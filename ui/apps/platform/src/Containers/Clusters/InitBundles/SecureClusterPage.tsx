@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { useLocation } from 'react-router-dom';
 import qs from 'qs';
 import {
+    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Divider,
@@ -65,6 +66,12 @@ function SecureClusterPage(): ReactElement {
                     ) : (
                         <SecureClusterUsingHelmChart headingLevel={headingLevel} />
                     )}
+                    <Alert
+                        variant="info"
+                        isInline
+                        title="You can use one bundle to secure multiple clusters that have the same installation method."
+                        component="p"
+                    />
                 </Flex>
             </PageSection>
         </>

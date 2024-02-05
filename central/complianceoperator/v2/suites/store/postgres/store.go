@@ -24,19 +24,19 @@ import (
 )
 
 const (
-	baseTable = "compliance_operator_suites"
-	storeName = "ComplianceOperatorSuite"
+	baseTable = "compliance_operator_suite_v2"
+	storeName = "ComplianceOperatorSuiteV2"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceOperatorSuitesSchema
+	schema         = pkgSchema.ComplianceOperatorSuiteV2Schema
 	targetResource = resources.Compliance
 )
 
-type storeType = storage.ComplianceOperatorSuite
+type storeType = storage.ComplianceOperatorSuiteV2
 
-// Store is the interface to interact with the storage for storage.ComplianceOperatorSuite
+// Store is the interface to interact with the storage for storage.ComplianceOperatorSuiteV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -62,8 +62,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoComplianceOperatorSuites,
-		copyFromComplianceOperatorSuites,
+		insertIntoComplianceOperatorSuiteV2,
+		copyFromComplianceOperatorSuiteV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
@@ -97,12 +97,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 		}
 	}
 	if len(deniedIDs) != 0 {
-		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceOperatorSuites with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceOperatorSuiteV2s with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
 	}
 	return nil
 }
 
-func insertIntoComplianceOperatorSuites(batch *pgx.Batch, obj *storage.ComplianceOperatorSuite) error {
+func insertIntoComplianceOperatorSuiteV2(batch *pgx.Batch, obj *storage.ComplianceOperatorSuiteV2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -117,13 +117,13 @@ func insertIntoComplianceOperatorSuites(batch *pgx.Batch, obj *storage.Complianc
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_suites (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_suite_v2 (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromComplianceOperatorSuites(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorSuite) error {
+func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorSuiteV2) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -173,7 +173,7 @@ func copyFromComplianceOperatorSuites(ctx context.Context, s pgSearch.Deleter, t
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_suites"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_suite_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -196,11 +196,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorSuites(ctx, db)
+	dropTableComplianceOperatorSuiteV2(ctx, db)
 }
 
-func dropTableComplianceOperatorSuites(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_suites CASCADE")
+func dropTableComplianceOperatorSuiteV2(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_suite_v2 CASCADE")
 
 }
 

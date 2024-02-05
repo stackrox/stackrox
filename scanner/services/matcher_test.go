@@ -55,11 +55,30 @@ func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_disbled() {
 	// when empty content is disabled and empty contents then error
 	srv := NewMatcherService(s.matcherMock, nil)
+	s.matcherMock.
+		EXPECT().
+		Initialized(gomock.Any()).
+		Return(nil)
 	res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 		HashId:   "/v4/containerimage/sample-hash-id",
 		Contents: nil,
 	})
 	s.ErrorContains(err, "empty contents is disabled")
+	s.Nil(res)
+}
+
+func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_not_initialized() {
+	// when matcher is not initialized then error
+	srv := NewMatcherService(s.matcherMock, nil)
+	s.matcherMock.
+		EXPECT().
+		Initialized(gomock.Any()).
+		Return(errors.New("not initialized"))
+	res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
+		HashId:   "/v4/containerimage/sample-hash-id",
+		Contents: nil,
+	})
+	s.ErrorContains(err, "not initialized")
 	s.Nil(res)
 }
 
@@ -84,6 +103,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 					"1": {ID: "1", Name: "Foobar"},
 				},
 			}, nil)
+		s.matcherMock.
+			EXPECT().
+			Initialized(gomock.Any()).
+			Return(nil)
 		srv := NewMatcherService(s.matcherMock, s.indexerMock)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId:   hashID,
@@ -114,6 +137,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 					"1": {ID: "1", Name: "Foobar", CPE: cpe.MustUnbind(emptyCPE)},
 				},
 			}, nil)
+		s.matcherMock.
+			EXPECT().
+			Initialized(gomock.Any()).
+			Return(nil)
 		srv := NewMatcherService(s.matcherMock, nil)
 		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId: hashID,

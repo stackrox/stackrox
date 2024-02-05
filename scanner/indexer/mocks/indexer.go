@@ -129,3 +129,17 @@ func (mr *MockIndexerMockRecorder) IndexContainerImage(arg0, arg1, arg2 any, arg
 	varargs := append([]any{arg0, arg1, arg2}, arg3...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexContainerImage", reflect.TypeOf((*MockIndexer)(nil).IndexContainerImage), varargs...)
 }
+
+// Ready mocks base method.
+func (m *MockIndexer) Ready(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ready", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ready indicates an expected call of Ready.
+func (mr *MockIndexerMockRecorder) Ready(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockIndexer)(nil).Ready), arg0)
+}

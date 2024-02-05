@@ -41,7 +41,7 @@ func init() {
 		&storage.ComplianceOperatorScanConfigurationV2{}:        resources.Compliance,
 		&storage.ComplianceOperatorScanV2{}:                     resources.Compliance,
 		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
-		&storage.ComplianceOperatorSuite{}:                      resources.Compliance,
+		&storage.ComplianceOperatorSuiteV2{}:                    resources.Compliance,
 		&storage.ComplianceRunMetadata{}:                        resources.Compliance,
 		&storage.ComplianceRunResults{}:                         resources.Compliance,
 		&storage.ComplianceStrings{}:                            resources.Compliance,
