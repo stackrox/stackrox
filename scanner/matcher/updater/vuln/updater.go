@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -83,6 +84,7 @@ type Updater struct {
 	url            string
 	root           string
 	updateInterval time.Duration
+	initialized    atomic.Bool
 
 	skipGC          bool
 	updateRetention int
@@ -215,6 +217,29 @@ func (u *Updater) Start() error {
 	}
 }
 
+// Initialized returns true if the vulnerability updater has fully initialized
+// the vulnerability store.
+func (u *Updater) Initialized(ctx context.Context) bool {
+	if u.initialized.Load() {
+		return true
+	}
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.Initialized")
+	ts, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
+	if err != nil {
+		zlog.
+			Warn(ctx).
+			Err(err).
+			Msg("did not get previous vuln update timestamp")
+		return false
+	}
+	if ts.IsZero() {
+		return false
+	}
+	zlog.Info(ctx).Msg("previous run exists: setting updater to initialized")
+	u.initialized.Store(true)
+	return true
+}
+
 // Update runs the full vulnerability update process.
 //
 // Note: periodic full GC will not be started.
@@ -284,6 +309,11 @@ func (u *Updater) runUpdate(ctx context.Context) error {
 	if err := u.metadataStore.SetLastVulnerabilityUpdate(ctx, timestamp); err != nil {
 		return err
 	}
+
+	if u.initialized.CompareAndSwap(false, true) {
+		zlog.Info(ctx).Msg("finished initial updater run: setting updater to initialized")
+	}
+
 	zlog.Info(ctx).
 		Str("timestamp", timestamp.Format(http.TimeFormat)).
 		Msg("new vuln update")

@@ -1,6 +1,7 @@
 package vuln
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -9,7 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -123,4 +127,66 @@ func TestFetch(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, f)
 	assert.Equal(t, time.Time{}, timestamp)
+}
+
+func TestUpdater_Initialized(t *testing.T) {
+	t.Run("when initialized then return ready", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
+		u := Updater{
+			metadataStore: metaMock,
+		}
+		u.initialized.Store(true)
+		got := u.Initialized(context.Background())
+		assert.True(t, got, `expecting "ready" got "not ready"`)
+	})
+
+	t.Run("when not initialized and get last update is empty then return not ready", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
+		metaMock.
+			EXPECT().
+			GetLastVulnerabilityUpdate(gomock.Any())
+		u := Updater{
+			metadataStore: metaMock,
+		}
+		got := u.Initialized(context.Background())
+		assert.False(t, got, `expecting "not ready" got "ready"`)
+	})
+
+	t.Run("when not initialized and get last update is not empty then return ready", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
+		metaMock.
+			EXPECT().
+			GetLastVulnerabilityUpdate(gomock.Any()).
+			Return(time.Now(), nil) // Non-zero
+		u := Updater{
+			metadataStore: metaMock,
+		}
+		got := u.Initialized(context.Background())
+		assert.True(t, got, `expecting "ready" got "not ready"`)
+	})
+
+	t.Run("when not initialized and get last update fails then log return not ready", func(t *testing.T) {
+		b := &bytes.Buffer{}
+		l := zerolog.New(b)
+		zlog.Set(&l)
+		ctx := zlog.Test(context.Background(), t)
+		ctrl := gomock.NewController(t)
+		metaMock := mocks.NewMockMatcherMetadataStore(ctrl)
+		metaMock.
+			EXPECT().
+			GetLastVulnerabilityUpdate(gomock.Any()).
+			Return(time.Unix(0, 0), errors.New("last update failed (fake error)"))
+		u := Updater{
+			metadataStore: metaMock,
+		}
+		u.initialized.Store(false)
+		got := u.Initialized(ctx)
+		assert.False(t, got, `expecting "not ready" got "ready"`)
+		assert.Contains(t, `"did not get previous vuln update timestamp"`, b.String())
+		assert.Contains(t, `"error":"last update failed (fake error)"`, b.String())
+		assert.Contains(t, `"level":"error"`, b.String())
+	})
 }

@@ -98,3 +98,31 @@ func (mr *MockMatcherMockRecorder) GetVulnerabilities(ctx, ir any) *gomock.Call 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilities", reflect.TypeOf((*MockMatcher)(nil).GetVulnerabilities), ctx, ir)
 }
+
+// Initialized mocks base method.
+func (m *MockMatcher) Initialized(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Initialized", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Initialized indicates an expected call of Initialized.
+func (mr *MockMatcherMockRecorder) Initialized(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialized", reflect.TypeOf((*MockMatcher)(nil).Initialized), ctx)
+}
+
+// Ready mocks base method.
+func (m *MockMatcher) Ready(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ready", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ready indicates an expected call of Ready.
+func (mr *MockMatcherMockRecorder) Ready(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockMatcher)(nil).Ready), ctx)
+}
