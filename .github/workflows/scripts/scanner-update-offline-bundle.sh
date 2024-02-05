@@ -22,7 +22,6 @@ for f in v4/*.json; do
 done
 
 dir=out
-defs="scanner-vulns-${ROX_PRODUCT_VERSION}.zip"
 mkdir -p $dir
 
 zip -j "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" v4/*

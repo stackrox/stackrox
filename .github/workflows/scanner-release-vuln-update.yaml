@@ -78,6 +78,7 @@ jobs:
         go run ./scanner/cmd/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
 
         # The vulnerability file created by older versions can remain the name vulns.json.zst in the GCS bucket.
+        # Remove after 4.4
         for file in output.json.{zst,ztd}; do
           if [ -f "${{ env.ROX_PRODUCT_VERSION }}/${file}" ]; then
             mv "${{ env.ROX_PRODUCT_VERSION }}/${file}" "${{ env.ROX_PRODUCT_VERSION }}/vulns.json.zst"
