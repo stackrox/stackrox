@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	defaultExportTimeout = 10 * time.Minute
-
 	maxPodsReturned = 1000
 )
 
