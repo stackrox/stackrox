@@ -511,6 +511,8 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 }
 
 func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
+	// This test is for v1/v2 behavior
+	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
 	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
 	srcID := "src-id"
 	dstID := "dst-id"
@@ -667,6 +669,8 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 }
 
 func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
+	// This test is for v1/v2 behavior
+	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
 	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
 	mockCtrl := gomock.NewController(s.T())
 	hostname := "hostname"
