@@ -146,6 +146,9 @@ type ScannerV4Component struct {
 
 // ScannerV4DB defines configuration for the Scanner V4 database component.
 type ScannerV4DB struct {
+	// Configures how Scanner V4 should store its persistent data.
+	// You can choose between using a persistent volume claim (recommended default), a host path,
+	// and an emptyDir volume in case Scanner V4 is running on a secured cluster.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Persistence    *ScannerV4Persistence `json:"persistence,omitempty"`
 	DeploymentSpec `json:",inline"`

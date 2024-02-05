@@ -36,11 +36,12 @@ type CentralSpec struct {
 	// images.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
+
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
 	//+kubebuilder:default={"scannerComponent":"Default"}
-	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
+	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 
 	// Settings related to outgoing network traffic.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4

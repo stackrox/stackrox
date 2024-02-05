@@ -1034,11 +1034,8 @@ spec:
                     type: string
                 type: object
               scannerV4:
-                default:
-                  scannerComponent: Default
-                description: 'Settings for the Scanner V4 component, which can run
-                  in addition to the previously existing Scanner components Above
-                  default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
+                description: Settings for the Scanner V4 components, which can run
+                  in addition to the previously existing Scanner components
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -1050,8 +1047,10 @@ spec:
                           nodes, you can configure a node selector here.
                         type: object
                       persistence:
-                        description: ScannerV4Persistence defines persistence settings
-                          for scanner V4.
+                        description: Configures how Scanner V4 should store its persistent
+                          data. You can choose between using a persistent volume claim
+                          (recommended default), a host path, and an emptyDir volume
+                          in case Scanner V4 is running on a secured cluster.
                         properties:
                           hostPath:
                             description: Stores persistent data on a directory on
