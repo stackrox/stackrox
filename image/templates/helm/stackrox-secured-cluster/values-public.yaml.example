@@ -187,10 +187,6 @@
 #  # Rarely needs to be changed.
 #  endpoint: sensor.stackrox.svc:443
 #
-#  # Enable compliance operator integration
-#  complianceOperator:
-#    enabled: false
-#
 ## Admission Control specific configuration.
 #admissionControl:
 #

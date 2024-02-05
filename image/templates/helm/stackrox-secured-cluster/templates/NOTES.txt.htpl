@@ -10,7 +10,6 @@ Secured Cluster Configuration Summary:
   Helm Release Name:                           {{ .Release.Name }}
   Central Endpoint:                            {{ ._rox.centralEndpoint }}
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
-  Compliance Operator Enabled:                 {{ ._rox.sensor.complianceOperator.enabled }}
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
   Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
 [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]

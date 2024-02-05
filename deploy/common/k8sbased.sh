@@ -666,10 +666,6 @@ function launch_sensor {
         helm_args+=(--set scanner.disable=false)
       fi
 
-      if [[ "$ROX_COMPLIANCE_ENHANCEMENTS" == "true" ]]; then
-        helm_args+=(--set "sensor.complianceOperator.enabled=true")
-      fi
-
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"

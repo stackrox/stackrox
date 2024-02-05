@@ -117,6 +117,3 @@ elif [[ -n "$ROX_DEFAULT_TLS_KEY_FILE" ]]; then
 else
 	echo "No default TLS certificates provided"
 fi
-
-export ROX_COMPLIANCE_ENHANCEMENTS="${ROX_COMPLIANCE_ENHANCEMENTS:-false}"
-echo "ROX_COMPLIANCE_ENHANCEMENTS is set to ${ROX_COMPLIANCE_ENHANCEMENTS}"
