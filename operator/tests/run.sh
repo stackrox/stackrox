@@ -32,7 +32,7 @@ _EO_KUTTL_HELP_
     junit_wrap deploy-previous-operator \
                "Deploy previously released version of the operator." \
                "${kuttl_help}" \
-               "make" "-C" "operator" "deploy-previous-via-olm"
+               "make" "-C" "operator" "deploy-previous-via-olm" fail
 
     info "Executing operator upgrade test"
     junit_wrap test-upgrade \
