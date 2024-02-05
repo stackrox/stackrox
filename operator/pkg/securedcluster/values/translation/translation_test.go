@@ -144,6 +144,13 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": true,
+							},
+						},
+					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -195,6 +202,13 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": true,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -271,6 +285,13 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": true,
+							},
+						},
+					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -779,6 +800,13 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": true,
+							},
+						},
+					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -830,6 +858,13 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": true,
+							},
+						},
+					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{

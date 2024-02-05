@@ -192,19 +192,30 @@ func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.S
 		return
 	}
 
-	if db == nil {
-		return
+	if db != nil {
+		dbVB.SetStringMap("nodeSelector", db.NodeSelector)
+		dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
+		dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
 	}
 
-	dbVB.SetStringMap("nodeSelector", db.NodeSelector)
-	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
-	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
-	setScannerV4DBPersistence(&dbVB, db.Persistence)
+	setScannerV4DBPersistence(&dbVB, objKind, db.GetPersistence())
 	sv.AddChild("db", &dbVB)
 }
 
-func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV4Persistence) {
+func setScannerV4DBPersistence(sv *ValuesBuilder, objKind string, persistence *platform.ScannerV4Persistence) {
 	if persistence == nil {
+		if objKind == platform.SecuredClusterGVK.Kind {
+			// If no explicit config is set at this point set createClaim true
+			// to explicitly signal to helm chart that we want a PVC
+			// otherwise it will default to use emptyDir because it's
+			// lookup for default StorageClass is turned off when using operator
+			pvcBuilder := NewValuesBuilder()
+			pvcBuilder.SetBool("createClaim", pointer.Bool(true))
+			persistenceVB := NewValuesBuilder()
+			persistenceVB.AddChild("persistentVolumeClaim", &pvcBuilder)
+			sv.AddChild("persistence", &persistenceVB)
+		}
+
 		return
 	}
 
@@ -238,11 +249,8 @@ func shouldUseEmptyDir(ctx context.Context, objKind string, db *platform.Scanner
 		return false, nil
 	}
 
-	storageClassDefined := db != nil && db.Persistence != nil &&
-		db.Persistence.PersistentVolumeClaim != nil &&
-		db.Persistence.PersistentVolumeClaim.StorageClassName != nil &&
-		*db.Persistence.PersistentVolumeClaim.StorageClassName != ""
-	if storageClassDefined {
+	storageClass := db.GetPersistence().GetPersistentVolumeClaim().GetStorageClassName()
+	if storageClass != "" {
 		return false, nil
 	}
 

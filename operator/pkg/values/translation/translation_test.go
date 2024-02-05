@@ -428,7 +428,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 			kind: platform.CentralGVK.Kind,
 			want: chartutil.Values{},
 		},
-		"empty for securedcluster default with default StorageClass": {
+		"createClaim for securedcluster default with default StorageClass": {
 			db:   &platform.ScannerV4DB{},
 			kind: platform.SecuredClusterGVK.Kind,
 			fakeObjects: []runtime.Object{
@@ -446,7 +446,15 @@ func TestSetScannerV4DBValues(t *testing.T) {
 					},
 				},
 			},
-			want: chartutil.Values{},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": true,
+						},
+					},
+				},
+			},
 		},
 		"db.persistence.none for securedcluster default without default StorageClass": {
 			db:   &platform.ScannerV4DB{},

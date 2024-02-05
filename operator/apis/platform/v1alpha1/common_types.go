@@ -151,6 +151,14 @@ type ScannerV4DB struct {
 	DeploymentSpec `json:",inline"`
 }
 
+// GetPersistence returns the configured PVC
+func (sdb *ScannerV4DB) GetPersistence() *ScannerV4Persistence {
+	if sdb == nil {
+		return nil
+	}
+	return sdb.Persistence
+}
+
 // ScannerV4Persistence defines persistence settings for scanner V4.
 type ScannerV4Persistence struct {
 	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
@@ -203,6 +211,16 @@ type ScannerV4PersistentVolumeClaim struct {
 	// class, you must select a value here.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage Class",order=3,xDescriptors={"urn:alm:descriptor:io.kubernetes:StorageClass"}
 	StorageClassName *string `json:"storageClassName,omitempty"`
+}
+
+// GetStorageClassName gets the StorageClassName string value
+// returns empty string if the object or the StorageClassName pointer is nil
+func (s *ScannerV4PersistentVolumeClaim) GetStorageClassName() string {
+	if s == nil || s.StorageClassName == nil {
+		return ""
+	}
+
+	return *s.StorageClassName
 }
 
 // ScannerComponentScaling defines replication settings of scanner components.
