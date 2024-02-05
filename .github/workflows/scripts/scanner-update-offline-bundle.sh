@@ -26,17 +26,4 @@ defs="scanner-vulns-${ROX_PRODUCT_VERSION}.zip"
 mkdir -p $dir
 
 zip -j "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" v4/*
-# V2 stuff (`-n` doesn't overwrite files).
-unzip -n v2/scanner-vuln-updates.zip scanner-defs.zip k8s-istio.zip -d $dir
-
-jq -n \
-    --arg version "$ROX_PRODUCT_VERSION" \
-    --arg date "$(date -u -Iseconds)" \
-    '{"version": $version, "created": $date}' > $dir/manifest.json
-
-ls -lh $dir/
-zip -j "$defs" $dir/*
-
-cat $dir/manifest.json
-
-gsutil cp "$defs" "gs://scanner-v4-test/offline-bundles/"
+gsutil cp "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" "gs://scanner-v4-test/offline-bundles/"
