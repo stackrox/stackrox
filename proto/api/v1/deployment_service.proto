@@ -84,7 +84,7 @@ service DeploymentService {
     option (google.api.http) = {get: "/v1/deployments/metadata/labels"};
   }
 
-  rpc Export(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
+  rpc ExportDeployments(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
     option (google.api.http) = {get: "/v1/export/deployments"};
   }
 }

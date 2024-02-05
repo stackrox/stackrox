@@ -354,21 +354,21 @@ func local_request_ImageService_GetWatchedImages_0(ctx context.Context, marshale
 }
 
 var (
-	filter_ImageService_Export_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_ImageService_ExportImages_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_ImageService_Export_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (ImageService_ExportClient, runtime.ServerMetadata, error) {
+func request_ImageService_ExportImages_0(ctx context.Context, marshaler runtime.Marshaler, client ImageServiceClient, req *http.Request, pathParams map[string]string) (ImageService_ExportImagesClient, runtime.ServerMetadata, error) {
 	var protoReq ExportImageRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_Export_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ImageService_ExportImages_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.Export(ctx, &protoReq)
+	stream, err := client.ExportImages(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -594,7 +594,7 @@ func RegisterImageServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 
 	})
 
-	mux.Handle("GET", pattern_ImageService_Export_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ImageService_ExportImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -822,7 +822,7 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 
 	})
 
-	mux.Handle("GET", pattern_ImageService_Export_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ImageService_ExportImages_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -831,14 +831,14 @@ func RegisterImageServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ImageService_Export_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ImageService_ExportImages_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ImageService_Export_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_ImageService_ExportImages_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -864,7 +864,7 @@ var (
 
 	pattern_ImageService_GetWatchedImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "watchedimages"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ImageService_Export_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "images"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ImageService_ExportImages_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "images"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
@@ -886,5 +886,5 @@ var (
 
 	forward_ImageService_GetWatchedImages_0 = runtime.ForwardResponseMessage
 
-	forward_ImageService_Export_0 = runtime.ForwardResponseStream
+	forward_ImageService_ExportImages_0 = runtime.ForwardResponseStream
 )

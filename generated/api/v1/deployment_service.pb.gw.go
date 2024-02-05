@@ -268,21 +268,21 @@ func local_request_DeploymentService_GetLabels_0(ctx context.Context, marshaler 
 }
 
 var (
-	filter_DeploymentService_Export_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_DeploymentService_ExportDeployments_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_DeploymentService_Export_0(ctx context.Context, marshaler runtime.Marshaler, client DeploymentServiceClient, req *http.Request, pathParams map[string]string) (DeploymentService_ExportClient, runtime.ServerMetadata, error) {
+func request_DeploymentService_ExportDeployments_0(ctx context.Context, marshaler runtime.Marshaler, client DeploymentServiceClient, req *http.Request, pathParams map[string]string) (DeploymentService_ExportDeploymentsClient, runtime.ServerMetadata, error) {
 	var protoReq ExportDeploymentRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DeploymentService_Export_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DeploymentService_ExportDeployments_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.Export(ctx, &protoReq)
+	stream, err := client.ExportDeployments(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -439,7 +439,7 @@ func RegisterDeploymentServiceHandlerServer(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("GET", pattern_DeploymentService_Export_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_DeploymentService_ExportDeployments_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -607,7 +607,7 @@ func RegisterDeploymentServiceHandlerClient(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("GET", pattern_DeploymentService_Export_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_DeploymentService_ExportDeployments_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -616,14 +616,14 @@ func RegisterDeploymentServiceHandlerClient(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_DeploymentService_Export_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_DeploymentService_ExportDeployments_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_DeploymentService_Export_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_DeploymentService_ExportDeployments_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -643,7 +643,7 @@ var (
 
 	pattern_DeploymentService_GetLabels_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "deployments", "metadata", "labels"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_DeploymentService_Export_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "deployments"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_DeploymentService_ExportDeployments_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "deployments"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
@@ -659,5 +659,5 @@ var (
 
 	forward_DeploymentService_GetLabels_0 = runtime.ForwardResponseMessage
 
-	forward_DeploymentService_Export_0 = runtime.ForwardResponseStream
+	forward_DeploymentService_ExportDeployments_0 = runtime.ForwardResponseStream
 )

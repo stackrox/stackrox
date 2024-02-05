@@ -29,7 +29,7 @@ service PodService {
     option (google.api.http) = {get: "/v1/pods"};
   }
 
-  rpc Export(ExportPodRequest) returns (stream ExportPodResponse) {
+  rpc ExportPods(ExportPodRequest) returns (stream ExportPodResponse) {
     option (google.api.http) = {get: "/v1/export/pods"};
   }
 }

@@ -13,7 +13,7 @@
   "paths": {
     "/v1/export/pods": {
       "get": {
-        "operationId": "PodService_Export",
+        "operationId": "PodService_ExportPods",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",

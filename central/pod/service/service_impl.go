@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -20,6 +21,8 @@ import (
 )
 
 const (
+	defaultExportTimeout = 10 * time.Minute
+
 	maxPodsReturned = 1000
 )
 
@@ -27,7 +30,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
 			"/v1.PodService/GetPods",
-			"/v1.PodService/Export",
+			"/v1.PodService/ExportPods",
 		},
 	})
 )
@@ -75,12 +78,19 @@ func (s *serviceImpl) GetPods(ctx context.Context, request *v1.RawQuery) (*v1.Po
 	}, nil
 }
 
-func (s *serviceImpl) Export(req *v1.ExportPodRequest, srv v1.PodService_ExportServer) error {
+func (s *serviceImpl) ExportPods(req *v1.ExportPodRequest, srv v1.PodService_ExportPodsServer) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	return s.datastore.WalkByQuery(srv.Context(), parsedQuery, func(p *storage.Pod) error {
+	ctx := srv.Context()
+	if timeout := req.GetTimeout(); timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+	}
+
+	return s.datastore.WalkByQuery(ctx, parsedQuery, func(p *storage.Pod) error {
 		if err := srv.Send(&v1.ExportPodResponse{Pod: p}); err != nil {
 			return err
 		}

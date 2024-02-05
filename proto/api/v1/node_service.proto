@@ -40,7 +40,7 @@ service NodeService {
     option (google.api.http) = {get: "/v1/nodes/{cluster_id}/{node_id}"};
   }
 
-  rpc Export(ExportNodeRequest) returns (stream ExportNodeResponse) {
+  rpc ExportNodes(ExportNodeRequest) returns (stream ExportNodeResponse) {
     option (google.api.http) = {get: "/v1/export/nodes"};
   }
 }

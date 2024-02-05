@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/central/export/common"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -19,9 +19,9 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "deployments",
-		Short: "Commands related to exporting deployments from Central.",
+		Short: "(Technology Preview) Exports all deployments from Central.",
+		Long:  "Exports all deployments from Central." + common.TechPreviewLongText,
 	}
-	common.AddDefaultExportTimeout(c)
 
 	c.RunE = func(cmd *cobra.Command, args []string) error {
 		conn, err := cliEnvironment.GRPCConnection()
@@ -34,7 +34,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		ctx, cancel := context.WithTimeout(pkgCommon.Context(), flags.Timeout(cmd))
 		defer cancel()
 
-		client, err := svc.Export(ctx, &v1.ExportDeploymentRequest{})
+		client, err := svc.ExportDeployments(ctx, &v1.ExportDeploymentRequest{})
 		if err != nil {
 			return errors.Wrap(err, "could not initialize stream client")
 		}

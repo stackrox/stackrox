@@ -13,7 +13,7 @@
   "paths": {
     "/v1/export/nodes": {
       "get": {
-        "operationId": "NodeService_Export",
+        "operationId": "NodeService_ExportNodes",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",

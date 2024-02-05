@@ -217,7 +217,7 @@ service ImageService {
     option (google.api.http) = {get: "/v1/watchedimages"};
   }
 
-  rpc Export(ExportImageRequest) returns (stream ExportImageResponse) {
+  rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
     option (google.api.http) = {get: "/v1/export/images"};
   }
 }

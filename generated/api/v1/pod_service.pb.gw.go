@@ -70,21 +70,21 @@ func local_request_PodService_GetPods_0(ctx context.Context, marshaler runtime.M
 }
 
 var (
-	filter_PodService_Export_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_PodService_ExportPods_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_PodService_Export_0(ctx context.Context, marshaler runtime.Marshaler, client PodServiceClient, req *http.Request, pathParams map[string]string) (PodService_ExportClient, runtime.ServerMetadata, error) {
+func request_PodService_ExportPods_0(ctx context.Context, marshaler runtime.Marshaler, client PodServiceClient, req *http.Request, pathParams map[string]string) (PodService_ExportPodsClient, runtime.ServerMetadata, error) {
 	var protoReq ExportPodRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_PodService_Export_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_PodService_ExportPods_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.Export(ctx, &protoReq)
+	stream, err := client.ExportPods(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -126,7 +126,7 @@ func RegisterPodServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("GET", pattern_PodService_Export_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_PodService_ExportPods_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -194,7 +194,7 @@ func RegisterPodServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
-	mux.Handle("GET", pattern_PodService_Export_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_PodService_ExportPods_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -203,14 +203,14 @@ func RegisterPodServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_PodService_Export_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PodService_ExportPods_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_PodService_Export_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_PodService_ExportPods_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -220,11 +220,11 @@ func RegisterPodServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 var (
 	pattern_PodService_GetPods_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "pods"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_PodService_Export_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "pods"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_PodService_ExportPods_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "export", "pods"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
 	forward_PodService_GetPods_0 = runtime.ForwardResponseMessage
 
-	forward_PodService_Export_0 = runtime.ForwardResponseStream
+	forward_PodService_ExportPods_0 = runtime.ForwardResponseStream
 )
