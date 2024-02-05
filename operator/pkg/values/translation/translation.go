@@ -167,6 +167,8 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 }
 
 // SetScannerV4DBValues sets values in "sv" based on "db"
+// In case of translating a secured cluster it checks for a default storage class
+// if none is found it sets appropriate values to use an emptyDir.
 // Unlike central-db's PVC we don't use the extension.ReconcilePVCExtension.
 // The operator creates this PVC through the helm chart. This means it is managed
 // by the default helm lifecycle, instead of the operator extension. The difference is
@@ -198,7 +200,6 @@ func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.S
 	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
 	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
 	setScannerV4DBPersistence(&dbVB, db.Persistence)
-	dbVB.AddChild("persistence", &persistenceVB)
 	sv.AddChild("db", &dbVB)
 }
 
