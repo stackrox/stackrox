@@ -11,4 +11,3 @@ spec:
     command: ["/bin/sh", "-c"]
     args:
      - "while true ; do sleep 2; curl http://nginx-service.sensor-integration.svc.cluster.local:80; done"
-     # - "while true ; do sleep 2; curl http://nginx-service.test.svc.cluster.local:80; done"

@@ -871,9 +871,8 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, rea
 		}
 
 		t.Setenv("ROX_HELM_CLUSTER_CONFIG_FP", clusterC.ClusterConfig.FingerPrint)
-	} else {
-		// TODO: setup fake-collector
 	}
+	// TODO: else setup fake-collector
 
 	s, err := sensor.CreateSensor(sensorConfig)
 
