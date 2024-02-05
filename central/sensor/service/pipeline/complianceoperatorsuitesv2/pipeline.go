@@ -59,7 +59,7 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	}
 
 	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorSuiteV2)(nil))
-	return reconciliation.Perform(store, existingIDs, "complianceoperatorsuites", func(id string) error {
+	return reconciliation.Perform(store, existingIDs, "complianceoperatorsuitesv2", func(id string) error {
 		return p.suiteDatastore.DeleteSuite(ctx, id)
 	})
 }
@@ -70,7 +70,7 @@ func (*pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input message and returns the error
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorSuite)
+	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorSuiteV2)
 
 	if !features.ComplianceEnhancements.Enabled() {
 		return errors.New("Next gen compliance is disabled. Message unexpected.")
