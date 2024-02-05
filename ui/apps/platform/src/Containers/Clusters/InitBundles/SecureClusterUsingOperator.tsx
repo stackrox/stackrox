@@ -58,8 +58,17 @@ function SecureClusterUsingOperator({
                         secure multiple clusters.
                     </p>
                 </ListItem>
+            </List>
+            <Title headingLevel={subHeadingLevel}>
+                Procedure to repeat for each secured cluster
+            </Title>
+            <List component="ol">
                 <ListItem>
-                    <p>With the ACS project selected create the init bundle secrets in OCP.</p>
+                    <p>Apply the init bundle by creating a resource on the secured cluster.</p>
+                    <p>
+                        With the RHACS project selected create the init bundle secrets in OpenShift
+                        Container Platform.
+                    </p>
                     {version && (
                         <ExternalLink>
                             <a
@@ -92,16 +101,17 @@ function SecureClusterUsingOperator({
                                 following:
                             </p>
                             <ClipboardCopy>
-                                oc -n rhacs-operator -f Operator-secrets-cluster-init-bundle.yaml
+                                oc -n stackrox -f Operator-secrets-cluster-init-bundle.yaml
                             </ClipboardCopy>
                         </ListItem>
                     </List>
                 </ListItem>
+                <ListItem>
+                    <p>
+                        Install secured cluster services on each cluster using the RHACS operator.
+                    </p>
+                </ListItem>
             </List>
-            <Title headingLevel={subHeadingLevel}>
-                Procedure to repeat for each secured cluster
-            </Title>
-            <p>TODO just use the operator?</p>
         </Flex>
     );
 }

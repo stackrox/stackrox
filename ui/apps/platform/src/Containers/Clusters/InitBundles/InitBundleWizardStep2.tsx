@@ -25,13 +25,11 @@ function InitBundleWizardStep2({ errorMessage, formik }: InitBundleWizardStep2Pr
             ) : (
                 <SecureClusterUsingHelmChart headingLevel={headingLevel} />
             )}
-            <Alert
-                variant="info"
-                isInline
-                title="You can download the YAML file only once when you create a cluster init bundle."
-                component="p"
-            >
-                Store the YAML file securely because it contains secrets.
+            <Alert variant="info" isInline title="Download YAML file" component="p">
+                <p>
+                    You can download the YAML file only once when you create a cluster init bundle.
+                </p>
+                <p>Store the YAML file securely because it contains secrets.</p>
             </Alert>
             {errorMessage && (
                 <Alert
