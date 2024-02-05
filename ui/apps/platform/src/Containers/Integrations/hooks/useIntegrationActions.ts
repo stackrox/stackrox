@@ -15,9 +15,9 @@ import { generateClusterInitBundle } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import { createMachineAccessConfig } from 'services/MachineAccessService';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
-import { createMachineAccessConfig } from 'services/MachineAccessService';
 
 export type UseIntegrationActions = {
     source: IntegrationSource;
