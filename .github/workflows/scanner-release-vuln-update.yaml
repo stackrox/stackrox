@@ -26,6 +26,8 @@ jobs:
   upload-release-vulnerabilities:
     needs: read-release-versions
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
     strategy:
       fail-fast: false # If one of the versions fails, it should not stop others from succeeding.
       max-parallel: 1 # Jobs are memory intensive, so only run one at a time.

@@ -9,12 +9,16 @@ on:
 jobs:
   upload-dev-vulnerabilities:
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2

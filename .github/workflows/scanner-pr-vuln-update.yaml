@@ -17,6 +17,8 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -24,6 +26,17 @@ jobs:
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
+
+    - name: Logs
+      run: |
+        env
+        echo
+        echo
+        go version
+        echo
+        echo
+        df --si /
+      shell: bash
 
     - name: Update vulnerabilities
       env:
