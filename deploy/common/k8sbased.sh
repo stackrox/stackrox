@@ -433,11 +433,6 @@ function launch_central {
         )
       fi
 
-      helm_args+=(
-        --reset-then-reuse-values
-      )
-
-
       helm upgrade --install -n "${central_namespace}" stackrox-central-services "${helm_chart}" \
           "${helm_args[@]}"
     else
