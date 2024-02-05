@@ -256,6 +256,7 @@ function launch_central {
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
+        echo "Generating Central bundle..."
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
@@ -483,7 +484,9 @@ function launch_central {
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
               echo "Deploying ScannerV4..."
-              "${unzip_dir}/scanner-v4/scripts/setup.sh"
+              if [[ -x "${unzip_dir}/scanner-v4/scripts/setup.sh" ]]; then
+                "${unzip_dir}/scanner-v4/scripts/setup.sh"
+              fi
               launch_service "${unzip_dir}" scanner-v4
             else
               echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."
