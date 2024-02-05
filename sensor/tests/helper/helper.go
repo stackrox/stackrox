@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"gopkg.in/yaml.v3"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
@@ -151,6 +152,7 @@ func DefaultCentralConfig() CentralConfig {
 		InitialSystemPolicies: policies,
 		CertFilePath:          "../../../../tools/local-sensor/certs/",
 		SendDeduperState:      false,
+		RealCerts:             false,
 	}
 }
 
@@ -181,7 +183,7 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}
 
 	tc.StartFakeGRPC()
-	tc.startSensorInstance(t, envConfig)
+	tc.startSensorInstance(t, envConfig, config.RealCerts)
 
 	return &tc, nil
 }
@@ -520,6 +522,28 @@ func (c *TestContext) WaitForMessageWithEventID(id string, timeout time.Duration
 	}
 }
 
+// EventMatcher function definition to match events.
+type EventMatcher func(*central.MsgFromSensor) bool
+
+// WaitForMessageWithMatcher given an EventMatcher, waits for an event to match said matcher.
+func (c *TestContext) WaitForMessageWithMatcher(matcher EventMatcher, timeout time.Duration) (*central.MsgFromSensor, error) {
+	timeoutTimer := time.NewTicker(timeout)
+	ticker := time.NewTicker(defaultTicker)
+	for {
+		select {
+		case <-timeoutTimer.C:
+			return nil, errors.Errorf("timeout (%s) reached waiting for message", timeout)
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			for _, m := range messages {
+				if matcher(m) {
+					return m, nil
+				}
+			}
+		}
+	}
+}
+
 // WaitForDeploymentEvent waits until sensor process a given deployment
 func (c *TestContext) WaitForDeploymentEvent(t *testing.T, name string) {
 	c.WaitForDeploymentEventWithTimeout(t, name, defaultWaitTimeout)
@@ -734,14 +758,14 @@ func (c *TestContext) NoViolations(t *testing.T, name string, message string) {
 	}, defaultWaitTimeout, defaultTicker, message)
 }
 
-// LastViolationStateByID checks the violation state by deployment ID
-func (c *TestContext) LastViolationStateByID(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
-	c.LastViolationStateByIDWithTimeout(t, id, assertion, message, checkEmptyAlertResults, defaultWaitTimeout)
+// AssertViolationStateByID checks all the violations of a specific deployment.
+func (c *TestContext) AssertViolationStateByID(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
+	c.AssertViolationStateByIDWithTimeout(t, id, assertion, message, checkEmptyAlertResults, false, defaultWaitTimeout)
 }
 
-// LastViolationStateByIDWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
-// until `timeout` the test fails.
-func (c *TestContext) LastViolationStateByIDWithTimeout(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
+// AssertViolationStateByIDWithTimeout checks all the violations of a specific deployment. The violations must match `assertion`. If violation state does not match
+// until `timeout` the test fails. If `checkOnlyLast` is set then the function will only match against the last violation.
+func (c *TestContext) AssertViolationStateByIDWithTimeout(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, checkOnlyLast bool, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.Errorf("no alerts sent for deployment ID %s", id)
@@ -751,18 +775,42 @@ func (c *TestContext) LastViolationStateByIDWithTimeout(t *testing.T, id string,
 			t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
-			lastAlert := GetLastAlertsWithDeploymentID(messages, id, checkEmptyAlertResults)
-			lastViolationState := lastAlert.GetEvent().GetAlertResults()
-			if lastViolationState == nil {
-				continue
+			if checkOnlyLast {
+				lastAlert := GetLastAlertsWithDeploymentID(messages, id, checkEmptyAlertResults)
+				lastViolationState := lastAlert.GetEvent().GetAlertResults()
+				if lastViolationState == nil {
+					continue
+				}
+				if lastErr = assertion(lastViolationState); lastErr == nil {
+					// Assertion matched the case. We can return here without failing the test case
+					return
+				}
+			} else {
+				alerts := GetAllAlertsWithDeploymentID(messages, id, checkEmptyAlertResults)
+				if len(alerts) == 0 {
+					continue
+				}
+				for _, a := range alerts {
+					if lastErr = assertion(a.GetEvent().GetAlertResults()); lastErr == nil {
+						// Assertion matched the case. We can return here without failing the test case
+						return
+					}
+				}
 			}
-			if lastErr = assertion(lastViolationState); lastErr == nil {
-				// Assertion matched the case. We can return here without failing the test case
-				return
-			}
+
 		}
 	}
+}
 
+// LastViolationStateByID checks the violation state by deployment ID
+func (c *TestContext) LastViolationStateByID(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
+	c.LastViolationStateByIDWithTimeout(t, id, assertion, message, checkEmptyAlertResults, defaultWaitTimeout)
+}
+
+// LastViolationStateByIDWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
+// until `timeout` the test fails.
+func (c *TestContext) LastViolationStateByIDWithTimeout(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
+	c.AssertViolationStateByIDWithTimeout(t, id, assertion, message, checkEmptyAlertResults, true, timeout)
 }
 
 // GetAllAlertsForDeploymentName filters sensor messages and gets all alerts for a deployment with `name`
@@ -784,18 +832,50 @@ type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 	CertFilePath          string
 	SendDeduperState      bool
+	RealCerts             bool
 }
 
-func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
+func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, realCerts bool) {
 	t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
 	t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
 	t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
 	t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
-	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
-		WithCentralConnectionFactory(c.grpcFactory))
+		WithCentralConnectionFactory(c.grpcFactory)
+	if realCerts {
+		t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/sensor-cert.pem"))
+		t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/sensor-key.pem"))
+		t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/ca.pem"))
+
+		type helmConfig struct {
+			ClusterName   string `yaml:"clusterName"`
+			ClusterConfig struct {
+				FingerPrint string `yaml:"configFingerprint"`
+			} `yaml:"clusterConfig"`
+		}
+
+		helmConfigFile := path.Join(c.config.CertFilePath, "/helm-config.yaml")
+		t.Setenv("ROX_HELM_CONFIG_FILE_OVERRIDE", helmConfigFile)
+		t.Setenv("ROX_HELM_CLUSTER_NAME_FILE_OVERRIDE", path.Join(c.config.CertFilePath, "/helm-name.yaml"))
+
+		var clusterC helmConfig
+		yamlFile, err := os.ReadFile(helmConfigFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := yaml.Unmarshal(yamlFile, &clusterC); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Setenv("ROX_HELM_CLUSTER_CONFIG_FP", clusterC.ClusterConfig.FingerPrint)
+	} else {
+		// TODO: setup fake-collector
+	}
+
+	s, err := sensor.CreateSensor(sensorConfig)
 
 	if err != nil {
 		panic(err)
@@ -943,6 +1023,14 @@ func (c *TestContext) ApplyResource(ctx context.Context, t *testing.T, ns string
 	}, nil
 }
 
+// WaitForResourceDeleted waits for a specific resource to be deleted.
+func (c *TestContext) WaitForResourceDeleted(obj k8s.Object) error {
+	if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func execWithRetry(timeout, interval time.Duration, fn backoff.Operation) error {
 	exponential := backoff.NewExponentialBackOff()
 	exponential.MaxElapsedTime = timeout
@@ -1029,6 +1117,21 @@ func GetLastMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, nam
 		}
 	}
 	return lastMessage
+}
+
+// GetAllAlertsWithDeploymentID find all alert messages by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
+func GetAllAlertsWithDeploymentID(messages []*central.MsgFromSensor, id string, checkEmptyAlertResults bool) []*central.MsgFromSensor {
+	var alerts []*central.MsgFromSensor
+	for i := len(messages) - 1; i >= 0; i-- {
+		if checkEmptyAlertResults && messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id && len(messages[i].GetEvent().GetAlertResults().GetAlerts()) == 0 {
+			alerts = append(alerts, messages[i])
+			continue
+		}
+		if messages[i].GetEvent().GetAlertResults().GetDeploymentId() == id {
+			alerts = append(alerts, messages[i])
+		}
+	}
+	return alerts
 }
 
 // GetLastAlertsWithDeploymentID find most recent alert message by deployment ID. If checkEmptyAlerts is set to true it will also check for AlertResults with no Alerts
