@@ -71,8 +71,8 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 }
 
 // JSONRemarks pipes out the violated alerts and remarks as JSON.
-func JSONRemarks(output io.Writer, alerts []*storage.Alert, remarks []string) error {
-	// This object is really just a filler because its a wrapper around the alerts
+func JSONRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.DeployDetectionRemark) error {
+	// This object is really just a filler because it's a wrapper around the alerts
 	// this is required because jsonpb can only marshal proto.Message
 	bdr := &v1.ResultAggregation{
 		Alerts:  alerts,

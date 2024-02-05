@@ -245,7 +245,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 	return d.printResults(alerts, ignoredObjRefs, remarks)
 }
 
-func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, []string, error) {
+func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, []*v1.DeployDetectionRemark, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
@@ -274,7 +274,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	return alerts, response.GetIgnoredObjectRefs(), response.GetRemarks(), nil
 }
 
-func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string, remarks []string) error {
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string, remarks []*v1.DeployDetectionRemark) error {
 	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
 	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
 	// want this to be visible to the old output format.
@@ -316,10 +316,10 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	return nil
 }
 
-func printRemarks(remarks []string, out logger.Logger) {
+func printRemarks(remarks []*v1.DeployDetectionRemark, out logger.Logger) {
 	out.PrintfLn("Additional remarks:")
 	for _, r := range remarks {
-		out.PrintfLn("%s", r)
+		out.PrintfLn("Deployment: %s, Permission Level: %s, Applied Network Policies: %s", r.Name, r.PermissionLevel, r.AppliedNetworkPolicies)
 	}
 }
 

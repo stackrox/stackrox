@@ -1516,6 +1516,23 @@
         }
       }
     },
+    "v1DeployDetectionRemark": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "permissionLevel": {
+          "type": "string"
+        },
+        "appliedNetworkPolicies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1DeployDetectionRequest": {
       "type": "object",
       "properties": {
@@ -1552,7 +1569,7 @@
         "remarks": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/v1DeployDetectionRemark"
           }
         }
       }

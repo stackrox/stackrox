@@ -44,6 +44,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/notifier"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -384,7 +385,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		eCtx.Namespace = ns
 	}
 
-	var remarks []string
+	remarks := make(map[string]*apiV1.DeployDetectionRemark)
 
 	var deployments []*storage.Deployment
 	errorList := errorhelpers.NewErrorList("error parsing YAML files")
@@ -400,7 +401,6 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			continue
 		}
 		deployments = append(deployments, d)
-		log.Errorf("DeploymentEnrichment: Incoming Deployment : %#v", d)
 	}
 	errs := errorList.ToError()
 
@@ -424,9 +424,12 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
 		for _, d := range deployments {
-			remarks = append(remarks, fmt.Sprintf("%s: Permission Level: %s, Exposures: %#v", d.GetName(), d.GetServiceAccountPermissionLevel().String(), d.GetPorts()))
+			remarks[d.Name] = &apiV1.DeployDetectionRemark{
+				Name:                   d.Name,
+				PermissionLevel:        d.GetServiceAccountPermissionLevel().String(),
+				AppliedNetworkPolicies: nil,
+			}
 		}
-		log.Errorf("DeploymentEnrichment: Enriched from Sensor Deployment example: %#v", deployments[0])
 	}
 
 	for _, d := range deployments {
@@ -442,14 +445,28 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		if err != nil {
 			continue
 		}
-		remarks = append(remarks, fmt.Sprintf("%s: Applied Network Policies: %#v", d.GetName(), an.Policies))
+
+		if remarks[d.Name] == nil {
+			remarks[d.Name] = &apiV1.DeployDetectionRemark{}
+		}
+		remarks[d.Name].AppliedNetworkPolicies = getPolicyNamesAsSlice(an.Policies)
 	}
 
 	return &apiV1.DeployDetectionResponse{
 		Runs:              runs,
 		IgnoredObjectRefs: ignoredObjectRefs,
-		Remarks:           remarks,
+		Remarks:           maputil.Values(remarks),
 	}, nil
+}
+
+func getPolicyNamesAsSlice(policies map[string]*storage.NetworkPolicy) (policyNames []string) {
+	for _, p := range policies {
+		if p == nil {
+			continue
+		}
+		policyNames = append(policyNames, p.Name)
+	}
+	return
 }
 
 func isDeployTimeEnforcement(actions []storage.EnforcementAction) bool {
