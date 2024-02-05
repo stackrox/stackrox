@@ -28,7 +28,7 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
-func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
+func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) *v1alpha1.ScanSetting {
 	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
@@ -36,14 +36,14 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      request.GetScanSettings().GetScanName(),
+			Name:      request.GetScanName(),
 			Namespace: namespace,
 		},
 		Roles: []string{masterRole, workerRole},
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
 			AutoApplyRemediations:  false,
 			AutoUpdateRemediations: false,
-			Schedule:               request.GetCron(),
+			Schedule:               cron,
 		},
 		ComplianceScanSettings: v1alpha1.ComplianceScanSettings{
 			StrictNodeScan:    pointers.Bool(false),
