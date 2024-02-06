@@ -14,7 +14,7 @@ func DiscoveredCluster(discoveredCluster *storage.DiscoveredCluster) *v1.Discove
 			Id:                metadata.GetId(),
 			Name:              metadata.GetName(),
 			Type:              discoveredClusterToV1TypeEnum(metadata.GetType()),
-			ProviderType:      v1.DiscoveredCluster_Metadata_ProviderType(metadata.GetProviderType()),
+			ProviderType:      discoveredClusterToV1ProviderTypeEnum(metadata.GetProviderType()),
 			Region:            metadata.GetRegion(),
 			FirstDiscoveredAt: metadata.GetFirstDiscoveredAt(),
 		},
