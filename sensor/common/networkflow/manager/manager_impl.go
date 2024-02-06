@@ -179,14 +179,23 @@ func (c *connection) String() string {
 	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
 }
 
+func debugIPv4String(e net.NetworkPeerID) string {
+	return fmt.Sprintf("Port=%d, Addr=%s, Network=%s", e.Port, e.Address.String(), e.IPNetwork.String())
+}
+
 // IsExternal returns true when IPv4 does not belong to the private IP addresses; false otherwise.
 // Error is returned when IP address is malformed
 func (c *connection) IsExternal() (bool, error) {
 	addr, err := c.getRemoteIPAddress()
 	if err != nil {
-		log.Debugf("Connection with port %d has invalid IP address (%q) and IP network (%q). "+
+		dir := "Outgoing"
+		if c.incoming {
+			dir = "Incomming"
+		}
+		log.Debugf("%s connection (%s) with port %d has invalid IP address (%q) and IP network (%q). "+
 			"Assuming connection to be external.",
-			c.remote.IPAndPort.Port, c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
+			dir, c.String(), c.remote.IPAndPort.Port, c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
+		log.Debugf("%s connection. Local: %s, Remote: %s", dir, debugIPv4String(c.local), debugIPv4String(c.remote.IPAndPort))
 		return true, errors.New("remote has invalid IP address and invalid IP network address")
 	}
 	return addr.IsPublic(), nil
