@@ -27,6 +27,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceIntegrationService/ListComplianceIntegrations",
+			"/v2.ComplianceIntegrationService/GetComplianceIntegrationsCount",
 		},
 	})
 )
@@ -82,4 +83,21 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 	}
 
 	return &v2.ListComplianceIntegrationsResponse{Integrations: apiIntegrations}, nil
+}
+
+// GetComplianceIntegrationsCount returns counts of profiles matching query
+func (s *serviceImpl) GetComplianceIntegrationsCount(ctx context.Context, request *v2.RawQuery) (*v2.CountComplianceIntegrationsResponse, error) {
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	integrationCount, err := s.complianceMetaDataStore.CountIntegrations(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to determine number of compliance operator integrations")
+	}
+
+	return &v2.CountComplianceIntegrationsResponse{
+		Count: int32(integrationCount),
+	}, nil
 }

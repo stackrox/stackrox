@@ -113,13 +113,13 @@ type TestSingleKeyStruct struct {
 	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" sql:"pk,index=hash" search:"Test Key"`
 	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Test Name"`
 	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`
-	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`
+	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"` // repeated bool bool_slice: currently unsupported
 	// When using this ensure your precision needs are met and accounted for.  This will use a
 	// BigInt which may require you to convert from uint64 to int64 OR update
 	// the handling to use numerics.
-	Uint64    uint64                        `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`
-	Int64     int64                         `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`
-	Float     float32                       `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`
+	Uint64    uint64                        `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"` // repeated uint64 uint64_slice: currently unsupported
+	Int64     int64                         `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`    // repeated int64 int64_slice: currently unsupported
+	Float     float32                       `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`   // repeated float float_slice: currently unsupported
 	Labels    map[string]string             `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" search:"Test Labels" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Timestamp *types.Timestamp              `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`
 	Enum      TestSingleKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`
@@ -760,13 +760,13 @@ type TestSingleUUIDKeyStruct struct {
 	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" sql:"pk,index=hash,type(uuid)" search:"Test Key"`
 	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Test Name"`
 	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`
-	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`
+	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"` // repeated bool bool_slice: currently unsupported
 	// When using this ensure your precision needs are met and accounted for.  This will use a
 	// BigInt which may require you to convert from uint64 to int64 OR update
 	// the handling to use numerics.
-	Uint64    uint64                            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`
-	Int64     int64                             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`
-	Float     float32                           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`
+	Uint64    uint64                            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"` // repeated uint64 uint64_slice: currently unsupported
+	Int64     int64                             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`    // repeated int64 int64_slice: currently unsupported
+	Float     float32                           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`   // repeated float float_slice: currently unsupported
 	Labels    map[string]string                 `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" search:"Test Labels" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Timestamp *types.Timestamp                  `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`
 	Enum      TestSingleUUIDKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`
@@ -1413,10 +1413,10 @@ type TestStruct struct {
 	Key1        string            `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`
 	Key2        string            `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" search:"Test Key 2,store,hidden"`
 	StringSlice []string          `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`
-	Bool        bool              `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`
-	Uint64      uint64            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`
-	Int64       int64             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`
-	Float       float32           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`
+	Bool        bool              `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`       // repeated bool bool_slice: currently unsupported
+	Uint64      uint64            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"` // repeated uint64 uint64_slice: currently unsupported
+	Int64       int64             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`    // repeated int64 int64_slice: currently unsupported
+	Float       float32           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`   // repeated float float_slice: currently unsupported
 	Labels      map[string]string `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" search:"Test Labels" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Timestamp   *types.Timestamp  `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`
 	Enum        TestStruct_Enum   `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestStruct_Enum" json:"enum,omitempty" search:"Test Enum"`
@@ -3401,9 +3401,9 @@ var fileDescriptor_f80f1f1db1167453 = []byte{
 	0x0f, 0x3d, 0x16, 0xed, 0xad, 0xe8, 0xb1, 0x40, 0x0f, 0xbd, 0x11, 0x45, 0xfa, 0x1f, 0xf0, 0xd4,
 	0x63, 0xc1, 0x99, 0x21, 0x39, 0xfc, 0x25, 0x29, 0x41, 0xda, 0xa6, 0x68, 0x4f, 0xe6, 0x8f, 0xf7,
 	0xde, 0x7c, 0xde, 0x7b, 0x9f, 0xf9, 0xbc, 0x11, 0x61, 0x00, 0x2d, 0xdb, 0x30, 0x3b, 0x7d, 0xbc,
-	0x6a, 0x63, 0xcb, 0xae, 0x9f, 0x9a, 0x86, 0x6d, 0xc0, 0x59, 0xf6, 0xac, 0x82, 0xfa, 0x86, 0xd1,
-	0x1f, 0xe2, 0x55, 0xf2, 0xf8, 0x70, 0x74, 0xb4, 0x6a, 0x6b, 0x27, 0xd8, 0xb2, 0x3b, 0x27, 0xa7,
-	0xd4, 0xb2, 0x72, 0xa1, 0x6f, 0xf4, 0x0d, 0x72, 0xb9, 0xea, 0x5d, 0xd1, 0xa7, 0xf2, 0x9f, 0xcb,
+	0x6a, 0x63, 0xcb, 0xae, 0x9f, 0x9a, 0x86, 0x6d, 0xc0, 0x59, 0xf6, 0xac, 0x72, 0xa1, 0x6f, 0xf4,
+	0x0d, 0xf2, 0x6c, 0xd5, 0xbb, 0xa2, 0xaf, 0x2b, 0xa8, 0x6f, 0x18, 0xfd, 0x21, 0x5e, 0x25, 0x77,
+	0x87, 0xa3, 0xa3, 0x55, 0x5b, 0x3b, 0xc1, 0x96, 0xdd, 0x39, 0x39, 0xa5, 0x06, 0xf2, 0x9f, 0xcb,
 	0xe0, 0x9d, 0xa7, 0xd8, 0xb2, 0xf7, 0x34, 0xbd, 0x3f, 0xc4, 0x9f, 0xe3, 0xb3, 0x3d, 0xdb, 0x1c,
 	0x75, 0x6d, 0x78, 0x07, 0xe4, 0x07, 0xf8, 0x4c, 0x14, 0x24, 0xa1, 0x5a, 0x6a, 0x5d, 0x73, 0x1d,
 	0x74, 0xd5, 0x7a, 0x3e, 0xdc, 0x94, 0x4f, 0x07, 0x35, 0x4d, 0xef, 0xe1, 0xaf, 0xef, 0x1e, 0x77,
@@ -3420,8 +3420,8 @@ var fileDescriptor_f80f1f1db1167453 = []byte{
 	0x16, 0x67, 0x25, 0xa1, 0x9a, 0x4b, 0x31, 0x7f, 0xe0, 0xbd, 0x95, 0x55, 0x6a, 0x05, 0x9f, 0x81,
 	0x99, 0x61, 0xe7, 0x10, 0x0f, 0x2d, 0x71, 0x4e, 0xca, 0x57, 0xcb, 0x4a, 0xb5, 0xce, 0xba, 0x5b,
 	0x4f, 0x69, 0x51, 0xfd, 0x11, 0x31, 0xdd, 0xd6, 0x6d, 0xf3, 0x2c, 0x05, 0x39, 0x7d, 0x2b, 0xab,
-	0x2c, 0x22, 0xdc, 0x07, 0xa5, 0x80, 0x11, 0x62, 0x49, 0x12, 0xaa, 0x65, 0xa5, 0x52, 0xa7, 0x9c,
-	0xa9, 0xfb, 0x9c, 0xa9, 0x3f, 0xf5, 0x2d, 0x5a, 0xef, 0xbb, 0x0e, 0xba, 0x18, 0x09, 0x18, 0xbc,
+	0x2c, 0x22, 0xdc, 0x07, 0xa5, 0xa0, 0xf7, 0x62, 0x49, 0x12, 0xaa, 0x65, 0xa5, 0x52, 0xa7, 0xec,
+	0xa8, 0xfb, 0xec, 0xa8, 0x3f, 0xf5, 0x2d, 0x5a, 0xef, 0xbb, 0x0e, 0xba, 0x18, 0x09, 0x18, 0xbc,
 	0x93, 0xd5, 0x30, 0x12, 0x7c, 0x0c, 0x0a, 0x58, 0x1f, 0x9d, 0x88, 0x40, 0x12, 0xaa, 0x0b, 0xca,
 	0xe5, 0xb1, 0x80, 0xb7, 0xf5, 0xd1, 0x49, 0x4a, 0x47, 0xbc, 0xc7, 0xb2, 0x4a, 0xc2, 0xc0, 0x7d,
 	0x50, 0xf4, 0xfe, 0x5a, 0x62, 0x59, 0xca, 0x4f, 0x17, 0xef, 0x92, 0xeb, 0x20, 0x31, 0x11, 0xcf,
@@ -3517,7 +3517,7 @@ var fileDescriptor_f80f1f1db1167453 = []byte{
 	0x5b, 0x7f, 0x7c, 0xb1, 0x24, 0xfc, 0xe9, 0xc5, 0x92, 0xf0, 0xd7, 0x17, 0x4b, 0xc2, 0xcf, 0xff,
 	0xb6, 0x74, 0x0e, 0xbc, 0xa7, 0x19, 0x75, 0xcb, 0xee, 0x74, 0x07, 0xa6, 0xf1, 0x35, 0xfd, 0x3e,
 	0xe4, 0x1f, 0x12, 0x9f, 0xf9, 0xff, 0x36, 0xf0, 0x77, 0x41, 0x38, 0x9c, 0x21, 0xaf, 0x1a, 0xff,
-	0x08, 0x00, 0x00, 0xff, 0xff, 0x94, 0xaa, 0xc5, 0x1e, 0x5f, 0x20, 0x00, 0x00,
+	0x08, 0x00, 0x00, 0xff, 0xff, 0x06, 0xd8, 0x98, 0x06, 0x5f, 0x20, 0x00, 0x00,
 }
 
 func (m *TestSingleKeyStruct) Marshal() (dAtA []byte, err error) {

@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	"github.com/stackrox/rox/operator/pkg/legacy"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/extensions"
@@ -46,12 +47,22 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
+	pullSecretRefInjector := legacy.NewImagePullSecretReferenceInjector(
+		mgr.GetClient(), "imagePullSecrets",
+		"secured-cluster-services-main", "stackrox", "stackrox-scanner", "stackrox-scanner-v4")
+	pullSecretRefInjector = pullSecretRefInjector.WithExtraImagePullSecrets(
+		"mainImagePullSecrets", "secured-cluster-services-main", "stackrox")
+	pullSecretRefInjector = pullSecretRefInjector.WithExtraImagePullSecrets(
+		"collectorImagePullSecrets", "secured-cluster-services-collector", "stackrox", "collector-stackrox")
+
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
 		translation.WithEnrichment(
 			scTranslation.New(mgr.GetClient()),
-			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger())),
+			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
+			pullSecretRefInjector,
+		),
 		opts...,
 	)
 }

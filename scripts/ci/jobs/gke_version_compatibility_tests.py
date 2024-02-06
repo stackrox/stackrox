@@ -18,7 +18,6 @@ from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
     get_latest_helm_chart_versions,
-    get_latest_helm_chart_version_for_specific_release,
 )
 
 Release = namedtuple("Release", ["major", "minor"])
@@ -65,16 +64,18 @@ test_tuples.extend(
     ]
 )
 
+support_exceptions = []
 # Support exception for latest central and sensor 3.74 as per
 # https://issues.redhat.com/browse/ROX-18223
-support_exceptions = [
-    ChartVersions(
-        central_version=latest_tag,
-        sensor_version=get_latest_helm_chart_version_for_specific_release(
-            "stackrox-secured-cluster-services", Release(major=3, minor=74)
-        ),
-    )
-]
+# Commented out until max message size fix has been backported
+# support_exceptions = [
+#     ChartVersions(
+#         central_version=latest_tag,
+#         sensor_version=get_latest_helm_chart_version_for_specific_release(
+#             "stackrox-secured-cluster-services", Release(major=3, minor=74)
+#         ),
+#     )
+# ]
 
 test_tuples.extend(
     support_exception

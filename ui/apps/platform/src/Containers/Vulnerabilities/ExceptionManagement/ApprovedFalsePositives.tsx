@@ -20,6 +20,7 @@ import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionSer
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import PageTitle from 'Components/PageTitle';
 import {
     RequestIDLink,
     RequestedAction,
@@ -67,6 +68,7 @@ function ApprovedFalsePositives() {
                     ...searchFilter,
                     'Request Status': ['APPROVED', 'APPROVED_PENDING_UPDATE'],
                     'Requested Vulnerability State': 'FALSE_POSITIVE',
+                    'Expired Request': 'false',
                 },
                 sortOption,
                 page - 1,
@@ -110,6 +112,7 @@ function ApprovedFalsePositives() {
 
     return (
         <PageSection>
+            <PageTitle title="Exception Management - Approved False Positives" />
             <Toolbar>
                 <ToolbarContent>
                     <FilterAutocompleteSelect

@@ -55,6 +55,20 @@ func (mr *MockMatcherMockRecorder) Close(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockMatcher)(nil).Close), ctx)
 }
 
+// GetKnownDistributions mocks base method.
+func (m *MockMatcher) GetKnownDistributions(ctx context.Context) []claircore.Distribution {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKnownDistributions", ctx)
+	ret0, _ := ret[0].([]claircore.Distribution)
+	return ret0
+}
+
+// GetKnownDistributions indicates an expected call of GetKnownDistributions.
+func (mr *MockMatcherMockRecorder) GetKnownDistributions(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKnownDistributions", reflect.TypeOf((*MockMatcher)(nil).GetKnownDistributions), ctx)
+}
+
 // GetLastVulnerabilityUpdate mocks base method.
 func (m *MockMatcher) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()
@@ -83,4 +97,32 @@ func (m *MockMatcher) GetVulnerabilities(ctx context.Context, ir *claircore.Inde
 func (mr *MockMatcherMockRecorder) GetVulnerabilities(ctx, ir any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilities", reflect.TypeOf((*MockMatcher)(nil).GetVulnerabilities), ctx, ir)
+}
+
+// Initialized mocks base method.
+func (m *MockMatcher) Initialized(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Initialized", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Initialized indicates an expected call of Initialized.
+func (mr *MockMatcherMockRecorder) Initialized(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialized", reflect.TypeOf((*MockMatcher)(nil).Initialized), ctx)
+}
+
+// Ready mocks base method.
+func (m *MockMatcher) Ready(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ready", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ready indicates an expected call of Ready.
+func (mr *MockMatcherMockRecorder) Ready(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ready", reflect.TypeOf((*MockMatcher)(nil).Ready), ctx)
 }

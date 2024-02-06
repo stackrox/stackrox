@@ -14,9 +14,9 @@ on:
     - synchronize
 
 jobs:
-  define-job-matrix:
+  define-scanner-job-matrix:
     outputs:
-      matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+      matrix: ${{ steps.define-scanner-job-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -25,17 +25,18 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Define the matrix for build jobs
-      id: define-job-matrix
+      id: define-scanner-job-matrix
       run: |
         source './scripts/ci/lib.sh'
 
         # If goarch is updated, be sure to update architectures in push-manifests below.
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] } }'
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] }, "push_manifests": { "name":["default"] } }'
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
           if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
             matrix="$(jq '.build_and_push.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
         fi
 
@@ -45,14 +46,14 @@ jobs:
         condensed="$(jq -c <<< "$matrix")"
         echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
-  build-and-push:
-    needs: define-job-matrix
+  build-and-push-scanner:
+    needs: define-scanner-job-matrix
     runs-on: ubuntu-latest
     strategy:
       # Supports two go binary builds:
       # default    - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
       env:
@@ -67,16 +68,13 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -86,6 +84,10 @@ jobs:
           ||
         matrix.name == 'prerelease'
       run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
+    - name: Set build tag for prerelease images
+      if: matrix.name == 'prerelease'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
 
     - name: Build Scanner and ScannerDB images
       run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
@@ -100,8 +102,15 @@ jobs:
 
   push-manifests:
     needs:
-    - build-and-push
+    - define-scanner-job-matrix
+    - build-and-push-scanner
     runs-on: ubuntu-latest
+    strategy:
+      # Supports two image builds:
+      # default
+      # prerelease
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
       env:
@@ -121,6 +130,12 @@ jobs:
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
 
+    - uses: ./.github/actions/handle-tagged-build
+
+    - name: Set build tag for prerelease images
+      if: matrix.name == 'prerelease'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
     - name: Push Scanner and ScannerDB image manifests
       # Skip for external contributions.
       if: |
@@ -128,7 +143,7 @@ jobs:
       run: |
         source ./scripts/ci/lib.sh
 
-        # If this is updated, be sure to update goarch in define-job-matrix above.
+        # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
         architectures="amd64,arm64,ppc64le,s390x"
 
         push_scanner_image_manifest_lists "$architectures"

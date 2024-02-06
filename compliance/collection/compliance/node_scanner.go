@@ -37,7 +37,7 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 		return
 	}
 	// Set up Compliance <-> NodeInventory connection
-	niConn, err := clientconn.AuthenticatedGRPCConnection(address, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
+	niConn, err := clientconn.AuthenticatedGRPCConnection(context.Background(), address, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 	if err != nil {
 		log.Errorf("Disabling node scanning for this node: could not initialize connection to node-inventory container: %v", err)
 	}

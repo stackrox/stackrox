@@ -64,8 +64,8 @@ data:
         type: file
         options:
           path: /etc/grafana/provisioning/dashboards
-  central.json: |-
-{{ .Files.Get "dashboards/central.json" | indent 4 }}
+  stackrox-core-dashboard.json: |-
+{{ .Files.Get "dashboards/stackrox-core-dashboard.json" | indent 4 }}
   cluster-health.json: |-
 {{ .Files.Get "dashboards/cluster-health.json" | indent 4 }}
   dataplane.json: |-

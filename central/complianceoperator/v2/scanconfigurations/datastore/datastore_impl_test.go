@@ -317,7 +317,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationsCount(
 	s.Require().Equal(0, count)
 }
 
-func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
+func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationByName() {
 	configID := uuid.NewV4().String()
 
 	scanConfig := s.getTestRec(mockScanName)
@@ -326,19 +326,108 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig))
 
-	found, err := s.dataStore.ScanConfigurationExists(s.testContexts[unrestrictedReadCtx], mockScanName)
+	foundConfig, err := s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], mockScanName)
 	s.Require().NoError(err)
-	s.Require().True(found)
+	s.Require().Equal(scanConfig, foundConfig)
 
 	// Retrieve a record that does not exist
-	found, err = s.dataStore.ScanConfigurationExists(s.testContexts[unrestrictedReadCtx], "DOES NOT EXIST")
+	foundConfig, err = s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], "DOES NOT EXIST")
 	s.Require().NoError(err)
-	s.Require().False(found)
+	s.Require().Nil(foundConfig)
 
 	// Try to retrieve a record with no access
-	found, err = s.dataStore.ScanConfigurationExists(s.testContexts[noAccessCtx], mockScanName)
+	foundConfig, err = s.dataStore.GetScanConfigurationByName(s.testContexts[noAccessCtx], mockScanName)
 	s.Require().NoError(err)
-	s.Require().False(found)
+	s.Require().Nil(foundConfig)
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExists() {
+	configID := uuid.NewV4().String()
+
+	scanConfig := s.getTestRec(mockScanName)
+	scanConfig.Id = configID
+
+	// Add a record so we have something to find
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig))
+
+	// Add testCases for different combinations of profiles and clusters
+	testCases := []struct {
+		desc        string
+		configID    string
+		profiles    []string
+		clusters    []string
+		found       bool
+		isErrorTest bool
+	}{
+		{
+			desc:        "Successful get - no deplicate profiles",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis-node"},
+			clusters:    []string{s.clusterID1},
+			found:       false,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - duplicate profiles",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis"},
+			clusters:    []string{s.clusterID1},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - duplicate profiles, multiple clusters",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis"},
+			clusters:    []string{s.clusterID1, s.clusterID2},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - duplicate profiles, multiple clusters, multiple profiles",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis", "ocp4-cis-node"},
+			clusters:    []string{s.clusterID1, s.clusterID2},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - one duplicate profile with version string",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"ocp4-cis-1-4-0"},
+			clusters:    []string{s.clusterID1},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - updateing existing config",
+			configID:    configID,
+			profiles:    []string{"no-match-profile", "ocp4-cis"},
+			clusters:    []string{s.clusterID1},
+			found:       false,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - updateing existing config",
+			configID:    configID,
+			profiles:    []string{"no-match-profile", "ocp4-cis", "ocp4-cis-1-4-0"},
+			clusters:    []string{s.clusterID1},
+			found:       true,
+			isErrorTest: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Info(tc.desc)
+		found, err := s.dataStore.ScanConfigurationProfileExists(s.testContexts[unrestrictedReadCtx], tc.configID, tc.profiles, tc.clusters)
+		if tc.isErrorTest {
+			s.Require().Error(err)
+		} else {
+			s.Require().NoError(err)
+			s.Require().Equal(tc.found, found)
+		}
+	}
+
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
@@ -527,9 +616,9 @@ func (s *complianceScanConfigDataStoreTestSuite) getTestRec(scanName string) *st
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,
-		Profiles: []*storage.ProfileShim{
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 			{
-				ProfileId: "ocp4-cis",
+				ProfileName: "ocp4-cis",
 			},
 		},
 		StrictNodeScan: false,

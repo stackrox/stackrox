@@ -215,6 +215,8 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		finished:          &sync.WaitGroup{},
+		activeConnections: make(map[connection]*networkConnIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 	}
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -238,6 +240,9 @@ type networkFlowManager struct {
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
+
+	activeConnections map[connection]*networkConnIndicator
+	activeEndpoints   map[containerEndpoint]*containerEndpointIndicator
 
 	done          concurrency.Signal
 	sensorUpdates chan *message.ExpiringMessage
@@ -442,6 +447,14 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func (m *networkFlowManager) resolveEntityType(conn *connection) networkgraph.Entity {
+	// If collector hides the IP, then the entity is most probably from outside of the cluster
+	if conn.remote.IPAndPort.Address.String() == "255.255.255.255" {
+		return networkgraph.InternetEntity()
+	}
+	return networkgraph.InternalEntities()
+}
+
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
@@ -450,6 +463,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			if activeConn, found := m.activeConnections[*conn]; found {
+				enrichedConnections[*activeConn] = timestamp.Now()
+				delete(m.activeConnections, *conn)
+				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+				return
+			}
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()
@@ -496,21 +515,25 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
-			// Fake a lookup result. This shows "External Entities" in the network graph
+			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity:         networkgraph.InternetEntity(),
+					Entity:         m.resolveEntityType(conn),
 					ContainerPorts: []uint16{port},
 				},
 			}
+			entitiesName := "Internal Entities"
+			if m.resolveEntityType(conn) == networkgraph.InternetEntity() {
+				entitiesName = "External Entities"
+			}
 			if conn.incoming {
 				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
-					"Marking it as 'External Entities' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)))
+					"Marking it as '%s' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)), entitiesName)
 			} else {
 				log.Debugf("Outgoing connection from container %s/%s to %s. "+
-					"Marking it as 'External Entities' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
+					"Marking it as '%s' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
 			}
 		} else {
 			lookupResults = []clusterentities.LookupResult{
@@ -548,6 +571,15 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
 				enrichedConnections[indicator] = status.lastSeen
+				if features.SensorCapturesIntermediateEvents.Enabled() {
+					if status.lastSeen == timestamp.InfiniteFuture {
+						m.activeConnections[*conn] = &indicator
+						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+					} else {
+						delete(m.activeConnections, *conn)
+						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+					}
+				}
 			}
 		}
 	}
@@ -564,6 +596,12 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			if activeEp, found := m.activeEndpoints[*ep]; found {
+				enrichedEndpoints[*activeEp] = timestamp.Now()
+				delete(m.activeEndpoints, *ep)
+				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+				return
+			}
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()
@@ -584,6 +622,15 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
 	if oldTS, found := enrichedEndpoints[indicator]; !found || oldTS < status.lastSeen {
 		enrichedEndpoints[indicator] = status.lastSeen
+		if features.SensorCapturesIntermediateEvents.Enabled() {
+			if status.lastSeen == timestamp.InfiniteFuture {
+				m.activeEndpoints[*ep] = &indicator
+				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+			} else {
+				delete(m.activeEndpoints, *ep)
+				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+			}
+		}
 	}
 }
 

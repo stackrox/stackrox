@@ -891,7 +891,7 @@ type Email struct {
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
 	Password              string           `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty" scrub:"always"`
 	DisableTLS            bool             `protobuf:"varint,5,opt,name=disableTLS,proto3" json:"disableTLS,omitempty"`
-	DEPRECATEDUseStartTLS bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS,proto3" json:"DEPRECATED_useStartTLS,omitempty"`
+	DEPRECATEDUseStartTLS bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS,proto3" json:"DEPRECATED_useStartTLS,omitempty"` // useStartTLS has been deprecated for startTLSAuthMethod
 	From                  string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
 	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
 	// Set to true to allow unauthenticated SMTP

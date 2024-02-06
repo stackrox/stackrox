@@ -9,25 +9,25 @@ import {
     entityNounOrdinaryCasePlural,
 } from '../entitiesForCompliance';
 
-const CLUSTERS_COUNT = gql`
+export const CLUSTERS_COUNT = gql`
     query clustersCount {
         results: complianceClusterCount
     }
 `;
 
-const NODES_COUNT = gql`
+export const NODES_COUNT = gql`
     query nodesCount {
         results: complianceNodeCount
     }
 `;
 
-const NAMESPACES_COUNT = gql`
+export const NAMESPACES_COUNT = gql`
     query namespacesCount {
         results: complianceNamespaceCount
     }
 `;
 
-const DEPLOYMENTS_COUNT = gql`
+export const DEPLOYMENTS_COUNT = gql`
     query deploymentsCount {
         results: complianceDeploymentCount
     }

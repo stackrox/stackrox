@@ -288,10 +288,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -365,10 +365,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -588,12 +588,6 @@
                 "id": 4,
                 "name": "deployment",
                 "type": "Deployment",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sensorhash:\"ignore\""
-                  }
-                ],
                 "oneof_parent": "Entity"
               },
               {
@@ -770,7 +764,13 @@
                     "field": {
                       "id": 7,
                       "name": "labels",
-                      "type": "string"
+                      "type": "string",
+                      "options": [
+                        {
+                          "name": "(gogoproto.moretags)",
+                          "value": "sensorhash:\"ignore\""
+                        }
+                      ]
                     }
                   },
                   {
@@ -778,7 +778,13 @@
                     "field": {
                       "id": 14,
                       "name": "annotations",
-                      "type": "string"
+                      "type": "string",
+                      "options": [
+                        {
+                          "name": "(gogoproto.moretags)",
+                          "value": "sensorhash:\"ignore\""
+                        }
+                      ]
                     }
                   }
                 ],
@@ -1350,6 +1356,9 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
@@ -1363,9 +1372,6 @@
           },
           {
             "path": "storage/process_indicator.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -1455,10 +1461,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -1719,10 +1725,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/traits.proto"
@@ -1850,6 +1856,42 @@
             "reserved_ids": [
               3,
               4
+            ]
+          },
+          {
+            "name": "ClusterMetadata.Type",
+            "enum_fields": [
+              {
+                "name": "UNSPECIFIED"
+              },
+              {
+                "name": "AKS",
+                "integer": 1
+              },
+              {
+                "name": "ARO",
+                "integer": 2
+              },
+              {
+                "name": "EKS",
+                "integer": 3
+              },
+              {
+                "name": "GKE",
+                "integer": 4
+              },
+              {
+                "name": "OCP",
+                "integer": 5
+              },
+              {
+                "name": "OSD",
+                "integer": 6
+              },
+              {
+                "name": "ROSA",
+                "integer": 7
+              }
             ]
           },
           {
@@ -2021,6 +2063,32 @@
         ],
         "messages": [
           {
+            "name": "ClusterMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "type",
+                "type": "Type",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster Type\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "id",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "GoogleProviderMetadata",
             "fields": [
               {
@@ -2090,6 +2158,11 @@
                 "id": 15,
                 "name": "verified",
                 "type": "bool"
+              },
+              {
+                "id": 16,
+                "name": "cluster",
+                "type": "ClusterMetadata"
               }
             ]
           },
@@ -2811,10 +2884,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -2880,13 +2953,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/user.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -4219,7 +4292,13 @@
               {
                 "id": 2,
                 "name": "profile_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Profile ID,hidden\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -4228,7 +4307,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile Name,hidden,store\"sql:\"index=category:unique;name:profile_unique_indicator\""
+                    "value": "search:\"Compliance Profile Name,hidden\""
                   }
                 ]
               },
@@ -4239,7 +4318,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile Version,hidden,store\"sql:\"index=category:unique;name:profile_unique_indicator\""
+                    "value": "search:\"Compliance Profile Version,hidden\""
                   }
                 ]
               },
@@ -4250,7 +4329,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile Product Type,hidden,store\""
+                    "value": "search:\"Compliance Profile Product Type,hidden\""
                   }
                 ]
               },
@@ -4261,7 +4340,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Standard,hidden,store\""
+                    "value": "search:\"Compliance Standard,hidden\""
                   }
                 ]
               },
@@ -4291,6 +4370,17 @@
                 "name": "values",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 14,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
               }
             ],
             "maps": [
@@ -4463,6 +4553,28 @@
             ]
           },
           {
+            "name": "RuleControls",
+            "fields": [
+              {
+                "id": 1,
+                "name": "standard",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Standard,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "controls",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
             "name": "ComplianceOperatorScanConfigurationV2",
             "fields": [
               {
@@ -4472,7 +4584,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"pk,type(uuid)\""
+                    "value": "search:\"Compliance Scan Config ID,hidden\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -4483,7 +4595,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Config Name,store\"sql:\"unique\""
+                    "value": "search:\"Compliance Scan Config Name\"sql:\"unique\""
                   }
                 ]
               },
@@ -4505,7 +4617,7 @@
               {
                 "id": 8,
                 "name": "profiles",
-                "type": "ProfileShim",
+                "type": "ProfileName",
                 "is_repeated": true
               },
               {
@@ -4577,6 +4689,22 @@
             ],
             "messages": [
               {
+                "name": "ProfileName",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "profile_name",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"-\"sql:\"fk(ComplianceOperatorProfileV2:name),no-fk-constraint\""
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
                 "name": "Cluster",
                 "fields": [
                   {
@@ -4615,7 +4743,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -4626,7 +4754,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)\""
+                    "value": "search:\"Compliance Scan Config ID,hidden\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -4664,7 +4792,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "search:\"Compliance Check UID,hidden\"sql:\"pk\""
                   }
                 ]
               },
@@ -4675,7 +4803,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Check ID,hidden,store\""
+                    "value": "search:\"Compliance Check ID,hidden\""
                   }
                 ]
               },
@@ -4686,7 +4814,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Check Name,hidden,store\""
+                    "value": "search:\"Compliance Check Name,hidden\""
                   }
                 ]
               },
@@ -4697,7 +4825,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
@@ -4713,7 +4841,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Check Status,hidden,store\""
+                    "value": "search:\"Compliance Check Status,hidden\""
                   }
                 ]
               },
@@ -4724,7 +4852,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Rule Severity,hidden,store\""
+                    "value": "search:\"Compliance Rule Severity,hidden\""
                   }
                 ]
               },
@@ -4756,7 +4884,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Standard,hidden,store\""
+                    "value": "search:\"Compliance Standard,hidden\""
                   }
                 ]
               },
@@ -4783,7 +4911,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Config Name,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Config Name\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
                   }
                 ]
               },
@@ -4835,7 +4963,13 @@
               {
                 "id": 2,
                 "name": "result",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Result\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -4865,14 +4999,20 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Config Name\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
                   }
                 ]
               },
               {
                 "id": 13,
                 "name": "scan_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Name,hidden\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -4881,18 +5021,18 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator\""
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },
               {
-                "id": 14,
-                "name": "warnings",
+                "id": 4,
+                "name": "errors",
                 "type": "string"
               },
               {
-                "id": 4,
-                "name": "errors",
+                "id": 14,
+                "name": "warnings",
                 "type": "string"
               },
               {
@@ -4952,7 +5092,7 @@
             ]
           },
           {
-            "name": "ComplianceOperatorProfileClusterEdge",
+            "name": "ComplianceOperatorScanSettingBindingV2",
             "fields": [
               {
                 "id": 1,
@@ -4967,34 +5107,159 @@
               },
               {
                 "id": 2,
-                "name": "profile_id",
+                "name": "name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile ID,store,hidden\"sql:\"fk(ComplianceOperatorProfileV2:id)\""
+                    "value": "search:\"Compliance Scan Setting Binding Name\""
                   }
                 ]
               },
               {
                 "id": 3,
-                "name": "profile_uid",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile UID,store,hidden\""
-                  }
-                ]
-              },
-              {
-                "id": 4,
                 "name": "cluster_id",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "profile_names",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "scan_setting_name",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "conditions",
+                "type": "ComplianceOperatorCondition",
+                "is_repeated": true
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 8,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorCondition",
+            "fields": [
+              {
+                "id": 1,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "status",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "reason",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "message",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "last_transition_time",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorSuiteV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,id,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Suite Name,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "status",
+                "type": "Status"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Status",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "phase",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "result",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "error_message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "conditions",
+                    "type": "ComplianceOperatorCondition",
+                    "is_repeated": true
                   }
                 ]
               }
@@ -6474,10 +6739,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -6594,10 +6859,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -8022,25 +8287,25 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/container_runtime.proto"
           },
           {
-            "path": "storage/labels.proto"
-          },
-          {
             "path": "storage/image.proto"
           },
           {
-            "path": "storage/taints.proto"
+            "path": "storage/labels.proto"
           },
           {
             "path": "storage/rbac.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "storage/taints.proto"
           }
         ],
         "package": {
@@ -8226,10 +8491,10 @@
         ],
         "imports": [
           {
-            "path": "storage/schedule.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "storage/schedule.proto"
           }
         ],
         "package": {
@@ -8639,6 +8904,10 @@
               {
                 "name": "NODEJS",
                 "integer": 4
+              },
+              {
+                "name": "GO",
+                "integer": 7
               },
               {
                 "name": "DOTNETCORERUNTIME",
@@ -9425,13 +9694,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/vulnerability.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -9560,10 +9829,10 @@
         ],
         "imports": [
           {
-            "path": "storage/image.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "storage/image.proto"
           }
         ],
         "package": {
@@ -9691,6 +9960,12 @@
                 "id": 20,
                 "name": "ibm",
                 "type": "IBMRegistryConfig",
+                "oneof_parent": "IntegrationConfig"
+              },
+              {
+                "id": 24,
+                "name": "azure",
+                "type": "AzureConfig",
                 "oneof_parent": "IntegrationConfig"
               },
               {
@@ -10118,6 +10393,49 @@
                 "type": "string"
               }
             ]
+          },
+          {
+            "name": "AzureConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\"dependent\"validate:\"nolocalendpoint\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "username",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\"dependent\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "password",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\"always\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "wif_enabled",
+                "type": "bool"
+              }
+            ]
           }
         ],
         "imports": [
@@ -10273,10 +10591,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -10799,10 +11117,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -11041,10 +11359,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -11182,13 +11500,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/network_flow.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -11519,10 +11837,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -11941,13 +12259,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/labels.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -12518,6 +12836,9 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
@@ -12528,9 +12849,6 @@
           },
           {
             "path": "storage/vulnerability.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -13073,6 +13391,11 @@
                 "id": 6,
                 "name": "default_fields_json",
                 "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "disablePriority",
+                "type": "bool"
               }
             ],
             "messages": [
@@ -14309,22 +14632,22 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/scope.proto"
-          },
-          {
-            "path": "storage/image.proto"
-          },
-          {
             "path": "gogoproto/gogo.proto"
+          },
+          {
+            "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/deployment.proto"
           },
           {
+            "path": "storage/image.proto"
+          },
+          {
             "path": "storage/rbac.proto"
+          },
+          {
+            "path": "storage/scope.proto"
           }
         ],
         "package": {
@@ -14389,12 +14712,12 @@
         },
         "options": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
             "name": "cc_enable_arenas",
             "value": "true"
+          },
+          {
+            "name": "go_package",
+            "value": "storage"
           },
           {
             "name": "java_package",
@@ -14624,10 +14947,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -14635,12 +14958,12 @@
         },
         "options": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
             "name": "cc_enable_arenas",
             "value": "true"
+          },
+          {
+            "name": "go_package",
+            "value": "storage"
           },
           {
             "name": "java_package",
@@ -14939,10 +15262,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -14950,12 +15273,12 @@
         },
         "options": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
             "name": "cc_enable_arenas",
             "value": "true"
+          },
+          {
+            "name": "go_package",
+            "value": "storage"
           },
           {
             "name": "java_package",
@@ -15077,6 +15400,11 @@
                 "id": 8,
                 "name": "pod_uid",
                 "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "namespace",
+                "type": "string"
               }
             ]
           },
@@ -15175,16 +15503,38 @@
                     "value": "search:\"Pod UID,hidden\"sql:\"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)\""
                   }
                 ]
+              },
+              {
+                "id": 10,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID\"sql:\"type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 11,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Namespace\""
+                  }
+                ]
               }
             ]
           }
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/network_flow.proto"
@@ -15198,12 +15548,12 @@
         },
         "options": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
             "name": "cc_enable_arenas",
             "value": "true"
+          },
+          {
+            "name": "go_package",
+            "value": "storage"
           }
         ]
       }
@@ -15588,10 +15938,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -15990,13 +16340,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/cve.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -16316,22 +16666,22 @@
         ],
         "imports": [
           {
-            "path": "storage/cve.proto"
-          },
-          {
-            "path": "storage/schedule.proto"
-          },
-          {
             "path": "gogoproto/gogo.proto"
           },
           {
             "path": "google/protobuf/timestamp.proto"
           },
           {
-            "path": "storage/user.proto"
+            "path": "storage/cve.proto"
           },
           {
             "path": "storage/role.proto"
+          },
+          {
+            "path": "storage/schedule.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {
@@ -16590,19 +16940,19 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
             "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "storage/user.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/report_configuration.proto"
           },
           {
             "path": "storage/schedule.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {
@@ -16782,16 +17132,16 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
             "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "storage/user.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/policy.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {
@@ -17336,13 +17686,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "storage/labels.proto"
           },
           {
             "path": "storage/traits.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -17956,10 +18306,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -18126,10 +18476,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -18459,6 +18809,9 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
@@ -18466,9 +18819,6 @@
           },
           {
             "path": "storage/user.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -18660,12 +19010,12 @@
         },
         "options": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
             "name": "cc_enable_arenas",
             "value": "true"
+          },
+          {
+            "name": "go_package",
+            "value": "storage"
           },
           {
             "name": "java_package",
@@ -20128,10 +20478,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -20139,12 +20489,12 @@
         },
         "options": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
             "name": "cc_enable_arenas",
             "value": "true"
+          },
+          {
+            "name": "go_package",
+            "value": "storage"
           },
           {
             "name": "java_package",
@@ -20457,10 +20807,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -20960,10 +21310,10 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "path": "gogoproto/gogo.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/cve.proto"
@@ -21266,13 +21616,13 @@
         ],
         "imports": [
           {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
             "path": "google/protobuf/timestamp.proto"
           },
           {
             "path": "storage/cve.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {

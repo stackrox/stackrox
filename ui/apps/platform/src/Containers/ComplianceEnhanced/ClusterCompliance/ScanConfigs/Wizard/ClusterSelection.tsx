@@ -21,7 +21,7 @@ import useTableSelection from 'hooks/useTableSelection';
 import { clustersBasePath } from 'routePaths';
 import { ComplianceIntegration } from 'services/ComplianceEnhancedService';
 
-import { ScanConfigFormValues } from './useFormikScanConfig';
+import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export type ClusterSelectionProps = {
     clusters: ComplianceIntegration[];

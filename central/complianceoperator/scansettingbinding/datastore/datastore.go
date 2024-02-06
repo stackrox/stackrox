@@ -15,6 +15,8 @@ var (
 )
 
 // DataStore defines the possible interactions with compliance operator scan setting bindings
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Walk(ctx context.Context, fn func(result *storage.ComplianceOperatorScanSettingBinding) error) error
 	Upsert(ctx context.Context, binding *storage.ComplianceOperatorScanSettingBinding) error

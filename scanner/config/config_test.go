@@ -30,6 +30,19 @@ something: unexpected
 `,
 			wantErr: "field something not found",
 		},
+		{
+			name: "when stackrox_services is enabled then set it for indexer and matcher",
+			yaml: `---
+stackrox_services: true
+`,
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.StackRoxServices = true
+				cfg.Indexer.StackRoxServices = true
+				cfg.Matcher.StackRoxServices = true
+				return &cfg
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -198,5 +211,35 @@ func Test_Database_validate(t *testing.T) {
 		c := Database{ConnString: "host=foobar password=inline-pass", PasswordFile: pwdFile}
 		err := c.validate()
 		assert.ErrorContains(t, err, "specify either")
+	})
+}
+
+func Test_ProxyConfig_validate(t *testing.T) {
+	tmp := t.TempDir()
+	configFile, err := os.Create(filepath.Join(tmp, "config.yaml"))
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, configFile.Close())
+	})
+
+	t.Run("when config dir not specified then ok", func(t *testing.T) {
+		c := ProxyConfig{}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when config dir does not exist then error", func(t *testing.T) {
+		c := ProxyConfig{ConfigDir: "/does/not/exist"}
+		err := c.validate()
+		assert.Error(t, err)
+	})
+	t.Run("when config file specified then ok", func(t *testing.T) {
+		c := ProxyConfig{ConfigDir: tmp, ConfigFile: "config.yaml"}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when config file does not exist then ok", func(t *testing.T) {
+		c := ProxyConfig{ConfigDir: tmp, ConfigFile: "does-not-exist.yaml"}
+		err := c.validate()
+		assert.NoError(t, err)
 	})
 }

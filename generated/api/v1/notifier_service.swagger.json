@@ -275,20 +275,6 @@
     }
   },
   "definitions": {
-    "AWSSecurityHubCredentials": {
-      "type": "object",
-      "properties": {
-        "accessKeyId": {
-          "type": "string"
-        },
-        "secretAccessKey": {
-          "type": "string"
-        },
-        "stsEnabled": {
-          "type": "boolean"
-        }
-      }
-    },
     "EmailAuthMethod": {
       "type": "string",
       "enum": [
@@ -421,10 +407,24 @@
           "type": "string"
         },
         "credentials": {
-          "$ref": "#/definitions/AWSSecurityHubCredentials"
+          "$ref": "#/definitions/storageAWSSecurityHubCredentials"
         },
         "accountId": {
           "type": "string"
+        }
+      }
+    },
+    "storageAWSSecurityHubCredentials": {
+      "type": "object",
+      "properties": {
+        "accessKeyId": {
+          "type": "string"
+        },
+        "secretAccessKey": {
+          "type": "string"
+        },
+        "stsEnabled": {
+          "type": "boolean"
         }
       }
     },

@@ -200,7 +200,7 @@ jobs:
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -278,7 +278,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -300,6 +300,28 @@ jobs:
             workflow and delete the `${{ needs.variables.outputs.next-milestone }}`
             milestone to avoid confusion." }}
             ]}
+
+  patch-scanner-versions:
+    name: Patch Scanner updater configuration
+    needs: [variables, cut-rc]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.main_branch }}
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - name: Patch scanner/updater/version/RELEASE_VERSION for ${{needs.variables.outputs.milestone}}
+        env:
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            patch-scanner-updater-configuration \
+            "${{needs.variables.outputs.milestone}}"
 
   clusters:
     name: Setup demo clusters

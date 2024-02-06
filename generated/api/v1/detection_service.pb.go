@@ -264,6 +264,7 @@ func (m *BuildDetectionResponse) Clone() *BuildDetectionResponse {
 
 type DeployDetectionRequest struct {
 	// Types that are valid to be assigned to Resource:
+	//
 	//	*DeployDetectionRequest_Deployment
 	Resource             isDeployDetectionRequest_Resource `protobuf_oneof:"Resource"`
 	NoExternalMetadata   bool                              `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`

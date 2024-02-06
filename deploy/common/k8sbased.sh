@@ -256,6 +256,7 @@ function launch_central {
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
+        echo "Generating Central bundle..."
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
@@ -321,11 +322,7 @@ function launch_central {
       central_scripts_dir="$unzip_dir/scripts"
 
       # New helm setup flavor
-      helm_args=(
-        -f "$unzip_dir/values-public.yaml"
-        -f "$unzip_dir/values-private.yaml"
-        --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
-      )
+      local helm_args=( )
 
       if [[ "${central_namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
@@ -415,6 +412,20 @@ function launch_central {
         helm lint "${helm_chart}" -n "${central_namespace}" "${helm_args[@]}"
       fi
 
+      if [[ "${HELM_REUSE_VALUES}" == "true" ]]; then
+        # Must be added here, after linting, because `helm lint` doesn't know about `--reuse-values`.
+        # If, instead of using `--reuse-values`, we would provide the newly generated
+        # `values-private.yaml` we would unnecessarily switch certificates and produce a certificate
+        # validation issue.
+        helm_args+=("--reuse-values")
+      else
+        helm_args+=(
+          -f "$unzip_dir/values-public.yaml"
+          -f "$unzip_dir/values-private.yaml"
+          --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
+        )
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
@@ -460,7 +471,7 @@ function launch_central {
       fi
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
-        echo "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
+        echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
         exit 1
       fi
 
@@ -470,6 +481,19 @@ function launch_central {
             "${unzip_dir}/scanner/scripts/setup.sh"
           fi
           launch_service "${unzip_dir}" scanner
+          if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+            if [[ -d "${unzip_dir}/scanner-v4" ]]; then
+              echo "Deploying ScannerV4..."
+              if [[ -x "${unzip_dir}/scanner-v4/scripts/setup.sh" ]]; then
+                "${unzip_dir}/scanner-v4/scripts/setup.sh"
+              fi
+              launch_service "${unzip_dir}" scanner-v4
+            else
+              echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."
+              echo >&2 "WARNING: Scanner V4 will not be deployed now."
+              echo >&2 "Possible reason for this: the roxctl in PATH does not support Scanner V4."
+            fi
+          fi
 
           if [[ -n "$CI" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
@@ -526,6 +550,7 @@ function launch_central {
             sleep 1
             ROUTE_HOST=$(kubectl -n "${central_namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
         done
+        echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
         "${central_scripts_dir}/port-forward.sh" 8000
@@ -703,7 +728,7 @@ function launch_sensor {
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
       else
-        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
+        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
       fi

@@ -125,7 +125,7 @@ spec:
         {{- end }}
         - name: ROX_INSTALL_METHOD
           value: {{ ._rox.env.installMethod | quote }}
-        [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
+        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4
           value: "true"

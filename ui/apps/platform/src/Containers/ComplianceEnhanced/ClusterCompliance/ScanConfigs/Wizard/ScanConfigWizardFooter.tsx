@@ -8,9 +8,10 @@ import {
 } from '@patternfly/react-core';
 import useModal from 'hooks/useModal';
 
-export type ScanConfigWizardStepsProps = {
+export type ScanConfigWizardFooterProps = {
     wizardSteps: WizardStep[];
     onSave: () => void;
+    isEditing: boolean;
     isSaving: boolean;
     proceedToNextStepIfValid: (nextFunction: () => void, stepId: string) => void;
 };
@@ -18,9 +19,10 @@ export type ScanConfigWizardStepsProps = {
 function ScanConfigWizardFooter({
     wizardSteps,
     onSave,
+    isEditing,
     isSaving,
     proceedToNextStepIfValid,
-}: ScanConfigWizardStepsProps) {
+}: ScanConfigWizardFooterProps) {
     const { isModalOpen, openModal, closeModal } = useModal();
     const firstStepId = wizardSteps[0].id;
     const lastStepId = wizardSteps[wizardSteps.length - 1].id;
@@ -44,7 +46,7 @@ function ScanConfigWizardFooter({
                         onClick={onSave}
                         isLoading={isSaving}
                     >
-                        Create
+                        {isEditing ? 'Save' : 'Create'}
                     </Button>
                 )}
                 <Button
@@ -61,7 +63,7 @@ function ScanConfigWizardFooter({
         );
     }
 
-    function renderModal() {
+    function renderModal(leaveWizard: () => void) {
         return (
             <Modal
                 variant="small"
@@ -69,7 +71,7 @@ function ScanConfigWizardFooter({
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 actions={[
-                    <Button key="confirm" variant="primary" onClick={closeModal}>
+                    <Button key="confirm" variant="primary" onClick={leaveWizard}>
                         Confirm
                     </Button>,
                     <Button key="cancel" variant="secondary" onClick={closeModal}>
@@ -88,10 +90,10 @@ function ScanConfigWizardFooter({
     return (
         <WizardFooter>
             <WizardContextConsumer>
-                {({ activeStep, onNext, onBack }) => (
+                {({ activeStep, onNext, onBack, onClose }) => (
                     <>
                         {renderButtons(activeStep.id, onNext, onBack)}
-                        {renderModal()}
+                        {renderModal(onClose)}
                     </>
                 )}
             </WizardContextConsumer>

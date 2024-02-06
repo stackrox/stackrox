@@ -153,13 +153,7 @@ function opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2) {
 }
 
 const routeMatcherMapForConfigurationManagementDashboard = getRouteMatcherMapForGraphQL([
-    'numPolicies',
-    'numCISControls',
-    'policyViolationsBySeverity',
-    'runStatuses',
     'complianceByControls',
-    'usersWithClusterAdminRoles',
-    'secrets',
 ]);
 
 export function visitConfigurationManagementDashboard() {
@@ -254,6 +248,10 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
         interactionCallback,
         routeMatcherMapForConfigurationManagementDashboard
     );
+
+    cy.get('div:contains("Compliance scanning in progress")', {
+        timeout: 30000,
+    }).should('not.exist');
 }
 
 export function navigateToSingleEntityPage(entitiesKey) {

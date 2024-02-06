@@ -160,7 +160,6 @@ export_test_environment() {
     ci_export ROX_ADMINISTRATION_EVENTS "${ROX_ADMINISTRATION_EVENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    ci_export ROX_SCANNER_V4_SUPPORT "${ROX_SCANNER_V4_SUPPORT:-true}"
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
@@ -275,6 +274,13 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_SCANNER_V4'
+    customize_envVars+=$'\n        value: "'"${ROX_SCANNER_V4:-false}"'"'
+
+    scanner_v4_component="Disabled"
+    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        scanner_v4_component="Enabled"
+    fi
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -288,6 +294,7 @@ deploy_central_via_operator() {
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
+      scanner_v4_component="$scanner_v4_component" \
     envsubst \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
@@ -407,8 +414,6 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRole.yaml"
-        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRoleBinding.yaml"
         wait_for_object_to_appear openshift-compliance deploy/compliance-operator
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
@@ -644,6 +649,7 @@ check_for_errors_in_stackrox_logs() {
             summary="$(summarize_check_output "${check_out}")"
             save_junit_failure "SuspiciousLog-${app}" "${summary}" "$check_out"
             failure_found="true"
+            info "Found suspicious log in $app: $check_out"
         else
             save_junit_success "SuspiciousLog-${app}" "Suspicious entries in log file(s)"
         fi

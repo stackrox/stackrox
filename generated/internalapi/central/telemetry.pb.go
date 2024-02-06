@@ -371,7 +371,7 @@ func (m *TelemetryResponsePayload) Clone() *TelemetryResponsePayload {
 }
 
 type TelemetryResponsePayload_EndOfStream struct {
-	ErrorMessage         string   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ErrorMessage         string   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // empty indicates success
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -500,7 +500,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo) Clone() *TelemetryResponsePayl
 
 type TelemetryResponsePayload_KubernetesInfo_File struct {
 	Path                 string   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Contents             []byte   `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"`
+	Contents             []byte   `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"` // compression (if any) is handled at the gRPC level
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

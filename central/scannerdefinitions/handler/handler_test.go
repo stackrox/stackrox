@@ -63,11 +63,10 @@ func (s *handlerTestSuite) SetupTest() {
 func (s *handlerTestSuite) TearDownSuite() {
 	entries, err := os.ReadDir(s.tmpDir)
 	s.NoError(err)
-	s.LessOrEqual(len(entries), 3)
+	s.LessOrEqual(len(entries), 2)
 	if len(entries) == 2 {
 		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
 		s.True(strings.HasPrefix(entries[1].Name(), definitionsBaseDir))
-		s.True(strings.HasPrefix(entries[2].Name(), definitionsBaseDir))
 	}
 
 	s.testDB.Teardown(s.T())
@@ -180,25 +179,6 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	assert.Empty(t, w.Data.String())
 }
 
-func (s *handlerTestSuite) TestServeHTTP_Online_Cvss_Bundle_Get() {
-	t := s.T()
-	h := New(s.datastore, handlerOpts{})
-
-	w := mock.NewResponseWriter()
-
-	// Nothing should be found
-	req := s.getRequestWithJSONFile(t, "randomCvss")
-	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code)
-
-	// Should get mapping json file from online update.
-	req = s.getRequestWithJSONFile(t, "cvss")
-	w.Data.Reset()
-	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "application/gzip", w.Header().Get("Content-Type"))
-}
-
 func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
 	t := s.T()
 	h := New(s.datastore, handlerOpts{})
@@ -211,7 +191,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// Should get mapping json file from online update.
-	req = s.getRequestWithJSONFile(t, "name2cpe")
+	req = s.getRequestWithJSONFile(t, "name2repos")
 	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)

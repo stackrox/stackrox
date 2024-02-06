@@ -22,7 +22,8 @@ var (
 	}
 
 	kubectlScannerScriptMap = FileNameMap{
-		"common/setup-scanner.sh": "scanner/scripts/setup.sh",
+		"common/setup-scanner.sh":    "scanner/scripts/setup.sh",
+		"common/setup-scanner-v4.sh": "scanner-v4/scripts/setup.sh",
 	}
 
 	centralDBScriptMap = FileNameMap{
@@ -66,7 +67,9 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 		contents += "\n"
 
 		subDir := "central"
-		if strings.HasPrefix(path.Base(fileName), "02-scanner-") {
+		if strings.HasPrefix(path.Base(fileName), "02-scanner-v4-") {
+			subDir = "scanner-v4"
+		} else if strings.HasPrefix(path.Base(fileName), "02-scanner-") {
 			subDir = "scanner"
 		}
 		renderedFiles = append(renderedFiles, zip.NewFile(path.Join(subDir, path.Base(fileName)), []byte(contents), 0))

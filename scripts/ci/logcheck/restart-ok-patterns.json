@@ -18,6 +18,12 @@
         "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
     },
     {
+        "comment": "scanner restart due to slow postgres db start",
+        "job": "^(ibmcloudz)",
+        "logfile": "scanner-previous",
+        "logline": "Failed to open database despite multiple retries"
+    },
+    {
         "comment": "sensor is up before central in scale-tests",
         "job": "scale-tests",
         "logfile": "sensor-previous",
@@ -46,17 +52,5 @@
         "job": "upgrade",
         "logfile": "sensor-previous",
         "logline": "checking central status failed after"
-    },
-    {
-        "comment": "Scanner V4 Indexer restart due to Scanner V4 DB not being ready",
-        "job": ".*",
-        "logfile": "indexer-previous",
-        "logline": "connecting to postgres for indexer: failed to create ConnPool: failed to connect to"
-    },
-    {
-        "comment": "Scanner V4 Matcher restart due to Scanner V4 DB not being ready",
-        "job": ".*",
-        "logfile": "matcher-previous",
-        "logline": "connecting to postgres for matcher: failed to create ConnPool: failed to connect to"
     }
 ]

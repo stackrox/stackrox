@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	golog "log"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -12,12 +13,14 @@ import (
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -43,6 +46,12 @@ type Backends struct {
 }
 
 func init() {
+	// Set the http.DefaultTransport's Proxy function to one which reads from the proxy configuration file.
+	// Note: http.DefaultClient uses http.DefaultTransport.
+	if !proxy.UseWithDefaultTransport() {
+		golog.Println("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
+	}
+
 	memlimit.SetMemoryLimit()
 }
 
@@ -64,7 +73,7 @@ func main() {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
-	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
+	zlog.Info(ctx).Str("version", version.Version).Str("build_flavor", buildinfo.BuildFlavor).Msg("starting scanner")
 
 	// If certs was specified, configure the identity environment.
 	if p := cfg.MTLS.CertsDir; p != "" {
@@ -73,6 +82,15 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(p, mtls.CAKeyFileName)))
 		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(p, mtls.ServiceCertFileName)))
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(p, mtls.ServiceKeyFileName)))
+	}
+
+	//  If proxy path is set, periodically check for updates.
+	if cfg.Proxy.ConfigDir != "" {
+		zlog.Info(ctx).
+			Str("dir", cfg.Proxy.ConfigDir).
+			Str("file", cfg.Proxy.ConfigFile).
+			Msg("proxy configured")
+		proxy.WatchProxyConfig(ctx, cfg.Proxy.ConfigDir, cfg.Proxy.ConfigFile, true)
 	}
 
 	// Initialize metrics and metrics server.
@@ -88,7 +106,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer backends.Close(ctx)
-	zlog.Info(ctx).Msg("backends are ready")
+	zlog.Info(ctx).Msg("backends created")
 
 	// Initialize gRPC API service.
 	grpcSrv, err := createGRPCService(backends, cfg)
@@ -132,8 +150,9 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 		return nil, fmt.Errorf("identity extractor: %w", err)
 	}
 
-	// Create gRPC API service and debug routes.
-	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
+	// Custom routes: debugging.
+	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes)+
+		len(backends.HealthRoutes()))
 	for path, handler := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         path,
@@ -142,6 +161,11 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 			Compression:   true,
 		})
 	}
+
+	// Custom routes: health checking.
+	customRoutes = append(customRoutes, backends.HealthRoutes()...)
+
+	// Create gRPC API service.
 	grpcSrv := grpc.NewAPI(grpc.Config{
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
@@ -164,7 +188,7 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 	})
 
 	// Register API services.
-	grpcSrv.Register(getServices(backends)...)
+	grpcSrv.Register(backends.APIServices()...)
 
 	return grpcSrv, nil
 }
@@ -202,8 +226,8 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	return &b, nil
 }
 
-// getServices returns the list of the API services based on the backends provided.
-func getServices(b *Backends) []grpc.APIService {
+// APIServices returns the list of the gRPC API services based on the configured backends.
+func (b *Backends) APIServices() []grpc.APIService {
 	var srvs []grpc.APIService
 	if b.Indexer != nil {
 		srvs = append(srvs, services.NewIndexerService(b.Indexer))
@@ -221,7 +245,45 @@ func getServices(b *Backends) []grpc.APIService {
 	return srvs
 }
 
-// Close closes all the backends used by the scanner.
+// HealthCheck returns true if all configured backends are healthy and ready.
+func (b *Backends) HealthCheck(ctx context.Context) bool {
+	var checkList []func(context.Context) error
+	if b.Indexer != nil {
+		checkList = append(checkList, b.Indexer.Ready)
+	}
+	if b.Matcher != nil {
+		checkList = append(checkList, b.Matcher.Ready)
+	}
+	for _, check := range checkList {
+		if err := check(ctx); err != nil {
+			zlog.Error(ctx).Err(err).Msg("scanner is not ready")
+			return false
+		}
+	}
+	return true
+}
+
+// HealthRoutes returns HTTP routes for health checking the configured backends.
+func (b *Backends) HealthRoutes() (r []routes.CustomRoute) {
+	for n, h := range map[string]http.HandlerFunc{
+		"/health/readiness": func(w http.ResponseWriter, r *http.Request) {
+			st := http.StatusOK
+			if !b.HealthCheck(r.Context()) {
+				st = http.StatusServiceUnavailable
+			}
+			w.WriteHeader(st)
+		},
+	} {
+		r = append(r, routes.CustomRoute{
+			Route:         n,
+			Authorizer:    allow.Anonymous(),
+			ServerHandler: h,
+		})
+	}
+	return r
+}
+
+// Close closes all the backends used by scanner.
 func (b *Backends) Close(ctx context.Context) {
 	type Closeable interface {
 		Close(context.Context) error

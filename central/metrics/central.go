@@ -191,15 +191,93 @@ var (
 		Name:      "pipeline_panics",
 		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
 	}, []string{"resource"})
+
 	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_connected",
 	}, []string{"ClusterID", "connection_state"})
+
+	grpcLastMessageSizeReceived = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_last_message_size_received_bytes",
+		Help:      "A gauge for last message size received per message type",
+	}, []string{"Type"})
+
+	grpcLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_last_message_size_sent_bytes",
+		Help:      "A gauge for last message size sent per message type",
+	}, []string{"Type"})
+
+	grpcMaxMessageSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_max_message_size_sent_bytes",
+		Help:      "A gauge for maximum message size sent in the lifetime of this central",
+	}, []string{"Type"})
+
+	grpcError = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_error",
+		Help:      "A counter for gRPC errors received in sensor connections",
+	}, []string{"Code"})
+
+	grpcSentSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_message_size_sent_bytes",
+		Help:      "Histogram of sent message sizes from Central",
+		Buckets: []float64{
+			4_000_000,
+			12_000_000,
+			24_000_000,
+			48_000_000,
+			256_000_000,
+		}, // Bucket sizes selected arbitrary based on current default limits for grpc message size
+	}, []string{"Type"})
 )
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
+
+// ObserveSentSize registers central payload sent size.
+func ObserveSentSize(messageType string, size float64) {
+	grpcSentSize.With(prometheus.Labels{
+		"Type": messageType,
+	}).Observe(size)
+}
+
+// SetGRPCMaxMessageSizeGauge sets the maximum message size observed for message with type.
+func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
+	grpcMaxMessageSize.With(prometheus.Labels{
+		"Type": typ,
+	}).Set(size)
+}
+
+// SetGRPCLastMessageSizeGauge sets last sent message size observed for message with type.
+func SetGRPCLastMessageSizeGauge(typ string, size float64) {
+	grpcLastMessageSizeSent.With(prometheus.Labels{
+		"Type": typ,
+	}).Set(size)
+}
+
+// SetGRPCLastMessageSizeReceived sets the last received message size observed for message with type.
+func SetGRPCLastMessageSizeReceived(typ string, size float64) {
+	grpcLastMessageSizeReceived.With(prometheus.Labels{
+		"Type": typ,
+	}).Set(size)
+}
+
+// RegisterGRPCError increments gRPC errors in the connection with Sensor observed by Central.
+func RegisterGRPCError(code string) {
+	grpcError.With(prometheus.Labels{
+		"Code": code,
+	}).Inc()
 }
 
 // SetCacheOperationDurationTime times how long a particular store cache operation took on a particular resource.

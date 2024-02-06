@@ -1,13 +1,19 @@
 package translation
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -15,6 +21,9 @@ const (
 	ResourcesKey = "resources"
 	// TolerationsKey is the default tolerations key used in the charts.
 	TolerationsKey = "tolerations"
+	// DefaultStorageClassAnnotationKey is the annotation used to identify a default storage class
+	DefaultStorageClassAnnotationKey = "storageclass.kubernetes.io/is-default-class"
+	defaultScannerV4PVCName          = "scanner-v4-db"
 )
 
 // GetResources converts platform.Resources to chart values builder.
@@ -161,22 +170,55 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 }
 
 // SetScannerV4DBValues sets values in "sv" based on "db"
-func SetScannerV4DBValues(sv *ValuesBuilder, db *platform.ScannerV4DB) {
-	if db == nil {
+// In case of translating a secured cluster it checks for a default storage class
+// if none is found it sets appropriate values to use an emptyDir.
+// Unlike central-db's PVC we don't use the extension.ReconcilePVCExtension.
+// The operator creates this PVC through the helm chart. This means it is managed
+// by the default helm lifecycle, instead of the operator extension. The difference is
+// that the extension prevents central DB's PVC deletion on deletion of the CR.
+// Since scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
+// through the helm uninstall if a CR is deleted.
+func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) {
+	dbVB := NewValuesBuilder()
+	persistenceVB := NewValuesBuilder()
+
+	useEmptyDir, err := shouldUseEmptyDir(ctx, db, objKind, namespace, client)
+	if err != nil {
+		sv.SetError(fmt.Errorf("error : %w", err))
 		return
 	}
 
-	dbVB := NewValuesBuilder()
-	dbVB.SetStringMap("nodeSelector", db.NodeSelector)
-	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
-	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
-	setScannerV4DBPersistence(&dbVB, db.Persistence)
+	if useEmptyDir {
+		persistenceVB.SetBoolValue("none", true)
+		dbVB.AddChild("persistence", &persistenceVB)
+		sv.AddChild("db", &dbVB)
+		return
+	}
 
+	if db != nil {
+		dbVB.SetStringMap("nodeSelector", db.NodeSelector)
+		dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
+		dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
+	}
+
+	setScannerV4DBPersistence(&dbVB, objKind, db.GetPersistence())
 	sv.AddChild("db", &dbVB)
 }
 
-func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV4Persistence) {
+func setScannerV4DBPersistence(sv *ValuesBuilder, objKind string, persistence *platform.ScannerV4Persistence) {
 	if persistence == nil {
+		if objKind == platform.SecuredClusterGVK.Kind {
+			// If no explicit config is set at this point set createClaim true
+			// to explicitly signal to helm chart that we want a PVC
+			// otherwise it will default to use emptyDir because it's
+			// lookup for default StorageClass is turned off when using operator
+			pvcBuilder := NewValuesBuilder()
+			pvcBuilder.SetBool("createClaim", pointer.Bool(true))
+			persistenceVB := NewValuesBuilder()
+			persistenceVB.AddChild("persistentVolumeClaim", &pvcBuilder)
+			sv.AddChild("persistence", &persistenceVB)
+		}
+
 		return
 	}
 
@@ -194,12 +236,6 @@ func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV
 	}
 
 	if pvc != nil {
-		// Unlike central-db's PVC we don't use the extension.ReconcilePVCExtension.
-		// The operator creates this PVC through the helm chart. This means it is managed
-		// by the default helm lifecycle, instead of the operator extension. The difference is
-		// that the extension prevents central DB's PVC deletion on deletion of the CR.
-		// Since scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
-		// through the helm uninstall if a CR is deleted.
 		pvcBuilder := NewValuesBuilder()
 		pvcBuilder.SetString("claimName", pvc.ClaimName)
 		pvcBuilder.SetBool("createClaim", pointer.Bool(true))
@@ -209,6 +245,71 @@ func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV
 	}
 
 	sv.AddChild("persistence", &persistenceVB)
+}
+
+func shouldUseEmptyDir(ctx context.Context, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) (bool, error) {
+	if objKind != v1alpha1.SecuredClusterGVK.Kind {
+		return false, nil
+	}
+
+	pvcAlreadyExists, err := hasScannerV4DBPVC(ctx, client, db.GetPersistence().GetPersistentVolumeClaim().GetClaimName(), namespace)
+	if err != nil {
+		return false, err
+	}
+
+	if pvcAlreadyExists {
+		return false, nil
+	}
+
+	storageClass := db.GetPersistence().GetPersistentVolumeClaim().GetStorageClassName()
+	if storageClass != "" {
+		return false, nil
+	}
+
+	hasSC, err := hasDefaultStorageClass(ctx, client)
+	if err != nil {
+		return false, err
+	}
+
+	return !hasSC, nil
+}
+
+func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Client, pvcName string, namespace string) (bool, error) {
+	lookupPvc := pvcName
+	if lookupPvc == "" {
+		lookupPvc = defaultScannerV4PVCName
+	}
+
+	pvc := corev1.PersistentVolumeClaim{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      lookupPvc,
+			Namespace: namespace,
+		},
+	}
+
+	if err := client.Get(ctx, ctrlClient.ObjectKeyFromObject(&pvc), &pvc); err != nil {
+		if apiErrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("looking for existing scanner v4 pvc: %w", err)
+	}
+
+	return false, nil
+}
+func hasDefaultStorageClass(ctx context.Context, client ctrlClient.Client) (bool, error) {
+	storageClassList := storagev1.StorageClassList{}
+	if err := client.List(ctx, &storageClassList); err != nil {
+		return false, fmt.Errorf("listing available StorageClasses: %w", err)
+	}
+
+	for _, sc := range storageClassList.Items {
+		value, hasAnnotation := sc.GetAnnotations()[DefaultStorageClassAnnotationKey]
+		if hasAnnotation && value == "true" {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // SetScannerV4ComponentValues sets values in "sv" based on "component"

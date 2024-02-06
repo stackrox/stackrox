@@ -20,7 +20,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/datastore/postgres"
+	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/gobin"
 	ccindexer "github.com/quay/claircore/indexer"
@@ -35,8 +35,11 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
@@ -59,6 +62,20 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	return es
 }
 
+// remoteTransport is the http.RoundTripper to use when talking to image registries.
+var remoteTransport = proxiedRemoteTransport()
+
+func proxiedRemoteTransport() http.RoundTripper {
+	tr, ok := remote.DefaultTransport.(*http.Transport)
+	if !ok {
+		// The proxy function was already modified to proxy.TransportFunc.
+		// See scanner/cmd/scanner/main.go.
+		return http.DefaultTransport
+	}
+	tr.Proxy = proxy.TransportFunc
+	return tr
+}
+
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
@@ -71,6 +88,7 @@ type Indexer interface {
 	ReportGetter
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
 	Close(context.Context) error
+	Ready(context.Context) error
 }
 
 // localIndexer is the Indexer implementation that runs libindex locally.
@@ -97,7 +115,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
+	store, err := ccpostgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
@@ -127,7 +145,17 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	indexer, err := newLibindex(ctx, cfg, root, store, locker)
+	// Note: http.DefaultTransport has already been modified to handle configured proxies.
+	// See scanner/cmd/scanner/main.go.
+	t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
+	if err != nil {
+		return nil, fmt.Errorf("creating HTTP transport: %w", err)
+	}
+	client := &http.Client{
+		Transport: t,
+	}
+
+	indexer, err := newLibindex(ctx, cfg, client, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
@@ -152,14 +180,12 @@ func castToConfig[T any](f func(cfg T)) func(o any) error {
 	}
 }
 
-func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	// TODO: Update the HTTP client.
-	c := http.DefaultClient
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *http.Client, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, root),
+		FetchArena:           libindex.NewRemoteFetchArena(client, root),
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 		Ecosystems:           ecosystems(ctx),
@@ -180,7 +206,8 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root stri
 			},
 		},
 	}
-	indexer, err := libindex.New(ctx, &opts, c)
+
+	indexer, err := libindex.New(ctx, &opts, client)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
@@ -194,6 +221,13 @@ func (i *localIndexer) Close(ctx context.Context) error {
 	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
 	i.pool.Close()
 	return err
+}
+
+func (i *localIndexer) Ready(ctx context.Context) error {
+	if err := i.pool.Ping(ctx); err != nil {
+		return fmt.Errorf("indexer DB ping failed: %w", err)
+	}
+	return nil
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
@@ -256,7 +290,7 @@ func (i *localIndexer) IndexContainerImage(
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
 	repo := imgRef.Context()
 	reg := repo.Registry
-	tr := remote.DefaultTransport
+	tr := remoteTransport
 	tr = transport.NewUserAgent(tr, `StackRox Scanner/`+version.Version)
 	tr = transport.NewRetry(tr)
 	var err error

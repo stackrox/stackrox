@@ -16,6 +16,8 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -25,7 +27,9 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Update vulnerabilities
-      continue-on-error: true
+      env:
+        STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        STACKROX_NVD_API_CALL_INTERVAL: 6s
       run: |
         if [ ! -d "scanner" ]; then
           echo "Scanner directory not found. Terminating current step."
@@ -33,6 +37,7 @@ jobs:
         fi
 
         make -C scanner bin/updater
+        go clean -cache -modcache
         ./scanner/bin/updater -output-dir=dev
         gsutil cp -r "dev" "gs://scanner-v4-test/vulnerability-bundles"
 

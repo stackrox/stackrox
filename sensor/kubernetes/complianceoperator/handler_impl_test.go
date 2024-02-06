@@ -360,6 +360,39 @@ func (s *HandlerTestSuite) TestProcessResumingScanNotFound() {
 	s.assert(expected, actual)
 }
 
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanSuccess() {
+	// create a scheduled scan first so we can update it
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	// Now do the update
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	msg = getTestUpdateScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected = expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanInvalid() {
+	msg := getTestUpdateScanRequestMsg("error", "error")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "compliance profiles not specified, schedule is not valid",
+	}
+
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
 func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
@@ -434,6 +467,30 @@ func getTestScheduledScanRequestMsg(name, cron string, profiles ...string) *cent
 						Id: uuid.NewV4().String(),
 						ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
 							ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
+								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+									ScanName:       name,
+									StrictNodeScan: true,
+									Profiles:       profiles,
+								},
+								Cron: cron,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestUpdateScanRequestMsg(name, cron string, profiles ...string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_ApplyScanConfig{
+					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+						Id: uuid.NewV4().String(),
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+							UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
 								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 									ScanName:       name,
 									StrictNodeScan: true,

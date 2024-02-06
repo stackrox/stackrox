@@ -1,18 +1,18 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "gogoproto/gogo.proto";
 
-package storage;
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
 
 // Next Tag: 6
 message ComplianceIntegration {
-    string id                     = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    string version                = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden,store"'];
-    string cluster_id             = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"'];
-    string compliance_namespace   = 4;
-    // Collection of errors that occurred while trying to obtain collector health info.
-    repeated string status_errors = 5;
+  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string version = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden,store"'];
+  string cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"'];
+  string compliance_namespace = 4;
+  // Collection of errors that occurred while trying to obtain collector health info.
+  repeated string status_errors = 5;
 }

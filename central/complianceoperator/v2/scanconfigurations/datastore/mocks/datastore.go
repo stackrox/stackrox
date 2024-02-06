@@ -102,6 +102,21 @@ func (mr *MockDataStoreMockRecorder) GetScanConfiguration(ctx, id any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanConfiguration", reflect.TypeOf((*MockDataStore)(nil).GetScanConfiguration), ctx, id)
 }
 
+// GetScanConfigurationByName mocks base method.
+func (m *MockDataStore) GetScanConfigurationByName(ctx context.Context, scanName string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScanConfigurationByName", ctx, scanName)
+	ret0, _ := ret[0].(*storage.ComplianceOperatorScanConfigurationV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScanConfigurationByName indicates an expected call of GetScanConfigurationByName.
+func (mr *MockDataStoreMockRecorder) GetScanConfigurationByName(ctx, scanName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanConfigurationByName", reflect.TypeOf((*MockDataStore)(nil).GetScanConfigurationByName), ctx, scanName)
+}
+
 // GetScanConfigurations mocks base method.
 func (m *MockDataStore) GetScanConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanConfigurationV2, error) {
 	m.ctrl.T.Helper()
@@ -117,19 +132,19 @@ func (mr *MockDataStoreMockRecorder) GetScanConfigurations(ctx, query any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanConfigurations", reflect.TypeOf((*MockDataStore)(nil).GetScanConfigurations), ctx, query)
 }
 
-// ScanConfigurationExists mocks base method.
-func (m *MockDataStore) ScanConfigurationExists(ctx context.Context, scanName string) (bool, error) {
+// ScanConfigurationProfileExists mocks base method.
+func (m *MockDataStore) ScanConfigurationProfileExists(ctx context.Context, id string, profiles, clusters []string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanConfigurationExists", ctx, scanName)
+	ret := m.ctrl.Call(m, "ScanConfigurationProfileExists", ctx, id, profiles, clusters)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ScanConfigurationExists indicates an expected call of ScanConfigurationExists.
-func (mr *MockDataStoreMockRecorder) ScanConfigurationExists(ctx, scanName any) *gomock.Call {
+// ScanConfigurationProfileExists indicates an expected call of ScanConfigurationProfileExists.
+func (mr *MockDataStoreMockRecorder) ScanConfigurationProfileExists(ctx, id, profiles, clusters any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanConfigurationExists", reflect.TypeOf((*MockDataStore)(nil).ScanConfigurationExists), ctx, scanName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanConfigurationProfileExists", reflect.TypeOf((*MockDataStore)(nil).ScanConfigurationProfileExists), ctx, id, profiles, clusters)
 }
 
 // UpdateClusterStatus mocks base method.

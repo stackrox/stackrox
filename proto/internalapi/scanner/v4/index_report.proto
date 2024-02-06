@@ -10,9 +10,9 @@ import "internalapi/scanner/v4/common.proto";
 option go_package = "v4";
 
 message IndexReport {
-    string   hash_id  = 1;
-    string   state    = 2;
-    bool     success  = 3;
-    string   err      = 4;
-    Contents contents = 5;
+  string hash_id = 1;
+  string state = 2;
+  bool success = 3;
+  string err = 4;
+  Contents contents = 5;
 }

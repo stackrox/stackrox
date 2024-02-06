@@ -30,7 +30,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     const currentEntityType = workflowState.getCurrentEntityType();
 
     const vulnType =
-        currentEntityType === entityTypes.NODE_COMPONENT || entityTypes.NODE
+        currentEntityType === entityTypes.NODE_COMPONENT || currentEntityType === entityTypes.NODE
             ? entityTypes.NODE_CVE
             : entityTypes.IMAGE_CVE;
 

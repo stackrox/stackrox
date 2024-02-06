@@ -120,7 +120,75 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 
 	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)
+	// ID will be added to the record and returned.  Add it to the validation object
+	request.Id = uuid.NewDummy().String()
 	s.Require().Equal(request, config)
+
+	// reset for error testing
+	request = getTestAPIRec()
+	request.ScanConfig = nil
+	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+	s.Require().Nil(config)
+
+	request = getTestAPIRec()
+	request.Clusters = []string{}
+	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one cluster is required for a scan configuration")
+	s.Require().Nil(config)
+
+	request = getTestAPIRec()
+	request.ScanConfig.Profiles = []string{}
+	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+	s.Require().Nil(config)
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	request := getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	storageRequest := convertV2ScanConfigToStorage(allAccessContext, request)
+	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
+	processResponse.Id = uuid.NewDummy().String()
+	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+
+	_, err := s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().NoError(err)
+
+	// Test Case 2: Update with Empty ID
+	request.Id = ""
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "Scan configuration ID is required: invalid arguments")
+
+	// Test Case 3: No ScanConfig
+	request = getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	request.ScanConfig = nil
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+
+	// Test Case 4: No clusters
+	request = getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	request.Clusters = []string{}
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one cluster is required for a scan configuration")
+
+	// Test Case 5: No profiles
+	request = getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	request.ScanConfig.Profiles = []string{}
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfiguration() {
@@ -208,9 +276,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
-						Profiles: []*storage.ProfileShim{
+						Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 							{
-								ProfileId: "ocp4-cis",
+								ProfileName: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
@@ -310,9 +378,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
-						Profiles: []*storage.ProfileShim{
+						Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 							{
-								ProfileId: "ocp4-cis",
+								ProfileName: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
