@@ -101,6 +101,10 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(exchanger TokenExchanger, issue
 // RemoveTokenExchanger removes the token exchanger for the specific configuration ID.
 // In case no config with the specific ID exists, nil will be returned.
 func (t *tokenExchangerSet) RemoveTokenExchanger(id string) error {
+	// NOTE: If the behavior of the function changes, we need to make sure that the datastore and the rollback
+	// scenarios are changed accordingly as well. Currently, no rollback will be attempted when delete returns
+	// an error.
+
 	exchanger, exists := t.tokenExchangers[id]
 	if !exists {
 		return nil

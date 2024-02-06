@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/auth/store/postgres"
+	authPGStore "github.com/stackrox/rox/central/auth/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 )
@@ -22,14 +22,14 @@ type Store interface {
 // and require rollbacks for upsert and delete.
 type storeWrapper struct {
 	db    pgPkg.DB
-	store postgres.Store
+	store authPGStore.Store
 }
 
 // New creates a new store.
 func New(db pgPkg.DB) Store {
 	return &storeWrapper{
 		db:    db,
-		store: postgres.New(db),
+		store: authPGStore.New(db),
 	}
 }
 

@@ -48,7 +48,7 @@ func (d *datastoreImpl) listAuthM2MConfigsNoLock(ctx context.Context) ([]*storag
 }
 
 func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
-	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.Au
 }
 
 func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
-	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m
 }
 
 func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) error {
-	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 
@@ -183,10 +183,10 @@ func (d *datastoreImpl) wrapRollback(ctx context.Context, tx *pgPkg.Tx, err erro
 
 	rollbackErr := tx.Rollback(ctx)
 	if exchangerErr != nil {
-		err = pkgErrors.Wrapf(exchangerErr, "rolling back due to exchanger error: %v", err)
+		err = pkgErrors.Wrapf(exchangerErr, "rolling back due to: %v", err)
 	}
 	if rollbackErr != nil {
-		err = pkgErrors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+		err = pkgErrors.Wrapf(rollbackErr, "rolling back due to: %v", err)
 	}
 
 	return err
