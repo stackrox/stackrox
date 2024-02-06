@@ -777,6 +777,8 @@ remove_existing_stackrox_resources() {
     local psps_supported=false
     local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
     local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
+    local centrals_supported=false
+    local securedclusters_supported=false
 
     if [[ ${#namespaces[@]} == 0 ]]; then
         namespaces+=( "stackrox" )
@@ -785,24 +787,38 @@ remove_existing_stackrox_resources() {
     info "Tearing down StackRox resources for namespaces ${namespaces[*]}..."
 
     # Check API Server Capabilities.
-    if kubectl api-resources -o name | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
+    local k8s_api_resources
+    k8s_api_resources=$(kubectl api-resources -o name)
+    if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
-    if kubectl api-resources -o name | grep -q "^podsecuritypolicies\.policy$"; then
+    if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
         psps_supported=true
         global_resource_types="${global_resource_types},psp"
     fi
+    if echo "${k8s_api_resources}" | grep -q "^centrals.platform.stackrox.io$"; then
+        centrals_supported=true
+    fi
+    if echo "${k8s_api_resources}" | grep -q "^securedclusters.platform.stackrox.io$"; then
+        securedclusters_supported=true
+    fi
 
     (
+        # Delete StackRox CRs first to give the operator a chance to properly finish the resource cleanup.
+        if [[ "${centrals_supported}" == "true" ]]; then
+            kubectl get centrals -o name | while read -r central; do
+                kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
+            done
+        fi
+        if [[ "${securedclusters_supported}" == "true" ]]; then
+            kubectl get securedclusters -o name | while read -r securedcluster; do
+                kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
+            done
+        fi
+
         if [[ "$psps_supported" = "true" ]]; then
             kubectl delete -R -f scripts/ci/psp --wait
         fi
-
-        # midstream ocp specific
-        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
-            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
-        fi
-        kubectl delete --ignore-not-found ns stackrox-operator --wait
 
         for namespace in "${namespaces[@]}"; do
             if kubectl get ns "$namespace" >/dev/null 2>&1; then
@@ -824,6 +840,12 @@ remove_existing_stackrox_resources() {
         kubectl get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
             kubectl delete --wait "$namespace"
         done
+
+        # midstream ocp specific
+        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
+            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
+        fi
+        kubectl delete --ignore-not-found ns stackrox-operator --wait
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."
 }
