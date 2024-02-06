@@ -68,16 +68,13 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
 
     - uses: ./.github/actions/handle-tagged-build
 
