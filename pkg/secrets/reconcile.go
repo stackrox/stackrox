@@ -31,6 +31,18 @@ func reconcileScrubbedWithExisting(updated reflect.Value, existing reflect.Value
 	if updated.Kind() != reflect.Struct {
 		return errors.Errorf("expected struct, got %s", updated.Kind())
 	}
+
+	skipDependentReconcile := false
+	for i := 0; i < updatedType.NumField(); i++ {
+		updatedField := updated.Field(i)
+
+		if updatedField.Kind() == reflect.Bool && updatedType.Field(i).Tag.Get(scrubStructTag) == scrubTagDisableDependentIfTrue {
+			if updatedField.Bool() {
+				skipDependentReconcile = true // skip because the field tagged as "disableDependentIfTrue" is true
+			}
+		}
+	}
+
 	path = append(path, updatedType.Name())
 	for i := 0; i < updatedType.NumField(); i++ {
 		updatedField := updated.Field(i)
@@ -67,7 +79,7 @@ func reconcileScrubbedWithExisting(updated reflect.Value, existing reflect.Value
 				updatedField.Set(reflect.ValueOf(existingField.String()))
 			}
 		case scrubTagDependent:
-			if !reflect.DeepEqual(updatedField.Interface(), existingField.Interface()) {
+			if !skipDependentReconcile && !reflect.DeepEqual(updatedField.Interface(), existingField.Interface()) {
 				return errors.Errorf("credentials required to update field '%s'",
 					strings.Join(append(path, updatedType.Field(i).Name), "."))
 			}
