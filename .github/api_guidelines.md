@@ -354,3 +354,99 @@ Be explicit about conveying the specific purpose of fields e.g. instead of `expi
 as it informs users if the field returns the date portion of the timestamp or the full timestamp, and use 
 `network_data_start_time` instead of `network_data_since` for a similar reason. The fields should convey their purpose without 
 requiring users to read the documentation.
+
+## URL Guidelines
+This section goes over key URL guidelines that could help avoid common mistakes when building APIs.
+
+All APIs, except custom HTTP routes, **must** be prefixed with API version. Custom routes **should not** be 
+version prefixed due to current design limitation of we handle gRPC vs HTTP-only endpoints (which may be mitigated
+in the future). The version is typically followed by the plural form of resource noun in the service name 
+e.g. `/v1/deployments`, `/v2/violations`. The resource noun may be singular if it refers to non-acting resources 
+encapsulating acting resources e.g. `/v1/compliance`, `/v1/networkgraph`, `/v1/debug`, `/v1/auth`.
+
+Path parameters are variable components of a URL path. They are typically used to point to a specific resource.
+A URL can have several path parameters, each denoted with curly braces `{ }`. If the request URL contains 
+one or more path parameters, the path parameter should clearly indicate the resource type otherwise by default 
+they are associated with resource type in the preceding URL component.
+
+<table>
+<tr>
+<td>
+
+`/v1/compliance/profiles/{id}`
+
+</td>
+<td>
+Acts on a specific compliance profile
+</td>
+</tr>
+<tr>
+<td>
+
+`/v1/networkpolicies/{id}`
+</td>
+<td>
+Acts on a specific network policy.
+</td>
+</tr>
+<tr>
+<td>
+
+`/v1/networkpolicies/{deployment_id}`
+</td>
+<td>
+Not recommended. Consider query string parameter pattern instead.
+</td>
+</tr>
+</table>
+
+Keep it simple and descriptive; avoid long-worded URL components. If one object can contain another object, design the 
+endpoint to reflect that regardless of whether the data is structured like this in the database. If the URL describes 
+the action, nest the action within the resource. Avoid stop words (the, and, or, of, a, an, to, for, etc.) in a URL
+to make it shorter and more readable.
+
+| Instead of                                       | Use                                              |                                             |
+|--------------------------------------------------|--------------------------------------------------|---------------------------------------------|
+| `GET: /v1/depoymentsbynamespace`                 | `GET: /v1/namespaces/{namespace}/deployments`    | Get all deployments in a specific namespace |
+| `GET: /v1/reportsmetadata/{id}`                  | `GET: /v1/reports/jobs/{id}/metadata`            | Get metadata of report job                  |
+| `GET: /v1/reports/status/{id}`                   | `GET: /v1/reports/jobs/{id}/status`              | Get status of report job                    |
+| `GET: /v1/complianceprofiles`                    | `GET: /v1/compliance/profiles`                   | Get all compliance profiles                 |
+| `POST: /v1/resetbaselineforcluster/{cluster_id}` | `POST: /v1/baselines/cluster/{cluster_id}/reset` | Reset baseline for a specific cluster       |
+
+If splitting the words into multiple URL components is not intuitive, it is recommended to use a hyphen(-).
+
+| Instead of                        | Use                               |
+|-----------------------------------|-----------------------------------|
+| `/v1/kernelsupport`               | `/v1/kernel-support`              |
+| `/v1/kernel_support`              | `/v1/kernel-support`              |
+| `/v1/securitypolicy`              | `/v1/security-policy`             |
+
+If the API acts on specific attribute of the resource, using URL query parameters is more intuitive over 
+long-worded or hierarchical identifiers.
+
+| Instead of               | Use                            |
+|--------------------------|--------------------------------|
+| `/v1/deferredcves`       | `/v1/cves?deferred=true`       |
+| `/v1/inactiveviolations` | `/v1/violations?inactive=true` |
+| `/v1/fixablecves`        | `/v1/cves?fixable=true`        |
+| `/v1/runningreports`     | `/v1/reports?status=running`   |
+
+URLs **should not** be duplicated. A request URL and request method **should** uniquely identify an API. For example,
+`GET: /v1/deployments/{id}` conflicts with `GET: /v1/deployments/violations`.
+
+A `GET` API **must not** declare a body but instead specify the response criteria using path and query parameters, 
+therefore, the gRPC request message fields should map to the URL path or query parameters.
+The parameters could be used for identifying, filtering, sorting, paginating, tracking the source, translation, etc.
+
+`POST` requests to create a resource **must not** accept the resource ID. IDs must be generated on the backend.
+Only `POST` requests to perform an action on a specific resource should accept a resource ID.
+
+A `GET` API **must** use an HTTP GET verb. For example, the following API configuration is not recommended and 
+should be avoided:
+```
+rpc GetExistingProbes(GetExistingProbesRequest) returns (GetExistingProbesResponse) {
+option (google.api.http) = {
+post: "/v1/probeupload/getexisting"
+};
+}
+```
