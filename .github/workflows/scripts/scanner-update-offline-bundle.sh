@@ -9,7 +9,6 @@ declare -A files_to_download=(
     ["v4/vulns.json.zst"]="${SCANNER_V4_DEFS_BUCKET}/vulnerability-bundles/${PRODUCT_VERSION}/vulns.json.zst"
     ["v4/repository-to-cpe.json"]="${SCANNER_V4_DEFS_BUCKET}/redhat-repository-mappings/repository-to-cpe.json"
     ["v4/container-name-repos-map.json"]="${SCANNER_V4_DEFS_BUCKET}/redhat-repository-mappings/container-name-repos-map.json"
-    ["v2/scanner-vuln-updates.zip"]="https://storage.googleapis.com/scanner-support-public/offline/v1/scanner-vuln-updates.zip"
 )
 
 # Download the files
@@ -23,6 +22,9 @@ done
 
 dir=out
 mkdir -p $dir
-
+jq -n \
+    --arg version "$ROX_PRODUCT_VERSION" \
+    --arg date "$(date -u -Iseconds)" \
+    '{"version": $version, "created": $date}' > v4/manifest.json
 zip -j "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" v4/*
 gsutil cp "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" "gs://scanner-v4-test/offline-bundles/"
