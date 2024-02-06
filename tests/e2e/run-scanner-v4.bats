@@ -297,10 +297,10 @@ _deploy_stackrox() {
     VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
 
     _deploy_central "${central_namespace}"
-    if [[ "${HELM_REUSE_VALUES:-}" != "true" ]]; then
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" && "${HELM_REUSE_VALUES:-}" != "true" ]]; then
       # In case we are reusing existing Helm values we should not export new
       # central credentials into the environment.
-      export_central_basic_auth_creds
+      DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" export_central_basic_auth_creds
     fi
     wait_for_api "${central_namespace}"
     setup_client_TLS_certs "${tls_client_certs}"
