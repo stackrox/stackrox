@@ -75,6 +75,8 @@ func TestUpdate(t *testing.T) {
 		importVulns: func(_ context.Context, _ io.Reader) error {
 			return nil
 		},
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
 	}
 
 	// Skip update when locking fails.

@@ -7,10 +7,12 @@ import (
 	"io"
 	"io/fs"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -36,6 +38,9 @@ const (
 	defaultUpdateInterval  = 5 * time.Minute
 	defaultUpdateRetention = libvuln.DefaultUpdateRetention
 	defaultFullGCInterval  = 24 * time.Hour
+
+	defaultRetryMax   = 4
+	defaultRetryDelay = 10 * time.Second
 )
 
 var (
@@ -67,6 +72,9 @@ type Opts struct {
 	SkipGC          bool
 	UpdateRetention int
 	FullGCInterval  time.Duration
+
+	RetryDelay time.Duration
+	RetryMax   int
 }
 
 // Updater represents a vulnerability updater.
@@ -91,6 +99,9 @@ type Updater struct {
 	fullGCInterval  time.Duration
 
 	importVulns func(ctx context.Context, reader io.Reader) error
+
+	retryDelay time.Duration
+	retryMax   int
 }
 
 // New creates a new Updater based on the given options.
@@ -117,6 +128,9 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		skipGC:          opts.SkipGC,
 		updateRetention: opts.UpdateRetention,
 		fullGCInterval:  opts.FullGCInterval,
+
+		retryDelay: opts.RetryDelay,
+		retryMax:   opts.RetryMax,
 	}
 	u.importVulns = func(ctx context.Context, reader io.Reader) error {
 		return libvuln.OfflineImport(ctx, u.pool, reader)
@@ -150,7 +164,12 @@ func fillOpts(opts *Opts) error {
 	if opts.FullGCInterval < 3*time.Hour {
 		opts.FullGCInterval = defaultFullGCInterval
 	}
-
+	if opts.RetryDelay == 0 {
+		opts.RetryDelay = defaultRetryDelay
+	}
+	if opts.RetryMax == 0 {
+		opts.RetryMax = defaultRetryMax
+	}
 	return nil
 }
 
@@ -328,18 +347,35 @@ func (u *Updater) runUpdate(ctx context.Context) error {
 func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File, time.Time, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
 
-	zlog.Info(ctx).Str("url", u.url).Msg("fetching vuln update")
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-	req.Header.Set(ifModifiedSince, prevTimestamp.Format(http.TimeFormat))
+	var resp *http.Response
+	var err error
+	for attempt := 0; attempt < u.retryMax; attempt++ {
+		zlog.Info(ctx).Str("url", u.url).Msg("fetching vuln update")
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
+		if err != nil {
+			return nil, time.Time{}, err
+		}
+		req.Header.Set(ifModifiedSince, prevTimestamp.Format(http.TimeFormat))
 
-	resp, err := u.client.Do(req)
-	if err != nil {
-		return nil, time.Time{}, err
+		resp, err = u.client.Do(req)
+		if err != nil {
+			var opErr *net.OpError
+			if errors.As(err, &opErr) && opErr.Op == "dial" && strings.Contains(opErr.Err.Error(), "connection refused") {
+				// Retry when vuln URL is unavailable
+				zlog.Error(ctx).Err(err).Msg("connection refused, retrying...")
+				if attempt < u.retryMax-1 {
+					time.Sleep(u.retryDelay) // Wait for retryDelay before retrying
+					continue
+				}
+			}
+			// For other errors, do not retry
+			closeResponse(resp)
+			return nil, time.Time{}, err
+
+		}
+		break // no error, no retry
 	}
-	defer utils.IgnoreError(resp.Body.Close)
+	defer closeResponse(resp)
 
 	switch resp.StatusCode {
 	case http.StatusOK:
@@ -387,4 +423,10 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 
 func jitter() time.Duration {
 	return jitterMinutes[random.Intn(len(jitterMinutes))]
+}
+
+func closeResponse(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		utils.IgnoreError(resp.Body.Close)
+	}
 }
