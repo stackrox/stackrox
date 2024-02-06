@@ -35,6 +35,8 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterStats",
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
+			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
+			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
 		},
 	})
 )
@@ -77,26 +79,19 @@ func (s *serviceImpl) GetComplianceScanResultsOverview(_ context.Context, _ *v2.
 // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 // TODO(ROX-20333):  the most recent portion will come when this ticket is worked once everything is wired up so we can tell
 // what the latest scan is.
-func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceScanResultsResponse, error) {
+func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanResultsResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	if request.GetScanConfigName() != "" {
-		parsedQuery = search.ConjunctionQuery(
-			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
-			parsedQuery,
-		)
-	}
-
 	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for request %v", request)
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", query)
 	}
 
 	// Need to look up the scan config IDs to return with the results.
@@ -105,7 +100,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, request *v2.
 		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
 			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
 			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
 			}
 			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
 		}
@@ -223,4 +218,75 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 	}
 
 	return storagetov2.ComplianceV2CheckResult(scanResult), nil
+}
+
+// GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
+// TODO(ROX-20333):  the most recent portion will come when this ticket is worked once everything is wired up so we can tell
+// what the latest scan is.
+func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceScanResultsResponse, error) {
+	if request.GetScanConfigName() == "" {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	// Add the scan config name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
+		parsedQuery,
+	)
+
+	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for request %v", request)
+	}
+
+	// Need to look up the scan config IDs to return with the results.
+	scanConfigToIDs := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
+			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
+			if err != nil {
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
+			}
+			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
+		}
+	}
+
+	return &v2.ListComplianceScanResultsResponse{
+		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
+	}, nil
+}
+
+// GetComplianceScanConfigurationResultsCount returns scan results count
+func (s *serviceImpl) GetComplianceScanConfigurationResultsCount(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.CountComplianceScanResults, error) {
+	if request.GetScanConfigName() == "" {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the scan config name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
+		parsedQuery,
+	)
+
+	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Errorf("Unable to retrieve compliance scan results count for request %v", request)
+	}
+	return &v2.CountComplianceScanResults{
+		Count: int32(count),
+	}, nil
 }

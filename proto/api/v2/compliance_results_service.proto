@@ -153,8 +153,14 @@ service ComplianceResultsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
-  rpc GetComplianceScanResults(ComplianceScanResultsRequest) returns (ListComplianceScanResultsResponse) {
+  rpc GetComplianceScanResults(RawQuery) returns (ListComplianceScanResultsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results"};
+  }
+
+  // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
+  // Optional RawQuery query fields can be combined.
+  rpc GetComplianceScanConfigurationResults(ComplianceScanResultsRequest) returns (ListComplianceScanResultsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/results/{scan_config_name}"};
   }
 
   // GetComplianceProfileScanStats lists current scan stats grouped by profile
@@ -187,5 +193,9 @@ service ComplianceResultsService {
 
   rpc GetComplianceScanResultsCount(RawQuery) returns (CountComplianceScanResults) {
     option (google.api.http) = {get: "/v2/compliance/scan/count/results"};
+  }
+
+  rpc GetComplianceScanConfigurationResultsCount(ComplianceScanResultsRequest) returns (CountComplianceScanResults) {
+    option (google.api.http) = {get: "/v2/compliance/scan/count/results/{scan_config_name}"};
   }
 }
