@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/convert/typetostorage"
-	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -133,12 +132,4 @@ func (s *datastorePostgresTestSuite) TestDeleteDiscoveredCluster() {
 func (s *datastorePostgresTestSuite) addDiscoveredClusters(num int) {
 	fakeClusters := fixtures.GetManyDiscoveredClusters(num)
 	s.Require().NoError(s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeClusters...))
-}
-
-func toStorageList(dc []*discoveredclusters.DiscoveredCluster) []*storage.DiscoveredCluster {
-	result := []*storage.DiscoveredCluster{}
-	for _, cluster := range dc {
-		result = append(result, typetostorage.DiscoveredCluster(cluster))
-	}
-	return result
 }
