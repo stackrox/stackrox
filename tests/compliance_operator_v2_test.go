@@ -256,6 +256,38 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 
+	// Create a scan configuration with invalid profiles configuration
+	// contains both rhcos4-moderate and ocp4-cis-node profiles
+	invalidProfileTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+	invalidProfileReq := &v2.ComplianceScanConfiguration{
+		ScanName: invalidProfileTestName,
+		Id:       "",
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: false,
+			Profiles:    []string{"rhcos4-moderate-rev-4", "ocp4-cis-node"},
+			Description: "test config with invalid profiles",
+			ScanSchedule: &v2.Schedule{
+				IntervalType: 1,
+				Hour:         15,
+				Minute:       0,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{1, 2, 3, 4, 5, 6},
+					},
+				},
+			},
+		},
+	}
+
+	// Verify that the invalid profile was not created and the error message is correct
+	_, err = service.CreateComplianceScanConfiguration(ctx, invalidProfileReq)
+	assert.Contains(t, err.Error(), "cannot have both ocp4 node profile and rhcos4 node profile")
+
+	query = &v2.RawQuery{Query: ""}
+	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 }
 
 func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {

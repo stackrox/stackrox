@@ -197,6 +197,31 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			isErrorTest: false,
 		},
 		{
+			desc:        "Successful creation of scan configuration with valid profiles",
+			testRequest: getTestRecNoIDValidProfile(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "", "test_cluster")
+			},
+			isErrorTest: false,
+		},
+		{
+			desc:        "Invalid profiles in scan configuration",
+			testRequest: getTestRecNoIDInvalidProfile(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: errors.Errorf("Invalid profiles found in scan configuration: %q.", mockScanName),
+		},
+		{
 			desc:        "Scan configuration already exists",
 			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
@@ -573,6 +598,42 @@ func getTestRecNoID() *storage.ComplianceOperatorScanConfigurationV2 {
 		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 			{
 				ProfileName: "ocp4-cis",
+			},
+		},
+		StrictNodeScan: false,
+	}
+}
+
+func getTestRecNoIDInvalidProfile() *storage.ComplianceOperatorScanConfigurationV2 {
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		ScanConfigName:         mockScanName,
+		AutoApplyRemediations:  false,
+		AutoUpdateRemediations: false,
+		OneTimeScan:            false,
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			{
+				ProfileName: "ocp4-cis-node",
+			},
+			{
+				ProfileName: "rhcos4-cis",
+			},
+		},
+		StrictNodeScan: false,
+	}
+}
+
+func getTestRecNoIDValidProfile() *storage.ComplianceOperatorScanConfigurationV2 {
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		ScanConfigName:         mockScanName,
+		AutoApplyRemediations:  false,
+		AutoUpdateRemediations: false,
+		OneTimeScan:            false,
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			{
+				ProfileName: "ocp4-cis",
+			},
+			{
+				ProfileName: "rhcos4-cis",
 			},
 		},
 		StrictNodeScan: false,

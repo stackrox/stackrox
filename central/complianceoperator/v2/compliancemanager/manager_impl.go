@@ -2,6 +2,7 @@ package compliancemanager
 
 import (
 	"context"
+	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
@@ -191,8 +192,14 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	}
 
 	// Check if any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
+	err := validateProfiles(profiles)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
+	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
 	// If so, then we cannot create the scan configuration.
-	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
+	err = m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
@@ -277,6 +284,30 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 			delete(m.runningRequests, k)
 		}
 	}
+}
+
+// validateProfiles checks if the profiles are valid and returns an error if not.
+// Check if node profiles have more than one product
+// ex. we can not have rhcos node profile and ocp node profile in the same scan configuration
+// as this is not allowed on Compliance Operator ScanSettingBinding
+func validateProfiles(profiles []string) error {
+	// check if any profiles are node profiles
+	hasOCPNodeProfile := false
+	hasRHCOSNodeProfile := false
+	for _, profile := range profiles {
+		// if profile contains "node" and ocp, then it is an ocp node profile
+		if strings.Contains(profile, "node") && strings.HasPrefix(profile, "ocp4") {
+			hasOCPNodeProfile = true
+		}
+		// if profile contains "rhcos4", then it is an rhcos4 node profile
+		if strings.HasPrefix(profile, "rhcos4") {
+			hasRHCOSNodeProfile = true
+		}
+	}
+	if hasOCPNodeProfile && hasRHCOSNodeProfile {
+		return errors.New("cannot have both ocp4 node profile and rhcos4 node profile in the same scan configuration")
+	}
+	return nil
 }
 
 // trackSensorRequest adds sensor request to a map with cluster and scan config that was sent for correlating responses.
