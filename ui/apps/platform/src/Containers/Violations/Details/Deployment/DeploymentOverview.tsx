@@ -1,9 +1,11 @@
 import React, { ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import dateFns from 'date-fns';
 import { DescriptionList } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { vulnManagementPath } from 'routePaths';
 import { AlertDeployment } from 'types/alert.proto';
 import { Deployment } from 'types/deployment.proto';
 
@@ -20,7 +22,14 @@ function DeploymentOverview({
 }: DeploymentOverviewProps): ReactElement {
     return (
         <DescriptionList isCompact isHorizontal>
-            <DescriptionListItem term="Deployment ID" desc={alertDeployment.id} />
+            <DescriptionListItem
+                term="Deployment ID"
+                desc={
+                    <Link to={`${vulnManagementPath}/deployment/${alertDeployment.id}`}>
+                        {alertDeployment.id}
+                    </Link>
+                }
+            />
             <DescriptionListItem term="Deployment name" desc={alertDeployment.name} />
             <DescriptionListItem term="Deployment type" desc={alertDeployment.type} />
             <DescriptionListItem term="Cluster" desc={alertDeployment.clusterName} />
