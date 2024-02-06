@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
@@ -32,13 +33,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "diff",
 		Short: "(Technology Preview) Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources.",
-		Long: `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.
-
-** This is a Technology Preview feature **
-Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete.
-Red Hat does not recommend using them in production.
-These features provide early access to upcoming product features, enabling customers to test functionality and provide feedback during the development process.
-For more information about the support scope of Red Hat Technology Preview features, see https://access.redhat.com/support/offerings/techpreview/`,
+		Long:  `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.` + common.TechPreviewLongText,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(c *cobra.Command, args []string) error {

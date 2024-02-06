@@ -179,6 +179,14 @@ func (ds *datastoreImpl) GetManyNodeMetadata(ctx context.Context, ids []string) 
 	return nodes, nil
 }
 
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error {
+	wrappedFn := func(node *storage.Node) error {
+		ds.updateNodePriority(node)
+		return fn(node)
+	}
+	return ds.storage.WalkByQuery(ctx, q, wrappedFn)
+}
+
 // UpsertNode dedupes the node with the underlying storage and adds the node to the index.
 func (ds *datastoreImpl) UpsertNode(ctx context.Context, node *storage.Node) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "UpsertNode")

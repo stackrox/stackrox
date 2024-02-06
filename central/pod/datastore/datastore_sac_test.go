@@ -6,6 +6,8 @@ import (
 	"context"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -13,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -197,4 +200,38 @@ func (s *podDatastoreSACSuite) TestUnrestrictedSearchRaw() {
 			s.runSearchRawTest(c)
 		})
 	}
+}
+
+func (s *podDatastoreSACSuite) TestScopedWalkByQuery() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runWalkByQueryTest(c, nil)
+			s.runWalkByQueryTest(c, search.NewQueryBuilder().AddRegexes(search.PodID, ".*").ProtoQuery())
+		})
+	}
+}
+
+func (s *podDatastoreSACSuite) TestUnrestrictedWalkByQuery() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runWalkByQueryTest(c, nil)
+			s.runWalkByQueryTest(c, search.NewQueryBuilder().AddRegexes(search.PodID, ".*").ProtoQuery())
+		})
+	}
+}
+
+func (s *podDatastoreSACSuite) runWalkByQueryTest(c testutils.SACSearchTestCase, query *v1.Query) {
+	ctx := s.testContexts[c.ScopeKey]
+	var results []*storage.Pod
+	err := s.datastore.WalkByQuery(ctx, query, func(p *storage.Pod) error {
+		results = append(results, p)
+		return nil
+	})
+	s.Require().NoError(err)
+	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
+	for i := range results {
+		resultObjs = append(resultObjs, results[i])
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }

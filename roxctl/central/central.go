@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/cert"
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/debug"
+	"github.com/stackrox/rox/roxctl/central/export"
 	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
 	"github.com/stackrox/rox/roxctl/central/login"
@@ -31,6 +32,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),
 		login.Command(cliEnvironment),
+		export.Command(cliEnvironment),
 	)
 	return c
 }

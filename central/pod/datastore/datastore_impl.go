@@ -79,6 +79,10 @@ func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, b
 	return pod, true, nil
 }
 
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(p *storage.Pod) error) error {
+	return ds.podStore.WalkByQuery(ctx, q, fn)
+}
+
 // UpsertPod inserts a pod into podStore
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")

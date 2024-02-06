@@ -207,7 +207,11 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error {
-	return ds.deploymentStore.WalkByQuery(ctx, query, fn)
+	wrappedFn := func(deployment *storage.Deployment) error {
+		ds.updateDeploymentPriority(deployment)
+		return fn(deployment)
+	}
+	return ds.deploymentStore.WalkByQuery(ctx, query, wrappedFn)
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore

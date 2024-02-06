@@ -10,14 +10,13 @@ import (
 
 // Merge merges the node parts into a node.
 func Merge(parts *NodeParts) *storage.Node {
-	ret := parts.Node.Clone()
-	mergeComponents(parts, ret)
-	return ret
+	mergeComponents(parts, parts.Node)
+	return parts.Node
 }
 
 func mergeComponents(parts *NodeParts, node *storage.Node) {
 	// If the node has a nil scan, there is nothing to fill in.
-	if node.Scan == nil {
+	if node.GetScan() == nil {
 		return
 	}
 
