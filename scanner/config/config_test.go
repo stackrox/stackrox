@@ -1,11 +1,14 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -145,17 +148,35 @@ func Test_MatcherConfig_validate(t *testing.T) {
 	})
 	t.Run("when valid addr then remote addr is set", func(t *testing.T) {
 		for _, addr := range []string{":8443", "localhost:443", "127.0.0.1:80"} {
-			c := MatcherConfig{Enable: true, IndexerAddr: addr, Database: Database{ConnString: "host=foobar"}}
+			c := MatcherConfig{Enable: true, IndexerAddr: addr, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "test.com"}
 			err := c.validate()
 			assert.NoError(t, err)
 			assert.True(t, c.RemoteIndexerEnabled)
 		}
 	})
 	t.Run("when addr is empty then remote addr is not set", func(t *testing.T) {
-		c := MatcherConfig{Enable: true, IndexerAddr: "", Database: Database{ConnString: "host=foobar"}}
+		c := MatcherConfig{Enable: true, IndexerAddr: "", Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "test.com"}
 		err := c.validate()
 		assert.NoError(t, err)
 		assert.False(t, c.RemoteIndexerEnabled)
+	})
+	t.Run("when URL is replaceable, replace it", func(t *testing.T) {
+		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION"}
+		err := c.validate()
+		assert.NoError(t, err)
+		v := "dev"
+		if buildinfo.ReleaseBuild {
+			v = version.Version
+		}
+		expectedURL := fmt.Sprintf("https://central.stackrox.svc/api/extensions/scannerdefinitions?version=%s", v)
+		assert.Equal(t, expectedURL, c.VulnerabilitiesURL)
+	})
+	t.Run("when URL is static, do not replace it", func(t *testing.T) {
+		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://myvulnsrox_version.com"}
+		err := c.validate()
+		assert.NoError(t, err)
+		expectedURL := "https://myvulnsrox_version.com"
+		assert.Equal(t, expectedURL, c.VulnerabilitiesURL)
 	})
 }
 
