@@ -16,14 +16,15 @@ import (
 
 type awsTransport struct {
 	registry.Transport
+	name      string
 	config    *docker.Config
 	client    *awsECR.ECR
 	expiresAt *time.Time
 	mutex     sync.RWMutex
 }
 
-func newAWSTransport(config *docker.Config, client *awsECR.ECR) *awsTransport {
-	transport := &awsTransport{config: config, client: client}
+func newAWSTransport(name string, config *docker.Config, client *awsECR.ECR) *awsTransport {
+	transport := &awsTransport{name: name, config: config, client: client}
 	if err := transport.refreshNoLock(); err != nil {
 		log.Error("Failed to refresh ECR token: ", err)
 	}
@@ -36,7 +37,7 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// a) we only need a write lock every 12 hours to refresh the token.
 	// b) refreshing the token multiple times is idempotent.
 	// c) we do not want to block the entire read path for performance reasons.
-	if concurrency.WithRLock1(&t.mutex, t.isExpiredNoLock) {
+	if !concurrency.WithRLock1(&t.mutex, t.isValidNoLock) {
 		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
 			return nil, err
 		}
@@ -46,11 +47,12 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	)
 }
 
-func (t *awsTransport) isExpiredNoLock() bool {
-	return t.expiresAt == nil || t.expiresAt.After(time.Now())
+func (t *awsTransport) isValidNoLock() bool {
+	return t.expiresAt != nil && t.expiresAt.After(time.Now())
 }
 
 func (t *awsTransport) refreshNoLock() error {
+	log.Infof("Refreshing ECR token for image integration %q", t.name)
 	authToken, err := t.client.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get authorization token")
