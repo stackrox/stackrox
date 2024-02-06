@@ -2,12 +2,12 @@ package manager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -179,24 +179,12 @@ func (c *connection) String() string {
 	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
 }
 
-func debugIPv4String(e net.NetworkPeerID) string {
-	return fmt.Sprintf("Port=%d, Addr=%s, Network=%s", e.Port, e.Address.String(), e.IPNetwork.String())
-}
-
 // IsExternal returns true when IPv4 does not belong to the private IP addresses; false otherwise.
 // Error is returned when IP address is malformed
 func (c *connection) IsExternal() (bool, error) {
 	addr, err := c.getRemoteIPAddress()
 	if err != nil {
-		dir := "Outgoing"
-		if c.incoming {
-			dir = "Incomming"
-		}
-		log.Debugf("%s connection (%s) with port %d has invalid IP address (%q) and IP network (%q). "+
-			"Assuming connection to be external.",
-			dir, c.String(), c.remote.IPAndPort.Port, c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
-		log.Debugf("%s connection. Local: %s, Remote: %s", dir, debugIPv4String(c.local), debugIPv4String(c.remote.IPAndPort))
-		return true, errors.New("remote has invalid IP address and invalid IP network address")
+		return true, errors.Wrap(err, "unable to determine if flow is external or internal")
 	}
 	return addr.IsPublic(), nil
 }
@@ -215,7 +203,7 @@ func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
 	if c.remote.IPAndPort.IPNetwork.IsValid() {
 		return c.remote.IPAndPort.IPNetwork.IP(), nil
 	}
-	return net.IPAddress{}, errors.New("unable to find valid IP address data")
+	return net.IPAddress{}, errors.New("remote has invalid IP address and invalid IP network address")
 }
 
 type processInfo struct {
@@ -549,7 +537,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
 			if err != nil { // IP is malformed or unknown - assume it is external and log a warning
-				log.Warnf("Analyzing IP address failed: %v", err)
+				log.Warnf("Not showing flow on the network graph: %v", err)
+				return
 			}
 			if !isExternal {
 				entityType = networkgraph.InternalEntities()
