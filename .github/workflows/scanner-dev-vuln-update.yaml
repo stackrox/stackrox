@@ -16,6 +16,8 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -35,6 +37,7 @@ jobs:
         fi
 
         make -C scanner bin/updater
+        go clean -cache -modcache
         ./scanner/bin/updater -output-dir=dev
         gsutil cp -r "dev" "gs://scanner-v4-test/vulnerability-bundles"
 
