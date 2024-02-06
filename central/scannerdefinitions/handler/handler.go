@@ -52,7 +52,7 @@ const (
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
 	v4VulnSubDir      = "vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
-	v4VulnFile        = "output.json.zst"
+	v4VulnFile        = "vulns.json.zst"
 	mappingUpdaterKey = "mapping"
 )
 

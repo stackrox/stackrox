@@ -25,7 +25,7 @@ const (
 
 	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
 
-	v4VulnURL = "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst"
+	v4VulnURL = "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst"
 )
 
 var (
