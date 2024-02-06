@@ -105,7 +105,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 
 	if c.Spec.ScannerV4 != nil && features.ScannerV4Support.Enabled() {
-		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(c.Spec.ScannerV4))
+		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(ctx, c.Spec.ScannerV4, c.GetNamespace(), t.client))
 	}
 
 	v.AddChild("customize", &customize)
@@ -367,13 +367,12 @@ func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *transla
 	return &sv
 }
 
-func getCentralScannerV4ComponentValues(s *platform.ScannerV4ComponentSpec) *translation.ValuesBuilder {
+func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4ComponentSpec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
-
 	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
 	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)
-	translation.SetScannerV4DBValues(&sv, s.DB)
+	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.CentralGVK.Kind, namespace, client)
 
 	return &sv
 }
