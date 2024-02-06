@@ -132,7 +132,7 @@ func (s *datastorePostgresTestSuite) TestDeleteDiscoveredCluster() {
 
 func (s *datastorePostgresTestSuite) addDiscoveredClusters(num int) {
 	fakeClusters := fixtures.GetManyDiscoveredClusters(num)
-	s.Require().NoError(s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeClusters))
+	s.Require().NoError(s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeClusters...))
 }
 
 func toStorageList(dc []*discoveredclusters.DiscoveredCluster) []*storage.DiscoveredCluster {

@@ -103,15 +103,20 @@ func (mr *MockDataStoreMockRecorder) ListDiscoveredClusters(ctx, query any) *gom
 }
 
 // UpsertDiscoveredClusters mocks base method.
-func (m *MockDataStore) UpsertDiscoveredClusters(ctx context.Context, discoveredClusters []*discoveredclusters.DiscoveredCluster) error {
+func (m *MockDataStore) UpsertDiscoveredClusters(ctx context.Context, discoveredClusters ...*discoveredclusters.DiscoveredCluster) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertDiscoveredClusters", ctx, discoveredClusters)
+	varargs := []any{ctx}
+	for _, a := range discoveredClusters {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpsertDiscoveredClusters", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertDiscoveredClusters indicates an expected call of UpsertDiscoveredClusters.
-func (mr *MockDataStoreMockRecorder) UpsertDiscoveredClusters(ctx, discoveredClusters any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertDiscoveredClusters(ctx any, discoveredClusters ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDiscoveredClusters", reflect.TypeOf((*MockDataStore)(nil).UpsertDiscoveredClusters), ctx, discoveredClusters)
+	varargs := append([]any{ctx}, discoveredClusters...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDiscoveredClusters", reflect.TypeOf((*MockDataStore)(nil).UpsertDiscoveredClusters), varargs...)
 }
