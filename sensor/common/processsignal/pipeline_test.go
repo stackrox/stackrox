@@ -411,8 +411,7 @@ func collectEventsFor(ctx context.Context, ch <-chan *message.ExpiringMessage, t
 }
 
 func TestProcessPipelineOnline(t *testing.T) {
-	t.Skip("ROX-22262: Skipping due to timeout")
-	sensorEvents := make(chan *message.ExpiringMessage)
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
