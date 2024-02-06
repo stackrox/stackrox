@@ -133,6 +133,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "cluster name or ID to delegate image scan to")
+	c.Flags().BoolVar(&imageScanCmd.local, "local", false, "use local image scan do not connect co central")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
@@ -156,6 +157,7 @@ type imageScanCommand struct {
 	retryCount     int
 	timeout        time.Duration
 	cluster        string
+	local          bool
 
 	// injected or constructed values
 	env                environment.Environment
@@ -212,6 +214,9 @@ func (i *imageScanCommand) Validate() error {
 
 // Scan will execute the image scan with retry functionality
 func (i *imageScanCommand) Scan() error {
+	if i.local {
+		return i.localScan()
+	}
 	err := retry.WithRetry(func() error {
 		return i.scanImage()
 	},
