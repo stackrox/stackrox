@@ -131,8 +131,20 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
 	}
 
+	// Need to look up the scan config IDs to return with the results.
+	scanConfigToIDs := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		if _, found := scanConfigToIDs[result.ScanConfigName]; !found {
+			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.ScanConfigName)
+			if err != nil {
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
+			}
+			scanConfigToIDs[result.ScanConfigName] = config.GetId()
+		}
+	}
+
 	return &v2.ListComplianceClusterScanStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ClusterStats(scanResults),
+		ScanStats: storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs),
 	}, nil
 }
 
