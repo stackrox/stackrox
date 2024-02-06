@@ -126,6 +126,11 @@ message CountComplianceScanResults {
   int32 count = 1;
 }
 
+message ComplianceScanResultsRequest {
+    string scan_config_name = 1;
+    RawQuery query = 2;
+}
+
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
   rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceCheckResult) {
@@ -148,7 +153,7 @@ service ComplianceResultsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
-  rpc GetComplianceScanResults(RawQuery) returns (ListComplianceScanResultsResponse) {
+  rpc GetComplianceScanResults(ComplianceScanResultsRequest) returns (ListComplianceScanResultsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results"};
   }
 

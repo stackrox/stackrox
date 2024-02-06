@@ -128,7 +128,7 @@ var (
 )
 
 func request_ComplianceResultsService_GetComplianceScanResults_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
+	var protoReq ComplianceScanResultsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -144,7 +144,7 @@ func request_ComplianceResultsService_GetComplianceScanResults_0(ctx context.Con
 }
 
 func local_request_ComplianceResultsService_GetComplianceScanResults_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
+	var protoReq ComplianceScanResultsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {

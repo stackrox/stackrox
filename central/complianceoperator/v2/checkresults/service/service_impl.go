@@ -77,19 +77,26 @@ func (s *serviceImpl) GetComplianceScanResultsOverview(_ context.Context, _ *v2.
 // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 // TODO(ROX-20333):  the most recent portion will come when this ticket is worked once everything is wired up so we can tell
 // what the latest scan is.
-func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanResultsResponse, error) {
+func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceScanResultsResponse, error) {
 	// Fill in Query.
-	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	if request.GetScanConfigName() != "" {
+		parsedQuery = search.ConjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
+			parsedQuery,
+		)
+	}
+
 	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", query)
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for request %v", request)
 	}
 
 	// Need to look up the scan config IDs to return with the results.
@@ -98,7 +105,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
 			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
 			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
 			}
 			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
 		}

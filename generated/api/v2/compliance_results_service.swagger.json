@@ -213,39 +213,45 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "scanConfigName",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "query.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "query.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "query.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -258,7 +264,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -924,6 +930,18 @@
           "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v2SortOption": {
       "type": "object",
