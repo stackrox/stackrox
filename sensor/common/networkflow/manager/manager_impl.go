@@ -184,9 +184,9 @@ func (c *connection) String() string {
 func (c *connection) IsExternal() (bool, error) {
 	addr, err := c.getRemoteIPAddress()
 	if err != nil {
-		log.Debugf("Connection has invalid IP address (%q) and IP network (%q). "+
+		log.Debugf("Connection with port %d has invalid IP address (%q) and IP network (%q). "+
 			"Assuming connection to be external.",
-			c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
+			c.remote.IPAndPort.Port, c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
 		return true, errors.New("remote has invalid IP address and invalid IP network address")
 	}
 	return addr.IsPublic(), nil
