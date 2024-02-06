@@ -36,7 +36,7 @@ spec:
       {{- end}}
       serviceAccountName: collector
       containers:
-      {{- if ne (default ._rox.collector.collectionMethod "") "NO_COLLECTION"}}
+      {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
         image: {{ quote ._rox.image.collector.fullRef }}
         imagePullPolicy: {{ ._rox.collector.imagePullPolicy }}

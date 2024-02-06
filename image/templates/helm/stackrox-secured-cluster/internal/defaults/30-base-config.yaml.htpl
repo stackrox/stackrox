@@ -102,6 +102,7 @@ admissionControl:
                 app: admission-control
 
 collector:
+  collectionMethod: "CORE_BPF"
   disableTaintTolerations: false
   nodescanningEndpoint: "127.0.0.1:8444"
   tolerations:
