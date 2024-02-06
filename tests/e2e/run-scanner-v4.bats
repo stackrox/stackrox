@@ -155,9 +155,7 @@ teardown() {
         fi
     fi
 
-    for namespace in "${namespaces[@]}"; do
-        run remove_existing_stackrox_resources "${namespace}" >/dev/null
-    done
+    run remove_existing_stackrox_resources "${namespaces[@]}"
 }
 
 teardown_file() {
