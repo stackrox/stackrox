@@ -13,7 +13,7 @@ function CreateIntegrationPage(): ReactElement {
 
     const title = getIsMachineAccessConfig(source, type)
         ? 'Create configuration'
-        : 'Create Integration';
+        : 'Create integration';
     return (
         <IntegrationPage title={title} name={title}>
             <IntegrationForm source={source} type={type} isEditable />

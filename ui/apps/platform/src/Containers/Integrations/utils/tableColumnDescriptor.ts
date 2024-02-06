@@ -13,7 +13,6 @@ import {
     BaseIntegration,
     CloudSourceIntegrationType,
     ImageIntegrationType,
-    MachineAccessConfiguration,
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
@@ -33,6 +32,7 @@ import {
     timesOfDay,
     transformDurationLongForm,
 } from './integrationUtils';
+import { AuthMachineToMachineConfig } from '../../../services/MachineAccessService';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;
@@ -105,9 +105,14 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         machineAccess: [
             {
                 accessor: (config) => {
-                    return (<MachineAccessConfiguration>config).type === 'GENERIC'
-                        ? 'Generic'
-                        : 'Github action';
+                    const { type } = <AuthMachineToMachineConfig>config;
+                    if (type === 'GENERIC') {
+                        return 'Generic';
+                    }
+                    if (type === 'GITHUB_ACTIONS') {
+                        return 'Github action';
+                    }
+                    return 'Unknown';
                 },
                 Header: 'Configuration',
             },
@@ -115,7 +120,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             {
                 accessor: (config) => {
                     return transformDurationLongForm(
-                        (<MachineAccessConfiguration>config).tokenExpirationDuration
+                        (<AuthMachineToMachineConfig>config).tokenExpirationDuration
                     );
                 },
                 Header: 'Token lifetime',

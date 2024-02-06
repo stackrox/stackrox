@@ -1,3 +1,5 @@
+import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+
 export type IntegrationSource =
     | 'authProviders'
     | 'notifiers'
@@ -64,18 +66,4 @@ export type BaseIntegration = {
     name: string;
 };
 
-export type AuthProviderIntegration = BaseIntegration | MachineAccessConfiguration;
-
-export type MachineAccessConfigMapping = {
-    key: string;
-    valueExpression: string;
-    role: string;
-};
-
-export type MachineAccessConfiguration = {
-    id: string;
-    type: string;
-    issuer: string;
-    tokenExpirationDuration: string;
-    mapping: MachineAccessConfigMapping[];
-};
+export type AuthProviderIntegration = BaseIntegration | AuthMachineToMachineConfig;

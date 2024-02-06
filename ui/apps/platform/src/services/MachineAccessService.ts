@@ -1,7 +1,9 @@
 import axios from './instance';
 import { Empty } from './types';
 
-export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS';
+const configTypes = ['GENERIC', 'GITHUB_ACTIONS'] as const;
+
+export type MachineConfigType = (typeof configTypes)[number];
 
 export type MachineConfigMapping = {
     key: string;
@@ -17,18 +19,22 @@ export type AuthMachineToMachineConfig = {
     mappings: MachineConfigMapping[];
 };
 
+const machineAccessURL = `/v1/auth/m2m`;
+
 export function fetchMachineAccessConfigs(): Promise<{
     response: { configs: AuthMachineToMachineConfig[] };
 }> {
-    return axios.get<{ configs: AuthMachineToMachineConfig[] }>(`/v1/auth/m2m`).then((response) => {
-        return {
-            response: response.data || { configs: [] },
-        };
-    });
+    return axios
+        .get<{ configs: AuthMachineToMachineConfig[] }>(machineAccessURL)
+        .then((response) => {
+            return {
+                response: response.data || { configs: [] },
+            };
+        });
 }
 
 export function deleteMachineAccessConfig(id: string): Promise<Empty> {
-    return axios.delete(`/v1/auth/m2m/${id}`);
+    return axios.delete(`${machineAccessURL}/${id}`);
 }
 
 export function deleteMachineAccessConfigs(ids: string[]): Promise<Empty[]> {
@@ -39,10 +45,14 @@ export function createMachineAccessConfig(data: AuthMachineToMachineConfig): Pro
     response: AuthMachineToMachineConfig;
 }> {
     return axios
-        .post<AuthMachineToMachineConfig>(`/v1/auth/m2m`, { config: data })
+        .post<AuthMachineToMachineConfig>(machineAccessURL, { config: data })
         .then((response) => {
             return {
                 response: response.data || {},
             };
         });
+}
+
+export function updateMachineAccessConfig(data: AuthMachineToMachineConfig): Promise<Empty> {
+    return axios.put(`${machineAccessURL}/${data.id}`, { config: data });
 }

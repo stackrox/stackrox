@@ -95,11 +95,11 @@ export function transformDurationLongForm(duration: string): string {
         result += pluralizeUnit(hours, 'hour');
     }
     if (minutes && minutes > 0) {
-        result += ' ';
+        result += hours && hours > 0 ? ' ' : '';
         result += pluralizeUnit(minutes, 'minute');
     }
     if (seconds && seconds > 0) {
-        result += ' ';
+        result += (hours && hours > 0) || (minutes && minutes > 0) ? ' ' : '';
         result += pluralizeUnit(seconds, 'second');
     }
     return result;
@@ -111,9 +111,9 @@ function pluralizeUnit(count: number, unit: string): string {
 
 function extractUnitsOfTime(duration: string, unit: string): number {
     const unitRegex = new RegExp(`[0-9]+${unit}`);
-    const matchHours = duration.match(unitRegex);
-    if (matchHours && matchHours.length !== 0) {
-        return parseInt(matchHours[0].replace(unit, ''));
+    const matchUnits = duration.match(unitRegex);
+    if (matchUnits && matchUnits.length !== 0) {
+        return parseInt(matchUnits[0].replace(unit, ''));
     }
     return 0;
 }

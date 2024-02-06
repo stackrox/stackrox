@@ -1,5 +1,6 @@
 import axios from './instance';
 import { Empty } from './types';
+import { AuthMachineToMachineConfig, updateMachineAccessConfig } from './MachineAccessService';
 
 export type IntegrationSource =
     | 'authProviders'
@@ -104,7 +105,7 @@ export function saveIntegrationV2(
     }
     // Machine access configs should be wrapped.
     if (source === 'authProviders') {
-        return axios.put(`${getPath(source)}/${(data as IntegrationBase).id}`, { config: data });
+        return updateMachineAccessConfig(data as AuthMachineToMachineConfig);
     }
     return axios.put(`${getPath(source)}/${(data as IntegrationBase).id}`, data);
 }

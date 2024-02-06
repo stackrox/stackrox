@@ -26,6 +26,7 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import SelectSingle from 'Components/SelectSingle';
 import { fetchRolesAsArray, Role } from 'services/RolesService';
 import { MachineConfigType } from 'services/MachineAccessService';
+import { getAxiosErrorMessage } from '../../../../utils/responseErrorUtils';
 
 export type MachineAccessConfig = {
     id: string;
@@ -42,13 +43,16 @@ export type MachineAccessConfig = {
 export const validationSchema = yup.object().shape({
     type: yup.string().trim().required('Type is required.'),
     tokenExpirationDuration: yup.string().trim().required('Token expiration duration is required'),
-    mappings: yup.array().of(
-        yup.object().shape({
-            key: yup.string().trim().required('Key is required.'),
-            valueExpression: yup.string().trim().required('Value expression is required.'),
-            role: yup.string().trim().required('Role is required.'),
-        })
-    ),
+    mappings: yup
+        .array()
+        .of(
+            yup.object().shape({
+                key: yup.string().trim().required('Key is required.'),
+                valueExpression: yup.string().trim().required('Value expression is required.'),
+                role: yup.string().trim().required('Role is required.'),
+            })
+        )
+        .min(1),
     issuer: yup.string().trim().required('Issuer is required.'),
 });
 
@@ -89,26 +93,26 @@ function MachineAccessIntegrationForm({
     }
 
     const [roles, setRoles] = useState<Role[]>([]);
-    const [alertRoles, setAlertRoles] = useState<ReactElement | null>(null);
+    const [alertRoles, setAlertRoles] = useState<string>('');
 
     useEffect(() => {
         fetchRolesAsArray()
             .then((rolesFetched) => {
                 setRoles(rolesFetched);
-                setAlertRoles(null);
+                setAlertRoles('');
             })
             .catch((error) => {
-                setAlertRoles(
-                    <Alert title="Fetch roles failed" variant={AlertVariant.warning} isInline>
-                        {error.message}
-                    </Alert>
-                );
+                setAlertRoles(getAxiosErrorMessage(error));
             });
     }, []);
 
     return (
         <>
-            {alertRoles}
+            {alertRoles && (
+                <Alert title="Fetch roles failed" variant={AlertVariant.warning} isInline>
+                    {alertRoles}
+                </Alert>
+            )}
             <PageSection variant="light" isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
@@ -166,12 +170,12 @@ function MachineAccessIntegrationForm({
                             fieldId="tokenExpirationDuration"
                             touched={touched}
                             errors={errors}
+                            helperText="For example, 3h20m20s"
                         >
                             <TextInput
                                 isRequired
                                 type="text"
                                 id="tokenExpirationDuration"
-                                placeholder={'3h20m20s'}
                                 value={values.tokenExpirationDuration}
                                 onChange={onChange}
                                 onBlur={handleBlur}
@@ -233,10 +237,6 @@ function MachineAccessIntegrationForm({
                                                                         <Button
                                                                             type="button"
                                                                             aria-label="More info for name field"
-                                                                            onClick={(e) =>
-                                                                                e.preventDefault()
-                                                                            }
-                                                                            aria-describedby="simple-form-name-02"
                                                                             className="pf-c-form__group-label-help"
                                                                             style={{
                                                                                 backgroundColor:

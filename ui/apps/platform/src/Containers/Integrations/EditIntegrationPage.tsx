@@ -22,7 +22,7 @@ function EditIntegrationPage(): ReactElement {
     return (
         <IntegrationPage
             title={
-                getIsMachineAccessConfig(source, type) ? 'Manage configuration' : 'Edit Integration'
+                getIsMachineAccessConfig(source, type) ? 'Manage configuration' : 'Edit integration'
             }
             name={integration.name}
         >

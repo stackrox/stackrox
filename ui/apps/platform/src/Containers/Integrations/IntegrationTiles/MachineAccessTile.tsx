@@ -1,5 +1,6 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { fetchMachineAccessConfigs } from 'services/MachineAccessService';
+import React, { ReactElement } from 'react';
+import { selectors } from 'reducers';
+import { useSelector } from 'react-redux';
 import IntegrationTile from './IntegrationTile';
 import {
     authenticationTokensSource as source,
@@ -9,23 +10,13 @@ import {
 
 function MachineAccessConfigTile(): ReactElement {
     const { image, label, type } = descriptor;
-
-    const [numIntegrations, setNumIntegrations] = useState(0);
-
-    useEffect(() => {
-        fetchMachineAccessConfigs()
-            .then(({ response: { configs } }) => {
-                setNumIntegrations(configs.length);
-            })
-            .catch(() => {});
-    }, []);
-
+    const integrations = useSelector(selectors.getMachineAccessConfigs);
     return (
         <IntegrationTile
             image={image}
             label={label}
             linkTo={getIntegrationsListPath(source, type)}
-            numIntegrations={numIntegrations}
+            numIntegrations={integrations.length}
         />
     );
 }
