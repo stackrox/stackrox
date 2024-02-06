@@ -302,12 +302,14 @@ teardown_file() {
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
+    run ! verify_central_scannerV4_env_var_set "stackrox"
 
     info "Upgrading StackRox using HEAD deployment bundles"
     _deploy_stackrox
 
     verify_scannerV2_deployed
     verify_scannerV4_deployed
+    verify_central_scannerV4_env_var_set "stackrox"
 }
 
 verify_no_scannerV4_deployed() {
