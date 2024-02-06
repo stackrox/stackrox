@@ -69,7 +69,12 @@ jobs:
           exit 1
         fi
 
-        go run ./scanner/cmd/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+        # Do not use the make target, as there may be some incompatibilities.
+        # See https://github.com/stackrox/stackrox/pull/9227.
+        cd scanner
+        go build -trimpath -o bin/updater ./cmd/updater
+        go clean -cache -modcache
+        ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
         gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
 
   send-notification:

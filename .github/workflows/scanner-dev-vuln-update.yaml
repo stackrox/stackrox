@@ -37,6 +37,7 @@ jobs:
         fi
 
         make -C scanner bin/updater
+        go clean -cache -modcache
         ./scanner/bin/updater -output-dir=dev
         gsutil cp -r "dev" "gs://scanner-v4-test/vulnerability-bundles"
 
