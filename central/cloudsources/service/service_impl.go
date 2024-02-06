@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cloudsources/datastore"
+	"github.com/stackrox/rox/central/cloudsources/manager"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -45,7 +46,8 @@ var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
 
-	ds datastore.DataStore
+	ds  datastore.DataStore
+	mgr manager.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -126,6 +128,8 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
 		return nil, errors.Wrapf(err, "failed to create cloud source %q", v1CloudSource.GetName())
 	}
+	// Short-circuit the cloud sources manager to ensure the latest changes are propagated.
+	s.mgr.ShortCircuit()
 	return &v1.CreateCloudSourceResponse{CloudSource: storagetov1.CloudSource(storageCloudSource)}, nil
 }
 
@@ -152,6 +156,8 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
 		return nil, errors.Wrapf(err, "failed to update cloud source %q", v1CloudSource.GetId())
 	}
+	// Short-circuit the cloud sources manager to ensure the latest changes are propagated.
+	s.mgr.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
@@ -165,6 +171,8 @@ func (s *serviceImpl) DeleteCloudSource(ctx context.Context, request *v1.DeleteC
 	if err := s.ds.DeleteCloudSource(ctx, resourceID); err != nil {
 		return nil, errors.Wrapf(err, "failed to delete cloud source %q", resourceID)
 	}
+	// Short-circuit the cloud sources manager to ensure the latest changes are propagated.
+	s.mgr.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 

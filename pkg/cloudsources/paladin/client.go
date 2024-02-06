@@ -100,6 +100,7 @@ func (p *paladinTransportWrapper) RoundTrip(req *http.Request) (*http.Response, 
 func NewClient(cfg *storage.CloudSource) *Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
+	retryClient.Logger = nil
 	retryClient.HTTPClient.Transport = &paladinTransportWrapper{
 		baseTransport: proxy.RoundTripper(),
 		token:         cfg.GetCredentials().GetSecret(),
