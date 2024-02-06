@@ -22,6 +22,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
+import useAuthStatus from 'hooks/useAuthStatus';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
@@ -67,9 +68,11 @@ function ClustersTablePanel({
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForDelegatedScanning = hasReadAccess('Administration');
-    const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
     const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
+    const { currentUser } = useAuthStatus();
+    const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
@@ -170,7 +173,7 @@ function ClustersTablePanel({
                         </Button>
                     </div>
                 )}
-                {hasWriteAccessForIntegration && (
+                {hasAdminRole && (
                     <div className="flex items-center ml-1">
                         <Button variant="tertiary">
                             <ManageTokensButton />
