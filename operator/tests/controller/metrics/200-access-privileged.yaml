@@ -1,0 +1,40 @@
+# This pod definition should match its siblings, except for the name, serviceAccount and command.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator-metrics-privileged
+  labels:
+    test: metrics-access
+spec:
+  restartPolicy: Never
+  containers:
+  - name: run
+    image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    args:
+    - bash
+    - "-c"
+    # TODO(ROX-22287): use $TEST_NAMESPACE from Makefile once templating is supported
+    - >-
+        operator_ns="stackrox-operator"
+        url="https://rhacs-operator-controller-manager-metrics-service.$operator_ns.svc.cluster.local:8443/metrics";
+        set -eu;
+        token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)";
+        for attempt in $(seq 5); do
+          echo Attempt $attempt:;
+          curl --insecure --fail -H "Authorization: Bearer $token" "$url" > /tmp/response;
+          echo beginning of response body:;
+          head /tmp/response;
+          echo checking response body:;
+          if grep -Ei "^# TYPE " /tmp/response; then exit 0; fi;
+          sleep 1;
+        done
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+  serviceAccount: operator-metrics-privileged
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
