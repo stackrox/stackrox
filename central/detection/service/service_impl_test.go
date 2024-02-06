@@ -711,3 +711,29 @@ func TestGetAppliedNetpolsForDeployment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, actual.Policies, 1)
 }
+
+func TestGetPolicyNamesAsSlice(t *testing.T) {
+	cases := map[string]struct {
+		policies map[string]*storage.NetworkPolicy
+		expected []string
+	}{
+		"No policies": {
+			policies: make(map[string]*storage.NetworkPolicy),
+			expected: nil,
+		},
+		"Mutliple policies": {
+			policies: map[string]*storage.NetworkPolicy{"1": {Name: "1"}, "2": {Name: "2"}},
+			expected: []string{"1", "2"},
+		},
+		"Nil policy": {
+			policies: map[string]*storage.NetworkPolicy{"1": {Name: "1"}, "2": nil},
+			expected: []string{"1"},
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			actual := getPolicyNamesAsSlice(c.policies)
+			assert.Equal(t, c.expected, actual)
+		})
+	}
+}
