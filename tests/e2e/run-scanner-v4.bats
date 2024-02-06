@@ -209,6 +209,8 @@ teardown_file() {
     export OUTPUT_FORMAT=helm
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_V4_SUPPORT=true
     _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
 
     verify_scannerV2_deployed "$central_namespace"
