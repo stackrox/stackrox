@@ -73,6 +73,17 @@ setup_file() {
 
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
+
+    export MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG:-}
+    info "Overriding MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+
+    # Taken from operator/Makefile
+    export OPERATOR_VERSION_TAG=${OPERATOR_VERSION_TAG:-}
+    if [[ -z "${OPERATOR_VERSION_TAG}" && -n "${MAIN_IMAGE_TAG:-}" ]]; then
+        OPERATOR_VERSION_TAG=$(echo "${MAIN_IMAGE_TAG}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
+    fi
+
+    setup_default_TLS_certs
 }
 
 test_case_no=0
@@ -97,9 +108,6 @@ setup() {
     fi
 
     test_case_no=$(( test_case_no + 1))
-
-    export MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG:-}
-    info "Overriding MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     export ROX_SCANNER_V4=true
 }
@@ -157,10 +165,6 @@ teardown_file() {
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
-    if [[ "$CI" = "true" ]]; then
-        setup_default_TLS_certs
-    fi
-
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     local main_image_tag="${MAIN_IMAGE_TAG}"
