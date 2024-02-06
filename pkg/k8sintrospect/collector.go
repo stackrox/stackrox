@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/scheme"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
 
@@ -171,17 +173,17 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 	sinceSeconds := int64(time.Since(c.since).Seconds())
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.State.Running != nil {
-			podLogOpts := &v1.PodLogOptions{
-				Container:    container.Name,
-				SinceSeconds: &[]int64{sinceSeconds}[0],
-				TailLines:    &[]int64{maxLogLines}[0],
-			}
+			podLogOpts := c.podLogOptions()
+			podLogOpts.Container = container.Name
+			podLogOpts.SinceSeconds = pointer.Int64(sinceSeconds)
+
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v\n", err))
 				logsData = appendDebugError(logsData, err)
 			} else {
-				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
+				logsData = utils.IfThenElse(c.cfg.IgnoreLogLimits,
+					logsData, truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff))
 			}
 
 			if err := c.emitFile(pod, fmt.Sprintf("-logs-%s.txt", container.Name), logsData); err != nil {
@@ -196,18 +198,18 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 				sinceSeconds = int64(time.Since(c.since).Seconds())
 			}
 
-			podLogOpts := &v1.PodLogOptions{
-				Container:    container.Name,
-				Previous:     true,
-				SinceSeconds: &[]int64{sinceSeconds}[0],
-				TailLines:    &[]int64{maxLogLines}[0],
-			}
+			podLogOpts := c.podLogOptions()
+			podLogOpts.Container = container.Name
+			podLogOpts.SinceSeconds = pointer.Int64(sinceSeconds)
+			podLogOpts.Previous = true
+
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v\n", err))
 				logsData = appendDebugError(logsData, err)
 			} else {
-				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
+				logsData = utils.IfThenElse(c.cfg.IgnoreLogLimits,
+					logsData, truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff))
 			}
 
 			if err := c.emitFile(pod, fmt.Sprintf("-logs-%s-previous.txt", container.Name), logsData); err != nil {
@@ -232,6 +234,15 @@ func (c *collector) recordError(err error) {
 	if err != nil {
 		c.errors = append(c.errors, err)
 	}
+}
+
+func (c *collector) podLogOptions() *v1.PodLogOptions {
+	opts := &v1.PodLogOptions{}
+	if c.cfg.IgnoreLogLimits {
+		return opts
+	}
+	opts.TailLines = pointer.Int64(maxLogLines)
+	return opts
 }
 
 func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClient dynamic.NamespaceableResourceInterface) error {
