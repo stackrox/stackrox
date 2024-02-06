@@ -120,9 +120,7 @@ teardown() {
         fi
     fi
 
-    for namespace in "${namespaces[@]}"; do
-        run remove_existing_stackrox_resources "${namespace}"
-    done
+    run remove_existing_stackrox_resources "${namespaces[@]}"
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
