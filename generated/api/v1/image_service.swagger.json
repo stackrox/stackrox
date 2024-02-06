@@ -11,6 +11,52 @@
     "application/json"
   ],
   "paths": {
+    "/v1/export/images": {
+      "get": {
+        "operationId": "ImageService_ExportImages",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1ExportImageResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/runtimeStreamError"
+                }
+              },
+              "title": "Stream result of v1ExportImageResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "timeout",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
     "/v1/images": {
       "get": {
         "summary": "ListImages returns all the images.",
@@ -530,6 +576,31 @@
           "format": "int32"
         },
         "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpcCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "httpCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "httpStatus": {
           "type": "string"
         },
         "details": {
@@ -1567,6 +1638,14 @@
     },
     "v1Empty": {
       "type": "object"
+    },
+    "v1ExportImageResponse": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/storageImage"
+        }
+      }
     },
     "v1GetWatchedImagesResponse": {
       "type": "object",

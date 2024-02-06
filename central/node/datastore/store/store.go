@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -16,6 +17,7 @@ type Store interface {
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
 	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error
 
 	Exists(ctx context.Context, id string) (bool, error)
 

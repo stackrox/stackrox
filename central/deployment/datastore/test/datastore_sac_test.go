@@ -10,6 +10,7 @@ import (
 	deploymentTypes "github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -604,6 +605,40 @@ func (s *deploymentDatastoreSACSuite) TestUnrestrictedSearchRawDeployments() {
 	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runTestSearchRawDeployments(c)
+		})
+	}
+}
+
+func (s *deploymentDatastoreSACSuite) runTestWalkByQuery(testCase testutils.SACSearchTestCase, query *v1.Query) {
+	ctx := s.testContexts[testCase.ScopeKey]
+
+	var deployments []sac.NamespaceScopedObject
+	err := s.datastore.WalkByQuery(ctx, query, func(d *storage.Deployment) error {
+		deployments = append(deployments, d)
+		return nil
+	})
+	s.NoError(err)
+
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), deployments)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, testCase.Results, resultCounts)
+}
+
+func (s *deploymentDatastoreSACSuite) TestScopedWalkByQuery() {
+	s.setupSearchTest()
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runTestWalkByQuery(c, searchPkg.EmptyQuery())
+			s.runTestWalkByQuery(c, searchPkg.NewQueryBuilder().AddRegexes(searchPkg.DeploymentID, ".*").ProtoQuery())
+		})
+	}
+}
+
+func (s *deploymentDatastoreSACSuite) TestUnrestrictedWalkByQuery() {
+	s.setupSearchTest()
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runTestWalkByQuery(c, searchPkg.EmptyQuery())
+			s.runTestWalkByQuery(c, searchPkg.NewQueryBuilder().AddRegexes(searchPkg.DeploymentID, ".*").ProtoQuery())
 		})
 	}
 }

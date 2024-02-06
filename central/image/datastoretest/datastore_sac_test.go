@@ -446,6 +446,33 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 	})
 }
 
+func (s *imageDatastoreSACSuite) TestWalkByQuery() {
+	images, cleanup, setupErr := s.setupReadTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+	s.Require().True(len(images) > 1)
+	image1 := images[0]
+	image2 := images[1]
+
+	s.runReadTest("TestWalkByQuery", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		var foundAtLeastOne bool
+		err := s.datastore.WalkByQuery(ctx, nil, func(image *storage.Image) error {
+			foundAtLeastOne = true
+			matchedImage := image1
+			if image.GetId() == image2.GetId() {
+				matchedImage = image2
+			}
+			s.Equal(matchedImage.GetId(), image.GetId())
+			s.Equal(matchedImage.GetComponents(), image.GetComponents())
+			s.Equal(matchedImage.GetCves(), image.GetCves())
+			return nil
+		})
+		s.Require().NoError(err)
+		s.Equal(testCase.ExpectedFound, foundAtLeastOne)
+	})
+}
+
 func (s *imageDatastoreSACSuite) runReadTest(testName string, prefix string, testFunc func(c testutils.SACCrudTestCase)) {
 	imageGraphBefore := graphDBTestUtils.GetImageGraph(
 		sac.WithAllAccess(context.Background()),

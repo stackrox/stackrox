@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -19,6 +20,7 @@ type Store interface {
 	// GetImageMetadata and GetImageMetadata returns the image without scan/component data.
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
 	GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, []int, error)
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error
 
 	Upsert(ctx context.Context, image *storage.Image) error
 	Delete(ctx context.Context, id string) error

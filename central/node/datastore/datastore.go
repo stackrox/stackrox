@@ -30,6 +30,7 @@ type DataStore interface {
 	GetNode(ctx context.Context, id string) (*storage.Node, bool, error)
 	GetNodesBatch(ctx context.Context, ids []string) ([]*storage.Node, error)
 	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, error)
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error
 
 	UpsertNode(ctx context.Context, node *storage.Node) error
 
