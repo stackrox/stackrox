@@ -740,7 +740,7 @@ function launch_sensor {
         fi
         sensor_namespace="${NAMESPACE_OVERRIDE}"
         echo "Changing namespace to ${NAMESPACE_OVERRIDE} due to NAMESPACE_OVERRIDE set in the environment."
-        find "${k8s_dir}/sensor-deploy" -name '*.yaml' -depth 1 | while read -r file; do
+        find "${k8s_dir}/sensor-deploy" -maxdepth 2 -name '*.yaml' | while read -r file; do
           sed -i'.original' -e 's/namespace: stackrox/namespace: '"${sensor_namespace}"'/g' "${file}"
         done
         sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"
