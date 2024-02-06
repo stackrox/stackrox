@@ -5,6 +5,7 @@ on:
   push:
     branches:
     - master
+    - ross/**
 
 jobs:
   upload-dev-vulnerabilities:
@@ -31,6 +32,7 @@ jobs:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
       run: |
+        exit 1
         if [ ! -d "scanner" ]; then
           echo "Scanner directory not found. Terminating current step."
           exit 1
@@ -49,4 +51,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
