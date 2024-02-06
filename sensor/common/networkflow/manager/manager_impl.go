@@ -182,17 +182,31 @@ func (c *connection) String() string {
 // IsExternal returns true when IPv4 does not belong to the private IP addresses; false otherwise.
 // Error is returned when IP address is malformed
 func (c *connection) IsExternal() (bool, error) {
-	if !c.remote.IsValid() {
-		return true, errors.New("remote IP address invalid")
+	addr, err := c.getRemoteIPAddress()
+	if err != nil {
+		log.Debugf("Connection has invalid IP address (%q) and IP network (%q). "+
+			"Assuming connection to be external.",
+			c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
+		return true, errors.New("remote has invalid IP address and invalid IP network address")
 	}
-	// If collector hides the IP, then the entity is most probably from outside of the cluster
-	if c.remote.IPAndPort.Address.String() == "255.255.255.255" {
-		return true, nil
+	return addr.IsPublic(), nil
+}
+
+// getIPAddress returns the IP address of the connection remote.
+// If that IP is unset, it returns the address of the IP Network to which the remote belongs.
+// If both are unavaliable, an error is returned.
+// This check of both is required, because Collector reports the IP addresses
+// either as IPAndPort.Address, or IPAndPort.IPNetwork. The former is used in most cases, but sometimes
+// (usually on OCP) the latter is provided. Analyzing only one of those two sources may lead to incorrectly reporting
+// a connection as external on the network graph.
+func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
+	if c.remote.IPAndPort.IsValid() {
+		return c.remote.IPAndPort.Address, nil
 	}
-	if c.remote.IPAndPort.Address.IsPublic() {
-		return true, nil
+	if c.remote.IPAndPort.IPNetwork.IsValid() {
+		return c.remote.IPAndPort.IPNetwork.IP(), nil
 	}
-	return false, nil
+	return net.IPAddress{}, errors.New("unable to find valid IP address data")
 }
 
 type processInfo struct {
@@ -523,19 +537,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
-			// Decide if the unknow connection is internal or external
-			dirPrefix := "Outgoing connection from"
-			if conn.incoming {
-				dirPrefix = "Incoming connection to"
-			}
-
 			entityType := networkgraph.InternetEntity()
-			ext, err := conn.IsExternal()
+			isExternal, err := conn.IsExternal()
 			if err != nil { // IP is malformed or unknown - assume it is external and log a warning
-				log.Warnf("%s container %s/%s. Local: %s, Remote: %v. ",
-					dirPrefix, container.Namespace, container.ContainerName, conn.local.DebugIPv4String(), conn.remote.IPAndPort.DebugIPv4String())
+				log.Warnf("Analyzing IP address failed: %v", err)
 			}
-			if !ext {
+			if !isExternal {
 				entityType = networkgraph.InternalEntities()
 			}
 
@@ -547,7 +554,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				},
 			}
 			entitiesName := "Internal Entities"
-			if ext {
+			if isExternal {
 				entitiesName = "External Entities"
 			}
 			if conn.incoming {
