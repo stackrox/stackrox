@@ -36,5 +36,6 @@ spec:
   serviceAccount: operator-metrics-unprivileged
   securityContext:
     runAsNonRoot: true
+    runAsUser: 1000
     seccompProfile:
       type: RuntimeDefault
