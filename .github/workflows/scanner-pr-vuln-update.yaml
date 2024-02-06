@@ -47,4 +47,4 @@ jobs:
         # Replace / with -, so the branch name isn't truncated when pushed to GCS.
         dir=${branch////-}
         ./scanner/bin/updater -output-dir="$dir"
-        gsutil cp -r "$branch" "gs://scanner-v4-test/vulnerability-bundles"
+        gsutil cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles"
