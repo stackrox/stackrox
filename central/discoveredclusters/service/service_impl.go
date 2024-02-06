@@ -94,11 +94,9 @@ func (s *serviceImpl) ListDiscoveredClusters(ctx context.Context, request *v1.Li
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list discovered clusters")
 	}
-	v1DiscoveredClusters := make([]*v1.DiscoveredCluster, 0, len(discoveredClusters))
-	for _, dc := range discoveredClusters {
-		v1DiscoveredClusters = append(v1DiscoveredClusters, storagetov1.DiscoveredCluster(dc))
-	}
-	return &v1.ListDiscoveredClustersResponse{Clusters: v1DiscoveredClusters}, nil
+	return &v1.ListDiscoveredClustersResponse{
+		Clusters: storagetov1.DiscoveredClusterList(discoveredClusters...),
+	}, nil
 }
 
 func getQueryBuilderFromFilter(filter *v1.DiscoveredClustersFilter) *search.QueryBuilder {
