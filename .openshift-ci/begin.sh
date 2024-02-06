@@ -20,7 +20,7 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
     exit 0 # not fatal but worth highlighting
 fi
 
-if [[ "${JOB_NAME}" =~ ^branch.*ocp-4-11-merge-(qa|ui) ]]; then
+if [[ "${JOB_NAME}" =~ ^branch.*ocp-4-14-merge-(qa|ui) ]]; then
     info "Forced failure to unblock stuck CI jobs"
     exit 1
 fi
