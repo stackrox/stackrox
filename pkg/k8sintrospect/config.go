@@ -17,7 +17,8 @@ type ObjectConfig struct {
 
 // Config configures the behavior of the Kubernetes self-diagnosis feature.
 type Config struct {
-	Namespaces []string
-	Objects    []ObjectConfig
-	PathPrefix string
+	Namespaces      []string
+	Objects         []ObjectConfig
+	PathPrefix      string
+	IgnoreLogLimits bool
 }

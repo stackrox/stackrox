@@ -106,6 +106,10 @@ var (
 
 func init() {
 	mainClusterConfig.PathPrefix = centralClusterPrefix
+	// For the main cluster (i.e. the collection for the Central cluster) we explicitly ignore the log file limits.
+	// The limitation is not required since the GRPC message isn't affected by it, and has proven to be unhelpful
+	// in cases where the logs of Central are quite big (e.g. in larger scale environments).
+	mainClusterConfig.IgnoreLogLimits = true
 }
 
 // Service provides the interface to the gRPC service for debugging
