@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/pkg/discoveredclusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 )
 
 // GetDiscoveredCluster returns a mock discovered cluster.

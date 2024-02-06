@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/convert/typetostorage"
-	"github.com/stackrox/rox/pkg/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -76,7 +76,7 @@ func (s *datastorePostgresTestSuite) TestGetNonExistingDiscoveredCluster() {
 
 func (s *datastorePostgresTestSuite) TestUpsertAndGetDiscoveredCluster() {
 	fakeCluster := fixtures.GetDiscoveredCluster()
-	err := s.datastore.UpsertDiscoveredClusters(s.writeCtx, toList(fakeCluster))
+	err := s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeCluster)
 	s.Require().NoError(err)
 
 	expectedCluster := typetostorage.DiscoveredCluster(fakeCluster)
@@ -99,22 +99,22 @@ func (s *datastorePostgresTestSuite) TestListDiscoveredClusters() {
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertDiscoveredClusters_InvalidArgument() {
-	err := s.datastore.UpsertDiscoveredClusters(s.writeCtx, toList(nil))
+	err := s.datastore.UpsertDiscoveredClusters(s.writeCtx, nil)
 	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	fakeCluster := fixtures.GetDiscoveredCluster()
 	fakeCluster.ID = ""
-	err = s.datastore.UpsertDiscoveredClusters(s.writeCtx, toList(fakeCluster))
+	err = s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeCluster)
 	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	fakeCluster = fixtures.GetDiscoveredCluster()
 	fakeCluster.Name = ""
-	err = s.datastore.UpsertDiscoveredClusters(s.writeCtx, toList(fakeCluster))
+	err = s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeCluster)
 	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	fakeCluster = fixtures.GetDiscoveredCluster()
 	fakeCluster.CloudSourceID = ""
-	err = s.datastore.UpsertDiscoveredClusters(s.writeCtx, toList(fakeCluster))
+	err = s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeCluster)
 	s.Assert().ErrorIs(err, errox.InvalidArgs)
 }
 
@@ -133,10 +133,6 @@ func (s *datastorePostgresTestSuite) TestDeleteDiscoveredCluster() {
 func (s *datastorePostgresTestSuite) addDiscoveredClusters(num int) {
 	fakeClusters := fixtures.GetManyDiscoveredClusters(num)
 	s.Require().NoError(s.datastore.UpsertDiscoveredClusters(s.writeCtx, fakeClusters))
-}
-
-func toList(dc *discoveredclusters.DiscoveredCluster) []*discoveredclusters.DiscoveredCluster {
-	return []*discoveredclusters.DiscoveredCluster{dc}
 }
 
 func toStorageList(dc []*discoveredclusters.DiscoveredCluster) []*storage.DiscoveredCluster {

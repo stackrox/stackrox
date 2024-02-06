@@ -3,7 +3,7 @@ package typetostorage
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 )
 
 // DiscoveredCluster converts the given discoveredclusters.DiscoveredCluster

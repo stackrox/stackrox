@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -48,7 +48,7 @@ func (ds *datastoreImpl) ListDiscoveredClusters(ctx context.Context, query *v1.Q
 }
 
 func (ds *datastoreImpl) UpsertDiscoveredClusters(ctx context.Context,
-	discoveredClusters []*discoveredclusters.DiscoveredCluster,
+	discoveredClusters ...*discoveredclusters.DiscoveredCluster,
 ) error {
 	upsertList := []*storage.DiscoveredCluster{}
 	for _, dc := range discoveredClusters {

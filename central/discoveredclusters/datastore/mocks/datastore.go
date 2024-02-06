@@ -15,7 +15,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	discoveredclusters "github.com/stackrox/rox/pkg/discoveredclusters"
+	discoveredclusters "github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	gomock "go.uber.org/mock/gomock"
 )
 
