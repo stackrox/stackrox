@@ -218,15 +218,27 @@ teardown_file() {
     verify_scannerV4_indexer_deployed "$sensor_namespace"
 }
 
-@test "Fresh installation using roxctl with Scanner V4 disabled" {
+@test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="false"
-    _deploy_stackrox
+    _deploy_stackrox # This generated deployment bundles for central, sensor and scanner.
 
-    verify_scannerV2_deployed "stackrox"
-    verify_no_scannerV4_deployed "stackrox"
+    verify_scannerV2_deployed
+    verify_no_scannerV4_deployed
+
+    local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
+    assert [ -d "${scanner_bundle}" ]
+    assert [ -d "${scanner_bundle}/scanner-v4" ]
+
+    echo "Deploying Scanner V4..."
+    if [[ -x "${scanner_bundle}/scanner-v4/scripts/setup.sh" ]]; then
+        "${scanner_bundle}/scanner-v4/scripts/setup.sh"
+    fi
+    ${ORCH_CMD} apply -R -f "${scanner_bundle}/scanner-v4"
+
+    verify_scannerV4_deployed
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
