@@ -107,7 +107,7 @@ function ViewScanConfigDetail({
                                         component={Button}
                                         onClick={onTriggerRescan}
                                         isLoading={isTriggeringRescan}
-                                        isDisabled={!scanConfig || isTriggeringRescan}
+                                        isDisabled={isTriggeringRescan}
                                     >
                                         Re-scan
                                     </Button>

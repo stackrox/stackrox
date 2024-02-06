@@ -10,7 +10,7 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Caption, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -133,6 +133,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
             <Divider component="div" />
             <Form className="pf-u-py-lg pf-u-px-lg">
                 <TableComposable variant="compact">
+                    <Caption>At least one profile is required.</Caption>
                     <Thead noWrap>
                         <Tr>
                             <Th

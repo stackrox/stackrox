@@ -447,13 +447,13 @@ export function getScanConfigsCount(): Promise<number> {
 }
 
 export function deleteScanConfig(scanConfigId: string) {
-    return axios.delete<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
+    return axios.delete<Empty>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
         return response.data;
     });
 }
 
 export function runComplianceScanConfiguration(scanConfigId: string) {
-    return axios.post<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}/run`).then((response) => {
+    return axios.post<Empty>(`${scanScheduleUrl}/${scanConfigId}/run`).then((response) => {
         return response.data;
     });
 }

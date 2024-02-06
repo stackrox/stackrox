@@ -44,6 +44,8 @@ const validationSchema = yup.object().shape({
                     : schema.notRequired()
             ),
     }),
+    clusters: yup.array().min(1),
+    profiles: yup.array().min(1),
 });
 
 function useFormikScanConfig(initialFormValues): FormikProps<ScanConfigFormValues> {
