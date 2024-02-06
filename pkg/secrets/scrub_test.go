@@ -294,8 +294,10 @@ type oneOfImplementation struct {
 
 func (o *oneOfImplementation) isOneOf() {}
 
-// validateStructTagsOnType returns error if a non-string struct field type has tag scrub:always or
-// if struct field is of type interface{}
+// validateStructTagsOnType returns error if any one of the following is true:
+// - a non-string struct field type has tag scrub:always
+// - a non-boolean field has tag scrub:disableDependentIfTrue
+// - if struct field is of type interface{}
 func validateStructTagsOnType(ty reflect.Type) error {
 	visited := make(map[reflect.Type]struct{})
 	return validateStructTagsOnTypeHelper(ty, visited)
@@ -326,6 +328,11 @@ func validateStructTagsOnTypeHelper(ty reflect.Type, visited map[reflect.Type]st
 			if fieldType.Kind() != reflect.String || fieldType != reflect.TypeOf("") {
 				return errors.Errorf("%s:%s is not allowed on type %s",
 					scrubStructTag, scrubTagAlways, fieldType)
+			}
+		case scrubTagDisableDependentIfTrue:
+			if fieldType.Kind() != reflect.Bool {
+				return errors.Errorf("%s:%s is not allowed on type %s",
+					scrubStructTag, scrubTagDisableDependentIfTrue, fieldType)
 			}
 		}
 	}

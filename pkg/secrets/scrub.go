@@ -17,6 +17,8 @@ const (
 	scrubTagMapValues = "map-values"
 	// scrubTagDependent is a scrub tag type used to indicate a field is dependent on credentials and could be used to exfiltrate credentials
 	scrubTagDependent = "dependent"
+	// scrubTagDisableDependentIfTrue is a scrub tag type used to indicate if dependent scrub reconcile should be disabled for the struct
+	scrubTagDisableDependentIfTrue = "disableDependentIfTrue"
 	// ScrubReplacementStr is a string format of a masked credential
 	ScrubReplacementStr = "******"
 )
