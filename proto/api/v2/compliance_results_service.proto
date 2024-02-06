@@ -127,8 +127,8 @@ message CountComplianceScanResults {
 }
 
 message ComplianceScanResultsRequest {
-    string scan_config_name = 1;
-    RawQuery query = 2;
+  string scan_config_name = 1;
+  RawQuery query = 2;
 }
 
 service ComplianceResultsService {

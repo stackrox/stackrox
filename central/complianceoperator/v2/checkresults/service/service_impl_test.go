@@ -136,7 +136,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			tc.setMocks()
 
-			results, err := s.service.GetComplianceScanResults(s.ctx, tc.query)
+			results, err := s.service.GetComplianceScanResults(s.ctx, &apiV2.ComplianceScanResultsRequest{Query: tc.query})
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
 			} else {
@@ -174,6 +174,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster2),
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster3),
 				}
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -191,6 +192,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 				results := []*datastore.ResourceResultCountByClusterScan{
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
 				}
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
