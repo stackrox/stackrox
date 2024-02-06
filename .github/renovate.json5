@@ -13,7 +13,9 @@
     // The time was selected (with the help of https://time.fyi/timezones) so that Renovate isn't active during
     // business hours in Germany and US West Coast. This way, after we merge a PR, a new one does not pop up immediately
     // after that.
-    "after 3am and before 7am",
+    // TODO: re-enable this after testing
+    // "after 3am and before 7am",
+    "at any time",
   ],
   "tekton": {
     "fileMatch": [
