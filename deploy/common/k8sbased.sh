@@ -494,6 +494,7 @@ function launch_sensor {
     local extra_json_config=''
     local extra_helm_config=()
 
+    echo "[k8sbased.sh launch_sensor]COLLECTION_METHOD=${COLLECTION_METHOD:-}"
     verify_orch
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then

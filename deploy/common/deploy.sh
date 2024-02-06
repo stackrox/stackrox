@@ -114,6 +114,7 @@ function get_cluster_zip {
     COLLECTION_METHOD="$7"
     EXTRA_JSON="$8"
 
+    echo "COLLECTION_METHOD=${COLLECTION_METHOD:-}"
     COLLECTION_METHOD_ENUM="default"
     if [[ "$COLLECTION_METHOD" == "core_bpf" ]]; then
        COLLECTION_METHOD_ENUM="CORE_BPF"
@@ -124,6 +125,7 @@ function get_cluster_zip {
     else
       echo "Unknown collection method '$COLLECTION_METHOD', using default collection-method."
     fi
+    echo "COLLECTION_METHOD_ENUM=${COLLECTION_METHOD_ENUM:-}"
 
     echo "Creating a new cluster"
     export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"

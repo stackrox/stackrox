@@ -18,6 +18,7 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../qa-tests-backend/scripts/lib.sh
 source "$ROOT/qa-tests-backend/scripts/lib.sh"
 
+echo "COLLECTION_METHOD=${COLLECTION_METHOD:-}"
 set -euo pipefail
 
 run_part_1() {
