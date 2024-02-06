@@ -124,14 +124,6 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			wantErr: `invalid hash id: "foobar"`,
 		},
 		{
-			name: "when empty request",
-			args: args{req: &v4.CreateIndexReportRequest{
-				HashId:          "foobar",
-				ResourceLocator: nil,
-			}},
-			wantErr: `invalid hash id: "foobar"`,
-		},
-		{
 			name: "when empty resource locator",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
@@ -228,6 +220,41 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	r, err = s.service.GetIndexReport(s.ctx, req)
 	s.NoError(err)
 	s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state", Contents: &v4.Contents{}}, r)
+}
+
+func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
+	req := &v4.GetOrCreateIndexReportRequest{
+		HashId: hashID,
+		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
+			ContainerImage: &v4.ContainerImageLocator{
+				Url:      "https://quay.io/stackrox-io/test/image:latest",
+				Username: "",
+				Password: "",
+			},
+		},
+	}
+
+	s.Run("create when index report does not exist", func() {
+		s.indexerMock.EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(nil, false, nil)
+		s.indexerMock.EXPECT().
+			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(&claircore.IndexReport{State: "sample state"}, nil)
+		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
+		s.NoError(err)
+		// Just make sure something is returned. Other tests ensure the conversion is correct.
+		s.NotNil(got)
+	})
+	s.Run("get when index report does exist", func() {
+		s.indexerMock.EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(&claircore.IndexReport{State: "sample state"}, true, nil)
+		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
+		s.NoError(err)
+		// Just make sure something is returned. Other tests ensure the conversion is correct.
+		s.NotNil(got)
+	})
 }
 
 func (s *indexerServiceTestSuite) Test_HasIndexReport() {

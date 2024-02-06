@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -23,9 +24,13 @@ import (
 
 var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	or.Or(idcheck.CentralOnly(), idcheck.SensorsOnly(), idcheck.ScannerV4MatcherOnly()): {
-		"/scanner.v4.Indexer/CreateIndexReport",
 		"/scanner.v4.Indexer/GetIndexReport",
 		"/scanner.v4.Indexer/HasIndexReport",
+	},
+	or.Or(idcheck.CentralOnly(), idcheck.SensorsOnly()): {
+		// Matcher should never attempt to create an index report.
+		"/scanner.v4.Indexer/CreateIndexReport",
+		"/scanner.v4.Indexer/GetOrCreateIndexReport",
 	},
 })
 
@@ -106,6 +111,35 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	}
 	indexReport.HashId = req.GetHashId()
 	return indexReport, nil
+}
+
+func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.GetOrCreateIndexReportRequest) (*v4.IndexReport, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.GetOrCreateIndexReport",
+		"hash_id", req.GetHashId(),
+	)
+
+	ir, err := s.GetIndexReport(ctx, &v4.GetIndexReportRequest{
+		HashId: req.GetHashId(),
+	})
+	switch {
+	case errors.Is(err, nil):
+		return ir, nil
+	case errors.Is(err, errox.NotFound):
+		// OK
+	default:
+		return nil, err
+	}
+
+	// TODO We currently only support container images, hence we assume the resource
+	//      is of that type. When introducing nodes and other resources, this should
+	//      evolve.
+	return s.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
+		HashId: req.GetHashId(),
+		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
+			ContainerImage: req.GetContainerImage(),
+		},
+	})
 }
 
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {

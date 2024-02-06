@@ -36,13 +36,25 @@ message HasIndexReportResponse {
   bool exists = 1;
 }
 
+message GetOrCreateIndexReportRequest {
+  string hash_id = 1;
+  oneof resource_locator {
+    ContainerImageLocator container_image = 2;
+  }
+}
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
-  // CreateIndexReport creates a manifest for the specified resource.
+  // CreateIndexReport creates an index report for the specified resource and returns the report.
   rpc CreateIndexReport(CreateIndexReportRequest) returns (IndexReport);
 
   // GetIndexReport returns one index report.
   rpc GetIndexReport(GetIndexReportRequest) returns (IndexReport);
+
+  // GetOrCreateIndexReport creates an index report for the specified resource,
+  // if it does not already exist, and returns the report.
+  // This essentially combines GetIndexReport and CreateIndexReport.
+  rpc GetOrCreateIndexReport(GetOrCreateIndexReportRequest) returns (IndexReport);
 
   // HasIndexReport checks if an index report for the specified resource exists.
   rpc HasIndexReport(HasIndexReportRequest) returns (HasIndexReportResponse);
