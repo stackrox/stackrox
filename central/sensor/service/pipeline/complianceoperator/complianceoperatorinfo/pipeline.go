@@ -60,6 +60,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		Version:             msg.GetComplianceOperatorInfo().GetVersion(),
 		ClusterId:           clusterID,
 		ComplianceNamespace: msg.GetComplianceOperatorInfo().GetNamespace(),
+		ReadOnly:            msg.GetComplianceOperatorInfo().GetReadOnly(),
 	}
 
 	if msg.GetComplianceOperatorInfo().GetStatusError() != "" {

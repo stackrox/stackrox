@@ -2,7 +2,9 @@ package complianceoperator
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -12,11 +14,15 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 const (
@@ -293,4 +299,39 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 		}
 	}
 	s.EqualValues(expectedVal, actual)
+}
+
+func TestSomething(t *testing.T) {
+	client, err := NewKubernetesClient()
+	require.NoError(t, err)
+
+	resp, err := isReadOnlyComplianceOperatorAccess(client)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+}
+
+// NewKubernetesClient initializes a new client for interacting with Kubernetes
+func NewKubernetesClient() (*kubernetes.Clientset, error) {
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	// Build the config from the kubeconfig file
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("error building kubeconfig: %w", err)
+	}
+	fmt.Println(config.Username)
+
+	// Create the Kubernetes clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("error creating Kubernetes client: %w", err)
+	}
+
+	return clientset, nil
 }

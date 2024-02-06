@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/authorization/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -165,6 +166,13 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		}
 	}
 
+	isReadOnly, err := isReadOnlyComplianceOperatorAccess(u.client)
+	if err != nil {
+		return &central.ComplianceOperatorInfo{
+			StatusError: err.Error(),
+		}
+	}
+
 	info := &central.ComplianceOperatorInfo{
 		Namespace: complianceOperator.GetNamespace(),
 		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
@@ -173,7 +181,8 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
 			TotalReadyPods: complianceOperator.Status.ReadyReplicas,
 		},
-		Version: version,
+		Version:  version,
+		ReadOnly: isReadOnly,
 	}
 
 	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
@@ -187,6 +196,26 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	}
 
 	return info
+}
+
+// isReadOnlyComplianceOperatorAccess checks if Sensor has permissions to write to compliance operator CRDs.
+func isReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, error) {
+	sar := v1.SelfSubjectAccessReviewSpec{
+		ResourceAttributes: &v1.ResourceAttributes{
+			Verb:     "*",
+			Resource: "*",
+			Group:    "compliance.openshift.io",
+		},
+	}
+	sac := &v1.SelfSubjectAccessReview{
+		Spec: sar,
+	}
+
+	response, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sac, metav1.CreateOptions{})
+	if err != nil {
+		return true, errors.Wrapf(err, "could not perform compliance operator access review")
+	}
+	return !response.Status.Allowed, nil
 }
 
 func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {

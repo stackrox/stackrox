@@ -30,6 +30,7 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *storage.Com
 		ClusterName:  clusterName,
 		Namespace:    integration.GetComplianceNamespace(),
 		StatusErrors: integration.GetStatusErrors(),
+		ReadOnly:     integration.GetReadOnly(),
 	}, clusterFound, nil
 }
 
