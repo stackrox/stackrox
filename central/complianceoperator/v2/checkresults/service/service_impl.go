@@ -225,7 +225,7 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 // what the latest scan is.
 func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceScanResultsResponse, error) {
 	if request.GetScanConfigName() == "" {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name is required")
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
 
 	// Fill in Query.
@@ -268,7 +268,7 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 // GetComplianceScanConfigurationResultsCount returns scan results count
 func (s *serviceImpl) GetComplianceScanConfigurationResultsCount(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.CountComplianceScanResults, error) {
 	if request.GetScanConfigName() == "" {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name is required")
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
 
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
