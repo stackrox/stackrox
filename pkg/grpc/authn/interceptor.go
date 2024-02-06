@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 var (
