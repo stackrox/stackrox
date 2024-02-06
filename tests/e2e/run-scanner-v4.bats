@@ -2,9 +2,35 @@
 
 # Runs Scanner V4 tests using the Bats testing framework.
 
-setup_file() {
+init() {
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
     export ROOT
+
+    if [[ "${CI:-}" != "true" ]]; then
+        # Some friendly environment checks
+        if [[ -z "${BATS_CORE_ROOT:-}" ]]; then
+            echo "WARNING: You better set \$BATS_CORE_ROOT before executing this test suite." >&3
+            exit 1
+        fi
+    fi
+
+    # shellcheck source=../../scripts/ci/lib.sh
+    source "$ROOT/scripts/ci/lib.sh"
+    # shellcheck source=../../scripts/ci/gcp.sh
+    source "$ROOT/scripts/ci/gcp.sh"
+    # shellcheck source=../../scripts/ci/sensor-wait.sh
+    source "$ROOT/scripts/ci/sensor-wait.sh"
+    # shellcheck source=../../tests/e2e/lib.sh
+    source "$ROOT/tests/e2e/lib.sh"
+    # shellcheck source=../../tests/scripts/setup-certs.sh
+    source "$ROOT/tests/scripts/setup-certs.sh"
+    load "$ROOT/scripts/test_helpers.bats"
+
+    require_environment "ORCHESTRATOR_FLAVOR"
+}
+
+setup_file() {
+    init
 
     # Use
     #   export CHART_BASE="/rhacs"
@@ -52,21 +78,9 @@ setup_file() {
 test_case_no=0
 
 setup() {
-    # shellcheck source=../../scripts/ci/lib.sh
-    source "$ROOT/scripts/ci/lib.sh"
-    # shellcheck source=../../scripts/ci/gcp.sh
-    source "$ROOT/scripts/ci/gcp.sh"
-    # shellcheck source=../../scripts/ci/sensor-wait.sh
-    source "$ROOT/scripts/ci/sensor-wait.sh"
-    # shellcheck source=../../tests/e2e/lib.sh
-    source "$ROOT/tests/e2e/lib.sh"
-    # shellcheck source=../../tests/scripts/setup-certs.sh
-    source "$ROOT/tests/scripts/setup-certs.sh"
-    load "$ROOT/scripts/test_helpers.bats"
-
+    init
     set -euo pipefail
 
-    require_environment "ORCHESTRATOR_FLAVOR"
     export_test_environment
     if [[ "$CI" = "true" ]]; then
         setup_gcp
