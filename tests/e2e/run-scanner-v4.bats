@@ -294,7 +294,7 @@ _deploy_stackrox() {
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
 
-    deploy_stackrox_operator
+    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
 
     _deploy_central "${central_namespace}"
     if [[ "${HELM_REUSE_VALUES:-}" != "true" ]]; then
