@@ -358,14 +358,15 @@
           "$ref": "#/definitions/v1DiscoveredClusterMetadata"
         },
         "status": {
-          "$ref": "#/definitions/v1DiscoveredClusterStatus"
+          "$ref": "#/definitions/v1DiscoveredClusterStatus",
+          "description": "If an equivalent internal cluster exists, the discovered cluster is\nconsidered secured. If an equivalent secured cluster does not exist, the\nstatus of the discovered cluster is either unsecured or unknown, depending\non the provider details."
         },
         "source": {
           "$ref": "#/definitions/v1DiscoveredClusterCloudSource",
           "description": "The cloud source integration from which the cluster was discovered."
         }
       },
-      "description": "DiscoveredCluster is the service representation of discovered clusters.\n\nA discovered cluster originates from a cloud source integration. If\nan equivalent internal cluster exists, the discovered cluster is considered\nsecured. If equivalent secured cluster exists, the status of the discovered\ncluster is either unsecured or unknown, depending on the provider details."
+      "description": "DiscoveredCluster represents a cluster discovered from a cloud source."
     },
     "v1DiscoveredClusterCloudSource": {
       "type": "object",

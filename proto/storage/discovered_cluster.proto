@@ -13,18 +13,12 @@ option java_package = "io.stackrox.proto.storage";
 //
 // Refer to v1.DiscoveredCluster for a more detailed doc.
 message DiscoveredCluster {
-  // UUIDv5 generated deterministically from the tuple (metadata.id, metadata.type, source.id).
   string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
   message Metadata {
-    // Represents a unique ID under which the cluster is registered with the
-    // cloud provider. Matches storage.ClusterMetadata.id for secured clusters.
     string id = 1;
-    // Represents the name under which the cluster is registered with the
-    // cloud provider. Matches storage.ClusterMetadata.name for secured clusters.
     string name = 2 [(gogoproto.moretags) = 'search:"Cluster,hidden"'];
 
-    // The cluster type. Matches storage.ClusterMetadata.type for secured clusters.
     ClusterMetadata.Type type = 3 [(gogoproto.moretags) = 'search:"Cluster Type,hidden"'];
 
     enum ProviderType {
@@ -33,32 +27,21 @@ message DiscoveredCluster {
       PROVIDER_TYPE_GCP = 2;
       PROVIDER_TYPE_AZURE = 3;
     }
-    // The cloud provider type.
     ProviderType provider_type = 4;
 
-    // The region as reported by the cloud provider.
     string region = 5;
-    // Timestamp at which the cluster was first discovered by the cloud source.
     google.protobuf.Timestamp first_discovered_at = 6;
   }
   Metadata metadata = 2;
 
   enum Status {
-    // The status of the cluster is unknown. May occur if a secured cluster
-    // is missing the metadata for a possible match.
     STATUS_UNSPECIFIED = 0;
-    // The discovered cluster was matched with a secured cluster.
     STATUS_SECURED = 1;
-    // The discovered cluster was not matched with a secured cluster.
     STATUS_UNSECURED = 2;
   }
   Status status = 3 [(gogoproto.moretags) = 'search:"Cluster Status,hidden"'];
 
-  // The cloud source integration from which the cluster was discovered.
-  string source_id = 4 [(gogoproto.moretags) = 'search:"Integration ID,hidden"'];
+  string source_id = 4 [(gogoproto.moretags) = 'search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"'];
 
-  // Timestamp at which the discovered cluster record was last updated.
-  // This is an internal timestamp and does not refer to the
-  // underlying cloud provider asset.
   google.protobuf.Timestamp last_updated_at = 5;
 }

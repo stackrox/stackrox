@@ -133,17 +133,16 @@ func (DiscoveredCluster_Metadata_ProviderType) EnumDescriptor() ([]byte, []int) 
 	return fileDescriptor_fe81e36624cd29b2, []int{0, 0, 1}
 }
 
-// DiscoveredCluster is the service representation of discovered clusters.
-//
-// A discovered cluster originates from a cloud source integration. If
-// an equivalent internal cluster exists, the discovered cluster is considered
-// secured. If equivalent secured cluster exists, the status of the discovered
-// cluster is either unsecured or unknown, depending on the provider details.
+// DiscoveredCluster represents a cluster discovered from a cloud source.
 type DiscoveredCluster struct {
 	// UUIDv5 generated deterministically from the tuple (metadata.id, metadata.type, source.id).
 	Id       string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Metadata *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Status   DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,proto3,enum=v1.DiscoveredCluster_Status" json:"status,omitempty"`
+	// If an equivalent internal cluster exists, the discovered cluster is
+	// considered secured. If an equivalent secured cluster does not exist, the
+	// status of the discovered cluster is either unsecured or unknown, depending
+	// on the provider details.
+	Status DiscoveredCluster_Status `protobuf:"varint,3,opt,name=status,proto3,enum=v1.DiscoveredCluster_Status" json:"status,omitempty"`
 	// The cloud source integration from which the cluster was discovered.
 	Source               *DiscoveredCluster_CloudSource `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
