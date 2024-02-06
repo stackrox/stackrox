@@ -367,11 +367,11 @@ func (s *HandlerTestSuite) TestProcessUpdateScheduledScanSuccess() {
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
 	}
 
-	// Now do the update
 	s.statusInfo.EXPECT().GetNamespace().Return("ns")
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 
+	// Now prepare an update
 	msg = getTestUpdateScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
 	expected = expectedResponse{
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -389,6 +389,17 @@ func (s *HandlerTestSuite) TestProcessUpdateScheduledScanInvalid() {
 		errSubstr: "compliance profiles not specified, schedule is not valid",
 	}
 
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanNewSuccess() {
+	msg := getTestUpdateScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 }

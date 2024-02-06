@@ -163,15 +163,15 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
 	}
 
-	return m.createScanResources(requestID, request.GetScanSettings(), request.GetCron())
-}
-
-func (m *handlerImpl) createScanResources(requestID string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
 	ns := m.complianceOperatorInfo.GetNamespace()
 	if ns == "" {
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+}
+
+func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
 	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -209,25 +209,23 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	ssObj, err := resSS.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
 	if err != nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, request.GetScanSettings().GetScanName())
-		log.Error(err)
-		//return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
+		log.Warn(err)
 	}
 
 	resSSB := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
 	ssbObj, err := resSSB.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
 	if err != nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found", ns, request.GetScanSettings().GetScanName())
-		log.Error(err)
-		//return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
+		log.Warn(err)
 	}
 
 	if ssObj == nil && ssbObj == nil {
 		// This is an add instead
-		return m.createScanResources(requestID, request.GetScanSettings(), request.GetCron())
+		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
 	}
 
-	// Invalid case because scan setting is created first so we should not have a situation where
+	// Invalid case because scan setting is created first, so we should not have a situation where
 	// we have a scan setting binding and not a scan setting.  This probably isn't even possible.
 	if ssObj == nil {
 		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
