@@ -165,7 +165,7 @@ defaults:
 
 [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
-    disable: false
+    disable: true
     indexer:
       logLevel: INFO
       metricsPort: 9090
