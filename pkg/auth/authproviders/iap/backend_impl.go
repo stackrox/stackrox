@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	joseJwt "github.com/go-jose/go-jose/v3/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	joseJwt "gopkg.in/square/go-jose.v2/jwt"
 )
 
 var (

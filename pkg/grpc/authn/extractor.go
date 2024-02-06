@@ -3,6 +3,7 @@ package authn
 import (
 	"context"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/mtls"
 )

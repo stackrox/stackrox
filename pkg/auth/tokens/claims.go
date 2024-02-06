@@ -3,7 +3,7 @@ package tokens
 import (
 	"encoding/json"
 
-	"gopkg.in/square/go-jose.v2/jwt"
+	"github.com/go-jose/go-jose/v3/jwt"
 )
 
 // ExternalUserClaim represents the claim that this token identifies a user from an external identity provider.
