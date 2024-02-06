@@ -40,5 +40,11 @@ jobs:
         make -C scanner bin/updater
         go clean -cache -modcache
         branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-        ./scanner/bin/updater -output-dir="$branch"
+        if [[ "$branch" == "dev" ]]; then
+          echo "Branch dev is disallowed"
+          exit 1
+        fi
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        ./scanner/bin/updater -output-dir="$dir"
         gsutil cp -r "$branch" "gs://scanner-v4-test/vulnerability-bundles"
