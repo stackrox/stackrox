@@ -224,6 +224,26 @@ teardown() {
     verify_no_scannerV4_deployed "stackrox"
 }
 
+@test "Fresh installation using Operator with Scanner V4 enabled" {
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
+    fi
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="true"
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    _deploy_stackrox
+
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
+}
+
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
