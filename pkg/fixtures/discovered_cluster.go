@@ -18,7 +18,7 @@ func GetDiscoveredCluster() *discoveredclusters.DiscoveredCluster {
 		Region:            "us-east-1",
 		FirstDiscoveredAt: types.TimestampNow(),
 		Status:            storage.DiscoveredCluster_STATUS_SECURED,
-		CloudSourceID:     "1234",
+		CloudSourceID:     "fb28231c-54d1-41e1-9551-ede4c0e15c6c",
 	}
 }
 
@@ -28,10 +28,15 @@ func GetManyDiscoveredClusters(num int) []*discoveredclusters.DiscoveredCluster 
 	for i := 0; i < num; i++ {
 		discoveredCluster := GetDiscoveredCluster()
 		discoveredCluster.ID = fmt.Sprintf("my-cluster-%d", i)
+		discoveredCluster.Name = fmt.Sprintf("my-cluster-%d", i)
 		if i < num/2 {
 			discoveredCluster.Type = storage.ClusterMetadata_GKE
+			discoveredCluster.Status = storage.DiscoveredCluster_STATUS_SECURED
+			discoveredCluster.CloudSourceID = "fb28231c-54d1-41e1-9551-ede4c0e15c6c"
 		} else {
 			discoveredCluster.Type = storage.ClusterMetadata_EKS
+			discoveredCluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
+			discoveredCluster.CloudSourceID = "4f026c43-8b8a-465a-8c09-664f16c9e8e3"
 		}
 		res = append(res, discoveredCluster)
 	}
