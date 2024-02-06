@@ -23,6 +23,11 @@ matcher:
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
+  {{- if ._rox.env.centralServices }}
+  vulnerabilities_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VERSION
+  {{- else }}
+  vulnerabilities_url: https://sensor.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VERSION
+  {{- end }}
   indexer_addr: scanner-v4-indexer.{{ .Release.Namespace }}.svc:8443
 log_level: info
 grpc_listen_addr: 0.0.0.0:8443
