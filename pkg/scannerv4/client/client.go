@@ -20,9 +20,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	// Register the custom Scanner v4 round-robin client-side gRPC load balancer.
-	_ "github.com/stackrox/rox/pkg/grpc/balancer/scannerv4/roundrobin"
 )
 
 // Scanner is the interface that contains the StackRox Scanner
@@ -108,15 +105,13 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 			// via DNS name resolution, which is possible because Scanner v4 services are "headless"
 			// (clusterIP: None).
 			//
-			// We use a custom round-robin load balancing algorithm tailored specifically for
-			// Scanner v4.
-			//
-			// See pkg/grpc/balancer/scannerv4/roundrobin for more details.
-			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"scanner_v4_round_robin": {}}]}`),
+			// We just use basic round-robin load balancing at this time.
+			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
 		),
 	}
 
 	// Replace HTTP(S) with DNS for client-side load balancing.
+	// This ensures we use the builtin DNS name resolver.
 	address := strings.TrimPrefix(o.address, "https://")
 	address = strings.TrimPrefix(address, "http://")
 	address = "dns:///" + address
