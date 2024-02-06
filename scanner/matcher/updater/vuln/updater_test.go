@@ -107,9 +107,11 @@ func TestFetch(t *testing.T) {
 	srv, now := testHTTPServer(t)
 
 	u := &Updater{
-		client: srv.Client(),
-		url:    srv.URL,
-		root:   t.TempDir(),
+		client:     srv.Client(),
+		url:        srv.URL,
+		root:       t.TempDir(),
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
 	}
 
 	// Fetch file, as it's modified after the given time.

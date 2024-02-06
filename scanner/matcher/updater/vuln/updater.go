@@ -371,7 +371,6 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			// For other errors, do not retry
 			closeResponse(resp)
 			return nil, time.Time{}, err
-
 		}
 		break // no error, no retry
 	}
