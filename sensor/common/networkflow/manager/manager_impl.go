@@ -200,7 +200,7 @@ func (c *connection) IsExternal() (bool, error) {
 // (usually on OCP) the latter is provided. Analyzing only one of those two sources may lead to incorrectly reporting
 // a connection as external on the network graph.
 func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
-	if c.remote.IPAndPort.IsValid() {
+	if c.remote.IPAndPort.IsAddressValid() {
 		return c.remote.IPAndPort.Address, nil
 	}
 	if c.remote.IPAndPort.IPNetwork.IsValid() {

@@ -77,7 +77,7 @@ func MakeNumericEndpoint(addr IPAddress, port uint16, proto L4Proto) NumericEndp
 
 // IsValid checks if the given numeric endpoint is valid.
 func (e NumericEndpoint) IsValid() bool {
-	return e.IPAndPort.IsValid()
+	return e.IPAndPort.IsAddressValid()
 }
 
 // String returns a string representation of this numeric endpoint.
