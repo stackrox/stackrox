@@ -103,6 +103,7 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
 }
 
+// GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
 func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
@@ -128,9 +129,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 	return ir, true, nil
 }
 
-// GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first
-// GetIndexReport, then if not found or if the report is not successful, then
-// call CreateIndexReport.
+// GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
 func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
@@ -138,15 +137,6 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"image", ref.String(),
 	)
 	id := getImageManifestID(ref)
-	ir, exists, err := c.GetImageIndex(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	// If the report already exists, then return it.
-	if exists {
-		return ir, nil
-	}
-	// Otherwise (re-)index the image.
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
 		Host:   ref.RegistryStr(),
@@ -156,9 +146,9 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 	if err != nil {
 		return nil, fmt.Errorf("get auth: %w", err)
 	}
-	req := v4.CreateIndexReportRequest{
+	req := v4.GetOrCreateIndexReportRequest{
 		HashId: id,
-		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
+		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
 				Url:      imgURL.String(),
 				Username: authCfg.Username,
@@ -166,8 +156,9 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 			},
 		},
 	}
-	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.CreateIndexReport", func() (err error) {
-		ir, err = c.indexer.CreateIndexReport(ctx, &req)
+	var ir *v4.IndexReport
+	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
+		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req)
 		return err
 	})
 	if err != nil {
@@ -176,7 +167,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 	return ir, nil
 }
 
-// IndexAndScanImage get or create an index report for the image, then call the
+// IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
 func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx,
