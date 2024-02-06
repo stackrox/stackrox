@@ -15,6 +15,11 @@ source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
+# If `envsubst` is contained in a non-standard directory (hello, nix!) `env -i` won't be able to
+# execute it, even though it can be located via `$PATH``, hence we retrieve the absolute path of
+# `envsubst`` before passing it to `env`.
+envsubst=$(command -v envsubst)
+
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
@@ -281,7 +286,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scanner_v4_component="$scanner_v4_component" \
-    envsubst \
+    "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
@@ -347,7 +352,7 @@ deploy_sensor_via_operator() {
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
-    envsubst \
+    "${envsubst}" \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
