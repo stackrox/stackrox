@@ -2,9 +2,6 @@ name: Scanner release vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
-  push:
-    branches:
-    - ross/**
 
 jobs:
   read-release-versions:
@@ -34,10 +31,6 @@ jobs:
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
-    - name: Fail
-      if: |
-        matrix.version == '4.3.0'
-      run: exit 1
     - name: Recover docker image cache space
       run: |
         df --si /

@@ -5,7 +5,6 @@ on:
   push:
     branches:
     - master
-    - ross/**
 
 jobs:
   upload-dev-vulnerabilities:
@@ -32,7 +31,6 @@ jobs:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
       run: |
-        exit 1
         if [ ! -d "scanner" ]; then
           echo "Scanner directory not found. Terminating current step."
           exit 1
