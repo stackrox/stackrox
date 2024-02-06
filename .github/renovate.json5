@@ -7,9 +7,6 @@
   // $ docker run --rm -it --entrypoint=/usr/local/bin/renovate-config-validator -v "$(pwd)":/mnt -w /mnt renovate/renovate --strict
   // There are more validation options, see https://docs.renovatebot.com/config-validation/
 
-  "extends": [
-    "config:base"
-  ],
   "timezone": "Etc/UTC",
   "schedule": [
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
