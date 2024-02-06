@@ -37,7 +37,8 @@ export type ImageIntegrationType =
     | 'ibm'
     | 'nexus'
     | 'quay'
-    | 'rhel';
+    | 'rhel'
+    | 'scannerv4';
 
 export type NotifierIntegrationType =
     | 'awsSecurityHub'

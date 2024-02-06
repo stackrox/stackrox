@@ -28,6 +28,10 @@ export function getIsSignatureIntegration(source: IntegrationSource): boolean {
     return source === 'signatureIntegrations';
 }
 
+export function getIsScannerV4(source: IntegrationSource, type: IntegrationType): boolean {
+    return source === 'imageIntegrations' && type === 'scannerv4';
+}
+
 export function getGoogleCredentialsPlaceholder(
     useWorkloadId: boolean,
     updatePassword: boolean

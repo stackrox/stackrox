@@ -20,6 +20,7 @@ import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import NexusIntegrationForm from './Forms/NexusIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
+import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
@@ -70,6 +71,7 @@ const ComponentFormMap = {
         nexus: NexusIntegrationForm,
         ibm: IbmIntegrationForm,
         rhel: RhelIntegrationForm,
+        scannerv4: ScannerV4IntegrationForm,
     },
     signatureIntegrations: {
         signature: SignatureIntegrationForm,
