@@ -27,6 +27,7 @@ spec:
           if grep -Ei "^HTTP/[0-9.]+ 401" /tmp/headers; then exit 0; fi;
           sleep 1;
         done
+        exit 1
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

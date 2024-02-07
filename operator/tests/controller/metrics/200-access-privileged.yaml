@@ -28,6 +28,7 @@ spec:
           if grep -Ei "^# TYPE " /tmp/response; then exit 0; fi;
           sleep 1;
         done
+        exit 1
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
