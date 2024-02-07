@@ -239,10 +239,23 @@ var (
 			256_000_000,
 		}, // Bucket sizes selected arbitrary based on current default limits for grpc message size
 	}, []string{"Type"})
+
+	deploymentEnhancementRoundTripDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "deployment_enhancement_duration_ms",
+		Help:      "Total round trip duration in milliseconds for enhancing deployments",
+		Buckets:   prometheus.LinearBuckets(50, 100, 10), // 50, 150, 250...
+	})
 )
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
+
+// ObserveDeploymentEnhancementTime registers how long a sensor deployment request took
+func ObserveDeploymentEnhancementTime(ms float64) {
+	deploymentEnhancementRoundTripDuration.Observe(ms)
 }
 
 // ObserveSentSize registers central payload sent size.
