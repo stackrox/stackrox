@@ -22,7 +22,7 @@ spec:
 
   params:
   - name: dockerfile
-    value: image/roxctl/rhtap.Dockerfile
+    value: image/roxctl/konflux.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
