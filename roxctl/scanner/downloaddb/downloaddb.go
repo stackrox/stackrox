@@ -56,7 +56,7 @@ func (cmd *scannerDownloadDBCommand) construct(_ *cobra.Command) {
 func (cmd *scannerDownloadDBCommand) downloadDb() error {
 	version := cmd.detectVersion()
 
-	// Get version variants.
+	// Get version variants to try.
 	versionVariants, isScannerV2 := cmd.disectVersion(version)
 	if versionVariants == nil && !isScannerV2 {
 		return errors.New("unexpected error parsing version")
@@ -76,8 +76,11 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 	var errs []error
 	for _, bundleFileName := range bundleFileNames {
 		// Get the name of the output file and ensures its valid.
-		outFileName, err := cmd.buildAndValidateOutputFile(bundleFileName)
+		outFileName, err := cmd.buildAndValidateOutputFileName(bundleFileName)
 		if err != nil {
+			// If there was an error validating the output file, assume the file exists
+			// and therefore was successfully created in the past. Do not continue
+			// processing other variants.
 			return fmt.Errorf("invalid output file %q: %w", bundleFileName, err)
 		}
 
@@ -88,7 +91,7 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 			continue
 		}
 
-		// Download the vulnerability database
+		// Download the vulnerability database.
 		err = cmd.downloadVulnDB(url, outFileName)
 		if err != nil {
 			errs = append(errs, err)
@@ -102,6 +105,7 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 	return errors.Join(errs...)
 }
 
+// detectVersion attempts to determine an appropriate base version to use.
 func (cmd *scannerDownloadDBCommand) detectVersion() string {
 	if cmd.version != "" {
 		cmd.env.Logger().InfofLn("Using the version from command line flag: %q", cmd.version)
@@ -147,7 +151,7 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 	return metadata.GetVersion(), nil
 }
 
-func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFile(outFileName string) (string, error) {
+func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFileName(outFileName string) (string, error) {
 	if cmd.filename != "" {
 		outFileName = cmd.filename
 
@@ -168,13 +172,9 @@ func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFile(outFileName stri
 }
 
 func (cmd *scannerDownloadDBCommand) buildDownloadURL(bundleFileName string) (string, error) {
-	url, err := url.JoinPath(env.ScannerDBDownloadBaseURL.Setting(), bundleFileName)
-	if err != nil {
-		return "", err
-	}
-
-	return url, nil
+	return url.JoinPath(env.ScannerDBDownloadBaseURL.Setting(), bundleFileName)
 }
+
 func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName string) error {
 	resp, err := http.Get(url)
 	if err != nil {
