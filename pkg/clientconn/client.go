@@ -59,7 +59,8 @@ type Options struct {
 	InsecureAllowCredsViaPlaintext bool
 	PerRPCCreds                    credentials.PerRPCCredentials
 
-	DialTLS DialTLSFunc
+	DialTLS     DialTLSFunc
+	DialOptions []grpc.DialOption
 
 	MaxMsgRecvSize int
 }
@@ -170,6 +171,7 @@ type connectionOptions struct {
 	useServiceCertToken bool
 	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
+	dialOptions         []grpc.DialOption
 	rootCAs             *x509.CertPool
 	serverName          string
 	maxMsgRecvSize      int
@@ -248,6 +250,14 @@ func UseDialTLSFunc(fn DialTLSFunc) ConnectionOption {
 	})
 }
 
+// WithDialOptions sets the gRPC dial options to use.
+func WithDialOptions(options ...grpc.DialOption) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.dialOptions = options
+		return nil
+	})
+}
+
 // OptionsForEndpoint returns an Options struct to be used with the given endpoint.
 func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Options, error) {
 	var connOpts connectionOptions
@@ -273,7 +283,8 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 			ServerName:    host,
 			RootCAs:       connOpts.rootCAs,
 		},
-		DialTLS: connOpts.dialTLSFunc,
+		DialTLS:     connOpts.dialTLSFunc,
+		DialOptions: connOpts.dialOptions,
 	}
 
 	if connOpts.useServiceCertToken {
@@ -301,7 +312,7 @@ func AuthenticatedGRPCConnection(ctx context.Context, endpoint string, server mt
 		return nil, err
 	}
 
-	var dialOpts []grpc.DialOption
+	dialOpts := make([]grpc.DialOption, 0, 2+len(clientConnOpts.DialOptions))
 	// To avoid getting 'Client received GoAway with error code ENHANCE_YOUR_CALM and debug data equal to ASCII "too_many_pings"'
 	// from Sensor in Compliance, we must match the client and server settings for keepalive
 	// See: https://github.com/grpc/grpc/blob/master/doc/keepalive.md#faq
@@ -313,6 +324,7 @@ func AuthenticatedGRPCConnection(ctx context.Context, endpoint string, server mt
 	if clientConnOpts.MaxMsgRecvSize > 0 {
 		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
 	}
+	dialOpts = append(dialOpts, clientConnOpts.DialOptions...)
 
 	return GRPCConnection(ctx, server, endpoint, clientConnOpts, dialOpts...)
 }

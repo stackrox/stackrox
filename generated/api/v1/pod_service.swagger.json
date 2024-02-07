@@ -11,6 +11,52 @@
     "application/json"
   ],
   "paths": {
+    "/v1/export/pods": {
+      "get": {
+        "operationId": "PodService_ExportPods",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1ExportPodResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/runtimeStreamError"
+                }
+              },
+              "title": "Stream result of v1ExportPodResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "timeout",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "PodService"
+        ]
+      }
+    },
     "/v1/pods": {
       "get": {
         "summary": "GetPods returns the pods.",
@@ -126,6 +172,31 @@
           "format": "int32"
         },
         "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpcCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "httpCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "httpStatus": {
           "type": "string"
         },
         "details": {
@@ -270,6 +341,14 @@
         "MAX"
       ],
       "default": "UNSET"
+    },
+    "v1ExportPodResponse": {
+      "type": "object",
+      "properties": {
+        "pod": {
+          "$ref": "#/definitions/storagePod"
+        }
+      }
     },
     "v1Pagination": {
       "type": "object",

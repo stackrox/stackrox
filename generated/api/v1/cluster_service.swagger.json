@@ -703,7 +703,8 @@
           "type": "string"
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "Deprecated in favor of providerMetadata.cluster.name."
         }
       }
     },

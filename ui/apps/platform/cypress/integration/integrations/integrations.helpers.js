@@ -119,7 +119,6 @@ function getIntegrationEndpointAddress(integrationSource, integrationType, integ
 const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
     [
         ['authProviders', 'apitoken'],
-        ['authProviders', 'clusterInitBundle'],
         ['imageIntegrations'],
         ['signatureIntegrations'],
         ['notifiers'],

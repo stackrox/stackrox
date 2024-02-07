@@ -120,6 +120,14 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 	return listImage, true, nil
 }
 
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
+	wrappedFn := func(image *storage.Image) error {
+		ds.updateImagePriority(image)
+		return fn(image)
+	}
+	return ds.storage.WalkByQuery(ctx, q, wrappedFn)
+}
+
 // CountImages delegates to the underlying store.
 func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil {

@@ -3,11 +3,11 @@ package authn
 import (
 	"testing"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 func TestExtractorErrorNilGuards(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	complianceScanConfig "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -58,7 +59,8 @@ func initialize() {
 		notifierProcessor.Singleton(),
 		ranking.ClusterRanker(),
 		indexer,
-		networkBaselineManager.Singleton())
+		networkBaselineManager.Singleton(),
+		complianceScanConfig.Singleton())
 
 	utils.CrashOnError(err)
 }

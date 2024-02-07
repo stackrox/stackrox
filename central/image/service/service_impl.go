@@ -60,6 +60,7 @@ var (
 			"/v1.ImageService/GetImage",
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
+			"/v1.ImageService/ExportImages",
 		},
 		or.SensorOr(idcheck.AdmissionControlOnly()): {
 			"/v1.ImageService/ScanImageInternal",
@@ -189,6 +190,25 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	return &v1.ListImagesResponse{
 		Images: images,
 	}, nil
+}
+
+func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageService_ExportImagesServer) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	ctx := srv.Context()
+	if timeout := req.GetTimeout(); timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+	}
+	return s.datastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
+		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // InvalidateScanAndRegistryCaches invalidates the image scan caches
