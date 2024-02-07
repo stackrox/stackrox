@@ -518,15 +518,15 @@ type ScannerV4Spec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
 	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
-	// Settings pertaining to the indexer component.
+	// Settings pertaining to the indexer deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	Indexer *ScannerV4Component `json:"indexer,omitempty"`
 
-	// Settings pertaining to the matcher component.
+	// Settings pertaining to the matcher deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	Matcher *ScannerV4Component `json:"matcher,omitempty"`
 
-	// Settings pertaining to the DB component.
+	// Settings pertaining to the DB deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	DB *ScannerV4DB `json:"db,omitempty"`
 
@@ -580,7 +580,7 @@ const (
 	// ScannerV4ComponentDefault means that scanner V4 uses the default semantics
 	// to identify wether scanner V4 component should be used.
 	// Currently this defaults to "Disabled" semantics.
-	// TODO: change default to "Enabled" semantics with version 4.5
+	// TODO change default to "Enabled" semantics with version 4.5
 	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
 	// ScannerV4ComponentEnabled explicitly enables the scanner V4 component.
 	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"

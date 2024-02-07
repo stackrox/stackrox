@@ -511,17 +511,17 @@ spec:
       - description: If you want to deploy Scanner V4 components set this to "Enabled"
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
-      - description: Settings pertaining to the indexer component.
+      - description: Settings pertaining to the indexer deployment.
         displayName: Indexer
         path: scannerV4.indexer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.scannerComponent:Enabled
-      - description: Settings pertaining to the matcher component.
+      - description: Settings pertaining to the matcher deployment.
         displayName: Matcher
         path: scannerV4.matcher
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.scannerComponent:Enabled
-      - description: Settings pertaining to the DB component.
+      - description: Settings pertaining to the DB deployment.
         displayName: DB
         path: scannerV4.db
         x-descriptors:

@@ -1041,7 +1041,7 @@ spec:
                   default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
                 properties:
                   db:
-                    description: Settings pertaining to the DB component.
+                    description: Settings pertaining to the DB deployment.
                     properties:
                       nodeSelector:
                         additionalProperties:
@@ -1187,7 +1187,7 @@ spec:
                         type: array
                     type: object
                   indexer:
-                    description: Settings pertaining to the indexer component.
+                    description: Settings pertaining to the indexer deployment.
                     properties:
                       nodeSelector:
                         additionalProperties:
@@ -1324,7 +1324,7 @@ spec:
                         type: array
                     type: object
                   matcher:
-                    description: Settings pertaining to the matcher component.
+                    description: Settings pertaining to the matcher deployment.
                     properties:
                       nodeSelector:
                         additionalProperties:

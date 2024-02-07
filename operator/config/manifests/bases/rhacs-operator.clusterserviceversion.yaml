@@ -265,7 +265,7 @@ spec:
         path: scannerV4.db.persistence.persistentVolumeClaim.size
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Settings pertaining to the indexer component.
+      - description: Settings pertaining to the indexer deployment.
         displayName: Indexer
         path: scannerV4.indexer
         x-descriptors:
@@ -345,7 +345,7 @@ spec:
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - description: Settings pertaining to the matcher component.
+      - description: Settings pertaining to the matcher deployment.
         displayName: Matcher
         path: scannerV4.matcher
         x-descriptors:
@@ -374,7 +374,7 @@ spec:
           compatible format.
         displayName: Monitoring
         path: scanner.monitoring
-      - description: Settings pertaining to the DB component.
+      - description: Settings pertaining to the DB deployment.
         displayName: DB
         path: scannerV4.db
         x-descriptors:
