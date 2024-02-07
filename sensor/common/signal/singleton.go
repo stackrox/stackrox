@@ -12,6 +12,7 @@ func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Op
 		indicators:       indicators,
 		processPipeline:  pipeline,
 		authFuncOverride: authFuncOverride,
+		writer:           nil,
 	}
 	for _, o := range opts {
 		o(srv)

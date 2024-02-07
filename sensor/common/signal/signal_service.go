@@ -2,6 +2,7 @@ package signal
 
 import (
 	"context"
+	"io"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -35,6 +36,13 @@ func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Cont
 	}
 }
 
+// WithTraceWriter sets a trace writer that will write the messages received from collector.
+func WithTraceWriter(writer io.Writer) Option {
+	return func(srv *serviceImpl) {
+		srv.writer = writer
+	}
+}
+
 // Service is the interface that manages the SignalEvent API from the server side
 type Service interface {
 	pkgGRPC.APIService
@@ -50,6 +58,7 @@ type serviceImpl struct {
 	indicators chan *message.ExpiringMessage
 
 	processPipeline  Pipeline
+	writer           io.Writer
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
@@ -149,6 +158,15 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			if !isProcessSignalValid(processSignal) {
 				log.Debugf("Invalid process signal: %+v", processSignal)
 				continue
+			}
+			if s.writer != nil {
+				if data, err := signalStreamMsg.Marshal(); err == nil {
+					if _, err := s.writer.Write(data); err != nil {
+						log.Warnf("Error writing msg: %v", err)
+					}
+				} else {
+					log.Warnf("Error marshalling  msg: %v", err)
+				}
 			}
 
 			s.processPipeline.Process(processSignal)

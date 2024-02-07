@@ -21,6 +21,8 @@ type CreateOptions struct {
 	eventPipelineQueueSize             int
 	networkFlowServiceAuthFuncOverride func(context.Context, string) (context.Context, error)
 	signalServiceAuthFuncOverride      func(context.Context, string) (context.Context, error)
+	networkFlowWriter                  io.Writer
+	processIndicatorWriter             io.Writer
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -39,6 +41,8 @@ func ConfigWithDefaults() *CreateOptions {
 		eventPipelineQueueSize:             env.EventPipelineQueueSize.IntegerSetting(),
 		networkFlowServiceAuthFuncOverride: nil,
 		signalServiceAuthFuncOverride:      nil,
+		networkFlowWriter:                  nil,
+		processIndicatorWriter:             nil,
 	}
 }
 
@@ -96,5 +100,19 @@ func (cfg *CreateOptions) WithNetworkFlowServiceAuthFuncOverride(fn func(context
 // Default: nil
 func (cfg *CreateOptions) WithSignalServiceAuthFuncOverride(fn func(context.Context, string) (context.Context, error)) *CreateOptions {
 	cfg.signalServiceAuthFuncOverride = fn
+	return cfg
+}
+
+// WithNetworkFlowTraceWriter sets the network flows trace writer.
+// Default: nil
+func (cfg *CreateOptions) WithNetworkFlowTraceWriter(writer io.Writer) *CreateOptions {
+	cfg.networkFlowWriter = writer
+	return cfg
+}
+
+// WithProcessIndicatorTraceWriter sets the network flows trace writer.
+// Default: nil
+func (cfg *CreateOptions) WithProcessIndicatorTraceWriter(writer io.Writer) *CreateOptions {
+	cfg.processIndicatorWriter = writer
 	return cfg
 }

@@ -20,7 +20,7 @@ func Test_SensorHello(t *testing.T) {
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 
-	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
+	c, err := helper.NewContextWithConfig(t, helper.Config{
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	})
@@ -44,7 +44,7 @@ func Test_SensorReconnects(t *testing.T) {
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 
-	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
+	c, err := helper.NewContextWithConfig(t, helper.Config{
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	})

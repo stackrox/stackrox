@@ -128,10 +128,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	indicators := make(chan *message.ExpiringMessage, env.ProcessIndicatorBufferSize.IntegerSetting())
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 	var processSignals signalService.Service
-	if cfg.signalServiceAuthFuncOverride != nil {
-		processSignals = signalService.New(processPipeline, indicators, signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		processSignals = signalService.New(processPipeline, indicators,
+			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride),
+			signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	} else {
-		processSignals = signalService.New(processPipeline, indicators)
+		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector)
@@ -211,10 +213,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	var networkFlowService service.Service
-	if cfg.networkFlowServiceAuthFuncOverride != nil {
-		networkFlowService = service.NewService(networkFlowManager, service.WithAuthFuncOverride(cfg.networkFlowServiceAuthFuncOverride))
+	if cfg.networkFlowServiceAuthFuncOverride != nil && cfg.localSensor {
+		networkFlowService = service.NewService(networkFlowManager,
+			service.WithAuthFuncOverride(cfg.networkFlowServiceAuthFuncOverride),
+			service.WithTraceWriter(cfg.networkFlowWriter))
 	} else {
-		networkFlowService = service.NewService(networkFlowManager)
+		networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
 	}
 	apiServices := []grpc.APIService{
 		networkFlowService,

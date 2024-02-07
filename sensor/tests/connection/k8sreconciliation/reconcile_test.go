@@ -54,7 +54,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 
-	cfg := helper.DefaultCentralConfig()
+	cfg := helper.DefaultConfig()
 	cfg.SendDeduperState = true
 	c, err := helper.NewContextWithConfig(t, cfg)
 	require.NoError(t, err)

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -25,6 +26,10 @@ const (
 	networkGraphExtSrcsCap = `network-graph-external-srcs`
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 // Option function for the networkFlow service.
 type Option func(*serviceImpl)
 
@@ -35,11 +40,19 @@ func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Cont
 	}
 }
 
+// WithTraceWriter sets a trace writer that will write the messages received from collector.
+func WithTraceWriter(writer io.Writer) Option {
+	return func(srv *serviceImpl) {
+		srv.writer = writer
+	}
+}
+
 // NewService creates a new streaming service with the collector. It should only be called once.
 func NewService(networkFlowManager manager.Manager, opts ...Option) Service {
 	srv := &serviceImpl{
 		manager:          networkFlowManager,
 		authFuncOverride: authFuncOverride,
+		writer:           nil,
 	}
 	for _, o := range opts {
 		o(srv)
@@ -56,6 +69,7 @@ type serviceImpl struct {
 
 	manager          manager.Manager
 	authFuncOverride func(context.Context, string) (context.Context, error)
+	writer           io.Writer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -179,6 +193,15 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 		if err != nil {
 			errC <- err
 			return
+		}
+		if s.writer != nil {
+			if data, err := msg.Marshal(); err == nil {
+				if _, err := s.writer.Write(data); err != nil {
+					log.Warnf("Error writing msg: %v", err)
+				}
+			} else {
+				log.Warnf("Error marshalling  msg: %v", err)
+			}
 		}
 
 		select {

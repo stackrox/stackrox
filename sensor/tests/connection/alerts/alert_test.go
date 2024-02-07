@@ -28,7 +28,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 
-	config := helper.DefaultCentralConfig()
+	config := helper.DefaultConfig()
 	var err error
 	config.InitialSystemPolicies, err = testutils.GetPoliciesFromFile("./data/policies.json")
 	require.NoError(t, err)

@@ -3,6 +3,7 @@ package helper
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -129,7 +130,7 @@ type TestContext struct {
 	stopFn           func()
 	sensorStopped    concurrency.ReadOnlyErrorSignal
 	centralStopped   atomic.Bool
-	config           CentralConfig
+	config           Config
 	grpcFactory      centralDebug.FakeGRPCFactory
 	deduperStateLock sync.Mutex
 	deduperState     *central.DeduperState
@@ -139,8 +140,8 @@ type TestContext struct {
 	archivedMessages [][]*central.MsgFromSensor
 }
 
-// DefaultCentralConfig hold default values when starting local sensor in tests.
-func DefaultCentralConfig() CentralConfig {
+// DefaultConfig hold default values when starting local sensor in tests.
+func DefaultConfig() Config {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
 	policies, err := testutils.GetPoliciesFromFile("../../data/policies.json")
@@ -148,21 +149,23 @@ func DefaultCentralConfig() CentralConfig {
 		log.Fatalln(err)
 	}
 
-	return CentralConfig{
-		InitialSystemPolicies: policies,
-		CertFilePath:          "../../../../tools/local-sensor/certs/",
-		SendDeduperState:      false,
-		RealCerts:             false,
+	return Config{
+		InitialSystemPolicies:       policies,
+		CertFilePath:                "../../../../tools/local-sensor/certs/",
+		SendDeduperState:            false,
+		RealCerts:                   false,
+		NetworkFlowTraceWriter:      nil,
+		ProcessIndicatorTraceWriter: nil,
 	}
 }
 
 // NewContext creates a new test context with default configuration.
 func NewContext(t *testing.T) (*TestContext, error) {
-	return NewContextWithConfig(t, DefaultCentralConfig())
+	return NewContextWithConfig(t, DefaultConfig())
 }
 
 // NewContextWithConfig creates a new test context with custom central configuration.
-func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, error) {
+func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
 	if err != nil {
@@ -183,7 +186,7 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}
 
 	tc.StartFakeGRPC()
-	tc.startSensorInstance(t, envConfig, config.RealCerts)
+	tc.startSensorInstance(t, envConfig, config)
 
 	return &tc, nil
 }
@@ -827,15 +830,17 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 	return selected
 }
 
-// CentralConfig allows tests to inject ACS policies in the tests
-type CentralConfig struct {
-	InitialSystemPolicies []*storage.Policy
-	CertFilePath          string
-	SendDeduperState      bool
-	RealCerts             bool
+// Config allows tests to inject ACS policies in the tests
+type Config struct {
+	InitialSystemPolicies       []*storage.Policy
+	CertFilePath                string
+	SendDeduperState            bool
+	RealCerts                   bool
+	NetworkFlowTraceWriter      io.Writer
+	ProcessIndicatorTraceWriter io.Writer
 }
 
-func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, realCerts bool) {
+func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg Config) {
 	t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
 	t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
 	t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
@@ -845,7 +850,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, rea
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
 		WithCentralConnectionFactory(c.grpcFactory)
-	if realCerts {
+	if cfg.RealCerts {
 		t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/sensor-cert.pem"))
 		t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/sensor-key.pem"))
 		t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/ca.pem"))
@@ -873,6 +878,12 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, rea
 		t.Setenv("ROX_HELM_CLUSTER_CONFIG_FP", clusterC.ClusterConfig.FingerPrint)
 	}
 	// TODO: else setup fake-collector
+	if cfg.NetworkFlowTraceWriter != nil {
+		sensorConfig.WithNetworkFlowTraceWriter(cfg.NetworkFlowTraceWriter)
+	}
+	if cfg.ProcessIndicatorTraceWriter != nil {
+		sensorConfig.WithProcessIndicatorTraceWriter(cfg.ProcessIndicatorTraceWriter)
+	}
 
 	s, err := sensor.CreateSensor(sensorConfig)
 

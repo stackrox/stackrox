@@ -36,7 +36,7 @@ func (s *NetworkPolicySuite) SetupSuite() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	cfg := helper.DefaultCentralConfig()
+	cfg := helper.DefaultConfig()
 	cfg.InitialSystemPolicies = policies
 
 	if testContext, err := helper.NewContextWithConfig(s.T(), cfg); err != nil {
