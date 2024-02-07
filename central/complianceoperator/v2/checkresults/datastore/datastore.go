@@ -36,7 +36,7 @@ type DataStore interface {
 	CountCheckResults(ctx context.Context, q *v1.Query) (int, error)
 
 	// Delete scan results associated with cluster
-	DeleteResultWhenClusterDeleted(ctx context.Context, clusterID string) error
+	DeleteResultsByCluster(ctx context.Context, clusterID string) error
 
 	// GetComplianceCheckResult returns the instance of the result specified by ID
 	GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error)
