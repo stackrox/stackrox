@@ -156,10 +156,13 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 func (p *Pipeline) sendIndicatorEvent() {
 	defer p.stopper.Flow().ReportStopped()
 	for indicator := range p.cm.GetOutput() {
+		log.Infof("sendIndicatorEvent(): Starting %s (%s %s)", indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs())
 		if !p.processFilter.Add(indicator) {
+			log.Infof("sendIndicatorEvent(): Process Indicator filtered %s (%s %s)", indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs())
 			continue
 		}
 		p.detector.ProcessIndicator(p.getCurrentContext(), indicator)
+		log.Infof("sendIndicatorEvent(): sending to central %s (%s %s)", indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs())
 		p.sendToCentral(
 			message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_Event{
