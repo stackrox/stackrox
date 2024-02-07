@@ -296,8 +296,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.",
 		Long: `Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.
 
-Helps download version specific offline vulnerability bundles. Will contact 
-Central to determine version if one is not specified, if communication fails 
+Helps download version specific offline vulnerability bundles. Will contact
+Central to determine version if one is not specified, if communication fails
 defaults to version embedded within roxctl.`,
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
