@@ -10,16 +10,16 @@ import (
 var (
 	defaultOptions = options{
 		indexerOpts: connOptions{
-			mTLSSubject: mtls.ScannerV4IndexerSubject,
-			address:     ":8443",
-			serverName:  fmt.Sprintf("scanner-v4-indexer.%s.svc", env.Namespace.Setting()),
-			skipTLS:     false,
+			mTLSSubject:   mtls.ScannerV4IndexerSubject,
+			address:       ":8443",
+			serverName:    fmt.Sprintf("scanner-v4-indexer.%s.svc", env.Namespace.Setting()),
+			skipTLSVerify: false,
 		},
 		matcherOpts: connOptions{
-			mTLSSubject: mtls.ScannerV4MatcherSubject,
-			address:     ":8443",
-			serverName:  fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
-			skipTLS:     false,
+			mTLSSubject:   mtls.ScannerV4MatcherSubject,
+			address:       ":8443",
+			serverName:    fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
+			skipTLSVerify: false,
 		},
 		comboMode: false,
 	}
@@ -29,10 +29,10 @@ var (
 type Option func(*options)
 
 type connOptions struct {
-	mTLSSubject mtls.Subject
-	address     string
-	serverName  string
-	skipTLS     bool
+	mTLSSubject   mtls.Subject
+	address       string
+	serverName    string
+	skipTLSVerify bool
 }
 
 type options struct {
@@ -89,7 +89,7 @@ func WithIndexerServerName(serverName string) Option {
 // SkipIndexerTLSVerification disables TLS verification, preventing the reading and usage
 // of client certificates (mTLS).
 func SkipIndexerTLSVerification(o *options) {
-	o.indexerOpts.skipTLS = true
+	o.indexerOpts.skipTLSVerify = true
 }
 
 // WithIndexerAddress specifies the gRPC address to connect.
@@ -116,7 +116,7 @@ func WithMatcherServerName(serverName string) Option {
 // SkipMatcherTLSVerification disables TLS verification, preventing the reading and usage
 // of client certificates (mTLS).
 func SkipMatcherTLSVerification(o *options) {
-	o.matcherOpts.skipTLS = true
+	o.matcherOpts.skipTLSVerify = true
 }
 
 // WithMatcherAddress specifies the gRPC address to connect.

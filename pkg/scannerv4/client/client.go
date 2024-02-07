@@ -95,27 +95,41 @@ func (c *gRPCScanner) Close() error {
 }
 
 func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
-	connOpts := []clientconn.ConnectionOption{
-		clientconn.UseInsecureNoTLS(o.skipTLS),
-		clientconn.ServerName(o.serverName),
-		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
-		clientconn.WithDialOptions(
-			// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes does not
-			// load balance too well on its own. We opt to do client-side load balancing, instead,
-			// via DNS name resolution, which is possible because Scanner v4 services are "headless"
-			// (clusterIP: None).
-			//
-			// We just use basic round-robin load balancing at this time.
-			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
-		),
-	}
-
 	// Replace HTTP(S) with DNS for client-side load balancing.
 	// This ensures we use the builtin DNS name resolver.
 	address := strings.TrimPrefix(o.address, "https://")
 	address = strings.TrimPrefix(address, "http://")
 	address = "dns:///" + address
 
+	dialOpts := []grpc.DialOption{
+		// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes does not
+		// load balance too well on its own. We opt to do client-side load balancing, instead,
+		// via DNS name resolution, which is possible because Scanner v4 services are "headless"
+		// (clusterIP: None).
+		//
+		// We just use basic round-robin load balancing at this time.
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
+	}
+
+	maxRespMsgSize := env.ScannerV4MaxRespMsgSize.IntegerSetting()
+
+	if o.skipTLSVerify {
+		connOpts := clientconn.Options{
+			TLS: clientconn.TLSConfigOptions{
+				GRPCOnly:           true,
+				InsecureSkipVerify: true,
+			},
+			DialOptions: dialOpts,
+		}
+		callOpts := []grpc.CallOption{grpc.MaxCallRecvMsgSize(maxRespMsgSize)}
+		return clientconn.GRPCConnection(ctx, o.mTLSSubject, address, connOpts, grpc.WithDefaultCallOptions(callOpts...))
+	}
+
+	connOpts := []clientconn.ConnectionOption{
+		clientconn.ServerName(o.serverName),
+		clientconn.MaxMsgReceiveSize(maxRespMsgSize),
+		clientconn.WithDialOptions(dialOpts...),
+	}
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
