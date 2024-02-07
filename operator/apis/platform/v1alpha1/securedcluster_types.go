@@ -69,6 +69,8 @@ type SecuredClusterSpec struct {
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	//+kubebuilder:default={"deployment":"Default"}
+	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 
@@ -356,12 +358,10 @@ type LocalScannerComponentSpec struct {
 
 // LocalScannerV4ComponentSpec defines settings for the "scanner V4" component in SecuredClusters
 type LocalScannerV4ComponentSpec struct {
-	// If you do not want to deploy the Red Hat Advanced Cluster Security local Scanner V4, you can disable it here
-	// (not recommended).
-	// If you do so, all the settings in this section will have no effect.
-	//+kubebuilder:default=AutoSense
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
-	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
+	// If you want to enable deployment of Scanner V4 components set this to "AutoSense"
+	//+kubebuilder:default=Default
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 deployment",order=1
+	Deployment *LocalScannerV4DeploymentPolicy `json:"deployment,omitempty"`
 
 	// Settings pertaining to the indexer deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense"}
@@ -387,6 +387,29 @@ const (
 
 // Pointer returns the pointer of the policy.
 func (l LocalScannerComponentPolicy) Pointer() *LocalScannerComponentPolicy {
+	return &l
+}
+
+// LocalScannerV4DeploymentPolicy is a type for values of spec.scannerV4.deployment
+// +kubebuilder:validation:Enum=Default;Enabled;Disabled
+type LocalScannerV4DeploymentPolicy string
+
+const (
+	// LocalScannerV4DeploymentDefault means that local scanner V4 will use the default semantics
+	// to determine wether scannerV4 components should be deployed.
+	// Currently this will default to "Disabled" semantics.
+	// TODO: change default to "AutoSense" semantics with version 4.5
+	LocalScannerV4DeploymentDefault LocalScannerV4DeploymentPolicy = "Default"
+	// LocalScannerV4DeploymentAutoSense means that scanner v4 should be installed,
+	// unless there is a Central resource in the same namespace.
+	// In that case typically a central scanner V4 will be deployed as a component of Central
+	LocalScannerV4DeploymentAutoSense LocalScannerV4DeploymentPolicy = "AutoSense"
+	// LocalScannerV4DeploymentDisabled means that scanner should not be installed.
+	LocalScannerV4DeploymentDisabled LocalScannerV4DeploymentPolicy = "Disabled"
+)
+
+// Pointer returns the pointer of the policy.
+func (l LocalScannerV4DeploymentPolicy) Pointer() *LocalScannerV4DeploymentPolicy {
 	return &l
 }
 

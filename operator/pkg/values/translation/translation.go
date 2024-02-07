@@ -149,6 +149,24 @@ func SetScannerComponentDisableValue(sv *ValuesBuilder, scannerComponent *platfo
 	}
 }
 
+// SetScannerV4DisableValue sets the value for the 'disable' key for scanner values
+func SetScannerV4DisableValue(sv *ValuesBuilder, deploymentPolicy *platform.ScannerV4DeploymentPolicy) {
+	if deploymentPolicy == nil {
+		return
+	}
+
+	switch *deploymentPolicy {
+	case platform.ScannerV4DeploymentDisabled:
+		sv.SetBoolValue("disable", true)
+	case platform.ScannerV4DeploymentDefault:
+		sv.SetBoolValue("disable", true)
+	case platform.ScannerV4DeploymentEnabled:
+		sv.SetBoolValue("disable", false)
+	default:
+		sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *deploymentPolicy))
+	}
+}
+
 // SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
 func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
 	if analyzer == nil {

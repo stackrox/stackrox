@@ -175,7 +175,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
 						},
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
-							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
+							Deployment: platform.LocalScannerV4DeploymentDisabled.Pointer(),
 						},
 					},
 				},

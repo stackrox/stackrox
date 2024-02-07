@@ -43,36 +43,51 @@ func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, 
 // Modifies the provided SecuredCluster object to set a default Spec.ScannerV4 if missing.
 func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
 	SetScannerV4Defaults(&s.Spec)
-	scannerV4Component := *s.Spec.ScannerV4.ScannerComponent
+	scannerV4DeploymentPolicy := *s.Spec.ScannerV4.Deployment
 
-	return autoSenseScanner(ctx, client, scannerV4Component, s.GetNamespace())
+	return autoSenseScannerV4(ctx, client, scannerV4DeploymentPolicy, s.GetNamespace())
 
 }
 
 func autoSenseScanner(ctx context.Context, client ctrlClient.Client, scannerComponent platform.LocalScannerComponentPolicy, namespace string) (AutoSenseResult, error) {
 	switch scannerComponent {
 	case platform.LocalScannerComponentAutoSense:
-		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, namespace)
-		if err != nil {
-			return AutoSenseResult{}, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
-		}
-		isOpenShift, err := isRunningOnOpenShift(ctx, client)
-		if err != nil {
-			return AutoSenseResult{}, errors.Wrap(err, "cannot fetch OpenShift ClusterVersion resource")
-		}
-		if !isOpenShift {
-			return AutoSenseResult{}, nil
-		}
-		return AutoSenseResult{
-			// Only deploy scanner resource if Central is not available in the same namespace.
-			DeployScannerResources:   !siblingCentralPresent,
-			EnableLocalImageScanning: true,
-		}, nil
+		return autoSense(ctx, client, namespace)
 	case platform.LocalScannerComponentDisabled:
 		return AutoSenseResult{}, nil
 	}
 
 	return AutoSenseResult{}, errors.Errorf("invalid scannerComponent setting: %q", scannerComponent)
+}
+
+func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymentPolicy platform.LocalScannerV4DeploymentPolicy, namespace string) (AutoSenseResult, error) {
+	switch deploymentPolicy {
+	case platform.LocalScannerV4DeploymentAutoSense:
+		return autoSense(ctx, client, namespace)
+	case platform.LocalScannerV4DeploymentDisabled, platform.LocalScannerV4DeploymentDefault:
+		return AutoSenseResult{}, nil
+	}
+
+	return AutoSenseResult{}, errors.Errorf("invalid scanner V4 deployment setting: %q", deploymentPolicy)
+}
+
+func autoSense(ctx context.Context, client ctrlClient.Client, namespace string) (AutoSenseResult, error) {
+	siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, namespace)
+	if err != nil {
+		return AutoSenseResult{}, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
+	}
+	isOpenShift, err := isRunningOnOpenShift(ctx, client)
+	if err != nil {
+		return AutoSenseResult{}, errors.Wrap(err, "cannot fetch OpenShift ClusterVersion resource")
+	}
+	if !isOpenShift {
+		return AutoSenseResult{}, nil
+	}
+	return AutoSenseResult{
+		// Only deploy scanner resource if Central is not available in the same namespace.
+		DeployScannerResources:   !siblingCentralPresent,
+		EnableLocalImageScanning: true,
+	}, nil
 }
 
 func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {
