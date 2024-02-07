@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eo pipefail
+
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
@@ -641,11 +643,11 @@ function launch_sensor {
       mkdir "$k8s_dir/sensor-deploy"
       touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
       chmod 0600 "$k8s_dir/sensor-deploy/init-bundle.yaml"
-      curl_central "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
+      curl_central -f --retry 10 "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
           -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}' \
           | jq '.helmValuesBundle' -r | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
 
-      curl_central "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
+      curl_central -f --retry 10 "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
           -o "$k8s_dir/sensor-deploy/chart.zip"
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
