@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -67,10 +68,10 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(processIndicator, foundProcessIndicator)
 
-	processIndicatorCount, err := store.Count(ctx)
+	processIndicatorCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, processIndicatorCount)
-	processIndicatorCount, err = store.Count(withNoAccessCtx)
+	processIndicatorCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(processIndicatorCount)
 
@@ -103,13 +104,13 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, processIndicators))
 
-	processIndicatorCount, err = store.Count(ctx)
+	processIndicatorCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, processIndicatorCount)
 
 	s.NoError(store.DeleteMany(ctx, processIndicatorIDs))
 
-	processIndicatorCount, err = store.Count(ctx)
+	processIndicatorCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, processIndicatorCount)
 }
@@ -259,7 +260,7 @@ func (s *ProcessIndicatorsStoreSuite) TestSACCount() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			expectedCount := len(testCase.expectedObjects)
-			count, err := s.store.Count(testCase.context)
+			count, err := s.store.Count(testCase.context, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -351,7 +352,7 @@ func (s *ProcessIndicatorsStoreSuite) TestSACDelete() {
 			assert.NoError(t, s.store.Delete(testCase.context, objA.GetId()))
 			assert.NoError(t, s.store.Delete(testCase.context, objB.GetId()))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 
@@ -379,7 +380,7 @@ func (s *ProcessIndicatorsStoreSuite) TestSACDeleteMany() {
 				objB.GetId(),
 			}))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 

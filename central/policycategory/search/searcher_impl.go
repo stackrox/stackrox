@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/policycategory/index"
 	"github.com/stackrox/rox/central/policycategory/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +26,6 @@ var (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
@@ -87,7 +85,7 @@ func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*st
 	return categories, newResults, nil
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+// Format the search functionality for field transformations.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PolicyCategoriesSchema.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)

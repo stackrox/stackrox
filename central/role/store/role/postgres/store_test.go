@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *RolesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(role, foundRole)
 
-	roleCount, err := store.Count(ctx)
+	roleCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, roleCount)
-	roleCount, err = store.Count(withNoAccessCtx)
+	roleCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(roleCount)
 
@@ -100,13 +101,13 @@ func (s *RolesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, roles))
 
-	roleCount, err = store.Count(ctx)
+	roleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, roleCount)
 
 	s.NoError(store.DeleteMany(ctx, roleIDs))
 
-	roleCount, err = store.Count(ctx)
+	roleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, roleCount)
 }

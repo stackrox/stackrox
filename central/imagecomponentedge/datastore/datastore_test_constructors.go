@@ -11,6 +11,6 @@ import (
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	storage := postgresStore.New(pool)
-	searcher := search.NewV2(storage, postgresStore.NewIndexer(pool))
+	searcher := search.NewV2(storage)
 	return New(storage, searcher)
 }

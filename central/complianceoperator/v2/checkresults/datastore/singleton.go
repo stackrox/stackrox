@@ -21,8 +21,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		db := globaldb.GetPostgres()
 		storage := pgStore.New(db)
-		indexer := pgStore.NewIndexer(db)
-		searcher := checkresultsSearch.New(storage, indexer)
+		searcher := checkresultsSearch.New(storage)
 		ds = New(storage, db, searcher)
 	})
 	return ds

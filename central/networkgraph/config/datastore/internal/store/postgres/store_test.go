@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(networkGraphConfig, foundNetworkGraphConfig)
 
-	networkGraphConfigCount, err := store.Count(ctx)
+	networkGraphConfigCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, networkGraphConfigCount)
-	networkGraphConfigCount, err = store.Count(withNoAccessCtx)
+	networkGraphConfigCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(networkGraphConfigCount)
 
@@ -100,13 +101,13 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkGraphConfigs))
 
-	networkGraphConfigCount, err = store.Count(ctx)
+	networkGraphConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkGraphConfigCount)
 
 	s.NoError(store.DeleteMany(ctx, networkGraphConfigIDs))
 
-	networkGraphConfigCount, err = store.Count(ctx)
+	networkGraphConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, networkGraphConfigCount)
 }

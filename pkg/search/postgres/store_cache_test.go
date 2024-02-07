@@ -196,21 +196,21 @@ func TestCachedCount(t *testing.T) {
 	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
-	firstCount, err1 := store.Count(cachedStoreCtx)
+	firstCount, err1 := store.Count(cachedStoreCtx, nil)
 	assert.Equal(t, 0, firstCount)
 	assert.NoError(t, err1)
 
 	testObject1 := newCachedTestSingleKeyStruct("TestCount", "Test Count", int64(256))
 	assert.NoError(t, store.Upsert(cachedStoreCtx, testObject1))
 
-	secondCount, err2 := store.Count(cachedStoreCtx)
+	secondCount, err2 := store.Count(cachedStoreCtx, nil)
 	assert.Equal(t, 1, secondCount)
 	assert.NoError(t, err2)
 
 	supplementaryObjects := sampleCachedTestSingleKeyStructArray("Count")
 	assert.NoError(t, store.UpsertMany(cachedStoreCtx, supplementaryObjects))
 
-	thirdCount, err3 := store.Count(cachedStoreCtx)
+	thirdCount, err3 := store.Count(cachedStoreCtx, nil)
 	assert.Equal(t, 1+len(supplementaryObjects), thirdCount)
 	assert.NoError(t, err3)
 }

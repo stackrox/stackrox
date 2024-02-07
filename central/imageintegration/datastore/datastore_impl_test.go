@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/imageintegration/index"
-	indexMocks "github.com/stackrox/rox/central/imageintegration/index/mocks"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	searchMocks "github.com/stackrox/rox/central/imageintegration/search/mocks"
 	"github.com/stackrox/rox/central/imageintegration/store"
@@ -40,14 +38,12 @@ type ImageIntegrationDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	mockIndexer  *indexMocks.MockIndexer
 	mockSearcher *searchMocks.MockSearcher
 
 	datastore DataStore
 
-	testDB  *pgtest.TestPostgres
-	store   store.Store
-	indexer index.Indexer
+	testDB *pgtest.TestPostgres
+	store  store.Store
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
@@ -62,14 +58,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Integration)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockIndexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.mockSearcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
 	suite.testDB = pgtest.ForT(suite.T())
 	suite.NotNil(suite.testDB)
 
 	suite.store = postgresStore.New(suite.testDB.DB)
-	suite.indexer = postgresStore.NewIndexer(suite.testDB.DB)
 
 	// test formattedSearcher
 	suite.datastore = NewForTestOnly(suite.store, suite.mockSearcher)
@@ -313,7 +307,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIndexing() {
 	suite.NoError(suite.store.Upsert(sac.WithAllAccess(context.Background()), ii))
 
 	q := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ClusterID, clusterID).ProtoQuery()
-	results, err := suite.indexer.Search(suite.hasWriteCtx, q)
+	results, err := suite.store.Search(suite.hasWriteCtx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }
@@ -326,7 +320,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestDataStoreSearch() {
 	}
 
 	// Create a new datastore since the one in suite uses mocks
-	ds := New(suite.store, search.New(suite.store, suite.indexer))
+	ds := New(suite.store, search.New(suite.store))
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	_, err := ds.AddImageIntegration(ctx, ii)

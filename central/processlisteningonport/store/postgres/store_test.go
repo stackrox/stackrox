@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -67,10 +68,10 @@ func (s *ListeningEndpointsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(processListeningOnPortStorage, foundProcessListeningOnPortStorage)
 
-	processListeningOnPortStorageCount, err := store.Count(ctx)
+	processListeningOnPortStorageCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, processListeningOnPortStorageCount)
-	processListeningOnPortStorageCount, err = store.Count(withNoAccessCtx)
+	processListeningOnPortStorageCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(processListeningOnPortStorageCount)
 
@@ -103,13 +104,13 @@ func (s *ListeningEndpointsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, processListeningOnPortStorages))
 
-	processListeningOnPortStorageCount, err = store.Count(ctx)
+	processListeningOnPortStorageCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, processListeningOnPortStorageCount)
 
 	s.NoError(store.DeleteMany(ctx, processListeningOnPortStorageIDs))
 
-	processListeningOnPortStorageCount, err = store.Count(ctx)
+	processListeningOnPortStorageCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, processListeningOnPortStorageCount)
 }
@@ -259,7 +260,7 @@ func (s *ListeningEndpointsStoreSuite) TestSACCount() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			expectedCount := len(testCase.expectedObjects)
-			count, err := s.store.Count(testCase.context)
+			count, err := s.store.Count(testCase.context, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -351,7 +352,7 @@ func (s *ListeningEndpointsStoreSuite) TestSACDelete() {
 			assert.NoError(t, s.store.Delete(testCase.context, objA.GetId()))
 			assert.NoError(t, s.store.Delete(testCase.context, objB.GetId()))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 
@@ -379,7 +380,7 @@ func (s *ListeningEndpointsStoreSuite) TestSACDeleteMany() {
 				objB.GetId(),
 			}))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 

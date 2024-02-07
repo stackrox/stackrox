@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -725,4 +726,15 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 			assert.Equal(t, c.expectedQuery, actual)
 		})
 	}
+}
+
+func TestSome(t *testing.T) {
+	q := search.EmptyQuery()
+	fmt.Println(q.GetQuery())
+	q.Pagination = &v1.QueryPagination{Limit: 5}
+	fmt.Println(q.GetQuery())
+	fmt.Println(q.GetPagination())
+
+	q = search.NewQueryBuilder().AddStrings(search.ImageName, "").ProtoQuery()
+	fmt.Println(q.GetQuery())
 }

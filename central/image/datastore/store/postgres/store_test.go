@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -58,7 +59,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	}
 	s.Equal(cloned, foundImage)
 
-	imageCount, err := store.Count(ctx)
+	imageCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(imageCount, 1)
 

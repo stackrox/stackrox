@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(complianceDomain, foundComplianceDomain)
 
-	complianceDomainCount, err := store.Count(ctx)
+	complianceDomainCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceDomainCount)
-	complianceDomainCount, err = store.Count(withNoAccessCtx)
+	complianceDomainCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceDomainCount)
 
@@ -100,13 +101,13 @@ func (s *ComplianceDomainsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceDomains))
 
-	complianceDomainCount, err = store.Count(ctx)
+	complianceDomainCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceDomainCount)
 
 	s.NoError(store.DeleteMany(ctx, complianceDomainIDs))
 
-	complianceDomainCount, err = store.Count(ctx)
+	complianceDomainCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, complianceDomainCount)
 }

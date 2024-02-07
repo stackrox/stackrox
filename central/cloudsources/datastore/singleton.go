@@ -16,9 +16,13 @@ var (
 // Singleton returns the singleton providing access to the external backups store.
 func Singleton() DataStore {
 	once.Do(func() {
-		searcher := search.New(pgStore.NewIndexer(globaldb.GetPostgres()))
 		store := pgStore.New(globaldb.GetPostgres())
+<<<<<<< HEAD
 		ds = newDataStore(searcher, store, discoveredClustersDS.Singleton())
+=======
+		searcher := search.New(store)
+		ds = newDataStore(searcher, store)
+>>>>>>> 1bbcff36b2 (ROX-22380: remove indexer from central)
 	})
 	return ds
 }

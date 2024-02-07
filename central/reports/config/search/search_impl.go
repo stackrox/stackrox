@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/reports/config/index"
 	"github.com/stackrox/rox/central/reports/config/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +19,6 @@ var (
 type searcherImpl struct {
 	storage  store.Store
 	searcher search.Searcher
-	indexer  index.Indexer
 }
 
 func (s *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -40,7 +38,7 @@ func (s *searcherImpl) Count(ctx context.Context, query *v1.Query) (int, error) 
 	return s.searcher.Count(ctx, query)
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+// Format the search functionality for default sorting.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	return paginated.WithDefaultSortOption(searcher, defaultSortOption)
 }

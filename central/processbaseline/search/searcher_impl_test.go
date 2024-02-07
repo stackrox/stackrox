@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	mockIndex "github.com/stackrox/rox/central/processbaseline/index/mocks"
 	mockStore "github.com/stackrox/rox/central/processbaseline/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -39,7 +38,6 @@ type ProcessBaselineSearchTestSuite struct {
 	suite.Suite
 
 	controller *gomock.Controller
-	indexer    *mockIndex.MockIndexer
 	store      *mockStore.MockStore
 
 	searcher    Searcher
@@ -53,9 +51,8 @@ func (suite *ProcessBaselineSearchTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	suite.controller = gomock.NewController(suite.T())
-	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
 	suite.store = mockStore.NewMockStore(suite.controller)
-	searcher, err := New(suite.store, suite.indexer)
+	searcher, err := New(suite.store)
 
 	suite.NoError(err)
 	suite.searcher = searcher
@@ -68,13 +65,13 @@ func (suite *ProcessBaselineSearchTestSuite) TearDownTest() {
 func (suite *ProcessBaselineSearchTestSuite) TestErrors() {
 	q := search.EmptyQuery()
 	someError := errors.New("this is a test error")
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(nil, someError)
+	suite.store.EXPECT().Search(gomock.Any(), q).Return(nil, someError)
 	results, err := suite.searcher.SearchRawProcessBaselines(suite.allowAllCtx, q)
 	suite.Equal(someError, err)
 	suite.Nil(results)
 
 	indexResults, _ := getFakeSearchResults(1)
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
+	suite.store.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
 	suite.store.EXPECT().GetMany(suite.allowAllCtx, search.ResultsToIDs(indexResults)).Return(nil, nil, someError)
 	results, err = suite.searcher.SearchRawProcessBaselines(suite.allowAllCtx, q)
 	suite.Error(err)
@@ -84,7 +81,7 @@ func (suite *ProcessBaselineSearchTestSuite) TestErrors() {
 func (suite *ProcessBaselineSearchTestSuite) TestSearchForAll() {
 	q := search.EmptyQuery()
 	var emptyList []search.Result
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(emptyList, nil)
+	suite.store.EXPECT().Search(gomock.Any(), q).Return(emptyList, nil)
 	// It's an implementation detail whether this method is called, so allow but don't require it.
 	suite.store.EXPECT().GetMany(suite.allowAllCtx, testutils.AssertionMatcher(assert.Empty)).MinTimes(0).MaxTimes(1)
 	results, err := suite.searcher.SearchRawProcessBaselines(suite.allowAllCtx, q)
@@ -92,7 +89,7 @@ func (suite *ProcessBaselineSearchTestSuite) TestSearchForAll() {
 	suite.Empty(results)
 
 	indexResults, dbResults := getFakeSearchResults(3)
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
+	suite.store.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
 	suite.store.EXPECT().GetMany(suite.allowAllCtx, search.ResultsToIDs(indexResults)).Return(dbResults, nil, nil)
 	results, err = suite.searcher.SearchRawProcessBaselines(suite.allowAllCtx, q)
 	suite.NoError(err)

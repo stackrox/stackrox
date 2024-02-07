@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/cluster/datastore/index"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,7 +11,6 @@ import (
 
 type searcherImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

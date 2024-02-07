@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/index"
+	"github.com/stackrox/rox/central/discoveredclusters/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -15,8 +15,8 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given indexer.
-func New(indexer index.Indexer) Searcher {
+func New(store store.Store) Searcher {
 	return &searcherImpl{
-		indexer: indexer,
+		store: store,
 	}
 }

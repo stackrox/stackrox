@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(networkPolicyApplicationUndoDeploymentRecord, foundNetworkPolicyApplicationUndoDeploymentRecord)
 
-	networkPolicyApplicationUndoDeploymentRecordCount, err := store.Count(ctx)
+	networkPolicyApplicationUndoDeploymentRecordCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, networkPolicyApplicationUndoDeploymentRecordCount)
-	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(withNoAccessCtx)
+	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(networkPolicyApplicationUndoDeploymentRecordCount)
 
@@ -100,13 +101,13 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkPolicyApplicationUndoDeploymentRecords))
 
-	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
+	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkPolicyApplicationUndoDeploymentRecordCount)
 
 	s.NoError(store.DeleteMany(ctx, networkPolicyApplicationUndoDeploymentRecordIDs))
 
-	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx)
+	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, networkPolicyApplicationUndoDeploymentRecordCount)
 }

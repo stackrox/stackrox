@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *PoliciesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(policy, foundPolicy)
 
-	policyCount, err := store.Count(ctx)
+	policyCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, policyCount)
-	policyCount, err = store.Count(withNoAccessCtx)
+	policyCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(policyCount)
 
@@ -103,13 +104,13 @@ func (s *PoliciesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(policys, allPolicy)
 
-	policyCount, err = store.Count(ctx)
+	policyCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, policyCount)
 
 	s.NoError(store.DeleteMany(ctx, policyIDs))
 
-	policyCount, err = store.Count(ctx)
+	policyCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, policyCount)
 }

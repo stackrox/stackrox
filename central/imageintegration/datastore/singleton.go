@@ -142,7 +142,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
 	initializeIntegrations(storage)
-	searcher := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	searcher := search.New(storage)
 	dataStore = New(storage, searcher)
 }
 

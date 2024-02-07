@@ -87,8 +87,7 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
-	index := collectionPostgres.NewIndexer(s.testDB.DB)
-	_, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore, index))
+	_, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
 	s.NoError(err)
 
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)

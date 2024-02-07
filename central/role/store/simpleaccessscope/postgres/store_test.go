@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(simpleAccessScope, foundSimpleAccessScope)
 
-	simpleAccessScopeCount, err := store.Count(ctx)
+	simpleAccessScopeCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, simpleAccessScopeCount)
-	simpleAccessScopeCount, err = store.Count(withNoAccessCtx)
+	simpleAccessScopeCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(simpleAccessScopeCount)
 
@@ -100,13 +101,13 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
 
-	simpleAccessScopeCount, err = store.Count(ctx)
+	simpleAccessScopeCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, simpleAccessScopeCount)
 
 	s.NoError(store.DeleteMany(ctx, simpleAccessScopeIDs))
 
-	simpleAccessScopeCount, err = store.Count(ctx)
+	simpleAccessScopeCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, simpleAccessScopeCount)
 }

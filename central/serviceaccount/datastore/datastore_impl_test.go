@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
 	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
@@ -30,7 +29,6 @@ type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
 	pool      postgres.DB
-	indexer   index.Indexer
 	searcher  serviceAccountSearch.Searcher
 	storage   store.Store
 	datastore DataStore
@@ -44,8 +42,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	suite.storage = pgStore.New(suite.pool)
-	suite.indexer = pgStore.NewIndexer(suite.pool)
-	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
+	suite.searcher = serviceAccountSearch.New(suite.storage)
 	suite.datastore, err = New(suite.storage, suite.searcher)
 	suite.Require().NoError(err)
 

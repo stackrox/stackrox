@@ -68,16 +68,14 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	pgStore.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), pgStore.NewIndexer(s.db), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	s.datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	componentIndexer := imageComponentPostgres.NewIndexer(s.db)
-	componentSearcher := imageComponentSearch.NewV2(componentStorage, componentIndexer)
+	componentSearcher := imageComponentSearch.NewV2(componentStorage)
 	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	cveIndexer := imageCVEPostgres.NewIndexer(s.db)
-	cveSearcher := imageCVESearch.New(cveStorage, cveIndexer)
+	cveSearcher := imageCVESearch.New(cveStorage)
 	cveDataStore := imageCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 }

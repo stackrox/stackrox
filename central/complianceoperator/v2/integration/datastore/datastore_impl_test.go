@@ -6,9 +6,7 @@ import (
 	"context"
 	"testing"
 
-	integrationSearch "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/search"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
-	integrationStorage "github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -62,10 +60,7 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 
 	s.db = pgtest.ForT(s.T())
 	s.storage = postgres.New(s.db)
-	indexer := integrationStorage.NewIndexer(s.db)
-	searcher := integrationSearch.New(s.storage, indexer)
-
-	s.dataStore = New(s.storage, searcher)
+	s.dataStore = New(s.storage)
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {

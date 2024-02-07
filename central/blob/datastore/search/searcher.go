@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/blob/datastore/index"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,10 +19,10 @@ type Searcher interface {
 	SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(blobStore store.Store, indexer index.Indexer) Searcher {
+// New returns a new instance of Searcher for the given the storage.
+func New(blobStore store.Store) Searcher {
 	return &searcherImpl{
 		storage:           blobStore,
-		formattedSearcher: formatSearcher(indexer),
+		formattedSearcher: formatSearcher(blobStore),
 	}
 }

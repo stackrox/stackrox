@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(integrationHealth, foundIntegrationHealth)
 
-	integrationHealthCount, err := store.Count(ctx)
+	integrationHealthCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, integrationHealthCount)
-	integrationHealthCount, err = store.Count(withNoAccessCtx)
+	integrationHealthCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(integrationHealthCount)
 
@@ -100,13 +101,13 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, integrationHealths))
 
-	integrationHealthCount, err = store.Count(ctx)
+	integrationHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, integrationHealthCount)
 
 	s.NoError(store.DeleteMany(ctx, integrationHealthIDs))
 
-	integrationHealthCount, err = store.Count(ctx)
+	integrationHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, integrationHealthCount)
 }

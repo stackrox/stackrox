@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -71,10 +72,10 @@ func (s *HashesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(hash, foundHash)
 
-	hashCount, err := store.Count(ctx)
+	hashCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, hashCount)
-	hashCount, err = store.Count(withNoAccessCtx)
+	hashCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(hashCount)
 
@@ -107,13 +108,13 @@ func (s *HashesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, hashs))
 
-	hashCount, err = store.Count(ctx)
+	hashCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, hashCount)
 
 	s.NoError(store.DeleteMany(ctx, hashIDs))
 
-	hashCount, err = store.Count(ctx)
+	hashCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, hashCount)
 }

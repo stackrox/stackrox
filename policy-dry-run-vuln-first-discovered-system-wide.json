@@ -1,0 +1,37 @@
+{
+    "pending": false,
+    "result": {
+        "alerts": [
+            {
+                "deployment": "redhat-operators-fq2h8",
+                "violations": [
+                    "Container 'registry-server' has image with remote 'redhat/redhat-operator-index'",
+                    "RHSA-2024:0299 (CVSS 6.1) (severity Moderate) found in component 'python3-requests' (version 2.20.0-2.1.el8_1.noarch) in container 'registry-server'",
+                    "RHSA-2024:0319 (CVSS 5.9) (severity Moderate) found in component 'gnutls' (version 3.6.16-5.el8_6.1.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0374 (CVSS 5.5) (severity Moderate) found in component 'platform-python-pip' (version 9.0.3-22.el8.noarch) in container 'registry-server'",
+                    "RHSA-2024:0374 (CVSS 5.5) (severity Moderate) found in component 'python3-pip' (version 9.0.3-22.el8.noarch) in container 'registry-server'",
+                    "RHSA-2024:0374 (CVSS 5.5) (severity Moderate) found in component 'python3-pip-wheel' (version 9.0.3-22.el8.noarch) in container 'registry-server'",
+                    "RHSA-2024:0406 (CVSS 6.2) (severity Moderate) found in component 'protobuf-c' (version 1.3.0-6.el8.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0413 (CVSS 7.8) (severity Moderate) found in component 'libxml2' (version 2.9.7-13.el8_6.2.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0413 (CVSS 7.8) (severity Moderate) found in component 'python3-libxml2' (version 2.9.7-13.el8_6.2.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0416 (CVSS 7.8) (severity Moderate) found in component 'ncurses-base' (version 6.1-9.20180224.el8.noarch) in container 'registry-server'",
+                    "RHSA-2024:0416 (CVSS 7.8) (severity Moderate) found in component 'ncurses-libs' (version 6.1-9.20180224.el8.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0417 (CVSS 4.7) (severity Low) found in component 'shadow-utils' (version 2:4.6-16.el8.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0421 (CVSS 7.5) (severity Moderate) found in component 'expat' (version 2.2.5-8.el8_6.3.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0424 (CVSS 6.5) (severity Moderate) found in component 'python3-rpm' (version 4.14.3-24.el8_6.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0424 (CVSS 6.5) (severity Moderate) found in component 'rpm' (version 4.14.3-24.el8_6.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0424 (CVSS 6.5) (severity Moderate) found in component 'rpm-build-libs' (version 4.14.3-24.el8_6.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0424 (CVSS 6.5) (severity Moderate) found in component 'rpm-libs' (version 4.14.3-24.el8_6.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0425 (CVSS 6.2) (severity Moderate) found in component 'sqlite-libs' (version 3.26.0-16.el8_6.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0427 (CVSS 5.9) (severity Moderate) found in component 'libtasn1' (version 4.13-3.el8.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0428 (CVSS 5.9) (severity Moderate) found in component 'curl' (version 7.61.1-22.el8_6.9.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0428 (CVSS 5.9) (severity Moderate) found in component 'libcurl' (version 7.61.1-22.el8_6.9.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0430 (CVSS 7.5) (severity Moderate) found in component 'platform-python' (version 3.6.8-47.el8_6.2.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0430 (CVSS 7.5) (severity Moderate) found in component 'python3-libs' (version 3.6.8-47.el8_6.2.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0538 (CVSS 5.9) (severity Moderate) found in component 'libssh' (version 0.9.6-3.el8.x86_64) in container 'registry-server'",
+                    "RHSA-2024:0538 (CVSS 5.9) (severity Moderate) found in component 'libssh-config' (version 0.9.6-3.el8.noarch) in container 'registry-server'"
+                ]
+            }
+        ]
+    }
+}

@@ -19,7 +19,7 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 	var err error
-	ad, err = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
+	ad, err = New(storage, search.New(storage))
 	if err != nil {
 		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}

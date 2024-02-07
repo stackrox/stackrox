@@ -40,8 +40,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	pgStore.Destroy(ctx, db)
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
 	store := pgStore.CreateTableAndNewStore(ctx, b, db, gormDB, false)
-	indexer := pgStore.NewIndexer(db)
-	searcher := search.NewV2(store, indexer)
+	searcher := search.NewV2(store)
 	datastore := NewWithPostgres(store, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)

@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/cluster/datastore/index"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/edgefields"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -22,12 +21,11 @@ type Searcher interface {
 	SearchRawClusterCVEs(ctx context.Context, query *v1.Query) ([]*storage.ClusterCVE, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, indexer index.Indexer) Searcher {
+// New returns a new instance of Searcher for the given the storage.
+func New(storage store.Store) Searcher {
 	return &searcherImpl{
 		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcherV2(indexer),
+		searcher: formatSearcherV2(storage),
 	}
 }
 

@@ -37,9 +37,6 @@ const (
 	imageCVEsTable           = pkgSchema.ImageCvesTableName
 	imageCVEEdgesTable       = pkgSchema.ImageCveEdgesTableName
 
-	countStmt  = "SELECT COUNT(*) FROM " + imagesTable
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM " + imagesTable + " WHERE Id = $1)"
-
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 	getImageIDsStmt  = "SELECT Id FROM " + imagesTable
 
@@ -762,16 +759,20 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
+func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Image")
 
 	return pgutils.Retry2(func() (int, error) {
-		row := s.db.QueryRow(ctx, countStmt)
-		var count int
-		if err := row.Scan(&count); err != nil {
-			return 0, err
-		}
-		return count, nil
+		return pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
+	})
+}
+
+// Search returns the result matching the query.
+func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Image")
+
+	return pgutils.Retry2(func() ([]search.Result, error) {
+		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
 }
 
@@ -780,13 +781,17 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Image")
 
 	return pgutils.Retry2(func() (bool, error) {
-		row := s.db.QueryRow(ctx, existsStmt, id)
-		var exists bool
-		if err := row.Scan(&exists); err != nil {
-			return false, pgutils.ErrNilIfNoRows(err)
-		}
-		return exists, nil
+		return s.retryableExists(ctx, id)
 	})
+}
+
+func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error) {
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		return false, err
+	}
+	return count == 1, nil
 }
 
 // Get returns the object, if it exists from the store.

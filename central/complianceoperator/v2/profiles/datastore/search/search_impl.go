@@ -7,7 +7,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -15,8 +14,7 @@ var (
 )
 
 type searcherImpl struct {
-	storage  pgStore.Store
-	searcher search.Searcher
+	storage pgStore.Store
 }
 
 // Count returns the number of profiles from the query
@@ -26,5 +24,5 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	} else if !ok {
 		return 0, sac.ErrResourceAccessDenied
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }

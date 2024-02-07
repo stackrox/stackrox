@@ -44,9 +44,6 @@ var storeFile string
 //go:embed store_test.go.tpl
 var storeTestFile string
 
-//go:embed index.go.tpl
-var indexFile string
-
 //go:embed migration.go.tpl
 var migrationFile string
 
@@ -65,7 +62,6 @@ var (
 	singletonTestTemplate     = newTemplate(singletonTestFile)
 	storeTemplate             = newTemplate(storeFile)
 	storeTestTemplate         = newTemplate(storeTestFile)
-	indexTemplate             = newTemplate(indexFile)
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
@@ -348,12 +344,6 @@ func main() {
 				}
 				if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
 					return err
-				}
-
-				if props.SearchCategory != "" {
-					if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
-						return err
-					}
 				}
 			}
 		}

@@ -5,7 +5,6 @@ import (
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 // Searcher is compliance integrations searcher
@@ -14,9 +13,8 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage pgStore.Store, search search.Searcher) Searcher {
+func New(storage pgStore.Store) Searcher {
 	return &searcherImpl{
-		storage:  storage,
-		searcher: search,
+		storage: storage,
 	}
 }

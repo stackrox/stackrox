@@ -201,7 +201,7 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 	return nil, false, nil
 }
 
-// AddPolicy inserts a policy into the storage and the indexer
+// AddPolicy inserts a policy into the storage.
 func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) (string, error) {
 	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return "", err
@@ -248,7 +248,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	return policy.Id, nil
 }
 
-// UpdatePolicy updates a policy from the storage and the indexer
+// UpdatePolicy updates a policy from the storage.
 func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
 	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -274,7 +274,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	return ds.storage.Upsert(ctx, policy)
 }
 
-// RemovePolicy removes a policy from the storage and the indexer
+// RemovePolicy removes a policy from the storage.
 func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err

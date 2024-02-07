@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(imageComponent, foundImageComponent)
 
-	imageComponentCount, err := store.Count(ctx)
+	imageComponentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, imageComponentCount)
-	imageComponentCount, err = store.Count(withNoAccessCtx)
+	imageComponentCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(imageComponentCount)
 
@@ -100,13 +101,13 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, imageComponents))
 
-	imageComponentCount, err = store.Count(ctx)
+	imageComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageComponentCount)
 
 	s.NoError(store.DeleteMany(ctx, imageComponentIDs))
 
-	imageComponentCount, err = store.Count(ctx)
+	imageComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, imageComponentCount)
 }

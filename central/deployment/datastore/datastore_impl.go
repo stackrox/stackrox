@@ -197,12 +197,9 @@ func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*s
 
 // CountDeployments
 func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
-	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
+	if _, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
-	} else if ok {
-		return ds.deploymentStore.Count(ctx)
 	}
-
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 

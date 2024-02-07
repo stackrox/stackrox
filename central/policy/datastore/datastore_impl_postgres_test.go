@@ -69,18 +69,15 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	s.mockNotifierDS = notifierDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 
 	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	categoryIndex := categoryPostgres.NewIndexer(s.db)
-	categorySearcher := categorySearch.New(categoryStorage, categoryIndex)
+	categorySearcher := categorySearch.New(categoryStorage)
 
 	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	edgeIndex := edgePostgres.NewIndexer(s.db)
-	edgeSearcher := edgeSearch.New(edgeStorage, edgeIndex)
+	edgeSearcher := edgeSearch.New(edgeStorage)
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
 
 	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyIndex := pgStore.NewIndexer(s.db)
-	s.datastore = New(policyStore, search.New(policyStore, policyIndex), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	s.datastore = New(policyStore, search.New(policyStore), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }
 

@@ -16,7 +16,7 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
-		ds = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
+		ds = New(storage, search.New(storage))
 	})
 	return ds
 }

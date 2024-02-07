@@ -26,7 +26,7 @@ var (
 
 func initialize() {
 	storage := policyPostgres.New(globaldb.GetPostgres())
-	searcher := search.New(storage, policyPostgres.NewIndexer(globaldb.GetPostgres()))
+	searcher := search.New(storage)
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()

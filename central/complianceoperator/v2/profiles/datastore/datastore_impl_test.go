@@ -70,8 +70,7 @@ func (s *complianceProfileDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = profileStorage.New(s.db)
-	indexer := profileStorage.NewIndexer(s.db)
-	searcher := profileSearch.New(s.storage, indexer)
+	searcher := profileSearch.New(s.storage)
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db, searcher)
 }
 
@@ -94,7 +93,7 @@ func (s *complianceProfileDataStoreTestSuite) TestUpsertProfile() {
 	// Verify upsert with global access
 	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
@@ -123,7 +122,7 @@ func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileForCluster() {
 	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec1))
 	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 

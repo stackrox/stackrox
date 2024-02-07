@@ -225,20 +225,14 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 	return c.isReadAllowed(ctx, obj), nil
 }
 
-// Count returns the number of objects in the store.
-func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
-	defer c.setCacheOperationDurationTime(time.Now(), ops.Count)
-	c.cacheLock.RLock()
-	defer c.cacheLock.RUnlock()
-	count := 0
-	err := c.walkCacheNoLock(ctx, func(obj PT) error {
-		count++
-		return nil
-	})
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+// Count returns the number of objects in the store matching the query.
+func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return c.underlyingStore.Count(ctx, q)
+}
+
+// Search searches for objects matching the query.
+func (c *cachedStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return c.underlyingStore.Search(ctx, q)
 }
 
 // Get returns the object, if it exists from the store.

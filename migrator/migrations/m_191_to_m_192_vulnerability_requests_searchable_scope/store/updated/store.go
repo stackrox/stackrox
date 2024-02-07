@@ -36,7 +36,6 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
-	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)

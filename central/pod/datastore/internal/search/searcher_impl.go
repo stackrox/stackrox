@@ -43,8 +43,8 @@ func (ds *searcherImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*stor
 	return pods, err
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(podIndexer search.Searcher) search.Searcher {
-	defaultSortedSearcher := paginated.WithDefaultSortOption(podIndexer, defaultSortOption)
+// Format the search functionality for default sorting.
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	defaultSortedSearcher := paginated.WithDefaultSortOption(searcher, defaultSortOption)
 	return defaultSortedSearcher
 }
