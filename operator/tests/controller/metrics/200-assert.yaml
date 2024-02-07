@@ -26,5 +26,3 @@ collectors:
   selector: test=metrics-access
   tail: -1
 - command: kubectl describe pod -n $NAMESPACE -l test=metrics-access
-# The test image is huge :-(
-timeout: 600
