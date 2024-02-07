@@ -249,7 +249,6 @@ teardown_file() {
     if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
         skip "This test is currently only supported on OpenShift"
     fi
-
     if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
@@ -285,7 +284,7 @@ teardown_file() {
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
 
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_scannerV4_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
