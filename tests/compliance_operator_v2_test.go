@@ -249,7 +249,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 
 	// Verify that the duplicate profile was not created and the error message is correct
 	_, err = service.CreateComplianceScanConfiguration(ctx, duplicateProfileReq)
-	assert.Contains(t, err.Error(), "Duplicated profiles found in current or existing scan configurations")
+	assert.Contains(t, err.Error(), "already uses profile")
 
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
