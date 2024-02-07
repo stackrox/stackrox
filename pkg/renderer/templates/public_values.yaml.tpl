@@ -166,7 +166,7 @@ scanner:
   {{- end }}
 
 scannerV4:
-  disable: false
+  disable: true
   indexer:
     {{- if .K8sConfig.ImageOverrides.Main }}
     image:
