@@ -7,14 +7,15 @@ ROX_PRODUCT_VERSION="$1"
 PRODUCT_VERSION="${ROX_PRODUCT_VERSION}.0"
 declare -A files_to_download=(
     ["v4/vulns.json.zst"]="${SCANNER_V4_DEFS_BUCKET}/vulnerability-bundles/${PRODUCT_VERSION}/vulns.json.zst"
-    ["v4/repository-to-cpe.json"]="${SCANNER_V4_DEFS_BUCKET}/redhat-repository-mappings/repository-to-cpe.json"
-    ["v4/container-name-repos-map.json"]="${SCANNER_V4_DEFS_BUCKET}/redhat-repository-mappings/container-name-repos-map.json"
+    ["v4/mapping.zip"]="https://storage.googleapis.com/definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 )
 
 # Download the files
 for f in "${!files_to_download[@]}"; do
     curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs -o "$f" "${files_to_download[$f]}"
 done
+
+unzip -j "v4/mapping.zip" "repomapping/*" -d v4 && rm v4/mapping.zip
 
 for f in v4/*.json; do
   jq empty "$f" || echo "jq processing failed for $f"
