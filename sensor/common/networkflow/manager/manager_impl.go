@@ -206,8 +206,7 @@ func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
 	if c.remote.IPAndPort.IPNetwork.IsValid() {
 		return c.remote.IPAndPort.IPNetwork.IP(), nil
 	}
-	return net.IPAddress{}, fmt.Errorf("remote has invalid IP address %q and invalid IP network address %q",
-		c.remote.IPAndPort.Address.String(), c.remote.IPAndPort.IPNetwork.String())
+	return net.IPAddress{}, fmt.Errorf("remote has invalid IP address %q", c.remote.IPAndPort.String())
 }
 
 type processInfo struct {
