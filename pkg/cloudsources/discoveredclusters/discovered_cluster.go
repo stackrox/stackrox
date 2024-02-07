@@ -7,17 +7,28 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var rootNamespaceUUID = uuid.FromStringOrPanic("1a379e9f-1ea4-4399-b7e1-4cd8b1ced3e3")
 
 // GenerateDiscoveredClusterID returns a UUID5 based on the discovered cluster fields.
+// Returns an empty string if the argument is invalid.
 func GenerateDiscoveredClusterID(discoveredCluster *DiscoveredCluster) string {
+	if discoveredCluster == nil {
+		return ""
+	}
+
+	id := discoveredCluster.GetID()
+	sourceID := discoveredCluster.GetCloudSourceID()
+	if stringutils.AtLeastOneEmpty(id, sourceID) {
+		return ""
+	}
 	key := strings.Join([]string{
-		discoveredCluster.GetID(),
+		id,
 		discoveredCluster.GetType().String(),
-		discoveredCluster.GetCloudSourceID(),
+		sourceID,
 	}, ",")
 	return uuid.NewV5(rootNamespaceUUID, key).String()
 }
