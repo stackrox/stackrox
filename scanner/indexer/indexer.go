@@ -203,6 +203,9 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 					cfg.Name2ReposMappingURL = indexerCfg.NameToReposURL
 					cfg.Name2ReposMappingFile = indexerCfg.NameToReposFile
 				}),
+				"java": castToConfig(func(cfg *java.ScannerConfig) {
+					cfg.DisableAPI = true
+				}),
 			},
 		},
 	}
