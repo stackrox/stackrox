@@ -122,6 +122,8 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		}
 		signal := signalStreamMsg.GetSignal()
 
+		log.Infof("Process received: %s (args = %s) (containerID= %s)", signal.GetProcessSignal().GetName(), signal.GetProcessSignal().GetArgs(), signal.GetProcessSignal().GetContainerId())
+
 		switch signal.GetSignal().(type) {
 		case *v1.Signal_ProcessSignal:
 			processSignal := signal.GetProcessSignal()
