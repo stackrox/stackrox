@@ -116,6 +116,20 @@ func (mr *MockDataStoreMockRecorder) DeleteResult(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResult", reflect.TypeOf((*MockDataStore)(nil).DeleteResult), ctx, id)
 }
 
+// DeleteResultWhenClusterDeleted mocks base method.
+func (m *MockDataStore) DeleteResultWhenClusterDeleted(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteResultWhenClusterDeleted", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteResultWhenClusterDeleted indicates an expected call of DeleteResultWhenClusterDeleted.
+func (mr *MockDataStoreMockRecorder) DeleteResultWhenClusterDeleted(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResultWhenClusterDeleted", reflect.TypeOf((*MockDataStore)(nil).DeleteResultWhenClusterDeleted), ctx, clusterID)
+}
+
 // GetComplianceCheckResult mocks base method.
 func (m *MockDataStore) GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error) {
 	m.ctrl.T.Helper()

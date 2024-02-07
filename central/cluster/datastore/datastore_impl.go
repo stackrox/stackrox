@@ -12,7 +12,12 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+<<<<<<< HEAD
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
+=======
+	scanResult "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	scanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+>>>>>>> 90aa7fca47 (Added changes to delete check result by cluster id)
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -79,7 +84,12 @@ type datastoreImpl struct {
 	serviceAccountDataStore   serviceAccountDataStore.DataStore
 	roleDataStore             roleDataStore.DataStore
 	roleBindingDataStore      roleBindingDataStore.DataStore
+<<<<<<< HEAD
 	compliancePruner          compliancePruning.Pruner
+=======
+	scanSettingDatastore      scanSetting.DataStore
+	scanResultDatastore       scanResult.DataStore
+>>>>>>> 90aa7fca47 (Added changes to delete check result by cluster id)
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
 
@@ -572,7 +582,16 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	}
 
 	if features.ComplianceEnhancements.Enabled() {
+<<<<<<< HEAD
 		ds.compliancePruner.RemoveComplianceResourcesByCluster(ctx, cluster.GetId())
+=======
+		if err := ds.scanSettingDatastore.RemoveClusterFromScanConfig(ctx, cluster.GetId()); err != nil {
+			log.Errorf("failed to delete scan config for cluster %s: %v", cluster.GetId(), err)
+		}
+		if err := ds.scanResultDatastore.DeleteResultWhenClusterDeleted(ctx, cluster.GetId()); err != nil {
+			log.Errorf("failed to delete scan result for cluster %s: %v", cluster.GetId(), err)
+		}
+>>>>>>> 90aa7fca47 (Added changes to delete check result by cluster id)
 	}
 
 	err := ds.networkBaselineMgr.ProcessPostClusterDelete(removedDeployments)
