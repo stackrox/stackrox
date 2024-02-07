@@ -14,10 +14,12 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -969,3 +971,120 @@ func mustSendWithoutBlock[T any](t *testing.T, ch chan T, v T) {
 }
 
 // endregion
+
+func Test_connection_IsExternal(t *testing.T) {
+	tests := map[string]struct {
+		remoteIP         string
+		remoteCIDR       string
+		expectedExternal bool
+		wantErr          bool
+	}{
+		"10.0.0.1 IP address should be internal": {
+			remoteIP:         "10.0.0.1",
+			remoteCIDR:       "",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"169.254.1.1 IP address should be internal": {
+			remoteIP:         "169.254.1.1",
+			remoteCIDR:       "",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"192.168.1.1 IP address should be internal": {
+			remoteIP:         "192.168.1.1",
+			remoteCIDR:       "",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"11.12.13.14 IP address should be external": {
+			remoteIP:         "11.12.13.14",
+			remoteCIDR:       "",
+			expectedExternal: true,
+			wantErr:          false,
+		},
+		"8.8.8.8 IP address should be external": {
+			remoteIP:         "8.8.8.8",
+			remoteCIDR:       "",
+			expectedExternal: true,
+			wantErr:          false,
+		},
+		"10.0.0.0/8 Network should be internal": {
+			remoteIP:         "",
+			remoteCIDR:       "10.0.0.0/8",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		// 10.0.0.0/6 contains entire 10.0.0.0/8 (which is internal) and additional address range that is external
+		"10.0.0.0/6 Network should be external": {
+			remoteIP:         "",
+			remoteCIDR:       "10.0.0.0/6",
+			expectedExternal: true,
+			wantErr:          false,
+		},
+		"169.254.1.0/24 Network should be internal": {
+			remoteIP:         "",
+			remoteCIDR:       "169.254.1.0/24",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"192.168.1.0/24 Network should be internal": {
+			remoteIP:         "",
+			remoteCIDR:       "192.168.1.0/24",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"11.12.13.2/30 Network should be external": {
+			remoteIP:         "",
+			remoteCIDR:       "11.12.13.2/30",
+			expectedExternal: true,
+			wantErr:          false,
+		},
+		"8.8.8.8/32 Network should be external": {
+			remoteIP:         "",
+			remoteCIDR:       "8.8.8.8/32",
+			expectedExternal: true,
+			wantErr:          false,
+		},
+		"IP address should have precedence over Network CIDR": {
+			remoteIP:         "192.168.1.1", // internal
+			remoteCIDR:       "8.8.8.8/32",  // external
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"Both empty should yield external and an error": {
+			remoteIP:         "",
+			remoteCIDR:       "",
+			expectedExternal: true,
+			wantErr:          true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			c := &connection{
+				local: net.NetworkPeerID{
+					Address:   net.ParseIP("99.99.99.99"),
+					Port:      80,
+					IPNetwork: net.IPNetwork{},
+				},
+				remote: net.NumericEndpoint{
+					IPAndPort: net.NetworkPeerID{
+						Address:   net.ParseIP(tt.remoteIP),
+						Port:      80,
+						IPNetwork: net.IPNetworkFromCIDR(tt.remoteCIDR),
+					},
+				},
+				containerID: uuid.NewV4().String(),
+				incoming:    true,
+			}
+			got, err := c.IsExternal()
+			if !tt.wantErr {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+			assert.Equalf(t, tt.expectedExternal, got, "expected %q/%q to be external=%t, but got=%t",
+				tt.remoteIP, tt.remoteCIDR, tt.expectedExternal, got)
+		})
+	}
+}
