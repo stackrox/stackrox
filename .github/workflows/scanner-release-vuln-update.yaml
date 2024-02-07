@@ -2,6 +2,9 @@ name: Scanner release vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
+  push:
+    branches:
+    - scanner/*
 
 jobs:
   read-release-versions:
@@ -71,6 +74,15 @@ jobs:
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache
         ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+
+        # The vulnerability file created by older versions can remain the name vulns.json.zst in the GCS bucket.
+        # TODO: ROX-22285 Remove after 4.4
+        for file in output.json.{zst,ztd}; do
+          if [ -f "${{ env.ROX_PRODUCT_VERSION }}/${file}" ]; then
+            mv "${{ env.ROX_PRODUCT_VERSION }}/${file}" "${{ env.ROX_PRODUCT_VERSION }}/vulns.json.zst"
+            break
+          fi
+        done
         gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
 
   send-notification:
