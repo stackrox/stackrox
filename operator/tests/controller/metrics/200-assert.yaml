@@ -8,6 +8,13 @@ status:
 apiVersion: v1
 kind: Pod
 metadata:
+  name: operator-metrics-no-http2
+status:
+  phase: Succeeded
+---
+apiVersion: v1
+kind: Pod
+metadata:
   name: operator-metrics-privileged
 status:
   phase: Succeeded
