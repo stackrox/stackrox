@@ -8,11 +8,11 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormLabelGroup from '../FormLabelGroup';
 
 import { categoriesUtilsForClairifyScanner } from '../../utils/integrationUtils';
 

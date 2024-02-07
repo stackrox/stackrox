@@ -87,7 +87,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Scanner',
         image: logo,
-        label: 'StackRox Scanner V4',
+        label: 'Scanner V4',
         type: 'scannerv4',
         featureFlagDependency: 'ROX_SCANNER_V4',
     },
