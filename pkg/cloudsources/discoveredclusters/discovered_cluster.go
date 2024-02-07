@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -102,10 +103,10 @@ func (d *DiscoveredCluster) GetCloudSourceID() string {
 
 // Validate will validate the discovered cluster.
 func (d *DiscoveredCluster) Validate() error {
-	errorList := errorhelpers.NewErrorList("Validation")
 	if d == nil {
-		errorList.AddString("empty discovered cluster")
+		return errors.New("empty discovered cluster")
 	}
+	errorList := errorhelpers.NewErrorList("Validation")
 	if d.GetID() == "" {
 		errorList.AddString("discovered cluster ID must be defined")
 	}
