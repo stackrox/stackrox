@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import * as yup from 'yup';
 
@@ -15,6 +15,7 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 
 import { categoriesUtilsForClairifyScanner } from '../../utils/integrationUtils';
+
 const { categoriesAlternatives, getCategoriesText, matchCategoriesAlternative, validCategories } =
     categoriesUtilsForClairifyScanner;
 
