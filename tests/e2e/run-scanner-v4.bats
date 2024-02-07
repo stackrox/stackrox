@@ -225,6 +225,9 @@ teardown_file() {
     export ROX_SCANNER_V4="false"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_HELM_DEPLOY="false"
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+      export ROX_OPENSHIFT_VERSION=4
+    fi
     _deploy_stackrox # This generated deployment bundles for central, sensor and scanner.
 
     verify_scannerV2_deployed
