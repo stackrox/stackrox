@@ -29,7 +29,6 @@ func validateScanName(req scanNameGetter) error {
 }
 
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
-	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
@@ -38,6 +37,12 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 		ObjectMeta: v1.ObjectMeta{
 			Name:      request.GetScanSettings().GetScanName(),
 			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "stackrox",
+			},
+			Annotations: map[string]string{
+				"owner": "stackrox",
+			},
 		},
 		Roles: []string{masterRole, workerRole},
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
@@ -64,7 +69,6 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 		})
 	}
 
-	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSettingBinding{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSettingBinding.Kind,
@@ -73,6 +77,12 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 		ObjectMeta: v1.ObjectMeta{
 			Name:      request.GetScanName(),
 			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "stackrox",
+			},
+			Annotations: map[string]string{
+				"owner": "stackrox",
+			},
 		},
 		Profiles: profileRefs,
 		SettingsRef: &v1alpha1.NamedObjectReference{
