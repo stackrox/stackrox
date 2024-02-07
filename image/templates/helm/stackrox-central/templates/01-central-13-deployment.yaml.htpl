@@ -75,7 +75,7 @@ spec:
               fieldPath: metadata.namespace
         {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
         {{- /* If telemetry.enabled is true or null, configure the endpoint and
-               the key, if provided. */}}
+               the key, if provided. Also, configure additional listening endpoints.*/}}
         {{- if ._rox.central.telemetry.storage.endpoint }}
         - name: ROX_TELEMETRY_ENDPOINT
           value: {{ ._rox.central.telemetry.storage.endpoint | quote }}
@@ -84,6 +84,8 @@ spec:
         - name: ROX_TELEMETRY_STORAGE_KEY_V1
           value: {{ ._rox.central.telemetry.storage.key | quote }}
         {{- end }}
+        - name: ROX_TELEMETRY_API_WHITELIST
+          value: "/api/splunk/ta/*"
         {{- /* Otherwise... */}}
         {{- else }}
         {{- /* ... if telemetry.enabled is false, configure the key to disable
