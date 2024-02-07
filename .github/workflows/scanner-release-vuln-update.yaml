@@ -75,7 +75,6 @@ jobs:
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache
         ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
-        go run ./scanner/cmd/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
 
         # The vulnerability file created by older versions can remain the name vulns.json.zst in the GCS bucket.
         # TODO: ROX-22285 Remove after 4.4
