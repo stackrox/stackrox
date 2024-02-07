@@ -3,6 +3,7 @@ package filter
 import (
 	"strings"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/set"
@@ -61,11 +62,12 @@ type filterImpl struct {
 	rootLock               sync.Mutex
 }
 
-func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool {
+func (f *filterImpl) siftNoLock(indicator *storage.ProcessIndicator, level *level, args []string, levelNum int) bool {
 	if len(args) == 0 || levelNum >= len(f.maxFanOut) {
 		// If we have hit this point with this exact level structure, maxExactPathMatch number of times
 		// then return false. Otherwise increment the levels hits and return true
 		if level.hits >= f.maxExactPathMatches {
+			log.Infof("Process Indicator filtered (%s | %s %s): hits exceed max path matches: %d >= %d", indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs(), level.hits, f.maxExactPathMatches)
 			return false
 		}
 		level.hits++
@@ -77,13 +79,14 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
 		if len(level.children) >= f.maxFanOut[levelNum] {
+			log.Infof("Process Indicator filtered (%s | %s %s): max fan out: %d >= %d", indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs(), len(level.children), f.maxFanOut[levelNum])
 			return false
 		}
 		nextLevel = newLevel()
 		level.children[currentArg] = nextLevel
 	}
 
-	return f.siftNoLock(nextLevel, args[1:], levelNum+1)
+	return f.siftNoLock(indicator, nextLevel, args[1:], levelNum+1)
 }
 
 // NewFilter returns an empty filter to start loading processes into
@@ -123,13 +126,14 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	processLevel := rootLevel.children[indicator.GetSignal().GetExecFilePath()]
 	if processLevel == nil {
 		if len(rootLevel.children) >= f.maxUniqueProcesses {
+			log.Infof("Process Indicator filtered (%s | %s %s): exceeded max unique process: %d >= %d", indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs(), len(rootLevel.children), f.maxUniqueProcesses)
 			return false
 		}
 		processLevel = newLevel()
 		rootLevel.children[indicator.GetSignal().GetExecFilePath()] = processLevel
 	}
 
-	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
+	return f.siftNoLock(indicator, processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
 }
 
 func (f *filterImpl) UpdateByPod(pod *storage.Pod) {
