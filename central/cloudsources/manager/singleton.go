@@ -1,7 +1,8 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/central/cloudsources/datastore"
+	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
+	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -29,7 +30,7 @@ func Singleton() Manager {
 	}
 
 	once.Do(func() {
-		m = newManager(datastore.Singleton())
+		m = newManager(cloudSourcesDS.Singleton(), discoveredClustersDS.Singleton())
 	})
 	return m
 }

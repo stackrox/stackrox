@@ -4,18 +4,23 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
+	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/pkg/errors"
+	pgkErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -24,6 +29,14 @@ import (
 const (
 	// Time format for Paladin API timestamps.
 	timeFormat = "2006-01-02 15:04:00+0000"
+
+	clusterTypeAKS = "aks"
+	clusterTypeGKE = "gke"
+	clusterTypeEKS = "eks"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // AssetsResponse holds the response returned by the Paladin Cloud API.
@@ -75,10 +88,11 @@ func (a *Asset) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Client can be used to interact with the Paladin Cloud API.
-type Client struct {
-	httpClient *http.Client
-	endpoint   string
+// paladinClient can be used to interact with the Paladin Cloud API.
+type paladinClient struct {
+	httpClient    *http.Client
+	endpoint      string
+	cloudSourceID string
 }
 
 // paladinTransportWrapper adds auth information to the underlying transport as well as the user agent.
@@ -97,7 +111,7 @@ func (p *paladinTransportWrapper) RoundTrip(req *http.Request) (*http.Response, 
 }
 
 // NewClient creates a client to interact with Paladin Cloud APIs.
-func NewClient(cfg *storage.CloudSource) *Client {
+func NewClient(cfg *storage.CloudSource) *paladinClient {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
 	retryClient.Logger = nil
@@ -109,24 +123,50 @@ func NewClient(cfg *storage.CloudSource) *Client {
 	retryClient.HTTPClient.Timeout = 30 * time.Second
 	retryClient.RetryWaitMin = 10 * time.Second
 
-	return &Client{
-		httpClient: retryClient.StandardClient(),
-		endpoint:   urlfmt.FormatURL(cfg.GetPaladinCloud().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash),
+	return &paladinClient{
+		httpClient:    retryClient.StandardClient(),
+		endpoint:      urlfmt.FormatURL(cfg.GetPaladinCloud().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash),
+		cloudSourceID: cfg.GetId(),
 	}
 }
 
-// GetAssets returns the discovered assets from Paladin Cloud.
-func (c *Client) GetAssets(ctx context.Context) (*AssetsResponse, error) {
+// GetDiscoveredClusters returns the discovered clusters from the Paladin Cloud API.
+func (c *paladinClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error) {
+	response, err := c.getAssets(ctx)
+	if err != nil {
+		return nil, pgkErrors.Wrap(err, "retrieving data from paladin cloud")
+	}
+
+	var transformErrors error
+	discoveredClusters := make([]*discoveredclusters.DiscoveredCluster, 0, len(response.Assets))
+	for _, asset := range response.Assets {
+		discoveredCluster, err := c.mapAssetToDiscoveredCluster(asset)
+		if err != nil {
+			transformErrors = errors.Join(transformErrors, err)
+			continue
+		}
+		discoveredClusters = append(discoveredClusters, discoveredCluster)
+	}
+
+	if transformErrors != nil {
+		return nil, transformErrors
+	}
+
+	return discoveredClusters, nil
+}
+
+// getAssets returns the discovered assets from Paladin Cloud.
+func (c *paladinClient) getAssets(ctx context.Context) (*AssetsResponse, error) {
 	var assets AssetsResponse
 
 	if err := c.sendRequest(ctx, http.MethodGet, "/v2/assets", "?category=k8s", &assets); err != nil {
-		return nil, errors.Wrap(err, "retrieving assets")
+		return nil, pgkErrors.Wrap(err, "retrieving assets")
 	}
 
 	return &assets, nil
 }
 
-func (c *Client) sendRequest(ctx context.Context, method string, apiPath string, query string, response interface{}) error {
+func (c *paladinClient) sendRequest(ctx context.Context, method string, apiPath string, query string, response interface{}) error {
 	path, err := url.JoinPath(c.endpoint, apiPath)
 	if err != nil {
 		return errox.InvalidArgs.CausedBy(err)
@@ -134,12 +174,12 @@ func (c *Client) sendRequest(ctx context.Context, method string, apiPath string,
 
 	req, err := http.NewRequestWithContext(ctx, method, path+query, nil)
 	if err != nil {
-		return errors.Wrap(err, "creating request")
+		return pgkErrors.Wrap(err, "creating request")
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "executing request")
+		return pgkErrors.Wrap(err, "executing request")
 	}
 
 	defer utils.IgnoreError(resp.Body.Close)
@@ -149,7 +189,7 @@ func (c *Client) sendRequest(ctx context.Context, method string, apiPath string,
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
-		return errors.Wrap(err, "decoding response body")
+		return pgkErrors.Wrap(err, "decoding response body")
 	}
 
 	return nil
@@ -161,4 +201,75 @@ func getErrorResponse(resp *http.Response) error {
 		return fmt.Errorf("request failed with status %d", resp.StatusCode)
 	}
 	return fmt.Errorf("request failed with status %d and response %q", resp.StatusCode, buf.String())
+}
+
+func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclusters.DiscoveredCluster, error) {
+	d := &discoveredclusters.DiscoveredCluster{
+		ID:            clusterIDFromAsset(asset),
+		Name:          asset.Name,
+		Type:          clusterTypeFromAsset(asset),
+		ProviderType:  providerTypeFromAsset(asset),
+		Region:        asset.Region,
+		CloudSourceID: c.cloudSourceID,
+	}
+
+	firstDiscoveredAt, err := gogoProto.TimestampProto(asset.FirstDiscoveredAt)
+	if err != nil {
+		return nil, errox.InvariantViolation.New("converting timestamps")
+	}
+	d.FirstDiscoveredAt = firstDiscoveredAt
+
+	return d, nil
+}
+
+func providerTypeFromAsset(a Asset) storage.DiscoveredCluster_Metadata_ProviderType {
+	switch a.Source {
+	case "gcp":
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP
+	case "aws":
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
+	case "azure":
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
+	default:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
+	}
+}
+
+func clusterTypeFromAsset(a Asset) storage.ClusterMetadata_Type {
+	switch a.Type {
+	case clusterTypeAKS:
+		return storage.ClusterMetadata_AKS
+	case clusterTypeGKE:
+		return storage.ClusterMetadata_GKE
+	case clusterTypeEKS:
+		return storage.ClusterMetadata_EKS
+	default:
+		return storage.ClusterMetadata_UNSPECIFIED
+	}
+}
+
+func clusterIDFromAsset(a Asset) string {
+	// If the type is not AKS, we can safely return the ID from Paladin Cloud.
+	// In the case of EKS, it will be the ARN, in the case of GCP it will be the cluster ID.
+	if a.Type != clusterTypeAKS {
+		return a.ID
+	}
+
+	// For Azure, our cluster ID is different from the one specified by Paladin Cloud.
+	// Paladin CLoud has the Azure reference, which is of the format
+	//	"subscriptions/<id>/resourcegroups/<group>/azure resource names.../<cluster name>"
+	// Internally, our format for AKS clusters is
+	//  "MC_<resource group>_<cluster name>_<location>
+
+	// Index 3 -> resource group name
+	// Index 7 -> cluster name
+	idParts := strings.Split(a.ID, "/")
+
+	if len(idParts) != 8 {
+		log.Warnf("Received unkown ID for AKS cluster from Paladin %q. This might lead to incorrect matching",
+			a.ID)
+		return a.ID
+	}
+
+	return fmt.Sprintf("MC_%s_%s_%s", idParts[3], idParts[7], a.Region)
 }
