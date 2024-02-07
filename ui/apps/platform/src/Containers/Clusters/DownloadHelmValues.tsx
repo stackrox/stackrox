@@ -4,6 +4,7 @@ import { Button } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
+import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES } from 'hooks/useAnalytics';
 import { actions as notificationActions } from 'reducers/notifications';
 import { downloadClusterHelmValuesYaml } from 'services/ClustersService';
 
@@ -20,6 +21,7 @@ const DownloadHelmValues = ({
     addToast,
     removeToast,
 }: DownloadHelmValuesProps): ReactElement => {
+    const { analyticsTrack } = useAnalytics();
     const [isFetchingValues, setIsFetchingValues] = useState(false);
 
     function downloadValues(): void {
@@ -47,7 +49,10 @@ const DownloadHelmValues = ({
                 <Button
                     variant="secondary"
                     icon={<DownloadIcon />}
-                    onClick={downloadValues}
+                    onClick={() => {
+                        downloadValues();
+                        analyticsTrack(LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES);
+                    }}
                     isDisabled={isFetchingValues}
                     isLoading={isFetchingValues}
                 >

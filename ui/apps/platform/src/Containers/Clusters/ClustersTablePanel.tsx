@@ -25,6 +25,10 @@ import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
+import useAnalytics, {
+    LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+    SECURE_A_CLUSTER_LINK_CLICKED,
+} from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
@@ -69,6 +73,7 @@ function ClustersTablePanel({
     selectedClusterId,
     searchOptions,
 }: ClustersTablePanelProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const history = useHistory();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
@@ -212,6 +217,12 @@ function ClustersTablePanel({
         isMoveInitBundlesEnabled ? (
             <DropdownItem
                 key="init-bundle"
+                onClick={() => {
+                    analyticsTrack({
+                        event: SECURE_A_CLUSTER_LINK_CLICKED,
+                        properties: { source: 'Secure a Cluster Dropdown' },
+                    });
+                }}
                 component={
                     <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
                 }
@@ -234,7 +245,15 @@ function ClustersTablePanel({
         <DropdownItem
             key="legacy"
             component={
-                <Link to={`${clustersBasePath}/new`}>
+                <Link
+                    to={`${clustersBasePath}/new`}
+                    onClick={() =>
+                        analyticsTrack({
+                            event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                            properties: { source: 'Secure a Cluster Dropdown' },
+                        })
+                    }
+                >
                     {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
                 </Link>
             }

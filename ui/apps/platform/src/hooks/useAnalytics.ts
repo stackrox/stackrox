@@ -21,6 +21,14 @@ export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Dow
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
 
+export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
+export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
+export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
+export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
+export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
+export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
+export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
+
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
  * allows us to use the boolean fields in numeric aggregations in the
@@ -139,7 +147,50 @@ type AnalyticsEvent =
               type: 'NODE' | 'PLATFORM';
               duration: string;
           };
-      };
+      }
+    /**
+     * Tracks each time the user clicks the "Create Bundle" button
+     */
+    | {
+          event: typeof CREATE_INIT_BUNDLE_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Cluster Init Bundles';
+          };
+      }
+    /**
+     * Tracks each time the user clicks a link to visit the "Secure a Cluster" page
+     */
+    | {
+          event: typeof SECURE_A_CLUSTER_LINK_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Secure a Cluster Dropdown';
+          };
+      }
+    /**
+     * Tracks each time the user clicks a link to visit the legacy installation method page
+     */
+    | {
+          event: typeof LEGACY_SECURE_A_CLUSTER_LINK_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Secure a Cluster Dropdown';
+          };
+      }
+    /**
+     * Tracks each time the user downloads an init bundle
+     */
+    | typeof DOWNLOAD_INIT_BUNDLE
+    /**
+     * Tracks each time the user revokes an init bundle
+     */
+    | typeof REVOKE_INIT_BUNDLE
+    /**
+     * Tracks each time the user downloads a cluster's YAML file and keys
+     */
+    | typeof LEGACY_CLUSTER_DOWNLOAD_YAML
+    /**
+     * Tracks each time the user downloads a cluster's Helm values
+     */
+    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES;
 
 const useAnalytics = () => {
     const telemetry = useSelector(selectors.publicConfigTelemetrySelector);

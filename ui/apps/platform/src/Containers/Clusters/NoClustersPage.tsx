@@ -18,6 +18,11 @@ import { CloudSecurityIcon } from '@patternfly/react-icons';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getProductBranding } from 'constants/productBranding';
+import useAnalytics, {
+    CREATE_INIT_BUNDLE_CLICKED,
+    LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+    SECURE_A_CLUSTER_LINK_CLICKED,
+} from 'hooks/useAnalytics';
 // import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
 import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -45,6 +50,8 @@ export type NoClustersPageProps = {
 };
 
 function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
+    const { analyticsTrack } = useAnalytics();
+
     /*
     // TODO after 4.4 release
     const { currentUser } = useAuthStatus();
@@ -132,6 +139,12 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 isLarge
                                 component={LinkShim}
                                 href={`${clustersInitBundlesPath}?action=create`}
+                                onClick={() =>
+                                    analyticsTrack({
+                                        event: CREATE_INIT_BUNDLE_CLICKED,
+                                        properties: { source: 'No Clusters' },
+                                    })
+                                }
                             >
                                 Create bundle
                             </Button>
@@ -141,13 +154,27 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 isLarge
                                 onClick={() => {
                                     setIsModalOpen(true);
+                                    analyticsTrack({
+                                        event: SECURE_A_CLUSTER_LINK_CLICKED,
+                                        properties: { source: 'No Clusters' },
+                                    });
                                 }}
                             >
                                 Review installation methods
                             </Button>
                         )}
                         <div className="pf-u-mt-xl">
-                            <Link to={`${clustersBasePath}/new`}>Legacy installation method</Link>
+                            <Link
+                                to={`${clustersBasePath}/new`}
+                                onClick={() => {
+                                    analyticsTrack({
+                                        event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                                        properties: { source: 'No Clusters' },
+                                    });
+                                }}
+                            >
+                                Legacy installation method
+                            </Link>
                         </div>
                         <SecureClusterModal
                             isModalOpen={isModalOpen}
