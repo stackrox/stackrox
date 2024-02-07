@@ -186,6 +186,9 @@ func (c *connection) IsExternal() (bool, error) {
 	if err != nil {
 		return true, errors.Wrap(err, "unable to determine if flow is external or internal")
 	}
+	if addr.IsLoopback() {
+		return false, errors.New("connection with localhost")
+	}
 	return addr.IsPublic(), nil
 }
 

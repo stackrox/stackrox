@@ -991,6 +991,12 @@ func Test_connection_IsExternal(t *testing.T) {
 			expectedExternal: false,
 			wantErr:          false,
 		},
+		"127.0.0.1 localhost should return an error (and not be shown on the graph)": {
+			remoteIP:         "127.0.0.1",
+			remoteCIDR:       "",
+			expectedExternal: false,
+			wantErr:          true,
+		},
 		"192.168.1.1 IP address should be internal": {
 			remoteIP:         "192.168.1.1",
 			remoteCIDR:       "",
@@ -1056,6 +1062,36 @@ func Test_connection_IsExternal(t *testing.T) {
 			remoteIP:         "",
 			remoteCIDR:       "",
 			expectedExternal: true,
+			wantErr:          true,
+		},
+		"fd00::/8 Network should be internal": {
+			remoteIP:         "",
+			remoteCIDR:       "fd00::/8",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"fe80::/10 Network should be internal": {
+			remoteIP:         "",
+			remoteCIDR:       "fe80::/10",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"fd12:3456:789a:1::1 (Unique Local Addresses) should be internal": {
+			remoteIP:         "fd12:3456:789a:1::1",
+			remoteCIDR:       "",
+			expectedExternal: false,
+			wantErr:          false,
+		},
+		"::1 IP address (localhost) should return an error (and not be shown on the graph)": {
+			remoteIP:         "::1",
+			remoteCIDR:       "",
+			expectedExternal: false,
+			wantErr:          true,
+		},
+		"::1/128 (localhost) should return an error (and not be shown on the graph)": {
+			remoteIP:         "",
+			remoteCIDR:       "::1/128",
+			expectedExternal: false,
 			wantErr:          true,
 		},
 	}
