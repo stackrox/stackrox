@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -20,30 +21,24 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
-// TODO:
-// - Verify adheres to style guide: https://github.com/stackrox/architecture-decision-records/blob/main/stackrox/ADR-0004-roxctl-subcommands-layout.md
-// - Also verify in alignment with: https://github.com/stackrox/stackrox/blob/master/roxctl/README.md
-
 const (
 	contentLengthHdrKey = "Content-Length"
 
-	// TODO: Pending decision to put vulns in subdir
-	// bundleFileNameFmt = "/%[1]s/scanner-vulns-%[1]s.zip"
-	bundleFileNameFmt = "scanner-vulns-%[1]s.zip"
-
+	bundleFileNameFmt    = "%[1]s/scanner-vulns-%[1]s.zip"
 	latestBundleFileName = "scanner-vuln-updates.zip"
 )
 
 type scannerDownloadDBCommand struct {
 	// Properties that are bound to cobra flags.
-	version     string
-	force       bool
-	skipCentral bool
-	filename    string
+	filename     string
+	force        bool
+	skipCentral  bool
+	skipVariants bool
+	version      string
 
 	// filenameValidated is set to true if filename is non-empty and has
 	// already been validated, this ensures the same file isn't validated
-	// repeatedly.
+	// repeatedly when processing version variants.
 	filenameValidated bool
 
 	// Properties that are injected or constructed.
@@ -54,22 +49,10 @@ func (cmd *scannerDownloadDBCommand) construct(_ *cobra.Command) {
 }
 
 func (cmd *scannerDownloadDBCommand) downloadDb() error {
-	version := cmd.detectVersion()
-
-	priorToV4, err := isPriorToScannerV4(version)
+	// Get the list of file names to attempt to download.
+	bundleFileNames, err := cmd.buildBundleFileNames()
 	if err != nil {
-		return fmt.Errorf("invalid version %q: %w", version, err)
-	}
-
-	var bundleFileNames []string
-	if priorToV4 {
-		cmd.env.Logger().InfofLn("Version represents StackRox Scanner, downloading 'latest' bundle.")
-		bundleFileNames = append(bundleFileNames, latestBundleFileName)
-	} else {
-		versionVariants := disectVersion(version)
-		for _, versionVariant := range versionVariants {
-			bundleFileNames = append(bundleFileNames, fmt.Sprintf(bundleFileNameFmt, versionVariant))
-		}
+		return err
 	}
 
 	var errs []error
@@ -104,10 +87,35 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 	return errors.Join(errs...)
 }
 
+// buildBundleFileNames builds a list of filenames to attempt to download.
+func (cmd *scannerDownloadDBCommand) buildBundleFileNames() ([]string, error) {
+	version := cmd.detectVersion()
+
+	priorToV4, err := isPriorToScannerV4(version)
+	if err != nil {
+		return nil, fmt.Errorf("invalid version %q: %w", version, err)
+	}
+
+	var bundleFileNames []string
+	if priorToV4 {
+		cmd.env.Logger().InfofLn("Version represents StackRox Scanner, downloading 'latest' bundle.")
+		bundleFileNames = append(bundleFileNames, latestBundleFileName)
+	} else if cmd.skipVariants {
+		bundleFileNames = append(bundleFileNames, fmt.Sprintf(bundleFileNameFmt, version))
+	} else {
+		versionVariants := disectVersion(version)
+		for _, versionVariant := range versionVariants {
+			bundleFileNames = append(bundleFileNames, fmt.Sprintf(bundleFileNameFmt, versionVariant))
+		}
+	}
+
+	return bundleFileNames, nil
+}
+
 // detectVersion attempts to determine an appropriate base version to use.
 func (cmd *scannerDownloadDBCommand) detectVersion() string {
 	if cmd.version != "" {
-		cmd.env.Logger().InfofLn("Using the version from command line flag: %q", cmd.version)
+		cmd.env.Logger().InfofLn("Using version from command line: %q", cmd.version)
 		return cmd.version
 	}
 
@@ -123,6 +131,8 @@ func (cmd *scannerDownloadDBCommand) detectVersion() string {
 	return ver
 }
 
+// versionFromCentral attempts to pull version from Central's metadata
+// service.
 func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 	client, err := cmd.env.HTTPClient(5 * time.Second)
 	if err != nil {
@@ -150,7 +160,11 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 	return metadata.GetVersion(), nil
 }
 
-func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFileName(outFileName string) (string, error) {
+// buildAndValidateOutputFileName returns a validated output file name where
+// downloaded data should be stored.
+func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFileName(bundleFileName string) (string, error) {
+	outFileName := bundleFileName
+
 	if cmd.filename != "" {
 		outFileName = cmd.filename
 
@@ -160,8 +174,8 @@ func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFileName(outFileName 
 		cmd.filenameValidated = true
 	}
 
-	// Throw an error if the file exists and force flag not used
 	if !cmd.force {
+		// Throw an error if the file exists and force flag not set.
 		if _, err := os.Stat(outFileName); err == nil {
 			return "", fmt.Errorf("file %q already exists, to overwrite use `--force`", outFileName)
 		}
@@ -170,10 +184,14 @@ func (cmd *scannerDownloadDBCommand) buildAndValidateOutputFileName(outFileName 
 	return outFileName, nil
 }
 
+// buildDownloadURL returns the URL from which to download the vulnerability
+// database from.
 func (cmd *scannerDownloadDBCommand) buildDownloadURL(bundleFileName string) (string, error) {
 	return url.JoinPath(env.ScannerDBDownloadBaseURL.Setting(), bundleFileName)
 }
 
+// downloadVulnDB downloads the vulnerability database from url and stores it in
+// the provided output file.
 func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName string) error {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -183,6 +201,11 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("downloading %q failed with status code %d: %s", url, resp.StatusCode, resp.Status)
+	}
+
+	err = os.MkdirAll(filepath.Dir(outFileName), 0700)
+	if err != nil {
+		return err
 	}
 
 	outFile, err := os.Create(outFileName)
@@ -199,7 +222,12 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 		}
 	}
 
-	cmd.env.Logger().InfofLn("Downloading %q (%d MiB)", url, fileSize/1024/1024)
+	var size string
+	if fileSize > 0 {
+		size = fmt.Sprintf("(%d MiB)", fileSize/1024/1024)
+	}
+
+	cmd.env.Logger().InfofLn("Downloading %q %s", url, size)
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return err
@@ -217,7 +245,7 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 }
 
 // disectVersion breaks a version into a series of version strings starting with
-// the most specific to the least specific.
+// the most specific to the least specific. Assumes format X.Y.Z-extra-stuff.
 func disectVersion(version string) []string {
 	res := []string{version}
 
@@ -241,15 +269,11 @@ func disectVersion(version string) []string {
 // isPriorToScannerV4 returns true if version represents a version of ACS from prior to the
 // introduction of Scanner V4. Will return an error if cannot determine result.
 func isPriorToScannerV4(version string) (bool, error) {
-	// 3.99.99 = Scanner V2
-	// 4.3.99  = Scanner V2
-	// 4.3.x   = Scanner V4
-	// 4.4.*   = Scanner V4
 	before, _, _ := strings.Cut(version, "-")
 	parts := strings.Split(before, ".")
 
 	if len(parts) < 2 || len(parts) > 3 {
-		return false, fmt.Errorf("%q is not in X.Y[.Z] format", before)
+		return false, fmt.Errorf("%q is not in x.y[.z] format", before)
 	}
 
 	x, err := strconv.Atoi(parts[0])
@@ -267,7 +291,7 @@ func isPriorToScannerV4(version string) (bool, error) {
 		z = parts[2]
 	}
 
-	if (x < 4 || y < 3) || (y == 3 && (z == "" || z != "x")) {
+	if x < 4 || y < 3 || (y == 3 && (z == "" || z != "x")) {
 		return true, nil
 	}
 
@@ -296,8 +320,9 @@ defaults to version embedded within roxctl.`,
 
 	c.Flags().StringVar(&scannerDownloadDBCmd.version, "version", "", "Download a specific version of the vulnerability database (default: auto-detect)")
 	c.Flags().StringVar(&scannerDownloadDBCmd.filename, "scanner-db-file", "", "Output file to save the vulnerability database to (default: remote filename)")
-	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting output file if it already exists")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting the output file if it already exists")
 	c.Flags().BoolVar(&scannerDownloadDBCmd.skipCentral, "skip-central", false, "Do not contact Central when detecting version")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.skipVariants, "skip-variants", false, "Do not attempt to download variants of the detected version")
 
 	return c
 }
