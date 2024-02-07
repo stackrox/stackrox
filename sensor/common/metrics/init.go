@@ -40,5 +40,6 @@ func init() {
 		telemetryInfo,
 		telemetrySecuredNodes,
 		telemetrySecuredVCPU,
+		deploymentEnhancementQueueSize,
 	)
 }
