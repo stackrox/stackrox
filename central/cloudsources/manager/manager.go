@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -45,8 +46,9 @@ type managerImpl struct {
 	shortCircuitSignal concurrency.Signal
 	stopSignal         concurrency.Signal
 
-	loopInterval time.Duration
-	loopTicker   *time.Ticker
+	loopInterval            time.Duration
+	loopTicker              *time.Ticker
+	shortCircuitRateLimiter *rate.Limiter
 
 	cloudSourcesDataStore       cloudSourcesDS.DataStore
 	discoveredClustersDataStore discoveredClustersDS.DataStore
@@ -60,6 +62,7 @@ func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
 		loopInterval:                discoveredClustersLoopInterval,
 		cloudSourcesDataStore:       cloudSourcesDS,
 		discoveredClustersDataStore: discoveredClustersDS,
+		shortCircuitRateLimiter:     rate.NewLimiter(rate.Every(time.Minute), 1),
 	}
 }
 
@@ -85,6 +88,12 @@ func (m *managerImpl) discoveredClustersLoop() {
 	for {
 		select {
 		case <-m.shortCircuitSignal.Done():
+			if err := m.shortCircuitRateLimiter.Wait(concurrency.AsContext(&m.stopSignal)); err != nil {
+				if errors.Is(err, context.Canceled) {
+					return
+				}
+				log.Errorw("Waiting for rate limiter entrance", logging.Err(err))
+			}
 			// Make sure to reset the signal again.
 			m.shortCircuitSignal.Reset()
 			// Make sure to reset the ticker, so we are not in the case where short-circuit is called and shortly after
