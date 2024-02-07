@@ -63,7 +63,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "upload-db",
-		Short: "Upload a vulnerability database for the StackRox Scanner.",
+		Short: "Upload the vulnerability database for the StackRox Scanner and/or Scanner V4.",
 		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			scannerUploadDBCmd.construct(c)
@@ -72,6 +72,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
+	// TODO: add force flag to upload to central ignoring version checks
 	c.Flags().StringVar(&scannerUploadDBCmd.filename, "scanner-db-file", "", "File containing the dumped Scanner definitions DB")
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 	utils.Must(c.MarkFlagRequired("scanner-db-file"))
