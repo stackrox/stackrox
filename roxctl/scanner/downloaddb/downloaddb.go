@@ -31,9 +31,10 @@ const (
 
 type scannerDownloadDBCommand struct {
 	// Properties that are bound to cobra flags.
-	version  string
-	force    bool
-	filename string
+	version     string
+	force       bool
+	skipCentral bool
+	filename    string
 
 	// filenameValidated is set to true if filename is non-empty and has
 	// already been validated, this ensures the same file isn't validated
@@ -99,9 +100,11 @@ func (cmd *scannerDownloadDBCommand) detectVersion() string {
 		return cmd.version
 	}
 
-	if ver, err := cmd.versionFromCentral(); err == nil {
-		cmd.env.Logger().InfofLn("Using version from Central: %q", ver)
-		return ver
+	if !cmd.skipCentral {
+		if ver, err := cmd.versionFromCentral(); err == nil {
+			cmd.env.Logger().InfofLn("Using version from Central: %q", ver)
+			return ver
+		}
 	}
 
 	ver := version.GetMainVersion()
@@ -275,16 +278,22 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "download-db",
-		Short: "Download the offline vulnerability database for the StackRox Scanner and/or Scanner V4.",
-		Args:  cobra.NoArgs,
+		Short: "Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.",
+		Long: `Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.
+
+Helps download version specific offline vulnerability bundles. Will contact 
+Central to determine version if one is not specified, if communication fails 
+defaults to version embedded within roxctl.`,
+		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			return scannerDownloadDBCmd.downloadDb()
 		},
 	}
 
-	c.Flags().StringVarP(&scannerDownloadDBCmd.version, "version", "v", "", "Download a specific version of the vulnerability database (by default will auto-detect).")
-	c.Flags().StringVar(&scannerDownloadDBCmd.filename, "scanner-db-file", "", "Output file to save the vulnerability database to.")
-	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting output file if exists")
+	c.Flags().StringVar(&scannerDownloadDBCmd.version, "version", "", "Download a specific version of the vulnerability database (default: auto-detect)")
+	c.Flags().StringVar(&scannerDownloadDBCmd.filename, "scanner-db-file", "", "Output file to save the vulnerability database to (default: remote filename)")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting output file if it already exists")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.skipCentral, "skip-central", false, "Do not contact Central when detecting version")
 
 	return c
 }
