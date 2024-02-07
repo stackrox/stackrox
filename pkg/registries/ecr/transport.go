@@ -48,7 +48,7 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func (t *awsTransport) isValidNoLock() bool {
-	return t.expiresAt != nil && t.expiresAt.After(time.Now())
+	return t.expiresAt != nil && time.Now().Before(*t.expiresAt)
 }
 
 func (t *awsTransport) refreshNoLock() error {
