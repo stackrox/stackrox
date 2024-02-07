@@ -5,9 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 /*
@@ -151,7 +153,19 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 	return ret
 }
 
-func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
+func getLatestBindingError(status *storage.ComplianceOperatorStatus) string {
+	conditions := status.GetConditions()
+	for _, c := range conditions {
+		if c.GetType() == "READY" && c.GetStatus() == "False" {
+			return c.GetMessage()
+		}
+	}
+	return ""
+}
+
+func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
+	scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore,
+	bindingsDS bindingsDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfig == nil {
 		return nil, nil
 	}
@@ -166,19 +180,31 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
+	var errors []string
+	bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).ProtoQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	bindingError := getLatestBindingError(bindings[0].Status)
+	if bindingError != "" {
+		errors = append(errors, bindingError)
+	}
+
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
+				errors = append(errors, cluster.GetErrors()...)
 				clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
 					ClusterId:   cluster.GetClusterId(),
 					ClusterName: cluster.GetClusterName(),
-					Errors:      cluster.GetErrors(),
+					Errors:      errors,
 				})
 			}
-
 			return clusterStatuses
 		}(),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
@@ -196,14 +222,16 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 	}, nil
 }
 
-func convertStorageScanConfigToV2ScanStatuses(ctx context.Context, scanConfigs []*storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
+func convertStorageScanConfigToV2ScanStatuses(ctx context.Context,
+	scanConfigs []*storage.ComplianceOperatorScanConfigurationV2,
+	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfigs == nil {
 		return nil, nil
 	}
 
 	scanStatuses := make([]*v2.ComplianceScanConfigurationStatus, 0, len(scanConfigs))
 	for _, scanConfig := range scanConfigs {
-		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS)
+		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS, bindingDS)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanConfigName())
 		}

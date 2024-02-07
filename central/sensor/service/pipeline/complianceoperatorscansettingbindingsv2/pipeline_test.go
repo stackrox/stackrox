@@ -147,7 +147,6 @@ func (s *PipelineTestSuite) TestMatch() {
 			},
 		},
 	}
-
 	s.Require().False(s.pipeline.Match(v1Msg))
 	s.Require().True(s.pipeline.Match(v2Msg))
 	s.Require().False(s.pipeline.Match(otherMsg))

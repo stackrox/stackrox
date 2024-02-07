@@ -23,7 +23,7 @@ var (
 
 // GetSuiteStorage -- returns suite storage
 func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuiteV2 {
-	status := &storage.ComplianceOperatorSuiteV2_Status{
+	status := &storage.ComplianceOperatorStatus{
 		Phase:        "DONE",
 		Result:       "NON-COMPLIANT",
 		ErrorMessage: "some error",
