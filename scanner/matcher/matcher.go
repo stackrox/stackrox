@@ -13,7 +13,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -53,6 +52,8 @@ type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
+	Ready(ctx context.Context) error
+	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
 }
 
@@ -130,9 +131,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	defaultTransport := http.DefaultTransport
 	// If this is a release build, Matcher should only reach out to Central,
 	// so deny (and log) any other traffic.
-	if buildinfo.ReleaseBuild {
-		defaultTransport = httputil.DenyTransport
-	}
+	// TODO(ROX-19004): re-add this when complete.
+	// if buildinfo.ReleaseBuild {
+	// 	 defaultTransport = httputil.DenyTransport
+	// }
 	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is always denied.
 	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices), httputil.WithDenySensor(true))
 	if err != nil {
@@ -211,4 +213,23 @@ func (m *matcherImpl) Close(ctx context.Context) error {
 	err := errors.Join(m.distroUpdater.Stop(), m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
+}
+
+// Initialized returns nil if the matcher is fully initialized including the
+// vulnerability store.  Otherwise, an error with an explanation is returned.
+func (m *matcherImpl) Initialized(ctx context.Context) error {
+	if !m.vulnUpdater.Initialized(ctx) {
+		return errors.New("initial load for the vulnerability store is in progress")
+	}
+	return nil
+}
+
+// Ready returns nil if the matcher is ready to query for vulnerabilities. Notice
+// the vulnerability store initial load might still be in progress. Otherwise, an
+// error with an explanation is returned.
+func (m *matcherImpl) Ready(ctx context.Context) error {
+	if err := m.pool.Ping(ctx); err != nil {
+		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	}
+	return nil
 }

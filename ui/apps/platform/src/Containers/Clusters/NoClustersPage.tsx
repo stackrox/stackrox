@@ -19,6 +19,7 @@ import { CloudSecurityIcon } from '@patternfly/react-icons';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getProductBranding } from 'constants/productBranding';
+// import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
 import useMetadata from 'hooks/useMetadata';
 import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getVersionedDocs } from 'utils/versioning';
@@ -42,6 +43,12 @@ import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
  */
 
 function NoClustersPage(): ReactElement {
+    /*
+    // TODO after 4.4 release
+    const { currentUser } = useAuthStatus();
+    const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
+    */
+
     // Use promise instead of useRestQuery hook because of role-based access control.
     const [errorMessage, setErrorMessage] = useState('');
     const [initBundlesCount, setInitBundlesCount] = useState(0);
@@ -53,6 +60,7 @@ function NoClustersPage(): ReactElement {
     const textForSuccessAlert = `You have successfully deployed a ${basePageTitle} platform. Now you can configure the clusters you want to secure.`;
 
     useEffect(() => {
+        // TODO after 4.4 release: if (hasAdminRole) {
         setIsLoading(true);
         fetchClusterInitBundles()
             .then(({ response }) => {
@@ -65,8 +73,10 @@ function NoClustersPage(): ReactElement {
             .finally(() => {
                 setIsLoading(false);
             });
-    }, []);
+        // TODO after 4.4 releaes: }
+    }, []); // TODO after 4.4 release [hasAdminRole]
 
+    // TODO after 4.4 release add hasAdminRole to conditional rendering.
     /* eslint-disable no-nested-ternary */
     return (
         <>

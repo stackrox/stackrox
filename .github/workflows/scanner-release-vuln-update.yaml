@@ -2,9 +2,6 @@ name: Scanner release vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
-  push:
-    branches:
-    - scanner/*
 
 jobs:
   read-release-versions:
@@ -34,6 +31,13 @@ jobs:
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
+    - name: Recover docker image cache space
+      run: |
+        df --si /
+        docker system prune --force --all
+        df --si /
+      shell: bash
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -46,7 +50,6 @@ jobs:
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
-      continue-on-error: true
       run: |
         DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
         FILE_NAME=$(basename "$DOWNLOAD_URL")
@@ -62,7 +65,12 @@ jobs:
           exit 1
         fi
 
-        go run ./scanner/cmd/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+        # Do not use the make target, as there may be some incompatibilities.
+        # See https://github.com/stackrox/stackrox/pull/9227.
+        cd scanner
+        go build -trimpath -o bin/updater ./cmd/updater
+        go clean -cache -modcache
+        ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
         gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
 
   send-notification:
@@ -74,4 +82,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

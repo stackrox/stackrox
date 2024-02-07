@@ -8,9 +8,9 @@ import (
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var _ DataStore = (*datastoreImpl)(nil)
@@ -49,7 +49,7 @@ func (ds *datastoreImpl) ListCloudSources(ctx context.Context, query *v1.Query) 
 
 func (ds *datastoreImpl) UpsertCloudSource(ctx context.Context, cloudSource *storage.CloudSource) error {
 	if err := validateCloudSource(cloudSource); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.CausedBy(err)
 	}
 	if err := ds.store.Upsert(ctx, cloudSource); err != nil {
 		return errors.Wrapf(err, "failed to upsert cloud source %q", cloudSource.GetId())
@@ -70,15 +70,40 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 	}
 
 	errorList := errorhelpers.NewErrorList("Validation")
-	if stringutils.AtLeastOneEmpty(
-		cloudSource.GetId(),
-		cloudSource.GetName(),
-		cloudSource.GetCredentials().GetSecret(),
-	) {
-		errorList.AddString("all required fields must be set")
+	if cloudSource.GetId() == "" {
+		errorList.AddString("cloud source id must be defined")
 	}
-	if cloudSource.GetConfig() == nil {
-		errorList.AddString("empty cloud source config")
+	if cloudSource.GetName() == "" {
+		errorList.AddString("cloud source name must be defined")
+	}
+	if cloudSource.GetCredentials().GetSecret() == "" {
+		errorList.AddString("cloud source credentials must be defined")
+	}
+	if err := validateType(cloudSource); err != nil {
+		errorList.AddError(err)
+	}
+	if err := endpoints.ValidateEndpoints(cloudSource.GetConfig()); err != nil {
+		errorList.AddWrap(err, "invalid endpoint")
 	}
 	return errorList.ToError()
+}
+
+func validateType(cloudSource *storage.CloudSource) error {
+	cloudSourceType := cloudSource.GetType()
+	if cloudSourceType == storage.CloudSource_TYPE_UNSPECIFIED {
+		return errors.New("cloud source type must be specified")
+	}
+	switch cloudSource.GetConfig().(type) {
+	case *storage.CloudSource_PaladinCloud:
+		if cloudSourceType != storage.CloudSource_TYPE_PALADIN_CLOUD {
+			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
+		}
+		return nil
+	case *storage.CloudSource_Ocm:
+		if cloudSourceType != storage.CloudSource_TYPE_OCM {
+			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
+		}
+		return nil
+	}
+	return errors.New("invalid cloud source config type")
 }

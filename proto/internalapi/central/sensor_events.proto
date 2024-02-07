@@ -99,7 +99,7 @@ message SensorEvent {
     ComplianceOperatorRuleV2 compliance_operator_rule_v2 = 29;
     ComplianceOperatorScanV2 compliance_operator_scan_v2 = 30;
     ComplianceOperatorScanSettingBindingV2 compliance_operator_scan_setting_binding_v2 = 31;
-    ComplianceOperatorSuite compliance_operator_suite = 32;
+    ComplianceOperatorSuiteV2 compliance_operator_suite_v2 = 32;
   }
 }
 

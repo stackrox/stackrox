@@ -13,7 +13,7 @@ function ComponentLocationTd({ location, source }: ComponentLocationTdProps) {
     return (
         <Flex spaceItems={{ default: 'spaceItemsXs' }} alignItems={{ default: 'alignItemsCenter' }}>
             <Truncate content={location || 'N/A'} position="middle" />
-            {source === 'OS' && (
+            {source === 'OS' && location === '' && (
                 <Tooltip content="Location is unavailable for operating system packages">
                     <InfoCircleIcon color="var(--pf-global--info-color--100)" />
                 </Tooltip>

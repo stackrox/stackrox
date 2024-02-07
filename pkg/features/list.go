@@ -41,7 +41,7 @@ var (
 	SyslogNamespaceLabels = registerUnchangeableFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", true)
 
 	// MoveInitBundlesUI is front-end only move from integrations to clusters route.
-	MoveInitBundlesUI = registerUnchangeableFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", false)
+	MoveInitBundlesUI = registerUnchangeableFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", true)
 
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
@@ -92,7 +92,7 @@ var (
 	_ = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", true)
 
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
-	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", false)
+	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", true)
 
 	// ScannerV4Support enables various capabilities associated with ACS + Clair consolidated scanner.
 	ScannerV4Support = registerUnchangeableFeature("Enable Scanner V4 Support", "ROX_SCANNER_V4_SUPPORT", true)
@@ -101,7 +101,7 @@ var (
 	ScannerV4 = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4", false)
 
 	// CloudCredentials enables support for short-lived cloud credentials.
-	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
+	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", true)
 
 	// CloudSources enables support for cloud source integrations.
 	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", false)

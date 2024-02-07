@@ -331,6 +331,30 @@ func (s *nodeDatastoreSACSuite) TestSearchNodes() {
 	}
 }
 
+func (s *nodeDatastoreSACSuite) TestWalkByQuery() {
+	clusterIDs := []string{testconsts.Cluster1, testconsts.Cluster3}
+
+	cases := getSACMultiNodeTestCases(context.Background(), s.T(), clusterIDs, testconsts.WrongCluster, resources.Node)
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := c.Context
+
+			var foundNodes []string
+			err := s.datastore.WalkByQuery(ctx, nil, func(node *storage.Node) error {
+				foundNodes = append(foundNodes, node.GetId())
+				return nil
+			})
+			s.NoError(err)
+
+			var expectedNodeIds []string
+			for _, expectedClusterID := range c.ExpectedClusterIds {
+				expectedNodeIds = append(expectedNodeIds, s.testNodeIDs[expectedClusterID]...)
+			}
+			s.ElementsMatch(expectedNodeIds, foundNodes)
+		})
+	}
+}
+
 func (s *nodeDatastoreSACSuite) TestSearchRawNodes() {
 	clusterIDs := []string{testconsts.Cluster1, testconsts.Cluster3}
 

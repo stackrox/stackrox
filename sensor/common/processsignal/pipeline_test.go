@@ -411,7 +411,7 @@ func collectEventsFor(ctx context.Context, ch <-chan *message.ExpiringMessage, t
 }
 
 func TestProcessPipelineOnline(t *testing.T) {
-	sensorEvents := make(chan *message.ExpiringMessage)
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

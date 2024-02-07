@@ -13,7 +13,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-// NewIndexer returns new indexer for `storage.ComplianceOperatorSuite`.
+// NewIndexer returns new indexer for `storage.ComplianceOperatorSuiteV2`.
 func NewIndexer(db postgres.DB) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -25,13 +25,13 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ComplianceOperatorSuite")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ComplianceOperatorSuiteV2")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_COMPLIANCE_SUITES, q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ComplianceOperatorSuite")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ComplianceOperatorSuiteV2")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_COMPLIANCE_SUITES, q, b.db)
 }

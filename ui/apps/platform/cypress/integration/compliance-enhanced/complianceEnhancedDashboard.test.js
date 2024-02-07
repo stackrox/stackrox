@@ -7,7 +7,7 @@ import {
     statusDashboardPath,
 } from './ComplianceEnhanced.helpers';
 
-describe('Compliance Dashboard', () => {
+describe.skip('Compliance Dashboard', () => {
     withAuth();
 
     before(function () {

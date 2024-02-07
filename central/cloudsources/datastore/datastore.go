@@ -30,8 +30,8 @@ func newDataStore(searcher search.Searcher, storage store.Store) DataStore {
 	}
 }
 
-// getTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func getTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	searcher := search.New(pgStore.NewIndexer(pool))
 	store := pgStore.New(pool)
 	return newDataStore(searcher, store)

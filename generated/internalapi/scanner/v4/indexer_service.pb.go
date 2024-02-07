@@ -393,12 +393,124 @@ func (m *HasIndexReportResponse) Clone() *HasIndexReportResponse {
 	return cloned
 }
 
+type GetOrCreateIndexReportRequest struct {
+	HashId string `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
+	// Types that are valid to be assigned to ResourceLocator:
+	//	*GetOrCreateIndexReportRequest_ContainerImage
+	ResourceLocator      isGetOrCreateIndexReportRequest_ResourceLocator `protobuf_oneof:"resource_locator"`
+	XXX_NoUnkeyedLiteral struct{}                                        `json:"-"`
+	XXX_unrecognized     []byte                                          `json:"-"`
+	XXX_sizecache        int32                                           `json:"-"`
+}
+
+func (m *GetOrCreateIndexReportRequest) Reset()         { *m = GetOrCreateIndexReportRequest{} }
+func (m *GetOrCreateIndexReportRequest) String() string { return proto.CompactTextString(m) }
+func (*GetOrCreateIndexReportRequest) ProtoMessage()    {}
+func (*GetOrCreateIndexReportRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3b3d06b94183d906, []int{5}
+}
+func (m *GetOrCreateIndexReportRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetOrCreateIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetOrCreateIndexReportRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetOrCreateIndexReportRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetOrCreateIndexReportRequest.Merge(m, src)
+}
+func (m *GetOrCreateIndexReportRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetOrCreateIndexReportRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetOrCreateIndexReportRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetOrCreateIndexReportRequest proto.InternalMessageInfo
+
+type isGetOrCreateIndexReportRequest_ResourceLocator interface {
+	isGetOrCreateIndexReportRequest_ResourceLocator()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isGetOrCreateIndexReportRequest_ResourceLocator
+}
+
+type GetOrCreateIndexReportRequest_ContainerImage struct {
+	ContainerImage *ContainerImageLocator `protobuf:"bytes,2,opt,name=container_image,json=containerImage,proto3,oneof" json:"container_image,omitempty"`
+}
+
+func (*GetOrCreateIndexReportRequest_ContainerImage) isGetOrCreateIndexReportRequest_ResourceLocator() {
+}
+func (m *GetOrCreateIndexReportRequest_ContainerImage) Clone() isGetOrCreateIndexReportRequest_ResourceLocator {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetOrCreateIndexReportRequest_ContainerImage)
+	*cloned = *m
+
+	cloned.ContainerImage = m.ContainerImage.Clone()
+	return cloned
+}
+
+func (m *GetOrCreateIndexReportRequest) GetResourceLocator() isGetOrCreateIndexReportRequest_ResourceLocator {
+	if m != nil {
+		return m.ResourceLocator
+	}
+	return nil
+}
+
+func (m *GetOrCreateIndexReportRequest) GetHashId() string {
+	if m != nil {
+		return m.HashId
+	}
+	return ""
+}
+
+func (m *GetOrCreateIndexReportRequest) GetContainerImage() *ContainerImageLocator {
+	if x, ok := m.GetResourceLocator().(*GetOrCreateIndexReportRequest_ContainerImage); ok {
+		return x.ContainerImage
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*GetOrCreateIndexReportRequest) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*GetOrCreateIndexReportRequest_ContainerImage)(nil),
+	}
+}
+
+func (m *GetOrCreateIndexReportRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetOrCreateIndexReportRequest) Clone() *GetOrCreateIndexReportRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetOrCreateIndexReportRequest)
+	*cloned = *m
+
+	if m.ResourceLocator != nil {
+		cloned.ResourceLocator = m.ResourceLocator.Clone()
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*ContainerImageLocator)(nil), "scanner.v4.ContainerImageLocator")
 	proto.RegisterType((*CreateIndexReportRequest)(nil), "scanner.v4.CreateIndexReportRequest")
 	proto.RegisterType((*GetIndexReportRequest)(nil), "scanner.v4.GetIndexReportRequest")
 	proto.RegisterType((*HasIndexReportRequest)(nil), "scanner.v4.HasIndexReportRequest")
 	proto.RegisterType((*HasIndexReportResponse)(nil), "scanner.v4.HasIndexReportResponse")
+	proto.RegisterType((*GetOrCreateIndexReportRequest)(nil), "scanner.v4.GetOrCreateIndexReportRequest")
 }
 
 func init() {
@@ -406,31 +518,32 @@ func init() {
 }
 
 var fileDescriptor_3b3d06b94183d906 = []byte{
-	// 369 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0xcd, 0x6a, 0xe2, 0x50,
-	0x14, 0x36, 0x0a, 0xea, 0x9c, 0x01, 0xc7, 0xb9, 0x8c, 0x1a, 0xb2, 0x08, 0x33, 0x61, 0x16, 0x2d,
-	0x94, 0x58, 0xac, 0x4f, 0xa0, 0x8b, 0x1a, 0x70, 0x95, 0x4d, 0xa1, 0x9b, 0x70, 0x9b, 0x1c, 0xea,
-	0x05, 0xbd, 0x37, 0xbd, 0xf7, 0x26, 0xf5, 0x01, 0xfa, 0x0a, 0x85, 0x3e, 0x52, 0x97, 0x7d, 0x84,
-	0x62, 0x5f, 0xa4, 0x24, 0xd1, 0xd6, 0xb4, 0x2a, 0xb8, 0xcb, 0xc9, 0xf9, 0xbe, 0xf3, 0xfd, 0x24,
-	0x70, 0xc6, 0xb8, 0x46, 0xc9, 0xe9, 0x9c, 0xc6, 0xac, 0xaf, 0x42, 0xca, 0x39, 0xca, 0x7e, 0x3a,
-	0xec, 0x33, 0x1e, 0xe1, 0x12, 0x65, 0xa0, 0x50, 0xa6, 0x2c, 0x44, 0x37, 0x96, 0x42, 0x0b, 0x02,
-	0x6b, 0x84, 0x9b, 0x0e, 0xad, 0xd3, 0x43, 0xcc, 0x40, 0x62, 0x2c, 0xa4, 0x2e, 0x68, 0x0e, 0x85,
-	0xce, 0x58, 0x70, 0x4d, 0x19, 0x47, 0xe9, 0x2d, 0xe8, 0x2d, 0x4e, 0x45, 0x48, 0xb5, 0x90, 0xa4,
-	0x0d, 0xb5, 0x44, 0xce, 0x4d, 0xe3, 0xaf, 0x71, 0xf2, 0xc3, 0xcf, 0x1e, 0x89, 0x05, 0xcd, 0x44,
-	0x65, 0x67, 0x17, 0x68, 0x56, 0xf3, 0xd7, 0x1f, 0x73, 0xb6, 0x8b, 0xa9, 0x52, 0xf7, 0x42, 0x46,
-	0x66, 0xad, 0xd8, 0x6d, 0x66, 0xe7, 0xd1, 0x00, 0x73, 0x2c, 0x91, 0x6a, 0xf4, 0x32, 0x7d, 0x3f,
-	0x97, 0xf7, 0xf1, 0x2e, 0x41, 0xa5, 0x49, 0x0f, 0x1a, 0x33, 0xaa, 0x66, 0x01, 0x8b, 0xd6, 0x52,
-	0xf5, 0x6c, 0xf4, 0x22, 0x32, 0x85, 0x5f, 0xe1, 0xc6, 0x58, 0xc0, 0x32, 0x67, 0xb9, 0xe8, 0xcf,
-	0xc1, 0x3f, 0xf7, 0x33, 0xa9, 0xbb, 0xd3, 0xfb, 0xa4, 0xe2, 0xb7, 0xc2, 0xd2, 0x62, 0x44, 0xa0,
-	0x2d, 0x51, 0x89, 0x44, 0x86, 0x18, 0xcc, 0x0b, 0x94, 0x73, 0x0e, 0x9d, 0x4b, 0xd4, 0x47, 0x78,
-	0xca, 0x18, 0x13, 0xaa, 0x8e, 0x63, 0x74, 0xbf, 0x32, 0x54, 0x2c, 0xb8, 0x42, 0xd2, 0x85, 0x3a,
-	0x2e, 0x99, 0xd2, 0x2a, 0x67, 0x34, 0xfd, 0xf5, 0x34, 0x78, 0xa8, 0x42, 0xc3, 0x2b, 0xbe, 0x30,
-	0xf1, 0xe1, 0xf7, 0xb7, 0xe2, 0xc8, 0xff, 0x52, 0xfe, 0x3d, 0xbd, 0x5a, 0xbd, 0x6d, 0xd4, 0x36,
-	0x7d, 0x0a, 0xad, 0x72, 0x6a, 0x52, 0x2a, 0x74, 0x67, 0x23, 0xfb, 0xaf, 0x5d, 0x41, 0xab, 0x9c,
-	0xaf, 0x7c, 0x6d, 0x67, 0x5b, 0x96, 0x73, 0x08, 0x52, 0xd4, 0x33, 0xfa, 0xf3, 0xbc, 0xb2, 0x8d,
-	0x97, 0x95, 0x6d, 0xbc, 0xae, 0x6c, 0xe3, 0xe9, 0xcd, 0xae, 0x5c, 0x57, 0xd3, 0xe1, 0x4d, 0x3d,
-	0xff, 0x69, 0x2f, 0xde, 0x03, 0x00, 0x00, 0xff, 0xff, 0xfe, 0x27, 0xa2, 0x36, 0x1b, 0x03, 0x00,
-	0x00,
+	// 393 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x53, 0xcd, 0xea, 0xd3, 0x40,
+	0x10, 0xff, 0xa7, 0x85, 0xb6, 0x8e, 0x50, 0xeb, 0x62, 0xdb, 0x10, 0x30, 0x68, 0xf0, 0x60, 0x41,
+	0x52, 0xa9, 0x7d, 0x82, 0xf6, 0xd0, 0x06, 0x0a, 0x42, 0x2e, 0x82, 0x08, 0x61, 0x4d, 0x06, 0xbb,
+	0xd0, 0xee, 0xc6, 0xdd, 0x4d, 0xec, 0x8b, 0x08, 0xe2, 0x13, 0x79, 0xf4, 0x11, 0x24, 0xbe, 0x88,
+	0x24, 0x69, 0xb5, 0xa9, 0x49, 0xa1, 0xb7, 0xff, 0x2d, 0x93, 0x99, 0xdf, 0xc7, 0x7c, 0x2c, 0xbc,
+	0x62, 0x5c, 0xa3, 0xe4, 0x74, 0x47, 0x63, 0x36, 0x55, 0x21, 0xe5, 0x1c, 0xe5, 0x34, 0x9d, 0x4f,
+	0x19, 0x8f, 0xf0, 0x80, 0x32, 0x50, 0x28, 0x53, 0x16, 0xa2, 0x1b, 0x4b, 0xa1, 0x05, 0x81, 0x63,
+	0x85, 0x9b, 0xce, 0xad, 0xc9, 0x35, 0x64, 0x20, 0x31, 0x16, 0x52, 0x97, 0x30, 0x87, 0xc2, 0x70,
+	0x29, 0xb8, 0xa6, 0x8c, 0xa3, 0xf4, 0xf6, 0xf4, 0x13, 0x6e, 0x44, 0x48, 0xb5, 0x90, 0x64, 0x00,
+	0xed, 0x44, 0xee, 0x4c, 0xe3, 0x99, 0xf1, 0xf2, 0x81, 0x9f, 0x7f, 0x12, 0x0b, 0x7a, 0x89, 0xca,
+	0x69, 0xf7, 0x68, 0xb6, 0x8a, 0xdf, 0x7f, 0xe3, 0x3c, 0x17, 0x53, 0xa5, 0xbe, 0x08, 0x19, 0x99,
+	0xed, 0x32, 0x77, 0x8a, 0x9d, 0xaf, 0x06, 0x98, 0x4b, 0x89, 0x54, 0xa3, 0x97, 0xeb, 0xfb, 0x85,
+	0xbc, 0x8f, 0x9f, 0x13, 0x54, 0x9a, 0x8c, 0xa1, 0xbb, 0xa5, 0x6a, 0x1b, 0xb0, 0xe8, 0x28, 0xd5,
+	0xc9, 0x43, 0x2f, 0x22, 0x1b, 0x78, 0x14, 0x9e, 0x8c, 0x05, 0x2c, 0x77, 0x56, 0x88, 0x3e, 0x9c,
+	0x3d, 0x77, 0xff, 0x75, 0xea, 0xd6, 0x7a, 0x5f, 0xdf, 0xf9, 0xfd, 0xb0, 0x92, 0x58, 0x10, 0x18,
+	0x48, 0x54, 0x22, 0x91, 0x21, 0x06, 0xbb, 0xb2, 0xca, 0x79, 0x0d, 0xc3, 0x15, 0xea, 0x1b, 0x3c,
+	0xe5, 0x88, 0x35, 0x55, 0xb7, 0x21, 0x46, 0x97, 0x08, 0x15, 0x0b, 0xae, 0x90, 0x8c, 0xa0, 0x83,
+	0x07, 0xa6, 0xb4, 0x2a, 0x10, 0x3d, 0xff, 0x18, 0x39, 0xdf, 0x0d, 0x78, 0xba, 0x42, 0xfd, 0x56,
+	0xde, 0xc3, 0x91, 0xcd, 0xb2, 0x16, 0x74, 0xbd, 0xf2, 0xfc, 0x88, 0x0f, 0x8f, 0xff, 0xb3, 0x48,
+	0x5e, 0x54, 0x94, 0x1a, 0x3a, 0xb0, 0xc6, 0xe7, 0x55, 0xe7, 0xf0, 0x0d, 0xf4, 0xab, 0x2b, 0x21,
+	0x15, 0xeb, 0xb5, 0xeb, 0x6a, 0x66, 0xfb, 0x00, 0xa3, 0xfa, 0x49, 0x92, 0xc9, 0x05, 0x6b, 0xf3,
+	0xb4, 0x9b, 0xd9, 0xdf, 0x41, 0xbf, 0xba, 0xda, 0xaa, 0xd7, 0xda, 0x43, 0xb1, 0x9c, 0x6b, 0x25,
+	0xe5, 0x65, 0x2c, 0x9e, 0xfc, 0xc8, 0x6c, 0xe3, 0x67, 0x66, 0x1b, 0xbf, 0x32, 0xdb, 0xf8, 0xf6,
+	0xdb, 0xbe, 0x7b, 0xdf, 0x4a, 0xe7, 0x1f, 0x3b, 0xc5, 0x7b, 0x7d, 0xf3, 0x27, 0x00, 0x00, 0xff,
+	0xff, 0x16, 0x98, 0xeb, 0x22, 0x16, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -445,10 +558,14 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type IndexerClient interface {
-	// CreateIndexReport creates a manifest for the specified resource.
+	// CreateIndexReport creates an index report for the specified resource and returns the report.
 	CreateIndexReport(ctx context.Context, in *CreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// GetIndexReport returns one index report.
 	GetIndexReport(ctx context.Context, in *GetIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
+	// GetOrCreateIndexReport creates an index report for the specified resource,
+	// if it does not already exist, and returns the report.
+	// This essentially combines GetIndexReport and CreateIndexReport.
+	GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error)
 }
@@ -479,6 +596,15 @@ func (c *indexerClient) GetIndexReport(ctx context.Context, in *GetIndexReportRe
 	return out, nil
 }
 
+func (c *indexerClient) GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error) {
+	out := new(IndexReport)
+	err := c.cc.Invoke(ctx, "/scanner.v4.Indexer/GetOrCreateIndexReport", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error) {
 	out := new(HasIndexReportResponse)
 	err := c.cc.Invoke(ctx, "/scanner.v4.Indexer/HasIndexReport", in, out, opts...)
@@ -490,10 +616,14 @@ func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRe
 
 // IndexerServer is the server API for Indexer service.
 type IndexerServer interface {
-	// CreateIndexReport creates a manifest for the specified resource.
+	// CreateIndexReport creates an index report for the specified resource and returns the report.
 	CreateIndexReport(context.Context, *CreateIndexReportRequest) (*IndexReport, error)
 	// GetIndexReport returns one index report.
 	GetIndexReport(context.Context, *GetIndexReportRequest) (*IndexReport, error)
+	// GetOrCreateIndexReport creates an index report for the specified resource,
+	// if it does not already exist, and returns the report.
+	// This essentially combines GetIndexReport and CreateIndexReport.
+	GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
 }
@@ -507,6 +637,9 @@ func (*UnimplementedIndexerServer) CreateIndexReport(ctx context.Context, req *C
 }
 func (*UnimplementedIndexerServer) GetIndexReport(ctx context.Context, req *GetIndexReportRequest) (*IndexReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetIndexReport not implemented")
+}
+func (*UnimplementedIndexerServer) GetOrCreateIndexReport(ctx context.Context, req *GetOrCreateIndexReportRequest) (*IndexReport, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreateIndexReport not implemented")
 }
 func (*UnimplementedIndexerServer) HasIndexReport(ctx context.Context, req *HasIndexReportRequest) (*HasIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
@@ -552,6 +685,24 @@ func _Indexer_GetIndexReport_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_GetOrCreateIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrCreateIndexReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).GetOrCreateIndexReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scanner.v4.Indexer/GetOrCreateIndexReport",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).GetOrCreateIndexReport(ctx, req.(*GetOrCreateIndexReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Indexer_HasIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HasIndexReportRequest)
 	if err := dec(in); err != nil {
@@ -581,6 +732,10 @@ var _Indexer_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetIndexReport",
 			Handler:    _Indexer_GetIndexReport_Handler,
+		},
+		{
+			MethodName: "GetOrCreateIndexReport",
+			Handler:    _Indexer_GetOrCreateIndexReport_Handler,
 		},
 		{
 			MethodName: "HasIndexReport",
@@ -808,6 +963,70 @@ func (m *HasIndexReportResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
+func (m *GetOrCreateIndexReportRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetOrCreateIndexReportRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetOrCreateIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ResourceLocator != nil {
+		{
+			size := m.ResourceLocator.Size()
+			i -= size
+			if _, err := m.ResourceLocator.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.HashId) > 0 {
+		i -= len(m.HashId)
+		copy(dAtA[i:], m.HashId)
+		i = encodeVarintIndexerService(dAtA, i, uint64(len(m.HashId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetOrCreateIndexReportRequest_ContainerImage) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetOrCreateIndexReportRequest_ContainerImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ContainerImage != nil {
+		{
+			size, err := m.ContainerImage.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintIndexerService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
 func encodeVarintIndexerService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovIndexerService(v)
 	base := offset
@@ -917,6 +1136,38 @@ func (m *HasIndexReportResponse) Size() (n int) {
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetOrCreateIndexReportRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.HashId)
+	if l > 0 {
+		n += 1 + l + sovIndexerService(uint64(l))
+	}
+	if m.ResourceLocator != nil {
+		n += m.ResourceLocator.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetOrCreateIndexReportRequest_ContainerImage) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ContainerImage != nil {
+		l = m.ContainerImage.Size()
+		n += 1 + l + sovIndexerService(uint64(l))
 	}
 	return n
 }
@@ -1407,6 +1658,124 @@ func (m *HasIndexReportResponse) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Exists = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexerService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetOrCreateIndexReportRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexerService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetOrCreateIndexReportRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetOrCreateIndexReportRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HashId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIndexerService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HashId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ContainerImage", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIndexerService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ContainerImageLocator{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.ResourceLocator = &GetOrCreateIndexReportRequest_ContainerImage{v}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipIndexerService(dAtA[iNdEx:])

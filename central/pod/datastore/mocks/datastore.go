@@ -130,3 +130,17 @@ func (mr *MockDataStoreMockRecorder) UpsertPod(ctx, pod any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPod", reflect.TypeOf((*MockDataStore)(nil).UpsertPod), ctx, pod)
 }
+
+// WalkByQuery mocks base method.
+func (m *MockDataStore) WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.Pod) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, q, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, q, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, q, fn)
+}

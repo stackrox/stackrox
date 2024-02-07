@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import qs from 'qs';
 
-import usePermissions from 'hooks/usePermissions';
+import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
 
 import InitBundlePage from './InitBundlePage';
 import InitBundlesPage from './InitBundlesPage';
@@ -14,13 +14,19 @@ function hasCreateAction(search: string) {
 }
 
 function InitBundlesRoute(): ReactElement {
-    const { hasReadWriteAccess } = usePermissions();
-    // TODO replace resources with Admin role.
-    const hasWriteAccessForInitBundles =
-        hasReadWriteAccess('Administration') && hasReadWriteAccess('Integration');
+    const { currentUser } = useAuthStatus();
+    const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
+    const hasWriteAccessForInitBundles = hasAdminRole; // TODO after 4.4 release becomes redundant
 
     const { search } = useLocation();
     const { id } = useParams(); // see clustersInitBundlesPathWithParam in routePaths.ts
+
+    /*
+    // TODO after 4.4 release
+    if (!hasAdminRole) {
+        return <NotFoundPage />; // factor out reusable component from Body.tsx file
+    }
+    */
 
     const isCreateAction = hasWriteAccessForInitBundles && hasCreateAction(search);
 

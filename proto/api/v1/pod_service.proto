@@ -13,10 +13,23 @@ message PodsResponse {
   repeated storage.Pod pods = 1;
 }
 
+message ExportPodRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportPodResponse {
+  storage.Pod pod = 1;
+}
+
 // PodService APIs can be used to manage pods.
 service PodService {
   // GetPods returns the pods.
   rpc GetPods(RawQuery) returns (PodsResponse) {
     option (google.api.http) = {get: "/v1/pods"};
+  }
+
+  rpc ExportPods(ExportPodRequest) returns (stream ExportPodResponse) {
+    option (google.api.http) = {get: "/v1/export/pods"};
   }
 }

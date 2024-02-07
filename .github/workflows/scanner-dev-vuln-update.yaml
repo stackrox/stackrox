@@ -16,6 +16,8 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -35,6 +37,7 @@ jobs:
         fi
 
         make -C scanner bin/updater
+        go clean -cache -modcache
         ./scanner/bin/updater -output-dir=dev
         gsutil cp -r "dev" "gs://scanner-v4-test/vulnerability-bundles"
 
@@ -46,4 +49,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

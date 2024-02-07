@@ -372,6 +372,7 @@ var (
 	EventOccurrence = newFieldLabel("Event Occurrence")
 
 	// Integration fields.
+	IntegrationID   = newFieldLabel("Integration ID")
 	IntegrationName = newFieldLabel("Integration Name")
 	IntegrationType = newFieldLabel("Integration Type")
 

@@ -10,14 +10,13 @@ import (
 
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
-	ret := parts.Image.Clone()
-	mergeComponents(parts, ret)
-	return ret
+	mergeComponents(parts, parts.Image)
+	return parts.Image
 }
 
 func mergeComponents(parts ImageParts, image *storage.Image) {
 	// If the image has a nil scan, there is nothing to fill in.
-	if image.Scan == nil {
+	if image.GetScan() == nil {
 		return
 	}
 

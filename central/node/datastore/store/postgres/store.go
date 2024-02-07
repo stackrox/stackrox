@@ -40,6 +40,8 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
+
+	cursorBatchSize = 50
 )
 
 var (
@@ -68,6 +70,8 @@ type Store interface {
 	GetNodeMetadata(ctx context.Context, id string) (*storage.Node, bool, error)
 	// GetManyNodeMetadata returns nodes without scan/component data.
 	GetManyNodeMetadata(ctx context.Context, ids []string) ([]*storage.Node, []int, error)
+	// WalkByQuery return nodes scoped by the passed query
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error
 }
 
 type storeImpl struct {
@@ -613,21 +617,10 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return node, found, getErr
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
-	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var node storage.Node
-	if err := node.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-
-	componentEdgeMap, err := getNodeComponentEdges(ctx, tx, nodeID)
+func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node) error {
+	componentEdgeMap, err := getNodeComponentEdges(ctx, tx, node.GetId())
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 	componentIDs := make([]string, 0, len(componentEdgeMap))
 	for _, val := range componentEdgeMap {
@@ -636,7 +629,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 
 	componentMap, err := getNodeComponents(ctx, tx, componentIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
@@ -645,7 +638,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	cveIDs := set.NewStringSet()
@@ -657,11 +650,11 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 
 	cveMap, err := getCVEs(ctx, tx, cveIDs.AsSlice())
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	nodeParts := &common.NodeParts{
-		Node:     &node,
+		Node:     node,
 		Children: []*common.ComponentParts{},
 	}
 	for componentID, component := range componentMap {
@@ -679,7 +672,25 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 		}
 		nodeParts.Children = append(nodeParts.Children, child)
 	}
-	return common.Merge(nodeParts), true, nil
+	common.Merge(nodeParts)
+	return nil
+}
+
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
+	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
+	var data []byte
+	if err := row.Scan(&data); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var node storage.Node
+	if err := node.Unmarshal(data); err != nil {
+		return nil, false, err
+	}
+	if err := s.populateNode(ctx, tx, &node); err != nil {
+		return nil, false, err
+	}
+	return &node, true, nil
 }
 
 func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
@@ -861,6 +872,53 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// WalkByQuery returns the objects specified by the query
+func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Node")
+
+	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Node")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Errorf("error rolling back: %v", err)
+		}
+	}()
+
+	ctxWithTx := postgres.ContextWithTx(ctx, tx)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Node, *storage.Node](ctxWithTx, pkgSchema.NodesSchema, q, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, node := range rows {
+			err := s.populateNode(ctx, tx, node)
+			if err != nil {
+				return err
+			}
+			if err := fn(node); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
 
 // GetNodeMetadata gets the node without scan/component data.

@@ -400,8 +400,6 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRole.yaml"
-        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRoleBinding.yaml"
         wait_for_object_to_appear openshift-compliance deploy/compliance-operator
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
@@ -637,6 +635,7 @@ check_for_errors_in_stackrox_logs() {
             summary="$(summarize_check_output "${check_out}")"
             save_junit_failure "SuspiciousLog-${app}" "${summary}" "$check_out"
             failure_found="true"
+            info "Found suspicious log in $app: $check_out"
         else
             save_junit_success "SuspiciousLog-${app}" "Suspicious entries in log file(s)"
         fi
