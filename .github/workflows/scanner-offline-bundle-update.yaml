@@ -6,7 +6,6 @@ on:
   push:
     branches:
     - scanner/*
-    - yli3/*
 
 jobs:
   read-release-versions:
