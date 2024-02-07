@@ -248,8 +248,10 @@ function launch_central {
       add_args "--enable-telemetry=false"
     fi
 
-    if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
-      add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
+    if [[ "${ORCH}" == "openshift" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+        add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
+      fi
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
