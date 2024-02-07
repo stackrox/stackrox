@@ -12,7 +12,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN scripts/rhtap/fail-build-if-git-is-dirty.sh
+RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
 RUN mkdir -p image/bin
 
