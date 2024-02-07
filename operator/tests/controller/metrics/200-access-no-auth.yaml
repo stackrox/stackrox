@@ -9,7 +9,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: run
-    image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    image: registry.access.redhat.com/ubi9/ubi-minimal:latest
     args:
     - bash
     - "-c"
