@@ -223,6 +223,8 @@ teardown_file() {
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="false"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_HELM_DEPLOY="false"
     _deploy_stackrox # This generated deployment bundles for central, sensor and scanner.
 
     verify_scannerV2_deployed
