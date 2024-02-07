@@ -396,7 +396,7 @@ type LocalScannerV4ComponentPolicy string
 
 const (
 	// LocalScannerV4ComponentDefault means that local scanner V4 will use the default semantics
-	// to determine wether scannerV4 components should be used.
+	// to determine whether scannerV4 components should be used.
 	// Currently this defaults to "Disabled" semantics.
 	// TODO: change default to "AutoSense" semantics with version 4.5
 	LocalScannerV4ComponentDefault LocalScannerV4ComponentPolicy = "Default"

@@ -578,7 +578,7 @@ type ScannerV4ComponentPolicy string
 
 const (
 	// ScannerV4ComponentDefault means that scanner V4 uses the default semantics
-	// to identify wether scanner V4 component should be used.
+	// to identify whether scanner V4 component should be used.
 	// Currently this defaults to "Disabled" semantics.
 	// TODO change default to "Enabled" semantics with version 4.5
 	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
