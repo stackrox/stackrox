@@ -443,6 +443,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		}
 		an, err := s.getAppliedNetpolsForDeployment(ctx, eCtx, d)
 		if err != nil {
+			log.Warnf("Failed to get Network Policies for deployment %s, continuing without. Error: %v", d.GetName(), err)
 			continue
 		}
 

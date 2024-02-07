@@ -287,6 +287,10 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 		return errors.Wrap(report.JSONRemarks(d.env.InputOutput().Out(), alerts, remarks), "could not print JSON report")
 	}
 
+	if d.verbose && len(remarks) > 0 {
+		printRemarks(remarks, d.env.Logger())
+	}
+
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
 	// as well as multiple results for each deployment
 	policySummary := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
@@ -297,10 +301,6 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 
 	if err := d.printer.Print(policySummary, d.env.ColorWriter()); err != nil {
 		return errors.Wrap(err, "could not print policy summary")
-	}
-
-	if d.verbose && len(remarks) > 0 {
-		printRemarks(remarks, d.env.Logger())
 	}
 
 	amountBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()
