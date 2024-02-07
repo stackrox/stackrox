@@ -101,7 +101,7 @@ var (
 	ScannerV4 = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4", false)
 
 	// CloudCredentials enables support for short-lived cloud credentials.
-	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
+	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", true)
 
 	// CloudSources enables support for cloud source integrations.
 	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", false)
