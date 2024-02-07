@@ -131,7 +131,7 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 		log.Errorw("Received errors during fetching assets from cloud sources. The result might be incomplete",
 			logging.Err(clientErrors))
 	}
-	log.Debugf("Got the following assets from Cloud Source integrations: %+v", discoveredClusters)
+	log.Debugf("Got the following discovered clusters from Cloud Source integrations: %+v", discoveredClusters)
 	return discoveredClusters
 }
 
