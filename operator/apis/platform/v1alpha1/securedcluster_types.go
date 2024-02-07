@@ -391,7 +391,7 @@ func (l LocalScannerComponentPolicy) Pointer() *LocalScannerComponentPolicy {
 }
 
 // LocalScannerV4ComponentPolicy is a type for values of spec.scannerV4.scannerComponent
-// +kubebuilder:validation:Enum=Default;Enabled;Disabled
+// +kubebuilder:validation:Enum=Default;AutoSense;Disabled
 type LocalScannerV4ComponentPolicy string
 
 const (

@@ -1236,7 +1236,7 @@ spec:
                       this to "AutoSense"
                     enum:
                     - Default
-                    - Enabled
+                    - AutoSense
                     - Disabled
                     type: string
                 type: object
