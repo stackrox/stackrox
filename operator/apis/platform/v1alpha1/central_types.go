@@ -37,7 +37,7 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
-	//+kubebuilder:default={"deployment":"Default"}
+	//+kubebuilder:default={"scannerComponent":"Default"}
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
@@ -515,8 +515,8 @@ type ScannerComponentSpec struct {
 type ScannerV4Spec struct {
 	// If you want to deploy Scanner V4 components set this to "Enabled"
 	//+kubebuilder:default=Default
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 deployment"
-	Deployment *ScannerV4DeploymentPolicy `json:"deployment,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
+	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
 	// Settings pertaining to the indexer component.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
@@ -539,10 +539,10 @@ type ScannerV4Spec struct {
 
 // IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
 func (s *ScannerV4Spec) IsEnabled() bool {
-	if s == nil || s.Deployment == nil {
+	if s == nil || s.ScannerComponent == nil {
 		return true // enabled by default
 	}
-	return *s.Deployment == ScannerV4DeploymentEnabled
+	return *s.ScannerComponent == ScannerV4ComponentEnabled
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil
@@ -572,20 +572,20 @@ const (
 	ScannerComponentDisabled ScannerComponentPolicy = "Disabled"
 )
 
-// ScannerV4DeploymentPolicy is a type for values of spec.scannerV4.deployment
+// ScannerV4ComponentPolicy is a type for values of spec.scannerV4.scannerComponent
 // +kubebuilder:validation:Enum=Default;Enabled;Disabled
-type ScannerV4DeploymentPolicy string
+type ScannerV4ComponentPolicy string
 
 const (
-	// ScannerV4DeploymentDefault means that scanner V4 uses the default semantics
-	// to identify wether scanner V4 resources should be deployed.
-	// Current the default is "Disabled".
+	// ScannerV4ComponentDefault means that scanner V4 uses the default semantics
+	// to identify wether scanner V4 component should be used.
+	// Currently this defaults to "Disabled" semantics.
 	// TODO: change default to "Enabled" semantics with version 4.5
-	ScannerV4DeploymentDefault ScannerV4DeploymentPolicy = "Default"
-	// ScannerV4DeploymentEnabled explicitly enables the deployment of scanner V4 resources.
-	ScannerV4DeploymentEnabled ScannerV4DeploymentPolicy = "Enabled"
-	// ScannerV4DeploymentDisabled explicitly disables the deployment of scanner V4 resources.
-	ScannerV4DeploymentDisabled ScannerV4DeploymentPolicy = "Disabled"
+	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
+	// ScannerV4ComponentEnabled explicitly enables the scanner V4 component.
+	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"
+	// ScannerV4ComponentDisabled explicitly disables the scanner V4 component.
+	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
 
 // -------------------------------------------------------------

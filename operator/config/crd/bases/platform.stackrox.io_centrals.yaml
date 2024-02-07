@@ -1035,7 +1035,7 @@ spec:
                 type: object
               scannerV4:
                 default:
-                  deployment: Default
+                  scannerComponent: Default
                 description: 'Settings for the Scanner V4 component, which can run
                   in addition to the previously existing Scanner components Above
                   default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
@@ -1186,15 +1186,6 @@ spec:
                           type: object
                         type: array
                     type: object
-                  deployment:
-                    default: Default
-                    description: If you want to deploy Scanner V4 components set this
-                      to "Enabled"
-                    enum:
-                    - Default
-                    - Enabled
-                    - Disabled
-                    type: string
                   indexer:
                     description: Settings pertaining to the indexer component.
                     properties:
@@ -1483,6 +1474,15 @@ spec:
                         - Disabled
                         type: string
                     type: object
+                  scannerComponent:
+                    default: Default
+                    description: If you want to deploy Scanner V4 components set this
+                      to "Enabled"
+                    enum:
+                    - Default
+                    - Enabled
+                    - Disabled
+                    type: string
                 type: object
               tls:
                 description: Allows you to specify additional trusted Root CAs.

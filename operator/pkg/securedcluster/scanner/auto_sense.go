@@ -43,9 +43,9 @@ func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, 
 // Modifies the provided SecuredCluster object to set a default Spec.ScannerV4 if missing.
 func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
 	SetScannerV4Defaults(&s.Spec)
-	scannerV4DeploymentPolicy := *s.Spec.ScannerV4.Deployment
+	scannerV4ComponentPolicy := *s.Spec.ScannerV4.ScannerComponent
 
-	return autoSenseScannerV4(ctx, client, scannerV4DeploymentPolicy, s.GetNamespace())
+	return autoSenseScannerV4(ctx, client, scannerV4ComponentPolicy, s.GetNamespace())
 
 }
 
@@ -60,11 +60,11 @@ func autoSenseScanner(ctx context.Context, client ctrlClient.Client, scannerComp
 	return AutoSenseResult{}, errors.Errorf("invalid scannerComponent setting: %q", scannerComponent)
 }
 
-func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymentPolicy platform.LocalScannerV4DeploymentPolicy, namespace string) (AutoSenseResult, error) {
+func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymentPolicy platform.LocalScannerV4ComponentPolicy, namespace string) (AutoSenseResult, error) {
 	switch deploymentPolicy {
-	case platform.LocalScannerV4DeploymentAutoSense:
+	case platform.LocalScannerV4ComponentAutoSense:
 		return autoSense(ctx, client, namespace)
-	case platform.LocalScannerV4DeploymentDisabled, platform.LocalScannerV4DeploymentDefault:
+	case platform.LocalScannerV4ComponentDisabled, platform.LocalScannerV4ComponentDefault:
 		return AutoSenseResult{}, nil
 	}
 

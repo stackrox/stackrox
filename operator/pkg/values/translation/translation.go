@@ -150,17 +150,17 @@ func SetScannerComponentDisableValue(sv *ValuesBuilder, scannerComponent *platfo
 }
 
 // SetScannerV4DisableValue sets the value for the 'disable' key for scanner values
-func SetScannerV4DisableValue(sv *ValuesBuilder, deploymentPolicy *platform.ScannerV4DeploymentPolicy) {
+func SetScannerV4DisableValue(sv *ValuesBuilder, deploymentPolicy *platform.ScannerV4ComponentPolicy) {
 	if deploymentPolicy == nil {
 		return
 	}
 
 	switch *deploymentPolicy {
-	case platform.ScannerV4DeploymentDisabled:
+	case platform.ScannerV4ComponentDisabled:
 		sv.SetBoolValue("disable", true)
-	case platform.ScannerV4DeploymentDefault:
+	case platform.ScannerV4ComponentDefault:
 		sv.SetBoolValue("disable", true)
-	case platform.ScannerV4DeploymentEnabled:
+	case platform.ScannerV4ComponentEnabled:
 		sv.SetBoolValue("disable", false)
 	default:
 		sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *deploymentPolicy))

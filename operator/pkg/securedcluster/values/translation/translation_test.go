@@ -143,7 +143,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"disable": false,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -175,7 +175,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
 						},
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
-							Deployment: platform.LocalScannerV4DeploymentDisabled.Pointer(),
+							ScannerComponent: platform.LocalScannerV4ComponentDisabled.Pointer(),
 						},
 					},
 				},
@@ -249,7 +249,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"none": true,
@@ -284,7 +284,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"disable": false,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -654,7 +654,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"indexer": map[string]interface{}{
 						"autoscaling": map[string]interface{}{
 							"disable":     false,
@@ -799,7 +799,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"disable": false,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
@@ -857,7 +857,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"disable": false,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"db": map[string]interface{}{
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{

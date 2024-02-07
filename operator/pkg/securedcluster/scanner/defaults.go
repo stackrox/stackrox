@@ -17,7 +17,7 @@ func SetScannerV4Defaults(spec *platform.SecuredClusterSpec) {
 	if spec.ScannerV4 == nil {
 		spec.ScannerV4 = &platform.LocalScannerV4ComponentSpec{}
 	}
-	if spec.ScannerV4.Deployment == nil {
-		spec.ScannerV4.Deployment = platform.LocalScannerV4DeploymentDisabled.Pointer()
+	if spec.ScannerV4.ScannerComponent == nil {
+		spec.ScannerV4.ScannerComponent = platform.LocalScannerV4ComponentDisabled.Pointer()
 	}
 }

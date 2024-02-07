@@ -157,9 +157,6 @@ spec:
           not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
-      - description: If you want to deploy Scanner V4 components set this to "Enabled"
-        displayName: Scanner V4 deployment
-        path: scannerV4.deployment
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
@@ -179,6 +176,9 @@ spec:
           connections to the port.
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
+      - description: If you want to deploy Scanner V4 components set this to "Enabled"
+        displayName: Scanner V4 component
+        path: scannerV4.scannerComponent
       - description: Specify a connection string that corresponds to a database managed
           elsewhere. If set, the operator will not manage the Central DB. When using
           this option, you must explicitly set a password secret; automatically generating
@@ -762,10 +762,6 @@ spec:
           not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
-      - description: If you want to enable deployment of Scanner V4 components set
-          this to "AutoSense"
-        displayName: Scanner V4 deployment
-        path: scannerV4.deployment
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
@@ -773,6 +769,9 @@ spec:
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
+      - description: If you want to enable the Scanner V4 component set this to "AutoSense"
+        displayName: Scanner V4 component
+        path: scannerV4.scannerComponent
       - description: "Set this to 'true' to enable preventive policy enforcement for
           object updates. \n Note: this will not have any effect unless 'Listen On
           Creates' is set to 'true' as well."

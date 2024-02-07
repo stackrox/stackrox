@@ -509,8 +509,8 @@ spec:
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
       - description: If you want to deploy Scanner V4 components set this to "Enabled"
-        displayName: Scanner V4 deployment
-        path: scannerV4.deployment
+        displayName: Scanner V4 component
+        path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer component.
         displayName: Indexer
         path: scannerV4.indexer
@@ -1000,10 +1000,9 @@ spec:
         path: scanner.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you want to enable deployment of Scanner V4 components set
-          this to "AutoSense"
-        displayName: Scanner V4 deployment
-        path: scannerV4.deployment
+      - description: If you want to enable the Scanner V4 component set this to "AutoSense"
+        displayName: Scanner V4 component
+        path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
         displayName: Indexer
         path: scannerV4.indexer

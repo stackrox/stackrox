@@ -42,7 +42,7 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 			ScannerComponent: new(platform.ScannerComponentPolicy),
 		},
 		ScannerV4: &platform.ScannerV4Spec{
-			Deployment: new(platform.ScannerV4DeploymentPolicy),
+			ScannerComponent: new(platform.ScannerV4ComponentPolicy),
 		},
 	}
 	if scannerEnabled {
@@ -52,9 +52,9 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 	}
 
 	if scannerV4Enabled {
-		*spec.ScannerV4.Deployment = platform.ScannerV4DeploymentEnabled
+		*spec.ScannerV4.ScannerComponent = platform.ScannerV4ComponentEnabled
 	} else {
-		*spec.ScannerV4.Deployment = platform.ScannerV4DeploymentDisabled
+		*spec.ScannerV4.ScannerComponent = platform.ScannerV4ComponentDisabled
 	}
 
 	return spec
