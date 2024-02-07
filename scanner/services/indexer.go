@@ -96,11 +96,14 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"component", "scanner/service/indexer.GetIndexReport",
 		"hash_id", req.GetHashId(),
 	)
+	// Create index report.
+	zlog.Info(ctx).Msg("getting index report for container image")
 	clairReport, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
+	zlog.Info(ctx).Bool("exists", exists).Send()
 	if !exists {
 		return nil, errox.NotFound.Newf("index report not found: %s", req.GetHashId())
 	}

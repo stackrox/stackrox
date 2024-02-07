@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -98,9 +99,24 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.UseInsecureNoTLS(o.skipTLS),
 		clientconn.ServerName(o.serverName),
 		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+		clientconn.WithDialOptions(
+			// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes does not
+			// load balance too well on its own. We opt to do client-side load balancing, instead,
+			// via DNS name resolution, which is possible because Scanner v4 services are "headless"
+			// (clusterIP: None).
+			//
+			// We just use basic round-robin load balancing at this time.
+			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
+		),
 	}
 
-	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
+	// Replace HTTP(S) with DNS for client-side load balancing.
+	// This ensures we use the builtin DNS name resolver.
+	address := strings.TrimPrefix(o.address, "https://")
+	address = strings.TrimPrefix(address, "http://")
+	address = "dns:///" + address
+
+	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
