@@ -224,10 +224,6 @@ deploy_central_via_operator() {
 
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        # Load balancer not available for ppc64le/s390x
-        LOAD_BALANCER="route"
-    fi
     case "${LOAD_BALANCER}" in
     "lb") central_exposure_loadBalancer_enabled="true" ;;
     "route") central_exposure_route_enabled="true" ;;
@@ -881,10 +877,6 @@ wait_for_api() {
 
     info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
-
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        LOAD_BALANCER="route"
-    fi
 
     LOAD_BALANCER="${LOAD_BALANCER:-}"
     case "${LOAD_BALANCER}" in
