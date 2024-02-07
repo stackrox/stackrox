@@ -15,9 +15,14 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
+
+// TODO:
+// - Verify adheres to style guide: https://github.com/stackrox/architecture-decision-records/blob/main/stackrox/ADR-0004-roxctl-subcommands-layout.md
+// - Also verify in alignment with: https://github.com/stackrox/stackrox/blob/master/roxctl/README.md
 
 const (
 	contentLengthHdrKey = "Content-Length"
@@ -45,13 +50,16 @@ type scannerDownloadDBCommand struct {
 	env environment.Environment
 }
 
+func (cmd *scannerDownloadDBCommand) construct(_ *cobra.Command) {
+}
+
 func (cmd *scannerDownloadDBCommand) downloadDb() error {
 	version := cmd.detectVersion()
 
 	// Get version variants.
 	versionVariants, isScannerV2 := cmd.disectVersion(version)
 	if versionVariants == nil && !isScannerV2 {
-		return fmt.Errorf("unexpected error parsing version")
+		return errors.New("unexpected error parsing version")
 	}
 
 	var bundleFileNames []string
@@ -70,13 +78,13 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 		// Get the name of the output file and ensures its valid.
 		outFileName, err := cmd.buildAndValidateOutputFile(bundleFileName)
 		if err != nil {
-			return fmt.Errorf("invalid output file %q: %v", bundleFileName, err)
+			return fmt.Errorf("invalid output file %q: %w", bundleFileName, err)
 		}
 
 		// Get the URL from which to download the vulnerability db.
 		url, err := cmd.buildDownloadURL(bundleFileName)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("unable to build download URL for %q: %v", bundleFileName, err))
+			errs = append(errs, fmt.Errorf("unable to build download URL for %q: %w", bundleFileName, err))
 			continue
 		}
 
@@ -124,12 +132,16 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 		cmd.env.Logger().WarnfLn("error contacting central: %v", err)
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 
 	var metadata v1.Metadata
 	if err := jsonpb.Unmarshal(resp.Body, &metadata); err != nil {
 		cmd.env.Logger().WarnfLn("error reading metadata from central: %v", err)
 		return "", err
+	}
+
+	if err := resp.Body.Close(); err != nil {
+		return "", fmt.Errorf("could not close respond body: %w", err)
 	}
 
 	return metadata.GetVersion(), nil
@@ -168,7 +180,7 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("downloading %q failed with status code %d: %s", url, resp.StatusCode, resp.Status)
@@ -178,7 +190,7 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
+	defer utils.IgnoreError(outFile.Close)
 
 	var fileSize int64
 	if fileSizeStrs, ok := resp.Header[contentLengthHdrKey]; ok {
@@ -189,14 +201,17 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 	}
 
 	cmd.env.Logger().InfofLn("Downloading %q (%d MiB)", url, fileSize/1024/1024)
-	written, err := io.Copy(outFile, resp.Body)
+	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return err
 	}
 
-	// TODO: Replace with checksum / signature in the future
-	if fileSize != 0 && written != fileSize {
-		return fmt.Errorf("expected and received file sizes differ! (expected %d, got %d)", fileSize, written)
+	if err := outFile.Close(); err != nil {
+		return fmt.Errorf("could not close out file: %w", err)
+	}
+
+	if err := resp.Body.Close(); err != nil {
+		return fmt.Errorf("could not close response body: %w", err)
 	}
 
 	return nil
@@ -241,7 +256,7 @@ func (cmd *scannerDownloadDBCommand) disectVersion(version string) ([]string, bo
 		z = parts[2]
 	}
 
-	if isScannerV2(x, y, z) {
+	if isPriorToScannerV4(x, y, z) {
 		return nil, true
 	}
 
@@ -252,9 +267,9 @@ func (cmd *scannerDownloadDBCommand) disectVersion(version string) ([]string, bo
 	return res, false
 }
 
-// isScannerV2 returns true if x, y, z represent a version from prior to the
+// isPriorToScannerV4 returns true if x, y, z represent a version from prior to the
 // introduction of Scanner V4.
-func isScannerV2(x int, y int, z string) bool {
+func isPriorToScannerV4(x int, y int, z string) bool {
 	// Examples:
 	//	 3.99.99 = Scanner V2
 	//	 4.3.99  = Scanner V2
@@ -286,6 +301,8 @@ Central to determine version if one is not specified, if communication fails
 defaults to version embedded within roxctl.`,
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
+			scannerDownloadDBCmd.construct(c)
+
 			return scannerDownloadDBCmd.downloadDb()
 		},
 	}
