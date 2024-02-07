@@ -52,7 +52,7 @@ func (t *awsTransport) isValidNoLock() bool {
 }
 
 func (t *awsTransport) refreshNoLock() error {
-	log.Infof("Refreshing ECR token for image integration %q", t.name)
+	log.Debugf("Refreshing ECR token for image integration %q", t.name)
 	authToken, err := t.client.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get authorization token")
