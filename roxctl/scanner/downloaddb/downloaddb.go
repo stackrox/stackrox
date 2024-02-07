@@ -56,20 +56,19 @@ func (cmd *scannerDownloadDBCommand) construct(_ *cobra.Command) {
 func (cmd *scannerDownloadDBCommand) downloadDb() error {
 	version := cmd.detectVersion()
 
-	// Get version variants to try.
-	versionVariants, isScannerV2 := cmd.disectVersion(version)
-	if versionVariants == nil && !isScannerV2 {
-		return errors.New("unexpected error parsing version")
+	priorToV4, err := isPriorToScannerV4(version)
+	if err != nil {
+		return fmt.Errorf("invalid version %q: %w", version, err)
 	}
 
 	var bundleFileNames []string
-	if isScannerV2 {
+	if priorToV4 {
 		cmd.env.Logger().InfofLn("Version represents StackRox Scanner, downloading 'latest' bundle.")
 		bundleFileNames = append(bundleFileNames, latestBundleFileName)
 	} else {
+		versionVariants := disectVersion(version)
 		for _, versionVariant := range versionVariants {
-			bundleFileName := fmt.Sprintf(bundleFileNameFmt, versionVariant)
-			bundleFileNames = append(bundleFileNames, bundleFileName)
+			bundleFileNames = append(bundleFileNames, fmt.Sprintf(bundleFileNameFmt, versionVariant))
 		}
 	}
 
@@ -98,7 +97,7 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 			continue
 		}
 
-		cmd.env.Logger().PrintfLn("\nSuccessfully downloaded database to %q", outFileName)
+		cmd.env.Logger().PrintfLn("\nSuccessfully downloaded %q", outFileName)
 		return nil
 	}
 
@@ -218,37 +217,49 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 }
 
 // disectVersion breaks a version into a series of version strings starting with
-// the most specific to the least specific. True will be returned if the
-// version should be ignored and Scanner V2 assumed.  If the return is
-// (nil, false) the version is invalid.
-func (cmd *scannerDownloadDBCommand) disectVersion(version string) ([]string, bool) {
+// the most specific to the least specific.
+func disectVersion(version string) []string {
 	res := []string{version}
 
 	i := strings.LastIndex(version, "-")
 	for i != -1 {
 		res = append(res, version[:i])
-
 		version = version[:i]
 		i = strings.LastIndex(version, "-")
 	}
 
-	// Version should be in X.Y.Z format at this point
-	parts := strings.Split(version, ".")
-	if len(parts) < 3 && len(res) > 1 {
-		cmd.env.Logger().ErrfLn("Error dissecting version, does not adhere to X.Y.Z-* format: %q", version)
-		return nil, false
+	i = strings.LastIndex(version, ".")
+	for i != -1 && strings.Count(version, ".") > 1 {
+		res = append(res, version[:i])
+		version = version[:i]
+		i = strings.LastIndex(version, ".")
+	}
+
+	return res
+}
+
+// isPriorToScannerV4 returns true if version represents a version of ACS from prior to the
+// introduction of Scanner V4. Will return an error if cannot determine result.
+func isPriorToScannerV4(version string) (bool, error) {
+	// 3.99.99 = Scanner V2
+	// 4.3.99  = Scanner V2
+	// 4.3.x   = Scanner V4
+	// 4.4.*   = Scanner V4
+	before, _, _ := strings.Cut(version, "-")
+	parts := strings.Split(before, ".")
+
+	if len(parts) < 2 || len(parts) > 3 {
+		return false, fmt.Errorf("%q is not in X.Y[.Z] format", before)
 	}
 
 	x, err := strconv.Atoi(parts[0])
 	if err != nil {
-		cmd.env.Logger().ErrfLn("Error dissecting version, X part is not numeric: %q", version)
-		return nil, false
+		return false, fmt.Errorf("x is not numeric: %q", version)
 	}
 
 	y, err := strconv.Atoi(parts[1])
 	if err != nil {
-		cmd.env.Logger().ErrfLn("Error dissecting version, Y part is not numeric: %q", version)
-		return nil, false
+		return false, fmt.Errorf("y is not numeric: %q", version)
 	}
 
 	var z string
@@ -256,35 +267,11 @@ func (cmd *scannerDownloadDBCommand) disectVersion(version string) ([]string, bo
 		z = parts[2]
 	}
 
-	if isPriorToScannerV4(x, y, z) {
-		return nil, true
+	if (x < 4 || y < 3) || (y == 3 && (z == "" || z != "x")) {
+		return true, nil
 	}
 
-	// Skip append if Z is empty because X.Y would have already been added.
-	if z != "" {
-		res = append(res, fmt.Sprintf("%s.%s", parts[0], parts[1]))
-	}
-	return res, false
-}
-
-// isPriorToScannerV4 returns true if x, y, z represent a version from prior to the
-// introduction of Scanner V4.
-func isPriorToScannerV4(x int, y int, z string) bool {
-	// Examples:
-	//	 3.99.99 = Scanner V2
-	//	 4.3.99  = Scanner V2
-	//	 4.3.x   = Scanner V4
-	//	 4.4.*   = Scanner V4
-
-	if x < 4 || y < 3 {
-		return true
-	}
-
-	if y == 3 && (z == "" || z != "x") {
-		return true
-	}
-
-	return false
+	return false, nil
 }
 
 // Command represents the command.
@@ -296,7 +283,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.",
 		Long: `Download the offline vulnerability database for StackRox Scanner and/or Scanner V4.
 
-Helps download version specific offline vulnerability bundles. Will contact
+Download version specific offline vulnerability bundles. Will contact
 Central to determine version if one is not specified, if communication fails
 defaults to version embedded within roxctl.`,
 		Args: cobra.NoArgs,
