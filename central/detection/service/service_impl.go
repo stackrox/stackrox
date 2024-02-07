@@ -424,8 +424,8 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
 		for _, d := range deployments {
-			remarks[d.Name] = &apiV1.DeployDetectionRemark{
-				Name:                   d.Name,
+			remarks[d.GetName()] = &apiV1.DeployDetectionRemark{
+				Name:                   d.GetName(),
 				PermissionLevel:        d.GetServiceAccountPermissionLevel().String(),
 				AppliedNetworkPolicies: nil,
 			}
@@ -464,7 +464,7 @@ func getPolicyNamesAsSlice(policies map[string]*storage.NetworkPolicy) (policyNa
 		if p == nil {
 			continue
 		}
-		policyNames = append(policyNames, p.Name)
+		policyNames = append(policyNames, p.GetName())
 	}
 	return
 }
