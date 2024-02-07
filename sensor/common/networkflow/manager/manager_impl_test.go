@@ -1094,6 +1094,12 @@ func Test_connection_IsExternal(t *testing.T) {
 			expectedExternal: false,
 			wantErr:          true,
 		},
+		"255.255.255.255 is a special value returned from collector and should be treated as external": {
+			remoteIP:         "255.255.255.255",
+			remoteCIDR:       "",
+			expectedExternal: true,
+			wantErr:          false,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
