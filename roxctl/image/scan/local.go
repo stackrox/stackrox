@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"runtime"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/quay/clair-action/datastore"
-	"github.com/quay/clair-action/image"
 	"github.com/quay/claircore/enricher/cvss"
-	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
@@ -46,19 +43,10 @@ func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
 		//dockerConfigDir = c.String("docker-config-dir")
 	)
 
-	var (
-		img image.Image
-		fa  indexer.FetchArena
-	)
-
-	if _, err := os.Stat(i.image); errors.Is(err, os.ErrNotExist) {
-		img = image.NewDockerRemoteImage(ctx, imgRef)
-	} else {
-		var err error
-		img, err = image.NewDockerLocalImage(ctx, i.image, os.TempDir())
-		if err != nil {
-			return nil, fmt.Errorf("error getting image information: %w", err)
-		}
+	fa := &LocalFetchArena{}
+	img, err := NewImage(imgRef)
+	if err != nil {
+		return nil, fmt.Errorf("could not get image to scan: %w", err)
 	}
 
 	//err := datastore.DownloadDB(ctx, dbURL, dbPath)
@@ -90,7 +78,6 @@ func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
 		return nil, fmt.Errorf("error creating manifest: %w", err)
 	}
 
-	fa = libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir())
 	indexerOpts := &libindex.Options{
 		Store:      datastore.NewLocalIndexerStore(),
 		Locker:     updates.NewLocalLockSource(),
