@@ -40,6 +40,7 @@ type IntegrationsTableProps = {
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
     onTriggerBackup: (integrationId) => void;
+    isReadOnly?: boolean;
 };
 
 function IntegrationsTable({
@@ -47,6 +48,7 @@ function IntegrationsTable({
     hasMultipleDelete,
     onDeleteIntegrations,
     onTriggerBackup,
+    isReadOnly,
 }: IntegrationsTableProps): React.ReactElement {
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams();
@@ -90,20 +92,26 @@ function IntegrationsTable({
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
                         <Flex>
-                            {hasSelections && hasMultipleDelete && permissions[source].write && (
-                                <FlexItem>
-                                    <Button variant="danger" onClick={onDeleteIntegrationHandler}>
-                                        Delete {numSelected} selected{' '}
-                                        {pluralize('integration', numSelected)}
-                                    </Button>
-                                </FlexItem>
-                            )}
+                            {hasSelections &&
+                                hasMultipleDelete &&
+                                permissions[source].write &&
+                                !isReadOnly && (
+                                    <FlexItem>
+                                        <Button
+                                            variant="danger"
+                                            onClick={onDeleteIntegrationHandler}
+                                        >
+                                            Delete {numSelected} selected{' '}
+                                            {pluralize('integration', numSelected)}
+                                        </Button>
+                                    </FlexItem>
+                                )}
                             {isClusterInitBundle && (
                                 <FlexItem>
                                     <DownloadCAConfigBundle />
                                 </FlexItem>
                             )}
-                            {permissions[source].write && (
+                            {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
                                         variant={ButtonVariant.primary}
@@ -129,7 +137,7 @@ function IntegrationsTable({
                     <TableComposable variant="compact" isStickyHeader>
                         <Thead>
                             <Tr>
-                                {hasMultipleDelete && (
+                                {hasMultipleDelete && !isReadOnly && (
                                     <Th
                                         select={{
                                             onSelect: onSelectAll,
@@ -173,13 +181,14 @@ function IntegrationsTable({
                                             </div>
                                         ),
                                         onClick: () => onDeleteIntegrations([integration.id]),
+                                        isHidden: isReadOnly,
                                     },
                                 ].filter((actionItem) => {
                                     return !actionItem?.isHidden;
                                 });
                                 return (
                                     <Tr key={integration.id}>
-                                        {hasMultipleDelete && (
+                                        {hasMultipleDelete && !isReadOnly && (
                                             <Td
                                                 key={integration.id}
                                                 select={{

@@ -209,6 +209,11 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     getCategoriesTextForClairifyScanner(integration.categories),
             },
         ],
+        scannerv4: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'scannerV4.indexerEndpoint', Header: 'Indexer Endpoint' },
+            { accessor: 'scannerV4.matcherEndpoint', Header: 'Matcher Endpoint' },
+        ],
         google: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'google.endpoint', Header: 'Endpoint' },

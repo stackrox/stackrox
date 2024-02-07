@@ -85,6 +85,13 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         type: 'clairify',
     },
     {
+        categories: 'Scanner',
+        image: logo,
+        label: 'Scanner V4',
+        type: 'scannerv4',
+        featureFlagDependency: 'ROX_SCANNER_V4',
+    },
+    {
         categories: 'Registry',
         image: docker,
         label: 'Generic Docker Registry',
