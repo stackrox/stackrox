@@ -81,3 +81,50 @@ func TestParseNumericEndpointInvalid(t *testing.T) {
 	ep = ParseIPPortPair("192.168.0.1:port")
 	assert.False(t, ep.IsAddressValid())
 }
+
+func TestNetworkPeerID_String(t *testing.T) {
+	tests := map[string]struct {
+		Address   IPAddress
+		Port      uint16
+		IPNetwork IPNetwork
+		want      string
+	}{
+		"IPv4 Address": {
+			Address:   IPAddress{data: ipv4data{192, 168, 0, 1}},
+			Port:      80,
+			IPNetwork: IPNetwork{},
+			want:      "192.168.0.1:80",
+		},
+		"IPv4 Address without port": {
+			Address:   IPAddress{data: ipv4data{192, 168, 0, 1}},
+			Port:      0,
+			IPNetwork: IPNetwork{},
+			want:      "192.168.0.1",
+		},
+		"IPv4 Network Address": {
+			Address: IPAddress{},
+			Port:    80,
+			IPNetwork: IPNetwork{
+				ip:        IPAddress{data: ipv4data{192, 168, 0, 0}},
+				prefixLen: 24,
+			},
+			want: "192.168.0.0:80",
+		},
+		"IPv6 Address": {
+			Address:   IPAddress{data: ipv6data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
+			Port:      80,
+			IPNetwork: IPNetwork{},
+			want:      "[::1]:80",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			e := NetworkPeerID{
+				Address:   tt.Address,
+				Port:      tt.Port,
+				IPNetwork: tt.IPNetwork,
+			}
+			assert.Equalf(t, tt.want, e.String(), "String()")
+		})
+	}
+}
