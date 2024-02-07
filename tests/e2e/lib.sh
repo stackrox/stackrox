@@ -883,17 +883,25 @@ wait_for_api() {
     info "Waiting for Central API endpoint"
 
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        API_HOSTNAME=$(kubectl get routes/central -n "${central_namespace}" -o json | jq -r '.spec.host')
-        API_PORT=443
-    else
-        API_HOSTNAME=localhost
-        API_PORT=8000
-        LOAD_BALANCER="${LOAD_BALANCER:-}"
-        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+        LOAD_BALANCER="route"
+    fi
+
+    LOAD_BALANCER="${LOAD_BALANCER:-}"
+    case "${LOAD_BALANCER}" in
+        lb)
             API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh "${central_namespace}")
             API_PORT=443
-        fi
-    fi
+            ;;
+        route)
+            API_HOSTNAME=$(kubectl get routes/central -n "${central_namespace}" -o json | jq -r '.spec.host')
+            API_PORT=443
+            ;;
+        *)
+            API_HOSTNAME=localhost
+            API_PORT=8000
+            ;;
+    esac
+
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
     info "PING_URL is set to ${PING_URL}"
