@@ -15,6 +15,7 @@ os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["ROX_SCANNER_V4"] = "true"
+os.environ["ENABLE_OPERATOR_TESTS"] = "true"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
