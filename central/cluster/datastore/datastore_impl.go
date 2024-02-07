@@ -292,6 +292,10 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ok, nil
 }
 
+func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error {
+	return ds.clusterStorage.Walk(ctx, fn)
+}
+
 func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
 	clusters, err := ds.searchRawClusters(ctx, q)
 	if err != nil {

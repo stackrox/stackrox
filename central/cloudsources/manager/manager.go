@@ -6,6 +6,7 @@ import (
 	"time"
 
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
 )
 
@@ -37,6 +39,12 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		))
 
+	clustersCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.ResourceScopeKeys(resources.Cluster),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		))
+
 	log = logging.LoggerForModule()
 )
 
@@ -50,6 +58,7 @@ type managerImpl struct {
 
 	cloudSourcesDataStore       cloudSourcesDS.DataStore
 	discoveredClustersDataStore discoveredClustersDS.DataStore
+	clusterDataStore            clusterDS.DataStore
 }
 
 func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
@@ -143,10 +152,35 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 }
 
 func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
-	// TODO: Add matching of discovered clusters with secured clusters.
+	m.matchDiscoveredClusters(clusters)
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx, clusters...); err != nil {
 		log.Errorw("Received errors during upserting discovered clusters.", logging.Err(err))
+	}
+}
+
+func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
+	// A list of hashes of currently secured cluster. A secured cluster hash consist of:
+	//  The secured cluster ID, name, and type.
+	securedClusters := set.NewStringSet()
+
+	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
+		index := clusterIndexForClusterMetadata(obj.GetStatus().GetProviderMetadata().GetCluster())
+		if index != "" {
+			securedClusters.Add(index)
+		}
+		return nil
+	}); err != nil {
+		log.Errorw("Failed to list secured clusters. Matching is skipped.", logging.Err(err))
+		return
+	}
+
+	for _, cluster := range clusters {
+		if securedClusters.Contains(clusterIndexForDiscoveredCluster(cluster)) {
+			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
+		} else {
+			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
+		}
 	}
 }
 
@@ -159,4 +193,14 @@ func createClients(cloudSources []*storage.CloudSource) []cloudsources.Client {
 		}
 	}
 	return clients
+}
+
+type clusterIndex = string
+
+func clusterIndexForClusterMetadata(obj *storage.ClusterMetadata) clusterIndex {
+	return obj.GetId() + obj.GetName() + obj.GetType().String()
+}
+
+func clusterIndexForDiscoveredCluster(obj *discoveredclusters.DiscoveredCluster) clusterIndex {
+	return obj.GetID() + obj.GetName() + obj.GetType().String()
 }
