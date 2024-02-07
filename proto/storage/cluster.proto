@@ -43,7 +43,8 @@ message ClusterMetadata {
 
 message GoogleProviderMetadata {
   string project = 1;
-  string cluster_name = 2;
+  // Deprecated in favor of providerMetadata.cluster.name.
+  string cluster_name = 2 [deprecated = true];
 }
 
 message AWSProviderMetadata {
