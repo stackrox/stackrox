@@ -26,6 +26,7 @@ import {
     getIsAPIToken,
     getIsClusterInitBundle,
     getIsSignatureIntegration,
+    getIsScannerV4,
 } from '../utils/integrationUtils';
 
 import {
@@ -59,6 +60,7 @@ function IntegrationsListPage({
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
+    const isScannerV4 = getIsScannerV4(source, type);
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -109,6 +111,7 @@ function IntegrationsListPage({
                     hasMultipleDelete={!isClusterInitBundle}
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={triggerBackup}
+                    isReadOnly={isScannerV4}
                 />
             </PageSection>
             {isAPIToken && (
