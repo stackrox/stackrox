@@ -2,6 +2,11 @@ values:
   monitoring:
     openshift:
       enabled: false
+defs: |
+  def getVolume(deploymentName; volumeName):
+    .deployments[deploymentName].spec.template.spec.volumes[] | select(.name == "disk");
+  def getScannerV4Disk:
+    getVolume("scanner-v4-db"; "disk");
 server:
   visibleSchemas:
   - openshift-4.1.0
@@ -262,6 +267,24 @@ tests:
             storageclass.kubernetes.io/is-default-class: true
     expect: |
       .deployments["scanner-v4-db"].spec.template.spec.volumes[] | select(.name == "disk") | assertThat(.persistentVolumeClaim != null)
+  - name: "if a PVC by the configured name already exists"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          namespace: stackrox
+          name: scanner-v4-db
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: "10Gi"
+    expect: |
+      .persistentvolumeclaims["scanner-v4-db"] | assertThat(. == null)
+      getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
+      getScannerV4Disk | assumeThat(.persistentVolumeClaim != null) | .persistentVolumeClaim | assertThat(.claimName == "scanner-v4-db")
   - name: "if configured explicitly"
     values:
       scannerV4:
@@ -280,11 +303,6 @@ tests:
           name: some-sc
           annotations:
             storageclass.kubernetes.io/is-default-class: false
-    defs: |
-      def getVolume(deploymentName; volumeName):
-        .deployments[deploymentName].spec.template.spec.volumes[] | select(.name == "disk");
-      def getScannerV4Disk:
-        getVolume("scanner-v4-db"; "disk");
     expect: |
       getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
       getScannerV4Disk | assumeThat(.persistentVolumeClaim != null) | .persistentVolumeClaim | assertThat(.claimName == "foo")

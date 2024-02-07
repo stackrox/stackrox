@@ -117,6 +117,7 @@
 {{ include "srox.applyDefaults" $ }}
 
 {{ include "srox.getStorageClasses" (list $) }}
+{{ include "srox.getPVCs" (list $) }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
