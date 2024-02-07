@@ -23,18 +23,6 @@ class XyzVersion(namedtuple("Version", ["x", "y", "z"])):
         return f"{self.x}.{self.y}.{self.z}"
 
 
-def rbac_proxy_replace(updated_img):
-    def update_rbac_proxy_img(img):
-        """
-        Updates the reference to the kube-rbac-proxy image to match the OpenShift one.
-        """
-        if not isinstance(img, str) or not img.startswith('gcr.io/kubebuilder/kube-rbac-proxy:'):
-            return None
-        return updated_img
-
-    return update_rbac_proxy_img
-
-
 def related_image_passthrough(val):
     """
     Searches for environment variable definitions of the form RELATED_IMAGE_* and replaces them
@@ -61,8 +49,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches,
-              rbac_proxy_replacement):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -75,9 +62,6 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     if not no_related_images:
         rewrite(csv_doc, related_image_passthrough)
-
-    if rbac_proxy_replacement:
-        rewrite(csv_doc, rbac_proxy_replace(rbac_proxy_replacement))
 
     previous_y_stream = get_previous_y_stream(version)
 
@@ -169,8 +153,7 @@ def parse_args():
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
                         help='Disable passthrough of related images')
-    parser.add_argument("--replace-rbac-proxy", required=False, metavar='replacement-image:tag',
-                        help='Replacement directives for the RBAC proxy image')
+    parser.add_argument("--replace-rbac-proxy", help='Unused legacy option.')
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
@@ -187,8 +170,7 @@ def main():
               version=args.use_version,
               first_version=args.first_version,
               no_related_images=args.no_related_images,
-              extra_supported_arches=args.add_supported_arch,
-              rbac_proxy_replacement=args.replace_rbac_proxy)
+              extra_supported_arches=args.add_supported_arch)
     print(yaml.safe_dump(doc))
 
 
