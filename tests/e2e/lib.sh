@@ -881,11 +881,13 @@ wait_for_api() {
     LOAD_BALANCER="${LOAD_BALANCER:-}"
     case "${LOAD_BALANCER}" in
         lb)
-            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh "${central_namespace}")
+            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname'
+            API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
         route)
-            API_HOSTNAME=$(kubectl get routes/central -n "${central_namespace}" -o json | jq -r '.spec.host')
+            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host'
+            API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
         *)
@@ -933,6 +935,41 @@ wait_for_api() {
     ci_export API_HOSTNAME "${API_HOSTNAME}"
     ci_export API_PORT "${API_PORT}"
     ci_export API_ENDPOINT "${API_ENDPOINT}"
+}
+
+get_ingress_endpoint() {
+    local namespace="$1"
+    local object="$2"
+    local field_accessor="$3"
+    local timeout="${4:-1800}"
+
+    local cli_cmd="kubectl"
+    if [[ "$object" =~ route ]]; then
+        cli_cmd="oc"
+    fi
+
+    local start_time curr_time elapsed_seconds endpoint
+    start_time="$(date '+%s')"
+
+    while true; do
+        endpoint=$("${cli_cmd}" -n "${namespace}" get "${object}" -o json | jq -r "${field_accessor}")
+        if [[ -n "${endpoint}" ]] && [[ "${endpoint}" != "null" ]]; then
+            info "Found ingress endpoint: ${endpoint}"
+            ingress_endpoint="${endpoint}"
+            return
+        fi
+
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        if (( elapsed_seconds > timeout )); then
+            "${cli_cmd}" -n "${namespace}" get "${object}" -o json
+            echo >&2 "get_ingress_endpoint() timeout after $timeout seconds."
+            exit 1
+        fi
+
+        sleep 5
+    done
 }
 
 record_build_info() {

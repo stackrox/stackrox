@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-NAMESPACE=${1:-stackrox}
-LB_IP=""
+set -euo pipefail
 
-until [ -n "${LB_IP}" ] && [ "${LB_IP}" != "null" ]; do
-    LB_IP=$(kubectl -n "${NAMESPACE}" get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
-    sleep 1
-done
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
+source "$ROOT/tests/e2e/lib.sh"
 
-echo "$LB_IP"
+get_ingress_endpoint "${1:-stackrox}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' \
+  > /dev/null
+
+echo "${ingress_endpoint}"
