@@ -24,20 +24,23 @@ func (e NetworkPeerID) IsAddressValid() bool {
 
 // String returns a string representation of this ip:port pair.
 func (e NetworkPeerID) String() string {
-	addr := e.Address.String()
+	addrPrefix := e.Address.String()
 	isIPv6 := e.Address.Family() == IPv6
-	if addr == "" {
-		addr = e.IPNetwork.IP().String()
+	if addrPrefix == "" {
+		addrPrefix = e.IPNetwork.IP().String()
 		isIPv6 = e.IPNetwork.IP().Family() == IPv6
+		if e.IPNetwork.prefixLen > 0 {
+			addrPrefix = fmt.Sprintf("%s/%d", addrPrefix, e.IPNetwork.prefixLen)
+		}
 	}
 	if e.Port == 0 {
-		return addr
+		return addrPrefix
 	}
 	var ldelim, rdelim string
 	if isIPv6 {
 		ldelim, rdelim = "[", "]"
 	}
-	return fmt.Sprintf("%s%s%s:%d", ldelim, addr, rdelim, e.Port)
+	return fmt.Sprintf("%s%s%s:%d", ldelim, addrPrefix, rdelim, e.Port)
 }
 
 // ParseIPPortPair parses a string representation of an ip:port pair. An invalid ip:port pair is returned if the string
