@@ -24,6 +24,14 @@ import (
 )
 
 func (i *imageScanCommand) localScan() error {
+	imageResult, err := i.scanLocal()
+	if err != nil {
+		return err
+	}
+	return i.printImageResult(imageResult)
+}
+
+func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
 	defer cancel()
 
@@ -49,18 +57,18 @@ func (i *imageScanCommand) localScan() error {
 		var err error
 		img, err = image.NewDockerLocalImage(ctx, i.image, os.TempDir())
 		if err != nil {
-			return fmt.Errorf("error getting image information: %v", err)
+			return nil, fmt.Errorf("error getting image information: %w", err)
 		}
 	}
 
 	//err := datastore.DownloadDB(ctx, dbURL, dbPath)
 	//if err != nil {
-	//	return fmt.Errorf("could not download database: %v", err)
+	//	return nil, fmt.Errorf("could not download database: %w", err)
 	//}
 
 	matcherStore, err := datastore.NewSQLiteMatcherStore(dbPath, true)
 	if err != nil {
-		return fmt.Errorf("error creating sqlite backend: %v", err)
+		return nil, fmt.Errorf("error creating sqlite backend: %w", err)
 	}
 
 	matcherOpts := &libvuln.Options{
@@ -74,12 +82,12 @@ func (i *imageScanCommand) localScan() error {
 	}
 	lv, err := libvuln.New(ctx, matcherOpts)
 	if err != nil {
-		return fmt.Errorf("error creating Libvuln: %v", err)
+		return nil, fmt.Errorf("error creating Libvuln: %w", err)
 	}
 
 	mf, err := img.GetManifest(ctx)
 	if err != nil {
-		return fmt.Errorf("error creating manifest: %v", err)
+		return nil, fmt.Errorf("error creating manifest: %w", err)
 	}
 
 	fa = libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir())
@@ -90,7 +98,7 @@ func (i *imageScanCommand) localScan() error {
 	}
 	li, err := libindex.New(ctx, indexerOpts, http.DefaultClient)
 	if err != nil {
-		return fmt.Errorf("error creating Libindex: %v", err)
+		return nil, fmt.Errorf("error creating Libindex: %w", err)
 	}
 	ir, err := li.Index(ctx, mf)
 	// TODO (crozzy) Better error handling once claircore
@@ -98,14 +106,14 @@ func (i *imageScanCommand) localScan() error {
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, tarfs.ErrFormat):
-		return fmt.Errorf("error creating index report due to invalid layer: %v", err)
+		return nil, fmt.Errorf("error creating index report due to invalid layer: %w", err)
 	default:
-		return fmt.Errorf("error creating index report: %v", err)
+		return nil, fmt.Errorf("error creating index report: %w", err)
 	}
 
 	vr, err := lv.Scan(ctx, ir)
 	if err != nil {
-		return fmt.Errorf("error creating vulnerability report: %v", err)
+		return nil, fmt.Errorf("error creating vulnerability report: %w", err)
 	}
 
 	components := []*storage.EmbeddedImageScanComponent{}
@@ -165,5 +173,5 @@ func (i *imageScanCommand) localScan() error {
 		Notes:                     nil,
 	}
 
-	return i.printImageResult(result)
+	return result, nil
 }
