@@ -27,7 +27,7 @@ spec:
           echo checking response headers:;
           if grep -Ei "^HTTP/[0-9.]+ 403" /tmp/headers; then exit 0; fi;
           sleep 1;
-        done
+        done;
         exit 1
     securityContext:
       allowPrivilegeEscalation: false

@@ -27,7 +27,7 @@ spec:
           echo checking response body:;
           if grep -Ei "^# TYPE " /tmp/response; then exit 0; fi;
           sleep 1;
-        done
+        done;
         exit 1
     securityContext:
       allowPrivilegeEscalation: false
