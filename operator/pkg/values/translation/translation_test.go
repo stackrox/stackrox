@@ -661,7 +661,8 @@ func TestSetScannerV4DisableValue(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			vb := NewValuesBuilder()
-			SetScannerV4DisableValue(&vb, &tt.scannerV4Component)
+			scannerV4Component := tt.scannerV4Component
+			SetScannerV4DisableValue(&vb, &scannerV4Component)
 			values, err := vb.Build()
 			if tt.wantErr {
 				require.NotNil(t, err)
