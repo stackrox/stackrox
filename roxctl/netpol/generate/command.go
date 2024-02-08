@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
@@ -15,7 +14,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Long:  cmd.LongText(),
 		Args:  cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			return errors.Wrap(cmd.RunE(c, args), "generating netpols")
+			return cmd.RunE(c, args)
 		},
 	}
 	return cmd.AddFlags(c)

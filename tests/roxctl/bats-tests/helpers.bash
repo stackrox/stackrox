@@ -19,6 +19,22 @@ test_data="$BATS_TEST_DIRNAME/../test-data"
 
 any_version='[0-9]+\.[0-9]+\.'
 
+delete-outdated-binaries() {
+    local roxctl_ver="${1}"
+    current_tag="$(git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')"
+    echo "Roxctl version='${roxctl_ver}'" >&3
+    echo "Current tag   ='${current_tag}'" >&3
+    if [[ "${current_tag}" != "${roxctl_ver}" ]]; then
+        echo "Roxctl version does not match current tag" >&3
+        if [[ -n "$NO_BATS_ROXCTL_REBUILD" ]]; then
+                echo "Doing nothing as NO_BATS_ROXCTL_REBUILD is set" >&3
+        else
+            echo "Deleting all roxctl binaries" >&3
+            rm -f "${tmp_roxctl}"/roxctl*
+        fi
+    fi
+}
+
 # roxctl-development-cmd prints the path to roxctl built with GOTAGS=''. It builds the binary if needed
 roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
