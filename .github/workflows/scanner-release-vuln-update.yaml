@@ -2,9 +2,11 @@ name: Scanner release vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
+  workflow_dispatch:
+  # TODO: remove prior to merge
   push:
     branches:
-    - scanner/*
+    - ross/*
 
 jobs:
   read-release-versions:
