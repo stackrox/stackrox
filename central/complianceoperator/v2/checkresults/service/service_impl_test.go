@@ -174,6 +174,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster2),
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster3),
 				}
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -191,6 +192,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 				results := []*datastore.ResourceResultCountByClusterScan{
 					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
 				}
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
 		},
@@ -407,6 +409,110 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 
 			if tc.expectedResp != nil {
 				s.Require().Equal(convertUtils.GetConvertedComplianceResult(s.T()), result)
+			}
+		})
+	}
+}
+
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationResults() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.ComplianceScanResultsRequest
+		expectedResp []*apiV2.ComplianceScanResult
+		expectedErr  error
+		found        bool
+		setMocks     func()
+	}{
+		{
+			desc: "Empty query",
+			query: &apiV2.ComplianceScanResultsRequest{
+				ScanConfigName: "scanConfig1",
+				Query:          &apiV2.RawQuery{Query: ""},
+			},
+			expectedErr:  nil,
+			expectedResp: convertUtils.GetConvertedComplianceResults(s.T()),
+			found:        true,
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
+					expectedQ,
+				)
+				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetComplianceStorageResults(s.T()), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with search field",
+			query: &apiV2.ComplianceScanResultsRequest{
+				ScanConfigName: "scanConfig1",
+				Query:          &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			},
+			expectedErr: nil,
+			found:       true,
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
+					expectedQ,
+				)
+
+				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetOneClusterComplianceStorageResults(s.T(), fixtureconsts.Cluster1), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with custom pagination",
+			query: &apiV2.ComplianceScanResultsRequest{
+				ScanConfigName: "scanConfig1",
+				Query: &apiV2.RawQuery{Query: "",
+					Pagination: &apiV2.Pagination{Limit: 1}},
+			},
+			expectedErr: nil,
+			found:       true,
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
+					expectedQ,
+				)
+				returnResults := []*storage.ComplianceOperatorCheckResultV2{
+					convertUtils.GetComplianceStorageResults(s.T())[0],
+				}
+
+				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(returnResults, nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with no scan configuration name field",
+			query: &apiV2.ComplianceScanResultsRequest{
+				Query: &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			},
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Scan configuration name is required"),
+			found:       false,
+			setMocks:    func() {},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceScanConfigurationResults(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(convertUtils.GetConvertedComplianceResults(s.T()), results.GetScanResults())
 			}
 		})
 	}
