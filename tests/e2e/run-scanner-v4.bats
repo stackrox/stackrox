@@ -92,7 +92,9 @@ setup() {
 
 describe_pods_in_namespace() {
     local namespace="$1"
+    info "==============================="
     info "Pods in namespace ${namespace}:"
+    info "==============================="
     "${ORCH_CMD}" -n "${namespace}" get pods
     echo
     "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
@@ -105,6 +107,20 @@ describe_pods_in_namespace() {
 
     done
 }
+
+describe_deployments_in_namespace() {
+    local namespace="$1"
+    info "====================================="
+    info "Deployments in namespace ${namespace}:"
+    info "====================================="
+    "${ORCH_CMD}" -n "${namespace}" get deployments
+    echo
+    "${ORCH_CMD}" -n "${namespace}" get deployments -o name | while read -r name; do
+      echo "** DESCRIBING DEPLOYMENT: ${namespace}/${name}:"
+      "${ORCH_CMD}" -n "${namespace}" describe "${name}"
+    done
+}
+
 
 teardown() {
     local central_namespace=""
@@ -130,8 +146,12 @@ teardown() {
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"
+        describe_deployments_in_namespace "${central_namespace}"
+
+
         if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
             describe_pods_in_namespace "${sensor_namespace}"
+            describe_deployments_in_namespace "${sensor_namespace}"
         fi
     fi
 
