@@ -28,7 +28,7 @@ func TestClient_GetAssets(t *testing.T) {
 
 	expectedDiscoveredClusters := []*discoveredclusters.DiscoveredCluster{
 		{
-			ID:            "MC_testing_test-cluster-1_eastus",
+			ID:            "123123213123_MC_testing_test-cluster-1_eastus",
 			Name:          "test-cluster-1",
 			Type:          storage.ClusterMetadata_AKS,
 			ProviderType:  storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,

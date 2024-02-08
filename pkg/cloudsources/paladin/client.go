@@ -259,8 +259,9 @@ func clusterIDFromAsset(a Asset) string {
 	// Paladin CLoud has the Azure reference, which is of the format
 	//	"subscriptions/<id>/resourcegroups/<group>/azure resource names.../<cluster name>"
 	// Internally, our format for AKS clusters is
-	//  "MC_<resource group>_<cluster name>_<location>
+	//  "<subscription_id>_MC_<resource group>_<cluster name>_<location>
 
+	// Index 1 -> subscription ID
 	// Index 3 -> resource group name
 	// Index 7 -> cluster name
 	idParts := strings.Split(a.ID, "/")
@@ -271,5 +272,5 @@ func clusterIDFromAsset(a Asset) string {
 		return a.ID
 	}
 
-	return fmt.Sprintf("MC_%s_%s_%s", idParts[3], idParts[7], a.Region)
+	return fmt.Sprintf("%s_MC_%s_%s_%s", idParts[1], idParts[3], idParts[7], a.Region)
 }

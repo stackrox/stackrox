@@ -154,8 +154,7 @@ func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters
 func createClients(cloudSources []*storage.CloudSource) []cloudsources.Client {
 	clients := make([]cloudsources.Client, 0, len(cloudSources))
 	for _, cloudSource := range cloudSources {
-		client := cloudsources.NewClientForCloudSource(cloudSource)
-		if client != nil {
+		if client := cloudsources.NewClientForCloudSource(cloudSource); client != nil {
 			clients = append(clients, client)
 		}
 	}

@@ -583,7 +583,7 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 	datastore := discoveredClustersDS.GetTestPostgresDataStore(s.T(), s.testDB)
 
 	clusters := []*storage.DiscoveredCluster{
-		// Should not be subject to pruning.
+		// Should be subject to pruning.
 		{
 			Id:            "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
 			LastUpdatedAt: timestamp.TimeBeforeDays(2),
@@ -596,17 +596,12 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 		// Should be subject to pruning.
 		{
 			Id:            "a10c6cae-c72f-58a3-bd86-dc0363990fe6",
-			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(96*24*time.Hour + 30*time.Minute))),
+			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(24*time.Hour + 30*time.Minute))),
 		},
 		// Should not be subject to pruning.
 		{
 			Id:            "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
-			LastUpdatedAt: timestamp.TimeBeforeDays(3),
-		},
-		// Should not be subject to pruning.
-		{
-			Id:            "13d24bd2-1373-57b3-af07-066cdd65d226",
-			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(4 * 24 * time.Hour)),
+			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-23 * time.Hour)),
 		},
 		// Should be subject to pruning.
 		{
@@ -622,11 +617,11 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 	s.Require().NoError(discoveredClustersDS.UpsertTestDiscoveredClusters(s.ctx, s.T(),
 		datastore, clusters...))
 
-	PruneDiscoveredClusters(s.ctx, s.testDB, 4*24*time.Hour)
+	PruneDiscoveredClusters(s.ctx, s.testDB, 24*time.Hour)
 
 	storedClusters, err := datastore.ListDiscoveredClusters(s.ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.ElementsMatch([]*storage.DiscoveredCluster{clusters[0], clusters[1], clusters[3], clusters[4]}, storedClusters)
+	s.ElementsMatch([]*storage.DiscoveredCluster{clusters[1], clusters[3]}, storedClusters)
 }
 
 func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
