@@ -160,6 +160,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 
 	var version string
 	for key, val := range complianceOperatorDeployment.Labels {
+		// Info: This label is set by OLM, if a custom compliance operator build was deployed via e.g. Helm, this label does not exist.
 		if strings.HasSuffix(key, "owner") {
 			version = strings.TrimPrefix(val, complianceoperator.Name+".")
 		}
