@@ -32,7 +32,7 @@ jobs:
         # Avoid BQ init message in first report
         bq --quiet --format=pretty query --use_legacy_sql=false 'select 1'
         n=10
-        slack_top_n_failures ${n} "qa-e2e" ":testgrid: Top ${n} QA E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "operator-e2e" ":operator: Top ${n} Operator E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "qa-e2e" ":testgrid: Top ${n} QA E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "operator-e2e" ":operator: Top ${n} Operator E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
