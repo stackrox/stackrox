@@ -43,7 +43,6 @@ import {
     ExternalEntitiesIcon,
     InternalEntitiesIcon,
 } from './common/NetworkGraphIcons';
-import InternalGroupSideBar from './internal/InternalGroupSideBar';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -233,14 +232,6 @@ const TopologyComponent = ({
                             flowTableLabel="Cidr block flows"
                         />
                     )}
-                    {selectedNode && isNodeOfType('INTERNAL_GROUP', selectedNode) && (
-                        <InternalGroupSideBar
-                            selectedNode={selectedNode}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
-                            onNodeSelect={onNodeSelect}
-                        />
-                    )}
                     {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
                             id={selectedNode.id}
@@ -259,7 +250,7 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<InternalEntitiesIcon />}
-                            sidebarTitle={'Unspecified entity connection within your clusters'}
+                            sidebarTitle={'Unknown entity connections within your clusters'}
                             flowTableLabel="Internal entities flows"
                         />
                     )}
