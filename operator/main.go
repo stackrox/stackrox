@@ -129,9 +129,24 @@ func run() error {
 	}
 	defer restore()
 
+	var tlsOpts []func(c *tls.Config)
+	if !enableHTTP2 {
+		// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
+		// the Go standard library and golang.org/x/net are fully fixed.
+		// Right now, it is possible for authenticated and unauthenticated users to
+		// hold open HTTP2 connections and consume huge amounts of memory.
+		// See:
+		// * https://github.com/kubernetes/kubernetes/pull/121120
+		// * https://github.com/kubernetes/kubernetes/issues/121197
+		// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
+		tlsOpts = append(tlsOpts, func(c *tls.Config) {
+			c.NextProtos = []string{"http/1.1"}
+		})
+	}
+
 	var webhookServer webhook.Server
 	if enableWebhooks.BooleanSetting() {
-		webhookServer = webhook.NewServer(getWebhookOptions(enableHTTP2))
+		webhookServer = webhook.NewServer(getWebhookOptions(tlsOpts))
 	}
 
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
@@ -140,6 +155,7 @@ func run() error {
 			BindAddress:    metricsAddr,
 			SecureServing:  true,
 			FilterProvider: filters.WithAuthenticationAndAuthorization,
+			TLSOpts:        tlsOpts,
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
@@ -213,7 +229,7 @@ func run() error {
 	return nil
 }
 
-func getWebhookOptions(enableHTTP2 bool) webhook.Options {
+func getWebhookOptions(tlsOpts []func(c *tls.Config)) webhook.Options {
 	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
 	// provide the TLS certificate/key in the location referenced by default by the controller runtime
 	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
@@ -223,25 +239,8 @@ func getWebhookOptions(enableHTTP2 bool) webhook.Options {
 	// by the "make deploy" scaffolding.
 
 	opts := webhook.Options{
-		Port: 9443,
-	}
-
-	// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
-	// the Go standard library and golang.org/x/net are fully fixed.
-	// Right now, it is possible for authenticated and unauthenticated users to
-	// hold open HTTP2 connections and consume huge amounts of memory.
-	// See:
-	// * https://github.com/kubernetes/kubernetes/pull/121120
-	// * https://github.com/kubernetes/kubernetes/issues/121197
-	// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
-	forceHTTP1 := func(c *tls.Config) {
-		c.NextProtos = []string{"http/1.1"}
-	}
-
-	if !enableHTTP2 {
-		opts.TLSOpts = []func(*tls.Config){
-			forceHTTP1,
-		}
+		Port:    9443,
+		TLSOpts: tlsOpts,
 	}
 
 	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
