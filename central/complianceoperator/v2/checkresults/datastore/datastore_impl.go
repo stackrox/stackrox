@@ -180,17 +180,8 @@ func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int
 
 func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	res, err := d.SearchComplianceCheckResults(ctx, query)
-	if err != nil {
-		return err
-	}
-	for _, scanResult := range res {
-		err = d.DeleteResult(ctx, scanResult.GetId())
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err := d.store.DeleteByQuery(ctx, query)
+	return err
 }
 
 func withCountQuery(q *v1.Query) *v1.Query {
