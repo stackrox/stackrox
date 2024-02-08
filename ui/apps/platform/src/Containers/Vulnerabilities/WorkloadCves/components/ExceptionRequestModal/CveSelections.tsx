@@ -1,6 +1,15 @@
 import React from 'react';
 import { Link, generatePath } from 'react-router-dom';
-import { Flex, List, ListItem, Text, pluralize, Button, FlexItem } from '@patternfly/react-core';
+import {
+    Flex,
+    List,
+    ListItem,
+    Text,
+    pluralize,
+    Button,
+    FlexItem,
+    Alert,
+} from '@patternfly/react-core';
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -25,53 +34,64 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
     };
 
     return (
-        <List isPlain isBordered>
-            {cves.map(({ cve, summary, numAffectedImages }) => {
-                const isSelected = selectedCVEIds.includes(cve);
-                return (
-                    <ListItem key={cve}>
-                        <Flex direction={{ default: 'column' }}>
-                            <Flex direction={{ default: 'row' }}>
-                                <ExternalLink>
-                                    <Link
-                                        target="_blank"
-                                        to={generatePath(vulnerabilitiesWorkloadCveSinglePath, {
-                                            cve,
-                                        })}
-                                    >
-                                        {cve}
-                                    </Link>
-                                </ExternalLink>
-                                <Text>Across {pluralize(numAffectedImages, 'image')}</Text>
-                                <FlexItem align={{ default: 'alignRight' }}>
-                                    {isSelected ? (
-                                        <Button
-                                            variant="link"
-                                            aria-label={`Remove ${cve}`}
-                                            onClick={onRemoveHandler(cve)}
-                                            icon={<MinusCircleIcon />}
-                                            isDanger
+        <>
+            <div className="pf-u-mb-md">
+                <Alert title="Include or exclude selected CVEs" variant="info" isInline>
+                    You currently have ({selectedCVEIds.length}) selected. Review your selection
+                    below.
+                </Alert>
+            </div>
+            <List isPlain isBordered>
+                {cves.map(({ cve, summary, numAffectedImages }) => {
+                    const isSelected = selectedCVEIds.includes(cve);
+                    return (
+                        <ListItem
+                            key={cve}
+                            className={!isSelected ? 'pf-u-background-color-200' : ''}
+                        >
+                            <Flex direction={{ default: 'column' }}>
+                                <Flex direction={{ default: 'row' }}>
+                                    <ExternalLink>
+                                        <Link
+                                            target="_blank"
+                                            to={generatePath(vulnerabilitiesWorkloadCveSinglePath, {
+                                                cve,
+                                            })}
                                         >
-                                            Remove
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            variant="link"
-                                            aria-label={`Add ${cve}`}
-                                            onClick={onAddHandler(cve)}
-                                            icon={<PlusCircleIcon />}
-                                        >
-                                            Add
-                                        </Button>
-                                    )}
-                                </FlexItem>
+                                            {cve}
+                                        </Link>
+                                    </ExternalLink>
+                                    <Text>Across {pluralize(numAffectedImages, 'image')}</Text>
+                                    <FlexItem align={{ default: 'alignRight' }}>
+                                        {isSelected ? (
+                                            <Button
+                                                variant="link"
+                                                aria-label={`Remove ${cve}`}
+                                                onClick={onRemoveHandler(cve)}
+                                                icon={<MinusCircleIcon />}
+                                                isDanger
+                                            >
+                                                Exclude CVE
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="link"
+                                                aria-label={`Add ${cve}`}
+                                                onClick={onAddHandler(cve)}
+                                                icon={<PlusCircleIcon />}
+                                            >
+                                                Include CVE
+                                            </Button>
+                                        )}
+                                    </FlexItem>
+                                </Flex>
+                                <Text>{summary}</Text>
                             </Flex>
-                            <Text>{summary}</Text>
-                        </Flex>
-                    </ListItem>
-                );
-            })}
-        </List>
+                        </ListItem>
+                    );
+                })}
+            </List>
+        </>
     );
 }
 
