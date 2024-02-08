@@ -219,6 +219,10 @@ deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
     info "Deploying central via operator into namespace ${central_namespace}"
 
+    if ! kubectl get ns "${central_namespace}" >/dev/null 2>&1; then
+        kubectl create ns "${central_namespace}"
+    fi
+
     make -C operator stackrox-image-pull-secret
 
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
@@ -330,6 +334,11 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+
+    if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
+        kubectl create ns "${sensor_namespace}"
+    fi
+
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     kubectl -n "${central_namespace}" exec deploy/central -- \
