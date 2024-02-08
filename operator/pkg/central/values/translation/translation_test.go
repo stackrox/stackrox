@@ -42,6 +42,7 @@ func TestTranslate(t *testing.T) {
 	claimName := "central-claim-name"
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
+	scannerV4ComponentDefault := platform.ScannerV4ComponentDefault
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
 	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
 	telemetryEndpoint := "endpoint"
@@ -323,8 +324,8 @@ func TestTranslate(t *testing.T) {
 								ExposeEndpoint: &monitoringExposeEndpointEnabled,
 							},
 						},
-						ScannerV4: &platform.ScannerV4ComponentSpec{
-							ScannerComponent: &scannerComponentPolicy,
+						ScannerV4: &platform.ScannerV4Spec{
+							ScannerComponent: &scannerV4ComponentDefault,
 							Indexer: &platform.ScannerV4Component{
 								Scaling: &platform.ScannerComponentScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
@@ -615,7 +616,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": true,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": false,
+					"disable": true,
 					"indexer": map[string]interface{}{
 						"autoscaling": map[string]interface{}{
 							"disable":     false,
