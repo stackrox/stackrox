@@ -367,9 +367,9 @@ func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *transla
 	return &sv
 }
 
-func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4ComponentSpec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
+func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.ScannerV4Spec, namespace string, client ctrlClient.Client) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
-	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
+	translation.SetScannerV4DisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
 	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)
 	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.CentralGVK.Kind, namespace, client)

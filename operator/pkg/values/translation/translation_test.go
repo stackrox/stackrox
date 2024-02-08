@@ -623,3 +623,58 @@ func TestSetScannerV4DBValues(t *testing.T) {
 		})
 	}
 }
+
+func TestSetScannerV4DisableValue(t *testing.T) {
+	tests := map[string]struct {
+		scannerV4Component platform.ScannerV4ComponentPolicy
+		want               chartutil.Values
+		wantErr            bool
+	}{
+		"scannerV4Component Disabled": {
+			scannerV4Component: platform.ScannerV4ComponentDisabled,
+			want: map[string]interface{}{
+				"disable": true,
+			},
+			wantErr: false,
+		},
+		"scannerV4Component Default": {
+			scannerV4Component: platform.ScannerV4ComponentDefault,
+			want: map[string]interface{}{
+				"disable": true,
+			},
+			wantErr: false,
+		},
+		"scannerV4Component Enabled": {
+			scannerV4Component: platform.ScannerV4ComponentEnabled,
+			want: map[string]interface{}{
+				"disable": false,
+			},
+			wantErr: false,
+		},
+		"scannerV4Component invalid": {
+			scannerV4Component: "something wrong",
+			want:               nil,
+			wantErr:            true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			vb := NewValuesBuilder()
+			scannerV4Component := tt.scannerV4Component
+			SetScannerV4DisableValue(&vb, &scannerV4Component)
+			values, err := vb.Build()
+			if tt.wantErr {
+				require.NotNil(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			wantAsValues, err := ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			assert.Equal(t, wantAsValues, values)
+		})
+	}
+}
