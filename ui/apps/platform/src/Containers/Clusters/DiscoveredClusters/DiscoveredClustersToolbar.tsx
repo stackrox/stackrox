@@ -7,6 +7,14 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import {
+    // DiscoveredClusterStatus,
+    DiscoveredClusterType,
+    getDiscoveredClustersFilter,
+    // replaceSearchFilterName,
+    // replaceSearchFilterStatuses,
+    replaceSearchFilterTypes,
+} from 'services/DiscoveredClusterService';
 import { SearchFilter } from 'types/search';
 
 import SearchFilterType from './SearchFilterType';
@@ -32,19 +40,33 @@ function DiscoveredClustersToolbar({
     searchFilter,
     setSearchFilter,
 }: DiscoveredClustersToolbarProps): ReactElement {
-    function setTypes(/* TODO */) {
-        setSearchFilter({ ...searchFilter }); // TODO
+    /*
+    function setNameSelected(name: string) {
+        setSearchFilter(replaceSearchFilterName(searchFilter, name));
     }
+
+    function setStatusesSelected(types: DiscoveredClusterStatus[] | undefined) {
+        setSearchFilter(replaceSearchFilterStatuses(searchFilter, statuses));
+    }
+    */
+
+    function setTypesSelected(types: DiscoveredClusterType[] | undefined) {
+        setSearchFilter(replaceSearchFilterTypes(searchFilter, types));
+    }
+
+    const { types: typesSelected } = getDiscoveredClustersFilter(searchFilter);
 
     return (
         <Toolbar>
             <ToolbarContent>
+                {/* SearchFilterName */}
+                {/* SearchFilterStatuses */}
                 <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
                         <SearchFilterType
-                            types={['GKE']}
+                            typesSelected={typesSelected}
                             isDisabled={isDisabled}
-                            setTypes={setTypes}
+                            setTypesSelected={setTypesSelected}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>

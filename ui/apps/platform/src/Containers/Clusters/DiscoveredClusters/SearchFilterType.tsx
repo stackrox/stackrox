@@ -1,25 +1,35 @@
 import React, { useState } from 'react';
 import { Divider, Select, SelectOption } from '@patternfly/react-core';
 
-const optionAll = 'All';
+import { DiscoveredClusterType, isType, types } from 'services/DiscoveredClusterService';
+
+import { getTypeText } from './DiscoveredCluster';
+
+const optionAll = 'All_types';
 
 type SearchFilterTypeProps = {
-    types: string[]; // TODO
+    typesSelected: DiscoveredClusterType[] | undefined;
     isDisabled: boolean;
-    setTypes: (types: string[]) => void; // TODO
+    setTypesSelected: (types: DiscoveredClusterType[] | undefined) => void;
 };
 
-function SearchFilterType({ types, isDisabled, setTypes }: SearchFilterTypeProps) {
+// TODO for multiselect rename as SearchFilterTypes (that is, plural).
+function SearchFilterType({ typesSelected, isDisabled, setTypesSelected }: SearchFilterTypeProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     function onSelect(_event, selection) {
-        setTypes(selection === optionAll ? [] : [selection]); // TODO add versus remove
+        if (isType(selection)) {
+            // TODO for multiselect, replace set with either spread in or filter out.
+            setTypesSelected([selection]);
+        } else {
+            setTypesSelected(undefined);
+        }
         setIsOpen(false);
     }
 
-    const options = types.map((typeArg) => (
-        <SelectOption key={typeArg} value={typeArg}>
-            {typeArg}
+    const options = types.map((type) => (
+        <SelectOption key={type} value={type}>
+            {getTypeText(type)}
         </SelectOption>
     ));
     options.push(
@@ -37,7 +47,11 @@ function SearchFilterType({ types, isDisabled, setTypes }: SearchFilterTypeProps
             toggleAriaLabel="Type filter menu toggle"
             onToggle={setIsOpen}
             onSelect={onSelect}
-            selections={types[0] ?? optionAll}
+            selections={
+                Array.isArray(typesSelected) && typesSelected.length !== 0
+                    ? typesSelected[0]
+                    : optionAll
+            }
             isDisabled={isDisabled}
             isOpen={isOpen}
         >
