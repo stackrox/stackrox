@@ -245,7 +245,7 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "deployment_enhancement_duration_ms",
 		Help:      "Total round trip duration in milliseconds for enhancing deployments",
-		Buckets:   prometheus.LinearBuckets(50, 100, 10), // 50, 150, 250...
+		Buckets:   prometheus.LinearBuckets(500, 1000, 10),
 	})
 )
 

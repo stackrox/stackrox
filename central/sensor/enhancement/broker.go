@@ -53,7 +53,7 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 		log.Warnf("Received response to an unknown Deployment Enrichment Request ID %s", reqID)
 		return
 	}
-	elapsed := time.Now().UnixMilli() - sig.requestTime.UnixMilli()
+	elapsed := time.Now().Sub(sig.requestTime).Milliseconds()
 	log.Debugf("Received answer for Deployment Enrichment Request ID %s (time elapsed %dms)", reqID, elapsed)
 	sig.msg = msg
 	metrics.ObserveDeploymentEnhancementTime(float64(elapsed))
