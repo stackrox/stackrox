@@ -83,7 +83,7 @@ func (s *serviceImpl) ListDiscoveredClusters(ctx context.Context, request *v1.Li
 ) (*v1.ListDiscoveredClustersResponse, error) {
 	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
-	paginated.FillDefaultSortOption(
+	query = paginated.FillDefaultSortOption(
 		query,
 		&v1.QuerySortOption{
 			Field: search.Cluster.String(),

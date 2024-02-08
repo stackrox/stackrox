@@ -82,7 +82,7 @@ func (s *servicePostgresTestSuite) TestCount() {
 	// 2.b. Filter cloud sources based on the name - one match.
 	resp, err = s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{
 		Filter: &v1.CloudSourcesFilter{
-			Names: []string{"sample name 0"},
+			Names: []string{"sample name 00"},
 		},
 	})
 	s.Require().NoError(err)
@@ -129,7 +129,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 	// 2.b. Filter cloud sources based on the name - one match.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
 		Filter: &v1.CloudSourcesFilter{
-			Names: []string{"sample name 0"},
+			Names: []string{"sample name 00"},
 		},
 	})
 	s.Require().NoError(err)
