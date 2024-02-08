@@ -20,9 +20,10 @@ import {
     DiscoveredCluster,
     countDiscoveredClusters,
     defaultSortOption,
+    getListDiscoveredClustersArg,
     listDiscoveredClusters,
     sortFields,
-} from 'services/DiscoveredClustersService';
+} from 'services/DiscoveredClusterService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath } from 'routePaths';
 
@@ -45,10 +46,10 @@ function DiscoveredClustersPage(): ReactElement {
 
     useEffect(() => {
         setIsReloading(true);
-        // const listArg = getListDiscoveredClustersArg({ page, perPage, searchFilter, sortOption });
-        // const { filter } = listArg;
+        const listArg = getListDiscoveredClustersArg({ page, perPage, searchFilter, sortOption });
+        const { filter } = listArg;
 
-        Promise.all([countDiscoveredClusters(/* filter */), listDiscoveredClusters(/* listArg */)])
+        Promise.all([countDiscoveredClusters(filter), listDiscoveredClusters(listArg)])
             .then(([countFromResponse, clustersFromResponse]) => {
                 setClusters(clustersFromResponse);
                 setCount(countFromResponse);
