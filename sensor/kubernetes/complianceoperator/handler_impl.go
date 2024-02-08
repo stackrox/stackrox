@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
@@ -167,12 +168,16 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request))
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+}
+
+func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -202,27 +207,33 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-	obj, err := resSS.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
-	if err != nil || obj == nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, request.GetScanSettings().GetScanName())
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	ssObj, err := resSS.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
+		log.Warn(err)
 	}
 
-	var scanSetting v1alpha1.ScanSetting
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
+	resSSB := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
+	ssbObj, err := resSSB.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
+		log.Warn(err)
+	}
+
+	if ssObj == nil && ssbObj == nil {
+		// This is an add instead
+		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+	}
+
+	// Invalid case because scan setting is created first, so we should not have a situation where
+	// we have a scan setting binding and not a scan setting.  This probably isn't even possible.
+	if ssObj == nil {
 		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	resSSB := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
-	obj, err = resSSB.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
-	if err != nil || obj == nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found", ns, request.GetScanSettings().GetScanName())
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-
-	var scanSettingBinding v1alpha1.ScanSettingBinding
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSettingBinding); err != nil {
+	var scanSetting v1alpha1.ScanSetting
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(ssObj.Object, &scanSetting); err != nil {
 		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -232,9 +243,25 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	updatedScanSettingBinding, err := runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, request.GetScanSettings()))
-	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	var updatedScanSettingBinding *unstructured.Unstructured
+	// It is possible that we successfully created the scan setting but had issues on the binding.
+	if ssbObj != nil {
+		var scanSettingBinding v1alpha1.ScanSettingBinding
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(ssbObj.Object, &scanSettingBinding); err != nil {
+			err = errors.Wrap(err, "Could not convert unstructured to scan setting")
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
+
+		updatedScanSettingBinding, err = runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, request.GetScanSettings()))
+		if err != nil {
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
+
+	} else {
+		updatedScanSettingBinding, err = runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+		if err != nil {
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
 	}
 
 	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Update(m.ctx(), updatedScanSetting, v1.UpdateOptions{})
@@ -243,9 +270,18 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(m.ctx(), updatedScanSettingBinding, v1.UpdateOptions{})
+	// Process SSB as an update
+	if ssbObj != nil {
+		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(m.ctx(), updatedScanSettingBinding, v1.UpdateOptions{})
+		if err != nil {
+			err = errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
+		}
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(m.ctx(), updatedScanSettingBinding, v1.CreateOptions{})
 	if err != nil {
-		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
+		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 	}
 
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
