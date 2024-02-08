@@ -7,24 +7,30 @@ import { getTypeText } from './DiscoveredCluster';
 
 const optionAll = 'All_types';
 
-type SearchFilterTypeProps = {
+type SearchFilterTypesProps = {
     typesSelected: DiscoveredClusterType[] | undefined;
     isDisabled: boolean;
     setTypesSelected: (types: DiscoveredClusterType[] | undefined) => void;
 };
 
-// TODO for multiselect rename as SearchFilterTypes (that is, plural).
-function SearchFilterType({ typesSelected, isDisabled, setTypesSelected }: SearchFilterTypeProps) {
+function SearchFilterTypes({
+    typesSelected,
+    isDisabled,
+    setTypesSelected,
+}: SearchFilterTypesProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     function onSelect(_event, selection) {
+        const previousTypes = typesSelected ?? [];
         if (isType(selection)) {
-            // TODO for multiselect, replace set with either spread in or filter out.
-            setTypesSelected([selection]);
+            setTypesSelected(
+                previousTypes.includes(selection)
+                    ? previousTypes.filter((type) => type !== selection)
+                    : [...previousTypes, selection]
+            );
         } else {
             setTypesSelected(undefined);
         }
-        setIsOpen(false);
     }
 
     const options = types.map((type) => (
@@ -34,24 +40,20 @@ function SearchFilterType({ typesSelected, isDisabled, setTypesSelected }: Searc
     ));
     options.push(
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
+        <SelectOption key="All" value={optionAll}>
             All types
         </SelectOption>
     );
 
-    // TODO replace single with checkbox for multiple selections.
     return (
         <Select
-            variant="single"
+            variant="checkbox"
+            placeholderText="Filter by type"
             aria-label="Type filter menu items"
             toggleAriaLabel="Type filter menu toggle"
             onToggle={setIsOpen}
             onSelect={onSelect}
-            selections={
-                Array.isArray(typesSelected) && typesSelected.length !== 0
-                    ? typesSelected[0]
-                    : optionAll
-            }
+            selections={typesSelected ?? optionAll}
             isDisabled={isDisabled}
             isOpen={isOpen}
         >
@@ -60,4 +62,4 @@ function SearchFilterType({ typesSelected, isDisabled, setTypesSelected }: Searc
     );
 }
 
-export default SearchFilterType;
+export default SearchFilterTypes;
