@@ -13,7 +13,7 @@ const providerTypeMap: Record<DiscoveredClusterProviderType, string> = {
     PROVIDER_TYPE_AWS: 'AWS',
     PROVIDER_TYPE_AZURE: 'Azure',
     PROVIDER_TYPE_GCP: 'GCP',
-    PROVIDER_TYPE_UNSPECIFIED: 'Unknown',
+    PROVIDER_TYPE_UNSPECIFIED: 'Not available',
 };
 
 export function getProviderRegionText(providerType: DiscoveredClusterProviderType, region: string) {
@@ -47,5 +47,5 @@ export function getStatusText(status: DiscoveredClusterStatus) {
 
 export function getTypeText(type: DiscoveredClusterType) {
     // Return AKS and so on, except for special case.
-    return type !== 'UNSPECIFIED' ? type : 'Unknown';
+    return type !== 'UNSPECIFIED' ? type : 'Not available';
 }
