@@ -217,8 +217,7 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 
 	var fileSize int64
 	if fileSizeStrs, ok := resp.Header[contentLengthHdrKey]; ok {
-		fileSizeI, err := strconv.ParseInt(fileSizeStrs[0], 10, 64)
-		if err == nil {
+		if fileSizeI, err := strconv.ParseInt(fileSizeStrs[0], 10, 64); err == nil {
 			fileSize = fileSizeI
 		}
 	}
