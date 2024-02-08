@@ -68,6 +68,7 @@ import (
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
+	discoveredClustersService "github.com/stackrox/rox/central/discoveredclusters/service"
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
@@ -461,6 +462,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.CloudSources.Enabled() {
 		servicesToRegister = append(servicesToRegister, cloudSourcesService.Singleton())
+		servicesToRegister = append(servicesToRegister, discoveredClustersService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

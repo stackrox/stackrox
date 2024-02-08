@@ -46,7 +46,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 
 	s.postgresTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.postgresTest)
-	s.datastore = getTestPostgresDataStore(s.T(), s.postgresTest.DB)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.postgresTest.DB)
 }
 
 func (s *datastorePostgresTestSuite) TearDownTest() {
