@@ -159,15 +159,11 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
 	// If so, then we cannot create the scan configuration.
-	found, err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
+	err = m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
-	// TODO (ROX-22187):  Include the name of the conflicting scan configuration in the error message.
-	if found {
-		return nil, errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", scanRequest.GetScanConfigName())
 	}
 
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
