@@ -104,6 +104,8 @@ const (
 
 	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 
+	pruneDiscoveredClusters = `DELETE FROM %s WHERE lastupdatedat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+
 	// Delete orphaned PLOPs
 	pruneOrphanedPLOPs = `DELETE FROM listening_endpoints WHERE closetimestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 )
@@ -220,6 +222,15 @@ func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionD
 		int(retentionDuration.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune administration events: %v", err)
+	}
+}
+
+// PruneDiscoveredClusters prunes discovered clusters that haven't been updated since the retention duration.
+func PruneDiscoveredClusters(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	query := fmt.Sprintf(pruneDiscoveredClusters, schema.DiscoveredClustersTableName,
+		int(retentionDuration.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune discovered clusters: %v", err)
 	}
 }
 

@@ -29,9 +29,9 @@
     {
       "id": "1231234124123541",
       "name": "test-cluster-3",
-      "type": "gke",
-      "typeName": "GKE",
-      "source": "gcp",
+      "type": "eks",
+      "typeName": "EKS",
+      "source": "aws",
       "region": "us-central1",
       "accountId": "test-account",
       "accountName": "test-account",

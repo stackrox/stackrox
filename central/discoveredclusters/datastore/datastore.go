@@ -37,3 +37,12 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
 	return newDataStore(searcher, store)
 }
+
+// UpsertTestDiscoveredClusters provides a way to upsert storage.DiscoveredClusters directly to the database.
+// This is required for testing with custom timestamps, since the datastore expects a struct with only a subset
+// of fields that clients may set. We still want this to be the case for callers, however for testing we can
+// be more lax in our enforcement.
+func UpsertTestDiscoveredClusters(ctx context.Context, _ testing.TB, datastore DataStore,
+	clusters ...*storage.DiscoveredCluster) error {
+	return datastore.(*datastoreImpl).store.UpsertMany(ctx, clusters)
+}

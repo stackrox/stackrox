@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	cloudSourcesManager "github.com/stackrox/rox/central/cloudsources/manager"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	cveFetcher "github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/deploymentenvs"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -23,22 +25,26 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton(), deploymentenvs.ManagerSingleton(), cveFetcher.SingletonManager())
+	return NewPipeline(clusterDataStore.Singleton(), deploymentenvs.ManagerSingleton(),
+		cveFetcher.SingletonManager(), cloudSourcesManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager, cveFetcher cveFetcher.OrchestratorIstioCVEManager) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager,
+	cveFetcher cveFetcher.OrchestratorIstioCVEManager, manager cloudSourcesManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters:          clusters,
-		deploymentEnvsMgr: deploymentEnvsMgr,
-		cveFetcher:        cveFetcher,
+		clusters:            clusters,
+		deploymentEnvsMgr:   deploymentEnvsMgr,
+		cveFetcher:          cveFetcher,
+		cloudSourcesManager: manager,
 	}
 }
 
 type pipelineImpl struct {
-	clusters          clusterDataStore.DataStore
-	deploymentEnvsMgr deploymentenvs.Manager
-	cveFetcher        cveFetcher.OrchestratorIstioCVEManager
+	clusters            clusterDataStore.DataStore
+	deploymentEnvsMgr   deploymentenvs.Manager
+	cveFetcher          cveFetcher.OrchestratorIstioCVEManager
+	cloudSourcesManager cloudSourcesManager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -65,6 +71,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return err
 		}
 		go s.cveFetcher.HandleClusterConnection()
+		if features.CloudSources.Enabled() {
+			s.cloudSourcesManager.ShortCircuit()
+		}
 		return nil
 	default:
 		return errors.Errorf("unknown cluster status update message type %T", m)
