@@ -181,7 +181,7 @@ function getStatuses(arg: SearchFilterValue): DiscoveredClusterStatus[] | undefi
     return undefined;
 }
 
-function isStatus(arg: string): arg is DiscoveredClusterStatus {
+export function isStatus(arg: string): arg is DiscoveredClusterStatus {
     return statuses.some((level) => level === arg);
 }
 
@@ -199,7 +199,7 @@ function getTypes(arg: SearchFilterValue): DiscoveredClusterType[] | undefined {
     return undefined;
 }
 
-function isType(arg: string): arg is DiscoveredClusterType {
+export function isType(arg: string): arg is DiscoveredClusterType {
     return types.some((level) => level === arg);
 }
 
