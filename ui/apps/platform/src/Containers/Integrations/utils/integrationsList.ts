@@ -22,6 +22,7 @@ import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
 import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
+import paladinCloud from 'images/paladinCloud.svg'
 import { integrationsPath } from 'routePaths';
 
 /*
@@ -274,7 +275,7 @@ const authenticationTokensDescriptors = [apiTokenDescriptor, clusterInitBundleDe
 export const cloudSourcesSource = 'cloudSources';
 
 export const paladinCloudDescriptor: CloudSourceDescriptor = {
-    image: logo, // TODO: replace with paladin cloud logo
+    image: paladinCloud,
     label: 'Paladin Cloud',
     type: 'paladinCloud',
 };

@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 import React, { ReactElement } from 'react';
-import { Form, PageSection, TextArea, TextInput } from '@patternfly/react-core';
+import {Checkbox, Form, PageSection, TextArea, TextInput} from '@patternfly/react-core';
 import { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
 import FormMessage from '../../../../Components/PatternFly/FormMessage';
@@ -9,30 +9,72 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormSaveButton from '../../../../Components/PatternFly/FormSaveButton';
 import FormCancelButton from '../../../../Components/PatternFly/FormCancelButton';
 import { CloudSourceIntegration } from '../../../../services/CloudSourceService';
+import usePageState from "../../hooks/usePageState";
 
 export const validationSchema = yup.object().shape({
-    name: yup.string().trim().required('Integration name is required'),
-    type: yup.string().matches(/TYPE_PALADIN_CLOUD/),
+    cloudSource: yup.object().shape({
+        name: yup.string().trim().required('Integration name is required'),
+        type: yup.string().matches(/TYPE_PALADIN_CLOUD/),
+        credentials: yup.object().shape({
+            secret: yup
+                .string()
+                .test(
+                    'secret-test',
+                    'A token is required',
+                    (value, context: yup.TestContext) => {
+                        const requireSecretField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updateCredentials || false;
+
+                        if (!requireSecretField) {
+                            return true;
+                        }
+
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
+        }),
+        paladinCloud: yup.object().shape({
+            endpoint: yup.string().required('Endpoint is required'),
+        }),
+        skipTestIntegration: yup.bool(),
+    }),
+    updatePassword: yup.bool(),
 });
 
-export const defaultValues: CloudSourceIntegration = {
-    id: '',
-    name: '',
-    type: 'TYPE_PALADIN_CLOUD',
-    credentials: {
-        secret: '',
+export type CloudSourceIntegrationFormValues = {
+    cloudSource: CloudSourceIntegration;
+    updateCredentials: boolean;
+}
+export const defaultValues: CloudSourceIntegrationFormValues = {
+    cloudSource: {
+        id: '',
+        name: '',
+        type: 'TYPE_PALADIN_CLOUD',
+        credentials: {
+            secret: '',
+        },
+        skipTestIntegration: true,
+        paladinCloud: {
+            endpoint: 'https://api.paladincloud.io',
+        },
     },
-    skipTestIntegration: true,
-    paladinCloud: {
-        endpoint: 'https://api.paladincloud.io',
-    },
+    updateCredentials: true,
 };
+
 
 function PaladinCloudIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<CloudSourceIntegration>): ReactElement {
     const formInitialValues = { ...defaultValues, ...initialValues };
+    if (initialValues) {
+        formInitialValues.cloudSource = { ...formInitialValues.cloudSource, ...initialValues };
+        formInitialValues.cloudSource.credentials.secret = '';
+        formInitialValues.updateCredentials = false;
+    }
     const {
         values,
         touched,
@@ -46,12 +88,19 @@ function PaladinCloudIntegrationForm({
         onSave,
         onCancel,
         message,
-    } = useIntegrationForm<CloudSourceIntegration>({
+    } = useIntegrationForm<CloudSourceIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });
 
+    const { isCreating } = usePageState();
+
     function onChange(value, event) {
+        return setFieldValue(event.target.id, value);
+    }
+
+    function onUpdateCredentialsChange(value, event) {
+        setFieldValue('cloudSource.credentials.secret', '');
         return setFieldValue(event.target.id, value);
     }
 
@@ -63,15 +112,15 @@ function PaladinCloudIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Integration name"
-                        fieldId="name"
+                        fieldId="cloudSource.name"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="name"
-                            value={values.name}
+                            id="cloudSource.name"
+                            value={values.cloudSource.name}
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
@@ -80,38 +129,59 @@ function PaladinCloudIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Paladin Cloud endpoint"
-                        fieldId="paladinCloud.endpoint"
+                        fieldId="cloudSource.paladinCloud.endpoint"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
                             isRequired
                             type="text"
-                            id="paladinCloud.endpoint"
-                            name="paladinCloud.endpoint"
-                            value={values.paladinCloud?.endpoint}
+                            id="cloudSource.paladinCloud.endpoint"
+                            name="cloudSource.paladinCloud.endpoint"
+                            value={values.cloudSource.paladinCloud?.endpoint}
                             onChange={onChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
+                    {!isCreating && isEditable && (
+                        <FormLabelGroup
+                            fieldId="updateCredentials"
+                            helperText="Enable this option to replace currently stored credentials (if any)"
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Update stored credentials"
+                                id="updateCredentials"
+                                isChecked={values.updateCredentials}
+                                onChange={onUpdateCredentialsChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
                     <FormLabelGroup
-                        isRequired
+                        isRequired={values.updateCredentials}
                         label="Paladin Cloud token"
-                        fieldId="credentials.secret"
+                        fieldId="cloudSource.credentials.secret"
                         touched={touched}
                         errors={errors}
                     >
                         <TextArea
+                            isRequired={values.updateCredentials}
                             autoResize
                             resizeOrientation="vertical"
-                            isRequired
                             type="text"
-                            id={`credentials.secret`}
-                            value={values.credentials.secret}
+                            id={`cloudSource.credentials.secret`}
+                            value={values.cloudSource.credentials.secret}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable}
+                            isDisabled={!isEditable || !values.updateCredentials}
+                            placeholder={
+                                values.updateCredentials
+                                    ? ''
+                                    : 'Currently-stored token will be used.'
+                            }
                         />
                     </FormLabelGroup>
                 </Form>

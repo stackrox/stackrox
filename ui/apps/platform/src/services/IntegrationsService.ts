@@ -114,10 +114,6 @@ export function createIntegration(
     const hasUpdatePassword = typeof data.updatePassword === 'boolean';
     const createData = hasUpdatePassword ? data[getJsonFieldBySource(source)] : data;
 
-    if (source === 'cloudSources') {
-        return axios.post(getPath(source), { cloudSource: createData });
-    }
-
     return axios.post(getPath(source), createData);
 }
 
