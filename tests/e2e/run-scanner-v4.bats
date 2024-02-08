@@ -362,11 +362,13 @@ verify_scannerV4_matcher_deployed() {
 
 verify_central_scannerV4_env_var_set() {
     local namespace=${1:-stackrox}
+    local central_env_vars
+    local scanner_v4_value
 
-    local central_env_vars="$("${ORCH_CMD}" -n "${namespace}" get deploy/central -o jsonpath="{.spec.template.spec.containers[?(@.name=='central')].env}")"
-    local scanner_v4_enabled="$(echo $central_env_vars | jq 'map(select(.name == "ROX_SCANNER_V4" and .value == "true")) | length > 0')"
+    central_env_vars="$("${ORCH_CMD}" -n "${namespace}" get deploy/central -o jsonpath="{.spec.template.spec.containers[?(@.name=='central')].env}")"
+    scanner_v4_value="$(echo "${central_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
 
-    if [[ "$scanner_v4_enabled" == "true" ]]; then
+    if [[ "${scanner_v4_value}" == "true" ]]; then
         return 0
     else
         return 1
