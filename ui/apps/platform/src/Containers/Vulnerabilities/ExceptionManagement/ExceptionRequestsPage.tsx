@@ -53,7 +53,10 @@ function ExceptionRequestsPage() {
     }
 
     const handleTabClick = (event, tabIndex) => {
-        const url = tabKeyURLMap[tabIndex];
+        const path = tabKeyURLMap[tabIndex];
+        const queryParams = location.search;
+        // If you're manipulating the query parameters before navigating, consider improving this URL construction
+        const url = `${path}${queryParams}`;
         history.push(url);
     };
 
