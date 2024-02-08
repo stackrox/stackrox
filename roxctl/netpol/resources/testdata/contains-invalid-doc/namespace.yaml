@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zeroday
+  labels:
+    name: zeroday
+    exposed: 'true'

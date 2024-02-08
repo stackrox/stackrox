@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
+	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
@@ -14,7 +14,9 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/rox/roxctl/netpol/resources"
 	v1 "k8s.io/api/networking/v1"
+	"k8s.io/cli-runtime/pkg/resource"
 )
 
 const (
@@ -94,10 +96,15 @@ func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	if err := cmd.validate(); err != nil {
 		return err
 	}
-	return cmd.generateNetpol(synth)
+	warns, errs := cmd.generateNetpol(synth)
+	err = npg.SummarizeErrors(warns, errs, cmd.Options.TreatWarningsAsErrors, cmd.env.Logger())
+	if err != nil {
+		return errors.Wrap(err, "generating netpols")
+	}
+	return nil
 }
 
-func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (netpolGenerator, error) {
+func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (*npguard.PoliciesSynthesizer, error) {
 	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
@@ -139,31 +146,25 @@ func (cmd *NetpolGenerateCmd) setupPath(path string) error {
 }
 
 type netpolGenerator interface {
-	PoliciesFromFolderPath(string) ([]*v1.NetworkPolicy, error)
-	Errors() []npguard.FileProcessingError
+	PoliciesFromInfos(infos []*resource.Info) ([]*v1.NetworkPolicy, error)
+	ErrorPtrs() []*npguard.FileProcessingError
 }
 
-func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
-	recommendedNetpols, err := synth.PoliciesFromFolderPath(cmd.inputFolderPath)
+func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
+	infos, warns, errs := resources.GetK8sInfos(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
+	if cmd.Options.StopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.Options.TreatWarningsAsErrors)) {
+		return warns, errs
+	}
+
+	recommendedNetpols, err := synth.PoliciesFromInfos(infos)
 	if err != nil {
-		return errors.Wrap(err, "error generating network policies")
+		return warns, append(errs, errors.Wrap(err, "error generating network policies"))
 	}
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
-		return err
+		return warns, append(errs, err)
 	}
-	var roxerr error
-	for _, e := range synth.Errors() {
-		if e.IsSevere() {
-			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
-			roxerr = npg.ErrErrors
-		} else {
-			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
-			if cmd.Options.TreatWarningsAsErrors && roxerr == nil {
-				roxerr = npg.ErrWarnings
-			}
-		}
-	}
-	return roxerr
+	w, e = npg.HandleNPGuardErrors(synth.ErrorPtrs())
+	return append(warns, w...), append(errs, e...)
 }
 
 func (cmd *NetpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {

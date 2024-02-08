@@ -5,7 +5,7 @@ out_dir=""
 templated_fragment='"{{ printf "%s" ._thing.image }}"'
 
 setup_file() {
-    [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+    delete-outdated-binaries "$(roxctl-development version)"
     echo "Testing roxctl version: '$(roxctl-development version)'" >&3
 }
 
@@ -19,16 +19,26 @@ teardown() {
   rm -f "$ofile"
 }
 
-
 @test "roxctl-development netpol connectivity map should return error on empty or non-existing directory" {
-  run roxctl-development netpol connectivity map "$out_dir"
-  assert_failure
-  assert_line --partial "error in connectivity analysis"
-  assert_line --partial "no such file or directory"
+    run roxctl-development netpol connectivity map "$out_dir"
+    assert_failure
+    assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+    assert_output --regexp 'ERROR:.*the path.*does not exist'
+    assert_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'
+    assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
 
-  run roxctl-development netpol connectivity map
-  assert_failure
-  assert_line --partial "accepts 1 arg(s), received 0"
+    run roxctl-development netpol connectivity map
+    assert_failure
+    assert_line --partial "accepts 1 arg(s), received 0"
+}
+
+@test "roxctl-development netpol connectivity map should return error on directory with no files" {
+    mkdir -p "$out_dir"
+    run roxctl-development netpol connectivity map "$out_dir"
+    assert_failure
+    assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+    assert_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'
+    assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity map generates connlist output" {
@@ -44,16 +54,85 @@ teardown() {
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
 }
 
-@test "roxctl-development netpol connectivity map stops on first error when run with --fail" {
-  mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+@test "roxctl-development netpol connectivity shows all warnings about corrupted files" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/mixed/backend.yaml"
+    assert_file_exist "${test_data}/np-guard/mixed/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/mixed/netpols.yaml"
+    assert_file_exist "${test_data}/np-guard/mixed/empty.yaml"
+    cp "${test_data}/np-guard/mixed/backend.yaml" "$out_dir/backend.yaml"
+    cp "${test_data}/np-guard/mixed/frontend.yaml" "$out_dir/frontend.yaml"
+    cp "${test_data}/np-guard/mixed/netpols.yaml" "$out_dir/netpols.yaml"
+    cp "${test_data}/np-guard/mixed/empty.yaml" "$out_dir/empty.yaml"
 
-  run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null --fail
-  assert_failure
-  assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error
-  assert_line --index 2 --partial 'there were errors during execution'  # last line
+    run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null
+    assert_success
+    assert_output --regexp 'WARN:.*unable to decode.*empty.yaml'
+    assert_output --regexp "WARN:.*empty.yaml\": Object 'Kind' is missing in"
+}
+
+@test "roxctl-development netpol connectivity map parameter --strict" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml" "$out_dir/backend.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml" "$out_dir/frontend.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml" "$out_dir/netpols.yaml"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+
+    run roxctl-development netpol connectivity map "$out_dir/" --strict
+    assert_failure
+    assert_output --regexp 'WARN:.*unable to decode.*-file1.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*-file2.yaml'
+    assert_output --regexp 'ERROR:.*there were warnings during execution'
+
+    run roxctl-development netpol connectivity map "$out_dir/"
+    assert_success
+    assert_output --regexp 'WARN:.*unable to decode.*-file1.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*-file2.yaml'
+}
+
+# TODO: It is difficult to find any scenario for this command when --fail alone would cause change of behavior
+@test "roxctl-development netpol connectivity map parameter --fail" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+    assert_file_exist "${test_data}/np-guard/mixed/empty.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml" "$out_dir/backend.yaml"
+    cp "${test_data}/np-guard/mixed/empty.yaml" "$out_dir/empty.yaml"
+    cp "${test_data}/np-guard/mixed/empty.yaml" "$out_dir/empty2.yaml"
+
+    run roxctl-development netpol connectivity map "$out_dir/"
+    assert_success
+    assert_output --regexp 'WARN:.*unable to decode.*/empty.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*/empty2.yaml'
+    assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+
+    run roxctl-development netpol connectivity map "$out_dir/" --fail
+    assert_success
+    assert_output --regexp 'WARN:.*unable to decode.*/empty.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*/empty2.yaml'
+    assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+}
+
+@test "roxctl-development netpol connectivity map parameter --fail and --strict" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml" "$out_dir/backend.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml" "$out_dir/frontend.yaml"
+    cp "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml" "$out_dir/netpols.yaml"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+
+    run roxctl-development netpol connectivity map "$out_dir/" --fail --strict
+    assert_failure
+    assert_output --regexp 'ERROR:.*building connectivity map: there were warnings during execution'
+    assert_output --regexp 'WARN:.*unable to decode.*-file1.yaml'
+    # should fail fast before trying to decode file2 due to warnings when processing file1
+    refute_output --regexp 'WARN:.*unable to decode.*-file2.yaml'
 }
 
 @test "roxctl-development netpol connectivity map produces no output when all yamls are templated" {
@@ -63,57 +142,71 @@ teardown() {
   echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
   run roxctl-development netpol connectivity map "$out_dir/"
   assert_failure
-  assert_output --partial 'YAML document is malformed'
-  assert_output --partial 'no relevant Kubernetes resources found'
+  assert_output --regexp 'WARN:.*unable to decode.*templated-.*.yaml'
+  assert_output --regexp 'WARN:.*error parsing.*templated-.*.yaml'
+  assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+  assert_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'
+  assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
 }
 
-@test "roxctl-development netpol connectivity map produces errors when some yamls are templated" {
-  mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
+@test "roxctl-development netpol connectivity map produces warnings when some yamls are templated" {
+    mkdir -p "$out_dir"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
 
-  assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
-  assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
-  cp "${test_data}/np-guard/scenario-minimal-service/frontend.yaml" "$out_dir/frontend.yaml"
-  cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    cp "${test_data}/np-guard/scenario-minimal-service/frontend.yaml" "$out_dir/frontend.yaml"
+    cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
 
-  echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
-  run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null
-  assert_failure
-  assert_output --partial 'YAML document is malformed'
-  refute_output --partial 'no relevant Kubernetes resources found'
+    echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
+    run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null
+    assert_success
+    assert_output --regexp 'WARN:.*unable to decode.*templated-.*.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-.*.yaml'
+    assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+
+    refute_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'
+    refute_output --regexp 'ERROR:.*building connectivity map:'
+
+    assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : All Connections'
 }
 
-@test "roxctl-development netpol connectivity map produces errors when yamls are not K8s resources" {
-  mkdir -p "$out_dir"
-  assert_file_exist "${test_data}/np-guard/empty-yamls/empty.yaml"
-  assert_file_exist "${test_data}/np-guard/empty-yamls/empty2.yaml"
-  cp "${test_data}/np-guard/empty-yamls/empty.yaml" "$out_dir/empty.yaml"
-  cp "${test_data}/np-guard/empty-yamls/empty2.yaml" "$out_dir/empty2.yaml"
+@test "roxctl-development netpol connectivity map produces warnings when yamls are not K8s resources" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/empty-yamls/empty.yaml"
+    assert_file_exist "${test_data}/np-guard/empty-yamls/empty2.yaml"
+    cp "${test_data}/np-guard/empty-yamls/empty.yaml" "$out_dir/empty.yaml"
+    cp "${test_data}/np-guard/empty-yamls/empty2.yaml" "$out_dir/empty2.yaml"
 
-  run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null
-  assert_failure
-  assert_output --partial 'Yaml document is not a K8s resource'
-  assert_output --partial 'no relevant Kubernetes resources found'
-  assert_output --partial 'ERROR:'
-  assert_output --partial 'there were errors during execution'
+    run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null
+    assert_failure
+    assert_output --regexp 'WARN:.*unable to decode.*empty.yaml'
+    refute_output --regexp 'WARN:.*error parsing.*empty.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*empty2.yaml'
+    refute_output --regexp 'WARN:.*error parsing.*empty2.yaml'
+
+    assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
+    assert_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'
+    assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity map should return error on invalid networkpolicy resource" {
-  assert_file_exist "${test_data}/np-guard/bad-netpol-example/resources.yaml"
-  run roxctl-development netpol connectivity map "${test_data}/np-guard/bad-netpol-example"
-  assert_failure
-  assert_line --partial "error in connectivity analysis"
-  assert_line --partial "selector error"
+    assert_file_exist "${test_data}/np-guard/bad-netpol-example/resources.yaml"
+    run roxctl-development netpol connectivity map "${test_data}/np-guard/bad-netpol-example"
+    assert_failure
+    assert_line --partial "selector error"
+    assert_output --regexp 'ERROR:.*connectivity analysis:.*'
+    assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity map should return error on not supported output format" {
-  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
-  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
-  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
-  run roxctl-development netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=docx
-  assert_failure
-  assert_line --partial "error in formatting connectivity list"
-  assert_line --partial "docx output format is not supported."
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+    run roxctl-development netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --output-format=docx
+    assert_failure
+    assert_output --regexp 'ERROR:.*formatting connectivity list: docx output format is not supported.'
+    assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity map generates txt connlist output" {
