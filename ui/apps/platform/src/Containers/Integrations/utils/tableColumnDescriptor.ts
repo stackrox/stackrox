@@ -24,6 +24,7 @@ import {
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
 import { getOriginLabel } from 'Containers/AccessControl/traits';
+import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
     categoriesUtilsForClairifyScanner,
@@ -32,7 +33,6 @@ import {
     timesOfDay,
     transformDurationLongForm,
 } from './integrationUtils';
-import { AuthMachineToMachineConfig } from '../../../services/MachineAccessService';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
     categoriesUtilsForClairifyScanner;

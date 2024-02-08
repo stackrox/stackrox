@@ -316,7 +316,7 @@ export function clickCreateNewIntegrationInTable(
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationTitle}")`);
-    cy.get(`${selectors.breadcrumbItem}:contains("Create Integration")`); // TODO Title Case
+    cy.get(`${selectors.breadcrumbItem}:contains("Create integration")`); // TODO Title Case
 }
 
 export function deleteIntegrationInTable(integrationSource, integrationType, integrationName) {
