@@ -180,14 +180,16 @@ func (m *handlerImpl) applyScanResources(requestID string, ns string, request *c
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
-	
-	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Apply(m.ctx(), scanSetting.GetName(), scanSetting, v1.ApplyOptions{FieldManager: "application/apply-patch"})
+
+	// Overwrite resources forefully in a server-side apply.
+	applyOptions := v1.ApplyOptions{Force: true, FieldManager: "stackrox-sensor-compliance-integration"}
+	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Apply(m.ctx(), scanSetting.GetName(), scanSetting, applyOptions)
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Apply(m.ctx(), scanSettingBinding.GetName(), scanSettingBinding, v1.ApplyOptions{FieldManager: "application/apply-patch"})
+	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Apply(m.ctx(), scanSettingBinding.GetName(), scanSettingBinding, applyOptions)
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	}
