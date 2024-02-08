@@ -8,7 +8,9 @@ import (
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -89,26 +91,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
-	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", query)
-	}
-
-	// Need to look up the scan config IDs to return with the results.
-	scanConfigToIDs := make(map[string]string, len(scanResults))
-	for _, result := range scanResults {
-		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
-			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
-			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
-			}
-			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
-		}
-	}
-
-	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
-	}, nil
+	return s.searchComplianceCheckResults(ctx, parsedQuery)
 }
 
 // GetComplianceProfileScanStats lists current scan stats grouped by profile
@@ -243,26 +226,7 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		parsedQuery,
 	)
 
-	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for request %v", request)
-	}
-
-	// Need to look up the scan config IDs to return with the results.
-	scanConfigToIDs := make(map[string]string, len(scanResults))
-	for _, result := range scanResults {
-		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
-			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
-			if err != nil {
-				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
-			}
-			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
-		}
-	}
-
-	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
-	}, nil
+	return s.searchComplianceCheckResults(ctx, parsedQuery)
 }
 
 // GetComplianceScanConfigurationResultsCount returns scan results count
@@ -288,5 +252,37 @@ func (s *serviceImpl) GetComplianceScanConfigurationResultsCount(ctx context.Con
 	}
 	return &v2.CountComplianceScanResults{
 		Count: int32(count),
+	}, nil
+}
+
+func (s *serviceImpl) mapScanConfigToID(ctx context.Context, scanResults []*storage.ComplianceOperatorCheckResultV2) (map[string]string, error) {
+	scanConfigToIDs := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		if _, found := scanConfigToIDs[result.ScanConfigName]; !found {
+			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.ScanConfigName)
+			if err != nil {
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration %q", result.ScanConfigName)
+			}
+			scanConfigToIDs[result.ScanConfigName] = config.GetId()
+		}
+	}
+
+	return scanConfigToIDs, nil
+}
+
+func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query) (*v2.ListComplianceScanResultsResponse, error) {
+	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+	}
+
+	// Need to look up the scan config IDs to return with the results.
+	scanConfigToIDs, err := s.mapScanConfigToID(ctx, scanResults)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.ListComplianceScanResultsResponse{
+		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
 	}, nil
 }

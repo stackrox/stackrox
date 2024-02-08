@@ -490,7 +490,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			},
 		},
 		{
-			desc: "Query with no scam configuration name field",
+			desc: "Query with no scan configuration name field",
 			query: &apiV2.ComplianceScanResultsRequest{
 				Query: &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
