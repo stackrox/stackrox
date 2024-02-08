@@ -2,7 +2,8 @@
 
 ## Structure
 
-All kuttl tests are in the [tests](.) directory. It contains four tests, contained in three suites:
+All kuttl tests are in the [tests](.) directory. It contains the following tests, grouped in four suites:
+- [controller/metrics](controller/metrics) - checks authenticated access to stackrox operator controller manager metrics
 - [central/central-basic](central/central-basic) - exercises some core `Central` CR features.
 - [central/central-misc](central/central-misc) - various `Central` resource configurations and switching between them.
 - [securedcluster/sc-basic](securedcluster/sc-basic) - various `SecuredCluster` resource configurations
@@ -23,7 +24,7 @@ Note that the `deploy-via-olm` and `deploy-previous-via-olm` targets in `Makefil
 In a CI job:
 1. a previous operator version is installed first (a requirement of the upgrade test) using the `deploy-previous-via-olm` rule,
 2. the upgrade test runs next; it leaves the cluster with current operator version installed,
-3. then the `central` and `securedcluster` test suites are run _in parallel_.
+3. then the `controller`, `central` and `securedcluster` test suites are run _in parallel_.
 
 An important fact is that `kuttl` creates a uniquely-named ephemeral namespace
 (something like `kuttl-test-adjective-animal`) for every test, and deletes it afterwards.
