@@ -178,7 +178,7 @@ func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int
 	return d.searcher.Count(ctx, q)
 }
 
-func (d *datastoreImpl) DeleteResultWhenClusterDeleted(ctx context.Context, clusterID string) error {
+func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	res, err := d.SearchComplianceCheckResults(ctx, query)
 	if err != nil {
