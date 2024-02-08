@@ -23,6 +23,8 @@ import { ComplianceCheckResult, ComplianceCheckStatus } from 'services/Complianc
 
 import { getClusterResultsStatusObject } from '../compliance.coverage.utils';
 
+import './CheckStatusModal.css';
+
 type CheckStatusModalProps = {
     checkResult: ComplianceCheckResult;
     isOpen: boolean;
@@ -75,13 +77,13 @@ function CheckStatusModal({ checkResult, isOpen, status, handleClose }: CheckSta
                 <DescriptionList>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Description</DescriptionListTerm>
-                        <DescriptionListDescription className="whitespace-pre-wrap">
+                        <DescriptionListDescription className="formatted-text">
                             {description}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Instruction</DescriptionListTerm>
-                        <DescriptionListDescription className="whitespace-pre-wrap">
+                        <DescriptionListDescription className="formatted-text">
                             {instructions}
                         </DescriptionListDescription>
                     </DescriptionListGroup>

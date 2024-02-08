@@ -101,7 +101,7 @@ function ClusterDetailsTable({
         return (
             clusters.find(
                 (clusterCheckStatus) => clusterCheckStatus.cluster.clusterId === clusterId
-            ) || null
+            ) ?? null
         );
     }
 
@@ -151,12 +151,10 @@ function ClusterDetailsTable({
             return (
                 <Tr key={checkName}>
                     <Td modifier="truncate">
-                        <>
-                            <Text>{checkName}</Text>
-                            <Text component={TextVariants.small} className="pf-u-color-200">
-                                {rationale}
-                            </Text>
-                        </>
+                        <Text>{checkName}</Text>
+                        <Text component={TextVariants.small} className="pf-u-color-200">
+                            {rationale}
+                        </Text>
                     </Td>
                     <Td>
                         {statusObj && (
