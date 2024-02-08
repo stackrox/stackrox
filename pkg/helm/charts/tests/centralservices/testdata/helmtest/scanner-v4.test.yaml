@@ -255,6 +255,12 @@ tests:
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe")
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=name2repos")
 
+- name: "matcher should be using central endpoint when deployed"
+  set:
+    scannerV4.disable: false
+    expect: |
+      .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION")
+
 - name: "Scanner V4 is installed by default"
   set:
     scannerV4.disable: null
