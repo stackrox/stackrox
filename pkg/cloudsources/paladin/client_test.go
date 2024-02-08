@@ -6,7 +6,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
+	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stretchr/testify/assert"
@@ -26,30 +28,46 @@ func TestClient_GetAssets(t *testing.T) {
 	}))
 	defer server.Close()
 
+	testCluster1FirstDiscoveredAt, err := time.Parse(timeFormat, "2023-11-28 08:00:00+0000")
+	require.NoError(t, err)
+	testCluster1FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster1FirstDiscoveredAt)
+	require.NoError(t, err)
+	testCluster2FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
+	require.NoError(t, err)
+	testCluster2FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster2FirstDiscoveredAt)
+	require.NoError(t, err)
+	testCluster3FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
+	require.NoError(t, err)
+	testCluster3FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster3FirstDiscoveredAt)
+	require.NoError(t, err)
+
 	expectedDiscoveredClusters := []*discoveredclusters.DiscoveredCluster{
 		{
-			ID:            "123123213123_MC_testing_test-cluster-1_eastus",
-			Name:          "test-cluster-1",
-			Type:          storage.ClusterMetadata_AKS,
-			ProviderType:  storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
-			Region:        "eastus",
-			CloudSourceID: "id",
+			ID:                "123123213123_MC_testing_test-cluster-1_eastus",
+			Name:              "test-cluster-1",
+			Type:              storage.ClusterMetadata_AKS,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
+			Region:            "eastus",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster1FirstDiscoveredAtTS,
 		},
 		{
-			ID:            "1231245342513",
-			Name:          "test-cluster-2",
-			Type:          storage.ClusterMetadata_GKE,
-			ProviderType:  storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
-			Region:        "us-central1-c",
-			CloudSourceID: "id",
+			ID:                "1231245342513",
+			Name:              "test-cluster-2",
+			Type:              storage.ClusterMetadata_GKE,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
+			Region:            "us-central1-c",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster2FirstDiscoveredAtTS,
 		},
 		{
-			ID:            "1231234124123541",
-			Name:          "test-cluster-3",
-			Type:          storage.ClusterMetadata_EKS,
-			ProviderType:  storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
-			Region:        "us-central1",
-			CloudSourceID: "id",
+			ID:                "1231234124123541",
+			Name:              "test-cluster-3",
+			Type:              storage.ClusterMetadata_EKS,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
+			Region:            "us-central1",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster3FirstDiscoveredAtTS,
 		},
 	}
 
@@ -65,12 +83,5 @@ func TestClient_GetAssets(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, resp, 3)
 
-	for i, cluster := range resp {
-		assert.Equal(t, expectedDiscoveredClusters[i].GetID(), cluster.GetID())
-		assert.Equal(t, expectedDiscoveredClusters[i].GetName(), cluster.GetName())
-		assert.Equal(t, expectedDiscoveredClusters[i].GetType(), cluster.GetType())
-		assert.Equal(t, expectedDiscoveredClusters[i].GetProviderType(), cluster.GetProviderType())
-		assert.Equal(t, expectedDiscoveredClusters[i].GetRegion(), cluster.GetRegion())
-		assert.Equal(t, expectedDiscoveredClusters[i].GetCloudSourceID(), cluster.GetCloudSourceID())
-	}
+	assert.ElementsMatch(t, resp, expectedDiscoveredClusters)
 }
