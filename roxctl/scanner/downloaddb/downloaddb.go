@@ -319,7 +319,17 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 Download version specific offline vulnerability bundles. Will contact
 Central to determine version if one is not specified, if communication fails
-defaults to version embedded within roxctl.`,
+defaults to version embedded within roxctl.
+
+By default will attempt to download the database for the determined version as 
+well as less specific variants. For example, given version "4.4.1-extra" 
+downloads will be attempted for the following version variants:
+   4.4.1-extra
+   4.4.1
+   4.4
+
+Use "--skip-variants" to only try the most specific version (i.e. "4.4.1-extra"
+from the example above).`,
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			scannerDownloadDBCmd.construct(c)
@@ -328,11 +338,11 @@ defaults to version embedded within roxctl.`,
 		},
 	}
 
-	c.Flags().StringVar(&scannerDownloadDBCmd.version, "version", "", "Download a specific version of the vulnerability database (default: auto-detect)")
+	c.Flags().StringVar(&scannerDownloadDBCmd.version, "version", "", "Download a specific version (or version variant) of the vulnerability database (default: auto-detect)")
 	c.Flags().StringVar(&scannerDownloadDBCmd.filename, "scanner-db-file", "", "Output file to save the vulnerability database to (default: remote filename)")
 	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting the output file if it already exists")
 	c.Flags().BoolVar(&scannerDownloadDBCmd.skipCentral, "skip-central", false, "Do not contact Central when detecting version")
-	c.Flags().BoolVar(&scannerDownloadDBCmd.skipVariants, "skip-variants", false, "Do not attempt to download variants of the detected version")
+	c.Flags().BoolVar(&scannerDownloadDBCmd.skipVariants, "skip-variants", false, "Do not attempt to process variants of the determined version")
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 
 	return c
