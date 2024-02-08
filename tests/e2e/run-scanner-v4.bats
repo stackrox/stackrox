@@ -74,8 +74,8 @@ setup_file() {
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
 
-    export MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG:-}
-    info "Overriding MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+    export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
+    info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     # Taken from operator/Makefile
     export OPERATOR_VERSION_TAG=${OPERATOR_VERSION_TAG:-}
