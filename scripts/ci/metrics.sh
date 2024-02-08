@@ -160,7 +160,7 @@ GROUP BY
     Classname,
     Name
 HAVING
-    `%` > 0
+    COUNTIF(Status="failed") > 0
 ORDER BY
     (COUNTIF(Status="failed")/COUNT(*)) DESC
 LIMIT
