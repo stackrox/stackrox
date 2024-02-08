@@ -23,6 +23,5 @@ func DiscoveredCluster(cluster *discoveredclusters.DiscoveredCluster) *storage.D
 		SourceId:      cluster.GetCloudSourceID(),
 		LastUpdatedAt: types.TimestampNow(),
 	}
-
 	return storageConfig
 }
