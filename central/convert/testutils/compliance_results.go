@@ -303,7 +303,8 @@ func GetComplianceClusterScanV2Count(_ *testing.T, clusterID string) *v2.Complia
 			ClusterName: clusterName1,
 		},
 		ScanStats: &v2.ComplianceScanStatsShim{
-			ScanName: scanConfigName1,
+			ScanName:     scanConfigName1,
+			ScanConfigId: scanConfigName1,
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  failCount,
