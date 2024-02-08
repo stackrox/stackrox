@@ -59,12 +59,12 @@ func (ds *datastoreImpl) GetScanConfigurationByName(ctx context.Context, scanNam
 }
 
 // ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.
-func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) (bool, error) {
+func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) error {
 	// use areProfilesEqual to check if there are any duplicate profiles in the scan request profiles
 	for i := 0; i < len(profiles); i++ {
 		for j := i + 1; j < len(profiles); j++ {
 			if areProfilesEqual(profiles[i], profiles[j]) {
-				return true, nil
+				return errors.Errorf("the scan configuration contains duplicate profiles.  Profile %q and profile %q", profiles[i], profiles[j])
 			}
 		}
 	}
@@ -73,31 +73,31 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters...).ProtoQuery())
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Create a map for quick lookup of profiles.
-	profileMap := make(map[string]bool)
+	profileMap := make(map[string][]string)
 
 	for _, scanConfig := range scanConfigs {
 		if scanConfig.GetId() == id {
 			continue
 		}
 		for _, profile := range scanConfig.GetProfiles() {
-			profileMap[profile.GetProfileName()] = true
+			profileMap[profile.GetProfileName()] = append(profileMap[profile.GetProfileName()], scanConfig.GetScanConfigName())
 		}
 	}
 
 	// Check if any of the profiles are being used by any of the existing scan configurations.
 	for _, profile := range profiles {
-		for profileName := range profileMap {
+		for profileName, configs := range profileMap {
 			if areProfilesEqual(profile, profileName) {
-				return true, nil
+				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs, profileName)
 			}
 		}
 	}
 
-	return false, nil
+	return nil
 }
 
 // areProfilesEqual returns true if the two profiles are equal

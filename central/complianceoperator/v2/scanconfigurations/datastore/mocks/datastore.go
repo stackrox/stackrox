@@ -147,12 +147,11 @@ func (mr *MockDataStoreMockRecorder) RemoveClusterFromScanConfig(ctx, clusterID 
 }
 
 // ScanConfigurationProfileExists mocks base method.
-func (m *MockDataStore) ScanConfigurationProfileExists(ctx context.Context, id string, profiles, clusters []string) (bool, error) {
+func (m *MockDataStore) ScanConfigurationProfileExists(ctx context.Context, id string, profiles, clusters []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ScanConfigurationProfileExists", ctx, id, profiles, clusters)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // ScanConfigurationProfileExists indicates an expected call of ScanConfigurationProfileExists.
