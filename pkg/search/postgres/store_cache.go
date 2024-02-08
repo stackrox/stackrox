@@ -158,7 +158,7 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 		// when write is not allowed. The cached store needs to respect that behavior for the time being.
 		// Ultimately, we have to convey on the behavior: either _always_ return sac.ErrResourceAccessDenied or return
 		// nil.
-		// TODO(ROX-XXXXX): Once the behavior is fixed, remove this special casing.
+		// TODO(ROX-22408): Once the behavior is fixed, remove this special casing.
 		if c.targetResource.GetScope() == permissions.GlobalScope {
 			return sac.ErrResourceAccessDenied
 		}
