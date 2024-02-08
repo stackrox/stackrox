@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -18,7 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
+	pkgVersion "github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -95,7 +94,7 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 func (cmd *scannerDownloadDBCommand) buildBundleFileNames() ([]string, error) {
 	version := cmd.detectVersion()
 
-	priorToV4, err := isPriorToScannerV4(version)
+	priorToV4, err := pkgVersion.IsPriorToScannerV4(version)
 	if err != nil {
 		return nil, fmt.Errorf("invalid version %q: %w", version, err)
 	}
@@ -107,7 +106,10 @@ func (cmd *scannerDownloadDBCommand) buildBundleFileNames() ([]string, error) {
 	} else if cmd.skipVariants {
 		bundleFileNames = append(bundleFileNames, fmt.Sprintf(bundleFileNameFmt, version))
 	} else {
-		versionVariants := disectVersion(version)
+		versionVariants, err := pkgVersion.Variants(version)
+		if err != nil {
+			return nil, fmt.Errorf("invalid version %q: %w", version, err)
+		}
 		for _, versionVariant := range versionVariants {
 			bundleFileNames = append(bundleFileNames, fmt.Sprintf(bundleFileNameFmt, versionVariant))
 		}
@@ -130,7 +132,7 @@ func (cmd *scannerDownloadDBCommand) detectVersion() string {
 		}
 	}
 
-	ver := version.GetMainVersion()
+	ver := pkgVersion.GetMainVersion()
 	cmd.env.Logger().InfofLn("Using version from roxctl binary: %q", ver)
 	return ver
 }
@@ -252,60 +254,6 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 	}
 
 	return nil
-}
-
-// disectVersion breaks a version into a series of version strings starting with
-// the most specific to the least specific. Assumes format X.Y.Z-extra-stuff.
-func disectVersion(version string) []string {
-	res := []string{version}
-
-	i := strings.LastIndex(version, "-")
-	for i != -1 {
-		res = append(res, version[:i])
-		version = version[:i]
-		i = strings.LastIndex(version, "-")
-	}
-
-	i = strings.LastIndex(version, ".")
-	for i != -1 && strings.Count(version, ".") > 1 {
-		res = append(res, version[:i])
-		version = version[:i]
-		i = strings.LastIndex(version, ".")
-	}
-
-	return res
-}
-
-// isPriorToScannerV4 returns true if version represents a version of ACS from prior to the
-// introduction of Scanner V4. Will return an error if cannot determine result.
-func isPriorToScannerV4(version string) (bool, error) {
-	before, _, _ := strings.Cut(version, "-")
-	parts := strings.Split(before, ".")
-
-	if len(parts) < 2 || len(parts) > 3 {
-		return false, fmt.Errorf("%q is not in x.y[.z] format", before)
-	}
-
-	x, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return false, fmt.Errorf("x is not numeric: %q", version)
-	}
-
-	y, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return false, fmt.Errorf("y is not numeric: %q", version)
-	}
-
-	var z string
-	if len(parts) > 2 {
-		z = parts[2]
-	}
-
-	if x < 4 || y < 3 || (y == 3 && (z == "" || z != "x")) {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 // Command represents the command.

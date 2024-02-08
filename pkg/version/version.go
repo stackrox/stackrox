@@ -13,6 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/version/internal"
 )
 
+var (
+	// ErrInvalidNumberOfComponents represents a version that has too few or
+	// too many components for the given use case.
+	ErrInvalidNumberOfComponents = errors.New("invalid number of components")
+)
+
 // GetMainVersion returns the tag of Rox.
 func GetMainVersion() string {
 	return internal.MainVersion
@@ -86,7 +92,7 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 
 	nComponents := len(components)
 	if nComponents < 3 || nComponents > 4 {
-		return parsedMainVersion{}, errors.Errorf("invalid number of components (expected 3 or 4, got %d)", nComponents)
+		return parsedMainVersion{}, fmt.Errorf("%w (expected 3 or 4, got %d)", ErrInvalidNumberOfComponents, nComponents)
 	}
 
 	marketingMajor, err := strconv.Atoi(components[0])
@@ -190,4 +196,82 @@ func IsReleaseVersion() bool {
 	return buildinfo.ReleaseBuild && !buildinfo.TestBuild &&
 		GetMainVersion() != "" &&
 		!strings.Contains(GetMainVersion(), "-")
+}
+
+// IsPriorToScannerV4 returns true if version represents a version of ACS from prior to the
+// introduction of Scanner V4. Will return an error if cannot determine result.
+func IsPriorToScannerV4(version string) (bool, error) {
+	var err error
+	parsed, err := parseVersion(version)
+	if err != nil {
+		return false, err
+	}
+
+	x := parsed.MarketingMajor
+	y := parsed.EngRelease
+	z := parsed.PatchLevel
+
+	if x < 4 || y < 3 || (y == 3 && (z == "" || z != "x")) {
+		return true, nil
+	}
+	return false, nil
+}
+
+// Variants breaks a version into a series of version strings starting with
+// the most specific to the least specific, stopping at X.Y. It uses
+// parseVersion to validate the format.
+func Variants(version string) ([]string, error) {
+	_, err := parseVersion(version)
+	if err != nil {
+		return nil, err
+	}
+
+	res := []string{version}
+
+	i := strings.LastIndex(version, "-")
+	for i != -1 {
+		res = append(res, version[:i])
+		version = version[:i]
+		i = strings.LastIndex(version, "-")
+	}
+
+	i = strings.LastIndex(version, ".")
+	for i != -1 && strings.Count(version, ".") > 1 {
+		res = append(res, version[:i])
+		version = version[:i]
+		i = strings.LastIndex(version, ".")
+	}
+
+	return res, nil
+}
+
+// parseVersion mimics parseMainVersion but allows for versions to be in a
+// format that would otherwise not be a valid main version (such as X.Y).
+func parseVersion(version string) (parsedMainVersion, error) {
+	parsed, err := parseMainVersion(version)
+	if err != nil && !errors.Is(err, ErrInvalidNumberOfComponents) {
+		return parsedMainVersion{}, err
+	}
+
+	if err == nil {
+		return parsed, nil
+	}
+
+	before, _, _ := strings.Cut(version, "-")
+	parts := strings.Split(before, ".")
+	if len(parts) != 2 {
+		return parsedMainVersion{}, fmt.Errorf("%w (expected 2-4, got %d)", ErrInvalidNumberOfComponents, len(parts))
+	}
+
+	x, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return parsedMainVersion{}, err
+	}
+
+	y, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return parsedMainVersion{}, err
+	}
+
+	return parsedMainVersion{MarketingMajor: x, EngRelease: y}, nil
 }
