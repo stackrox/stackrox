@@ -43,6 +43,7 @@ import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrati
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 import './IntegrationForm.css';
+import PaladinCloudIntegrationForm from "./Forms/PaladinCloudIntegrationForm";
 
 type IntegrationFormProps = {
     source: IntegrationSource;
@@ -96,6 +97,9 @@ const ComponentFormMap = {
     authProviders: {
         apitoken: ApiTokenIntegrationForm,
         clusterInitBundle: ClusterInitBundleIntegrationForm,
+    },
+    cloudSources: {
+        paladinCloud: PaladinCloudIntegrationForm,
     },
 } as Record<
     IntegrationSource,

@@ -35,6 +35,7 @@ import { FeatureFlagEnvVar } from 'types/featureFlag';
 import {
     AuthProviderType,
     BackupIntegrationType,
+    CloudSourceIntegrationType,
     ImageIntegrationType,
     IntegrationSource,
     NotifierIntegrationType,
@@ -66,6 +67,10 @@ export type NotifierIntegrationDescriptor = {
 
 export type SignatureIntegrationDescriptor = {
     type: SignatureIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type CloudSourceDescriptor = {
+    type: CloudSourceIntegrationType;
 } & BaseIntegrationDescriptor;
 
 export type BaseIntegrationDescriptor = {
@@ -266,6 +271,16 @@ export const clusterInitBundleDescriptor: AuthProviderDescriptor = {
 
 const authenticationTokensDescriptors = [apiTokenDescriptor, clusterInitBundleDescriptor];
 
+export const cloudSourcesSource = 'cloudSources';
+
+export const paladinCloudDescriptor: CloudSourceDescriptor = {
+    image: logo, // TODO: replace with paladin cloud logo
+    label: 'Paladin Cloud',
+    type: 'paladinCloud',
+};
+
+const cloudSourceDescriptors = [paladinCloudDescriptor];
+
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {
         case 'imageIntegrations':
@@ -278,6 +293,8 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
             return backupIntegrationsDescriptors;
         case 'authProviders':
             return authenticationTokensDescriptors;
+        case 'cloudSources':
+            return cloudSourceDescriptors;
         default:
             return [];
     }

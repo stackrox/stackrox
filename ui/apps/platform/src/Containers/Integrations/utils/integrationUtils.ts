@@ -32,6 +32,10 @@ export function getIsScannerV4(source: IntegrationSource, type: IntegrationType)
     return source === 'imageIntegrations' && type === 'scannerv4';
 }
 
+export function getIsCloudSource(source: IntegrationSource): boolean {
+    return source === 'cloudSources';
+}
+
 export function getGoogleCredentialsPlaceholder(
     useWorkloadId: boolean,
     updatePassword: boolean

@@ -6,7 +6,8 @@ export type IntegrationSource =
     | 'backups'
     | 'imageIntegrations'
     | 'notifiers'
-    | 'signatureIntegrations';
+    | 'signatureIntegrations'
+    | 'cloudSources';
 
 function getPath(source: IntegrationSource): string {
     switch (source) {
@@ -18,6 +19,8 @@ function getPath(source: IntegrationSource): string {
             return '/v1/externalbackups';
         case 'signatureIntegrations':
             return '/v1/signatureintegrations';
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -110,6 +113,10 @@ export function createIntegration(
     // If the data has a config object, use the contents of that config object.
     const hasUpdatePassword = typeof data.updatePassword === 'boolean';
     const createData = hasUpdatePassword ? data[getJsonFieldBySource(source)] : data;
+
+    if (source === 'cloudSources') {
+        return axios.post(getPath(source), { cloudSource: createData });
+    }
 
     return axios.post(getPath(source), createData);
 }
