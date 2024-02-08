@@ -16,7 +16,7 @@ type NetworkPeerID struct {
 	IPNetwork IPNetwork
 }
 
-// IsAddressValid checks if the ip:port pair of the Address is valid.
+// IsAddressValid checks if the ip Address is valid.
 // This does not check the validity of IPNetwork.
 func (e NetworkPeerID) IsAddressValid() bool {
 	return e.Address.IsValid()
