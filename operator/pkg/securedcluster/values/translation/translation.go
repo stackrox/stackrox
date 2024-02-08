@@ -376,6 +376,10 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 		translation.DisableScannerV4Component(&sv, "indexer")
 	}
 
+	if s.Monitoring != nil {
+		sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
+	}
+
 	return &sv
 }
 

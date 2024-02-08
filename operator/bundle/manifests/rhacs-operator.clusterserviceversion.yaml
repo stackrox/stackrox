@@ -1015,6 +1015,11 @@ spec:
         path: scannerV4.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.scannerComponent:AutoSense
+      - description: Configures monitoring endpoint for Scanner V4. The monitoring
+          endpoint allows other services to collect metrics from Scanner V4, provided
+          in Prometheus compatible format.
+        displayName: Monitoring
+        path: scannerV4.monitoring
       - description: Configures how Scanner V4 should store its persistent data. You
           can use a persistent volume claim (the recommended default), a host path,
           or an emptyDir volume if Scanner V4 is running on a secured cluster without
@@ -1106,6 +1111,11 @@ spec:
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.indexer.scaling.autoScaling:Enabled
+      - description: Expose the monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing inbound
+          connections to the port.
+        displayName: Expose Endpoint
+        path: scannerV4.monitoring.exposeEndpoint
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.
