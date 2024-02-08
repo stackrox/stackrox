@@ -153,7 +153,8 @@ def parse_args():
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
                         help='Disable passthrough of related images')
-    parser.add_argument("--replace-rbac-proxy", help='Unused legacy option.')
+    # TODO(ROX-22395): remove this option once downstream scripts don't pass the argument.
+    parser.add_argument("--replace-rbac-proxy", help='This option is deprecated and ignored.')
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
