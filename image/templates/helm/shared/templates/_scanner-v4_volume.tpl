@@ -51,15 +51,28 @@
     {{ else }}
       {{ include "srox.note" (list $ "A PVC will be used for Scanner V4 DB persistence.") }}
     {{ end }}
-    {{ $_ = include "srox.mergeInto" (list $scannerV4DBCfg.persistence.persistentVolumeClaim $pvcConfigShape $pvcDefaults $extraSettings) }}
+    {{ if has $pvcDefaults.claimName $._rox.env.pvcs.names }}
+      {{ $_ = set $extraSettings "createClaim" false }}
+    {{ else }}
+      {{ $_ = set $extraSettings "createClaim" true }}
+    {{ end }}
+    {{ $_ = include "srox.mergeInto" (list $scannerV4DBCfg.persistence.persistentVolumeClaim $pvcConfigShape $extraSettings $pvcDefaults) }}
   {{ else }}
     {{/* No default StorageClass detected, currently rendering secured-cluster-services chart. */}}
-    {{ include "srox.warn" (list $ (printf "No default StorageClass detected, using emptyDir as persistence backend for Scanner V4 DB. It is highly recommended to use a PVC instead. Please check the documentation for more information on this." )) }}
-    {{ $_ = set $scannerV4DBCfg.persistence "none" true }}
+    {{ if has $pvcDefaults.claimName $._rox.env.pvcs.names }}
+      {{ include "srox.note" (list $ (printf "A PVC named %s already exists, will keep using it for Scanner V4 DB persistence." $pvcDefaults.claimName)) }}
+      {{ $_ = set $extraSettings "createClaim" false }}
+      {{ $_ = include "srox.mergeInto" (list $scannerV4DBCfg.persistence.persistentVolumeClaim $pvcConfigShape $extraSettings $pvcDefaults) }}
+    {{ else }}
+      {{/* Fallback to emptyDir. */}}
+      {{ include "srox.warn" (list $ (printf "No default StorageClass detected, using emptyDir as persistence backend for Scanner V4 DB. It is highly recommended to use a PVC instead. Please check the documentation for more information on this." )) }}
+      {{ $_ = set $scannerV4DBCfg.persistence "none" true }}
+    {{ end }}
   {{ end }}
 {{ else if gt (len $persistenceBackendsConfigured) 1 }}
   {{ include "srox.fail" (printf "Invalid persistence configuration for Scanner V4 DB: more than one persistence backend configured (%v)" $persistenceBackendsConfigured) }}
 {{ end }}
+
 
 {{/* Update $scannerV4DBVolumeCfg depending on configured persistence backend. */}}
 {{ if $scannerV4DBCfg.persistence.none }}
@@ -75,7 +88,7 @@
 {{ else }}
   {{ include "srox.note" (list $ (printf "A PVC using the storage class %q will be used by the Scanner V4 DB." $scannerV4DBCfg.persistence.persistentVolumeClaim.storageClass)) }}
   {{ $scannerV4DBPVCCfg := $scannerV4DBCfg.persistence.persistentVolumeClaim }}
-  {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $pvcDefaults $extraSettings) }}
+  {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $extraSettings $pvcDefaults) }}
   {{ $_ = set $scannerV4DBVolumeCfg "persistentVolumeClaim" (dict "claimName" $scannerV4DBPVCCfg.claimName) }}
   {{ if $scannerV4DBPVCCfg.createClaim }}
     {{ $_ = set $scannerV4DBCfg.persistence "_pvcCfg" $scannerV4DBPVCCfg }}
