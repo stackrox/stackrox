@@ -134,23 +134,23 @@ _EO_UPDATE_
     bq query --use_legacy_sql=false "$sql"
 }
 
-slack_top_10_failures() {
-    local job_name_match="${1:-qa}"
-    local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
-    local is_test="${3:-false}"
+slack_top_n_failures() {
+    local n="${1:-10}"
+    local job_name_match="${2:-qa}"
+    local subject="${3:-Top 10 QA E2E Test failures for the last 7 days}"
+    local is_test="${4:-false}"
 
     local sql
     # shellcheck disable=SC2016
     sql='
 SELECT
-    COUNT(*) AS `#`,
+    ROUND((COUNTIF(Status="failed")/COUNT(*))*100,2) AS `%`,
     IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
     IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
     CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
-    AND Status = "failed"
     AND NOT IsPullRequest
     AND CONTAINS_SUBSTR(JobName, "master")
     AND NOT CONTAINS_SUBSTR(JobName, "ibmcloudz")
@@ -159,10 +159,12 @@ WHERE
 GROUP BY
     Classname,
     Name
+HAVING
+    `%` > 0
 ORDER BY
-    COUNT(*) DESC
+    `%` DESC
 LIMIT
-    10
+    '"${n}"'
 '
 
     local data
@@ -175,6 +177,8 @@ LIMIT
     if [[ -z "${data}" ]]; then
         data="No failures!"
     fi
+    # strip the leading ascii vertical line and padding to save space
+    data="$(echo "${data}" | cut -c 3-)"
     echo "$data"
 
     local webhook_url

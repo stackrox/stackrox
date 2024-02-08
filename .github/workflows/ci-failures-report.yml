@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: "Slack to #acs-slack-integration-testing"
+        description: "Slack to #acs-slack-ci-integration-testing"
         required: true
         default: true
         type: boolean
@@ -31,8 +31,8 @@ jobs:
 
         # Avoid BQ init message in first report
         bq --quiet --format=pretty query --use_legacy_sql=false 'select 1'
-
-        slack_top_10_failures "qa-e2e" ":testgrid: Top 10 QA E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_10_failures "operator-e2e" ":operator: Top 10 Operator E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_10_failures "ui-e2e" ":computer: Top 10 UI E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_10_failures "nongroovy-e2e" ":go: Top 10 NonGroovy E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        n=10
+        slack_top_n_failures ${n} "qa-e2e" ":testgrid: Top ${n} QA E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "operator-e2e" ":operator: Top ${n} Operator E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
