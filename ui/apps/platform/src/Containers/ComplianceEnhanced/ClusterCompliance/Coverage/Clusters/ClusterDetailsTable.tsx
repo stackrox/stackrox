@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
 import {
     Bullseye,
     Button,
+    ButtonVariant,
     Pagination,
     SearchInput,
     Spinner,
     Text,
+    TextVariants,
     Title,
     Toolbar,
     ToolbarContent,
@@ -16,7 +17,6 @@ import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import omit from 'lodash/omit';
 
-import { complianceEnhancedScanConfigDetailPath } from 'routePaths';
 import IconText from 'Components/PatternFly/IconText/IconText';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -24,6 +24,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import {
     ComplianceCheckStatus,
+    ComplianceCheckResult,
     ClusterCheckStatus,
     getSingleClusterResultsByScanConfig,
     getSingleClusterResultsByScanConfigCount,
@@ -38,6 +39,7 @@ import TableErrorComponent from 'Containers/Vulnerabilities/WorkloadCves/compone
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getClusterResultsStatusObject } from '../compliance.coverage.utils';
 import CheckStatusDropdown from '../Components/CheckStatusDropdown';
+import CheckStatusModal from '../Components/CheckStatusModal';
 
 type ClusterDetailsTableProps = {
     clusterId: string;
@@ -55,6 +57,9 @@ function ClusterDetailsTable({
     scanName,
 }: ClusterDetailsTableProps): React.ReactElement {
     const [searchCheckValue, setSearchCheckValue] = useState('');
+    const [selectedCheckResult, setSelectedCheckResult] = useState<ComplianceCheckResult | null>(
+        null
+    );
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort({
@@ -92,10 +97,16 @@ function ClusterDetailsTable({
         }
     }, [searchFilter]);
 
-    function getStatusByClusterId(clusters: ClusterCheckStatus[]): ComplianceCheckStatus | null {
-        const matchingCluster = clusters.find(
-            (clusterCheckStatus) => clusterCheckStatus.cluster.clusterId === clusterId
+    function getMatchingCluster(clusters: ClusterCheckStatus[]): ClusterCheckStatus | null {
+        return (
+            clusters.find(
+                (clusterCheckStatus) => clusterCheckStatus.cluster.clusterId === clusterId
+            ) || null
         );
+    }
+
+    function getStatusByClusterId(clusters: ClusterCheckStatus[]): ComplianceCheckStatus | null {
+        const matchingCluster = getMatchingCluster(clusters);
         return matchingCluster ? matchingCluster.status : null;
     }
 
@@ -132,11 +143,8 @@ function ClusterDetailsTable({
     }
 
     const renderTableContent = () => {
-        return scanResults?.checkResults.map(({ checkName, rationale, clusters }) => {
-            const scanConfigUrl = generatePath(complianceEnhancedScanConfigDetailPath, {
-                scanConfigId: checkName,
-            });
-
+        return scanResults?.checkResults.map((checkResult) => {
+            const { checkName, rationale, clusters } = checkResult;
             const status = getStatusByClusterId(clusters);
             const statusObj = status ? getClusterResultsStatusObject(status) : null;
 
@@ -144,14 +152,21 @@ function ClusterDetailsTable({
                 <Tr key={checkName}>
                     <Td modifier="truncate">
                         <>
-                            <Link to={scanConfigUrl}>{checkName}</Link>
-                            <br />
-                            <small className="pf-u-color-200">{rationale}</small>
+                            <Text>{checkName}</Text>
+                            <Text component={TextVariants.small} className="pf-u-color-200">
+                                {rationale}
+                            </Text>
                         </>
                     </Td>
                     <Td>
                         {statusObj && (
-                            <IconText icon={statusObj.icon} text={statusObj.statusText} />
+                            <Button
+                                isInline
+                                variant={ButtonVariant.link}
+                                onClick={() => setSelectedCheckResult(checkResult)}
+                            >
+                                <IconText icon={statusObj.icon} text={statusObj.statusText} />
+                            </Button>
                         )}
                     </Td>
                 </Tr>
@@ -260,6 +275,15 @@ function ClusterDetailsTable({
                 </Thead>
                 <Tbody>{renderTableBodyContent()}</Tbody>
             </TableComposable>
+
+            {selectedCheckResult && (
+                <CheckStatusModal
+                    checkResult={selectedCheckResult}
+                    status={getStatusByClusterId(selectedCheckResult.clusters)}
+                    isOpen
+                    handleClose={() => setSelectedCheckResult(null)}
+                />
+            )}
         </>
     );
 }
