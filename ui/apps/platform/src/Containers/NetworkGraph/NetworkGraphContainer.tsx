@@ -50,7 +50,7 @@ function getFilteredEdges(
         edges.forEach((edge) => {
             const { source, target } = edge;
             const { type } = selectedNode.data;
-            if (type === 'NAMESPACE' || type === 'EXTERNAL_GROUP' || type === 'INTERNAL_GROUP') {
+            if (type === 'NAMESPACE' || type === 'EXTERNAL_GROUP') {
                 // if a "grouped type" is selected, add children's node edges
                 const { children } = selectedNode;
                 if (children?.includes(source) || children?.includes(target)) {

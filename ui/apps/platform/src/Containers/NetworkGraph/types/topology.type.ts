@@ -12,7 +12,6 @@ export type CustomNodeModel =
     | DeploymentNodeModel
     | ExternalGroupNodeModel
     | ExternalEntitiesNodeModel
-    | InternalGroupNodeModel
     | InternalEntitiesNodeModel
     | CIDRBlockNodeModel
     | ExtraneousNodeModel;
@@ -30,8 +29,6 @@ export type DeploymentNodeModel = Override<NodeModel, { data: DeploymentData }>;
 export type ExternalGroupNodeModel = Override<NodeModel, { data: ExternalGroupData }>;
 
 export type ExternalEntitiesNodeModel = Override<NodeModel, { data: ExternalEntitiesData }>;
-
-export type InternalGroupNodeModel = Override<NodeModel, { data: InternalGroupData }>;
 
 export type InternalEntitiesNodeModel = Override<NodeModel, { data: InternalEntitiesData }>;
 
@@ -78,7 +75,6 @@ export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
 // prettier-ignore
 type NodeModelType<DataType extends NodeDataType> =
     DataType extends 'DEPLOYMENT' ? DeploymentNodeModel :
-    DataType extends 'INTERNAL_GROUP' ? InternalGroupNodeModel :
     DataType extends 'EXTERNAL_GROUP' ? ExternalGroupNodeModel :
     DataType extends 'EXTERNAL_ENTITIES' ? ExternalEntitiesNodeModel :
     DataType extends 'CIDR_BLOCK' ? CIDRBlockNodeModel :
@@ -119,7 +115,6 @@ export type NodeDataType =
     | 'EXTERNAL_GROUP'
     | 'EXTERNAL_ENTITIES'
     | 'CIDR_BLOCK'
-    | 'INTERNAL_GROUP'
     | 'INTERNAL_ENTITIES'
     | 'EXTRANEOUS';
 
@@ -143,13 +138,6 @@ export type DeploymentData = {
 
 export type ExternalGroupData = {
     type: 'EXTERNAL_GROUP';
-    collapsible: boolean;
-    showContextMenu: boolean;
-    isFadedOut: boolean;
-};
-
-export type InternalGroupData = {
-    type: 'INTERNAL_GROUP';
     collapsible: boolean;
     showContextMenu: boolean;
     isFadedOut: boolean;
