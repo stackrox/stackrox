@@ -33,7 +33,7 @@ export type DiscoveredClusterMetadata = {
 // type
 
 // Order of items is for search filter options.
-const types = ['AKS', 'ARO', 'EKS', 'GKE', 'OCP', 'OSD', 'ROSA', 'UNSPECIFIED'] as const; // for isType function
+export const types = ['AKS', 'ARO', 'EKS', 'GKE', 'OCP', 'OSD', 'ROSA', 'UNSPECIFIED'] as const; // for isType function
 
 export type DiscoveredClusterType = (typeof types)[number];
 
@@ -52,7 +52,7 @@ export type DiscoveredClusterProviderType = (typeof providerTypes)[number];
 // status
 
 // Order of items is for search filter options.
-const statuses = ['STATUS_SECURED', 'STATUS_UNSECURED', 'STATUS_UNSPECIFIED'] as const; // for isStatus function
+export const statuses = ['STATUS_SECURED', 'STATUS_UNSECURED', 'STATUS_UNSPECIFIED'] as const; // for isStatus function
 
 export type DiscoveredClusterStatus = (typeof statuses)[number];
 
