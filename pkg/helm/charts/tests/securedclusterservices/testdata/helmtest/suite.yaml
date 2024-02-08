@@ -70,6 +70,17 @@ server:
         name: some-sc-that-we-dont-care-about
         annotations:
           storageclass.kubernetes.io/is-default-class: false
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        namespace: stackrox
+        name: just-some-dummy-pvc
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "314159Mi"
 values:
   clusterName: "testcluster"
   createSecrets: false
