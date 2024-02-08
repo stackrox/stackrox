@@ -19,7 +19,7 @@ message ComplianceOperatorInfo {
     int32 total_ready_pods = 4;
   }
 
-  // Collection of errors that occurred while trying to obtain collector health info.
+  // Collection of errors that occurred while trying to obtain compliance health info.
   string status_error = 5;
 }
 
