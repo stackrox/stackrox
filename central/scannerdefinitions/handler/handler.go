@@ -510,6 +510,10 @@ func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updater
 	if mappingUpdaterKey == updaterKey {
 		f, err = h.openMostRecentV4File(mappingUpdaterKey, fileName)
 	} else {
+		if strings.Contains(strings.ToLower(updaterKey), strings.ToLower("-nightly")) {
+			// get dev for nightly at this moment
+			updaterKey = "dev"
+		}
 		updaterKey = fmt.Sprintf("%s%s", v4Prefix, updaterKey)
 		f, err = h.openMostRecentV4File(updaterKey, "")
 		if err == nil {
