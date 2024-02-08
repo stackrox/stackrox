@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 import React, { ReactElement } from 'react';
-import { Checkbox, Form, PageSection, TextArea, TextInput } from '@patternfly/react-core';
+import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
@@ -162,11 +162,9 @@ function PaladinCloudIntegrationForm({
                         touched={touched}
                         errors={errors}
                     >
-                        <TextArea
+                        <TextInput
                             isRequired={values.updateCredentials}
-                            autoResize
-                            resizeOrientation="vertical"
-                            type="text"
+                            type="password"
                             id={`cloudSource.credentials.secret`}
                             value={values.cloudSource.credentials.secret}
                             onChange={onChange}
