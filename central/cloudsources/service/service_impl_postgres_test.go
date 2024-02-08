@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/cloudsources/datastore"
+	cloudSourcesManagerMocks "github.com/stackrox/rox/central/cloudsources/manager/mocks"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestServicePostgres(t *testing.T) {
@@ -50,7 +52,9 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 	s.datastore = datastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.service = newService(s.datastore)
+	mockManager := cloudSourcesManagerMocks.NewMockManager(gomock.NewController(s.T()))
+	mockManager.EXPECT().ShortCircuit().AnyTimes()
+	s.service = newService(s.datastore, mockManager)
 }
 
 func (s *servicePostgresTestSuite) TearDownTest() {

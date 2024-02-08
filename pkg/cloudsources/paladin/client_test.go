@@ -6,8 +6,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
+	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,14 +28,60 @@ func TestClient_GetAssets(t *testing.T) {
 	}))
 	defer server.Close()
 
+	testCluster1FirstDiscoveredAt, err := time.Parse(timeFormat, "2023-11-28 08:00:00+0000")
+	require.NoError(t, err)
+	testCluster1FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster1FirstDiscoveredAt)
+	require.NoError(t, err)
+	testCluster2FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
+	require.NoError(t, err)
+	testCluster2FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster2FirstDiscoveredAt)
+	require.NoError(t, err)
+	testCluster3FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
+	require.NoError(t, err)
+	testCluster3FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster3FirstDiscoveredAt)
+	require.NoError(t, err)
+
+	expectedDiscoveredClusters := []*discoveredclusters.DiscoveredCluster{
+		{
+			ID:                "123123213123_MC_testing_test-cluster-1_eastus",
+			Name:              "test-cluster-1",
+			Type:              storage.ClusterMetadata_AKS,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
+			Region:            "eastus",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster1FirstDiscoveredAtTS,
+		},
+		{
+			ID:                "1231245342513",
+			Name:              "test-cluster-2",
+			Type:              storage.ClusterMetadata_GKE,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
+			Region:            "us-central1-c",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster2FirstDiscoveredAtTS,
+		},
+		{
+			ID:                "1231234124123541",
+			Name:              "test-cluster-3",
+			Type:              storage.ClusterMetadata_EKS,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
+			Region:            "us-central1",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster3FirstDiscoveredAtTS,
+		},
+	}
+
 	client := NewClient(&storage.CloudSource{
+		Id:          "id",
 		Credentials: &storage.CloudSource_Credentials{Secret: "testing"},
 		Config: &storage.CloudSource_PaladinCloud{PaladinCloud: &storage.PaladinCloudConfig{
 			Endpoint: server.URL,
 		}},
 	})
 
-	resp, err := client.GetAssets(context.Background())
+	resp, err := client.GetDiscoveredClusters(context.Background())
 	require.NoError(t, err)
-	assert.Len(t, resp.Assets, 3)
+	assert.Len(t, resp, 3)
+
+	assert.ElementsMatch(t, resp, expectedDiscoveredClusters)
 }

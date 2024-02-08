@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,10 +52,11 @@ const (
 
 // DiscoveredClusters holds the Gorm model for Postgres table `discovered_clusters`.
 type DiscoveredClusters struct {
-	ID           string                           `gorm:"column:id;type:uuid;primaryKey"`
-	MetadataName string                           `gorm:"column:metadata_name;type:varchar"`
-	MetadataType storage.ClusterMetadata_Type     `gorm:"column:metadata_type;type:integer"`
-	Status       storage.DiscoveredCluster_Status `gorm:"column:status;type:integer"`
-	SourceID     string                           `gorm:"column:sourceid;type:uuid"`
-	Serialized   []byte                           `gorm:"column:serialized;type:bytea"`
+	ID            string                           `gorm:"column:id;type:uuid;primaryKey"`
+	MetadataName  string                           `gorm:"column:metadata_name;type:varchar"`
+	MetadataType  storage.ClusterMetadata_Type     `gorm:"column:metadata_type;type:integer"`
+	Status        storage.DiscoveredCluster_Status `gorm:"column:status;type:integer"`
+	SourceID      string                           `gorm:"column:sourceid;type:uuid"`
+	LastUpdatedAt *time.Time                       `gorm:"column:lastupdatedat;type:timestamp"`
+	Serialized    []byte                           `gorm:"column:serialized;type:bytea"`
 }

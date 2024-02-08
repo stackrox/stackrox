@@ -96,10 +96,11 @@ func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredClust
 		obj.GetMetadata().GetType(),
 		obj.GetStatus(),
 		pgutils.NilOrUUID(obj.GetSourceId()),
+		pgutils.NilOrTime(obj.GetLastUpdatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO discovered_clusters (Id, Metadata_Name, Metadata_Type, Status, SourceId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Metadata_Name = EXCLUDED.Metadata_Name, Metadata_Type = EXCLUDED.Metadata_Type, Status = EXCLUDED.Status, SourceId = EXCLUDED.SourceId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO discovered_clusters (Id, Metadata_Name, Metadata_Type, Status, SourceId, LastUpdatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Metadata_Name = EXCLUDED.Metadata_Name, Metadata_Type = EXCLUDED.Metadata_Type, Status = EXCLUDED.Status, SourceId = EXCLUDED.SourceId, LastUpdatedAt = EXCLUDED.LastUpdatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -122,6 +123,7 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 		"metadata_type",
 		"status",
 		"sourceid",
+		"lastupdatedat",
 		"serialized",
 	}
 
@@ -142,6 +144,7 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 			obj.GetMetadata().GetType(),
 			obj.GetStatus(),
 			pgutils.NilOrUUID(obj.GetSourceId()),
+			pgutils.NilOrTime(obj.GetLastUpdatedAt()),
 			serialized,
 		})
 

@@ -31,6 +31,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -166,6 +167,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	}
 	if features.AdministrationEvents.Enabled() {
 		g.removeExpiredAdministrationEvents(pvtConfig)
+	}
+	if features.CloudSources.Enabled() {
+		g.removeExpiredDiscoveredClusters()
 	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
@@ -435,6 +439,10 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
 	retentionDays := time.Duration(config.GetAdministrationEventsConfig().GetRetentionDurationDays()) * 24 * time.Hour
 	postgres.PruneAdministrationEvents(pruningCtx, g.postgres, retentionDays)
+}
+
+func (g *garbageCollectorImpl) removeExpiredDiscoveredClusters() {
+	postgres.PruneDiscoveredClusters(pruningCtx, g.postgres, env.DiscoveredClustersRetentionTime.DurationSetting())
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {
