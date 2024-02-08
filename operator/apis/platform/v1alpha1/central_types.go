@@ -537,10 +537,10 @@ type ScannerV4Spec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
+// IsEnabled checks whether scanner v4 is enabled. This method is safe to be used with nil receivers.
 func (s *ScannerV4Spec) IsEnabled() bool {
 	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
+		return false // disabled by default
 	}
 	return *s.ScannerComponent == ScannerV4ComponentEnabled
 }
