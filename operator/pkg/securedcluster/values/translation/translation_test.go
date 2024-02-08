@@ -742,6 +742,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"collector": map[string]interface{}{
+					"forceCollectionMethod":   true,
 					"collectionMethod":        "CORE_BPF",
 					"disableTaintTolerations": false,
 					"slimMode":                false,
@@ -784,8 +785,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"collector": map[string]interface{}{
-					"collectionMethod": "CORE_BPF",
-					"slimMode":         false,
+					"forceCollectionMethod": true,
+					"collectionMethod":      "CORE_BPF",
+					"slimMode":              false,
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
@@ -842,8 +844,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"collector": map[string]interface{}{
-					"collectionMethod": "EBPF",
-					"slimMode":         false,
+					"forceCollectionMethod": true,
+					"collectionMethod":      "EBPF",
+					"slimMode":              false,
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
