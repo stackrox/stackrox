@@ -627,6 +627,12 @@ function launch_sensor {
         scanner_extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
     fi
 
+    if [[ "${ORCH}" == "openshift" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+        extra_config+=("--openshift-version=${ROX_OPENSHIFT_VERSION}")
+      fi
+    fi
+
     # Delete paths
     rm -rf "${k8s_dir}/sensor-deploy"
     rm -rf "${k8s_dir}/scanner-deploy"
