@@ -144,7 +144,7 @@ slack_top_n_failures() {
     # shellcheck disable=SC2016
     sql='
 SELECT
-    ROUND((COUNTIF(Status="failed")/COUNT(*))*100,2) AS `%`,
+    FORMAT("%.2f", 100 * COUNTIF(Status="failed") / COUNT(*)) AS `%`,
     IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
     IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
 FROM
@@ -162,7 +162,7 @@ GROUP BY
 HAVING
     `%` > 0
 ORDER BY
-    `%` DESC
+    (COUNTIF(Status="failed")/COUNT(*)) DESC
 LIMIT
     '"${n}"'
 '
