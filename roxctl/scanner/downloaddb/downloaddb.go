@@ -13,12 +13,14 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 const (
@@ -34,6 +36,7 @@ type scannerDownloadDBCommand struct {
 	force        bool
 	skipCentral  bool
 	skipVariants bool
+	timeout      time.Duration
 	version      string
 
 	// filenameValidated is set to true if filename is non-empty and has
@@ -45,7 +48,8 @@ type scannerDownloadDBCommand struct {
 	env environment.Environment
 }
 
-func (cmd *scannerDownloadDBCommand) construct(_ *cobra.Command) {
+func (cmd *scannerDownloadDBCommand) construct(c *cobra.Command) {
+	cmd.timeout = flags.Timeout(c)
 }
 
 func (cmd *scannerDownloadDBCommand) downloadDb() error {
@@ -134,7 +138,7 @@ func (cmd *scannerDownloadDBCommand) detectVersion() string {
 // versionFromCentral attempts to pull version from Central's metadata
 // service.
 func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
-	client, err := cmd.env.HTTPClient(5 * time.Second)
+	client, err := cmd.env.HTTPClient(cmd.timeout)
 	if err != nil {
 		cmd.env.Logger().WarnfLn("issue building central http client: %v", err)
 		return "", err
@@ -191,10 +195,21 @@ func (cmd *scannerDownloadDBCommand) buildDownloadURL(bundleFileName string) (st
 	return url.JoinPath(env.ScannerDBDownloadBaseURL.Setting(), bundleFileName)
 }
 
+// httpClient builds a retryable http client for non-ACS requests (such as
+// for downloading the vulnerability bundle from a public url).
+func (cmd *scannerDownloadDBCommand) httpClient() *retryablehttp.Client {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = env.ClientMaxRetries.IntegerSetting()
+	retryClient.HTTPClient.Timeout = cmd.timeout
+	retryClient.RetryWaitMin = 10 * time.Second
+
+	return retryClient
+}
+
 // downloadVulnDB downloads the vulnerability database from url and stores it in
 // the provided output file.
 func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName string) error {
-	resp, err := http.Get(url)
+	resp, err := cmd.httpClient().Get(url)
 	if err != nil {
 		return err
 	}
@@ -323,6 +338,7 @@ defaults to version embedded within roxctl.`,
 	c.Flags().BoolVar(&scannerDownloadDBCmd.force, "force", false, "Force overwriting the output file if it already exists")
 	c.Flags().BoolVar(&scannerDownloadDBCmd.skipCentral, "skip-central", false, "Do not contact Central when detecting version")
 	c.Flags().BoolVar(&scannerDownloadDBCmd.skipVariants, "skip-variants", false, "Do not attempt to download variants of the detected version")
+	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 
 	return c
 }
