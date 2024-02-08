@@ -28,14 +28,14 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
-func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
+func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) *v1alpha1.ScanSetting {
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      request.GetScanSettings().GetScanName(),
+			Name:      request.GetScanName(),
 			Namespace: namespace,
 			Labels: map[string]string{
 				"app.kubernetes.io/name": "stackrox",
@@ -48,7 +48,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
 			AutoApplyRemediations:  false,
 			AutoUpdateRemediations: false,
-			Schedule:               request.GetCron(),
+			Schedule:               cron,
 		},
 		ComplianceScanSettings: v1alpha1.ComplianceScanSettings{
 			StrictNodeScan:    pointers.Bool(false),
@@ -94,7 +94,6 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 }
 
 func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) *v1alpha1.ScanSetting {
-	// TODO: Add ACS labels.
 	// TODO:  Update additional fields as ACS capability expands
 	scanSetting.Roles = []string{masterRole, workerRole}
 	scanSetting.ComplianceSuiteSettings = v1alpha1.ComplianceSuiteSettings{
