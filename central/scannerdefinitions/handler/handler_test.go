@@ -199,15 +199,21 @@ func (s *handlerTestSuite) TestServeHTTP_Online_ZSTD_Bundle_Get() {
 	// If the version is invalid or versioned bundle cannot be found, it's a 500
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	// Should get zstd file from online update.
+	// Should get dev zstd file from online update.
 	req = s.getRequestWithVersionedFile(t, "dev")
 	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 
-	// Should get mapping json file from online update.
-	req = s.getRequestWithVersionedFile(t, "4.3.x-nightly-20240105")
+	req = s.getRequestWithVersionedFile(t, "4.3.x-173-g6bbb2e07dc")
+	w.Data.Reset()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
+
+	// Should get dev zstd file from online update.
+	req = s.getRequestWithVersionedFile(t, "4.3.x-nightly-20240106")
 	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
