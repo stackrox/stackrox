@@ -57,7 +57,7 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 
 	var errs []error
 	for _, bundleFileName := range bundleFileNames {
-		// Get the name of the output file and ensures its valid.
+		// Get the name of the output file and ensures it's valid.
 		outFileName, err := cmd.buildAndValidateOutputFileName(bundleFileName)
 		if err != nil {
 			// If there was an error validating the output file, assume the file exists
@@ -154,7 +154,8 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 	}
 
 	if err := resp.Body.Close(); err != nil {
-		return "", fmt.Errorf("could not close respond body: %w", err)
+		cmd.env.Logger().WarnfLn("could not close response body: %w", err)
+		return "", err
 	}
 
 	return metadata.GetVersion(), nil
