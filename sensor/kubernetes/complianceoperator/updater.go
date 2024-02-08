@@ -142,13 +142,13 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		}
 	}
 
-	complianceOperator, err := getComplianceOperator(u.ctx(), u.client, ns)
+	complianceOperatorDeployment, err := getComplianceOperatorDeployment(u.ctx(), u.client, ns)
 	if err != nil {
 		// Lookup all namespaces again to cover the case that compliance operator was moved to different complianceOperatorNS.
 		if kubeAPIErr.IsNotFound(err) {
 			ns, err = u.getComplianceOperatorNamespace()
 			if err == nil {
-				complianceOperator, err = getComplianceOperator(u.ctx(), u.client, ns)
+				complianceOperatorDeployment, err = getComplianceOperatorDeployment(u.ctx(), u.client, ns)
 			}
 		}
 	}
@@ -159,19 +159,19 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	}
 
 	var version string
-	for key, val := range complianceOperator.Labels {
+	for key, val := range complianceOperatorDeployment.Labels {
 		if strings.HasSuffix(key, "owner") {
 			version = strings.TrimPrefix(val, complianceoperator.Name+".")
 		}
 	}
 
 	info := &central.ComplianceOperatorInfo{
-		Namespace: complianceOperator.GetNamespace(),
+		Namespace: complianceOperatorDeployment.GetNamespace(),
 		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
-			TotalDesiredPods: complianceOperator.Status.Replicas,
+			TotalDesiredPods: complianceOperatorDeployment.Status.Replicas,
 		},
 		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
-			TotalReadyPods: complianceOperator.Status.ReadyReplicas,
+			TotalReadyPods: complianceOperatorDeployment.Status.ReadyReplicas,
 		},
 		Version: version,
 	}
@@ -197,7 +197,7 @@ func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
 	}
 
 	for _, namespace := range namespaceList.Items {
-		complianceOperator, err := getComplianceOperator(u.ctx(), u.client, namespace.Name)
+		complianceOperator, err := getComplianceOperatorDeployment(u.ctx(), u.client, namespace.Name)
 		if err == nil {
 			return complianceOperator.GetNamespace(), nil
 		}
@@ -245,6 +245,6 @@ func checkRequiredComplianceCRDsExist(resourceList *metav1.APIResourceList) erro
 	return errorList.ToError()
 }
 
-func getComplianceOperator(ctx context.Context, client kubernetes.Interface, namespace string) (*appsv1.Deployment, error) {
+func getComplianceOperatorDeployment(ctx context.Context, client kubernetes.Interface, namespace string) (*appsv1.Deployment, error) {
 	return client.AppsV1().Deployments(namespace).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
 }
