@@ -20,8 +20,6 @@ import (
 
 const (
 	discoveredClustersLoopInterval = 10 * time.Minute
-
-	discoveredClustersRetentionTime = 24 * time.Hour
 )
 
 var (
@@ -145,20 +143,6 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 }
 
 func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
-	// Remove discovered clusters which are out of the retention time.
-	deleted, err := m.discoveredClustersDataStore.DeleteDiscoveredClusters(discoveredClusterCtx, search.NewQueryBuilder().
-		AddTimeRangeField(
-			search.LastUpdatedTime,
-			time.Unix(0, 0),
-			time.Now().Add(-discoveredClustersRetentionTime),
-		).ProtoQuery())
-	if err != nil {
-		log.Errorw("Received errors during deletion of discovered clusters who haven't been updated outside of the retention time",
-			logging.Err(err))
-	} else {
-		log.Debugf("Deleted %d discovered clusters due to being outside of the retention time", len(deleted))
-	}
-
 	// TODO: Add matching of discovered clusters with secured clusters.
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx, clusters...); err != nil {
@@ -170,7 +154,10 @@ func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters
 func createClients(cloudSources []*storage.CloudSource) []cloudsources.Client {
 	clients := make([]cloudsources.Client, 0, len(cloudSources))
 	for _, cloudSource := range cloudSources {
-		clients = append(clients, cloudsources.NewClientForCloudSource(cloudSource))
+		client := cloudsources.NewClientForCloudSource(cloudSource)
+		if client != nil {
+			clients = append(clients, client)
+		}
 	}
 	return clients
 }

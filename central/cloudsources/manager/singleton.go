@@ -12,14 +12,14 @@ var (
 	m    Manager
 )
 
-// Manager for detecting clusters from cloud sources.
+// Manager for fetching clusters from cloud sources.
 //
 //go:generate mockgen-wrapper
 type Manager interface {
 	Start()
 	Stop()
 
-	// ShortCircuit will signal the manager to short circuit the collection of clusters based on cloud sources.
+	// ShortCircuit signals the manager to short circuit the collection of clusters from cloud sources.
 	ShortCircuit()
 }
 

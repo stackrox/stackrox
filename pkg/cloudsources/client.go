@@ -16,5 +16,10 @@ type Client interface {
 // NewClientForCloudSource creates a new Client based on the cloud source to fetch discovered clusters.
 func NewClientForCloudSource(source *storage.CloudSource) Client {
 	// For the time being, this only supports paladin cloud clients.
-	return paladin.NewClient(source)
+	switch source.GetType() {
+	case storage.CloudSource_TYPE_PALADIN_CLOUD:
+		return paladin.NewClient(source)
+	default:
+		return nil
+	}
 }
