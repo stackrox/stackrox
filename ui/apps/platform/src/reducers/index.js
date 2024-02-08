@@ -110,7 +110,7 @@ const boundSelectors = {
     ...bindSelectors(getPublicConfig, publicConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
     ...bindSelectors(getCentralCapabilities, centralCapabilitiesSelectors),
-    ...bindSelectors(getCloudSources, cloudSourcesSelectors)
+    ...bindSelectors(getCloudSources, cloudSourcesSelectors),
 };
 
 export const selectors = {

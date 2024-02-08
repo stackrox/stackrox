@@ -42,8 +42,9 @@ import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrati
 // signature integrations
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
+// cloud source integrations
 import './IntegrationForm.css';
-import PaladinCloudIntegrationForm from "./Forms/PaladinCloudIntegrationForm";
+import PaladinCloudIntegrationForm from './Forms/PaladinCloudIntegrationForm';
 
 type IntegrationFormProps = {
     source: IntegrationSource;

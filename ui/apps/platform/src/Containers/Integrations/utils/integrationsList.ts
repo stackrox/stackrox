@@ -22,7 +22,7 @@ import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
 import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
-import paladinCloud from 'images/paladinCloud.svg'
+import paladinCloud from 'images/paladinCloud.svg';
 import { integrationsPath } from 'routePaths';
 
 /*

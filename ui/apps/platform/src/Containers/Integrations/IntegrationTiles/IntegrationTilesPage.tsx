@@ -8,7 +8,7 @@ import BackupIntegrationsSection from './BackupIntegrationsSection';
 import ImageIntegrationsSection from './ImageIntegrationsSection';
 import NotifierIntegrationsSection from './NotifierIntegrationsSection';
 import SignatureIntegrationsSection from './SignatureIntegrationsSection';
-import CloudSourceIntegrationsSection from "./CloudSourceIntegrationsSection";
+import CloudSourceIntegrationsSection from './CloudSourceIntegrationsSection';
 
 function IntegrationTilesPage(): ReactElement {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -26,8 +26,8 @@ function IntegrationTilesPage(): ReactElement {
                 <SignatureIntegrationsSection />
                 <NotifierIntegrationsSection />
                 {canUseCloudBackupIntegrations && <BackupIntegrationsSection />}
-                <AuthenticationTokensSection />
                 <CloudSourceIntegrationsSection />
+                <AuthenticationTokensSection />
             </PageSection>
         </>
     );

@@ -1,15 +1,15 @@
 import * as yup from 'yup';
 import React, { ReactElement } from 'react';
-import {Checkbox, Form, PageSection, TextArea, TextInput} from '@patternfly/react-core';
-import { IntegrationFormProps } from '../integrationFormTypes';
-import useIntegrationForm from '../useIntegrationForm';
-import FormMessage from '../../../../Components/PatternFly/FormMessage';
-import FormLabelGroup from '../FormLabelGroup';
+import { Checkbox, Form, PageSection, TextArea, TextInput } from '@patternfly/react-core';
+import usePageState from 'Containers/Integrations/hooks/usePageState';
+import FormMessage from 'Components/PatternFly/FormMessage';
+import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import { CloudSourceIntegration } from 'services/CloudSourceService';
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormSaveButton from '../../../../Components/PatternFly/FormSaveButton';
-import FormCancelButton from '../../../../Components/PatternFly/FormCancelButton';
-import { CloudSourceIntegration } from '../../../../services/CloudSourceService';
-import usePageState from "../../hooks/usePageState";
+import useIntegrationForm from '../useIntegrationForm';
+import { IntegrationFormProps } from '../integrationFormTypes';
 
 export const validationSchema = yup.object().shape({
     cloudSource: yup.object().shape({
@@ -18,23 +18,19 @@ export const validationSchema = yup.object().shape({
         credentials: yup.object().shape({
             secret: yup
                 .string()
-                .test(
-                    'secret-test',
-                    'A token is required',
-                    (value, context: yup.TestContext) => {
-                        const requireSecretField =
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            context?.from[2]?.value?.updateCredentials || false;
+                .test('secret-test', 'A token is required', (value, context: yup.TestContext) => {
+                    const requireSecretField =
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        context?.from[2]?.value?.updateCredentials || false;
 
-                        if (!requireSecretField) {
-                            return true;
-                        }
-
-                        const trimmedValue = value?.trim();
-                        return !!trimmedValue;
+                    if (!requireSecretField) {
+                        return true;
                     }
-                ),
+
+                    const trimmedValue = value?.trim();
+                    return !!trimmedValue;
+                }),
         }),
         paladinCloud: yup.object().shape({
             endpoint: yup.string().required('Endpoint is required'),
@@ -47,7 +43,7 @@ export const validationSchema = yup.object().shape({
 export type CloudSourceIntegrationFormValues = {
     cloudSource: CloudSourceIntegration;
     updateCredentials: boolean;
-}
+};
 export const defaultValues: CloudSourceIntegrationFormValues = {
     cloudSource: {
         id: '',
@@ -63,7 +59,6 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
     },
     updateCredentials: true,
 };
-
 
 function PaladinCloudIntegrationForm({
     initialValues = null,
