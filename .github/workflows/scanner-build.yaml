@@ -61,7 +61,9 @@ jobs:
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-    steps:
+        # If true, scanner-db image will ship with the DB init bundle.
+        SCANNER_DB_INIT_BUNDLE_ENABLED: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
+     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
