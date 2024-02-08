@@ -1697,9 +1697,9 @@ const _ = grpc.SupportPackageIsVersion6
 type ImageServiceClient interface {
 	// GetImage returns the image given its ID.
 	GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
-	// ListImages returns all the images.
+	// CountImages returns a count of images that match the input query.
 	CountImages(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountImagesResponse, error)
-	// ListImages returns all the images.
+	// ListImages returns all the images that match the input query.
 	ListImages(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListImagesResponse, error)
 	// ScanImage scans a single image and returns the result
 	ScanImage(ctx context.Context, in *ScanImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
@@ -1891,9 +1891,9 @@ func (x *imageServiceExportImagesClient) Recv() (*ExportImageResponse, error) {
 type ImageServiceServer interface {
 	// GetImage returns the image given its ID.
 	GetImage(context.Context, *GetImageRequest) (*storage.Image, error)
-	// ListImages returns all the images.
+	// CountImages returns a count of images that match the input query.
 	CountImages(context.Context, *RawQuery) (*CountImagesResponse, error)
-	// ListImages returns all the images.
+	// ListImages returns all the images that match the input query.
 	ListImages(context.Context, *RawQuery) (*ListImagesResponse, error)
 	// ScanImage scans a single image and returns the result
 	ScanImage(context.Context, *ScanImageRequest) (*storage.Image, error)

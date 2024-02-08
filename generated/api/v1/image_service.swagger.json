@@ -59,7 +59,7 @@
     },
     "/v1/images": {
       "get": {
-        "summary": "ListImages returns all the images.",
+        "summary": "ListImages returns all the images that match the input query.",
         "operationId": "ImageService_ListImages",
         "responses": {
           "200": {
@@ -314,7 +314,7 @@
     },
     "/v1/imagescount": {
       "get": {
-        "summary": "ListImages returns all the images.",
+        "summary": "CountImages returns a count of images that match the input query.",
         "operationId": "ImageService_CountImages",
         "responses": {
           "200": {

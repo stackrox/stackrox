@@ -152,12 +152,12 @@ service ImageService {
     option (google.api.http) = {get: "/v1/images/{id}"};
   }
 
-  // ListImages returns all the images.
+  // CountImages returns a count of images that match the input query.
   rpc CountImages(RawQuery) returns (CountImagesResponse) {
     option (google.api.http) = {get: "/v1/imagescount"};
   }
 
-  // ListImages returns all the images.
+  // ListImages returns all the images that match the input query.
   rpc ListImages(RawQuery) returns (ListImagesResponse) {
     option (google.api.http) = {get: "/v1/images"};
   }
