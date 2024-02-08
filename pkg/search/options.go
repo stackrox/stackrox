@@ -263,7 +263,8 @@ var (
 	SubjectName = newFieldLabel("Subject")
 
 	// General
-	CreatedTime = newFieldLabel("Created Time")
+	CreatedTime    = newFieldLabel("Created Time")
+	DiscoveredTime = newFieldLabel("Discovered Time")
 
 	// Inactive Deployment
 	Inactive = newFieldLabel("Inactive Deployment")
