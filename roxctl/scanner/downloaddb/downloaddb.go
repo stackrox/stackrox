@@ -269,8 +269,8 @@ Download version specific offline vulnerability bundles. Will contact
 Central to determine version if one is not specified, if communication fails
 defaults to version embedded within roxctl.
 
-By default will attempt to download the database for the determined version as 
-well as less specific variants. For example, given version "4.4.1-extra" 
+By default will attempt to download the database for the determined version as
+well as less specific variants. For example, given version "4.4.1-extra"
 downloads will be attempted for the following version variants:
    4.4.1-extra
    4.4.1
