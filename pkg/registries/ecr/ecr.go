@@ -135,7 +135,7 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 			log.Error("Failed to create ECR client: ", err)
 			return nil, err
 		}
-		cfg.Transport = newAWSTransport(cfg, client)
+		cfg.Transport = newAWSTransport(integration.GetName(), cfg, client)
 	}
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, reg.integration)
 	if err != nil {

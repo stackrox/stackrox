@@ -104,7 +104,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")
 	}
-	dockerConfig.Transport = newGoogleTransport(dockerConfig, tokenSource)
+	dockerConfig.Transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
 	reg, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create docker registry")
