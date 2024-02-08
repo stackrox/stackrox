@@ -20,12 +20,12 @@ type scanResultKey struct {
 }
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
-func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceCheckResult {
+func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, clusterNameMap map[string]string) *v2.ComplianceCheckResult {
 	converted := &v2.ComplianceCheckResult{
 		CheckId:   incoming.GetCheckId(),
 		CheckName: incoming.GetCheckName(),
 		Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
-			clusterStatus(incoming),
+			clusterStatus(incoming, clusterNameMap),
 		},
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
@@ -202,11 +202,11 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 	return convertedResults
 }
 
-func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceCheckResult_ClusterCheckStatus {
+func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, clusterNameMap map[string]string) *v2.ComplianceCheckResult_ClusterCheckStatus {
 	return &v2.ComplianceCheckResult_ClusterCheckStatus{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   incoming.GetClusterId(),
-			ClusterName: incoming.GetClusterName(),
+			ClusterName: clusterNameMap[incoming.GetClusterId()],
 		},
 		Status:      convertComplianceCheckStatus(incoming.Status),
 		CreatedTime: incoming.GetCreatedTime(),

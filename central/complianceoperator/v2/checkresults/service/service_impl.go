@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -45,11 +46,12 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, clusterDatastore clusterDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
 		integrationDS:       integrationDS,
+		clusterDatastore:    clusterDatastore,
 	}
 }
 
@@ -59,6 +61,7 @@ type serviceImpl struct {
 	complianceResultsDS complianceDS.DataStore
 	scanConfigDS        complianceConfigDS.DataStore
 	integrationDS       complianceIntegrationDS.DataStore
+	clusterDatastore    clusterDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -213,7 +216,17 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		return nil, errors.Wrapf(errox.NotFound, "compliance check result with id %q does not exist", req.GetId())
 	}
 
-	return storagetov2.ComplianceV2CheckResult(scanResult), nil
+	clusterIDToNameMap := make(map[string]string, 1)
+	clusterName, found, err := s.clusterDatastore.GetClusterName(ctx, scanResult.GetClusterId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve cluster with id %q.", scanResult.GetClusterId())
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "cluster with id %q does not exist", scanResult.GetClusterId())
+	}
+	clusterIDToNameMap[scanResult.GetClusterId()] = clusterName
+
+	return storagetov2.ComplianceV2CheckResult(scanResult, clusterIDToNameMap), nil
 }
 
 // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
