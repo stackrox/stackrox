@@ -102,7 +102,7 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 	}
 
 	return &v2.ListComplianceProfileSummaryResponse{
-		Profiles: storagetov2.ComplianceProfileSummary(profiles),
+		Profiles: storagetov2.ComplianceProfileSummary(profiles, request.GetClusterIds()),
 	}, nil
 }
 
