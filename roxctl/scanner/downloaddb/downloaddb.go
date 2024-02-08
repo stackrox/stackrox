@@ -157,11 +157,6 @@ func (cmd *scannerDownloadDBCommand) versionFromCentral() (string, error) {
 		return "", err
 	}
 
-	if err := resp.Body.Close(); err != nil {
-		cmd.env.Logger().WarnfLn("could not close response body: %w", err)
-		return "", err
-	}
-
 	return metadata.GetVersion(), nil
 }
 
