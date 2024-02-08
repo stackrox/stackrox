@@ -51,6 +51,11 @@
     {{ else }}
       {{ include "srox.note" (list $ "A PVC will be used for Scanner V4 DB persistence.") }}
     {{ end }}
+    {{ if has $pvcDefaults.claimName $._rox.env.pvcs.names }}
+      {{ $_ = set $extraSettings "createClaim" false }}
+    {{ else }}
+      {{ $_ = set $extraSettings "createClaim" true }}
+    {{ end }}
     {{ $_ = include "srox.mergeInto" (list $scannerV4DBCfg.persistence.persistentVolumeClaim $pvcConfigShape $extraSettings $pvcDefaults) }}
   {{ else }}
     {{/* No default StorageClass detected, currently rendering secured-cluster-services chart. */}}
