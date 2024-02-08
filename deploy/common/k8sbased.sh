@@ -686,6 +686,10 @@ function launch_sensor {
         helm_args+=(--set scanner.disable=false)
       fi
 
+      if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
+        helm_args+=(--set scannerV4.disable=false)
+      fi
+
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
