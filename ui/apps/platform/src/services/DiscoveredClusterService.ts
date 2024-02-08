@@ -167,6 +167,13 @@ function getValues(arg: SearchFilterValue): string[] | undefined {
     return undefined;
 }
 
+export function replaceSearchFilterName(searchFilter: SearchFilter, name: string | undefined) {
+    return {
+        ...searchFilter,
+        [nameField]: typeof name === 'string' && name.length !== 0 ? [name] : undefined,
+    };
+}
+
 // statuses
 
 function getStatuses(arg: SearchFilterValue): DiscoveredClusterStatus[] | undefined {
@@ -185,6 +192,13 @@ export function isStatus(arg: string): arg is DiscoveredClusterStatus {
     return statuses.some((level) => level === arg);
 }
 
+export function replaceSearchFilterStatuses(
+    searchFilter: SearchFilter,
+    statuses: DiscoveredClusterStatus[] | undefined
+): SearchFilter {
+    return { ...searchFilter, [statusField]: statuses };
+}
+
 // types
 
 function getTypes(arg: SearchFilterValue): DiscoveredClusterType[] | undefined {
@@ -201,6 +215,13 @@ function getTypes(arg: SearchFilterValue): DiscoveredClusterType[] | undefined {
 
 export function isType(arg: string): arg is DiscoveredClusterType {
     return types.some((level) => level === arg);
+}
+
+export function replaceSearchFilterTypes(
+    searchFilter: SearchFilter,
+    types: DiscoveredClusterType[] | undefined
+): SearchFilter {
+    return { ...searchFilter, [typeField]: types };
 }
 
 // For useURLSort hook.
