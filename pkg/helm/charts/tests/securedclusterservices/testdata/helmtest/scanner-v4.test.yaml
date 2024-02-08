@@ -187,14 +187,14 @@ tests:
   expect: |
     envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
 
-- name: "Enabling scanner v2 automatically enables scanner v4 as well"
+- name: "Enabling scanner v2 does not automatically enable scanner v4 as well"
   values:
     scanner:
       disable: false
     imagePullSecrets:
       allowNone: true
   expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-indexer"] | assertThat(. == null)
 
 - name: "Enabling scanner v2 does not enable scanner v4 if it has been explicitly disabled"
   values:

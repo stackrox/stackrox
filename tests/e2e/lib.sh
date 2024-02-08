@@ -789,7 +789,7 @@ remove_existing_stackrox_resources() {
     fi
     if kubectl api-resources -o name | grep -q "^podsecuritypolicies\.policy$"; then
         psps_supported=true
-        resource_types="${resource_types},psp"
+        global_resource_types="${global_resource_types},psp"
     fi
 
     (
