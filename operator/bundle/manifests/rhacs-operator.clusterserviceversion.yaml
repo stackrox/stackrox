@@ -58,7 +58,7 @@ spec:
           vulnerability scanning of container images.
         displayName: Scanner Component Settings
         path: scanner
-      - description: Settings for the Scanner V4 components, which can run in addition
+      - description: Settings for the Scanner V4 component, which can run in addition
           to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
@@ -531,9 +531,9 @@ spec:
         displayName: Monitoring
         path: scannerV4.monitoring
       - description: Configures how Scanner V4 should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          a host path, and an emptyDir volume in case Scanner V4 is running on a secured
-          cluster.
+          can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without
+          default StorageClass.
         displayName: Persistence
         path: scannerV4.db.persistence
       - description: Allows overriding the default resource settings for this component.
@@ -1016,9 +1016,9 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.scannerComponent:AutoSense
       - description: Configures how Scanner V4 should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          a host path, and an emptyDir volume in case Scanner V4 is running on a secured
-          cluster.
+          can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without
+          default StorageClass.
         displayName: Persistence
         path: scannerV4.db.persistence
       - description: Allows overriding the default resource settings for this component.

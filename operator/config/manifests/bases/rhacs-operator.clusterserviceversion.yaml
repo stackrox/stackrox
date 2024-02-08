@@ -147,9 +147,9 @@ spec:
         displayName: Scanner Component
         path: scanner.scannerComponent
       - description: Configures how Scanner V4 should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          a host path, and an emptyDir volume in case Scanner V4 is running on a secured
-          cluster.
+          can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without
+          default StorageClass.
         displayName: Persistence
         path: scannerV4.db.persistence
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
@@ -333,7 +333,7 @@ spec:
         path: scanner.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: Settings for the Scanner V4 components, which can run in addition
+      - description: Settings for the Scanner V4 component, which can run in addition
           to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
@@ -755,9 +755,9 @@ spec:
         displayName: Scanner Component
         path: scanner.scannerComponent
       - description: Configures how Scanner V4 should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          a host path, and an emptyDir volume in case Scanner V4 is running on a secured
-          cluster.
+          can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without
+          default StorageClass.
         displayName: Persistence
         path: scannerV4.db.persistence
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the

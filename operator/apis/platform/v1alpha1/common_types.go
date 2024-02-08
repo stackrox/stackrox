@@ -162,7 +162,7 @@ func (sdb *ScannerV4DB) GetPersistence() *ScannerV4Persistence {
 	return sdb.Persistence
 }
 
-// ScannerV4Persistence defines persistence settings for scanner V4.
+// ScannerV4Persistence defines persistence settings for Scanner V4.
 type ScannerV4Persistence struct {
 	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
 	// Recommended for most users.
