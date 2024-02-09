@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -30,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/codes"
 )
 
@@ -49,12 +49,19 @@ const (
 	defaultCleanupAge      = 1 * time.Hour
 
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
-	v4Prefix          = "v4-"
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
 	v4VulnSubDir      = "vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
 	v4VulnFile        = "vulns.json.zst"
 	mappingUpdaterKey = "mapping"
+)
+
+type updaterType int
+
+const (
+	mappingUpdaterType updaterType = iota
+	vulnerabilityUpdaterType
+	v2UpdaterType
 )
 
 var (
@@ -129,14 +136,14 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	// If only file is requested, then this is for Scanner v4.
 	if fileName != "" && uuid == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {
-			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
+			h.getV4Files(w, r, mappingUpdaterType, mappingUpdaterKey, v4FileName)
 			return
 		}
 		writeErrorNotFound(w)
 		return
 	}
 	if v := r.URL.Query().Get("version"); v != "" {
-		h.getV4Files(w, r, v, "")
+		h.getV4Files(w, r, vulnerabilityUpdaterType, v, "")
 		return
 	}
 
@@ -207,7 +214,7 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 // getUpdater gets or creates the updater for the scanner definitions
 // identified by the given key/uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
-func (h *httpHandler) getUpdater(key string) *requestedUpdater {
+func (h *httpHandler) getUpdater(t updaterType, key string) *requestedUpdater {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -216,12 +223,12 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 		filePath := filepath.Join(h.onlineVulnDir, key)
 
 		var urlStr string
-		switch {
-		case mappingUpdaterKey == key:
+		switch t {
+		case mappingUpdaterType:
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
 			filePath += ".zip"
-		case strings.HasPrefix(key, v4Prefix):
-			urlStr, _ = url.JoinPath(v4StorageDomain, v4VulnSubDir, strings.TrimPrefix(key, v4Prefix), v4VulnFile)
+		case vulnerabilityUpdaterType:
+			urlStr, _ = url.JoinPath(v4StorageDomain, v4VulnSubDir, key, v4VulnFile)
 			filePath += ".json.zst"
 		default: // uuid
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
@@ -377,7 +384,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	// Start the updater, can be called multiple times for the same uuid, but will
 	// only start the updater once. The Start() call blocks if the definitions were
 	// not downloaded yet.
-	u := h.getUpdater(uuid)
+	u := h.getUpdater(v2UpdaterType, uuid)
 
 	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
@@ -411,10 +418,10 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
-func (h *httpHandler) openMostRecentV4File(updaterKey string, fileName string) (file *vulDefFile, err error) {
+func (h *httpHandler) openMostRecentV4File(t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
 	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
-	u := h.getUpdater(updaterKey)
+	u := h.getUpdater(t, updaterKey)
 	var onlineFile *vulDefFile
 	// Ensure the updater is running.
 	u.Start()
@@ -431,7 +438,8 @@ func (h *httpHandler) openMostRecentV4File(updaterKey string, fileName string) (
 			utils.IgnoreError(f.Close)
 		}
 	}
-	if mappingUpdaterKey == updaterKey {
+	switch t {
+	case mappingUpdaterType:
 		targetFile, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
@@ -440,7 +448,7 @@ func (h *httpHandler) openMostRecentV4File(updaterKey string, fileName string) (
 			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
 		}
 		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
-	} else { // versioned vuln file
+	default:
 		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
 	}
 	defer toClose(onlineFile)
@@ -501,24 +509,29 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updaterKey, fileName string) {
+func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, t updaterType, updaterKey, fileName string) {
 	log.Debugf("Fetching scanner V4 file: %s", fileName)
 
 	var err error
 	var f *vulDefFile
 
-	if mappingUpdaterKey == updaterKey {
-		f, err = h.openMostRecentV4File(mappingUpdaterKey, fileName)
-	} else {
-		if strings.Contains(strings.ToLower(updaterKey), strings.ToLower("-nightly")) {
+	switch t {
+	case mappingUpdaterType:
+		f, err = h.openMostRecentV4File(t, mappingUpdaterKey, fileName)
+	case vulnerabilityUpdaterType:
+		if version.GetVersionKind(updaterKey) == version.NightlyKind {
 			// get dev for nightly at this moment
 			updaterKey = "dev"
 		}
-		updaterKey = fmt.Sprintf("%s%s", v4Prefix, updaterKey)
-		f, err = h.openMostRecentV4File(updaterKey, "")
+		f, err = h.openMostRecentV4File(t, updaterKey, "")
 		if err == nil {
 			w.Header().Set("Content-Type", "application/zstd")
 		}
+	default:
+		errMsg := "unknown updater type"
+		log.Error(errMsg)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
+		return
 	}
 
 	if err != nil {
