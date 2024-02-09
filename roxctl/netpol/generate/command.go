@@ -11,7 +11,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "generate <folder-path>",
 		Short: cmd.ShortText(),
-		Long:  cmd.LongText(),
+		Long:  cmd.longText(),
 		Args:  cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			return cmd.RunE(c, args)

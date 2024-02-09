@@ -45,26 +45,6 @@ type NetpolGenerateCmd struct {
 	printer printer.ObjectPrinter
 }
 
-// NewNetpolGenerateCmd returns new NewNetpolGenerateCmd object
-func NewNetpolGenerateCmd(env environment.Environment) *NetpolGenerateCmd {
-	return &NetpolGenerateCmd{
-		Options: NetpolGenerateOptions{
-			StopOnFirstError:      false,
-			TreatWarningsAsErrors: false,
-			OutputFolderPath:      "",
-			OutputFilePath:        "",
-			RemoveOutputPath:      false,
-		},
-		offline:         false,
-		inputFolderPath: "",
-		mergeMode:       false,
-		splitMode:       false,
-		env:             env,
-		printer:         nil,
-	}
-
-}
-
 // AddFlags binds command flags to parameters
 func (cmd *NetpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
 	c.Flags().BoolVar(&cmd.Options.TreatWarningsAsErrors, "strict", false, "treat warnings as errors")
@@ -80,8 +60,7 @@ func (cmd *NetpolGenerateCmd) ShortText() string {
 	return "Recommend Network Policies based on deployment information."
 }
 
-// LongText provides long command description
-func (cmd *NetpolGenerateCmd) LongText() string {
+func (cmd *NetpolGenerateCmd) longText() string {
 	return `Based on a given folder containing deployment YAMLs, will generate a list of recommended Network Policies. Will write to stdout if no output flags are provided.`
 }
 
