@@ -892,6 +892,12 @@
           "items": {
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
+        },
+        "clusterErrors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "title": "ComplianceClusterOverallStats provides overall stats for cluster"
