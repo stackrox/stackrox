@@ -10,7 +10,6 @@ import {
     AuthProviderIntegration,
     AuthProviderType,
     BackupIntegrationType,
-    BaseIntegration,
     CloudSourceIntegrationType,
     ImageIntegrationType,
     NotifierIntegrationType,
