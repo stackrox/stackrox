@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -73,6 +74,47 @@ func (m *MockDataStore) GetProcessListeningOnPort(ctx context.Context, deploymen
 func (mr *MockDataStoreMockRecorder) GetProcessListeningOnPort(ctx, deployment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).GetProcessListeningOnPort), ctx, deployment)
+}
+
+// PruneOrphanedPLOPs mocks base method.
+func (m *MockDataStore) PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneOrphanedPLOPs", ctx, orphanWindow)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// PruneOrphanedPLOPs indicates an expected call of PruneOrphanedPLOPs.
+func (mr *MockDataStoreMockRecorder) PruneOrphanedPLOPs(ctx, orphanWindow any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneOrphanedPLOPs", reflect.TypeOf((*MockDataStore)(nil).PruneOrphanedPLOPs), ctx, orphanWindow)
+}
+
+// PruneOrphanedPLOPsByProcessIndicators mocks base method.
+func (m *MockDataStore) PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PruneOrphanedPLOPsByProcessIndicators", ctx, orphanWindow)
+}
+
+// PruneOrphanedPLOPsByProcessIndicators indicates an expected call of PruneOrphanedPLOPsByProcessIndicators.
+func (mr *MockDataStoreMockRecorder) PruneOrphanedPLOPsByProcessIndicators(ctx, orphanWindow any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneOrphanedPLOPsByProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).PruneOrphanedPLOPsByProcessIndicators), ctx, orphanWindow)
+}
+
+// RemovePLOPsWithoutProcessIndicatorOrProcessInfo mocks base method.
+func (m *MockDataStore) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemovePLOPsWithoutProcessIndicatorOrProcessInfo", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemovePLOPsWithoutProcessIndicatorOrProcessInfo indicates an expected call of RemovePLOPsWithoutProcessIndicatorOrProcessInfo.
+func (mr *MockDataStoreMockRecorder) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePLOPsWithoutProcessIndicatorOrProcessInfo", reflect.TypeOf((*MockDataStore)(nil).RemovePLOPsWithoutProcessIndicatorOrProcessInfo), ctx)
 }
 
 // RemovePlopsByPod mocks base method.
