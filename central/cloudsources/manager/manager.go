@@ -166,7 +166,7 @@ func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters
 
 func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
 	// A list of hashes of currently secured cluster. A secured cluster hash consist of:
-	//  The secured cluster ID, name, and type.
+	//  The secured cluster ID, and type.
 	securedClusters := set.NewStringSet()
 
 	unspecifiedClusterTypes := set.NewStringSet()
@@ -183,13 +183,14 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		// cluster type is unspecified), then mark the provider type as Unspecified.
 		// This means that we will assign each discovered cluster that cannot be safely matched to a secured cluster
 		// as Unspecified instead of Unsecured. This is to avoid false-positives.
-		if stringutils.AtLeastOneEmpty(providerMetadata.GetCluster().GetId(), providerMetadata.GetCluster().GetName()) {
-			unspecifiedClusterTypes.Add(providerMetadata.GetCluster().GetType().String())
+		clusterMetadata := providerMetadata.GetCluster()
+		if stringutils.AtLeastOneEmpty(clusterMetadata.GetId(), clusterMetadata.GetName()) {
+			unspecifiedClusterTypes.Add(clusterMetadata.GetType().String())
 			return nil
 		}
 
 		// Add the cluster with the full metadata information we require as an index for matching.
-		securedClusters.Add(clusterIndexForClusterMetadata(providerMetadata.GetCluster()))
+		securedClusters.Add(clusterIndexForClusterMetadata(clusterMetadata))
 		return nil
 	}); err != nil {
 		log.Errorw("Failed to list secured clusters. Matching is skipped.", logging.Err(err))
@@ -222,11 +223,11 @@ func createClients(cloudSources []*storage.CloudSource) []cloudsources.Client {
 type clusterIndex = string
 
 func clusterIndexForClusterMetadata(obj *storage.ClusterMetadata) clusterIndex {
-	return obj.GetId() + obj.GetName() + obj.GetType().String()
+	return obj.GetId() + obj.GetType().String()
 }
 
 func clusterIndexForDiscoveredCluster(obj *discoveredclusters.DiscoveredCluster) clusterIndex {
-	return obj.GetID() + obj.GetName() + obj.GetType().String()
+	return obj.GetID() + obj.GetType().String()
 }
 
 func debugPrintDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {

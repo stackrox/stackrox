@@ -27,24 +27,33 @@ func (m *mockClusterStore) WalkClusters(_ context.Context, fn func(obj *storage.
 func TestMatchDiscoveredClusters(t *testing.T) {
 	clusterStore := &mockClusterStore{clusters: []*storage.Cluster{
 		createCluster(
-			"MC_testing_test-cluster-1_eastus",
+			"123123213123_MC_testing_test-cluster-1_eastus",
 			"test-cluster-1",
 			storage.ClusterMetadata_AKS,
 		),
-		createCluster("something-else", "something-else", storage.ClusterMetadata_ROSA),
-		createCluster("another-thing", "another-thing", storage.ClusterMetadata_OSD),
+		createCluster(
+			"2c507da1-b882-48cc-8143-b74e14c5cd4f",
+			"rosa-cluster",
+			storage.ClusterMetadata_ROSA,
+		),
+		createCluster(
+			"460c8808-9f70-51e7-9f3a-973f44ab8595",
+			"osd-cluster",
+			storage.ClusterMetadata_OSD,
+		),
 		createCluster("1231245342513", "test-cluster-2", storage.ClusterMetadata_GKE),
-		createCluster("1231234124123541", "test-cluster-3", storage.ClusterMetadata_EKS),
+		createCluster("arn:aws:eks:us-east-1:test-account:cluster/test-cluster-3",
+			"test-cluster-3", storage.ClusterMetadata_EKS),
 		nil,
 		{
 			Status: &storage.ClusterStatus{
 				ProviderMetadata: &storage.ProviderMetadata{
 					Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{
-						AccountId: "12345",
+						AccountId: "666666666666",
 					}},
 					Cluster: &storage.ClusterMetadata{
 						Type: storage.ClusterMetadata_EKS,
-						Id:   "some-id",
+						Id:   "arn:aws:eks:us-east-1:666666666666:cluster/test-cluster-5",
 					},
 				},
 			},
@@ -53,7 +62,7 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 
 	discoveredClusters := []*discoveredclusters.DiscoveredCluster{
 		{
-			ID:           "MC_testing_test-cluster-1_eastus",
+			ID:           "123123213123_MC_testing_test-cluster-1_eastus",
 			Name:         "test-cluster-1",
 			Type:         storage.ClusterMetadata_AKS,
 			ProviderType: storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
@@ -65,20 +74,20 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 			ProviderType: storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
 		},
 		{
-			ID:           "1231234124123541",
+			ID:           "arn:aws:eks:us-east-1:test-account:cluster/test-cluster-3",
 			Name:         "test-cluster-3",
 			Type:         storage.ClusterMetadata_EKS,
 			ProviderType: storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
 		},
 		{
-			ID:           "55555555",
+			ID:           "5553424234234_MC_testing_unsecured_eastus",
 			Name:         "unsecured",
 			Type:         storage.ClusterMetadata_AKS,
 			ProviderType: storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
 		},
 		{
-			ID:           "6666666",
-			Name:         "unspecified",
+			ID:           "arn:aws:eks:us-east-1:666666666666:cluster/test-cluster-5",
+			Name:         "test-cluster-5",
 			Type:         storage.ClusterMetadata_EKS,
 			ProviderType: storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
 		},
