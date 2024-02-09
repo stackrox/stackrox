@@ -81,6 +81,10 @@ spec:
           value: "scram-sha-256"
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
+{{- if ._rox.env.centralServices }}
+        - name: SCANNER_DB_INIT_BUNDLE_ENABLED
+          value: "true"
+{{- end }}
         command:
         - init-entrypoint.sh
         volumeMounts:

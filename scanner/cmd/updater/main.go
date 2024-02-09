@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
 )
 
@@ -30,27 +33,42 @@ func tryExport(outputDir string) error {
 }
 
 func main() {
+	versionFlag := flag.Bool("version", false, "Print version")
 	outputDir := flag.String("output-dir", "", "Output directory")
+	dbConn := flag.String("db-conn", "", "Postgres connection string")
+	vulnsURL := flag.String("vulns-url", "", "URL to the vulnerabilities bundle")
 	flag.Parse()
 
-	if *outputDir == "" {
-		log.Fatal("Missing argument for the output directory.")
+	if *versionFlag {
+		fmt.Println(version.Version)
+		os.Exit(0)
 	}
 
-	const maxRetries = 3
+	if *outputDir != "" {
+		const maxRetries = 3
 
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		err := tryExport(*outputDir)
-		if err == nil {
-			return
-		}
-		if errors.Is(err, context.DeadlineExceeded) {
-			zlog.Error(context.Background()).Err(err).Msg("Data export attempt failed; will attempt retry if within retry limits")
-			continue
-		}
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			err := tryExport(*outputDir)
+			if err == nil {
+				return
+			}
+			if errors.Is(err, context.DeadlineExceeded) {
+				zlog.Error(context.Background()).Err(err).Msg("Data export attempt failed; will attempt retry if within retry limits")
+				continue
+			}
 
-		zlog.Error(context.Background()).Err(err).Msg("Data updater failed to update vulnerabilities")
-		log.Fatal("The data export process has failed.")
+			zlog.Error(context.Background()).Err(err).Msg("Data updater failed to update vulnerabilities")
+			log.Fatal("The data export process has failed.")
+		}
+		log.Fatal("The data export process has failed: max retries exceeded")
+		return
 	}
-	log.Fatal("The data export process has failed: max retries exceeded")
+	if *vulnsURL != "" {
+		err := updater.Load(context.Background(), *dbConn, *vulnsURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+	log.Fatal("Invalid arguments: See `updater -h`")
 }
