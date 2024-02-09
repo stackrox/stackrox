@@ -336,14 +336,14 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local scanner_component_setting="Disabled"
+    local scanner_v4_component_setting="Disabled"
 
-    info "Deploying sensor via operator into namespace ${sensor_namespace}"
+    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
-
-
-    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
@@ -360,9 +360,18 @@ deploy_sensor_via_operator() {
        die "COLLECTION_METHOD not set"
     fi
 
+    if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
+        scanner_component_setting="AutoSense"
+    fi
+    if [[ "${SENSOR_SCANNER_V4_SUPPORT:-}" == "true" ]]; then
+        scanner_v4_component_setting="AutoSense"
+    fi
+
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
+      scanner_component_setting="$scanner_component_setting" \
+      scanner_v4_component_setting="$scanner_v4_component_setting" \
     "${envsubst}" \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
 
