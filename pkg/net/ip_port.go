@@ -16,21 +16,31 @@ type NetworkPeerID struct {
 	IPNetwork IPNetwork
 }
 
-// IsValid checks if the ip:port pair is valid.
-func (e NetworkPeerID) IsValid() bool {
+// IsAddressValid checks if the ip Address is valid.
+// This does not check the validity of IPNetwork.
+func (e NetworkPeerID) IsAddressValid() bool {
 	return e.Address.IsValid()
 }
 
 // String returns a string representation of this ip:port pair.
 func (e NetworkPeerID) String() string {
+	addrPrefix := e.Address.String()
+	isIPv6 := e.Address.Family() == IPv6
+	if addrPrefix == "" {
+		addrPrefix = e.IPNetwork.IP().String()
+		isIPv6 = e.IPNetwork.IP().Family() == IPv6
+		if e.IPNetwork.prefixLen > 0 {
+			addrPrefix = fmt.Sprintf("%s/%d", addrPrefix, e.IPNetwork.prefixLen)
+		}
+	}
 	if e.Port == 0 {
-		return e.Address.String()
+		return addrPrefix
 	}
 	var ldelim, rdelim string
-	if e.Address.Family() == IPv6 {
+	if isIPv6 {
 		ldelim, rdelim = "[", "]"
 	}
-	return fmt.Sprintf("%s%s%s:%d", ldelim, e.Address.String(), rdelim, e.Port)
+	return fmt.Sprintf("%s%s%s:%d", ldelim, addrPrefix, rdelim, e.Port)
 }
 
 // ParseIPPortPair parses a string representation of an ip:port pair. An invalid ip:port pair is returned if the string

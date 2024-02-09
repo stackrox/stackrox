@@ -2,12 +2,12 @@ package manager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -177,6 +177,36 @@ func (c *connection) String() string {
 		arrow = "->"
 	}
 	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
+}
+
+// IsExternal returns true when IPv4 does not belong to the private IP addresses; false otherwise.
+// Error is returned when IP address is malformed
+func (c *connection) IsExternal() (bool, error) {
+	addr, err := c.getRemoteIPAddress()
+	if err != nil {
+		return true, errors.Wrap(err, "unable to determine if flow is external or internal")
+	}
+	if addr.IsLoopback() {
+		return false, errors.New("connection with localhost")
+	}
+	return addr.IsPublic(), nil
+}
+
+// getIPAddress returns the IP address of the connection remote.
+// If that IP is unset, it returns the address of the IP Network to which the remote belongs.
+// If both are unavaliable, an error is returned.
+// This check of both is required, because Collector reports the IP addresses
+// either as IPAndPort.Address, or IPAndPort.IPNetwork. The former is used in most cases, but sometimes
+// (usually on OCP) the latter is provided. Analyzing only one of those two sources may lead to incorrectly reporting
+// a connection as external on the network graph.
+func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
+	if c.remote.IPAndPort.IsAddressValid() {
+		return c.remote.IPAndPort.Address, nil
+	}
+	if c.remote.IPAndPort.IPNetwork.IsValid() {
+		return c.remote.IPAndPort.IPNetwork.IP(), nil
+	}
+	return net.IPAddress{}, fmt.Errorf("remote has invalid IP address %q", c.remote.IPAndPort.String())
 }
 
 type processInfo struct {
@@ -447,14 +477,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-func (m *networkFlowManager) resolveEntityType(conn *connection) networkgraph.Entity {
-	// If collector hides the IP, then the entity is most probably from outside of the cluster
-	if conn.remote.IPAndPort.Address.String() == "255.255.255.255" {
-		return networkgraph.InternetEntity()
-	}
-	return networkgraph.InternalEntities()
-}
-
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
@@ -515,15 +537,27 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
+			entityType := networkgraph.InternetEntity()
+			isExternal, err := conn.IsExternal()
+			if err != nil {
+				// IP is malformed or unknown - do not show on the graph and log the info
+				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
+				log.Debugf("Not showing flow on the network graph: %v", err)
+				return
+			}
+			if !isExternal {
+				entityType = networkgraph.InternalEntities()
+			}
+
 			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity:         m.resolveEntityType(conn),
+					Entity:         entityType,
 					ContainerPorts: []uint16{port},
 				},
 			}
 			entitiesName := "Internal Entities"
-			if m.resolveEntityType(conn) == networkgraph.InternetEntity() {
+			if isExternal {
 				entitiesName = "External Entities"
 			}
 			if conn.incoming {

@@ -22,6 +22,8 @@ var (
 	IPv6PrivateNetworks = []*net.IPNet{
 		// Unique Local Addresses (ULA)
 		MustParseCIDR("fd00::/8"),
+		// Link-Local addresses (IP autoconfiguration)
+		MustParseCIDR("fe80::/10"),
 
 		// IPv4-mapped IPv6 for private networks per RFC1918.
 		MustParseCIDR("::ffff:10.0.0.0/104"),
