@@ -55,6 +55,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -336,7 +337,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	connMgr := connectionMocks.NewMockManager(mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(mockCtrl)
 	networkBaselineMgr := networkBaselineMocks.NewMockManager(mockCtrl)
-	complianceScanConfig := complianceScanConfig.NewMockDataStore(mockCtrl)
+	complianceScanConfigMockStore := complianceScanConfig.NewMockDataStore(mockCtrl)
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
@@ -369,6 +370,9 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	flows.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
 	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
+	if features.ComplianceEnhancements.Enabled() {
+		complianceScanConfigMockStore.EXPECT().RemoveClusterFromScanConfig(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	}
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 
@@ -396,7 +400,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		ranking.NewRanker(),
 		clusterPostgres.NewIndexer(s.pool),
 		networkBaselineMgr,
-		complianceScanConfig)
+		complianceScanConfigMockStore)
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore
