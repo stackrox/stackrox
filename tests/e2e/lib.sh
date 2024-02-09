@@ -223,7 +223,7 @@ deploy_central_via_operator() {
         kubectl create ns "${central_namespace}"
     fi
 
-    make -C operator stackrox-image-pull-secret
+    NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
 
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
@@ -336,12 +336,13 @@ deploy_sensor_via_operator() {
     local central_namespace=${2:-stackrox}
     local scanner_component_setting="Disabled"
     local scanner_v4_component_setting="Disabled"
+    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
 
-    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+    NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
     kubectl -n "${central_namespace}" exec deploy/central -- \
     roxctl central init-bundles generate my-test-bundle \
