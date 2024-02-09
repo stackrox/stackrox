@@ -60,7 +60,10 @@ type gRPCScanner struct {
 
 // NewGRPCScanner creates a new gRPC scanner client.
 func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
-	o := makeOptions(opts...)
+	o, err := makeOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 	var connList []*grpc.ClientConn
 	conn, err := createGRPCConn(ctx, o.indexerOpts)
 	if err != nil {
@@ -102,12 +105,14 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 	address = "dns:///" + address
 
 	dialOpts := []grpc.DialOption{
-		// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes does not
-		// load balance too well on its own. We opt to do client-side load balancing, instead,
+		// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes Services
+		// cannot properly load balance. Kubernetes Service load balancer is connection-based
+		// (best for HTTP/1.x), while gRPC is built on top of HTTP/2 which tends to just use a single connection
+		// for all requests.
+		//
+		// We opt to do client-side load balancing, instead,
 		// via DNS name resolution, which is possible because Scanner v4 services are "headless"
 		// (clusterIP: None).
-		//
-		// We just use basic round-robin load balancing at this time.
 		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
 	}
 

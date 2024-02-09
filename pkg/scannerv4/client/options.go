@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -126,7 +127,7 @@ func WithMatcherAddress(address string) Option {
 	}
 }
 
-func makeOptions(opts ...Option) options {
+func makeOptions(opts ...Option) (options, error) {
 	o := defaultOptions
 	for _, opt := range opts {
 		opt(&o)
@@ -134,5 +135,15 @@ func makeOptions(opts ...Option) options {
 	// If both indexer and matcher are equal, we are in combo mode. Right now structs
 	// are simple enough to compare.
 	o.comboMode = o.indexerOpts == o.matcherOpts
-	return o
+	return o, validateOptions(o)
+}
+
+func validateOptions(o options) error {
+	if _, _, err := net.SplitHostPort(o.indexerOpts.address); err != nil {
+		return fmt.Errorf("invalid indexer address (want [host]:port): %w", err)
+	}
+	if _, _, err := net.SplitHostPort(o.matcherOpts.address); err != nil {
+		return fmt.Errorf("invalid matcher address (want [host]:port): %w", err)
+	}
+	return nil
 }

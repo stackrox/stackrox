@@ -55,8 +55,16 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		"Address of the matcher service.")
 	serverName := flags.String(
 		"server-name",
-		"",
+		"scanner-v4.stackrox",
 		"Server name of the scanner service, primarily used for TLS verification.")
+	indexerServerName := flags.String(
+		"indexer-server-name",
+		"",
+		"Server name of the indexer service, primarily used for TLS verification.")
+	matcherServerName := flags.String(
+		"matcher-server-name",
+		"",
+		"Server name of the matcher service, primarily used for TLS verification.")
 	skipTLSVerify := flags.Bool(
 		"insecure-skip-tls-verify",
 		false,
@@ -84,18 +92,22 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		// Set options for the gRPC connection.
 		opts := []client.Option{
 			client.WithAddress(*address),
+			client.WithServerName(*serverName),
 		}
 		if *skipTLSVerify {
 			opts = append(opts, client.SkipTLSVerification)
-		}
-		if *serverName != "" {
-			opts = append(opts, client.WithServerName(*serverName))
 		}
 		if *indexerAddr != "" {
 			opts = append(opts, client.WithIndexerAddress(*indexerAddr))
 		}
 		if *matcherAddr != "" {
 			opts = append(opts, client.WithMatcherAddress(*matcherAddr))
+		}
+		if *indexerServerName != "" {
+			opts = append(opts, client.WithIndexerServerName(*indexerServerName))
+		}
+		if *matcherServerName != "" {
+			opts = append(opts, client.WithMatcherServerName(*matcherServerName))
 		}
 		// Create the client factory.
 		factory = opts
