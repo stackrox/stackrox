@@ -6,7 +6,8 @@ export type IntegrationSource =
     | 'backups'
     | 'imageIntegrations'
     | 'notifiers'
-    | 'signatureIntegrations';
+    | 'signatureIntegrations'
+    | 'cloudSources';
 
 function getPath(source: IntegrationSource): string {
     switch (source) {
@@ -18,6 +19,8 @@ function getPath(source: IntegrationSource): string {
             return '/v1/externalbackups';
         case 'signatureIntegrations':
             return '/v1/signatureintegrations';
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }

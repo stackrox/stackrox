@@ -22,6 +22,7 @@ import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
 import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
+import paladinCloud from 'images/paladinCloud.svg';
 import { integrationsPath } from 'routePaths';
 
 /*
@@ -35,6 +36,7 @@ import { FeatureFlagEnvVar } from 'types/featureFlag';
 import {
     AuthProviderType,
     BackupIntegrationType,
+    CloudSourceIntegrationType,
     ImageIntegrationType,
     IntegrationSource,
     NotifierIntegrationType,
@@ -66,6 +68,10 @@ export type NotifierIntegrationDescriptor = {
 
 export type SignatureIntegrationDescriptor = {
     type: SignatureIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type CloudSourceDescriptor = {
+    type: CloudSourceIntegrationType;
 } & BaseIntegrationDescriptor;
 
 export type BaseIntegrationDescriptor = {
@@ -266,6 +272,16 @@ export const clusterInitBundleDescriptor: AuthProviderDescriptor = {
 
 const authenticationTokensDescriptors = [apiTokenDescriptor, clusterInitBundleDescriptor];
 
+export const cloudSourcesSource = 'cloudSources';
+
+export const paladinCloudDescriptor: CloudSourceDescriptor = {
+    image: paladinCloud,
+    label: 'Paladin Cloud',
+    type: 'paladinCloud',
+};
+
+const cloudSourceDescriptors = [paladinCloudDescriptor];
+
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {
         case 'imageIntegrations':
@@ -278,6 +294,8 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
             return backupIntegrationsDescriptors;
         case 'authProviders':
             return authenticationTokensDescriptors;
+        case 'cloudSources':
+            return cloudSourceDescriptors;
         default:
             return [];
     }

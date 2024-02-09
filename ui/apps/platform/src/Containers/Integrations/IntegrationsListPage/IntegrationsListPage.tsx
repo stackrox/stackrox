@@ -17,6 +17,7 @@ import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
+import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
 import { ClusterInitBundle } from 'services/ClustersService';
 
@@ -24,6 +25,7 @@ import useIntegrations from '../hooks/useIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
+    getIsCloudSource,
     getIsClusterInitBundle,
     getIsSignatureIntegration,
     getIsScannerV4,
@@ -41,6 +43,7 @@ function IntegrationsListPage({
     triggerBackup,
     fetchClusterInitBundles,
     revokeAPITokens,
+    deleteCloudSources,
 }): ReactElement {
     const { source, type } = useParams();
     const integrations = useIntegrations({ source, type });
@@ -61,6 +64,7 @@ function IntegrationsListPage({
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
+    const isCloudSource = getIsCloudSource(source);
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -69,6 +73,8 @@ function IntegrationsListPage({
     function onConfirmDeletingIntegrationIds() {
         if (isAPIToken) {
             revokeAPITokens(deletingIntegrationIds);
+        } else if (isCloudSource) {
+            deleteCloudSources(deletingIntegrationIds);
         } else {
             deleteIntegrations(source, type, deletingIntegrationIds);
         }
@@ -163,6 +169,7 @@ const mapDispatchToProps = {
     triggerBackup: integrationsActions.triggerBackup,
     fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
+    deleteCloudSources: cloudSourcesActions.deleteCloudSources,
 };
 
 export default connect(null, mapDispatchToProps)(IntegrationsListPage);

@@ -27,6 +27,7 @@ import telemetryConfig, { selectors as telemetryConfigSelectors } from './teleme
 import centralCapabilities, {
     selectors as centralCapabilitiesSelectors,
 } from './centralCapabilities';
+import cloudSources, { selectors as cloudSourcesSelectors } from './cloudSources';
 
 // Reducers
 
@@ -50,6 +51,7 @@ const appReducer = combineReducers({
     publicConfig,
     telemetryConfig,
     centralCapabilities,
+    cloudSources,
 });
 
 const createRootReducer = (history) => {
@@ -85,6 +87,7 @@ const getRuleGroups = (state) => getApp(state).groups;
 const getPublicConfig = (state) => getApp(state).publicConfig;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 const getCentralCapabilities = (state) => getApp(state).centralCapabilities;
+const getCloudSources = (state) => getApp(state).cloudSources;
 
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
@@ -107,6 +110,7 @@ const boundSelectors = {
     ...bindSelectors(getPublicConfig, publicConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
     ...bindSelectors(getCentralCapabilities, centralCapabilitiesSelectors),
+    ...bindSelectors(getCloudSources, cloudSourcesSelectors),
 };
 
 export const selectors = {

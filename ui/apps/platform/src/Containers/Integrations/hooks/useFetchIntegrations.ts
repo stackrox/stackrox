@@ -4,6 +4,7 @@ import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles';
+import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { IntegrationSource } from '../utils/integrationUtils';
 
 const fetchIntegrationsActionMap = {
@@ -12,6 +13,7 @@ const fetchIntegrationsActionMap = {
     imageIntegrations: integrationsActions.fetchImageIntegrations.request(),
     signatureIntegrations: integrationsActions.fetchSignatureIntegrations.request(),
     notifiers: integrationsActions.fetchNotifiers.request(),
+    cloudSources: cloudSourcesActions.fetchCloudSources.request(),
 };
 
 export type UseFetchIntegrationsResponse = () => void;
