@@ -59,6 +59,12 @@ func TestIsPriorToScannerV4(t *testing.T) {
 		{"4.4.0", !isV2, !wantErr},
 		{"4.4.99", !isV2, !wantErr},
 		{"4.5.99-1050-blah", !isV2, !wantErr},
+		{"5.0", !isV2, !wantErr},
+		{"5.0.0", !isV2, !wantErr},
+		{"5.99.0", !isV2, !wantErr},
+		{"5.0.99", !isV2, !wantErr},
+		{"5.99.99", !isV2, !wantErr},
+		{"99.99.99", !isV2, !wantErr},
 	}
 
 	for _, tc := range tcs {

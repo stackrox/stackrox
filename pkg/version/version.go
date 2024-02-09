@@ -201,7 +201,6 @@ func IsReleaseVersion() bool {
 // IsPriorToScannerV4 returns true if version represents a version of ACS from prior to the
 // introduction of Scanner V4. Will return an error if cannot determine result.
 func IsPriorToScannerV4(version string) (bool, error) {
-	var err error
 	parsed, err := parseVersion(version)
 	if err != nil {
 		return false, err
@@ -211,9 +210,19 @@ func IsPriorToScannerV4(version string) (bool, error) {
 	y := parsed.EngRelease
 	z := parsed.PatchLevel
 
-	if x < 4 || y < 3 || (y == 3 && (z == "" || z != "x")) {
+	if x < 4 {
 		return true, nil
 	}
+
+	if x > 4 {
+		return false, nil
+	}
+
+	// x == 4
+	if y < 3 || (y == 3 && (z == "" || z != "x")) {
+		return true, nil
+	}
+
 	return false, nil
 }
 
@@ -226,20 +235,15 @@ func Variants(version string) ([]string, error) {
 		return nil, err
 	}
 
-	res := []string{version}
-
-	i := strings.LastIndex(version, "-")
-	for i != -1 {
+	var res []string
+	for i := len(version); i != -1; i = strings.LastIndex(version, "-") {
 		res = append(res, version[:i])
 		version = version[:i]
-		i = strings.LastIndex(version, "-")
 	}
 
-	i = strings.LastIndex(version, ".")
-	for i != -1 && strings.Count(version, ".") > 1 {
+	for i := strings.LastIndex(version, "."); i != -1 && strings.Count(version, ".") > 1; i = strings.LastIndex(version, ".") {
 		res = append(res, version[:i])
 		version = version[:i]
-		i = strings.LastIndex(version, ".")
 	}
 
 	return res, nil

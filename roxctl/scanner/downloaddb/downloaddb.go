@@ -249,10 +249,6 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 		return fmt.Errorf("could not close out file: %w", err)
 	}
 
-	if err := resp.Body.Close(); err != nil {
-		return fmt.Errorf("could not close response body: %w", err)
-	}
-
 	return nil
 }
 
