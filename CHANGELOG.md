@@ -13,6 +13,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Customer-provided PostgreSQL databases are now GA
 - ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to backup certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
 - The "Kubernetes Resource Name" policy criteria now supports regex values. Note: the value must be prefixed with "r/" to activate regex matching.
+- ROX-22238: `roxctl deployment check` results now contain additional information about the Permission Level and applicable Network Policies for a deployment, if `--cluster` and `--namespace` are provided together with `--verbose`.
 - Export APIs have been added for deployments, nodes, pods, and images as a tech preview.
 
 ### Removed Features
