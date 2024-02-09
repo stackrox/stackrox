@@ -302,7 +302,7 @@ func TestJSONRemarks(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			a := assert.New(t)
 			buf := bytes.NewBuffer(nil)
-			a.NoError(JSONRemarks(buf, c.alerts, c.remarks))
+			a.NoError(JSONWithRemarks(buf, c.alerts, c.remarks))
 
 			// If the -update flag was passed to go test, update the contents
 			// of all golden files.

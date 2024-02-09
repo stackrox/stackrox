@@ -70,8 +70,8 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	return nil
 }
 
-// JSONRemarks pipes out the violated alerts and remarks as JSON.
-func JSONRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.DeployDetectionRemark) error {
+// JSONWithRemarks renders the given list of policies and remarks as JSON and writes them to the output steam.
+func JSONWithRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.DeployDetectionRemark) error {
 	// This object is really just a filler because it's a wrapper around the alerts
 	// this is required because jsonpb can only marshal proto.Message
 	bdr := &v1.ResultAggregation{
@@ -83,7 +83,7 @@ func JSONRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.Deploy
 		return errors.Wrap(err, "could not marshal alerts")
 	}
 	if _, err := output.Write([]byte{'\n'}); err != nil {
-		return errors.Wrap(err, "could not write alerts")
+		return errors.Wrap(err, "could not write final newline for alerts")
 	}
 	return nil
 }
