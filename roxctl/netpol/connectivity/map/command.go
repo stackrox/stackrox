@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
@@ -33,7 +32,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "map <folder-path>",
 		Short: "(Technology Preview) Analyze connectivity based on network policies and other resources.",
-		Long:  `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.` + common.TechPreviewLongText,
+		Long:  `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.`,
 
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
@@ -61,7 +60,6 @@ func (cmd *Cmd) setupPath(path string) error {
 
 // RunE executes the command and returns potential errors
 func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
-	cmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
 	analyzer, err := cmd.construct(args)
 	if err != nil {
 		return err

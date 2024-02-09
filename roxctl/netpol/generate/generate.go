@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
@@ -83,12 +82,11 @@ func (cmd *NetpolGenerateCmd) ShortText() string {
 
 // LongText provides long command description
 func (cmd *NetpolGenerateCmd) LongText() string {
-	return `Based on a given folder containing deployment YAMLs, will generate a list of recommended Network Policies. Will write to stdout if no output flags are provided.` + common.TechPreviewLongText
+	return `Based on a given folder containing deployment YAMLs, will generate a list of recommended Network Policies. Will write to stdout if no output flags are provided.`
 }
 
 // RunE runs the command
 func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
-	cmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
 	synth, err := cmd.construct(args, c)
 	if err != nil {
 		return err
