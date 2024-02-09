@@ -80,14 +80,8 @@ const (
 	pruneLogImbues = `DELETE FROM log_imbues WHERE timestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 
 	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
-<<<<<<< HEAD
 
 	pruneDiscoveredClusters = `DELETE FROM %s WHERE lastupdatedat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
-
-	// Delete orphaned PLOPs
-	pruneOrphanedPLOPs = `DELETE FROM listening_endpoints WHERE closetimestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
-=======
->>>>>>> 6f7d96fab5 (X-Smart-Squash: Squashed 31 commits:)
 )
 
 var (
