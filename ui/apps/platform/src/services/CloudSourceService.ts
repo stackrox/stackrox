@@ -31,7 +31,7 @@ export function fetchCloudSources(): Promise<{
 }
 
 export function deleteCloudSource(id: string): Promise<Empty> {
-    return axios.delete(`${cloudSourcesURL}/${id}`);
+    return axios.delete<Empty>(`${cloudSourcesURL}/${id}`).then((response) => response.data);
 }
 
 export function deleteCloudSources(ids: string[]): Promise<Empty[]> {
