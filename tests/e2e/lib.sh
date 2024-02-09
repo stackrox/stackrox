@@ -336,6 +336,8 @@ deploy_sensor_via_operator() {
     local central_namespace=${2:-stackrox}
     local scanner_component_setting="Disabled"
     local scanner_v4_component_setting="Disabled"
+    local central_endpoint="central.${central_namespace}.svc:443"
+
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
@@ -369,6 +371,7 @@ deploy_sensor_via_operator() {
       collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
       scanner_v4_component_setting="$scanner_v4_component_setting" \
+      central_endpoint="$central_endpoint" \
     "${envsubst}" \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
 
