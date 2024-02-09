@@ -33,14 +33,18 @@ LABEL \
     com.redhat.component="rhacs-main-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
+    distribution-scope="public" \
     io.k8s.description="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.display-name="main" \
     io.openshift.tags="rhacs,main,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-main-rhel8" \
+    # TODO(ROX-20236): release label is required by EC, figure what to put in the release version on rebuilds.
+    release="0" \
     source-location="https://github.com/stackrox/stackrox" \
     summary="Main Image for RHACS" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+    vendor="Red Hat, Inc." \
     # We must set version label to prevent inheriting value set in the base stage.
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
     version="0.0.1-todo"
