@@ -98,7 +98,7 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	for _, profile := range profiles {
 		for profileName, configs := range profileMap {
 			if areProfilesEqual(profile, profileName) {
-				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs, profileName)
+				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs.AsSlice(), profileName)
 			}
 		}
 	}
