@@ -257,6 +257,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCANNER_V4'
     customize_envVars+=$'\n        value: "'"${ROX_SCANNER_V4:-false}"'"'
 
