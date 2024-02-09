@@ -67,7 +67,6 @@ message DiscoveredCluster {
 
   message CloudSource {
     string id = 1;
-    string name = 2;
   }
   // The cloud source integration from which the cluster was discovered.
   CloudSource source = 4;
