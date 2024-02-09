@@ -104,6 +104,9 @@ func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string)
 	if !found {
 		return nil, errox.NotFound.CausedBy(err)
 	}
+	if !ir.Success {
+		return nil, errox.NotFound.Newf("index report unsuccessful: %s: %s", ir.State, ir.Err)
+	}
 	return ir, nil
 }
 

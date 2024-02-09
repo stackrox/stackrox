@@ -194,32 +194,44 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	req := &v4.GetIndexReportRequest{HashId: hashID}
 
-	// When get index report returns an error.
-	s.indexerMock.
-		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-		Return(nil, false, errors.New("ouch"))
-	r, err := s.service.GetIndexReport(s.ctx, req)
-	s.ErrorContains(err, "ouch")
-	s.Nil(r)
+	s.Run("when get index report returns an error", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(nil, false, errors.New("ouch"))
+		r, err := s.service.GetIndexReport(s.ctx, req)
+		s.ErrorContains(err, "ouch")
+		s.Nil(r)
+	})
 
-	// When get index report returns not found.
-	s.indexerMock.
-		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-		Return(nil, false, nil)
-	r, err = s.service.GetIndexReport(s.ctx, req)
-	s.ErrorContains(err, "not found")
-	s.Nil(r)
+	s.Run("when get index report returns an unsuccessful report", func() {
+		s.indexerMock.EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(&claircore.IndexReport{State: "sample state"}, true, nil)
+		r, err := s.service.GetIndexReport(s.ctx, req)
+		s.ErrorContains(err, "sample state")
+		s.Nil(r)
+	})
 
-	// When get index report returns an index report.
-	s.indexerMock.
-		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-		Return(&claircore.IndexReport{State: "sample state"}, true, nil)
-	r, err = s.service.GetIndexReport(s.ctx, req)
-	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state", Contents: &v4.Contents{}}, r)
+	s.Run("when get index report returns not found", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(nil, false, nil)
+		r, err := s.service.GetIndexReport(s.ctx, req)
+		s.ErrorContains(err, "not found")
+		s.Nil(r)
+	})
+
+	s.Run("when get index report returns an index report", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(&claircore.IndexReport{Success: true, State: "sample state"}, true, nil)
+		r, err := s.service.GetIndexReport(s.ctx, req)
+		s.NoError(err)
+		s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state", Contents: &v4.Contents{}}, r)
+	})
 }
 
 func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
@@ -234,7 +246,7 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 		},
 	}
 
-	s.Run("create when index report does not exist", func() {
+	s.Run("when index report does not exist then create", func() {
 		s.indexerMock.EXPECT().
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
 			Return(nil, false, nil)
@@ -246,10 +258,24 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 		// Just make sure something is returned. Other tests ensure the conversion is correct.
 		s.NotNil(got)
 	})
-	s.Run("get when index report does exist", func() {
+
+	s.Run("when index report exists but not successful then create", func() {
 		s.indexerMock.EXPECT().
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-			Return(&claircore.IndexReport{State: "sample state"}, true, nil)
+			Return(&claircore.IndexReport{}, true, nil)
+		s.indexerMock.EXPECT().
+			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(&claircore.IndexReport{State: "sample state"}, nil)
+		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
+		s.NoError(err)
+		// Just make sure something is returned. Other tests ensure the conversion is correct.
+		s.NotNil(got)
+	})
+
+	s.Run("when index report does exist then get", func() {
+		s.indexerMock.EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(&claircore.IndexReport{Success: true, State: "sample state"}, true, nil)
 		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
 		s.NoError(err)
 		// Just make sure something is returned. Other tests ensure the conversion is correct.
@@ -260,30 +286,43 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 func (s *indexerServiceTestSuite) Test_HasIndexReport() {
 	req := &v4.HasIndexReportRequest{HashId: hashID}
 
-	// When get index report returns an error.
-	s.indexerMock.
-		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-		Return(nil, false, errors.New("ouch"))
-	r, err := s.service.HasIndexReport(s.ctx, req)
-	s.ErrorContains(err, "ouch")
-	s.Nil(r)
+	s.Run("when get index report returns an error then return error", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(nil, false, errors.New("ouch"))
+		r, err := s.service.HasIndexReport(s.ctx, req)
+		s.ErrorContains(err, "ouch")
+		s.Nil(r)
+	})
 
-	// When get index report returns not found.
-	s.indexerMock.
-		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-		Return(nil, false, nil)
-	r, err = s.service.HasIndexReport(s.ctx, req)
-	s.NoError(err)
-	s.False(r.GetExists())
+	s.Run("when get index report returns an unsuccessful report then does not exist", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(&claircore.IndexReport{}, true, nil)
+		r, err := s.service.HasIndexReport(s.ctx, req)
+		s.NoError(err)
+		s.False(r.GetExists())
+	})
 
-	// When get index report returns an index report.
-	s.indexerMock.
-		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
-		Return(&claircore.IndexReport{State: "sample state"}, true, nil)
-	r, err = s.service.HasIndexReport(s.ctx, req)
-	s.NoError(err)
-	s.True(r.GetExists())
+	s.Run("when get index report returns not found then does not exist", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(nil, false, nil)
+		r, err := s.service.HasIndexReport(s.ctx, req)
+		s.NoError(err)
+		s.False(r.GetExists())
+	})
+
+	s.Run("when get index report returns an index report then exists", func() {
+		s.indexerMock.
+			EXPECT().
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+			Return(&claircore.IndexReport{Success: true, State: "sample state"}, true, nil)
+		r, err := s.service.HasIndexReport(s.ctx, req)
+		s.NoError(err)
+		s.True(r.GetExists())
+	})
 }

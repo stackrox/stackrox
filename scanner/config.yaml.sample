@@ -13,7 +13,7 @@ matcher:
   database:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
-  vulnerability_url: https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst
+  vulnerabilities_url: https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst
 mtls:
   certs_dir: certs/scanner-v4
 log_level: info
