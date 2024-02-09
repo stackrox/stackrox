@@ -48,10 +48,12 @@ spec:
         env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
-        {{- if (default ._rox.collector.forceCollectionMethod false) }}
         - name: COLLECTION_METHOD
+          {{- if (default ._rox.collector.forceCollectionMethod false) }}
           value: {{ ._rox.collector.collectionMethod }}
-        {{- end }}
+          {{- else }}
+          value: CORE_EBPF
+          {{- end }}
         - name: GRPC_SERVER
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
