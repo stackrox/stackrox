@@ -13,14 +13,14 @@ import (
 storage type to apiV2 type conversions
 */
 
-func convertStorageIntegrationToV2(ctx context.Context, integration *storage.ComplianceIntegration, clusterStore datastore.DataStore) (*v2.ComplianceIntegration, error) {
+func convertStorageIntegrationToV2(ctx context.Context, integration *storage.ComplianceIntegration, clusterStore datastore.DataStore) (*v2.ComplianceIntegration, bool, error) {
 	if integration == nil {
-		return nil, nil
+		return nil, false, nil
 	}
 
-	clusterName, _, err := clusterStore.GetClusterName(ctx, integration.GetClusterId())
+	clusterName, clusterFound, err := clusterStore.GetClusterName(ctx, integration.GetClusterId())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	return &v2.ComplianceIntegration{
@@ -30,7 +30,7 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *storage.Com
 		ClusterName:  clusterName,
 		Namespace:    integration.GetComplianceNamespace(),
 		StatusErrors: integration.GetStatusErrors(),
-	}, nil
+	}, clusterFound, nil
 }
 
 func convertStorageProtos(ctx context.Context, integrations []*storage.ComplianceIntegration, clusterStore datastore.DataStore) ([]*v2.ComplianceIntegration, error) {
@@ -41,9 +41,14 @@ func convertStorageProtos(ctx context.Context, integrations []*storage.Complianc
 	apiIntegrations := make([]*v2.ComplianceIntegration, 0, len(integrations))
 
 	for _, integration := range integrations {
-		converted, err := convertStorageIntegrationToV2(ctx, integration, clusterStore)
+		converted, clusterFound, err := convertStorageIntegrationToV2(ctx, integration, clusterStore)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage compliance operator integration with id %s to response", integration.GetId())
+		}
+		// If the cluster cannot be found that means it was removed, so we should not
+		// return this as a valid integration
+		if !clusterFound {
+			continue
 		}
 		apiIntegrations = append(apiIntegrations, converted)
 	}

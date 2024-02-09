@@ -4,7 +4,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	complianceScanConfig "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -60,7 +60,7 @@ func initialize() {
 		ranking.ClusterRanker(),
 		indexer,
 		networkBaselineManager.Singleton(),
-		complianceScanConfig.Singleton())
+		compliancePruning.Singleton())
 
 	utils.CrashOnError(err)
 }
