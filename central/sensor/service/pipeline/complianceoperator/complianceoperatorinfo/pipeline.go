@@ -74,6 +74,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		operatorErrors = append(operatorErrors, fmt.Sprintf("compliance operator not ready.  Only %d pods are ready when %d are desired.", readyPods, desiredPods))
 	}
 
+	// force an error to test
+	operatorErrors = append(operatorErrors, "Forcing an error for test")
 	operatorInfo.StatusErrors = operatorErrors
 
 	return s.manager.ProcessComplianceOperatorInfo(ctx, operatorInfo)
