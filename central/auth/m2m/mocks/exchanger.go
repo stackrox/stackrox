@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
-	tokens "github.com/stackrox/rox/pkg/auth/tokens"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -68,18 +67,4 @@ func (m *MockTokenExchanger) Provider() authproviders.Provider {
 func (mr *MockTokenExchangerMockRecorder) Provider() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Provider", reflect.TypeOf((*MockTokenExchanger)(nil).Provider))
-}
-
-// RecreateIssuer mocks base method.
-func (m *MockTokenExchanger) RecreateIssuer(issuerFactory tokens.IssuerFactory) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecreateIssuer", issuerFactory)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RecreateIssuer indicates an expected call of RecreateIssuer.
-func (mr *MockTokenExchangerMockRecorder) RecreateIssuer(issuerFactory any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecreateIssuer", reflect.TypeOf((*MockTokenExchanger)(nil).RecreateIssuer), issuerFactory)
 }
