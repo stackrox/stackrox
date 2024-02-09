@@ -121,7 +121,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation. Setting cluster enables enhancing deployments with cluster-specific information.")
 	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "a namespace to enhance the deployments with context information (network policies, RBACs, services) for deployments that lack namespace in their spec. Namespace defined in spec will not be changed.")
-
+	c.Flags().BoolVarP(&deploymentCheckCmd.verbose, "verbose", "v", false, "enable additional output like permission level and applied network policies for checked deployments")
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
 		"The new output format's structure has changed in a non-backward compatible way."))
@@ -145,6 +145,7 @@ type deploymentCheckCommand struct {
 	force              bool
 	cluster            string
 	namespace          string
+	verbose            bool
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -237,18 +238,18 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 		combinedDeployments = combinedDeployments + normalizeYaml(string(fileContents))
 	}
 
-	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
+	alerts, ignoredObjRefs, remarks, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
 	if err != nil {
 		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
 
-	return d.printResults(alerts, ignoredObjRefs)
+	return d.printResults(alerts, ignoredObjRefs, remarks)
 }
 
-func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, error) {
+func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, []*v1.DeployDetectionRemark, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
+		return nil, nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -263,7 +264,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		Namespace:        d.namespace,
 	})
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
+		return nil, nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
@@ -271,10 +272,10 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		alerts = append(alerts, r.GetAlerts()...)
 	}
 
-	return alerts, response.GetIgnoredObjectRefs(), nil
+	return alerts, response.GetIgnoredObjectRefs(), response.GetRemarks(), nil
 }
 
-func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string) error {
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string, remarks []*v1.DeployDetectionRemark) error {
 	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
 	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
 	// want this to be visible to the old output format.
@@ -283,7 +284,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	}
 
 	if d.json {
-		return errors.Wrap(report.JSON(d.env.InputOutput().Out(), alerts), "could not print JSON report")
+		return errors.Wrap(report.JSONWithRemarks(d.env.InputOutput().Out(), alerts, remarks), "could not print JSON report")
 	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
@@ -308,7 +309,19 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	if amountBreakingPolicies != 0 {
 		return errors.Wrap(policy.NewErrBreakingPolicies(amountBreakingPolicies), "breaking policies found")
 	}
+
+	if d.verbose && len(remarks) > 0 {
+		printRemarks(remarks, d.env.Logger())
+	}
+
 	return nil
+}
+
+func printRemarks(remarks []*v1.DeployDetectionRemark, out logger.Logger) {
+	out.PrintfLn("Additional remarks:")
+	for _, r := range remarks {
+		out.PrintfLn("Deployment: %s, Permission Level: %s, Applied Network Policies: %s", r.Name, r.PermissionLevel, strings.Join(r.AppliedNetworkPolicies, ", "))
+	}
 }
 
 func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logger.Logger, deployments ...string) {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,6 +134,18 @@ var (
 			},
 		},
 	}
+
+	remarkOne = v1.DeployDetectionRemark{
+		Name:                   "deployment1",
+		PermissionLevel:        storage.PermissionLevel_CLUSTER_ADMIN.String(),
+		AppliedNetworkPolicies: []string{"Policy1, Policy2"},
+	}
+
+	remarkTwo = v1.DeployDetectionRemark{
+		Name:                   "deployment2",
+		PermissionLevel:        storage.PermissionLevel_NONE.String(),
+		AppliedNetworkPolicies: nil,
+	}
 )
 
 func TestReport(t *testing.T) {
@@ -238,6 +251,69 @@ func TestReport(t *testing.T) {
 			raw, err := os.ReadFile(test.goldenFile)
 			require.Nil(t, err)
 			assert.Equal(t, string(raw), buf.String())
+		})
+	}
+}
+
+func TestJSONRemarks(t *testing.T) {
+	cases := map[string]struct {
+		alerts     []*storage.Alert
+		remarks    []*v1.DeployDetectionRemark
+		goldenFile string
+	}{
+		"one alert without remarks": {
+			alerts:     []*storage.Alert{&imageAlertOne},
+			remarks:    nil,
+			goldenFile: "testdata/one-alert.json",
+		},
+		"multi alerts with empty remarks": {
+			alerts:     []*storage.Alert{&imageAlertOne, &imageAlertTwo},
+			remarks:    make([]*v1.DeployDetectionRemark, 0),
+			goldenFile: "testdata/multi-alerts.json",
+		},
+		"multi alerts with remarks": {
+			alerts:     []*storage.Alert{&imageAlertOne, &imageAlertTwo},
+			remarks:    []*v1.DeployDetectionRemark{&remarkOne, &remarkTwo},
+			goldenFile: "testdata/multi-alerts-remarks.json",
+		},
+		"nil alerts with remarks": {
+			alerts:     nil,
+			remarks:    []*v1.DeployDetectionRemark{&remarkOne, &remarkTwo},
+			goldenFile: "testdata/nil-alerts-multi-remarks.json",
+		},
+		"empty alerts with remarks": {
+			alerts:     make([]*storage.Alert, 0),
+			remarks:    []*v1.DeployDetectionRemark{&remarkOne, &remarkTwo},
+			goldenFile: "testdata/empty-alerts-multi-remarks.json",
+		},
+		"empty alerts with empty remarks": {
+			alerts:     make([]*storage.Alert, 0),
+			remarks:    make([]*v1.DeployDetectionRemark, 0),
+			goldenFile: "testdata/empty-alerts-remarks.json",
+		},
+		"nil alerts with nil remarks": {
+			alerts:     nil,
+			remarks:    nil,
+			goldenFile: "testdata/nil-alerts-remarks.json",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			a := assert.New(t)
+			buf := bytes.NewBuffer(nil)
+			a.NoError(JSONWithRemarks(buf, c.alerts, c.remarks))
+
+			// If the -update flag was passed to go test, update the contents
+			// of all golden files.
+			if *updateFlag {
+				a.NoError(os.WriteFile(c.goldenFile, buf.Bytes(), 0644))
+				return
+			}
+
+			raw, err := os.ReadFile(c.goldenFile)
+			a.NoError(err)
+			a.Equal(buf.String(), string(raw))
 		})
 	}
 }

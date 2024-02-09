@@ -1516,6 +1516,23 @@
         }
       }
     },
+    "v1DeployDetectionRemark": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "permissionLevel": {
+          "type": "string"
+        },
+        "appliedNetworkPolicies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1DeployDetectionRequest": {
       "type": "object",
       "properties": {
@@ -1548,6 +1565,12 @@
             "type": "string"
           },
           "description": "The reference will be in the format: namespace/name[\u003cgroup\u003e/\u003cversion\u003e, Kind=\u003ckind\u003e]."
+        },
+        "remarks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1DeployDetectionRemark"
+          }
         }
       }
     },
