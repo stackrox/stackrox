@@ -224,10 +224,6 @@ deploy_central_via_operator() {
 
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        # Load balancer not available for ppc64le/s390x
-        LOAD_BALANCER="route"
-    fi
     case "${LOAD_BALANCER}" in
     "lb") central_exposure_loadBalancer_enabled="true" ;;
     "route") central_exposure_route_enabled="true" ;;
@@ -882,18 +878,24 @@ wait_for_api() {
     info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
 
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        API_HOSTNAME=$(kubectl get routes/central -n "${central_namespace}" -o json | jq -r '.spec.host')
-        API_PORT=443
-    else
-        API_HOSTNAME=localhost
-        API_PORT=8000
-        LOAD_BALANCER="${LOAD_BALANCER:-}"
-        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh "${central_namespace}")
+    LOAD_BALANCER="${LOAD_BALANCER:-}"
+    case "${LOAD_BALANCER}" in
+        lb)
+            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname'
+            API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
-        fi
-    fi
+            ;;
+        route)
+            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host'
+            API_HOSTNAME="${ingress_endpoint}"
+            API_PORT=443
+            ;;
+        *)
+            API_HOSTNAME=localhost
+            API_PORT=8000
+            ;;
+    esac
+
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
     info "PING_URL is set to ${PING_URL}"
@@ -933,6 +935,41 @@ wait_for_api() {
     ci_export API_HOSTNAME "${API_HOSTNAME}"
     ci_export API_PORT "${API_PORT}"
     ci_export API_ENDPOINT "${API_ENDPOINT}"
+}
+
+get_ingress_endpoint() {
+    local namespace="$1"
+    local object="$2"
+    local field_accessor="$3"
+    local timeout="${4:-1800}"
+
+    local cli_cmd="kubectl"
+    if [[ "$object" =~ route ]]; then
+        cli_cmd="oc"
+    fi
+
+    local start_time curr_time elapsed_seconds endpoint
+    start_time="$(date '+%s')"
+
+    while true; do
+        endpoint=$("${cli_cmd}" -n "${namespace}" get "${object}" -o json | jq -r "${field_accessor}")
+        if [[ -n "${endpoint}" ]] && [[ "${endpoint}" != "null" ]]; then
+            info "Found ingress endpoint: ${endpoint}"
+            ingress_endpoint="${endpoint}"
+            return
+        fi
+
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        if (( elapsed_seconds > timeout )); then
+            "${cli_cmd}" -n "${namespace}" get "${object}" -o json
+            echo >&2 "get_ingress_endpoint() timeout after $timeout seconds."
+            exit 1
+        fi
+
+        sleep 5
+    done
 }
 
 record_build_info() {
