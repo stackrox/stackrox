@@ -27,8 +27,8 @@ func GetManyDiscoveredClusters(num int) []*discoveredclusters.DiscoveredCluster 
 	res := make([]*discoveredclusters.DiscoveredCluster, 0, num)
 	for i := 0; i < num; i++ {
 		discoveredCluster := GetDiscoveredCluster()
-		discoveredCluster.ID = fmt.Sprintf("my-cluster-%d", i)
-		discoveredCluster.Name = fmt.Sprintf("my-cluster-%d", i)
+		discoveredCluster.ID = fmt.Sprintf("my-cluster-%02d", i)
+		discoveredCluster.Name = fmt.Sprintf("my-cluster-%02d", i)
 		if i < num/2 {
 			discoveredCluster.Type = storage.ClusterMetadata_GKE
 			discoveredCluster.Status = storage.DiscoveredCluster_STATUS_SECURED

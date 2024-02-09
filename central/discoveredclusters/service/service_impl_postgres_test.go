@@ -76,7 +76,7 @@ func (s *servicePostgresTestSuite) TestCount() {
 	// 2.b. Filter discovered clusters based on the name - one match.
 	resp, err = s.service.CountDiscoveredClusters(s.readCtx, &v1.CountDiscoveredClustersRequest{
 		Filter: &v1.DiscoveredClustersFilter{
-			Names: []string{"my-cluster-0"},
+			Names: []string{"my-cluster-00"},
 		},
 	})
 	s.Require().NoError(err)
@@ -140,7 +140,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 	// 2.b. Filter discovered clusters based on the name - one match.
 	resp, err = s.service.ListDiscoveredClusters(s.readCtx, &v1.ListDiscoveredClustersRequest{
 		Filter: &v1.DiscoveredClustersFilter{
-			Names: []string{"my-cluster-0"},
+			Names: []string{"my-cluster-00"},
 		},
 	})
 	s.Require().NoError(err)

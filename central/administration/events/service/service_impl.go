@@ -81,7 +81,7 @@ func (s *serviceImpl) GetAdministrationEvent(ctx context.Context, resource *v1.R
 func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.ListAdministrationEventsRequest) (*v1.ListAdministrationEventsResponse, error) {
 	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
-	paginated.FillDefaultSortOption(
+	query = paginated.FillDefaultSortOption(
 		query,
 		&v1.QuerySortOption{
 			Field:    search.LastUpdatedTime.String(),
