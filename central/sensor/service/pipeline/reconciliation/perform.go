@@ -1,9 +1,9 @@
 package reconciliation
 
 import (
-	"fmt"
+	"errors"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -23,9 +23,9 @@ func Perform(store Store, existingIDs set.StringSet, resourceType string, remove
 
 	log.Infof("Deleting %d %s as a part of reconciliation", idsToDelete.Cardinality(), resourceType)
 
-	errList := errorhelpers.NewErrorList(fmt.Sprintf("%s reconciliation", resourceType))
+	var reconcileErrs error
 	for id := range idsToDelete {
-		errList.AddError(removeFunc(id))
+		reconcileErrs = errors.Join(reconcileErrs, removeFunc(id))
 	}
-	return errList.ToError()
+	return pkgErrors.Wrapf(reconcileErrs, "%s reconciliation", resourceType)
 }

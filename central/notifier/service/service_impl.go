@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -105,20 +105,21 @@ func validateNotifier(notifier *storage.Notifier) error {
 	if notifier == nil {
 		return errors.New("empty notifier")
 	}
-	errorList := errorhelpers.NewErrorList("Validation")
+	var validateErrs error
 	if notifier.GetName() == "" {
-		errorList.AddString("notifier name must be defined")
+
+		validateErrs = stdErrors.Join(validateErrs, errox.InvalidArgs.New("name must be defined"))
 	}
 	if notifier.GetType() == "" {
-		errorList.AddString("notifier type must be defined")
+		validateErrs = stdErrors.Join(validateErrs, errox.InvalidArgs.New("type must be defined"))
 	}
 	if notifier.GetUiEndpoint() == "" {
-		errorList.AddString("notifier UI endpoint must be defined")
+		validateErrs = stdErrors.Join(validateErrs, errox.InvalidArgs.New("UI endpoint must be defined"))
 	}
 	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
-		errorList.AddWrap(err, "invalid endpoint")
+		validateErrs = stdErrors.Join(validateErrs, errox.InvalidArgs.CausedBy(err))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validateErrs, "validating notifier")
 }
 
 // PutNotifier updates a notifier configuration, without stored credential reconciliation

@@ -2,9 +2,10 @@ package datastore
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
@@ -14,7 +15,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -260,13 +260,13 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	errorList := errorhelpers.NewErrorList("deleting images")
+	var deleteImageErrs error
 	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	for _, id := range ids {
 		if err := ds.storage.Delete(ctx, id); err != nil {
-			errorList.AddError(err)
+			deleteImageErrs = errors.Join(deleteImageErrs, err)
 			continue
 		}
 		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_IMAGE); err != nil {
@@ -274,7 +274,10 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		}
 	}
 	// removing component risk handled by pruning
-	return errorList.ToError()
+	if deleteImageErrs != nil {
+		return fmt.Errorf("deleting images: %w", deleteImageErrs)
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {

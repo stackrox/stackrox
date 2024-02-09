@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"math"
 	"sort"
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -368,11 +368,11 @@ func (s *serviceImpl) checkAlertsSAC(ctx context.Context, alerts []*storage.Aler
 	}
 	waitGroup.Wait()
 	if len(c) > 0 {
-		errorList := errorhelpers.NewErrorList(fmt.Sprintf("found %d sac permission denials while resolving alerts", len(c)))
+		resolveAlertsErrors := fmt.Errorf("found %d sac permission denials while resolving alerts", len(c))
 		for err := range c {
-			errorList.AddError(err)
+			resolveAlertsErrors = stdErrors.Join(resolveAlertsErrors, err)
 		}
-		return errorList.ToError()
+		return resolveAlertsErrors
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -153,11 +153,11 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	waitGroup.Wait()
 	close(c)
 	if len(c) > 0 {
-		errorList := errorhelpers.NewErrorList(fmt.Sprintf("found %d errors while resolving alerts", len(c)))
+		resolveAlertsErrors := fmt.Errorf("found %d errors while resolving alerts", len(c))
 		for err := range c {
-			errorList.AddError(err)
+			resolveAlertsErrors = stdErrors.Join(resolveAlertsErrors, err)
 		}
-		return errorList.ToError()
+		return resolveAlertsErrors
 	}
 	return nil
 }

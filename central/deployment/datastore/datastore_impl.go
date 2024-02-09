@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	stdErrors "errors"
 	"time"
 
 	"github.com/pkg/errors"
@@ -17,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -307,7 +307,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	// We still want to ensure it is properly cleared when the deployment is deleted.
 	ds.processFilter.Delete(id)
 
-	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
+	var deletionErrs error
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -315,21 +315,21 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		))
 
 	if err := ds.risks.RemoveRisk(deleteRelatedCtx, id, storage.RiskSubjectType_DEPLOYMENT); err != nil {
-		errorList.AddError(err)
+		deletionErrs = stdErrors.Join(deletionErrs, err)
 	}
 
 	if err := ds.baselines.RemoveProcessBaselinesByDeployment(deleteRelatedCtx, id); err != nil {
-		errorList.AddError(err)
+		deletionErrs = stdErrors.Join(deletionErrs, err)
 	}
 
 	flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
 	if err != nil {
-		errorList.AddError(err)
-		return errorList.ToError()
+		deletionErrs = stdErrors.Join(deletionErrs, err)
+		return errors.Wrap(deletionErrs, "deleting related objects of deployments")
 	}
 
 	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
-		errorList.AddError(err)
+		deletionErrs = stdErrors.Join(deletionErrs, err)
 	}
 
 	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
@@ -340,10 +340,10 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return nil
 	})
 	if err != nil {
-		errorList.AddError(err)
+		deletionErrs = stdErrors.Join(deletionErrs, err)
 	}
 
-	return errorList.ToError()
+	return errors.Wrap(deletionErrs, "deleting related objects of deployments")
 }
 
 func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {

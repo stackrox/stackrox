@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -13,7 +14,6 @@ import (
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
@@ -142,13 +142,12 @@ func (m *orchestratorCVEManager) RemoveIntegration(integrationID string) {
 }
 
 func k8sScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Kubernetes:%s", version))
-
+	var scanningErrs error
 	var allVulns []*storage.EmbeddedVulnerability
 	for _, scanner := range scanners {
 		result, err := scanner.KubernetesScan(version)
 		if err != nil {
-			errorList.AddError(err)
+			scanningErrs = stdErrors.Join(scanningErrs, err)
 			continue
 		}
 		vulnIDsSet := set.NewStringSet()
@@ -162,21 +161,21 @@ func k8sScan(version string, scanners map[string]types.OrchestratorScanner) ([]*
 		return allVulns, nil
 	}
 
-	return nil, errorList.ToError()
+	return nil, errors.Wrapf(scanningErrs, "scanning orchestrator for Kubernetes version %s", version)
 }
 
 func openShiftScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for OpenShift:%s", version))
+	var scanningErrs error
 	for _, scanner := range scanners {
 		result, err := scanner.OpenShiftScan(version)
 		if err != nil {
-			errorList.AddError(err)
+			scanningErrs = stdErrors.Join(scanningErrs, err)
 			continue
 		}
 		return result, nil
 	}
 
-	return nil, errorList.ToError()
+	return nil, errors.Wrapf(scanningErrs, "scanning orchestrator for OpenShift version %s", version)
 }
 
 func (m *orchestratorCVEManager) reconcileCVEs(clusters []*storage.Cluster, cveType utils.CVEType) error {
@@ -246,12 +245,11 @@ func (m *orchestratorCVEManager) getAffectedClusters(ctx context.Context, cveID 
 }
 
 func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([]*storage.EmbeddedVulnerability, error) {
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning orchestrator for Istio:%s", version))
-
+	var scanningErrs error
 	for _, scanner := range scanners {
 		results, err := scanner.IstioScan(version)
 		if err != nil {
-			errorList.AddError(err)
+			scanningErrs = stdErrors.Join(scanningErrs, err)
 			continue
 		}
 		vulnIDsSet := set.NewStringSet()
@@ -265,5 +263,5 @@ func istioScan(version string, scanners map[string]types.OrchestratorScanner) ([
 		return allVulns, nil
 	}
 
-	return nil, errorList.ToError()
+	return nil, errors.Wrapf(scanningErrs, "scanning orchestrator for Istio version %s", version)
 }

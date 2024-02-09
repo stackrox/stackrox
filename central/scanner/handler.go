@@ -3,6 +3,7 @@ package scanner
 import (
 	"bytes"
 	"encoding/json"
+	stdErrors "errors"
 	"net/http"
 	"sort"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -37,10 +38,9 @@ func validateParamsForScannerV1(p *apiparams.Scanner) (errs []error) {
 }
 
 func validateParamsAndNormalizeClusterType(p *apiparams.Scanner) (storage.ClusterType, error) {
-	errorList := errorhelpers.NewErrorList("invalid params:")
-
 	clusterType := storage.ClusterType(storage.ClusterType_value[p.ClusterType])
 
+	var validationErrs error
 	if int32(clusterType) == 0 {
 		var validClusterTypes []string
 		for clusterString, value := range storage.ClusterType_value {
@@ -49,12 +49,12 @@ func validateParamsAndNormalizeClusterType(p *apiparams.Scanner) (storage.Cluste
 			}
 		}
 		sort.Strings(validClusterTypes)
-		errorList.AddStringf("invalid cluster type: %q; valid options are %+v", p.ClusterType, validClusterTypes)
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.Newf("invalid cluster type: %q; valid options are %+v", p.ClusterType, validClusterTypes))
 	}
+	validationErrs = stdErrors.Join(validationErrs, stdErrors.Join(validateParamsForScannerV1(p)...))
 
-	errorList.AddErrors(validateParamsForScannerV1(p)...)
-
-	return clusterType, errorList.ToError()
+	return clusterType, errors.Wrap(validationErrs, "invalid params")
 }
 
 func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.ClusterType) ([]*zip.File, error) {

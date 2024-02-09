@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"strings"
 
@@ -23,7 +24,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -321,38 +321,42 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 		return nil, errors.Wrapf(errox.NotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
-	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
+	var notifierErrs error
 	for _, notifierID := range request.GetNotifierIds() {
 		notifierProto, exists, err := s.notifierStore.GetNotifier(ctx, notifierID)
 		if err != nil {
-			errorList.AddError(err)
+			notifierErrs = stdErrors.Join(notifierErrs, err)
 			continue
 		}
 		if !exists {
-			errorList.AddStringf("notifier with id:%s not found", notifierID)
+			notifierErrs = stdErrors.Join(notifierErrs,
+				errox.NotFound.Newf("notifier with id %q not found", notifierID))
 			continue
 		}
 
 		notifier, err := notifiers.CreateNotifier(notifierProto)
 		if err != nil {
-			errorList.AddStringf("error creating notifier with id:%s (%s) and type %s: %v", notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType(), err)
+			notifierErrs = stdErrors.Join(notifierErrs,
+				errors.Wrapf(err, "creating notifier with id %q (%q) and type %s",
+					notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType()))
 			continue
 		}
 		netpolNotifier, ok := notifier.(notifiers.NetworkPolicyNotifier)
 		if !ok {
-			errorList.AddStringf("notifier %s cannot notify on network policies", notifierProto.GetName())
+			notifierErrs = stdErrors.Join(notifierErrs,
+				errors.Errorf("notifier %q cannot notify on network policies", notifierProto.GetName()))
 			continue
 		}
 
 		err = netpolNotifier.NetworkPolicyYAMLNotify(ctx, request.GetModification().GetApplyYaml(), clusterName)
 		if err != nil {
-			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
+			notifierErrs = stdErrors.Join(notifierErrs,
+				errors.Wrapf(err, "sending YAML notification to notifier %q", notifierProto.GetName()))
 		}
 	}
 
-	err = errorList.ToError()
-	if err != nil {
-		return nil, err
+	if notifierErrs != nil {
+		return nil, notifierErrs
 	}
 	return &v1.Empty{}, nil
 }

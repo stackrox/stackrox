@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -19,7 +20,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -320,18 +320,18 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 	if request == nil {
 		return errors.New("empty integration")
 	}
-	errorList := errorhelpers.NewErrorList("Validation")
+	var validationErrs error
 	if err := endpoints.ValidateEndpoints(request.IntegrationConfig); err != nil {
-		errorList.AddWrap(err, "invalid endpoint")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "invalid endpoint"))
 	}
 	if len(request.GetCategories()) == 0 {
-		errorList.AddStrings("integrations require a category")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("integrations require a category"))
 	}
 
 	// Validate if there is a name. If there isn't, then skip the DB name check by returning the accumulated errors
 	if request.GetName() == "" {
-		errorList.AddString("name for integration is required")
-		return errorList.ToError()
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("name is required"))
+		return validationErrs
 	}
 
 	integrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: request.GetName()})
@@ -339,9 +339,10 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		return err
 	}
 	if len(integrations) != 0 && request.GetId() != integrations[0].GetId() {
-		errorList.AddStringf("integration with name %q already exists", request.GetName())
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.AlreadyExists.Newf("integration with name %q already exists", request.GetName()))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "validating image integration")
 }
 
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {

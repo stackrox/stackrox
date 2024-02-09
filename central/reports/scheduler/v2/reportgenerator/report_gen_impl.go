@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -24,7 +25,6 @@ import (
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -148,12 +148,13 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			return errors.Wrap(err, "Error adding report config details")
 		}
 
-		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
+		var sendErrs error
 		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
 			reportNotifier, ok := nf.(notifiers.ReportNotifier)
 			if !ok {
-				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
+				sendErrs = stdErrors.Join(sendErrs,
+					errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
 				continue
 			}
 			customBody := notifierSnap.GetEmailConfig().GetCustomBody()
@@ -170,13 +171,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, emailSubject, emailBodyWithConfigDetails)
 			if err != nil {
-				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
-					notifierSnap.GetEmailConfig().GetNotifierId(), err))
+				sendErrs = stdErrors.Join(sendErrs,
+					errors.Wrapf(err, "sending mail for notifier %q", notifierSnap.GetEmailConfig().GetNotifierId()))
 			}
 		}
-		if !errorList.Empty() {
-			return errorList.ToError()
-		}
+		return errors.Wrap(sendErrs, "sending email notifications")
 	}
 	return nil
 }

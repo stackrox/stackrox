@@ -2,6 +2,7 @@ package all
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/safe"
 )
@@ -53,11 +53,11 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 // This will only happen once per cluster because the pipeline is generated every time the streamer connects
 func (s *pipelineImpl) Reconcile(ctx context.Context, reconciliationStore *reconciliation.StoreMap) error {
 	log.Info("Received Synced message from Sensor. Determining if there is any reconciliation to be done")
-	errList := errorhelpers.NewErrorList("Reconciling state")
+	var reconcileErrs error
 	for _, fragment := range s.fragments {
-		errList.AddError(fragment.Reconcile(ctx, s.clusterID, reconciliationStore))
+		reconcileErrs = stdErrors.Join(reconcileErrs, fragment.Reconcile(ctx, s.clusterID, reconciliationStore))
 	}
-	return errList.ToError()
+	return errors.Wrap(reconcileErrs, "reconciling state")
 }
 
 // Run looks for one fragment (and only one) that matches the input message and runs that fragment on the message and injector.

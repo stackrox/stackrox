@@ -2,6 +2,7 @@ package gcs
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"io"
 	"path"
@@ -16,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
 	gcpUtils "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
@@ -43,17 +44,19 @@ type gcs struct {
 }
 
 func validate(conf *storage.GCSConfig) error {
-	errorList := errorhelpers.NewErrorList("GCS Validation")
+	var validationErrs error
 	if conf.GetBucket() == "" {
-		errorList.AddString("Bucket must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("bucket must be specified"))
 	}
 	if conf.GetServiceAccount() == "" && !conf.GetUseWorkloadId() {
-		errorList.AddString("Service Account JSON or Use Workload Identity must be specified")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("service Account JSON or Use Workload Identity must be specified"))
 	}
 	if conf.GetServiceAccount() != "" && conf.GetUseWorkloadId() {
-		errorList.AddString("Service Account JSON must be empty when workload ID is enabled")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("service Account JSON must be empty when workload ID is enabled"))
 	}
-	return errorList.ToError()
+	return validationErrs
 }
 
 func newGCS(integration *storage.ExternalBackup) (*gcs, error) {

@@ -1,21 +1,23 @@
 package framework
 
 import (
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"errors"
+
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 // RegisterChecks registers a check in the global registry.
 func RegisterChecks(checks ...Check) error {
-	errList := errorhelpers.NewErrorList("registering checks")
+	var registerChecksErrs error
 	registry := RegistrySingleton()
 	for _, check := range checks {
 		if err := registry.Register(check); err != nil {
-			errList.AddError(err)
+			registerChecksErrs = errors.Join(registerChecksErrs, err)
 		}
 	}
-	return errList.ToError()
+	return pkgErrors.Wrap(registerChecksErrs, "checking registry")
 }
 
 // MustRegisterChecks registers a check in the global registry, and panics if the check could not be registered.

@@ -13,7 +13,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -80,11 +80,10 @@ func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
 }
 
 func validateConfig(sumologic *storage.SumoLogic) error {
-	errList := errorhelpers.NewErrorList("Sumo Logic notifier validation")
 	if sumologic.GetHttpSourceAddress() == "" {
-		errList.AddString("http source address is required")
+		return errox.InvalidArgs.New("HTTP source address is required")
 	}
-	return errList.ToError()
+	return nil
 }
 
 func newSumoLogic(notifier *storage.Notifier) (*sumologic, error) {

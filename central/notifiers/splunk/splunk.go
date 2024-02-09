@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	stdErrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -268,22 +269,25 @@ func Validate(conf *storage.Splunk, validateSecret bool) error {
 	if conf == nil {
 		return errors.New("Splunk configuration required")
 	}
-	errorList := errorhelpers.NewErrorList("Splunk config validation")
+	var validationErrs error
 	if validateSecret && len(conf.HttpToken) == 0 {
-		errorList.AddString("Splunk HTTP Event Collector(HEC) token must be specified")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("Splunk HTTP Event Collector(HEC) token must be specified"))
 	}
 	if len(conf.HttpEndpoint) == 0 {
-		errorList.AddString("Splunk HTTP endpoint must be specified")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("Splunk HTTP endpoint must be specified"))
 	}
 	if conf.GetTruncate() == 0 {
 		conf.Truncate = splunkHECDefaultDataLimit
 	}
 	for sourceTypeKey := range defaultSourceTypeMap {
 		if _, ok := conf.SourceTypes[sourceTypeKey]; !ok {
-			errorList.AddStringf("Source type key %s must be specified", sourceTypeKey)
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.Newf("Source type key %s must be specified", sourceTypeKey))
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "splunk config validation")
 }
 
 // UpgradeNotifierConfig applies changes to the current notifier to make it backwards compatible

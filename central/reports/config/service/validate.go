@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"net/mail"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -76,14 +76,15 @@ func (s *serviceImpl) validateEmailConfig(ctx context.Context, emailConfig *stor
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
 	}
 
-	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
+	var emailErrs error
 	for _, addr := range emailConfig.GetMailingLists() {
 		if _, err := mail.ParseAddress(addr); err != nil {
-			errorList.AddError(errors.Wrapf(errox.InvalidArgs, "Invalid email recipient address: %s", addr))
+			emailErrs = stdErrors.Join(emailErrs,
+				errox.InvalidArgs.Newf("invalid email recipient address %q", addr).CausedBy(err))
 		}
 	}
-	if !errorList.Empty() {
-		return errorList.ToError()
+	if emailErrs != nil {
+		return errors.Wrap(emailErrs, "invalid email addresses")
 	}
 
 	exists, err := s.notifierDatastore.Exists(ctx, emailConfig.GetNotifierId())

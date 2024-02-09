@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"sort"
 	"strings"
 	"time"
@@ -28,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -568,23 +568,22 @@ func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set
 }
 
 func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
-	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
-
+	var policyErrs error
 	if policies.AppliesAtBuildTime(policy) {
-		errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
+		policyErrs = stdErrors.Join(policyErrs, s.buildTimePolicies.UpsertPolicy(policy))
 	} else {
 		s.buildTimePolicies.RemovePolicy(policy.GetId())
 	}
-
-	errorList.AddError(s.lifecycleManager.UpsertPolicy(policy))
-	return errorList.ToError()
+	policyErrs = stdErrors.Join(policyErrs, s.lifecycleManager.UpsertPolicy(policy))
+	return errors.Wrap(policyErrs, "adding policy to detection caches")
 }
 
 func (s *serviceImpl) removeActivePolicy(id string) error {
-	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
 	s.buildTimePolicies.RemovePolicy(id)
-	errorList.AddError(s.lifecycleManager.RemovePolicy(id))
-	return errorList.ToError()
+	if err := s.lifecycleManager.RemovePolicy(id); err != nil {
+		return errors.Wrap(err, "removing policy from detection")
+	}
+	return nil
 }
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
@@ -617,15 +616,16 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
-	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
+	var notifierErrs error
 	for _, notifierID := range notifierIDs {
 		_, exists, err := s.notifiers.GetNotifier(ctx, notifierID)
 		if err != nil {
-			errorList.AddError(err)
+			notifierErrs = stdErrors.Join(notifierErrs, err)
 			continue
 		}
 		if !exists {
-			errorList.AddStringf("notifier with id: %s not found", notifierID)
+			notifierErrs = stdErrors.Join(notifierErrs,
+				errox.NotFound.Newf("notifier with id %q was not found", notifierID))
 			continue
 		}
 		if notifierSet.Contains(notifierID) {
@@ -636,14 +636,9 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 
 	_, err = s.PutPolicy(ctx, policy)
 	if err != nil {
-		errorList.AddStringf("policy could not be updated with notifier %v", err)
+		notifierErrs = stdErrors.Join(notifierErrs, errors.Wrap(err, "policy could not be updated with notifier"))
 	}
-
-	err = errorList.ToError()
-	if err != nil {
-		return err
-	}
-	return nil
+	return errors.Wrap(notifierErrs, "unable to use all requested notifiers")
 }
 
 func (s *serviceImpl) syncPoliciesWithSensors() error {
@@ -668,7 +663,6 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 	if notifierSet.Cardinality() == 0 {
 		return nil
 	}
-	errorList := errorhelpers.NewErrorList("unable to delete all requested notifiers")
 	for _, notifierID := range notifierIDs {
 		if !notifierSet.Contains(notifierID) {
 			continue
@@ -679,14 +673,8 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 	policy.Notifiers = notifierSet.AsSlice()
 	_, err = s.PutPolicy(ctx, policy)
 	if err != nil {
-		errorList.AddStringf("policy could not be updated with notifier %v", err)
+		return errors.Wrap(err, "policy could not be updated with notifier")
 	}
-
-	err = errorList.ToError()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

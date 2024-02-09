@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	stdErrors "errors"
 	"net/mail"
 
 	"github.com/pkg/errors"
@@ -14,7 +15,6 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
@@ -132,14 +132,15 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", bodyMaxLen)
 	}
 
-	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
+	var mailErrs error
 	for _, addr := range emailConfig.GetMailingLists() {
 		if _, err := mail.ParseAddress(addr); err != nil {
-			errorList.AddError(errors.Wrapf(errox.InvalidArgs, "Invalid email recipient address: %s", addr))
+			mailErrs = stdErrors.Join(mailErrs,
+				errox.InvalidArgs.Newf("invalid mail recipient address %q", addr).CausedBy(err))
 		}
 	}
-	if !errorList.Empty() {
-		return errorList.ToError()
+	if mailErrs != nil {
+		return errors.Wrap(mailErrs, "invalid email addresses in mailing list")
 	}
 
 	// Use allAccessCtx since report creator/updater might not have permissions for integrationSAC

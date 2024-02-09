@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -78,24 +79,27 @@ func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clus
 
 // Validate Generic notifier
 func Validate(generic *storage.Generic, validateSecret bool) error {
-	errList := errorhelpers.NewErrorList("Generic webhook validation")
+	var validationErrs error
 	if generic.GetEndpoint() == "" {
-		errList.AddString("endpoint is required")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("endpoint is required"))
 	}
 	if validateSecret && generic.GetUsername() != generic.GetPassword() && stringutils.AtLeastOneEmpty(generic.GetUsername(), generic.GetPassword()) {
-		errList.AddString("both username and password must be defined together")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("both username and password must be defined together"))
 	}
 	for _, f := range generic.GetHeaders() {
 		if f.GetKey() == "" || f.GetValue() == "" {
-			errList.AddString("all headers must have both a key and a value")
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.New("all headers must have both a key and a value"))
 		}
 	}
 	for _, f := range generic.GetExtraFields() {
 		if f.GetKey() == "" || f.GetValue() == "" {
-			errList.AddString("all extra fields must have both a key and a value")
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.New("all extra fields must have both a key and a value"))
 		}
 	}
-	return errList.ToError()
+	return errors.Wrap(validationErrs, "generic webhook validation")
 }
 
 func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {

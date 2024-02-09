@@ -2,9 +2,10 @@ package datastore
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/datastore/search"
@@ -14,7 +15,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
@@ -244,19 +244,22 @@ func (ds *datastoreImpl) DeleteAllNodesForCluster(ctx context.Context, clusterID
 }
 
 func (ds *datastoreImpl) deleteNodeFromStore(ctx context.Context, ids ...string) error {
-	errorList := errorhelpers.NewErrorList("deleting nodes")
+	var deleteErrs error
 	deleteRiskCtx := sac.WithAllAccess(context.Background())
 	for _, id := range ids {
 		if err := ds.storage.Delete(ctx, id); err != nil {
-			errorList.AddError(err)
+			deleteErrs = errors.Join(deleteErrs, err)
 			continue
 		}
 		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_NODE); err != nil {
-			errorList.AddError(err)
+			deleteErrs = errors.Join(deleteErrs, err)
 			continue
 		}
 	}
-	return errorList.ToError()
+	if deleteErrs != nil {
+		return fmt.Errorf("deleting nodes: %w", deleteErrs)
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
