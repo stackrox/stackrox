@@ -48,7 +48,7 @@ the login page, and log in with username "admin" and the password found in the
     - Run scanner/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f scanner
 
-  - Optional: Deploy Scanner components
+  - Optional: Deploy Scanner V4 components
     - Run scanner-v4/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f scanner-v4
 `
