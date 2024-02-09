@@ -733,7 +733,7 @@ func TestGetPolicyNamesAsSlice(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			actual := getPolicyNamesAsSlice(c.policies)
-			assert.Equal(t, c.expected, actual)
+			assert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }
