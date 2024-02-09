@@ -130,7 +130,7 @@ export type ClusterCheckStatus = {
     checkUid: string;
 };
 
-type ComplianceCheckResult = {
+export type ComplianceCheckResult = {
     checkId: string;
     checkName: string;
     clusters: ClusterCheckStatus[];
