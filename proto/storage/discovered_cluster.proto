@@ -30,7 +30,7 @@ message DiscoveredCluster {
     ProviderType provider_type = 4;
 
     string region = 5;
-    google.protobuf.Timestamp first_discovered_at = 6;
+    google.protobuf.Timestamp first_discovered_at = 6 [(gogoproto.moretags) = 'search:"Cluster Discovered Time,hidden"'];
   }
   Metadata metadata = 2;
 

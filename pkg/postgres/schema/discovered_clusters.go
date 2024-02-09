@@ -52,11 +52,12 @@ const (
 
 // DiscoveredClusters holds the Gorm model for Postgres table `discovered_clusters`.
 type DiscoveredClusters struct {
-	ID            string                           `gorm:"column:id;type:uuid;primaryKey"`
-	MetadataName  string                           `gorm:"column:metadata_name;type:varchar"`
-	MetadataType  storage.ClusterMetadata_Type     `gorm:"column:metadata_type;type:integer"`
-	Status        storage.DiscoveredCluster_Status `gorm:"column:status;type:integer"`
-	SourceID      string                           `gorm:"column:sourceid;type:uuid"`
-	LastUpdatedAt *time.Time                       `gorm:"column:lastupdatedat;type:timestamp"`
-	Serialized    []byte                           `gorm:"column:serialized;type:bytea"`
+	ID                        string                           `gorm:"column:id;type:uuid;primaryKey"`
+	MetadataName              string                           `gorm:"column:metadata_name;type:varchar"`
+	MetadataType              storage.ClusterMetadata_Type     `gorm:"column:metadata_type;type:integer"`
+	MetadataFirstDiscoveredAt *time.Time                       `gorm:"column:metadata_firstdiscoveredat;type:timestamp"`
+	Status                    storage.DiscoveredCluster_Status `gorm:"column:status;type:integer"`
+	SourceID                  string                           `gorm:"column:sourceid;type:uuid"`
+	LastUpdatedAt             *time.Time                       `gorm:"column:lastupdatedat;type:timestamp"`
+	Serialized                []byte                           `gorm:"column:serialized;type:bytea"`
 }
