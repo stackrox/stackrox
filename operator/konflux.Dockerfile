@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN scripts/rhtap/fail-build-if-git-is-dirty.sh
+RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
 # Build the operator binary.
 # TODO(ROX-20240): enable non-release development builds.
