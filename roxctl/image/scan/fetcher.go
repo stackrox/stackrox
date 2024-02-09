@@ -28,9 +28,6 @@ func (*LocalFetchArena) Close(context.Context) error {
 type realizer struct{}
 
 func (*realizer) Realize(ctx context.Context, ls []*claircore.Layer) error {
-	for _, l := range ls {
-		l.SetLocal(l.URI)
-	}
 	return nil
 }
 
