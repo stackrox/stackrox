@@ -38,9 +38,6 @@ func (i *imageScanCommand) scanLocal(ctx context.Context) (*storage.Image, error
 	nop := zerolog.Nop()
 	zlog.Set(&nop)
 
-	dbPath = "/home/janisz/go/src/github.com/stackrox/clair-action/vulndb"
-	dbURL = "https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
-
 	fa := &LocalFetchArena{}
 
 	img, err := newImage(i.image)
@@ -49,6 +46,7 @@ func (i *imageScanCommand) scanLocal(ctx context.Context) (*storage.Image, error
 	}
 	defer os.Remove(img.path)
 
+	// https://gateway.ipfs.io/ipfs/QmaiQRxehdQE5cyqN9ZvM9U8QLCpyJ3rxoXcwHNkTpenj9
 	//err := datastore.DownloadDB(ctx, dbURL, dbPath)
 	//if err != nil {
 	//	return nil, fmt.Errorf("could not download database: %w", err)
@@ -56,7 +54,7 @@ func (i *imageScanCommand) scanLocal(ctx context.Context) (*storage.Image, error
 
 	println("Creating sqlite matcher store")
 
-	matcherStore, err := datastore.NewSQLiteMatcherStore(dbPath, true)
+	matcherStore, err := datastore.NewSQLiteMatcherStore(i.dbUri, true)
 	if err != nil {
 		return nil, fmt.Errorf("error creating sqlite backend: %w", err)
 	}
