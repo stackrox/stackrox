@@ -16,7 +16,7 @@ source "$TEST_ROOT/scripts/ci/test_state.sh"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
 # If `envsubst` is contained in a non-standard directory (hello, nix!) `env -i` won't be able to
-# execute it, even though it can be located via `$PATH``, hence we retrieve the absolute path of
+# execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
 # `envsubst`` before passing it to `env`.
 envsubst=$(command -v envsubst)
 
