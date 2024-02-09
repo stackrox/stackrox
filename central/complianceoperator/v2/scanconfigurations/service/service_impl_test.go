@@ -101,6 +101,24 @@ func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestComplianceScanConfigurationName() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	request := getTestAPIRec()
+	request.ScanName = "test@scan"
+	request.Id = uuid.NewDummy().String()
+	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
+	processResponse.Id = uuid.NewDummy().String()
+
+	_, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+
+	request.ScanName = "testscan_"
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
