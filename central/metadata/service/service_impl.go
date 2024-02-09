@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"encoding/base64"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -77,6 +80,11 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		BuildFlavor:   buildinfo.BuildFlavor,
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
+	}
+	if env.ExpiredAt.Setting() != "" {
+		if timestamp, err := time.Parse(time.RFC3339, env.ExpiredAt.Setting()); err == nil {
+			metadata.ExpiredAt, _ = types.TimestampProto(timestamp)
+		}
 	}
 	// Only return the version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {

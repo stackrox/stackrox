@@ -112,6 +112,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.labels['rhacs.redhat.com/tenant']
+        - name: ROX_EXPIRED_AT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['rhacs.redhat.com/expired-at']
         {{- end }}
         {{- if ._rox.central.notifierSecretsEncryption }}
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}

@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "storage/system_info.proto";
 
 option go_package = "v1";
@@ -24,6 +25,8 @@ message Metadata {
 
   // Do not use this field. It will always contain "VALID"
   LicenseStatus license_status = 4 [deprecated = true];
+
+  google.protobuf.Timestamp expired_at = 5;
 }
 
 message TrustInfo {

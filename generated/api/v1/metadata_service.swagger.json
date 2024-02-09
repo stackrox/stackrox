@@ -295,6 +295,10 @@
         "licenseStatus": {
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""
+        },
+        "expiredAt": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
