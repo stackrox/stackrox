@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"golang.org/x/time/rate"
 )
 
@@ -169,7 +168,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 	//  The secured cluster ID, and type.
 	securedClusters := set.NewStringSet()
 
-	unspecifiedClusterTypes := set.NewStringSet()
+	unspecifiedProviderType := set.NewStringSet()
 
 	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
 		providerMetadata := obj.GetStatus().GetProviderMetadata()
@@ -184,8 +183,8 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		// This means that we will assign each discovered cluster that cannot be safely matched to a secured cluster
 		// as Unspecified instead of Unsecured. This is to avoid false-positives.
 		clusterMetadata := providerMetadata.GetCluster()
-		if stringutils.AtLeastOneEmpty(clusterMetadata.GetId(), clusterMetadata.GetName()) {
-			unspecifiedClusterTypes.Add(clusterMetadata.GetType().String())
+		if clusterMetadata.GetId() == "" {
+			unspecifiedProviderType.Add(providerMetadataToProviderType(providerMetadata).String())
 			return nil
 		}
 
@@ -201,7 +200,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		switch {
 		case securedClusters.Contains(clusterIndexForDiscoveredCluster(cluster)):
 			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
-		case unspecifiedClusterTypes.Contains(cluster.GetType().String()):
+		case unspecifiedProviderType.Contains(cluster.GetProviderType().String()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
 		default:
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
@@ -236,4 +235,17 @@ func debugPrintDiscoveredClusters(clusters []*discoveredclusters.DiscoveredClust
 		logMsg = fmt.Sprintf("%s%d: %+v\n", logMsg, i, cluster)
 	}
 	log.Debug(logMsg)
+}
+
+func providerMetadataToProviderType(metadata *storage.ProviderMetadata) storage.DiscoveredCluster_Metadata_ProviderType {
+	switch {
+	case metadata.GetGoogle() != nil:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP
+	case metadata.GetAws() != nil:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
+	case metadata.GetAzure() != nil:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
+	default:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
+	}
 }

@@ -51,10 +51,6 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 					Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{
 						AccountId: "666666666666",
 					}},
-					Cluster: &storage.ClusterMetadata{
-						Type: storage.ClusterMetadata_EKS,
-						Id:   "arn:aws:eks:us-east-1:666666666666:cluster/test-cluster-5",
-					},
 				},
 			},
 		},
