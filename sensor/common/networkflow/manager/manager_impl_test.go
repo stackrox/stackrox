@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -1104,11 +1103,6 @@ func Test_connection_IsExternal(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			c := &connection{
-				local: net.NetworkPeerID{
-					Address:   net.ParseIP("99.99.99.99"),
-					Port:      80,
-					IPNetwork: net.IPNetwork{},
-				},
 				remote: net.NumericEndpoint{
 					IPAndPort: net.NetworkPeerID{
 						Address:   net.ParseIP(tt.remoteIP),
@@ -1116,8 +1110,6 @@ func Test_connection_IsExternal(t *testing.T) {
 						IPNetwork: net.IPNetworkFromCIDR(tt.remoteCIDR),
 					},
 				},
-				containerID: uuid.NewV4().String(),
-				incoming:    true,
 			}
 			got, err := c.IsExternal()
 			if !tt.wantErr {
