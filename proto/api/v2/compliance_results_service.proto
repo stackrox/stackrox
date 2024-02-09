@@ -94,6 +94,7 @@ message ComplianceClusterScanStats {
 message ComplianceClusterOverallStats {
   ComplianceScanCluster cluster = 1;
   repeated ComplianceCheckStatusCount check_stats = 2;
+  repeated string cluster_errors = 3;
 }
 
 // ListComplianceScanResultsOverviewResponse provides overviews for scans

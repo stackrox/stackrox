@@ -361,6 +361,7 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 			ClusterId:   clusterID,
 			ClusterName: clusterName1,
 		},
+		ClusterErrors: []string{"test error"},
 		CheckStats: []*v2.ComplianceCheckStatusCount{
 			{
 				Count:  failCount,
