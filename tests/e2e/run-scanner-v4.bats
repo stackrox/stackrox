@@ -258,6 +258,10 @@ teardown_file() {
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_V4_SUPPORT=true
     _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
@@ -278,6 +282,10 @@ teardown_file() {
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_V4_SUPPORT=true
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
