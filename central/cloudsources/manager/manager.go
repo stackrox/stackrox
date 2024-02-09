@@ -166,7 +166,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 	//  The secured cluster ID, name, and type.
 	securedClusters := set.NewStringSet()
 
-	unspecifiedProviderTypes := set.NewStringSet()
+	unspecifiedClusterTypes := set.NewStringSet()
 
 	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
 		providerMetadata := obj.GetStatus().GetProviderMetadata()
@@ -180,9 +180,8 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		// cluster type is unspecified), then mark the provider type as Unspecified.
 		// This means that we will assign each discovered cluster that cannot be safely matched to a secured cluster
 		// as Unspecified instead of Unsecured. This is to avoid false-positives.
-		if providerMetadata.GetCluster().GetType() == storage.ClusterMetadata_UNSPECIFIED ||
-			stringutils.AtLeastOneEmpty(providerMetadata.GetCluster().GetId(), providerMetadata.GetCluster().GetName()) {
-			unspecifiedProviderTypes.Add(providerMetadataToProviderType(providerMetadata).String())
+		if stringutils.AtLeastOneEmpty(providerMetadata.GetCluster().GetId(), providerMetadata.GetCluster().GetName()) {
+			unspecifiedClusterTypes.Add(providerMetadata.GetCluster().GetType().String())
 			return nil
 		}
 
@@ -198,7 +197,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		switch {
 		case securedClusters.Contains(clusterIndexForDiscoveredCluster(cluster)):
 			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
-		case unspecifiedProviderTypes.Contains(cluster.GetProviderType().String()):
+		case unspecifiedClusterTypes.Contains(cluster.GetType().String()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
 		default:
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
