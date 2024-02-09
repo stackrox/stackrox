@@ -51,7 +51,7 @@ func (cmd *scannerDownloadDBCommand) construct(c *cobra.Command) {
 	cmd.timeout = flags.Timeout(c)
 }
 
-func (cmd *scannerDownloadDBCommand) downloadDb() error {
+func (cmd *scannerDownloadDBCommand) downloadDB() error {
 	// Get the list of file names to attempt to download.
 	bundleFileNames, err := cmd.buildBundleFileNames()
 	if err != nil {
@@ -63,9 +63,6 @@ func (cmd *scannerDownloadDBCommand) downloadDb() error {
 		// Get the name of the output file and ensures it's valid.
 		outFileName, err := cmd.buildAndValidateOutputFileName(bundleFileName)
 		if err != nil {
-			// If there was an error validating the output file, assume the file exists
-			// and therefore was successfully created in the past. Do not continue
-			// processing other variants.
 			return fmt.Errorf("invalid output file %q: %w", bundleFileName, err)
 		}
 
@@ -228,8 +225,8 @@ func (cmd *scannerDownloadDBCommand) downloadVulnDB(url string, outFileName stri
 	defer utils.IgnoreError(outFile.Close)
 
 	var fileSize int64
-	if fileSizeStrs, ok := resp.Header[contentLengthHdrKey]; ok {
-		if fileSizeI, err := strconv.ParseInt(fileSizeStrs[0], 10, 64); err == nil {
+	if fileSizeStr := resp.Header.Get(contentLengthHdrKey); fileSizeStr != "" {
+		if fileSizeI, err := strconv.ParseInt(fileSizeStr, 10, 64); err == nil {
 			fileSize = fileSizeI
 		}
 	}
@@ -278,7 +275,7 @@ from the example above).`,
 		RunE: func(c *cobra.Command, args []string) error {
 			scannerDownloadDBCmd.construct(c)
 
-			return scannerDownloadDBCmd.downloadDb()
+			return scannerDownloadDBCmd.downloadDB()
 		},
 	}
 

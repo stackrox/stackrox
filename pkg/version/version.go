@@ -219,11 +219,8 @@ func IsPriorToScannerV4(version string) (bool, error) {
 	}
 
 	// x == 4
-	if y < 3 || (y == 3 && (z == "" || z != "x")) {
-		return true, nil
-	}
-
-	return false, nil
+	// Scanner V4 was introduced in 4.4
+	return y < 3 || (y == 3 && (z == "" || z != "x")), nil
 }
 
 // Variants breaks a version into a series of version strings starting with
