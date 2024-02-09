@@ -17,7 +17,6 @@ func Singleton() Pruner {
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil
 	}
-	
 	once.Do(func() {
 		pruner = New(compIntegration.Singleton(), compScanSetting.Singleton())
 	})
