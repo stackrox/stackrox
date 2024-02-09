@@ -1,3 +1,4 @@
+# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 LABEL \
