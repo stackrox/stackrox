@@ -38,7 +38,20 @@
       "discoveryDate": "2024-02-06 07:41:00+0000",
       "firstDiscoveryDate": "2024-02-01 13:52:00+0000",
       "metadata": {}
+    },
+    {
+      "id": "arn:aws:eks:us-east-1:test-account:cluster/test-cluster-4",
+      "name": "",
+      "type": "eks",
+      "typeName": "EKS",
+      "source": "aws",
+      "region": "us-east-1",
+      "accountId": "test-account",
+      "accountName": "test-account",
+      "discoveryDate": "2024-02-09 08:00:00+0000",
+      "firstDiscoveryDate": "2024-02-09 08:00:00+0000",
+      "metadata": {}
     }
   ],
-  "total": 3
+  "total": 4
 }

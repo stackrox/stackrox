@@ -88,6 +88,88 @@ func (a *Asset) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// GetName returns the name of the asset.
+// In case no name is given, the name will be attempted to be parsed from the asset ID.
+// In case no name can be parsed from the asset ID, the ID will be returned.
+func (a *Asset) GetName() string {
+	if a.Name != "" {
+		return a.Name
+	}
+
+	// By default, in case we cannot retrieve the name from the ID (e.g. in case GKE clusters are given), return
+	// the cluster ID as name.
+	name := a.ID
+
+	// For AKS and EKS clusters, the name is embedded within the cluster ID. It will be the last part of the ID
+	// when split by "/"
+	// AKS ID: "subscriptions/<id>/resourcegroups/<group>/azure resource names.../<cluster name>"
+	// EKS ID: "arn:aws:eks:<region>:<account-id>:cluster/<cluster name>
+	idParts := strings.Split(a.ID, "/")
+	idPartsLen := len(idParts)
+	if len(idParts) > 1 {
+		name = idParts[idPartsLen-1]
+	}
+	return name
+}
+
+// GetID returns the ID of the asset compatible with the expected ID of secured clusters in ACS.
+// For AKS, this requires parsing the ID and formatting it according to the structure defined in
+// pkg/cloudproviders/azure.
+func (a *Asset) GetID() string {
+	// If the type is not AKS, we can safely return the ID from Paladin Cloud.
+	// In the case of EKS, it will be the ARN, in the case of GCP it will be the cluster ID.
+	if a.Type != clusterTypeAKS {
+		return a.ID
+	}
+
+	// For Azure, our cluster ID is different from the one specified by Paladin Cloud.
+	// Paladin CLoud has the Azure reference, which is of the format
+	//	"subscriptions/<id>/resourcegroups/<group>/azure resource names.../<cluster name>"
+	// Internally, our format for AKS clusters is
+	//  "<subscription_id>_MC_<resource group>_<cluster name>_<location>
+
+	// Index 1 -> subscription ID
+	// Index 3 -> resource group name
+	// Index 7 -> cluster name
+	idParts := strings.Split(a.ID, "/")
+
+	if len(idParts) != 8 {
+		log.Warnf("Received unkown ID for AKS cluster from Paladin %q. This might lead to incorrect matching",
+			a.ID)
+		return a.ID
+	}
+
+	return fmt.Sprintf("%s_MC_%s_%s_%s", idParts[1], idParts[3], idParts[7], a.Region)
+}
+
+// GetType returns the asset type converted to storage.ClusterMetadata_Type.
+func (a *Asset) GetType() storage.ClusterMetadata_Type {
+	switch a.Type {
+	case clusterTypeAKS:
+		return storage.ClusterMetadata_AKS
+	case clusterTypeGKE:
+		return storage.ClusterMetadata_GKE
+	case clusterTypeEKS:
+		return storage.ClusterMetadata_EKS
+	default:
+		return storage.ClusterMetadata_UNSPECIFIED
+	}
+}
+
+// GetProviderType returns the asset source converted to storage.DiscoveredCluster_Metadata_ProviderType.
+func (a *Asset) GetProviderType() storage.DiscoveredCluster_Metadata_ProviderType {
+	switch a.Source {
+	case "gcp":
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP
+	case "aws":
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
+	case "azure":
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
+	default:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
+	}
+}
+
 // paladinClient can be used to interact with the Paladin Cloud API.
 type paladinClient struct {
 	httpClient    *http.Client
@@ -205,10 +287,10 @@ func getErrorResponse(resp *http.Response) error {
 
 func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclusters.DiscoveredCluster, error) {
 	d := &discoveredclusters.DiscoveredCluster{
-		ID:            clusterIDFromAsset(asset),
-		Name:          asset.Name,
-		Type:          clusterTypeFromAsset(asset),
-		ProviderType:  providerTypeFromAsset(asset),
+		ID:            asset.GetID(),
+		Name:          asset.GetName(),
+		Type:          asset.GetType(),
+		ProviderType:  asset.GetProviderType(),
 		Region:        asset.Region,
 		CloudSourceID: c.cloudSourceID,
 	}
@@ -220,57 +302,4 @@ func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclu
 	d.FirstDiscoveredAt = firstDiscoveredAt
 
 	return d, nil
-}
-
-func providerTypeFromAsset(a Asset) storage.DiscoveredCluster_Metadata_ProviderType {
-	switch a.Source {
-	case "gcp":
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP
-	case "aws":
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
-	case "azure":
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
-	default:
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
-	}
-}
-
-func clusterTypeFromAsset(a Asset) storage.ClusterMetadata_Type {
-	switch a.Type {
-	case clusterTypeAKS:
-		return storage.ClusterMetadata_AKS
-	case clusterTypeGKE:
-		return storage.ClusterMetadata_GKE
-	case clusterTypeEKS:
-		return storage.ClusterMetadata_EKS
-	default:
-		return storage.ClusterMetadata_UNSPECIFIED
-	}
-}
-
-func clusterIDFromAsset(a Asset) string {
-	// If the type is not AKS, we can safely return the ID from Paladin Cloud.
-	// In the case of EKS, it will be the ARN, in the case of GCP it will be the cluster ID.
-	if a.Type != clusterTypeAKS {
-		return a.ID
-	}
-
-	// For Azure, our cluster ID is different from the one specified by Paladin Cloud.
-	// Paladin CLoud has the Azure reference, which is of the format
-	//	"subscriptions/<id>/resourcegroups/<group>/azure resource names.../<cluster name>"
-	// Internally, our format for AKS clusters is
-	//  "<subscription_id>_MC_<resource group>_<cluster name>_<location>
-
-	// Index 1 -> subscription ID
-	// Index 3 -> resource group name
-	// Index 7 -> cluster name
-	idParts := strings.Split(a.ID, "/")
-
-	if len(idParts) != 8 {
-		log.Warnf("Received unkown ID for AKS cluster from Paladin %q. This might lead to incorrect matching",
-			a.ID)
-		return a.ID
-	}
-
-	return fmt.Sprintf("%s_MC_%s_%s_%s", idParts[1], idParts[3], idParts[7], a.Region)
 }

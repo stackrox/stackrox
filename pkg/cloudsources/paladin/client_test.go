@@ -40,6 +40,10 @@ func TestClient_GetAssets(t *testing.T) {
 	require.NoError(t, err)
 	testCluster3FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster3FirstDiscoveredAt)
 	require.NoError(t, err)
+	testCluster4FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-09 08:00:00+0000")
+	require.NoError(t, err)
+	testCluster4FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster4FirstDiscoveredAt)
+	require.NoError(t, err)
 
 	expectedDiscoveredClusters := []*discoveredclusters.DiscoveredCluster{
 		{
@@ -69,6 +73,15 @@ func TestClient_GetAssets(t *testing.T) {
 			CloudSourceID:     "id",
 			FirstDiscoveredAt: testCluster3FirstDiscoveredAtTS,
 		},
+		{
+			ID:                "arn:aws:eks:us-east-1:test-account:cluster/test-cluster-4",
+			Name:              "test-cluster-4",
+			Type:              storage.ClusterMetadata_EKS,
+			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
+			Region:            "us-east-1",
+			CloudSourceID:     "id",
+			FirstDiscoveredAt: testCluster4FirstDiscoveredAtTS,
+		},
 	}
 
 	client := NewClient(&storage.CloudSource{
@@ -81,7 +94,7 @@ func TestClient_GetAssets(t *testing.T) {
 
 	resp, err := client.GetDiscoveredClusters(context.Background())
 	require.NoError(t, err)
-	assert.Len(t, resp, 3)
+	assert.Len(t, resp, 4)
 
 	assert.ElementsMatch(t, resp, expectedDiscoveredClusters)
 }

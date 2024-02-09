@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
@@ -149,12 +150,14 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 		log.Errorw("Received errors during fetching assets from cloud sources. The result might be incomplete",
 			logging.Err(clientErrors))
 	}
-	log.Debugf("Got the following discovered clusters from Cloud Source integrations: %+v", discoveredClusters)
+	debugPrintDiscoveredClusters(discoveredClusters)
 	return discoveredClusters
 }
 
 func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
 	m.matchDiscoveredClusters(clusters)
+
+	debugPrintDiscoveredClusters(clusters)
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx, clusters...); err != nil {
 		log.Errorw("Received errors during upserting discovered clusters.", logging.Err(err))
@@ -224,4 +227,12 @@ func clusterIndexForClusterMetadata(obj *storage.ClusterMetadata) clusterIndex {
 
 func clusterIndexForDiscoveredCluster(obj *discoveredclusters.DiscoveredCluster) clusterIndex {
 	return obj.GetID() + obj.GetName() + obj.GetType().String()
+}
+
+func debugPrintDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
+	logMsg := "Got the following discovered clusters:\n"
+	for i, cluster := range clusters {
+		logMsg = fmt.Sprintf("%s%d: %+v\n", logMsg, i, cluster)
+	}
+	log.Debug(logMsg)
 }
