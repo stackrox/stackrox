@@ -3,14 +3,16 @@ export type IntegrationSource =
     | 'notifiers'
     | 'imageIntegrations'
     | 'backups'
-    | 'signatureIntegrations';
+    | 'signatureIntegrations'
+    | 'cloudSources';
 
 export type IntegrationType =
     | AuthProviderType
     | BackupIntegrationType
     | ImageIntegrationType
     | NotifierIntegrationType
-    | SignatureIntegrationType;
+    | SignatureIntegrationType
+    | CloudSourceIntegrationType;
 
 export type AuthProviderType = 'apitoken' | 'clusterInitBundle';
 
@@ -54,6 +56,8 @@ export type NotifierIntegrationType =
     | 'teams';
 
 export type SignatureIntegrationType = 'signature';
+
+export type CloudSourceIntegrationType = 'paladinCloud';
 
 export type BaseIntegration = {
     id: string;

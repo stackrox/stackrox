@@ -10,6 +10,7 @@ import {
     AuthProviderType,
     BackupIntegrationType,
     BaseIntegration,
+    CloudSourceIntegrationType,
     ImageIntegrationType,
     NotifierIntegrationType,
     SignatureIntegrationType,
@@ -22,6 +23,7 @@ import {
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
 import { getOriginLabel } from 'Containers/AccessControl/traits';
+import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
@@ -73,6 +75,10 @@ type IntegrationTableColumnDescriptorMap = {
     signatureIntegrations: Record<
         SignatureIntegrationType,
         IntegrationTableColumnDescriptor<SignatureIntegration>[]
+    >;
+    cloudSources: Record<
+        CloudSourceIntegrationType,
+        IntegrationTableColumnDescriptor<CloudSourceIntegration>[]
     >;
 };
 
@@ -292,6 +298,12 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                 },
                 Header: 'Schedule',
             },
+        ],
+    },
+    cloudSources: {
+        paladinCloud: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'paladinCloud.endpoint', Header: 'Endpoint' },
         ],
     },
 };

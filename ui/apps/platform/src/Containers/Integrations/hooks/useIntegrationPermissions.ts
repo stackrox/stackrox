@@ -38,6 +38,10 @@ const useIntegrationPermissions = (): UseIntegrationPermissionsResponse => {
             write: getHasReadWritePermission('Integration', userRolePermissions),
             read: getHasReadPermission('Integration', userRolePermissions),
         },
+        cloudSources: {
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
+        },
     };
 };
 
