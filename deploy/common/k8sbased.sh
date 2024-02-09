@@ -628,8 +628,9 @@ function launch_sensor {
     fi
 
     if [[ "${ORCH}" == "openshift" ]]; then
-      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+      if [[ "${ROX_OPENSHIFT_VERSION:-}" == "4" ]]; then
         extra_config+=("--openshift-version=${ROX_OPENSHIFT_VERSION}")
+        scanner_extra_config+=("--cluster-type=openshift4")
       fi
     fi
 
