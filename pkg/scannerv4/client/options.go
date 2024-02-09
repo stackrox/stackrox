@@ -139,9 +139,11 @@ func makeOptions(opts ...Option) (options, error) {
 }
 
 func validateOptions(o options) error {
+	// If this check is removed, make sure we still properly use the DNS name resolver.
 	if _, _, err := net.SplitHostPort(o.indexerOpts.address); err != nil {
 		return fmt.Errorf("invalid indexer address (want [host]:port): %w", err)
 	}
+	// If this check is removed, make sure we still properly use the DNS name resolver.
 	if _, _, err := net.SplitHostPort(o.matcherOpts.address); err != nil {
 		return fmt.Errorf("invalid matcher address (want [host]:port): %w", err)
 	}

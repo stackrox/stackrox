@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -98,11 +97,8 @@ func (c *gRPCScanner) Close() error {
 }
 
 func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
-	// Replace HTTP(S) with DNS for client-side load balancing.
-	// This ensures we use the builtin DNS name resolver.
-	address := strings.TrimPrefix(o.address, "https://")
-	address = strings.TrimPrefix(address, "http://")
-	address = "dns:///" + address
+	// Prefix address with dns:/// to use the DNS name resolver.
+	address := "dns:///" + o.address
 
 	dialOpts := []grpc.DialOption{
 		// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes Services
