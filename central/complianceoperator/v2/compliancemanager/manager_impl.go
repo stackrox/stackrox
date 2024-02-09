@@ -2,13 +2,13 @@ package compliancemanager
 
 import (
 	"context"
-	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
+	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -41,6 +41,7 @@ type managerImpl struct {
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
 	clusterDS     clusterDatastore.DataStore
+	profileDS     profileDatastore.DataStore
 
 	// Map used to correlate requests to a sensor with a response.  Each request will generate
 	// a unique entry in the map
@@ -49,13 +50,14 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
 		scanSettingDS:   scanSettingDS,
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
+		profileDS:       profileDS,
 	}
 }
 
@@ -191,17 +193,33 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	// Check if any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
-	err := validateProfiles(profiles)
+	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
+	// If so, then we cannot create the scan configuration.
+	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
+		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
-	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
-	// If so, then we cannot create the scan configuration.
-	err = m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
+	// check if cluster is selected
+	if len(clusters) == 0 {
+		return nil, errors.Errorf("No clusters selected for scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
+	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusters[0]).
+		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
+
 	if err != nil {
 		log.Error(err)
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
+	if len(returnedProfiles) != len(profiles) {
+		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+	err = validateProfiles(returnedProfiles)
+	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
@@ -290,22 +308,16 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 // Check if node profiles have more than one product
 // ex. we can not have rhcos node profile and ocp node profile in the same scan configuration
 // as this is not allowed on Compliance Operator ScanSettingBinding
-func validateProfiles(profiles []string) error {
-	// check if any profiles are node profiles
-	hasOCPNodeProfile := false
-	hasRHCOSNodeProfile := false
+func validateProfiles(profiles []*storage.ComplianceOperatorProfileV2) error {
+	var product string
 	for _, profile := range profiles {
-		// if profile contains "node" and ocp, then it is an ocp node profile
-		if strings.Contains(profile, "node") && strings.HasPrefix(profile, "ocp4") {
-			hasOCPNodeProfile = true
+		if profile.GetProductType() == "node" {
+			if product == "" {
+				product = profile.GetProduct()
+			} else if product != profile.GetProduct() {
+				return errors.New("Node profiles must have the same product")
+			}
 		}
-		// if profile contains "rhcos4", then it is an rhcos4 node profile
-		if strings.HasPrefix(profile, "rhcos4") {
-			hasRHCOSNodeProfile = true
-		}
-	}
-	if hasOCPNodeProfile && hasRHCOSNodeProfile {
-		return errors.New("cannot have both ocp4 node profile and rhcos4 node profile in the same scan configuration")
 	}
 	return nil
 }

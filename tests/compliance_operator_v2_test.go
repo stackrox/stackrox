@@ -265,7 +265,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate-rev-4", "ocp4-cis-node"},
+			Profiles:    []string{"rhcos4-high", "ocp4-cis-node"},
 			Description: "test config with invalid profiles",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -280,9 +280,9 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		},
 	}
 
-	// Verify that the invalid profile was not created and the error message is correct
+	// Verify that the invalid scan configuration was not created and the error message is correct
 	_, err = service.CreateComplianceScanConfiguration(ctx, invalidProfileReq)
-	assert.Contains(t, err.Error(), "cannot have both ocp4 node profile and rhcos4 node profile")
+	assert.Contains(t, err.Error(), "profiles must have the same product")
 
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
@@ -343,7 +343,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 	assert.Empty(t, scanconfigID)
 }
 
-func TestComplianceV2ComplianceObjectMetadata(t *testing.T){
+func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 	ctx := context.Background()
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
