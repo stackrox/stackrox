@@ -225,16 +225,3 @@ func clusterIndexForClusterMetadata(obj *storage.ClusterMetadata) clusterIndex {
 func clusterIndexForDiscoveredCluster(obj *discoveredclusters.DiscoveredCluster) clusterIndex {
 	return obj.GetID() + obj.GetName() + obj.GetType().String()
 }
-
-func providerMetadataToProviderType(metadata *storage.ProviderMetadata) storage.DiscoveredCluster_Metadata_ProviderType {
-	switch {
-	case metadata.GetGoogle() != nil:
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP
-	case metadata.GetAws() != nil:
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
-	case metadata.GetAzure() != nil:
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
-	default:
-		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
-	}
-}
