@@ -124,6 +124,8 @@ func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 }
 
 func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
+	// image := "quay.io/stackrox-io/scanner-db:4.3.4"
+	image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-db:on-pr-4312c58932be0a656654d7d0adb1d010c326ca54"
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -146,7 +148,7 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 					},
 					Containers: []v1.Container{{
 						Name:  "db",
-						Image: "quay.io/stackrox-io/scanner-db:4.3.4",
+						Image: image,
 						SecurityContext: &v1.SecurityContext{
 							RunAsUser:  &PostgresUser,
 							RunAsGroup: &PostgresUser,
@@ -169,7 +171,7 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 					}},
 					InitContainers: []v1.Container{{
 						Name:  "init-db",
-						Image: "quay.io/stackrox-io/scanner-db:4.3.4",
+						Image: image,
 						SecurityContext: &v1.SecurityContext{
 							RunAsUser:  &PostgresUser,
 							RunAsGroup: &PostgresUser,
@@ -282,6 +284,8 @@ func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error 
 }
 
 func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
+	// image := "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner:on-pr-8f408774a783d37ea22030afbae689aa72ba1966"
+	image := "quay.io/stackrox-io/scanner:4.3.4"
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -304,7 +308,7 @@ func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 					},
 					Containers: []v1.Container{{
 						Name:    "scanner",
-						Image:   "quay.io/stackrox-io/scanner:4.3.4",
+						Image:   image,
 						Command: []string{"/entrypoint.sh"},
 						SecurityContext: &v1.SecurityContext{
 							RunAsUser:  &ScannerUser,

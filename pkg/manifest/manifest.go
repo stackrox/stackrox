@@ -90,8 +90,9 @@ func (m *manifestGenerator) getCA(ctx context.Context) error {
 				}
 				return fmt.Errorf("Error creating secret additional-ca: %w", err)
 			}
+		} else {
+			return fmt.Errorf("Error fetching additional-ca secret: %w", err)
 		}
-		return fmt.Errorf("Error fetching additional-ca secret: %v", err)
 	} else {
 		ca, err = certgen.LoadCAFromFileMap(secret.Data)
 		if err != nil {
