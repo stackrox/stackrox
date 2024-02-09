@@ -829,17 +829,16 @@ remove_existing_stackrox_resources() {
 
     (
         # Delete StackRox CRs first to give the operator a chance to properly finish the resource cleanup.
-        if [[ "${centrals_supported}" == "true" ]]; then
-            kubectl get centrals -o name | while read -r central; do
-                kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
-            done
-        fi
         if [[ "${securedclusters_supported}" == "true" ]]; then
             kubectl get securedclusters -o name | while read -r securedcluster; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
             done
         fi
-
+        if [[ "${centrals_supported}" == "true" ]]; then
+            kubectl get centrals -o name | while read -r central; do
+                kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
+            done
+        fi
         if [[ "$psps_supported" = "true" ]]; then
             kubectl delete -R -f scripts/ci/psp --wait
         fi
