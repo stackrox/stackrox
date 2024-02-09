@@ -204,9 +204,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 
 func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeployment) error {
 	log.Debug("ReprocessDeployment message received from central")
-	if err := p.reprocessor.ProcessReprocessDeployments(req); err != nil {
-		return err
-	}
+
 	msg := component.NewEvent()
 	msg.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
 		component.WithForceDetection(),

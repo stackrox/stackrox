@@ -72,7 +72,7 @@ func (mr *MockDetectorMockRecorder) Notify(e any) *gomock.Call {
 }
 
 // ProcessDeployment mocks base method.
-func (m *MockDetector) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
+func (m *MockDetector) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction, force bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ProcessDeployment", ctx, deployment, action)
 }
@@ -178,19 +178,19 @@ func (mr *MockDetectorMockRecorder) ProcessUpdatedImage(image any) *gomock.Call 
 }
 
 // ReprocessDeployments mocks base method.
-func (m *MockDetector) ReprocessDeployments(deploymentIDs ...string) {
+func (m *MockDetector) RemoveDeploymentsFromDeduper(deploymentIDs ...string) {
 	m.ctrl.T.Helper()
 	varargs := []any{}
 	for _, a := range deploymentIDs {
 		varargs = append(varargs, a)
 	}
-	m.ctrl.Call(m, "ReprocessDeployments", varargs...)
+	m.ctrl.Call(m, "RemoveDeploymentsFromDeduper", varargs...)
 }
 
 // ReprocessDeployments indicates an expected call of ReprocessDeployments.
 func (mr *MockDetectorMockRecorder) ReprocessDeployments(deploymentIDs ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessDeployments", reflect.TypeOf((*MockDetector)(nil).ReprocessDeployments), deploymentIDs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeploymentsFromDeduper", reflect.TypeOf((*MockDetector)(nil).RemoveDeploymentsFromDeduper), deploymentIDs...)
 }
 
 // ResponsesC mocks base method.
