@@ -217,7 +217,7 @@ func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken
 
 	rawIDToken, err := claimsAsString(idToken)
 	if err != nil {
-		return nil, "", err
+		return nil, "", errors.Wrap(err, "extracting raw ID token claims from ID token")
 	}
 
 	return externalClaims, rawIDToken, nil
