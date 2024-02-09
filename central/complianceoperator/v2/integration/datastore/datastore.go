@@ -43,7 +43,9 @@ func New(complianceIntegrationStorage pgStore.Store, searcher search.Searcher) D
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, searcher search.Searcher) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store, searcher), nil
+	indexer := pgStore.NewIndexer(pool)
+	searcher := search.New(store, indexer)
+	return New(store, searcher)
 }

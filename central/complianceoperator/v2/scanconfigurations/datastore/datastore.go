@@ -59,8 +59,8 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
 	statusStorage := statusStore.New(pool)
-	return New(store, statusStorage), nil
+	return New(store, statusStorage)
 }

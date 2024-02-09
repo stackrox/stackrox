@@ -66,11 +66,13 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				clusterDatastore.EXPECT().GetClusterName(gomock.Any(), c.integration.GetClusterId()).Return(mockClusterName, true, nil).Times(1)
 			}
 
-			converted, err := convertStorageIntegrationToV2(context.Background(), c.integration, clusterDatastore)
+			converted, clusterFound, err := convertStorageIntegrationToV2(context.Background(), c.integration, clusterDatastore)
 			if c.clusterError {
 				assert.NotNil(t, err)
+				assert.False(t, clusterFound)
 			} else {
 				assert.NoError(t, err)
+				assert.True(t, clusterFound)
 			}
 			assert.Equal(t, c.expected, converted)
 		})
