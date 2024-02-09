@@ -134,6 +134,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "cluster name or ID to delegate image scan to")
 	c.Flags().BoolVar(&imageScanCmd.local, "local", false, "use local image scan do not connect co central")
+	c.Flags().StringVar(&imageScanCmd.dbUri, "db-uri", "", "URI to vuln database")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
@@ -158,6 +159,7 @@ type imageScanCommand struct {
 	timeout        time.Duration
 	cluster        string
 	local          bool
+	dbUri          string
 
 	// injected or constructed values
 	env                environment.Environment

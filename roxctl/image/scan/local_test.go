@@ -10,22 +10,34 @@ import (
 )
 
 func TestLocal(t *testing.T) {
-	cmd := imageScanCommand{
-		//image: "quay.io/stackrox-io/main:4.0.0",
-		image: "quay.io/stackrox-io/main@sha256:e7d366c7579e4e08a26c24bac03dc5f2869006c10183e3c5f780f3754f01e3c3",
-		//image: "sha256:760780e4e49cdfd6a5a480f87a00daf30995b9fa0edc39534c86e59fb24ddc2f",
-		//image:      "test:0.0.1",
-		retryDelay: 3,
-		retryCount: 3,
-		timeout:    1 * time.Minute,
+	// Before this test ensure you have image locally
+	// docker pull  quay.io/stackrox-io/main:4.0.0
+	// docker tag sha256:760780e4e49cdfd6a5a480f87a00daf30995b9fa0edc39534c86e59fb24ddc2f test:0.0.1
+	images := map[string]string{
+		"repo digest": "quay.io/stackrox-io/main@sha256:e7d366c7579e4e08a26c24bac03dc5f2869006c10183e3c5f780f3754f01e3c3",
+		//"tag name":    "quay.io/stackrox-io/main:4.0.0", can't run multiple tsts due to store registering sql functions
+		//"local tag":   "test:0.0.1",
+		//"sha":         "sha256:760780e4e49cdfd6a5a480f87a00daf30995b9fa0edc39534c86e59fb24ddc2f", // not working as it gets default registry
 	}
-	result, err := cmd.scanLocal()
-	require.NoError(t, err)
-	assert.Equal(t, "quay.io/stackrox-io/main:4.0.0", result.Name.FullName)
-	assert.Equal(t, "sha256:d407c96802e7db04ec01f267574aba3c6c0f3f445a879232f249af01e84a4f12", result.Id)
-	assert.Equal(t, "linux", result.GetScan().OperatingSystem)
-	assert.Len(t, result.GetScan().Components, 1822)
-
+	for name, image := range images {
+		t.Run(name, func(t *testing.T) {
+			cmd := imageScanCommand{
+				dbUri:      "vulndb",
+				image:      image,
+				retryDelay: 3,
+				retryCount: 3,
+				timeout:    1 * time.Minute,
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			result, err := cmd.scanLocal(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, image, result.Name.FullName)
+			assert.Equal(t, "sha256:d407c96802e7db04ec01f267574aba3c6c0f3f445a879232f249af01e84a4f12", result.Id)
+			assert.Equal(t, "linux", result.GetScan().OperatingSystem)
+			assert.Len(t, result.GetScan().Components, 1822)
+		})
+	}
 }
 
 func TestImage(t *testing.T) {

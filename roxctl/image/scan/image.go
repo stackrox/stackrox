@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/pkg/errors"
 	"github.com/quay/claircore"
+	"github.com/schollz/progressbar/v3"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -44,13 +46,37 @@ func newImage(ref string) (*dockerLocalImage, error) {
 	if err == nil {
 		tag, err := name.NewTag("roxctl-test-tag")
 		utils.Must(err)
-		err = tarball.MultiRefWrite(map[name.Reference]v1.Image{r: img, tag: img}, f)
+
+		bar := progressbar.DefaultBytes(-1, "Preparing...")
+
+		upates := make(chan v1.Update)
+		go func(updated <-chan v1.Update) {
+			t := time.NewTicker(time.Second)
+			for {
+				select {
+				case u := <-updated:
+					t.Stop()
+					bar.Describe(ref)
+					bar.ChangeMax64(u.Total)
+					err := bar.Set64(u.Complete)
+					utils.Must(err)
+				case <-t.C:
+					err := bar.RenderBlank()
+					utils.Must(err)
+				}
+			}
+		}(upates)
+		err = tarball.MultiRefWrite(map[name.Reference]v1.Image{r: img, tag: img}, f, tarball.WithProgress(upates))
+
 		utils.Must(err) // , "could not write tarball")
+		err = bar.Finish()
+		utils.Must(err)
 		return newDockerLocalImage(f.Name())
 	}
-	//return newDockerLocalImage("/tmp/roxctl1634259876.tar", r)
-	panic(err)
-
+	if err != nil {
+		return nil, errors.Wrapf(err, "image %q does not exist in local daemon registry", ref)
+	}
+	//TODO(janisz): do we want to handle remote images?
 	return remoteImage(ref, err)
 }
 
@@ -94,7 +120,6 @@ func newDockerLocalImage(imageTar string) (*dockerLocalImage, error) {
 	opener := pathOpener(imageTar)
 	manifest, err := tarball.LoadManifest(opener)
 	utils.Must(err)
-	spew.Dump(manifest)
 	tag, err := name.NewTag(manifest[0].RepoTags[0])
 	utils.Must(err)
 
@@ -111,11 +136,15 @@ func newDockerLocalImage(imageTar string) (*dockerLocalImage, error) {
 
 func pathOpener(path string) tarball.Opener {
 	return func() (io.ReadCloser, error) {
-		return os.Open(path)
+		open, err := os.Open(path)
+		utils.Must(err)
+		bar := progressbar.DefaultBytes(-1, path)
+		reader := progressbar.NewReader(open, bar)
+		return &reader, err
 	}
 }
 
-func (i *dockerLocalImage) GetManifest(_ context.Context) (*claircore.Manifest, error) {
+func (i *dockerLocalImage) GetManifest(ctx context.Context) (*claircore.Manifest, error) {
 	hash, err := i.image.Digest()
 	utils.Must(err)
 	digest, err := claircore.ParseDigest(hash.String())
@@ -148,6 +177,15 @@ func (i *dockerLocalImage) GetManifest(_ context.Context) (*claircore.Manifest, 
 
 		layers = append(layers, &cl)
 	}
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			for _, l := range layers {
+				utils.IgnoreError(l.Close)
+			}
+		}
+	}()
 
 	return &claircore.Manifest{
 		Hash:   digest,

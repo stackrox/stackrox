@@ -27,35 +27,23 @@ import (
 )
 
 func (i *imageScanCommand) localScan() error {
-	imageResult, err := i.scanLocal()
+	imageResult, err := i.scanLocal(context.TODO())
 	if err != nil {
 		return err
 	}
 	return i.printImageResult(imageResult)
 }
 
-func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
-	//ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
-	//defer cancel()
-
+func (i *imageScanCommand) scanLocal(ctx context.Context) (*storage.Image, error) {
 	nop := zerolog.Nop()
 	zlog.Set(&nop)
 
-	ctx := context.TODO()
-
-	var (
-		// All arguments
-		imgRef = i.image
-		//imgPath         = c.String("image-path")
-		dbPath = "/home/janisz/go/src/github.com/stackrox/clair-action/vulndb"
-		//dbURL  = "https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
-		//format          = c.String("format")
-		//returnCode      = c.Int("return-code")
-		//dockerConfigDir = c.String("docker-config-dir")
-	)
+	dbPath = "/home/janisz/go/src/github.com/stackrox/clair-action/vulndb"
+	dbURL = "https://clair-sqlite-db.s3.amazonaws.com/matcher.zst"
 
 	fa := &LocalFetchArena{}
-	img, err := newImage(imgRef)
+
+	img, err := newImage(i.image)
 	if err != nil {
 		return nil, fmt.Errorf("could not get image to scan: %w", err)
 	}
@@ -65,6 +53,8 @@ func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
 	//if err != nil {
 	//	return nil, fmt.Errorf("could not download database: %w", err)
 	//}
+
+	println("Creating sqlite matcher store")
 
 	matcherStore, err := datastore.NewSQLiteMatcherStore(dbPath, true)
 	if err != nil {
@@ -80,11 +70,13 @@ func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
 		},
 		Client: http.DefaultClient,
 	}
+	println("Creating libvuln")
 	lv, err := libvuln.New(ctx, matcherOpts)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Libvuln: %w", err)
 	}
 
+	println("Get manifest")
 	mf, err := img.GetManifest(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error creating manifest: %w", err)
@@ -95,13 +87,16 @@ func (i *imageScanCommand) scanLocal() (*storage.Image, error) {
 		Locker:     updates.NewLocalLockSource(),
 		FetchArena: fa,
 	}
+	println("Creating new index")
 	li, err := libindex.New(ctx, indexerOpts, http.DefaultClient)
 	if err != nil {
 		return nil, fmt.Errorf("error creating Libindex: %w", err)
 	}
+	println("Indexing...")
 	ir, err := li.Index(ctx, mf)
 	utils.Must(err)
 
+	println("Scanning...")
 	vr, err := lv.Scan(ctx, ir)
 	if err != nil {
 		return nil, fmt.Errorf("error creating vulnerability report: %w", err)
@@ -227,6 +222,7 @@ func (i *imageScanCommand) convertToImage(vr *claircore.VulnerabilityReport, ima
 		SetTopCvss:                &storage.Image_TopCvss{TopCvss: float32(totalTop)},
 		Notes:                     nil,
 	}
+	//bar.Finish()
 	return result
 }
 
