@@ -21,7 +21,7 @@ type ScannerV4BearingCustomResource interface {
 	IsScannerV4Enabled() bool
 }
 
-// ReconcileScannerV4DBPassword reconciles a Scanner v4 db password
+// ReconcileScannerV4DBPassword reconciles a Scanner V4 db password
 func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
 	return reconcileScannerV4DBPassword(ctx, obj, client)
 }
