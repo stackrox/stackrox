@@ -86,12 +86,12 @@ func systemCertPoolWithInjectedCAs() (*x509.CertPool, error) {
 	for _, path := range []string{serviceCAPath, k8sCAPath, cnoTrustedCAPath} {
 		caBytes, err := os.ReadFile(path)
 		if err != nil {
-			log.Debugw("failed to read CA file",
+			log.Errorw("Failed to read CA file for token verifier",
 				logging.String("path", path), logging.Err(err))
 			continue
 		}
 		if !certPool.AppendCertsFromPEM(caBytes) {
-			log.Debugw("couldn't add CA to cert pool",
+			log.Errorw("Couldn't add CA to cert pool for token verifier",
 				logging.String("path", path))
 		}
 	}
