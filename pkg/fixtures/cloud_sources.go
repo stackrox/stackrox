@@ -40,7 +40,7 @@ func GetManyStorageCloudSources(num int) []*storage.CloudSource {
 	for i := 0; i < num; i++ {
 		cloudSource := &storage.CloudSource{
 			Id:          uuid.NewV4().String(),
-			Name:        fmt.Sprintf("sample name %d", i),
+			Name:        fmt.Sprintf("sample name %02d", i),
 			Credentials: &storage.CloudSource_Credentials{Secret: "1234"},
 		}
 		if i < num/2 {

@@ -95,7 +95,7 @@ func (s *serviceImpl) ListCloudSources(ctx context.Context, request *v1.ListClou
 ) (*v1.ListCloudSourcesResponse, error) {
 	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
-	paginated.FillDefaultSortOption(
+	query = paginated.FillDefaultSortOption(
 		query,
 		&v1.QuerySortOption{
 			Field: search.IntegrationName.String(),
