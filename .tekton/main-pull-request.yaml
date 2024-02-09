@@ -450,5 +450,5 @@ spec:
         operator: in
         values: [ "false" ]
 
-  taskRunTemplate: { }
+taskRunTemplate: { }
 status: { }

@@ -447,6 +447,5 @@ spec:
       - input: $(params.skip-checks)
         operator: in
         values: [ "false" ]
-
-  taskRunTemplate: { }
+taskRunTemplate: { }
 status: { }
