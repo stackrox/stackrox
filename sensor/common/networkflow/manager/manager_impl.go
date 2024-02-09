@@ -540,7 +540,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
 			if err != nil {
-				// IP is malformed or unknown - assume it is external and log a warning
+				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
 				log.Debugf("Not showing flow on the network graph: %v", err)
 				return
