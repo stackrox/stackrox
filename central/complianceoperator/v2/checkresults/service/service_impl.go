@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,10 +45,11 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
+		integrationDS:       integrationDS,
 	}
 }
 
@@ -56,6 +58,7 @@ type serviceImpl struct {
 
 	complianceResultsDS complianceDS.DataStore
 	scanConfigDS        complianceConfigDS.DataStore
+	integrationDS       complianceIntegrationDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -149,8 +152,18 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
 	}
 
+	// Lookup the integrations to get the status
+	clusterErrors := make(map[string][]string, len(scanResults))
+	for _, result := range scanResults {
+		integrations, err := s.integrationDS.GetComplianceIntegrationByCluster(ctx, result.ClusterID)
+		if err != nil || len(integrations) != 1 {
+			return nil, errors.Errorf("Unable to retrieve cluster %q", result.ClusterID)
+		}
+		clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
+	}
+
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults),
+		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
 	}, nil
 }
 

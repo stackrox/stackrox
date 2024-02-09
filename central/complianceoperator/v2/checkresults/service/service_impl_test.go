@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
+	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -16,10 +17,37 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+)
+
+var (
+	integration1 = &storage.ComplianceIntegration{
+		Id:                  "",
+		ClusterId:           testconsts.Cluster1,
+		ComplianceNamespace: fixtureconsts.Namespace1,
+		Version:             "2",
+		StatusErrors:        []string{"test error"},
+	}
+
+	integration2 = &storage.ComplianceIntegration{
+		Id:                  "",
+		ClusterId:           testconsts.Cluster2,
+		ComplianceNamespace: fixtureconsts.Namespace1,
+		Version:             "2",
+		StatusErrors:        []string{"test error"},
+	}
+
+	integration3 = &storage.ComplianceIntegration{
+		Id:                  "",
+		ClusterId:           testconsts.Cluster3,
+		ComplianceNamespace: fixtureconsts.Namespace1,
+		Version:             "2",
+		StatusErrors:        []string{"test error"},
+	}
 )
 
 func TestAuthz(t *testing.T) {
@@ -37,6 +65,7 @@ type ComplianceResultsServiceTestSuite struct {
 	ctx             context.Context
 	resultDatastore *resultMocks.MockDataStore
 	scanConfigDS    *scanConfigMocks.MockDataStore
+	integrationDS   *integrationMocks.MockDataStore
 	service         Service
 }
 
@@ -54,8 +83,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.resultDatastore = resultMocks.NewMockDataStore(s.mockCtrl)
 	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
+	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
@@ -252,6 +282,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3),
 				}
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
+				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster2).Return([]*storage.ComplianceIntegration{integration2}, nil).Times(1)
+				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster3).Return([]*storage.ComplianceIntegration{integration3}, nil).Times(1)
 			},
 		},
 		{
@@ -269,6 +302,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
 				}
 				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), fixtureconsts.Cluster1).Return([]*storage.ComplianceIntegration{integration1}, nil).Times(1)
 			},
 		},
 		{
