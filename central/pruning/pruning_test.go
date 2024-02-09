@@ -13,7 +13,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	complianceScanConfig "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	compliancePrunerMocks "github.com/stackrox/rox/central/complianceoperator/v2/pruner/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
@@ -337,7 +337,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	connMgr := connectionMocks.NewMockManager(mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(mockCtrl)
 	networkBaselineMgr := networkBaselineMocks.NewMockManager(mockCtrl)
-	complianceScanConfigMockStore := complianceScanConfig.NewMockDataStore(mockCtrl)
+	compliancePruner := compliancePrunerMocks.NewMockPruner(mockCtrl)
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
@@ -371,7 +371,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
 	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
 	if features.ComplianceEnhancements.Enabled() {
-		complianceScanConfigMockStore.EXPECT().RemoveClusterFromScanConfig(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+		compliancePruner.EXPECT().RemoveComplianceResourcesByCluster(gomock.Any(), gomock.Any()).AnyTimes()
 	}
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
@@ -400,7 +400,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		ranking.NewRanker(),
 		clusterPostgres.NewIndexer(s.pool),
 		networkBaselineMgr,
-		complianceScanConfigMockStore)
+		compliancePruner)
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore

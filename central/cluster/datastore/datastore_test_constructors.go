@@ -6,9 +6,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterPostgresStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
-	scanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/hash/datastore"
@@ -90,13 +88,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 	sensorCnxMgr := connection.NewManager(hashManager.NewManager(hashStore))
 	clusterRanker := ranking.ClusterRanker()
 
-	scanConfigDataStore, err := scanSetting.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-
-	complianceIntegrationDS := compIntegration.GetTestPostgresDataStore(t, pool)
-	compliancePruner := compliancePruning.New(complianceIntegrationDS, scanConfigDataStore)
+	compliancePruner := compliancePruning.GetTestPruner(t, pool)
 
 	return New(clusterdbstore, clusterhealthdbstore, clusterCVEStore,
 		alertStore, iiStore, namespaceStore, deploymentStore,
