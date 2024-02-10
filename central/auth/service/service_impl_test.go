@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	"github.com/stackrox/rox/central/auth/store"
+	"github.com/stackrox/rox/central/convert/v1tostorage"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -64,9 +65,10 @@ type authServiceAccessControlTestSuite struct {
 	withNoRoleCtx    context.Context
 	anonymousCtx     context.Context
 
-	mockIssuerFactory  *tokensMocks.MockIssuerFactory
-	mockTokenExchanger *mocks.MockTokenExchanger
-	tokenExchangerSet  m2m.TokenExchangerSet
+	mockIssuerFactory    *tokensMocks.MockIssuerFactory
+	mockTokenExchanger   *mocks.MockTokenExchanger
+	tokenExchangerSet    m2m.TokenExchangerSet
+	mockExchangerFactory *mockExchangerFactory
 
 	accessCtx context.Context
 }
@@ -113,7 +115,10 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 	s.mockIssuerFactory = tokensMocks.NewMockIssuerFactory(gomock.NewController(s.T()))
 	s.mockTokenExchanger = mocks.NewMockTokenExchanger(gomock.NewController(s.T()))
 
-	s.tokenExchangerSet = m2m.TokenExchangerSetForTesting(s.T(), s.roleDS, s.mockIssuerFactory, mockTokenExchangerFactory(s.mockTokenExchanger))
+	s.mockExchangerFactory = &mockExchangerFactory{mockExchanger: s.mockTokenExchanger}
+
+	s.tokenExchangerSet = m2m.TokenExchangerSetForTesting(s.T(), s.roleDS, s.mockIssuerFactory,
+		s.mockExchangerFactory.factory())
 	authDataStore := datastore.New(store, s.tokenExchangerSet)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
@@ -750,6 +755,8 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 	})
 	s.Require().NoError(err)
 
+	s.mockTokenExchanger.EXPECT().Config().Return(v1tostorage.AuthM2MConfig(newConfig)).Times(2)
+
 	// No error during rollback.
 	gomock.InOrder(
 		s.mockTokenExchanger.EXPECT().Provider().Return(nil),
@@ -760,7 +767,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 
 	sameConfig := &v1.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
-		TokenExpirationDuration: "1m",
+		TokenExpirationDuration: "5m",
 		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
 	_, err = s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
@@ -768,6 +775,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 	})
 	s.Error(err)
 	s.NotContains(err.Error(), "rollback")
+	s.Equal(v1tostorage.AuthM2MConfig(newConfig), s.mockExchangerFactory.currentExchangerConfig)
 }
 
 func (s *authServiceAccessControlTestSuite) addRoles() {
@@ -802,8 +810,14 @@ func (s *authServiceAccessControlTestSuite) addRoles() {
 
 // Mocks used within tests.
 
-func mockTokenExchangerFactory(mockExchanger *mocks.MockTokenExchanger) m2m.TokenExchangerFactory {
+type mockExchangerFactory struct {
+	currentExchangerConfig *storage.AuthMachineToMachineConfig
+	mockExchanger          *mocks.MockTokenExchanger
+}
+
+func (m *mockExchangerFactory) factory() m2m.TokenExchangerFactory {
 	return func(_ context.Context, config *storage.AuthMachineToMachineConfig, _ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
-		return mockExchanger, nil
+		m.currentExchangerConfig = config
+		return m.mockExchanger, nil
 	}
 }

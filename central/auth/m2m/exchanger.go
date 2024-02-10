@@ -26,6 +26,7 @@ var (
 type TokenExchanger interface {
 	ExchangeToken(ctx context.Context, rawIDToken string) (string, error)
 	Provider() authproviders.Provider
+	Config() *storage.AuthMachineToMachineConfig
 }
 
 type machineToMachineTokenExchanger struct {
@@ -118,6 +119,10 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 	}
 
 	return tokenInfo.Token, nil
+}
+
+func (m *machineToMachineTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
+	return m.config
 }
 
 func mapToStringClaims(claims map[string]interface{}) map[string][]string {

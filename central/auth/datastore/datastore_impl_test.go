@@ -83,7 +83,7 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		TokenExpirationDuration: "5m",
@@ -100,7 +100,7 @@ func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
 }
 
 func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		TokenExpirationDuration: "5m",
@@ -122,7 +122,7 @@ func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 }
 
 func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
-	_, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	_, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
 		TokenExpirationDuration: "5m",
@@ -138,7 +138,7 @@ func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
 
 	s.NoError(err)
 
-	_, err = s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	_, err = s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "12c153c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
 		TokenExpirationDuration: "5m",
