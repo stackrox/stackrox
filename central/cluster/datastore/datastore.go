@@ -49,6 +49,7 @@ type DataStore interface {
 	GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error)
 	CountClusters(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+	WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error
 
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error

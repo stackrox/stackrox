@@ -3,9 +3,11 @@ package manager
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources"
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
 )
 
@@ -37,6 +40,12 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		))
 
+	clustersCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.ResourceScopeKeys(resources.Cluster),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		))
+
 	log = logging.LoggerForModule()
 )
 
@@ -50,17 +59,19 @@ type managerImpl struct {
 
 	cloudSourcesDataStore       cloudSourcesDS.DataStore
 	discoveredClustersDataStore discoveredClustersDS.DataStore
+	clusterDataStore            clusterDS.DataStore
 }
 
 func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
-	discoveredClustersDS discoveredClustersDS.DataStore) *managerImpl {
+	discoveredClustersDS discoveredClustersDS.DataStore, clustersDS clusterDS.DataStore) *managerImpl {
 	return &managerImpl{
 		shortCircuitSignal:          concurrency.NewSignal(),
 		stopSignal:                  concurrency.NewSignal(),
 		loopInterval:                discoveredClustersLoopInterval,
+		shortCircuitRateLimiter:     rate.NewLimiter(rate.Every(time.Minute), 1),
 		cloudSourcesDataStore:       cloudSourcesDS,
 		discoveredClustersDataStore: discoveredClustersDS,
-		shortCircuitRateLimiter:     rate.NewLimiter(rate.Every(time.Minute), 1),
+		clusterDataStore:            clustersDS,
 	}
 }
 
@@ -138,15 +149,62 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 		log.Errorw("Received errors during fetching assets from cloud sources. The result might be incomplete",
 			logging.Err(clientErrors))
 	}
-	log.Debugf("Got the following discovered clusters from Cloud Source integrations: %+v", discoveredClusters)
+	debugPrintDiscoveredClusters(discoveredClusters)
 	return discoveredClusters
 }
 
 func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
-	// TODO: Add matching of discovered clusters with secured clusters.
+	m.matchDiscoveredClusters(clusters)
+
+	debugPrintDiscoveredClusters(clusters)
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx, clusters...); err != nil {
 		log.Errorw("Received errors during upserting discovered clusters.", logging.Err(err))
+	}
+}
+
+func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
+	// A list of hashes of currently secured cluster. A secured cluster hash consist of:
+	//  The secured cluster ID, and type.
+	securedClusters := set.NewStringSet()
+
+	unspecifiedProviderType := set.NewStringSet()
+
+	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
+		providerMetadata := obj.GetStatus().GetProviderMetadata()
+
+		// Explicitly ignore clusters which do not have provider metadata associated with them.
+		if providerMetadata == nil {
+			return nil
+		}
+
+		// In case we have partial provider metadata (e.g. we miss the cluster name for EKS clusters, or the
+		// cluster type is unspecified), then mark the provider type as Unspecified.
+		// This means that we will assign each discovered cluster that cannot be safely matched to a secured cluster
+		// as Unspecified instead of Unsecured. This is to avoid false-positives.
+		clusterMetadata := providerMetadata.GetCluster()
+		if clusterMetadata.GetId() == "" {
+			unspecifiedProviderType.Add(providerMetadataToProviderType(providerMetadata).String())
+			return nil
+		}
+
+		// Add the cluster with the full metadata information we require as an index for matching.
+		securedClusters.Add(clusterIndexForClusterMetadata(clusterMetadata))
+		return nil
+	}); err != nil {
+		log.Errorw("Failed to list secured clusters. Matching is skipped.", logging.Err(err))
+		return
+	}
+
+	for _, cluster := range clusters {
+		switch {
+		case securedClusters.Contains(clusterIndexForDiscoveredCluster(cluster)):
+			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
+		case unspecifiedProviderType.Contains(cluster.GetProviderType().String()):
+			cluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
+		default:
+			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
+		}
 	}
 }
 
@@ -159,4 +217,35 @@ func createClients(cloudSources []*storage.CloudSource) []cloudsources.Client {
 		}
 	}
 	return clients
+}
+
+type clusterIndex = string
+
+func clusterIndexForClusterMetadata(obj *storage.ClusterMetadata) clusterIndex {
+	return obj.GetId() + obj.GetType().String()
+}
+
+func clusterIndexForDiscoveredCluster(obj *discoveredclusters.DiscoveredCluster) clusterIndex {
+	return obj.GetID() + obj.GetType().String()
+}
+
+func debugPrintDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
+	logMsg := "Got the following discovered clusters:\n"
+	for i, cluster := range clusters {
+		logMsg = fmt.Sprintf("%s%d: %+v\n", logMsg, i, cluster)
+	}
+	log.Debug(logMsg)
+}
+
+func providerMetadataToProviderType(metadata *storage.ProviderMetadata) storage.DiscoveredCluster_Metadata_ProviderType {
+	switch {
+	case metadata.GetGoogle() != nil:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP
+	case metadata.GetAws() != nil:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
+	case metadata.GetAzure() != nil:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
+	default:
+		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
+	}
 }

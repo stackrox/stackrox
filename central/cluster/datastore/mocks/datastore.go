@@ -337,3 +337,17 @@ func (mr *MockDataStoreMockRecorder) UpdateSensorDeploymentIdentification(ctx, i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSensorDeploymentIdentification", reflect.TypeOf((*MockDataStore)(nil).UpdateSensorDeploymentIdentification), ctx, id, identification)
 }
+
+// WalkClusters mocks base method.
+func (m *MockDataStore) WalkClusters(ctx context.Context, fn func(*storage.Cluster) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkClusters", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkClusters indicates an expected call of WalkClusters.
+func (mr *MockDataStoreMockRecorder) WalkClusters(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkClusters", reflect.TypeOf((*MockDataStore)(nil).WalkClusters), ctx, fn)
+}
