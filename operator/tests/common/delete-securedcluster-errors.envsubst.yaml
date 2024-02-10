@@ -17,82 +17,82 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: stackrox
+  name: stackrox-${NAMESPACE}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox:create-events-binding
+  name: stackrox-${NAMESPACE}:create-events-binding
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox:enforce-policies
+  name: stackrox-${NAMESPACE}:enforce-policies
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox:monitor-cluster
+  name: stackrox-${NAMESPACE}:monitor-cluster
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox:network-policies-binding
+  name: stackrox-${NAMESPACE}:network-policies-binding
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox:review-tokens-binding
+  name: stackrox-${NAMESPACE}:review-tokens-binding
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox:update-namespaces-binding
+  name: stackrox-${NAMESPACE}:update-namespaces-binding
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-admission-control-psp
+  name: stackrox-${NAMESPACE}-admission-control-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-collector-psp
+  name: stackrox-${NAMESPACE}-collector-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-sensor-psp
+  name: stackrox-${NAMESPACE}-sensor-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox:create-events
+  name: stackrox-${NAMESPACE}:create-events
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox:edit-workloads
+  name: stackrox-${NAMESPACE}:edit-workloads
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox:network-policies
+  name: stackrox-${NAMESPACE}:network-policies
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox:review-tokens
+  name: stackrox-${NAMESPACE}:review-tokens
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox:update-namespaces
+  name: stackrox-${NAMESPACE}:update-namespaces
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox:view-cluster
+  name: stackrox-${NAMESPACE}:view-cluster
 # namespace-scoped resources follow
 ---
 # TODO(ROX-11020): find what creates this configmap and why it's not getting cleaned up

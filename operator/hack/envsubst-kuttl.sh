@@ -7,5 +7,6 @@ input_file="$1"
 shift
 intermediate_file=$(mktemp)
 trap 'rm -f ${intermediate_file}' EXIT
-env - PATH="${PATH}" NAMESPACE="${NAMESPACE}" envsubst < "${input_file}" > "${intermediate_file}"
+envsubst=$(command -v envsubst)
+env - PATH="${PATH}" NAMESPACE="${NAMESPACE}" "${envsubst}" < "${input_file}" > "${intermediate_file}"
 ${KUTTL:-kubectl-kuttl} "$@" "${intermediate_file}"
