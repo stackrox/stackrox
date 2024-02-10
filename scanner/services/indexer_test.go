@@ -230,7 +230,12 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 			Return(&claircore.IndexReport{Success: true, State: "sample state"}, true, nil)
 		r, err := s.service.GetIndexReport(s.ctx, req)
 		s.NoError(err)
-		s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state", Contents: &v4.Contents{}}, r)
+		s.Equal(&v4.IndexReport{
+			Success:  true,
+			HashId:   hashID,
+			State:    "sample state",
+			Contents: &v4.Contents{},
+		}, r)
 	})
 }
 
@@ -296,7 +301,7 @@ func (s *indexerServiceTestSuite) Test_HasIndexReport() {
 		s.Nil(r)
 	})
 
-	s.Run("when get index report returns an unsuccessful report then does not exist", func() {
+	s.Run("when index report is unsuccessful then does not exist", func() {
 		s.indexerMock.
 			EXPECT().
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
@@ -306,7 +311,7 @@ func (s *indexerServiceTestSuite) Test_HasIndexReport() {
 		s.False(r.GetExists())
 	})
 
-	s.Run("when get index report returns not found then does not exist", func() {
+	s.Run("when index report not found then does not exist", func() {
 		s.indexerMock.
 			EXPECT().
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).

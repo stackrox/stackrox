@@ -148,9 +148,6 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		"hash_id", req.GetHashId(),
 	)
 	_, err := s.getClairIndexReport(ctx, req.GetHashId())
-	if err != nil {
-		return nil, err
-	}
 	var exists bool
 	switch {
 	case errors.Is(err, nil):
