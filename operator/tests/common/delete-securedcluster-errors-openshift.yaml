@@ -9,77 +9,77 @@ testRunSelector:
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox-${NAMESPACE}:create-events-binding
+  name: stackrox:create-events-binding
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox-${NAMESPACE}:enforce-policies
+  name: stackrox:enforce-policies
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox-${NAMESPACE}:monitor-cluster
+  name: stackrox:monitor-cluster
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox-${NAMESPACE}:network-policies-binding
+  name: stackrox:network-policies-binding
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox-${NAMESPACE}:review-tokens-binding
+  name: stackrox:review-tokens-binding
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: stackrox-${NAMESPACE}:update-namespaces-binding
+  name: stackrox:update-namespaces-binding
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}-admission-control-psp
+  name: stackrox-admission-control-psp
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}-collector-psp
+  name: stackrox-collector-psp
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}-sensor-psp
+  name: stackrox-sensor-psp
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}:create-events
+  name: stackrox:create-events
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}:edit-workloads
+  name: stackrox:edit-workloads
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}:network-policies
+  name: stackrox:network-policies
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}:review-tokens
+  name: stackrox:review-tokens
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}:update-namespaces
+  name: stackrox:update-namespaces
 ---
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
-  name: stackrox-${NAMESPACE}:view-cluster
+  name: stackrox:view-cluster
 ---
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
