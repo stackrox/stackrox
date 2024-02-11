@@ -47,17 +47,6 @@ tests:
       | .volumes[] | select(.name == "additional-ca-volume")
       | .secret.secretName
       | assertThat(. == "additional-ca")
-- name: "rendering fails if scannerV4 is disabled but"
-  expectError: true
-  set:
-    scannerV4.disable: true
-  tests:
-    - name: "indexer is enabled"
-      set:
-        scannerV4.indexer.disable: false
-    - name: "matcher is enabled"
-      set:
-        scannerV4.matcher.disable: false
 - name: "StorageClass stackrox-gke-ssd is created when scannerV4 references this storage class in its PVC configuration"
   values:
     scannerV4:
@@ -93,26 +82,13 @@ tests:
     set:
       scannerV4.disable: true
     expect: |
-      .notes | assertThat(match("Scanner V4 Installation Method: +none"))
+      .notes | assertThat(match("Scanner V4: +disabled"))
   - name: "when installing indexer and matcher"
     set:
       scannerV4.disable: false
     expect: |
-      .notes | assertThat(match("Scanner V4 Installation Method: +indexer-and-matcher"))
-  - name: "when installing only indexer"
-    set:
-      scannerV4.disable: false
-      scannerV4.indexer.disable: false
-      scannerV4.matcher.disable: true
-    expect: |
-      .notes | assertThat(match("Scanner V4 Installation Method: +indexer-only"))
-  - name: "when installing only matcher"
-    set:
-      scannerV4.disable: false
-      scannerV4.indexer.disable: true
-      scannerV4.matcher.disable: false
-    expect: |
-      .notes | assertThat(match("Scanner V4 Installation Method: +matcher-only"))
+      .notes | assertThat(match("Scanner V4: +enabled"))
+      .notes | assertThat(match("Scanner V4 is enabled and the following Scanner V4 components will be deployed: indexer and matcher"))
 # This test can be deleted once the scanner V2 is removed.
 - name: "enabling scanner V4 keeps scanner V2 enabled"
   set:
@@ -177,27 +153,6 @@ tests:
     .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. != null)
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. != null)
-
-- name: "Warning is emitted if"
-  tests:
-    - name: "indexer is enabled and matcher is disabled"
-      values:
-        scannerV4:
-          disable: false
-          indexer:
-            disable: false
-          matcher:
-            disable: true
-    - name: "indexer is disabled and matcher is enabled"
-      values:
-        scannerV4:
-          disable: false
-          indexer:
-            disable: true
-          matcher:
-            disable: false
-  expect:
-    .notes | assertThat(contains("Unsupported Scanner V4 configuration detected"))
 
 - name: "scanner v4 DB uses expected default configuration"
   values:
