@@ -159,7 +159,7 @@ apiVersion: admissionregistration.k8s.io/v1beta1
 {{- end }}
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox") }}
+  name: stackrox
   labels:
     {{- include "srox.labels" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
