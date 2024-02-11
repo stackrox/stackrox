@@ -51,7 +51,7 @@ rules:
     resources:
       - podsecuritypolicies
     resourceNames:
-      - {{ include "srox.globalResourceName" (list . "stackrox-admission-control") }}
+      - stackrox-admission-control
     verbs:
       - use
 ---
