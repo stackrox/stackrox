@@ -44,11 +44,14 @@ var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
+type cloudSourceClientFactory = func(source *storage.CloudSource) cloudsources.Client
+
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
 
-	ds  datastore.DataStore
-	mgr manager.Manager
+	ds            datastore.DataStore
+	mgr           manager.Manager
+	clientFactory cloudSourceClientFactory
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -218,7 +221,7 @@ func (s *serviceImpl) TestCloudSource(ctx context.Context, req *v1.TestCloudSour
 }
 
 func (s *serviceImpl) testCloudSource(ctx context.Context, storageCloudSource *storage.CloudSource) error {
-	client := cloudsources.NewClientForCloudSource(storageCloudSource)
+	client := s.clientFactory(storageCloudSource)
 	_, err := client.GetDiscoveredClusters(ctx)
 	return err
 }
