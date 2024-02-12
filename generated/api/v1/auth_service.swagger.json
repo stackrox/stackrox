@@ -577,6 +577,10 @@
           "items": {
             "$ref": "#/definitions/v1UserAttribute"
           }
+        },
+        "idpToken": {
+          "type": "string",
+          "description": "Token returned to ACS by the underlying identity provider. This field is set only in a few,\nspecific contexts. Do not rely on this field being present in the response."
         }
       }
     },

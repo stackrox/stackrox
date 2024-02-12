@@ -56,6 +56,16 @@ function getMessage(response) {
                 <h2 className="font-700">User Attributes:</h2>
                 <ul className="list-none">{displayAttributes}</ul>
             </p>
+            {response?.idpToken && (
+                <p className="pb-2 mb-2 border-b border-success-700">
+                    <span className="font-700" id="user-idp-token">
+                        IdP Token:
+                    </span>{' '}
+                    <span aria-labelledby="user-idp-token">
+                        <pre>{JSON.stringify(JSON.parse(response?.idpToken), null, 4)}</pre>
+                    </span>
+                </p>
+            )}
             <h2 className="font-700">User Roles:</h2>
             <ul className="list-none">{displayRoles}</ul>
         </>

@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -171,37 +172,41 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim,
+func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim, string,
 	error) {
 	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: rawAccessToken,
 	}))
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching userinfo claims")
+		return nil, "", errors.Wrap(err, "fetching userinfo claims")
 	}
 
 	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
+		return nil, "", errors.Wrap(err, "extracting external claims from userinfo endpoint response")
 	}
 
-	return externalClaims, nil
+	rawUserInfo, err := claimsAsString(userInfoFromEndpoint)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "extracting raw user info from userinfo endpoint response")
+	}
+
+	return externalClaims, rawUserInfo, nil
 }
 
-func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken,
-	rawAccessToken string) (*tokens.ExternalUserClaim, error) {
+func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken, rawAccessToken string) (*tokens.ExternalUserClaim, string, error) {
 	externalClaims, err := p.extractExternalClaims(idToken)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Special case: in the case of an ID token being presented which has an empty group attribute, we attempt to
 	// enrich data from the userinfo endpoint. The rationale behind this is that some OIDC providers we've seen
 	// (i.e. GitLab) only present the complete group membership in the userinfo endpoint, not within the ID token.
 	if hasEmptyGroups(externalClaims) && rawAccessToken != "" {
-		userInfoClaims, err := p.claimsFromUserInfo(ctx, rawAccessToken)
+		userInfoClaims, _, err := p.claimsFromUserInfo(ctx, rawAccessToken)
 		if err != nil {
-			return nil, errors.Wrap(err, "fetching userinfo claims")
+			return nil, "", errors.Wrap(err, "fetching userinfo claims")
 		}
 
 		if !hasEmptyGroups(userInfoClaims) {
@@ -210,7 +215,12 @@ func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken
 		}
 	}
 
-	return externalClaims, nil
+	rawIDToken, err := claimsAsString(idToken)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "extracting raw ID token claims from ID token")
+	}
+
+	return externalClaims, rawIDToken, nil
 }
 
 // authFromIDToken returns an auth response from the given raw ID token.
@@ -224,7 +234,7 @@ func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, ra
 		return nil, errors.Wrap(err, "verifying ID token")
 	}
 
-	externalClaims, err := p.claimsFromIDToken(ctx, idToken, rawAccessToken)
+	externalClaims, claimsStr, err := p.claimsFromIDToken(ctx, idToken, rawAccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +242,7 @@ func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, ra
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
+		IdpToken:   claimsStr,
 	}, nil
 }
 
@@ -250,13 +261,15 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string,
 }
 
 func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
-	externalClaims, err := p.claimsFromUserInfo(ctx, rawAccessToken)
+	externalClaims, claimsStr, err := p.claimsFromUserInfo(ctx, rawAccessToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching userinfo claims")
 	}
+
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: time.Now().Add(userInfoExpiration),
+		IdpToken:   claimsStr,
 	}, nil
 }
 
@@ -697,6 +710,18 @@ func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[s
 		}
 	}
 	return nil
+}
+
+func claimsAsString(claimExtractor claimExtractor) (string, error) {
+	claims := make(map[string]interface{})
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return "", errors.Wrap(err, "failed to extract all claims")
+	}
+	byteClaims, err := json.Marshal(claims)
+	if err != nil {
+		return "", err
+	}
+	return string(byteClaims), nil
 }
 
 func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue interface{}) error {
