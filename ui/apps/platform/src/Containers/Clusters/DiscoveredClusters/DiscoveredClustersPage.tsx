@@ -13,9 +13,11 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
+import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
+import { fetchCloudSources } from 'services/CloudSourceService';
 import {
     DiscoveredCluster,
     countDiscoveredClusters,
@@ -43,6 +45,22 @@ function DiscoveredClustersPage(): ReactElement {
     // Use currentDatetime === null as substitute for initial isLoading.
     const [currentDatetime, setCurrentDatetime] = useState<Date | null>(null);
     const [isReloading, setIsReloading] = useState(false);
+
+    const { hasReadAccess } = usePermissions();
+    const [sourceNameMap, setSourceNameMap] = useState<Map<string, string>>(new Map());
+
+    const hasReadAccessForIntegration = hasReadAccess('Integration');
+    useEffect(() => {
+        if (hasReadAccessForIntegration) {
+            fetchCloudSources()
+                .then(({ response: { cloudSources } }) => {
+                    setSourceNameMap(new Map(cloudSources.map(({ id, name }) => [id, name])));
+                })
+                .catch(() => {
+                    // TODO
+                });
+        }
+    }, [hasReadAccessForIntegration]);
 
     useEffect(() => {
         setIsReloading(true);
@@ -118,6 +136,7 @@ function DiscoveredClustersPage(): ReactElement {
                             currentDatetime={currentDatetime}
                             getSortParams={getSortParams}
                             searchFilter={searchFilter}
+                            sourceNameMap={sourceNameMap}
                         />
                     </>
                 )}
