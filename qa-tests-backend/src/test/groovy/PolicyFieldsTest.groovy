@@ -831,6 +831,9 @@ class PolicyFieldsTest extends BaseSpecification {
     private List<String> createdPolicyIds
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         createdPolicyIds = []
         for (policyBuilder in POLICY_BUILDERS) {
             Policy policy = policyBuilder.build()
@@ -862,6 +865,9 @@ class PolicyFieldsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteDeployment(UNSCANNED)
 
         for (Deployment deployment : DEPLOYMENTS) {

@@ -75,6 +75,9 @@ class GroupsTest extends BaseSpecification {
     private static final Map<String, Group> GROUPS_WITH_IDS = [:]
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         for (def role : ROLES) {
             RoleService.createRole(role)
         }
@@ -104,6 +107,9 @@ class GroupsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         GROUPS_WITH_IDS.values().flatten().each { group ->
             try {
                 GroupService.deleteGroup(group.props)
@@ -206,6 +212,9 @@ class GroupsTest extends BaseSpecification {
             propsBuilder.setValue(value)
             reqBuilder.setValue(value)
         }
+        if (getIdFromGroup != null) {
+            id = GROUPS_WITH_IDS[getIdFromGroup].props.getId()
+        }
         if (id != null) {
             propsBuilder.setId(id)
         }
@@ -233,11 +242,11 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProviderName | key | id | value | expectGroup | expectGroups
-        "groups-test-provider-1" | null  | GROUPS_WITH_IDS["QAGroupTest-Group1"].props.getId() | null  | "Group1"    | ["Group1", "Group2"]
-        null                     | "foo" | "some-id"                                           | "bar" | null        | ["Group2", "Group3"]
-        "groups-test-provider-1" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group2"].props.getId() | "bar" | "Group2"    | ["Group2"]
-        "groups-test-provider-2" | null  | "some-id"                                           | null  | null        | ["Group3"]
-        "groups-test-provider-2" | "foo" | GROUPS_WITH_IDS["QAGroupTest-Group3"].props.getId() | "bar" | "Group3"    | ["Group3"]
+        authProviderName         | key   | id        | getIdFromGroup       | value | expectGroup | expectGroups
+        "groups-test-provider-1" | null  | null      | "QAGroupTest-Group1" | null  | "Group1"   | ["Group1", "Group2"]
+        null                     | "foo" | "some-id" | null                 | "bar" | null       | ["Group2", "Group3"]
+        "groups-test-provider-1" | "foo" | null      | "QAGroupTest-Group2" | "bar" | "Group2"    | ["Group2"]
+        "groups-test-provider-2" | null  | "some-id" | null                 | null  | null        | ["Group3"]
+        "groups-test-provider-2" | "foo" | null      | "QAGroupTest-Group3" | "bar" | "Group3"    | ["Group3"]
     }
 }

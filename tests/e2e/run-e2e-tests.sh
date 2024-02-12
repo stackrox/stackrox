@@ -143,6 +143,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -v "${ROXCTL_FOR_TEST}:/usr/local/bin/roxctl:z" \
       -v "${ROOT}/.gitconfig:/etc/gitconfig:ro" \
       -e VAULT_TOKEN \
+      -e SKIP_STABLE_TESTS \
       --platform linux/amd64 \
       --rm -it \
       --entrypoint="$0" \
@@ -423,7 +424,7 @@ export_job_name() {
             ;;
     esac
 
-    export CI_JOB_NAME="$job_name"
+    export CI_JOB_NAME="gke-${job_name}"
 }
 
 main "$@"

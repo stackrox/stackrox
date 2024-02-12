@@ -72,6 +72,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
     private List<String> disabledPolicyIds
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         disabledPolicyIds = []
         getPolicies().forEach {
             policy ->
@@ -99,6 +102,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         disabledPolicyIds.forEach {
             id ->
             log.info "Re-disabling a policy after test"

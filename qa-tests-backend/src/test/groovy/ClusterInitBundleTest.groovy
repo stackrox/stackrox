@@ -18,10 +18,16 @@ class ClusterInitBundleTest extends BaseSpecification {
     private ApiTokenService.GenerateTokenResponse adminToken
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         adminToken = services.ApiTokenService.generateToken(randomUUID().toString(), "Admin")
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         if (adminToken != null) {
             services.ApiTokenService.revokeToken(adminToken.metadata.id)
         }

@@ -65,6 +65,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     }
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         def clusterId = ClusterService.getClusterId()
         assert clusterId
 
@@ -85,6 +88,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         for (def deployment : DEPLOYMENTS.values()) {
             orchestrator.deleteDeployment(deployment)
         }

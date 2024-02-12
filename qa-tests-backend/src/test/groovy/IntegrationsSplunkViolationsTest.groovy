@@ -49,6 +49,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private SplunkDeployment splunkDeployment
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
@@ -56,6 +59,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 

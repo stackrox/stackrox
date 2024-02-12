@@ -234,6 +234,9 @@ class Enforcement extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 90
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         POLICIES.each {
             label, create ->
             CREATED_POLICIES[label] = create()
@@ -252,6 +255,9 @@ class Enforcement extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         CREATED_POLICIES.each {
             unused, policyId -> PolicyService.deletePolicy(policyId)
         }

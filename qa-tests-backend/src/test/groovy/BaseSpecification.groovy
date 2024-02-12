@@ -30,7 +30,9 @@ import services.RoleService
 import util.Env
 import util.Helpers
 import util.OnFailure
+import util.TestMetrics
 
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -70,6 +72,8 @@ class BaseSpecification extends Specification {
     private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
+
+    public static TestMetrics testMetrics = initializeTestMetrics()
 
     private static synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
@@ -196,6 +200,23 @@ class BaseSpecification extends Specification {
         globalSetupDone = true
     }
 
+    static TestMetrics initializeTestMetrics() {
+        if (!Env.SKIP_STABLE_TESTS) {
+            return null
+        }
+        LOG.debug("Initializing test metrics DB")
+        try {
+            testMetrics = new TestMetrics()
+            testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
+            testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
+        } catch (Exception e) {
+            LOG.warn("Could not load test metrics data", e)
+            testMetrics = null
+        }
+
+        return testMetrics
+    }
+
     @Rule
     Timeout globalTimeout = new Timeout(
             isRaceBuild() ? 2500 : 800,
@@ -285,6 +306,8 @@ class BaseSpecification extends Specification {
         MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testcase: ${name.getMethodName()}")
 
+        Assume.assumeTrue(shouldTestRun(this.class.getSimpleName(), name.getMethodName()))
+
         // Make sure to use or revert back to the desired central gRPC auth
         // before each test.
         useDesiredServiceAuth()
@@ -303,6 +326,38 @@ class BaseSpecification extends Specification {
                 }
             }
         }
+    }
+
+    static boolean shouldSpecRun(String specification) {
+        if (!Env.SKIP_STABLE_TESTS) {
+            return true
+        }
+        if (!testMetrics) {
+            LOG.debug("Test metrics were not loaded, all specification setup/cleanup will run")
+            return true
+        }
+        if (!testMetrics.isSuiteStable(specification)) {
+            LOG.debug("Specification ${specification} setup/cleanup will run")
+            return true
+        }
+        LOG.debug("Specification ${specification} setup/cleanup will not run")
+        return false
+    }
+
+    private static boolean shouldTestRun(String specification, String testcase) {
+        if (!Env.SKIP_STABLE_TESTS) {
+            return true
+        }
+        if (!testMetrics) {
+            LOG.debug("Test metrics were not loaded, all features will run")
+            return true
+        }
+        if (!testMetrics.isTestStable(specification, testcase)) {
+            LOG.debug("This feature will run (${specification}/${testcase})")
+            return true
+        }
+        LOG.debug("This feature will not run (${specification}/${testcase})")
+        return false
     }
 
     def cleanupSpec() {

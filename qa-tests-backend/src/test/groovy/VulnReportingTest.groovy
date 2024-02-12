@@ -46,6 +46,9 @@ class VulnReportingTest extends BaseSpecification {
     private MailServer mailServer
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         mailServer = MailServer.createMailServer(orchestrator, true, false)
         sleep 60 * 1000 // wait 60s for service to start
 
@@ -55,6 +58,9 @@ class VulnReportingTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         if (mailServer) {
             mailServer.teardown(orchestrator)
         }

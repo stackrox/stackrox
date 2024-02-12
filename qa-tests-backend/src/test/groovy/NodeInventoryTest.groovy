@@ -20,6 +20,9 @@ class NodeInventoryTest extends BaseSpecification {
     private String clusterId
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         BaseService.useBasicAuth()
 
         // Get cluster ID

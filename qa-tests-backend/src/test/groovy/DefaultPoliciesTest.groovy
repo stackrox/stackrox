@@ -134,6 +134,9 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String anyFixedPolicyId
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         def anyFixedPolicy = Policy.newBuilder()
         .setName(Constants.ANY_FIXED_VULN_POLICY)
                 .addLifecycleStages(LifecycleStage.DEPLOY)
@@ -188,6 +191,9 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }

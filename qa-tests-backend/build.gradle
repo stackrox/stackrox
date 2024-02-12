@@ -123,6 +123,9 @@ dependencies {
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.16.0'
+
+    implementation platform('com.google.cloud:libraries-bom:26.29.0')
+    implementation 'com.google.cloud:google-cloud-bigquery'
 }
 
 // Apply some base attributes to all the test tasks.

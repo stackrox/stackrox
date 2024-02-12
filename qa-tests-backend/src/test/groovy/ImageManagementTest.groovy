@@ -29,6 +29,9 @@ class ImageManagementTest extends BaseSpecification {
         "struts-app":"trigger-policy-violations-most-v1")
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
