@@ -89,13 +89,13 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 		cloned.Pagination = &v1.QueryPagination{}
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
+				Field: search.ComplianceOperatorScanConfigName.String(),
+			},
+			{
 				Field: search.ClusterID.String(),
 			},
 			{
 				Field: search.Cluster.String(),
-			},
-			{
-				Field: search.ComplianceOperatorScanConfigName.String(),
 			},
 		}
 	}
