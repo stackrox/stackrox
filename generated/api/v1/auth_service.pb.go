@@ -132,16 +132,18 @@ type AuthStatus struct {
 	// Types that are valid to be assigned to Id:
 	//	*AuthStatus_UserId
 	//	*AuthStatus_ServiceId
-	Id                   isAuthStatus_Id       `protobuf_oneof:"id"`
-	Expires              *types.Timestamp      `protobuf:"bytes,3,opt,name=expires,proto3" json:"expires,omitempty"`
-	RefreshUrl           string                `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl,proto3" json:"refresh_url,omitempty"`
-	AuthProvider         *storage.AuthProvider `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
-	UserInfo             *storage.UserInfo     `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
-	UserAttributes       []*UserAttribute      `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
-	IdpToken             string                `protobuf:"bytes,8,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
-	XXX_unrecognized     []byte                `json:"-"`
-	XXX_sizecache        int32                 `json:"-"`
+	Id             isAuthStatus_Id       `protobuf_oneof:"id"`
+	Expires        *types.Timestamp      `protobuf:"bytes,3,opt,name=expires,proto3" json:"expires,omitempty"`
+	RefreshUrl     string                `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl,proto3" json:"refresh_url,omitempty"`
+	AuthProvider   *storage.AuthProvider `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
+	UserInfo       *storage.UserInfo     `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
+	UserAttributes []*UserAttribute      `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
+	// Token returned to ACS by the underlying identity provider. This field is set only in a few,
+	// specific contexts. Do not rely on this field being present in the response.
+	IdpToken             string   `protobuf:"bytes,8,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *AuthStatus) Reset()         { *m = AuthStatus{} }
