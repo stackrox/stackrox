@@ -166,11 +166,8 @@ function getValues(arg: SearchFilterValue): string[] | undefined {
     return undefined;
 }
 
-export function replaceSearchFilterName(searchFilter: SearchFilter, name: string | undefined) {
-    return {
-        ...searchFilter,
-        [nameField]: typeof name === 'string' && name.length !== 0 ? [name] : undefined,
-    };
+export function replaceSearchFilterNames(searchFilter: SearchFilter, names: string[] | undefined) {
+    return { ...searchFilter, [nameField]: names };
 }
 
 // statuses

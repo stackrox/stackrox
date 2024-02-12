@@ -14,7 +14,7 @@ export type FilterChipGroupDescriptor = {
     /** The name of the search filter category as it appears in the URL */
     searchFilterName: string;
     /** Optional render function for the chip. Defaults to rendering plain text inside a PatternFly `Chip` component */
-    render?: (filter: string) => React.ReactElement;
+    render?: (filter: string) => React.ReactNode;
 };
 
 export type SearchFilterChipsProps = {
