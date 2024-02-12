@@ -167,7 +167,7 @@ function PoliciesTable({
         hasSelections,
         onSelect,
         onSelectAll,
-        // onClearAll,
+        onClearAll,
         getSelectedIds,
     } = useTableSelection(policies);
 
@@ -303,10 +303,6 @@ function PoliciesTable({
                                             >
                                                 {`Disable policies (${numEnabled})`}
                                             </DropdownItem>,
-                                            // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
-                                            // Export policies to JSON
-                                            // onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
-                                            // {`Export policies to JSON (${numSelected})`}
                                             <DropdownSeparator key="Separator" />,
                                             <DropdownItem
                                                 key="Enable notification"
@@ -325,6 +321,17 @@ function PoliciesTable({
                                                 }}
                                             >
                                                 Disable notification
+                                            </DropdownItem>,
+                                            <DropdownSeparator key="Separator" />,
+                                            <DropdownItem
+                                                key="Export policy"
+                                                component="button"
+                                                isDisabled={selectedPolicies.length < 1}
+                                                onClick={() =>
+                                                    exportPoliciesHandler(selectedIds, onClearAll)
+                                                }
+                                            >
+                                                {`Export policies (${selectedPolicies.length})`}
                                             </DropdownItem>,
                                             <DropdownSeparator key="Separator" />,
                                             <DropdownItem
