@@ -43,7 +43,7 @@ function main() {
 
   if ! [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     approve_install_plan "${operator_ns}" "${operator_version}"
-    local -r operator_version_midstream="$(oc get csv -n ${operator_ns} -o jsonpath='{.items[0].spec.version}')"
+    local -r operator_version_midstream=$(oc get csv -n ${operator_ns} -o jsonpath='{.items[0].spec.version}')
     nurse_deployment_until_available "${operator_ns}" "${operator_version_midstream}"
   else
     nurse_deployment_until_available "${operator_ns}" "${operator_version}"
