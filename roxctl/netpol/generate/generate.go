@@ -55,15 +55,6 @@ func (cmd *NetpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
 	return c
 }
 
-// ShortText provides short command description
-func (cmd *NetpolGenerateCmd) ShortText() string {
-	return "Recommend Network Policies based on deployment information."
-}
-
-func (cmd *NetpolGenerateCmd) longText() string {
-	return `Based on a given folder containing deployment YAMLs, will generate a list of recommended Network Policies. Will write to stdout if no output flags are provided.`
-}
-
 // RunE runs the command
 func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	synth, err := cmd.construct(args, c)
