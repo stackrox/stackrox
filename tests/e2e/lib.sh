@@ -820,7 +820,7 @@ remove_existing_stackrox_resources() {
         if [[ "${centrals_supported}" == "true" ]]; then
             kubectl get centrals -o name | while read -r central; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
-                kubectl wait -n "${namespace}"  --for=delete deployment/sensor --timeout=60s
+                kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
             done
         fi
         if [[ "$psps_supported" = "true" ]]; then
