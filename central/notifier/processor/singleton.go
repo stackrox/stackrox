@@ -11,6 +11,7 @@ import (
 	encConfigDatastore "github.com/stackrox/rox/central/notifier/encconfig/datastore"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -36,10 +37,11 @@ var (
 
 func initialize() {
 	// Create a context that can access notifiers and namespaces since this is on initialization.
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integration, resources.Namespace)))
+	ctx := declarativeconfig.WithModifyDeclarativeOrImperative(
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Integration, resources.Namespace))))
 
 	// Keep track of the notifiers in use.
 	ns = notifier.NewNotifierSet(retryAlertsFor)
