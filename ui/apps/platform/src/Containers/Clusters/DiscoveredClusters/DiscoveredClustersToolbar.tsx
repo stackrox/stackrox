@@ -7,17 +7,37 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import {
-    // DiscoveredClusterStatus,
+    DiscoveredClusterStatus,
     DiscoveredClusterType,
     getDiscoveredClustersFilter,
-    // replaceSearchFilterName,
-    // replaceSearchFilterStatuses,
+    isStatus,
+    isType,
+    replaceSearchFilterNames,
+    replaceSearchFilterStatuses,
     replaceSearchFilterTypes,
 } from 'services/DiscoveredClusterService';
 import { SearchFilter } from 'types/search';
 
-import SearchFilterType from './SearchFilterType';
+import SearchFilterTypes from './SearchFilterTypes';
+import SearchFilterNames from './SearchFilterNames';
+import SearchFilterStatuses from './SearchFilterStatuses';
+import { getStatusText, getTypeText } from './DiscoveredCluster';
+
+const searchFilterChipDescriptors = [
+    { displayName: 'Name', searchFilterName: 'Cluster' },
+    {
+        displayName: 'Status',
+        searchFilterName: 'Cluster Status',
+        render: (filter: string) => (isStatus(filter) ? getStatusText(filter) : filter),
+    },
+    {
+        displayName: 'Type',
+        searchFilterName: 'Cluster Type',
+        render: (filter: string) => (isType(filter) ? getTypeText(filter) : filter),
+    },
+];
 
 export type DiscoveredClustersToolbarProps = {
     count: number;
@@ -40,30 +60,44 @@ function DiscoveredClustersToolbar({
     searchFilter,
     setSearchFilter,
 }: DiscoveredClustersToolbarProps): ReactElement {
-    /*
-    function setNameSelected(name: string) {
-        setSearchFilter(replaceSearchFilterName(searchFilter, name));
+    function setNamesSelected(names: string[] | undefined) {
+        setSearchFilter(replaceSearchFilterNames(searchFilter, names));
     }
 
-    function setStatusesSelected(types: DiscoveredClusterStatus[] | undefined) {
+    function setStatusesSelected(statuses: DiscoveredClusterStatus[] | undefined) {
         setSearchFilter(replaceSearchFilterStatuses(searchFilter, statuses));
     }
-    */
 
     function setTypesSelected(types: DiscoveredClusterType[] | undefined) {
         setSearchFilter(replaceSearchFilterTypes(searchFilter, types));
     }
 
-    const { types: typesSelected } = getDiscoveredClustersFilter(searchFilter);
+    const {
+        names: namesSelected,
+        types: typesSelected,
+        statuses: statusesSelected,
+    } = getDiscoveredClustersFilter(searchFilter);
 
     return (
         <Toolbar>
             <ToolbarContent>
-                {/* SearchFilterName */}
-                {/* SearchFilterStatuses */}
+                <ToolbarItem variant="search-filter">
+                    <SearchFilterNames
+                        namesSelected={namesSelected}
+                        isDisabled={isDisabled}
+                        setNamesSelected={setNamesSelected}
+                    />
+                </ToolbarItem>
                 <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
-                        <SearchFilterType
+                        <SearchFilterStatuses
+                            statusesSelected={statusesSelected}
+                            isDisabled={isDisabled}
+                            setStatusesSelected={setStatusesSelected}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <SearchFilterTypes
                             typesSelected={typesSelected}
                             isDisabled={isDisabled}
                             setTypesSelected={setTypesSelected}
@@ -85,6 +119,9 @@ function DiscoveredClustersToolbar({
                             }}
                         />
                     </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup className="pf-u-w-100">
+                    <SearchFilterChips filterChipGroupDescriptors={searchFilterChipDescriptors} />
                 </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>
