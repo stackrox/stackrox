@@ -190,6 +190,7 @@ teardown_file() {
     # Verify that Scanner v2 and v4 are up.
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+    verify_central_scannerV4_env_var_set "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
@@ -200,11 +201,13 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
+    run ! verify_central_scannerV4_env_var_set "stackrox"
 
     HELM_REUSE_VALUES=true _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+    verify_central_scannerV4_env_var_set "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
@@ -215,6 +218,7 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+    verify_central_scannerV4_env_var_set "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
@@ -233,6 +237,7 @@ teardown_file() {
 
     verify_scannerV2_deployed "$central_namespace"
     verify_scannerV4_deployed "$central_namespace"
+    verify_central_scannerV4_env_var_set "$central_namespace"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
 }
 
@@ -251,6 +256,7 @@ teardown_file() {
 
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
+    run ! verify_central_scannerV4_env_var_set
 
     local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
     assert [ -d "${scanner_bundle}" ]
@@ -263,6 +269,7 @@ teardown_file() {
     ${ORCH_CMD} apply -R -f "${scanner_bundle}/scanner-v4"
 
     verify_scannerV4_deployed
+    verify_central_scannerV4_env_var_set
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
@@ -280,6 +287,7 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+    verify_central_scannerV4_env_var_set "stackrox"
 }
 
 @test "Upgrade from old version without Scanner V4 support to the version which supports Scanner v4" {
@@ -294,12 +302,14 @@ teardown_file() {
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
+    run ! verify_central_scannerV4_env_var_set "stackrox"
 
     info "Upgrading StackRox using HEAD deployment bundles"
     _deploy_stackrox
 
     verify_scannerV2_deployed
     verify_scannerV4_deployed
+    verify_central_scannerV4_env_var_set "stackrox"
 }
 
 verify_no_scannerV4_deployed() {
@@ -350,6 +360,20 @@ verify_scannerV4_matcher_deployed() {
     wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 120
 }
 
+verify_central_scannerV4_env_var_set() {
+    local namespace=${1:-stackrox}
+    local central_env_vars
+    local scanner_v4_value
+
+    central_env_vars="$("${ORCH_CMD}" -n "${namespace}" get deploy/central -o jsonpath="{.spec.template.spec.containers[?(@.name=='central')].env}")"
+    scanner_v4_value="$(echo "${central_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
+
+    if [[ "${scanner_v4_value}" == "true" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
 
 # We are using our own deploy function, because we want to have the flexibility to patch down resources
 # after deployment. Without this we are only able to special-case local deployments and CI deployments,
