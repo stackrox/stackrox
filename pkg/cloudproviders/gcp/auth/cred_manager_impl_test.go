@@ -116,8 +116,8 @@ func TestCredentialManager(t *testing.T) {
 		},
 	}
 
-	for name, c := range cases {
-		c := c
+	for name, tc := range cases {
+		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
@@ -125,14 +125,14 @@ func TestCredentialManager(t *testing.T) {
 			manager.Start()
 			defer manager.Stop()
 
-			err := c.setupFn(k8sClient)
+			err := tc.setupFn(k8sClient)
 			require.NoError(t, err)
 
 			// Assert that the secret data has been updated.
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			assert.EventuallyWithT(t, func(c *assert.CollectT) {
 				manager.mutex.RLock()
 				defer manager.mutex.RUnlock()
-				assert.Equal(t, []byte(c.expected), manager.stsConfig)
+				assert.Equal(c, []byte(tc.expected), manager.stsConfig)
 			}, 5*time.Second, 100*time.Millisecond)
 		})
 	}
