@@ -10,13 +10,16 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type notifierUpdater struct {
@@ -27,6 +30,7 @@ type notifierUpdater struct {
 	reporter      integrationhealth.Reporter
 	nameExtractor types.NameExtractor
 	idExtractor   types.IDExtractor
+	cryptoKey     string
 }
 
 var _ ResourceUpdater = (*notifierUpdater)(nil)
@@ -34,6 +38,14 @@ var _ ResourceUpdater = (*notifierUpdater)(nil)
 func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner policycleaner.PolicyCleaner,
 	processor notifier.Processor, healthDS declarativeConfigHealth.DataStore,
 	reporter integrationhealth.Reporter) ResourceUpdater {
+	var cryptoKey string
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error creating declarative config notifier updater, notifiers will be unable to send notifications"))
+		}
+	}
 	return &notifierUpdater{
 		notifierDS:    notifierDS,
 		policyCleaner: policyCleaner,
@@ -42,6 +54,7 @@ func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner po
 		reporter:      reporter,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),
+		cryptoKey:     cryptoKey,
 	}
 }
 
@@ -49,6 +62,12 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
 	notifierProto, ok := m.(*storage.Notifier)
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to role updater: %T", notifierProto)
+	}
+	if env.EncNotifierCreds.BooleanSetting() {
+		err := notifierUtils.SecureNotifier(notifierProto, u.cryptoKey)
+		if err != nil {
+			return errors.Errorf("Error securing declarative config notifier %s, notifications to this notifier will fail", notifierProto.GetName())
+		}
 	}
 	_, err := u.notifierDS.UpsertNotifier(ctx, notifierProto)
 	if err != nil {
