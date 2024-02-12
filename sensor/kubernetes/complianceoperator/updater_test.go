@@ -301,6 +301,7 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 	s.EqualValues(expectedVal, actual)
 }
 
+// TODO(do-not-merge): Remove this
 func TestSomething(t *testing.T) {
 	client, err := NewKubernetesClient()
 	require.NoError(t, err)
