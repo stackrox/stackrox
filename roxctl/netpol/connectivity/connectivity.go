@@ -2,7 +2,6 @@ package connectivity
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/netpol/connectivity/diff"
 	connectivitymap "github.com/stackrox/rox/roxctl/netpol/connectivity/map"
@@ -12,8 +11,8 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "connectivity",
-		Short: "(Technology Preview) Commands related to connectivity analysis of network policy resources.",
-		Long:  `Commands related to connectivity analysis of network policy resources.` + common.TechPreviewLongText,
+		Short: "Commands related to connectivity analysis of network policy resources.",
+		Long:  `Commands related to connectivity analysis of network policy resources.`,
 	}
 
 	c.AddCommand(

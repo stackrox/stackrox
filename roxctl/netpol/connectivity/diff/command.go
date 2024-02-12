@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
@@ -32,12 +31,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	diffNetpolCmd := &diffNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "diff",
-		Short: "(Technology Preview) Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources.",
-		Long:  `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.` + common.TechPreviewLongText,
+		Short: "Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources.",
+		Long:  `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(c *cobra.Command, args []string) error {
-			diffNetpolCmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
 			analyzer, err := diffNetpolCmd.construct()
 			if err != nil {
 				return err
