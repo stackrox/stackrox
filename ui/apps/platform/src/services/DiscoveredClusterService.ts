@@ -60,7 +60,6 @@ export type DiscoveredClusterStatus = (typeof statuses)[number];
 
 export type DiscoveredClusterCloudSource = {
     id: string;
-    name: string;
 };
 
 // endpoints
@@ -226,7 +225,7 @@ export function replaceSearchFilterTypes(
 
 // For useURLSort hook.
 
-export const firstDiscoveredAtField = 'TODO';
+export const firstDiscoveredAtField = 'Cluster Discovered Time';
 
 export const sortFields = [nameField];
 export const defaultSortOption: SortOption = {
