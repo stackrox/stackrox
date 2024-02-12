@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -11,7 +12,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const resyncTime = 10 * time.Minute
+const (
+	resyncTime       = 10 * time.Minute
+	cacheSyncTimeout = 30 * time.Second
+)
 
 // SecretInformer is a convenience wrapper around a Kubernetes informer for a specific secret.
 type SecretInformer struct {
@@ -22,7 +26,7 @@ type SecretInformer struct {
 	onAddFn    func(*v1.Secret)
 	onUpdateFn func(*v1.Secret)
 	onDeleteFn func()
-	stopCh     chan struct{}
+	stopCh     concurrency.Signal
 }
 
 var _ cache.ResourceEventHandler = &SecretInformer{}
@@ -43,7 +47,7 @@ func NewSecretInformer(
 		onAddFn:    onAddFn,
 		onUpdateFn: onUpdateFn,
 		onDeleteFn: onDeleteFn,
-		stopCh:     make(chan struct{}),
+		stopCh:     concurrency.NewSignal(),
 	}
 }
 
@@ -58,15 +62,20 @@ func (c *SecretInformer) Start() error {
 	if _, err := sif.Core().V1().Secrets().Informer().AddEventHandler(c); err != nil {
 		return errors.Wrap(err, "could not add event handler")
 	}
-	sif.Start(c.stopCh)
-	sif.WaitForCacheSync(c.stopCh)
-
+	sif.Start(c.stopCh.Done())
+	stopWait := concurrency.Any(concurrency.Never(), c.stopCh.WaitC(), concurrency.Timeout(cacheSyncTimeout))
+	synced := sif.WaitForCacheSync(stopWait.Done())
+	for _, ok := range synced {
+		if !ok {
+			return errors.New("failed to sync informer cache")
+		}
+	}
 	return nil
 }
 
 // Stop ends the secret informer loop.
 func (c *SecretInformer) Stop() {
-	close(c.stopCh)
+	c.stopCh.Signal()
 }
 
 // OnAdd is called when the secret is added.
