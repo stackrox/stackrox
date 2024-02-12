@@ -248,8 +248,10 @@ function launch_central {
       add_args "--enable-telemetry=false"
     fi
 
-    if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
-      add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
+    if [[ "${ORCH}" == "openshift" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+        add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
+      fi
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -581,6 +583,7 @@ function launch_sensor {
     local common_dir="${k8s_dir}/../common"
 
     local extra_config=()
+    local scanner_extra_config=()
     local extra_json_config=''
     local extra_helm_config=()
 
@@ -610,6 +613,7 @@ function launch_sensor {
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
+      scanner_extra_config+=("--timeout=$ROXCTL_TIMEOUT")
     fi
 
     SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
@@ -620,10 +624,18 @@ function launch_sensor {
 
     if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
+        scanner_extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
     fi
 
-    # Delete path
-    rm -rf "$k8s_dir/sensor-deploy"
+    if [[ "${ORCH}" == "openshift" ]]; then
+      if [[ "${ROX_OPENSHIFT_VERSION:-}" == "4" ]]; then
+        extra_config+=("--openshift-version=${ROX_OPENSHIFT_VERSION}")
+        scanner_extra_config+=("--cluster-type=openshift4")
+      fi
+    fi
+
+    rm -rf "${k8s_dir}/sensor-deploy"
+    rm -rf "${k8s_dir}/scanner-deploy"
 
     if [[ -z "$CI" && -z "${SENSOR_HELM_DEPLOY:-}" && -x "$(command -v helm)" && "$(helm version --short)" == v3.* ]]; then
       echo >&2 "================================================================================================"
@@ -736,6 +748,11 @@ function launch_sensor {
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
       fi
+
+      roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" scanner generate \
+            --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
+      mv "scanner-deploy" "${k8s_dir}/scanner-deploy"
+      echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"
 
       if [[ -n "${NAMESPACE_OVERRIDE}" ]]; then
         if [[ "${sensor_namespace}" != "stackrox" && "${sensor_namespace}" != "${NAMESPACE_OVERRIDE}" ]]; then
