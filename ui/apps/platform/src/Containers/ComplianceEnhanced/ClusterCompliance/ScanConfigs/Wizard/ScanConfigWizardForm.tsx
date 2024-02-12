@@ -3,12 +3,13 @@ import { useHistory } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedScanConfigsPath } from 'routePaths';
+import isEqual from 'lodash/isEqual';
 
 import useRestQuery from 'hooks/useRestQuery';
 import {
     saveScanConfig,
     listComplianceIntegrations,
-    listComplianceProfiles,
+    listComplianceSummaries,
 } from 'services/ComplianceEnhancedService';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -38,11 +39,17 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     const formik = useFormikScanConfig(initialFormValues);
     const [isCreating, setIsCreating] = useState(false);
     const [createScanConfigError, setCreateScanConfigError] = useState('');
+    const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, loading: isFetchingClusters } = useRestQuery(listClustersQuery);
 
-    const listProfilesQuery = useCallback(() => listComplianceProfiles(), []);
+    const listProfilesQuery = useCallback(() => {
+        if (clustersUsedForProfileData.length > 0) {
+            return listComplianceSummaries(clustersUsedForProfileData);
+        }
+        return Promise.resolve([]);
+    }, [clustersUsedForProfileData]);
     const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
 
     async function onSave() {
@@ -57,6 +64,12 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             setCreateScanConfigError(getAxiosErrorMessage(error));
         } finally {
             setIsCreating(false);
+        }
+    }
+
+    function handleProfilesUpdate() {
+        if (!isEqual(clustersUsedForProfileData, formik.values.clusters)) {
+            setClustersUsedForProfileData(formik.values.clusters);
         }
     }
 
@@ -81,6 +94,18 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         }
     }
 
+    function canJumpToSelectClusters() {
+        return Object.keys(formik.errors?.parameters || {}).length === 0;
+    }
+
+    function canJumpToSelectProfiles() {
+        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters || {}).length === 0;
+    }
+
+    function canJumpToReviewConfig() {
+        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles || {}).length === 0;
+    }
+
     const wizardSteps: WizardStep[] = [
         {
             name: PARAMETERS,
@@ -96,7 +121,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     isFetchingClusters={isFetchingClusters}
                 />
             ),
-            canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
+            canJumpTo: canJumpToSelectClusters(),
         },
         {
             name: SELECT_PROFILES,
@@ -107,7 +132,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     isFetchingProfiles={isFetchingProfiles}
                 />
             ),
-            canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
+            canJumpTo: canJumpToSelectProfiles(),
         },
         {
             name: REVIEW_CONFIG,
@@ -119,7 +144,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     errorMessage={createScanConfigError}
                 />
             ),
-            canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
+            canJumpTo: canJumpToReviewConfig(),
         },
     ];
 
@@ -134,6 +159,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     hasNoBodyPadding
                     steps={wizardSteps}
                     onClose={onClose}
+                    onCurrentStepChanged={handleProfilesUpdate}
                     footer={
                         <ScanConfigWizardFooter
                             wizardSteps={wizardSteps}

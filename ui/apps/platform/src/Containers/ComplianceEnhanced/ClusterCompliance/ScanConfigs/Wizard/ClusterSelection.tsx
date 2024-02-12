@@ -22,6 +22,7 @@ import { clustersBasePath } from 'routePaths';
 import { ComplianceIntegration } from 'services/ComplianceEnhancedService';
 
 import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
+import ClusterStatus from '../components/ClusterStatus';
 
 export type ClusterSelectionProps = {
     clusters: ComplianceIntegration[];
@@ -77,7 +78,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     };
 
     function renderTableContent() {
-        return clusters?.map(({ clusterId, clusterName }, rowIndex) => (
+        return clusters?.map(({ clusterId, clusterName, statusErrors }, rowIndex) => (
             <Tr key={clusterId}>
                 <Td
                     key={clusterId}
@@ -88,6 +89,9 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                     }}
                 />
                 <Td>{clusterName}</Td>
+                <Td>
+                    <ClusterStatus errors={statusErrors} />
+                </Td>
             </Tr>
         ));
     }
@@ -146,7 +150,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             </PageSection>
             <Divider component="div" />
             <Form className="pf-u-py-lg pf-u-px-lg">
-                <TableComposable variant="compact">
+                <TableComposable>
                     <Caption>At least one cluster is required.</Caption>
                     <Thead noWrap>
                         <Tr>
@@ -157,6 +161,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                                 }}
                             />
                             <Th>Name</Th>
+                            <Th>Operator status</Th>
                         </Tr>
                     </Thead>
                     <Tbody>{renderTableBodyContent()}</Tbody>
