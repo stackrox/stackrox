@@ -634,7 +634,6 @@ function launch_sensor {
       fi
     fi
 
-    # Delete paths
     rm -rf "${k8s_dir}/sensor-deploy"
     rm -rf "${k8s_dir}/scanner-deploy"
 

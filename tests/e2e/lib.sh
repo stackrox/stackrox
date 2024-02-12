@@ -328,7 +328,7 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
-    local central_namespace=${1:-stackrox}
+
     info "Deploying sensor via operator into namespace ${sensor_namespace}"
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
@@ -801,10 +801,10 @@ remove_existing_stackrox_resources() {
         psps_supported=true
         global_resource_types="${global_resource_types},psp"
     fi
-    if echo "${k8s_api_resources}" | grep -q "^centrals.platform.stackrox.io$"; then
+    if echo "${k8s_api_resources}" | grep -q "^centrals\.platform\.stackrox\.io$"; then
         centrals_supported=true
     fi
-    if echo "${k8s_api_resources}" | grep -q "^securedclusters.platform.stackrox.io$"; then
+    if echo "${k8s_api_resources}" | grep -q "^securedclusters\.platform\.stackrox\.io$"; then
         securedclusters_supported=true
     fi
 
