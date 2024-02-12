@@ -100,6 +100,18 @@ tests:
   expect: |
     envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == false)
 
+- name: ExpiredAt should be set when env.managedServices is true
+  set:
+    env.managedServices: true
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_EXPIRED_AT") == true)
+
+- name: ExpiredAt should not be set when env.managedServices is false
+  set:
+    env.managedServices: false
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_EXPIRED_AT") == false)
+
 - name: "override affinity"
   values:
     central:
