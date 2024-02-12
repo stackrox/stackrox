@@ -26,7 +26,11 @@ function CoveragesPage() {
             <Divider component="div" />
             <TabNavSubHeader
                 description="Assess profile compliance for platform resources and nodes across clusters"
-                actions={<Button variant="primary">Export data as CSV</Button>}
+                actions={
+                    <Button isDisabled variant="primary">
+                        Export data as CSV (coming soon)
+                    </Button>
+                }
             />
             <Divider component="div" />
             <PageSection>
