@@ -10,6 +10,7 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "daemonset" "collector") | nindent 4 }}
+    openshift.io/required-scc: privileged
   name: collector
   namespace: {{ ._rox._namespace }}
 spec:

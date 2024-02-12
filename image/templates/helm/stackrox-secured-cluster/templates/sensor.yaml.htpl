@@ -11,6 +11,7 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "deployment" "sensor") | nindent 4 }}
+    openshift.io/required-scc: restricted-v2
 spec:
   replicas: 1
   minReadySeconds: 15
