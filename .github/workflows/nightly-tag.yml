@@ -2,7 +2,7 @@ name: Create nightly tag
 on:
   workflow_dispatch:
   schedule:
-  - cron: 0 0 * * 1,2,3,4,5
+  - cron: 0 0 * * 1-5
 jobs:
   create-nightly-tag:
     runs-on: ubuntu-latest
