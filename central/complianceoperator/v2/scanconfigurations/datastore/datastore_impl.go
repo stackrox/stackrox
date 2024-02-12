@@ -275,8 +275,11 @@ func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context
 		return err
 	}
 
+	// Remove the status for the cluster as well.
 	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfig.GetId()).ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfig.GetId()).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery())
 	if err != nil {
 		return errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", scanConfig.GetId())
 	}
