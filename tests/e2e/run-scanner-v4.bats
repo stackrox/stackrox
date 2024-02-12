@@ -92,7 +92,9 @@ setup() {
 
 describe_pods_in_namespace() {
     local namespace="$1"
+    info "==============================="
     info "Pods in namespace ${namespace}:"
+    info "==============================="
     "${ORCH_CMD}" -n "${namespace}" get pods
     echo
     "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
@@ -105,6 +107,20 @@ describe_pods_in_namespace() {
 
     done
 }
+
+describe_deployments_in_namespace() {
+    local namespace="$1"
+    info "====================================="
+    info "Deployments in namespace ${namespace}:"
+    info "====================================="
+    "${ORCH_CMD}" -n "${namespace}" get deployments
+    echo
+    "${ORCH_CMD}" -n "${namespace}" get deployments -o name | while read -r name; do
+      echo "** DESCRIBING DEPLOYMENT: ${namespace}/${name}:"
+      "${ORCH_CMD}" -n "${namespace}" describe "${name}"
+    done
+}
+
 
 teardown() {
     local central_namespace=""
@@ -130,14 +146,16 @@ teardown() {
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"
+        describe_deployments_in_namespace "${central_namespace}"
+
+
         if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
             describe_pods_in_namespace "${sensor_namespace}"
+            describe_deployments_in_namespace "${sensor_namespace}"
         fi
     fi
 
-    for namespace in "${namespaces[@]}"; do
-        run remove_existing_stackrox_resources "${namespace}" >/dev/null
-    done
+    run remove_existing_stackrox_resources "${namespaces[@]}"
 }
 
 teardown_file() {
@@ -218,15 +236,33 @@ teardown_file() {
     verify_scannerV4_indexer_deployed "$sensor_namespace"
 }
 
-@test "Fresh installation using roxctl with Scanner V4 disabled" {
+@test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="false"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_HELM_DEPLOY="false"
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+      export ROX_OPENSHIFT_VERSION=4
+    fi
+
     _deploy_stackrox
 
-    verify_scannerV2_deployed "stackrox"
-    verify_no_scannerV4_deployed "stackrox"
+    verify_scannerV2_deployed
+    verify_no_scannerV4_deployed
+
+    local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
+    assert [ -d "${scanner_bundle}" ]
+    assert [ -d "${scanner_bundle}/scanner-v4" ]
+
+    echo "Deploying Scanner V4..."
+    if [[ -x "${scanner_bundle}/scanner-v4/scripts/setup.sh" ]]; then
+        "${scanner_bundle}/scanner-v4/scripts/setup.sh"
+    fi
+    ${ORCH_CMD} apply -R -f "${scanner_bundle}/scanner-v4"
+
+    verify_scannerV4_deployed
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
@@ -234,6 +270,12 @@ teardown_file() {
     export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+      export ROX_OPENSHIFT_VERSION=4
+    fi
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_HELM_DEPLOY="false"
+
     _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
