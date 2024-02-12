@@ -876,8 +876,13 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 		}
 
 		t.Setenv("ROX_HELM_CLUSTER_CONFIG_FP", clusterC.ClusterConfig.FingerPrint)
+	} else {
+		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
+			return ctx, nil
+		}
+		sensorConfig.WithSignalServiceAuthFuncOverride(acceptAnyFn).
+			WithNetworkFlowServiceAuthFuncOverride(acceptAnyFn)
 	}
-	// TODO: else setup fake-collector
 	if cfg.NetworkFlowTraceWriter != nil {
 		sensorConfig.WithNetworkFlowTraceWriter(cfg.NetworkFlowTraceWriter)
 	}

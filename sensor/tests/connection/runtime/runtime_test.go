@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +40,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 	config := helper.DefaultConfig()
-	config.RealCerts = true
+	config.RealCerts = helper.UseRealCollector.BooleanSetting()
 	config.InitialSystemPolicies, err = testutils.GetPoliciesFromFile("../../data/runtime-policies.json")
 	require.NoError(t, err)
 
@@ -55,11 +55,17 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 	c, err := helper.NewContextWithConfig(t, config)
 	require.NoError(t, err)
 
+	var fakeCollector *collector.FakeCollector
+	if !helper.UseRealCollector.BooleanSetting() {
+		fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig().WithCertsPath(config.CertFilePath))
+		require.NoError(t, fakeCollector.Start())
+	}
+
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		// Wait for collector to connect
-		time.Sleep(30 * time.Second)
+		waitIfRealCollector(30 * time.Second)
 		testContext.GetFakeCentral().ClearReceivedBuffer()
 		testContext.StopCentralGRPC()
 
@@ -81,71 +87,51 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		talkUID := string(talkObj.GetUID())
 		talkContainerIds := testContext.GetContainerIdsFromPod(ctx, talkObj)
 		require.Len(t, talkContainerIds, 1)
+		talkIP := testContext.GetIPFromPod(talkObj)
+		require.NotEqual(t, "", talkIP)
 
+		if !helper.UseRealCollector.BooleanSetting() {
+			nginxPodIDs, nginxContainerIDs := c.GetContainerIdsFromDeployment(nginxObj)
+			require.Len(t, nginxPodIDs, 1)
+			require.Len(t, nginxContainerIDs, 1)
+			require.Len(t, nginxContainerIDs[nginxPodIDs[0]], 1)
+			require.NotEqual(t, "", nginxContainerIDs[nginxPodIDs[0]][0])
+
+			nginxIP := c.GetIPFromService(srvObj)
+			require.NotEqual(t, "", nginxIP)
+
+			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
+			helper.SendFlowMessage(fakeCollector,
+				sensor.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+				storage.L4Protocol_L4_PROTOCOL_TCP,
+				talkContainerIds[0],
+				nginxContainerIDs[nginxPodIDs[0]][0],
+				talkIP,
+				nginxIP,
+				80,
+			)
+		}
 		messagesReceivedSignal := concurrency.NewErrorSignal()
-		go func() {
-			expectedNetworkFlows := []func(*sensor.NetworkConnectionInfoMessage) bool{
-				func(msg *sensor.NetworkConnectionInfoMessage) bool {
-					for _, conn := range msg.GetInfo().GetUpdatedConnections() {
-						if conn.Protocol == storage.L4Protocol_L4_PROTOCOL_TCP && conn.ContainerId == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
-							return true
-						}
-					}
-					return false
-				},
-			}
-			expectedSignals := []func(*sensor.SignalStreamMessage) bool{
-				func(msg *sensor.SignalStreamMessage) bool {
-					return msg.GetSignal().GetProcessSignal().GetName() == "curl" && msg.GetSignal().GetProcessSignal().GetContainerId() == talkContainerIds[0]
-				},
-			}
-			timeout := time.NewTicker(5 * time.Minute)
-			for {
-				select {
-				case <-ctx.Done():
-					messagesReceivedSignal.Signal()
-					return
-				case <-timeout.C:
-					messagesReceivedSignal.SignalWithError(errors.New("Timeout waiting for collector messages"))
-					return
-				case msg, ok := <-flowC:
-					if !ok {
-						messagesReceivedSignal.SignalWithError(errors.New("NetworkFlows trace channel closed"))
-						return
-					}
-					pos := -1
-					for i, fn := range expectedNetworkFlows {
-						if fn(msg) {
-							pos = i
-							break
-						}
-					}
-					if pos != -1 {
-						expectedNetworkFlows[pos] = expectedNetworkFlows[len(expectedNetworkFlows)-1]
-						expectedNetworkFlows = expectedNetworkFlows[:len(expectedNetworkFlows)-1]
-					}
-				case msg, ok := <-signalC:
-					if !ok {
-						messagesReceivedSignal.SignalWithError(errors.New("Signals trace channel closed"))
-						return
-					}
-					pos := -1
-					for i, fn := range expectedSignals {
-						if fn(msg) {
-							pos = i
-							break
-						}
-					}
-					if pos != -1 {
-						expectedSignals[pos] = expectedSignals[len(expectedSignals)-1]
-						expectedSignals = expectedSignals[:len(expectedSignals)-1]
+		expectedNetworkFlows := []helper.ExpectedNetworkConnectionMessageFn{
+			func(msg *sensor.NetworkConnectionInfoMessage) bool {
+				for _, conn := range msg.GetInfo().GetUpdatedConnections() {
+					if conn.Protocol == storage.L4Protocol_L4_PROTOCOL_TCP && conn.ContainerId == talkContainerIds[0] && conn.GetRemoteAddress().GetPort() == 80 {
+						return true
 					}
 				}
-				if len(expectedSignals) == 0 && len(expectedNetworkFlows) == 0 {
-					messagesReceivedSignal.Signal()
-				}
-			}
-		}()
+				return false
+			},
+		}
+		expectedSignals := []helper.ExpectedSignalMessageFn{
+			func(msg *sensor.SignalStreamMessage) bool {
+				return msg.GetSignal().GetProcessSignal().GetName() == "curl" && msg.GetSignal().GetProcessSignal().GetContainerId() == talkContainerIds[0]
+			},
+		}
+		go helper.WaitToReceiveMessagesFromCollector(ctx, &messagesReceivedSignal,
+			signalC,
+			flowC,
+			expectedSignals,
+			expectedNetworkFlows)
 		require.NoError(t, messagesReceivedSignal.Wait())
 
 		// We need to wait here at least 30s to make sure the network flows are processed
@@ -159,8 +145,6 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 
 		testContext.StartFakeGRPC()
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
-		// Wait for the updates to be sent
-		time.Sleep(30 * time.Second)
 
 		msg, err := testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 			return event.GetEvent().GetProcessIndicator().GetDeploymentId() == talkUID &&
@@ -182,4 +166,10 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		testContext.AssertViolationStateByID(t, talkUID, helper.AssertViolationsMatch(processIndicatorPolicyName), processIndicatorPolicyName, false)
 		testContext.AssertViolationStateByID(t, nginxUID, helper.AssertViolationsMatch(networkFlowPolicyName), networkFlowPolicyName, false)
 	}))
+}
+
+func waitIfRealCollector(sleepTime time.Duration) {
+	if helper.UseRealCollector.BooleanSetting() {
+		time.Sleep(sleepTime)
+	}
 }
