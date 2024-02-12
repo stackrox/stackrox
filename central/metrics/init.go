@@ -36,5 +36,6 @@ func init() {
 		grpcLastMessageSizeSent,
 		grpcLastMessageSizeReceived,
 		grpcError,
+		deploymentEnhancementRoundTripDuration,
 	)
 }

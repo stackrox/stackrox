@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
@@ -54,6 +55,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 
 	select {
 	case d.deploymentsQueue <- toEnhance:
+		metrics.IncrementDeploymentEnhancerQueueSize()
 		return nil
 	default:
 		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", env.SensorDeploymentEnhancementQueueSize.IntegerSetting())
@@ -71,6 +73,7 @@ func (d *DeploymentEnhancer) Start() error {
 				if !more {
 					return
 				}
+				metrics.DecrementDeploymentEnhancerQueueSize()
 				if deploymentMsg.GetMsg() == nil {
 					log.Warnf("Received empty deploymentEnhancement message. Discarding request.")
 					return
