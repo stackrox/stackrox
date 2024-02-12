@@ -7,7 +7,7 @@ import (
 
 // Command defines the netpol generate command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	cmd := &NetpolGenerateCmd{env: cliEnvironment}
+	cmd := &netpolGenerateCmd{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "generate <folder-path>",
 		Short: "Recommend Network Policies based on deployment information.",
