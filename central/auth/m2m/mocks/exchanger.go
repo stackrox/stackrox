@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	storage "github.com/stackrox/rox/generated/storage"
 	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -38,6 +39,20 @@ func NewMockTokenExchanger(ctrl *gomock.Controller) *MockTokenExchanger {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTokenExchanger) EXPECT() *MockTokenExchangerMockRecorder {
 	return m.recorder
+}
+
+// Config mocks base method.
+func (m *MockTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Config")
+	ret0, _ := ret[0].(*storage.AuthMachineToMachineConfig)
+	return ret0
+}
+
+// Config indicates an expected call of Config.
+func (mr *MockTokenExchangerMockRecorder) Config() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockTokenExchanger)(nil).Config))
 }
 
 // ExchangeToken mocks base method.

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
-	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
+	"github.com/stackrox/rox/central/auth/store"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -58,7 +58,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 
-	store := pgStore.New(s.pool.DB)
+	store := store.New(s.pool.DB)
 
 	permSetStore := permissionSetPostgresStore.New(s.pool.DB)
 	accessScopeStore := accessScopePostgresStore.New(s.pool.DB)
@@ -73,7 +73,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	s.mockSet.EXPECT().NewTokenExchangerFromConfig(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.authDataStore = New(store, s.mockSet)
 }
 
@@ -83,7 +83,7 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		TokenExpirationDuration: "5m",
@@ -100,7 +100,7 @@ func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
 }
 
 func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	config, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 		TokenExpirationDuration: "5m",
@@ -122,7 +122,7 @@ func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 }
 
 func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
-	_, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	_, err := s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
 		TokenExpirationDuration: "5m",
@@ -138,7 +138,7 @@ func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
 
 	s.NoError(err)
 
-	_, err = s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+	_, err = s.authDataStore.UpsertAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "12c153c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
 		TokenExpirationDuration: "5m",

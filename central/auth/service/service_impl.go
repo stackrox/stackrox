@@ -171,7 +171,7 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 		return nil, err
 	}
 	config.Id = uuid.NewV4().String()
-	storageConfig, err := s.authDataStore.AddAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config))
+	storageConfig, err := s.authDataStore.UpsertAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config))
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, requ
 		return nil, err
 	}
 
-	if err := s.authDataStore.UpdateAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config)); err != nil {
+	if _, err := s.authDataStore.UpsertAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config)); err != nil {
 		return nil, err
 	}
 
