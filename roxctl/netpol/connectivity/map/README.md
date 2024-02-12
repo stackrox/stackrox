@@ -1,8 +1,5 @@
 # Static Network Policy Analysis and Visualization
 
-## Developer Preview Notice
-The static network policy analysis feature is offered as a developer preview feature. While we are open to receiving feedback about this feature, our technical support will not be able to assist and answer questions about it.
-
 ## About
 The static network policy analyzer is a tool that analyzes Kubernetes network policies.
 Based on a given folder containing deployment and network policy YAMLs, it analyzes the permitted cluster connectivity.
