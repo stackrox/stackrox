@@ -52,7 +52,7 @@ spec:
           {{- if (default ._rox.collector.forceCollectionMethod false) }}
           value: {{ ._rox.collector.collectionMethod }}
           {{- else }}
-          value: CORE_EBPF
+          value: CORE_BPF
           {{- end }}
         - name: GRPC_SERVER
           value: {{ ._rox.sensor.endpoint }}
