@@ -202,6 +202,7 @@ scannerV4:
 {{- $_ := unset $envVars "ROX_OFFLINE_MODE" -}}
 {{- $_ := unset $envVars "ROX_TELEMETRY_ENDPOINT" -}}
 {{- $_ := unset $envVars "ROX_TELEMETRY_STORAGE_KEY_V1" -}}
+{{- $_ := unset $envVars "ROX_SCANNER_V4" -}}
 {{- if $envVars }}
 
 customize:
