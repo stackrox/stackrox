@@ -207,7 +207,7 @@ teardown_file() {
     # Verify that Scanner v2 and v4 are up.
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
-    verify_central_scannerV4_env_var_set "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
@@ -218,13 +218,13 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
-    run ! verify_central_scannerV4_env_var_set "stackrox"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
     HELM_REUSE_VALUES=true _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
-    verify_central_scannerV4_env_var_set "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
@@ -235,7 +235,7 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
-    verify_central_scannerV4_env_var_set "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
@@ -254,8 +254,9 @@ teardown_file() {
 
     verify_scannerV2_deployed "$central_namespace"
     verify_scannerV4_deployed "$central_namespace"
-    verify_central_scannerV4_env_var_set "$central_namespace"
+    verify_deployment_scannerV4_env_var_set "$central_namespace" "central"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
+    verify_deployment_scannerV4_env_var_set "$sensor_namespace" "sensor"
 }
 
 @test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
@@ -275,7 +276,7 @@ teardown_file() {
 
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
-    run ! verify_central_scannerV4_env_var_set
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
     assert [ -d "${scanner_bundle}" ]
     assert [ -d "${scanner_bundle}/scanner-v4" ]
@@ -287,7 +288,7 @@ teardown_file() {
     ${ORCH_CMD} apply -R -f "${scanner_bundle}/scanner-v4"
 
     verify_scannerV4_deployed
-    verify_central_scannerV4_env_var_set
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "[Operator] Fresh installation with Scanner V4 enabled" {
@@ -355,7 +356,7 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
-    verify_central_scannerV4_env_var_set "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "Upgrade from old version without Scanner V4 support to the version which supports Scanner v4" {
@@ -370,14 +371,14 @@ teardown_file() {
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
-    run ! verify_central_scannerV4_env_var_set "stackrox"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
 
     info "Upgrading StackRox using HEAD deployment bundles"
     _deploy_stackrox
 
     verify_scannerV2_deployed
     verify_scannerV4_deployed
-    verify_central_scannerV4_env_var_set "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 verify_no_scannerV4_deployed() {
@@ -428,13 +429,14 @@ verify_scannerV4_matcher_deployed() {
     wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 120
 }
 
-verify_central_scannerV4_env_var_set() {
+verify_deployment_scannerV4_env_var_set() {
     local namespace=${1:-stackrox}
-    local central_env_vars
+    local deployment=${2:-central}
+    local deployment_env_vars
     local scanner_v4_value
 
-    central_env_vars="$("${ORCH_CMD}" -n "${namespace}" get deploy/central -o jsonpath="{.spec.template.spec.containers[?(@.name=='central')].env}")"
-    scanner_v4_value="$(echo "${central_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
+    deployment_env_vars="$("${ORCH_CMD}" -n "${namespace}" get deploy/"${deployment}" -o jsonpath="{.spec.template.spec.containers[?(@.name=='${deployment}')].env}")"
+    scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
 
     if [[ "${scanner_v4_value}" == "true" ]]; then
         return 0
