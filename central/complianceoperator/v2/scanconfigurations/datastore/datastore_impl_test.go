@@ -239,7 +239,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig
 
 	scanConfigStatus, err := s.dataStore.GetScanConfigClusterStatus(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
 	s.Require().NoError(err)
-	s.Require().Empty(scanConfigStatus)
+	s.Require().Equal(len(newscanConfig.GetClusters()), len(scanConfigStatus))
 
 	err = s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.Clusters[0].GetClusterId())
 	s.Require().NoError(err)
