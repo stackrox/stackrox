@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -45,57 +47,57 @@ func (d *datastoreImpl) listAuthM2MConfigsNoLock(ctx context.Context) ([]*storag
 	return d.store.GetAll(ctx)
 }
 
-func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
-	if err != nil {
+func (d *datastoreImpl) UpsertAuthM2MConfig(ctx context.Context,
+	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
 	}
 
-	if err := d.store.Upsert(ctx, config); err != nil {
-		return nil, err
-	}
-
-	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	existingConfig, exists, err := d.getAuthM2MConfigNoLock(ctx, config.GetId())
+	// Get the existing stored config, if any.
+	storedConfig, exists, err := d.getAuthM2MConfigNoLock(ctx, config.GetId())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
+	// Get the existing exchanger for the issuer, if any.
+	existingExchanger, _ := d.set.GetTokenExchanger(config.GetIssuer())
+
+	// Create a transaction for the DB operation. Since we can potentially fail during in-memory operations (i.e.
+	// upserting the token exchanger in the set or removal) we want to make sure we can rollback DB changes.
+	ctx, tx, err := d.store.Begin(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	// Upsert the token exchanger first, ensuring the config is valid and a token exchanger can be successfully
+	// created from it.
+	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
+		return nil, d.wrapRollBackSet(ctx, err, storedConfig, config, existingExchanger)
+	}
+
+	// Upsert the config to the DB after the token exchanger has been successfully added.
 	if err := d.store.Upsert(ctx, config); err != nil {
-		return err
-	}
-
-	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
-		return err
+		return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
 	}
 
 	// We need to ensure that any previously existing config is removed from the token exchanger set.
 	// Since this updated config may have updated the issuer, we need to fetch the existing, stored config from the
 	// database and ensure it's removed properly from the set. We do this at the end since we want the new config
 	// to successfully exist beforehand.
-	if exists && config.GetIssuer() != existingConfig.GetIssuer() {
-		if err := d.set.RemoveTokenExchanger(existingConfig.GetIssuer()); err != nil {
-			return err
+	if exists && config.GetIssuer() != storedConfig.GetIssuer() {
+		if err := d.set.RemoveTokenExchanger(storedConfig.GetIssuer()); err != nil {
+			return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
 		}
 	}
 
-	return nil
+	if err := tx.Commit(ctx); err != nil {
+		return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
+	}
+
+	return config, nil
 }
 
 func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m2m.TokenExchanger, bool) {
@@ -106,6 +108,10 @@ func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m
 }
 
 func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) error {
+	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
@@ -136,17 +142,51 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 
 	var tokenExchangerErrors error
 	for _, config := range configs {
-		exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
-		if err != nil {
+		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
 			continue
-		}
-		if err := d.set.UpsertTokenExchanger(exchanger, config.GetId()); err != nil {
-			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
 		}
 	}
 	if tokenExchangerErrors != nil {
 		return tokenExchangerErrors
 	}
 	return tokenExchangerErrors
+}
+
+// wrapRollback wraps the error with potential rollback errors.
+// In the case the giving config is not nil, it will attempt to rollback the exchanger in the set in addition to
+// rolling back the transaction.
+func (d *datastoreImpl) wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error,
+	storedConfig, newConfig *storage.AuthMachineToMachineConfig, existingExchanger m2m.TokenExchanger) error {
+	err = d.wrapRollBackSet(ctx, err, storedConfig, newConfig, existingExchanger)
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		err = pkgErrors.Wrapf(rollbackErr, "rolling back due to: %v", err)
+	}
+
+	return err
+}
+
+func (d *datastoreImpl) wrapRollBackSet(ctx context.Context, err error, storedConfig,
+	newConfig *storage.AuthMachineToMachineConfig, existingExchanger m2m.TokenExchanger) error {
+	exchangerErr := d.set.RemoveTokenExchanger(newConfig.GetIssuer())
+
+	// We have two configs to restore from: either a config has already existed within the DB for the given ID,
+	// or a token exchanger exists for the given issuer.
+	// We first attempt to restore the exchanger from the stored config. This is the case where e.g. an update to
+	// an existing config rendered as invalid.
+	// If no stored config is given, i.e. this is was not an update to an existing config, we rollback the changes
+	// from the existing exchanger config. This is the case where e.g. a new config was added with the same issuer
+	// as an existing config.
+	if storedConfig != nil {
+		exchangerErr = errors.Join(exchangerErr, d.set.RollbackExchanger(ctx, storedConfig))
+	} else if existingExchanger != nil && existingExchanger.Config() != nil {
+		exchangerErr = errors.Join(exchangerErr, d.set.RollbackExchanger(ctx, existingExchanger.Config()))
+	}
+
+	if exchangerErr != nil {
+		err = pkgErrors.Wrapf(exchangerErr, "rolling back due to: %v", err)
+	}
+
+	return err
 }
