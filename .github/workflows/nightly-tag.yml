@@ -1,13 +1,10 @@
 name: Create nightly tag
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - tm/ROX-15193-move-nightly-tag-to-gha
   schedule:
   - cron: 0 0 * * 1,2,3,4,5
 jobs:
-  triage-report:
+  create-nightly-tag:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
