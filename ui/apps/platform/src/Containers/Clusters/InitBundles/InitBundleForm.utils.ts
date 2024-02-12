@@ -1,5 +1,4 @@
 import FileSaver from 'file-saver';
-import { FormikProps } from 'formik';
 
 import { GenerateClusterInitBundleResponse } from 'services/ClustersService';
 
@@ -18,20 +17,6 @@ export const platformOptions: Record<string, string> = {
 } as const;
 
 export type PlatformKey = keyof typeof platformOptions;
-
-export type InitBundleWizardValues = {
-    installation: InstallationKey;
-    name: string;
-    platform: PlatformKey;
-};
-
-export const initialValues: InitBundleWizardValues = {
-    installation: 'Operator',
-    name: '',
-    platform: 'OpenShift',
-};
-
-export type InitBundleWizardFormikProps = FormikProps<InitBundleWizardValues>;
 
 export function downloadBundle(
     installation: InstallationKey,

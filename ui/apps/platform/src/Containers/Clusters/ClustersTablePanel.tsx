@@ -50,6 +50,7 @@ import {
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import ManageTokensButton from './Components/ManageTokensButton';
+import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import AddClusterPrompt from './AddClusterPrompt';
@@ -78,6 +79,7 @@ function ClustersTablePanel({
     const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
 
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     function onToggleInstallMenu(newIsInstallMenuOpen) {
         setIsInstallMenuOpen(newIsInstallMenuOpen);
@@ -284,7 +286,7 @@ function ClustersTablePanel({
     // After there is a response, if there are no clusters nor search filter:
     if (currentClusters.length === 0 && !hasSearchApplied) {
         return isMoveInitBundlesEnabled ? (
-            <NoClustersPage />
+            <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
         ) : (
             <PageSection variant="light">
                 <Bullseye>
@@ -504,6 +506,7 @@ function ClustersTablePanel({
                 onCancel={hideDialog}
                 isDestructive
             />
+            <SecureClusterModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
         </div>
     );
 }
