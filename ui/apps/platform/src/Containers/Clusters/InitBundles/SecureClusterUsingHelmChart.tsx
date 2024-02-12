@@ -68,18 +68,32 @@ function SecureClusterUsingHelmChart({
                 Secure a cluster using Helm chart installation method
             </Title>
             {version && (
-                <ExternalLink>
-                    <a
-                        href={getVersionedDocs(
-                            version,
-                            '/installing/installing_other/install-secured-cluster-other.html'
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Installing secured cluster services on other platforms
-                    </a>
-                </ExternalLink>
+                <>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                '/installing/installing_other/init-bundle-other.html'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Generating and applying an init bundle for RHACS on other platforms
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                '/installing/installing_other/install-secured-cluster-other.html'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Installing secured cluster services for RHACS on other platforms
+                        </a>
+                    </ExternalLink>
+                </>
             )}
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
             <List component="ul">
@@ -111,9 +125,7 @@ function SecureClusterUsingHelmChart({
                     </p>
                 </ListItem>
             </List>
-            <Title headingLevel={subHeadingLevel}>
-                Procedure to repeat for each secured cluster
-            </Title>
+            <Title headingLevel={subHeadingLevel}>Repeat for each secured cluster</Title>
             <List component="ol">
                 <ListItem>
                     <Flex

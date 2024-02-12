@@ -16,15 +16,14 @@ import {
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getProductBranding } from 'constants/productBranding';
 // import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
-import useMetadata from 'hooks/useMetadata';
 import { fetchClusterInitBundles } from 'services/ClustersService';
-import { getVersionedDocs } from 'utils/versioning';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
+
+import SecureClusterModal from './InitBundles/SecureClusterModal';
 
 /*
  * Comments about data flow:
@@ -34,15 +33,18 @@ import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
  *    so when **Download** goes back, NoClustersPage makes a new GET /v1/init-bundles request
  *    and therefore renders the link instead of the button.
  *
- * 2. It is important that /main/clusters NoClustersPage **Review installation instructions**
- *    opens /main/clusters/secure-a-cluster SecureCluster in new tab,
+ * 2. It is important that /main/clusters NoClustersPage **Review installation methods**
+ *    opens the modal SecureCluster in the same tab,
  *    so polling loop in original tab will cause conditional rendering of table
  *    whenever there is a secured cluster.
- *    That is, if it opens the page in the same tab,
- *    then it suggests the need for a back button outside of a wizard.
  */
 
-function NoClustersPage(): ReactElement {
+export type NoClustersPageProps = {
+    isModalOpen: boolean;
+    setIsModalOpen: (isOpen: boolean) => void;
+};
+
+function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
     /*
     // TODO after 4.4 release
     const { currentUser } = useAuthStatus();
@@ -53,8 +55,6 @@ function NoClustersPage(): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
     const [initBundlesCount, setInitBundlesCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
-
-    const { version } = useMetadata();
 
     const { basePageTitle } = getProductBranding();
     const textForSuccessAlert = `You have successfully deployed a ${basePageTitle} platform. Now you can configure the clusters you want to secure.`;
@@ -122,41 +122,11 @@ function NoClustersPage(): ReactElement {
                                         <Text component="p">
                                             You have successfully created cluster init bundles.
                                         </Text>
-                                        {version && (
-                                            <>
-                                                <ExternalLink>
-                                                    <a
-                                                        href={getVersionedDocs(
-                                                            version,
-                                                            'installing/installing_ocp/install-secured-cluster-ocp.html'
-                                                        )}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                    >
-                                                        Installing secured cluster services on Red
-                                                        Hat OpenShift
-                                                    </a>
-                                                </ExternalLink>
-                                                <ExternalLink>
-                                                    <a
-                                                        href={getVersionedDocs(
-                                                            version,
-                                                            'installing/installing_other/install-secured-cluster-other.html'
-                                                        )}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                    >
-                                                        Installing secured cluster services on other
-                                                        platforms
-                                                    </a>
-                                                </ExternalLink>
-                                            </>
-                                        )}
                                     </FlexItem>
                                 )}
                             </Flex>
                         </EmptyStateBody>
-                        {initBundlesCount === 0 && (
+                        {initBundlesCount === 0 ? (
                             <Button
                                 variant="primary"
                                 isLarge
@@ -165,10 +135,24 @@ function NoClustersPage(): ReactElement {
                             >
                                 Create bundle
                             </Button>
+                        ) : (
+                            <Button
+                                variant="primary"
+                                isLarge
+                                onClick={() => {
+                                    setIsModalOpen(true);
+                                }}
+                            >
+                                Review installation methods
+                            </Button>
                         )}
                         <div className="pf-u-mt-xl">
                             <Link to={`${clustersBasePath}/new`}>Legacy installation method</Link>
                         </div>
+                        <SecureClusterModal
+                            isModalOpen={isModalOpen}
+                            setIsModalOpen={setIsModalOpen}
+                        />
                     </EmptyState>
                 )}
             </PageSection>
