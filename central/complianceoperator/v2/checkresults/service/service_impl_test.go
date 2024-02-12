@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
@@ -66,6 +67,7 @@ type ComplianceResultsServiceTestSuite struct {
 	resultDatastore *resultMocks.MockDataStore
 	scanConfigDS    *scanConfigMocks.MockDataStore
 	integrationDS   *integrationMocks.MockDataStore
+	clusterDS       *clusterMocks.MockDataStore
 	service         Service
 }
 
@@ -84,8 +86,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.resultDatastore = resultMocks.NewMockDataStore(s.mockCtrl)
 	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.integrationDS = integrationMocks.NewMockDataStore(s.mockCtrl)
+	s.clusterDS = clusterMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS)
+	s.service = New(s.resultDatastore, s.scanConfigDS, s.integrationDS, s.clusterDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
@@ -472,6 +475,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
 					expectedQ,
 				)
+				s.clusterDS.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+				s.clusterDS.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster2).Return("cluster2", true, nil).Times(1)
+				s.clusterDS.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster3).Return("cluster3", true, nil).Times(1)
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetComplianceStorageResults(s.T()), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
@@ -494,6 +500,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 					expectedQ,
 				)
 
+				s.clusterDS.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetOneClusterComplianceStorageResults(s.T(), fixtureconsts.Cluster1), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
@@ -519,6 +526,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 					convertUtils.GetComplianceStorageResults(s.T())[0],
 				}
 
+				s.clusterDS.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(returnResults, nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 			},

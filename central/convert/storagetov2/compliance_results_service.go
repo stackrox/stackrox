@@ -40,7 +40,7 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, 
 }
 
 // ComplianceV2CheckResults converts the storage check results to v2 scan results
-func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, scanToScanID map[string]string) []*v2.ComplianceScanResult {
+func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, scanToScanID map[string]string, clusterIDToName map[string]string) []*v2.ComplianceScanResult {
 	// Since a check result can hold the status for multiple clusters we need to build from
 	// bottom up.  resultsByScanCheck holds check result based on the key combination of
 	// scanName, profileName, checkName.  Then when that key is encountered again we
@@ -60,10 +60,10 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 		// First time seeing this rule in the results.
 		if !found {
 			orderedKeys = append(orderedKeys, key)
-			resultsByScanCheck[key] = ComplianceV2CheckResult(result)
+			resultsByScanCheck[key] = ComplianceV2CheckResult(result, clusterIDToName)
 		} else {
 			// Append the new cluster status to the v2 check result.
-			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result))
+			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result, clusterIDToName))
 			resultsByScanCheck[key] = workingResult
 		}
 	}

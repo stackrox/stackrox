@@ -308,7 +308,18 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 		return nil, err
 	}
 
+	clusterIDToName := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		if _, found := clusterIDToName[result.GetClusterId()]; !found {
+			clusterName, _, err := s.clusterDatastore.GetClusterName(ctx, result.GetClusterId())
+			if err != nil {
+				return nil, errors.Errorf("Unable to retrieve cluster %q", result.GetClusterId())
+			}
+			clusterIDToName[result.GetClusterId()] = clusterName
+		}
+	}
+
 	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
+		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs, clusterIDToName),
 	}, nil
 }
