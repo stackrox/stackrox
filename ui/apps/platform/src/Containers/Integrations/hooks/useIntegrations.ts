@@ -8,6 +8,7 @@ import { Integration, IntegrationSource, IntegrationType } from '../utils/integr
 const selectIntegrations = createStructuredSelector({
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
+    machineAccessConfigs: selectors.getMachineAccessConfigs,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
@@ -26,6 +27,7 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
     const {
         apiTokens,
         clusterInitBundles,
+        machineAccessConfigs,
         notifiers,
         backups,
         imageIntegrations,
@@ -45,6 +47,9 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 }
                 if (type === 'clusterInitBundle') {
                     return clusterInitBundles;
+                }
+                if (type === 'machineAccess') {
+                    return machineAccessConfigs;
                 }
                 return [];
             }

@@ -20,7 +20,7 @@ import { Traits } from 'types/traits.proto';
 import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import { getIntegrationLabel } from './utils/integrationsList';
-import { getEditDisabledMessage } from './utils/integrationUtils';
+import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
 import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 
@@ -61,9 +61,11 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
             <Divider component="div" />
             <PageSection variant="light">
                 <Flex>
-                    <FlexItem>
-                        <Title headingLevel="h1">{name}</Title>
-                    </FlexItem>
+                    {(name || getIsMachineAccessConfig(source, type)) && (
+                        <FlexItem>
+                            <Title headingLevel="h1">{name || 'Manage configuration'}</Title>
+                        </FlexItem>
+                    )}
                     {hasTraitsLabel && <TraitsOriginLabel traits={traits} />}
                     {hasEditButton && (
                         <FlexItem align={{ default: 'alignRight' }}>

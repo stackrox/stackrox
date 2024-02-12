@@ -7,9 +7,9 @@ import {
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
 import {
+    AuthProviderIntegration,
     AuthProviderType,
     BackupIntegrationType,
-    BaseIntegration,
     CloudSourceIntegrationType,
     ImageIntegrationType,
     NotifierIntegrationType,
@@ -23,12 +23,14 @@ import {
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
 import { getOriginLabel } from 'Containers/AccessControl/traits';
+import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
     daysOfWeek,
     timesOfDay,
+    transformDurationLongForm,
 } from './integrationUtils';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
@@ -52,7 +54,10 @@ export type IntegrationTableColumnDescriptor<Integration> = {
  */
 
 type IntegrationTableColumnDescriptorMap = {
-    authProviders: Record<AuthProviderType, IntegrationTableColumnDescriptor<BaseIntegration>[]>;
+    authProviders: Record<
+        AuthProviderType,
+        IntegrationTableColumnDescriptor<AuthProviderIntegration>[]
+    >;
     backups: Record<
         BackupIntegrationType,
         IntegrationTableColumnDescriptor<BaseBackupIntegration>[]
@@ -95,6 +100,30 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
+        ],
+        machineAccess: [
+            {
+                accessor: (config) => {
+                    const { type } = <AuthMachineToMachineConfig>config;
+                    if (type === 'GENERIC') {
+                        return 'Generic';
+                    }
+                    if (type === 'GITHUB_ACTIONS') {
+                        return 'Github action';
+                    }
+                    return 'Unknown';
+                },
+                Header: 'Configuration',
+            },
+            { accessor: 'issuer', Header: 'Issuer' },
+            {
+                accessor: (config) => {
+                    return transformDurationLongForm(
+                        (<AuthMachineToMachineConfig>config).tokenExpirationDuration
+                    );
+                },
+                Header: 'Token lifetime',
+            },
         ],
     },
     notifiers: {

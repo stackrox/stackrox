@@ -39,12 +39,14 @@ import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrationForm';
+import MachineAccessIntegrationForm from './Forms/MachineAccessIntegrationForm';
 // signature integrations
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 // cloud source integrations
-import './IntegrationForm.css';
 import PaladinCloudIntegrationForm from './Forms/PaladinCloudIntegrationForm';
+
+import './IntegrationForm.css';
 
 type IntegrationFormProps = {
     source: IntegrationSource;
@@ -98,6 +100,7 @@ const ComponentFormMap = {
     authProviders: {
         apitoken: ApiTokenIntegrationForm,
         clusterInitBundle: ClusterInitBundleIntegrationForm,
+        machineAccess: MachineAccessIntegrationForm,
     },
     cloudSources: {
         paladinCloud: PaladinCloudIntegrationForm,

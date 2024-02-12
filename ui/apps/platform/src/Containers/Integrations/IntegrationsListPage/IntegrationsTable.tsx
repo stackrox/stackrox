@@ -32,6 +32,9 @@ function getNewButtonText(type) {
     if (type === 'clusterInitBundle') {
         return 'Generate bundle';
     }
+    if (type === 'machineAccess') {
+        return 'Create configuration';
+    }
     return 'New integration';
 }
 
@@ -199,7 +202,11 @@ function IntegrationsTable({
                                             />
                                         )}
                                         {columns.map((column) => {
-                                            if (column.Header === 'Name') {
+                                            if (
+                                                column.Header === 'Name' ||
+                                                (type === 'machineAccess' &&
+                                                    column.Header === 'Configuration')
+                                            ) {
                                                 return (
                                                     <Td key="name">
                                                         <Button

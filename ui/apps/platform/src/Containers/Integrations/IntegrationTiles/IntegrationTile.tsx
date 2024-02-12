@@ -42,7 +42,9 @@ function IntegrationTile({
                             {numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}
                         </CardActions>
                     </CardHeader>
-                    <CardTitle className="pf-u-color-100">{label}</CardTitle>
+                    <CardTitle className="pf-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                        {label}
+                    </CardTitle>
                     {categories && <CardFooter className="pf-u-color-200">{categories}</CardFooter>}
                 </Card>
             </Link>
