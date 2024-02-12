@@ -165,6 +165,7 @@ metadata:
     {{- include "srox.labels" (list . "deployment" "scanner-db") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "deployment" "scanner-db") | nindent 4 }}
+    openshift.io/required-scc: nonroot-v2
 spec:
   replicas: 1
   minReadySeconds: 15
