@@ -25,6 +25,16 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// Option function for the signal service.
+type Option func(*serviceImpl)
+
+// WithAuthFuncOverride sets the AuthFuncOverride.
+func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
+	return func(srv *serviceImpl) {
+		srv.authFuncOverride = overrideFn
+	}
+}
+
 // Service is the interface that manages the SignalEvent API from the server side
 type Service interface {
 	pkgGRPC.APIService
@@ -39,7 +49,12 @@ type serviceImpl struct {
 	queue      chan *v1.Signal
 	indicators chan *message.ExpiringMessage
 
-	processPipeline Pipeline
+	processPipeline  Pipeline
+	authFuncOverride func(context.Context, string) (context.Context, error)
+}
+
+func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) Start() error {
@@ -80,7 +95,7 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return s.authFuncOverride(ctx, fullMethodName)
 }
 
 // PushSignals handles the bidirectional gRPC stream with the collector
