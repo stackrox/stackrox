@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -77,14 +78,19 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	}
 
 	// Create a map for quick lookup of profiles.
-	profileMap := make(map[string][]string)
+	profileMap := make(map[string]set.StringSet)
 
 	for _, scanConfig := range scanConfigs {
 		if scanConfig.GetId() == id {
 			continue
 		}
 		for _, profile := range scanConfig.GetProfiles() {
-			profileMap[profile.GetProfileName()] = append(profileMap[profile.GetProfileName()], scanConfig.GetScanConfigName())
+			configSet, found := profileMap[profile.GetProfileName()]
+			if !found {
+				profileMap[profile.GetProfileName()] = set.NewStringSet()
+			}
+			configSet.Add(scanConfig.GetScanConfigName())
+			profileMap[profile.GetProfileName()] = configSet
 		}
 	}
 
@@ -92,7 +98,7 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	for _, profile := range profiles {
 		for profileName, configs := range profileMap {
 			if areProfilesEqual(profile, profileName) {
-				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs, profileName)
+				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs.AsSlice(), profileName)
 			}
 		}
 	}
