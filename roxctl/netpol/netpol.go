@@ -11,7 +11,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "netpol",
-		Short: "(Technology Preview) Commands related to network policies.",
+		Short: "Commands related to network policies.",
 		Long:  `Commands related to to network policies.`,
 	}
 

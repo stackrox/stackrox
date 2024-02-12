@@ -77,7 +77,7 @@ func (cmd *NetpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
 
 // ShortText provides short command description
 func (cmd *NetpolGenerateCmd) ShortText() string {
-	return "(Technology Preview) Recommend Network Policies based on deployment information."
+	return "Recommend Network Policies based on deployment information."
 }
 
 // LongText provides long command description

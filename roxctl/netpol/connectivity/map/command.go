@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := NewCmd(cliEnvironment)
 	c := &cobra.Command{
 		Use:   "map <folder-path>",
-		Short: "(Technology Preview) Analyze connectivity based on network policies and other resources.",
+		Short: "Analyze connectivity based on network policies and other resources.",
 		Long:  `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.`,
 
 		Args: cobra.ExactArgs(1),
