@@ -71,7 +71,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 			return nil, errox.InvalidArgs.New("empty contents is disabled")
 		}
 		zlog.Debug(ctx).Msg("no contents, retrieving")
-		ir, err = s.retrieveIndexReport(ctx, req.GetHashId())
+		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
 		ir, err = s.parseIndexReport(req.GetContents())
@@ -93,21 +93,6 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	report.HashId = req.GetHashId()
 	report.Notes = s.notes(ctx, report)
 	return report, nil
-}
-
-// retrieveIndexReport will pull an index report from the Indexer backend.
-func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
-	ir, found, err := s.indexer.GetIndexReport(ctx, hashID)
-	if err != nil {
-		return nil, fmt.Errorf("internal error: %w", err)
-	}
-	if !found {
-		return nil, errox.NotFound.CausedBy(err)
-	}
-	if !ir.Success {
-		return nil, errox.NotFound.Newf("index report unsuccessful: %s: %s", ir.State, ir.Err)
-	}
-	return ir, nil
 }
 
 // parseIndexReport will generate an index report from a Contents payload.

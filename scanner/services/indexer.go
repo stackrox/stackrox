@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -96,11 +95,10 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"component", "scanner/service/indexer.GetIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	// Create index report.
 	zlog.Info(ctx).Msg("getting index report for container image")
-	ccIR, err := s.getClairIndexReport(ctx, req.GetHashId())
+	ccIR, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	if err != nil {
-		zlog.Error(ctx).Err(err).Send()
+		zlog.Warn(ctx).Err(err).Send()
 		return nil, err
 	}
 	v4IR, err := mappers.ToProtoV4IndexReport(ccIR)
@@ -147,7 +145,7 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		"component", "scanner/service/indexer.HasIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	_, err := s.getClairIndexReport(ctx, req.GetHashId())
+	_, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	var exists bool
 	switch {
 	case errors.Is(err, nil):
@@ -159,22 +157,6 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		return nil, err
 	}
 	return &v4.HasIndexReportResponse{Exists: exists}, nil
-}
-
-// getClairIndexReport query and return a claircore index report, return a "not
-// found" error when the report does not exist or if it is not successful.
-func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
-	ir, found, err := s.indexer.GetIndexReport(ctx, hashID)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, errox.NotFound.Newf("report %q not found", hashID)
-	}
-	if !ir.Success {
-		return nil, errox.NotFound.Newf("unsuccessful state %q: %s", ir.State, ir.Err)
-	}
-	return ir, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
