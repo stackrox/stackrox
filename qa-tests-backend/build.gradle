@@ -122,7 +122,7 @@ dependencies {
     implementation 'org.javers:javers-core:7.3.7'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
-    implementation 'commons-codec:commons-codec:1.16.0'
+    implementation 'commons-codec:commons-codec:1.16.1'
 }
 
 // Apply some base attributes to all the test tasks.
