@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,8 +20,9 @@ var (
 )
 
 type enhancementSignal struct {
-	msgArrived concurrency.Signal
-	msg        *central.DeploymentEnhancementResponse
+	requestTime time.Time
+	msgArrived  concurrency.Signal
+	msg         *central.DeploymentEnhancementResponse
 }
 
 // The Broker coordinates and matches deployment enhancement requests to responses
@@ -51,8 +53,10 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 		log.Warnf("Received response to an unknown Deployment Enrichment Request ID %s", reqID)
 		return
 	}
-	log.Debugf("Received answer for Deployment Enrichment Request ID %s", reqID)
+	elapsed := time.Since(sig.requestTime).Milliseconds()
+	log.Debugf("Received answer for Deployment Enrichment Request ID %s (time elapsed %dms)", reqID, elapsed)
 	sig.msg = msg
+	metrics.ObserveDeploymentEnhancementTime(float64(elapsed))
 	delete(b.activeRequests, reqID)
 	sig.msgArrived.Signal()
 }
@@ -65,7 +69,8 @@ func (b *Broker) SendAndWaitForEnhancedDeployments(ctx context.Context, conn con
 	concurrency.WithLock(&b.lock, func() {
 		id = uuid.NewV4().String()
 		s = enhancementSignal{
-			msgArrived: concurrency.NewSignal(),
+			requestTime: time.Now(),
+			msgArrived:  concurrency.NewSignal(),
 		}
 		b.activeRequests[id] = &s
 	})
