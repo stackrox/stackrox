@@ -1,5 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
+import pluralize from 'pluralize';
 
 import { IntegrationBase } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'types/integration';
@@ -22,6 +23,13 @@ export function getIsAPIToken(source: IntegrationSource, type: IntegrationType):
 
 export function getIsClusterInitBundle(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'authProviders' && type === 'clusterInitBundle';
+}
+
+export function getIsMachineAccessConfig(
+    source: IntegrationSource,
+    type: IntegrationType
+): boolean {
+    return source === 'authProviders' && type === 'machineAccess';
 }
 
 export function getIsSignatureIntegration(source: IntegrationSource): boolean {
@@ -76,6 +84,38 @@ export function getEditDisabledMessage(type) {
         return 'This API Token can not be edited. Create a new API Token or delete an existing one.';
     }
     return '';
+}
+
+export function transformDurationLongForm(duration: string): string {
+    const hours = extractUnitsOfTime(duration, 'h');
+    const minutes = extractUnitsOfTime(duration, 'm');
+    const seconds = extractUnitsOfTime(duration, 's');
+    let result = '';
+    if (hours && hours > 0) {
+        result += pluralizeUnit(hours, 'hour');
+    }
+    if (minutes && minutes > 0) {
+        result += hours && hours > 0 ? ' ' : '';
+        result += pluralizeUnit(minutes, 'minute');
+    }
+    if (seconds && seconds > 0) {
+        result += (hours && hours > 0) || (minutes && minutes > 0) ? ' ' : '';
+        result += pluralizeUnit(seconds, 'second');
+    }
+    return result;
+}
+
+function pluralizeUnit(count: number, unit: string): string {
+    return `${count} ${pluralize(unit, count)}`;
+}
+
+function extractUnitsOfTime(duration: string, unit: string): number {
+    const unitRegex = new RegExp(`[0-9]+${unit}`);
+    const matchUnits = duration.match(unitRegex);
+    if (matchUnits && matchUnits.length !== 0) {
+        return parseInt(matchUnits[0].replace(unit, ''));
+    }
+    return 0;
 }
 
 export const daysOfWeek = [
