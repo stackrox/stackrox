@@ -105,7 +105,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			testCmd.Flags().String("output-file", "", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
-			generateNetpolCmd := NetpolGenerateCmd{
+			generateNetpolCmd := netpolGenerateCmd{
 				Options: NetpolGenerateOptions{
 					StopOnFirstError:      tt.stopOnFirstErr,
 					TreatWarningsAsErrors: false, // this is tested in netpol/resources/npg_test.go

@@ -22,7 +22,7 @@ const (
 	generatedNetworkPolicyLabel = `network-policy-buildtime-generator.stackrox.io/generated`
 )
 
-// NetpolGenerateOptions represents input parameters to NetpolGenerateCmd
+// NetpolGenerateOptions represents input parameters to netpolGenerateCmd
 type NetpolGenerateOptions struct {
 	StopOnFirstError      bool
 	TreatWarningsAsErrors bool
@@ -31,8 +31,8 @@ type NetpolGenerateOptions struct {
 	RemoveOutputPath      bool
 }
 
-// NetpolGenerateCmd represents NP-Guard functionality for generating network policies
-type NetpolGenerateCmd struct {
+// netpolGenerateCmd represents NP-Guard functionality for generating network policies
+type netpolGenerateCmd struct {
 	Options NetpolGenerateOptions
 	// Properties that are bound to cobra flags.
 	offline         bool
@@ -45,28 +45,8 @@ type NetpolGenerateCmd struct {
 	printer printer.ObjectPrinter
 }
 
-// NewNetpolGenerateCmd returns new NewNetpolGenerateCmd object
-func NewNetpolGenerateCmd(env environment.Environment) *NetpolGenerateCmd {
-	return &NetpolGenerateCmd{
-		Options: NetpolGenerateOptions{
-			StopOnFirstError:      false,
-			TreatWarningsAsErrors: false,
-			OutputFolderPath:      "",
-			OutputFilePath:        "",
-			RemoveOutputPath:      false,
-		},
-		offline:         false,
-		inputFolderPath: "",
-		mergeMode:       false,
-		splitMode:       false,
-		env:             env,
-		printer:         nil,
-	}
-
-}
-
 // AddFlags binds command flags to parameters
-func (cmd *NetpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
+func (cmd *netpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
 	c.Flags().BoolVar(&cmd.Options.TreatWarningsAsErrors, "strict", false, "treat warnings as errors")
 	c.Flags().BoolVar(&cmd.Options.StopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&cmd.Options.RemoveOutputPath, "remove", false, "remove the output path if it already exists")
@@ -75,18 +55,8 @@ func (cmd *NetpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
 	return c
 }
 
-// ShortText provides short command description
-func (cmd *NetpolGenerateCmd) ShortText() string {
-	return "Recommend Network Policies based on deployment information."
-}
-
-// LongText provides long command description
-func (cmd *NetpolGenerateCmd) LongText() string {
-	return `Based on a given folder containing deployment YAMLs, will generate a list of recommended Network Policies. Will write to stdout if no output flags are provided.`
-}
-
 // RunE runs the command
-func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
+func (cmd *netpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	synth, err := cmd.construct(args, c)
 	if err != nil {
 		return err
@@ -102,7 +72,7 @@ func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	return nil
 }
 
-func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (*npguard.PoliciesSynthesizer, error) {
+func (cmd *netpolGenerateCmd) construct(args []string, c *cobra.Command) (*npguard.PoliciesSynthesizer, error) {
 	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
@@ -117,7 +87,7 @@ func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (*npgua
 	return npguard.NewPoliciesSynthesizer(opts...), nil
 }
 
-func (cmd *NetpolGenerateCmd) validate() error {
+func (cmd *netpolGenerateCmd) validate() error {
 	if cmd.Options.OutputFolderPath != "" && cmd.Options.OutputFilePath != "" {
 		return errors.New("Flags [-d|--output-dir, -f|--output-file] cannot be used together")
 	}
@@ -134,7 +104,7 @@ func (cmd *NetpolGenerateCmd) validate() error {
 	return nil
 }
 
-func (cmd *NetpolGenerateCmd) setupPath(path string) error {
+func (cmd *netpolGenerateCmd) setupPath(path string) error {
 	if _, err := os.Stat(path); err == nil && !cmd.Options.RemoveOutputPath {
 		return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
 	} else if !os.IsNotExist(err) {
@@ -148,7 +118,7 @@ type netpolGenerator interface {
 	ErrorPtrs() []*npguard.FileProcessingError
 }
 
-func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
+func (cmd *netpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
 	infos, warns, errs := resources.GetK8sInfos(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
 	if cmd.Options.StopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.Options.TreatWarningsAsErrors)) {
 		return warns, errs
@@ -165,7 +135,7 @@ func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, 
 	return append(warns, w...), append(errs, e...)
 }
 
-func (cmd *NetpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {
+func (cmd *netpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {
 	if _, err := os.Stat(cmd.Options.OutputFolderPath); err == nil {
 		if err := os.RemoveAll(cmd.Options.OutputFolderPath); err != nil {
 			return errors.Wrapf(err, "failed to remove output path %s", cmd.Options.OutputFolderPath)
@@ -208,11 +178,11 @@ func (cmd *NetpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolic
 	return nil
 }
 
-func (cmd *NetpolGenerateCmd) printNetpols(combinedNetpols string) {
+func (cmd *netpolGenerateCmd) printNetpols(combinedNetpols string) {
 	cmd.env.Logger().PrintfLn(combinedNetpols)
 }
 
-func (cmd *NetpolGenerateCmd) saveNetpolsToMergedFile(combinedNetpols string) error {
+func (cmd *netpolGenerateCmd) saveNetpolsToMergedFile(combinedNetpols string) error {
 	dirpath, filename := filepath.Split(cmd.Options.OutputFilePath)
 	if filename == "" {
 		filename = "policies.yaml"
@@ -224,7 +194,7 @@ func (cmd *NetpolGenerateCmd) saveNetpolsToMergedFile(combinedNetpols string) er
 	return nil
 }
 
-func (cmd *NetpolGenerateCmd) saveNetpolsToFolder(recommendedNetpols []*v1.NetworkPolicy) error {
+func (cmd *netpolGenerateCmd) saveNetpolsToFolder(recommendedNetpols []*v1.NetworkPolicy) error {
 	for _, netpol := range recommendedNetpols {
 		policyName := netpol.GetName()
 		if policyName == "" {

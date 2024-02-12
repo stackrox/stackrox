@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
@@ -16,11 +15,9 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
-	connectivitymapDeprecated "github.com/stackrox/rox/roxctl/connectivity-map"
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/doc"
-	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
@@ -82,12 +79,8 @@ func Command() *cobra.Command {
 		helm.Command(cliEnvironment),
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
-		connectivitymapDeprecated.Command(cliEnvironment),
 		netpol.Command(cliEnvironment),
 	)
-	if features.RoxctlNetpolGenerate.Enabled() {
-		c.AddCommand(generate.Command(cliEnvironment))
-	}
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))
 	}
