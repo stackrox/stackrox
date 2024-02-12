@@ -116,7 +116,7 @@ type ComplianceOperatorInfo struct {
 	// Types that are valid to be assigned to TotalReadyPodsOpt:
 	//	*ComplianceOperatorInfo_TotalReadyPods
 	TotalReadyPodsOpt isComplianceOperatorInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
-	// Collection of errors that occurred while trying to obtain collector health info.
+	// Collection of errors that occurred while trying to obtain compliance health info.
 	StatusError          string   `protobuf:"bytes,5,opt,name=status_error,json=statusError,proto3" json:"status_error,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
