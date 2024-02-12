@@ -15,9 +15,6 @@ var (
 	// QuayRobotAccounts enables Robot accounts as credentials in Quay Image Integration.
 	QuayRobotAccounts = registerUnchangeableFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", true)
 
-	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
-	RoxctlNetpolGenerate = registerUnchangeableFeature("Enable 'roxctl netpol generate' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
-
 	// RoxSyslogExtraFields enables user to add additional key value pairs in syslog alert notification in cef format.
 	RoxSyslogExtraFields = registerUnchangeableFeature("Enable extra fields for syslog integration", "ROX_SYSLOG_EXTRA_FIELDS", true)
 
