@@ -54,6 +54,9 @@ describe(Cypress.spec.relative, () => {
         // Ensure duplicate filters are not created
         cy.findByLabelText('Filter by name').type('cluster-a{enter}');
         filterGroup('Name').within(() => filterChip('cluster-a').should('have.length', 1));
+
+        // clear filters
+        removeGroup('Name');
     });
 
     it('should handle the "select all" checkbox mutual exclusion in the status and type dropdowns', () => {
@@ -129,6 +132,9 @@ describe(Cypress.spec.relative, () => {
     it('should correctly handle adding and removing filters', () => {
         setup();
 
+        // Default is no filters
+        cy.location('search').should('match', /^$/);
+
         // Add filters of each type
         cy.findByLabelText('Filter by name').type('cluster-a{enter}');
         cy.findByLabelText('Filter by name').type('cluster-b{enter}');
@@ -159,6 +165,18 @@ describe(Cypress.spec.relative, () => {
             filterChip('EKS');
         });
 
+        // Verify that the filters exist in the URL
+        [
+            /s\[Cluster\]\[\d\]=cluster-a/,
+            /s\[Cluster\]\[\d\]=cluster-b/,
+            /s\[Cluster%20Status\]\[\d\]=STATUS_UNSECURED/,
+            /s\[Cluster%20Status\]\[\d\]=STATUS_UNSPECIFIED/,
+            /s\[Cluster%20Type\]\[\d\]=AKS/,
+            /s\[Cluster%20Type\]\[\d\]=EKS/,
+        ].forEach((filter) => {
+            cy.location('search').should('match', filter);
+        });
+
         // Remove some filters and verify that the chips are removed
         filterGroup('Name').within(() => {
             removeChip('cluster-b');
@@ -179,11 +197,23 @@ describe(Cypress.spec.relative, () => {
 
         filterGroup('Type').should('not.exist');
 
+        // Verify the next URL state
+        [
+            /s\[Cluster\]\[\d\]=cluster-a/,
+            /s\[Cluster%20Status\]\[\d\]=STATUS_UNSECURED/,
+            /s\[Cluster%20Status\]\[\d\]=STATUS_UNSPECIFIED/,
+        ].forEach((filter) => {
+            cy.location('search').should('match', filter);
+        });
+
         // Remove all filters and verify that the chips are removed
         cy.findByRole('button', { name: 'Clear filters' }).click();
 
         filterGroup('Name').should('not.exist');
         filterGroup('Status').should('not.exist');
         filterGroup('Type').should('not.exist');
+
+        // Verify the next URL state
+        cy.location('search').should('match', /^$/);
     });
 });
