@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -92,6 +93,7 @@ type localSensorConfig struct {
 	NoMemProfile       bool
 	PprofServer        bool
 	CentralEndpoint    string
+	FakeCollector      bool
 }
 
 const (
@@ -160,6 +162,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		NoMemProfile:       false,
 		PprofServer:        false,
 		CentralEndpoint:    "",
+		FakeCollector:      false,
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -178,6 +181,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
+	flag.BoolVar(&sensorConfig.FakeCollector, "with-fake-collector", sensorConfig.FakeCollector, "enables sensor to allow connections from a fake collector")
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
@@ -306,6 +310,14 @@ func main() {
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager)
 
+	if localConfig.FakeCollector {
+		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
+			return ctx, nil
+		}
+		sensorConfig.WithSignalServiceAuthFuncOverride(acceptAnyFn).
+			WithNetworkFlowServiceAuthFuncOverride(acceptAnyFn)
+	}
+
 	if localConfig.RecordK8sEnabled {
 		traceRec := &k8s.TraceWriter{
 			Destination: path.Clean(localConfig.RecordK8sFile),
@@ -363,6 +375,13 @@ func main() {
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
+	}
+
+	if localConfig.FakeCollector {
+		fakeCollector := collector.NewFakeCollector(collector.WithDefaultConfig())
+		if err := fakeCollector.Start(); err != nil {
+			log.Fatalln(err)
+		}
 	}
 
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
