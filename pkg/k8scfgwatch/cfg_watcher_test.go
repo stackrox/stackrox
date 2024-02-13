@@ -42,8 +42,8 @@ func TestConfigMapTrigger(t *testing.T) {
 		},
 	}
 
-	for name, tc := range cases {
-		tc := tc
+	for name, c := range cases {
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
@@ -63,13 +63,13 @@ func TestConfigMapTrigger(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: cfgName, Namespace: cfgNamespace},
 				Data:       map[string]string{cfgKey: cfgValue},
 			}
-			tc.triggerFunc(watcher, cm)
+			c.triggerFunc(watcher, cm)
 
 			// Assert that the config map data has been updated.
-			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assert.EventuallyWithT(t, func(t *assert.CollectT) {
 				mutex.RLock()
 				defer mutex.RUnlock()
-				assert.Equal(c, cfgValue, currentCfgData)
+				assert.Equal(t, cfgValue, currentCfgData)
 			}, 5*time.Second, 100*time.Millisecond)
 		})
 	}

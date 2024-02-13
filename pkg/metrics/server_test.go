@@ -151,13 +151,13 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 	server.RunForever()
 
 	url := fmt.Sprintf("http://localhost:%d/metrics", freePort)
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+	assert.EventuallyWithT(t, func(t *assert.CollectT) {
 		resp, err := http.Get(url)
-		require.NoError(c, err)
+		require.NoError(t, err)
 		defer utils.IgnoreError(resp.Body.Close)
 		msg, err := io.ReadAll(resp.Body)
-		require.NoError(c, err)
-		assert.Contains(c, string(msg), "go_gc_duration_seconds")
+		require.NoError(t, err)
+		assert.Contains(t, string(msg), "go_gc_duration_seconds")
 	}, 1*time.Second, 50*time.Millisecond)
 }
 
@@ -219,12 +219,12 @@ func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	client, err := testClient()
 	require.NoError(t, err)
 	url := fmt.Sprintf("https://localhost:%d/metrics", freePort)
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+	assert.EventuallyWithT(t, func(t *assert.CollectT) {
 		resp, err := client.Get(url)
-		require.NoError(c, err)
+		require.NoError(t, err)
 		defer utils.IgnoreError(resp.Body.Close)
 		msg, err := io.ReadAll(resp.Body)
-		require.NoError(c, err)
-		assert.Contains(c, string(msg), "go_gc_duration_seconds")
+		require.NoError(t, err)
+		assert.Contains(t, string(msg), "go_gc_duration_seconds")
 	}, 1*time.Second, 50*time.Millisecond)
 }

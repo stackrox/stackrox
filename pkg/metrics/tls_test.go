@@ -29,10 +29,10 @@ func TestTLSConfigurerServerCertLoading(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, cfgrTLSConfig.Certificates)
 
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+	assert.EventuallyWithT(t, func(t *assert.CollectT) {
 		tlsConfig, err := cfgrTLSConfig.GetConfigForClient(nil)
-		require.NoError(c, err)
-		assert.NotEmpty(c, tlsConfig.Certificates)
+		require.NoError(t, err)
+		assert.NotEmpty(t, tlsConfig.Certificates)
 	}, 5*time.Second, 100*time.Millisecond)
 }
 
@@ -55,12 +55,12 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 		Data:       map[string]string{clientCAKey: string(caFileRaw)},
 	})
 
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+	assert.EventuallyWithT(t, func(t *assert.CollectT) {
 		tlsConfig, err := cfgrTLSConfig.GetConfigForClient(nil)
-		require.NoError(c, err)
-		require.NotNil(c, tlsConfig.ClientCAs)
+		require.NoError(t, err)
+		require.NotNil(t, tlsConfig.ClientCAs)
 		// Two certs in `./testdata/ca.pem`.
-		assert.Len(c, tlsConfig.ClientCAs.Subjects(), 2)
+		assert.Len(t, tlsConfig.ClientCAs.Subjects(), 2)
 	}, 5*time.Second, 100*time.Millisecond)
 }
 

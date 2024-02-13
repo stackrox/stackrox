@@ -108,8 +108,8 @@ func TestSecretInformer(t *testing.T) {
 		},
 	}
 
-	for name, tc := range cases {
-		tc := tc
+	for name, c := range cases {
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
@@ -123,13 +123,13 @@ func TestSecretInformer(t *testing.T) {
 					mutex.Lock()
 					defer mutex.Unlock()
 					onAddCnt++
-					assert.Equal(t, tc.expectedData, string(s.Data[secretKey]))
+					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
 				},
 				func(s *v1.Secret) {
 					mutex.Lock()
 					defer mutex.Unlock()
 					onUpdateCnt++
-					assert.Equal(t, tc.expectedData, string(s.Data[secretKey]))
+					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
 				},
 				func() {
 					mutex.Lock()
@@ -141,15 +141,15 @@ func TestSecretInformer(t *testing.T) {
 			err := informer.Start()
 			require.NoError(t, err)
 			defer informer.Stop()
-			err = tc.setupFn(k8sClient)
+			err = c.setupFn(k8sClient)
 			require.NoError(t, err)
 
-			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+			assert.EventuallyWithT(t, func(t *assert.CollectT) {
 				mutex.RLock()
 				defer mutex.RUnlock()
-				assert.Equal(c, tc.expectedOnAddCnt, onAddCnt)
-				assert.Equal(c, tc.expectedOnUpdateCnt, onUpdateCnt)
-				assert.Equal(c, tc.expectedOnDeleteCnt, onDeleteCnt)
+				assert.Equal(t, c.expectedOnAddCnt, onAddCnt)
+				assert.Equal(t, c.expectedOnUpdateCnt, onUpdateCnt)
+				assert.Equal(t, c.expectedOnDeleteCnt, onDeleteCnt)
 			}, 5*time.Second, 100*time.Millisecond)
 		})
 	}
