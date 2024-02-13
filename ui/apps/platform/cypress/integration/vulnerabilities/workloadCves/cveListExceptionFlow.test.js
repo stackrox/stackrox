@@ -125,6 +125,29 @@ describe('Workload CVE List deferral and false positive flows', () => {
         });
     });
 
+    it('should allow selecting multiple CVEs but enable undoing some selections in the exception modal', () => {
+        visitWorkloadCveOverview();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
+
+        selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
+            const cveToUnselect = cveNames[0];
+
+            verifySelectedCvesInModal(cveNames);
+
+            // unselect the first CVE
+            cy.get(`*[role="dialog"] button[aria-label="Remove ${cveToUnselect}"]`).click();
+
+            fillAndSubmitExceptionForm({ comment: 'Test comment', expiryLabel: '30 days' });
+
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'Deferral',
+                cves: cveNames.filter((cve) => cve !== cveToUnselect), // The first CVE should have been unselected
+                scope: 'All images',
+                expiry: `${getDateString(getFutureDateByDays(30))} (30 days)`,
+            });
+        });
+    });
+
     it('should mark a single CVE false positive', () => {
         visitWorkloadCveOverview();
         cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
