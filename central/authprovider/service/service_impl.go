@@ -30,6 +30,9 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
 			"/v1.AuthProviderService/ListAvailableProviderTypes",
+			// The /v1/login/authproviders is used to render the list of providers on the UI
+			// the UI login screen. At that point, the user is not authenticated or logged in.
+			// Therefore this endpoint should remain anonymously accessible.
 			"/v1.AuthProviderService/GetLoginAuthProviders",
 			// The ExchangeToken endpoint is used by the UI as part of the
 			// user login flow, where user authentication data is not always
