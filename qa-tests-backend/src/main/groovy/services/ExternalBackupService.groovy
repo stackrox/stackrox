@@ -29,7 +29,7 @@ class ExternalBackupService extends BaseService {
             String endpoint = "",
             String accessKeyId = Env.mustGetAWSAccessKeyID(),
             String accessKey = Env.mustGetAWSSecretAccessKey())  {
-        ExternalBackupOuterClass.S3Config s3Config =  ExternalBackupOuterClass.S3Config.newBuilder()
+        ExternalBackupOuterClass.S3Config s3Config = ExternalBackupOuterClass.S3Config.newBuilder()
                 .setObjectPrefix(UUID.randomUUID().toString())
                 .setBucket(bucket)
                 .setRegion(region)
@@ -49,6 +49,32 @@ class ExternalBackupService extends BaseService {
                         .build()
                 )
                 .setS3(s3Config)
+                .build()
+    }
+
+    static ExternalBackupOuterClass.ExternalBackup getGCSIntegrationConfig(
+            String name,
+            Boolean useWorkloadId = false,
+            String bucket = Env.mustGetGCSBucketName(),
+            String serviceAccount = Env.mustGetGCSServiceAccount()) {
+
+        ExternalBackupOuterClass.GCSConfig gcsConfig = ExternalBackupOuterClass.GCSConfig.newBuilder()
+                .setObjectPrefix(UUID.randomUUID().toString())
+                .setBucket(bucket)
+                .setServiceAccount(useWorkloadId ? "" : serviceAccount)
+                .setUseWorkloadId(useWorkloadId)
+                .build()
+
+        return ExternalBackupOuterClass.ExternalBackup.newBuilder()
+                .setName(name)
+                .setType("gcs")
+                .setBackupsToKeep(1)
+                .setSchedule(ScheduleOuterClass.Schedule.newBuilder()
+                        .setIntervalType(ScheduleOuterClass.Schedule.IntervalType.DAILY)
+                        .setHour(0) //12:00 AM
+                        .build()
+                )
+                .setGcs(gcsConfig)
                 .build()
     }
 }

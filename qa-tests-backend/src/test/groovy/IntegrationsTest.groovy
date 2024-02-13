@@ -528,6 +528,31 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
+    @Tag("Integration")
+    def "Verify GCS Integration: #integrationName"() {
+        setup:
+        Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
+
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getGCSIntegrationConfig(integrationName, useWorkloadId)
+
+        then:
+        "verify test integration"
+        // Test integration for GCS performs test backup (and rollback).
+        assert ExternalBackupService.testExternalBackup(backup)
+
+        where:
+        "configurations are:"
+
+        integrationName                | bucket                     | useWorkloadId
+        // Bucket is in stackrox-ci.
+        "GCS with service account key" | Env.mustGetGCSBucketName() | false
+        // Bucket is in acs-san-stackroxci.
+        "GCS with workload identity"   | "stackrox-qa-wif-gcs-test" | true
+    }
+
+    @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {

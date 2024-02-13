@@ -267,6 +267,10 @@ class Env {
         return mustGet("GCP_SECRET_ACCESS_KEY")
     }
 
+    static String mustGetGCSServiceAccount() {
+        return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT")
+    }
+
     static String mustGetPagerdutyToken() {
         return mustGet("PAGERDUTY_TOKEN")
     }
