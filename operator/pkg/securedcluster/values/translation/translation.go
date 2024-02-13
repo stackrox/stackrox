@@ -367,10 +367,12 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.ScannerV4
-	sv.SetBoolValue("disable", !config.DeployScannerResources)
+	sv.SetBoolValue("disable", !config.EnableLocalImageScanning)
 
-	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
-	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client)
+	if config.DeployScannerResources {
+		translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
+		translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client)
+	}
 
 	return &sv
 }
