@@ -32,12 +32,14 @@ init() {
 setup_file() {
     init
 
-    # Use
-    #   export CHART_BASE="/rhacs"
-    #   export DEFAULT_IMAGE_REGISTRY="quay.io/rhacs-eng"
-    # for the RHACS flavor.
-    export CHART_BASE=""
-    export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
+    export ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING:-STACKROX_BRANDING}
+    if [[ "$ROX_PRODUCT_BRANDING" == "RHACS_BRANDING" ]]; then
+        export CHART_BASE="/rhacs"
+        export DEFAULT_IMAGE_REGISTRY="quay.io/rhacs-eng"
+    else
+        export CHART_BASE=""
+        export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
+    fi
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
     export EARLIER_CHART_VERSION="4.3.0"
@@ -97,6 +99,7 @@ setup() {
         setup_gcp
         setup_deployment_env false false
     fi
+    dump_env
 
     if (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
@@ -110,6 +113,14 @@ setup() {
     test_case_no=$(( test_case_no + 1))
 
     export ROX_SCANNER_V4=true
+}
+
+dump_env() {
+    info "** Test Environment **"
+    (
+        info "ROX_PRODUCT_BRANDING=$ROX_PRODUCT_BRANDING"
+        info "MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+    ) | sort | sed -e 's/^/    /;'
 }
 
 describe_pods_in_namespace() {
@@ -234,6 +245,7 @@ teardown_file() {
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
+  (
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
