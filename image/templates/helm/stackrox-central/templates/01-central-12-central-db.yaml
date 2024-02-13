@@ -11,9 +11,6 @@ metadata:
     {{- include "srox.labels" (list . "deployment" "central-db") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "deployment" "central-db") | nindent 4 }}
-    {{- if eq ._rox.env.openshift 4 }}
-    openshift.io/required-scc: nonroot-v2
-    {{- end }}
 spec:
   replicas: 1
   minReadySeconds: 15
@@ -30,6 +27,9 @@ spec:
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: nonroot-v2
+        {{- end }}
     spec:
       {{- if ._rox.central.db._nodeSelector }}
       nodeSelector:

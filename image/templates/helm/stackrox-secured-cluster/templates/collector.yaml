@@ -10,9 +10,6 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "daemonset" "collector") | nindent 4 }}
-    {{- if eq ._rox.env.openshift 4 }}
-    openshift.io/required-scc: privileged
-    {{- end }}
   name: collector
   namespace: {{ ._rox._namespace }}
 spec:
@@ -28,6 +25,9 @@ spec:
         {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "daemonset" "collector") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: privileged
+        {{- end }}
     spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:
