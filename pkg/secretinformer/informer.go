@@ -12,10 +12,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const (
-	resyncTime       = 10 * time.Minute
-	cacheSyncTimeout = 30 * time.Second
-)
+const resyncTime = 10 * time.Minute
 
 // SecretInformer is a convenience wrapper around a Kubernetes informer for a specific secret.
 type SecretInformer struct {
@@ -23,6 +20,7 @@ type SecretInformer struct {
 	secretName string
 
 	k8sClient  kubernetes.Interface
+	handler    cache.ResourceEventHandlerRegistration
 	onAddFn    func(*v1.Secret)
 	onUpdateFn func(*v1.Secret)
 	onDeleteFn func()
@@ -59,23 +57,31 @@ func (c *SecretInformer) Start() error {
 	})
 	sif := informers.NewSharedInformerFactoryWithOptions(c.k8sClient, resyncTime, nsOption, labelOption)
 
-	if _, err := sif.Core().V1().Secrets().Informer().AddEventHandler(c); err != nil {
-		return errors.Wrap(err, "could not add event handler")
+	handler, err := sif.Core().V1().Secrets().Informer().AddEventHandler(c)
+	if err != nil {
+		return errors.Wrapf(err,
+			"could not add event handler to informer for secret %q/%q",
+			c.namespace,
+			c.secretName,
+		)
 	}
-	sif.Start(c.stopCh.Done())
-	stopWait := concurrency.Any(concurrency.Never(), c.stopCh.WaitC(), concurrency.Timeout(cacheSyncTimeout))
-	synced := sif.WaitForCacheSync(stopWait.Done())
-	for _, ok := range synced {
-		if !ok {
-			return errors.New("failed to sync informer cache")
-		}
-	}
+	c.handler = handler
+	sif.Start(c.stopCh.WaitC())
 	return nil
 }
 
 // Stop ends the secret informer loop.
 func (c *SecretInformer) Stop() {
 	c.stopCh.Signal()
+}
+
+// HasSynced reports if the informer handler has synced, meaning it has had
+// all items in the initial list delivered.
+func (c *SecretInformer) HasSynced() bool {
+	if c == nil || c.handler == nil {
+		return false
+	}
+	return c.handler.HasSynced()
 }
 
 // OnAdd is called when the secret is added.
