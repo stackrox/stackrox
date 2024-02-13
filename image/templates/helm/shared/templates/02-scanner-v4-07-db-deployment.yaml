@@ -10,9 +10,9 @@ metadata:
     {{- include "srox.labels" (list . "deployment" "scanner-v4-db") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "deployment" "scanner-v4-db") | nindent 4 }}
-    {{ - if eq ._rox.env.openshift 4 }}
+    {{- if eq ._rox.env.openshift 4 }}
     openshift.io/required-scc: nonroot-v2
-    {{ - end }}
+    {{- end }}
 
 spec:
   replicas: 1
