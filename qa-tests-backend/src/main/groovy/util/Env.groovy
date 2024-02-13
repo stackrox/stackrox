@@ -283,6 +283,6 @@ class Env {
     }
 
     static String getDisableAuditLogAlertsTest() {
-        return envVars.get("DISABLE_AUDIT_LOG_ALERTS_TEST")
+        return get("DISABLE_AUDIT_LOG_ALERTS_TEST")
     }
 }
