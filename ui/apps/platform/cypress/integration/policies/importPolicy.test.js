@@ -253,4 +253,70 @@ describe('Import policy', () => {
         cy.get(selectors.importUploadModal.renameInput).type('Two are better than one');
         cy.get(selectors.importUploadModal.resumeButton).should('be.enabled');
     });
+
+    it('it should just display errors for multi-policy import files when at least one import fails', () => {
+        visitPolicies();
+
+        cy.get(selectors.table.importButton).click();
+
+        const contents = {
+            policies: [
+                {
+                    name: 'Dupe Name Policy',
+                },
+                {
+                    name: 'Good Policy',
+                },
+            ],
+        };
+        cy.get(selectors.importUploadModal.fileInput).selectFile(
+            {
+                contents,
+                fileName: 'multipolicyfile.json',
+            },
+            { force: true } // because input element has display: none style
+        );
+
+        const body = {
+            responses: [
+                {
+                    succeeded: false,
+                    policy: {
+                        id: 'f09f8da1-6111-4ca0-8f49-294a76c65118',
+                        name: 'Dupe Name Policy',
+                        // Omit other policy properties.
+                    },
+                    errors: [
+                        {
+                            message: 'Could not add policy due to name validation',
+                            type: 'duplicate_name',
+                            duplicateName: 'Dupe Name Policy',
+                        },
+                    ],
+                },
+                {
+                    succeeded: true,
+                    policy: {
+                        id: 'f09f8da1-6111-4ca0-8f49-294a76c65118',
+                        name: 'Good Policy',
+                        // Omit other policy properties.
+                    },
+                    errors: [],
+                },
+            ],
+            allSucceeded: false,
+        };
+        cy.intercept('POST', api.policies.import, { body }).as('importPolicy');
+        cy.get(selectors.importUploadModal.beginButton).click();
+        cy.wait('@importPolicy');
+
+        cy.get(selectors.importUploadModal.errorAlertTitle);
+        cy.get(selectors.importUploadModal.duplicateNameSubstring);
+
+        cy.get(selectors.importUploadModal.overwriteRadioLabel).should('not.exist');
+        cy.get(selectors.importUploadModal.renameRadioLabel).should('not.exist');
+        cy.get(selectors.importUploadModal.resumeButton).should('not.exist');
+
+        cy.get(selectors.importUploadModal.cancelButton).should('exist').click();
+    });
 });

@@ -100,6 +100,8 @@ export const selectors = {
         renameInput: 'input#policy-rename',
         overwriteRadioLabel:
             'label[for="policy-overwrite-radio-1"]:contains("Overwrite existing policy")',
+        errorAlertTitle:
+            '.pf-c-modal-box__body .pf-m-danger .pf-c-alert__title:contains("Errors trying to import policies")',
     },
     importSuccessModal: {
         titleText: '.pf-c-modal-box__title-text:contains("Import policy JSON")',

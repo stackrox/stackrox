@@ -66,7 +66,9 @@ function ImportPolicyJSONError({
         >
             <>
                 <ModalBoxBody>
-                    Address the errors below to continue importing policies
+                    {duplicateErrorsOnly
+                        ? 'Address the errors below to continue importing policies'
+                        : 'Correct the file to address the errors listed below, and then import again.'}
                     <Alert
                         title={
                             duplicateErrorsOnly
