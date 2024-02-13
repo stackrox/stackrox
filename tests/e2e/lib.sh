@@ -15,6 +15,11 @@ source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
+# If `envsubst` is contained in a non-standard directory `env -i` won't be able to
+# execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
+# `envsubst`` before passing it to `env`.
+envsubst=$(command -v envsubst)
+
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
@@ -218,7 +223,7 @@ deploy_central_via_operator() {
         kubectl create ns "${central_namespace}"
     fi
 
-    make -C operator stackrox-image-pull-secret
+    NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
 
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
@@ -283,7 +288,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scanner_v4_component="$scanner_v4_component" \
-    envsubst \
+    "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
@@ -331,14 +336,17 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local scanner_component_setting="Disabled"
+    local scanner_v4_component_setting="Disabled"
+    local central_endpoint="central.${central_namespace}.svc:443"
 
-    info "Deploying sensor via operator into namespace ${sensor_namespace}"
+    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
 
-
-    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+    NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
     kubectl -n "${central_namespace}" exec deploy/central -- \
     roxctl central init-bundles generate my-test-bundle \
@@ -353,10 +361,20 @@ deploy_sensor_via_operator() {
        die "COLLECTION_METHOD not set"
     fi
 
+    if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
+        scanner_component_setting="AutoSense"
+    fi
+    if [[ "${SENSOR_SCANNER_V4_SUPPORT:-}" == "true" ]]; then
+        scanner_v4_component_setting="AutoSense"
+    fi
+
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
-    envsubst \
+      scanner_component_setting="$scanner_component_setting" \
+      scanner_v4_component_setting="$scanner_v4_component_setting" \
+      central_endpoint="$central_endpoint" \
+    "${envsubst}" \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300

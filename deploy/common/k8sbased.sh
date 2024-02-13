@@ -83,10 +83,14 @@ EOF
 
 function verify_orch {
     if [ "$ORCH" == "openshift" ]; then
-        if kubectl api-versions | grep -q openshift.io; then
+        local k8s_api_versions
+        k8s_api_versions=$(kubectl api-versions 2>&1)
+        if echo "${k8s_api_versions}" | grep -q "openshift\.io"; then
             return
         fi
         echo "Cannot find openshift orchestrator. Please check your kubeconfig for: $(kubectl config current-context)"
+        echo "API resources returned by kubectl:"
+        sed -e 's/^/    /;' <(echo "${k8s_api_versions}")
         exit 1
     fi
     if [ "$ORCH" == "k8s" ]; then
