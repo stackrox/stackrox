@@ -17,7 +17,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.9.0
 	github.com/Shopify/toxiproxy/v2 v2.7.0
 	github.com/VividCortex/ewma v1.2.0
-	github.com/adhocore/gronx v1.6.6
+	github.com/adhocore/gronx v1.6.7
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/aws/aws-sdk-go v1.50.0
 	github.com/cenkalti/backoff/v3 v3.2.2
