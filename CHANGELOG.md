@@ -62,6 +62,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-21620: publish opensource instead of stackrox.io helm charts
 - ROX-20163: Sensor captures runtime events even if it is disconnected from Central.
 - ROX-20280: Fixed bug that prevented user from editing the endpoint from an unauthenticated email notifier. The credentials are still required to change the endpoint if it's not unauthenticated.
+- ROX-21729: When deleting a collection is blocked by a referenced objects the names of the respective report configurations and collection are being displayed in the error message.
 
 ## [4.3.0]
 
