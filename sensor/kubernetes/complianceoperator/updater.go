@@ -213,7 +213,7 @@ func isReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, erro
 
 	response, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sac, metav1.CreateOptions{})
 	if err != nil {
-		return true, errors.Wrapf(err, "could not perform compliance operator access review")
+		return true, errors.Wrap(err, "could not perform compliance operator access review")
 	}
 	return !response.Status.Allowed, nil
 }
