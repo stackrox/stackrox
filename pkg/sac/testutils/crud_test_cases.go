@@ -330,6 +330,168 @@ func GenericClusterSACWriteTestCases(baseContext context.Context, _ *testing.T, 
 	}
 }
 
+// GenericClusterSACUpsertTestCases returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing Upsert function on cluster scoped resources
+// when the scope checks are expected to assess whether the object to upsert belongs to a cluster
+// in scope. These test cases assume the inserted test object belongs to Cluster2.
+func GenericClusterSACUpsertTestCases(_ *testing.T, verb string) map[string]SACCrudTestCase {
+	return map[string]SACCrudTestCase{
+		"(full) read-only cannot " + verb: {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"full read-write can " + verb: {
+			ScopeKey:      UnrestrictedReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"full read-write on wrong cluster cannot " + verb: {
+			ScopeKey:      Cluster1ReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on wrong cluster and partial namespace name cannot " + verb: {
+			ScopeKey:      Cluster1NamespaceAReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"full read-write on right cluster can " + verb: {
+			ScopeKey:      Cluster2ReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on right cluster and partial namespace (1) can " + verb: {
+			ScopeKey:      Cluster2NamespaceAReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on right cluster and partial namespaces (2) can " + verb: {
+			ScopeKey:      Cluster2NamespacesACReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on the right cluster and partial namespace (3) can " + verb: {
+			ScopeKey:      Cluster2NamespaceBReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on the right cluster and partial namespace (4) can " + verb: {
+			ScopeKey:      Cluster2NamespacesABReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+	}
+}
+
+// GenericClusterSACDeleteTestCases returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing Delete or Remove function on resources when the scope checks
+// are expected to assess whether the retrieved object belongs to a cluster
+// in scope. These test cases assume the removed test object belongs to Cluster2.
+func GenericClusterSACDeleteTestCases(_ *testing.T) map[string]SACCrudTestCase {
+	return map[string]SACCrudTestCase{
+		"global read-only should not be able to delete": {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"global read-write should be able to delete": {
+			ScopeKey:      UnrestrictedReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on wrong cluster should not be able to delete": {
+			ScopeKey:      Cluster1ReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on wrong cluster and partial namespace (1) should not be able to delete": {
+			ScopeKey:      Cluster1NamespaceAReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on wrong cluster and partial namespace (2) should not be able to delete": {
+			ScopeKey:      Cluster1NamespaceBReadWriteCtx,
+			ExpectError:   true,
+			ExpectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on matching cluster should be able to delete": {
+			ScopeKey:      Cluster2ReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on matching cluster and partial namespace (1) should be able to delete": {
+			ScopeKey:      Cluster2NamespaceAReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on matching cluster and partial namespaces (2) should not be able to delete": {
+			ScopeKey:      Cluster2NamespacesACReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on matching cluster and partial namespace (3) should be able to delete": {
+			ScopeKey:      Cluster2NamespaceBReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+		"read-write on matching cluster and partial namespace (4) should be able to delete": {
+			ScopeKey:      Cluster2NamespacesABReadWriteCtx,
+			ExpectError:   false,
+			ExpectedError: nil,
+		},
+	}
+}
+
+// GenericClusterSACReadTestCases returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing Get function on cluster scoped resources
+// when the scope checks are expected to assess whether the retrieved object belongs to a cluster
+// in scope. These test cases assume the tested object belongs to Cluster2.
+func GenericClusterSACReadTestCases(_ *testing.T) map[string]SACCrudTestCase {
+	return map[string]SACCrudTestCase{
+		"(full) read-only can get": {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectedFound: true,
+		},
+		"full read-write can get": {
+			ScopeKey:      UnrestrictedReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"full read-write on wrong cluster cannot get": {
+			ScopeKey:      Cluster1ReadWriteCtx,
+			ExpectedFound: false,
+		},
+		"read-write on wrong cluster and partial namespace (1) name cannot get": {
+			ScopeKey:      Cluster1NamespaceAReadWriteCtx,
+			ExpectedFound: false,
+		},
+		"read-write on wrong cluster and partial namespace (2) name cannot get": {
+			ScopeKey:      Cluster1NamespaceBReadWriteCtx,
+			ExpectedFound: false,
+		},
+		"full read-write on right cluster can get": {
+			ScopeKey:      Cluster2ReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on right cluster and partial namespace (1) cannot get": {
+			ScopeKey:      Cluster2NamespaceAReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on right cluster and partial namespaces (2) cannot get": {
+			ScopeKey:      Cluster2NamespacesACReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on the right cluster and partial namespace (3) can get": {
+			ScopeKey:      Cluster2NamespaceBReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on the right cluster and partial namespace (4) can get": {
+			ScopeKey:      Cluster2NamespacesABReadWriteCtx,
+			ExpectedFound: true,
+		},
+	}
+}
+
 // GenericGlobalSACUpsertTestCases returns a generic set of SACCrudTestCase.
 // It is appropriate for use in the context of testing Upsert function on resources when the scope checks
 // are expected to check global resource access only. These test cases assume the inserted test object
