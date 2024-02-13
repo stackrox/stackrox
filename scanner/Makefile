@@ -114,11 +114,11 @@ endif
 
 image-prefix := scanner-v4
 
-image-scripts := restore-all-dir-contents \
-                 import-additional-cas \
-                 save-dir-contents
-
+image-scripts        := restore-all-dir-contents \
+                        import-additional-cas \
+                        save-dir-contents
 image-scripts-prefix := image/scanner/scripts
+image-scripts-t      := $(addprefix $(image-scripts-prefix)/,$(image-scripts))
 
 image-db-init-enabled := $(SCANNER_DB_INIT_BUNDLE_ENABLED)
 image-db-init-ver     := $(SCANNER_DB_INIT_BUNDLE_VERSION)
@@ -137,9 +137,14 @@ $(image-scripts-prefix)/%: ../image/rhel/static-bin/%
 	@echo "+ $@"
 	cp $< $@
 
+# Used by downstream builds.
+.PHONY: copy-scripts
+copy-scripts: $(image-scripts-t)
+	@echo "+ $@"
+
 .PHONY: image-scanner
 image-scanner: image/scanner/bin/scanner \
-               $(addprefix $(image-scripts-prefix)/,$(image-scripts)) \
+               $(image-scripts-t) \
                $(if $(CI),ossls-notice-no-download,ossls-notice)
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
