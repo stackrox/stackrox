@@ -93,17 +93,14 @@ func (m *managerImpl) ProcessComplianceOperatorInfo(ctx context.Context, complia
 	return m.integrationDS.UpdateComplianceIntegration(ctx, complianceIntegration)
 }
 
-// Plan
-// Create an UpdateScanRequest
-// calculate clusters to delete
-// send deletes
-// remove from cluster status
-// Split ProcessScanRequest into shared pieces
-
 // ProcessScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
 func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
+	}
+
+	if scanRequest.GetId() != "" {
+		return nil, errors.Errorf("The scan configuration already exists and cannot be added.  ID %q and name %q", scanRequest.GetId(), scanRequest.GetScanConfigName())
 	}
 
 	err := validateClusterAccess(ctx, clusters)
@@ -139,6 +136,10 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
 	}
 
+	if scanRequest.GetId() == "" {
+		return nil, errors.New("Scan Configuration ID is required for an update")
+	}
+
 	err := validateClusterAccess(ctx, clusters)
 	if err != nil {
 		return nil, err
@@ -163,8 +164,10 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 	// Use the old config to determine which clusters were deleted from the configuration
 	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
 	var deletedClusters []string
+	log.Infof("SHREWS -- clusters %v", clusters)
+	log.Infof("SHREWS -- old clusters %v", oldScanConfig.GetClusters())
 	for _, oldCluster := range oldScanConfig.GetClusters() {
-		if sliceutils.Find(scanRequest.GetClusters(), oldCluster) == -1 {
+		if sliceutils.Find(clusters, oldCluster.GetClusterId()) == -1 {
 			deletedClusters = append(deletedClusters, oldCluster.ClusterId)
 		}
 	}
@@ -231,6 +234,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 
 func (m *managerImpl) processClusterDelete(scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) {
 	for _, clusterID := range clusters {
+		log.Infof("SHREWS -- trying to delete cluster %q", clusterID)
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
