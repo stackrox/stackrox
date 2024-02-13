@@ -215,6 +215,7 @@ func isReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, erro
 	if err != nil {
 		return true, errors.Wrap(err, "could not perform compliance operator access review")
 	}
+	log.Infof("Sensor has Compliance Operator writes access: %+v", response.Status.Allowed)
 	return !response.Status.Allowed, nil
 }
 
