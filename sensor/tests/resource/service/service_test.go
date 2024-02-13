@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -333,7 +334,8 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, NginxDeployment, nil)
+		deployment := &appsv1.Deployment{}
+		deleteDep, err := testC.ApplyResourceAndWait(context.Background(), t, helper.DefaultNamespace, &NginxDeployment, deployment, nil)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
 
@@ -392,7 +394,6 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 				},
 			),
 			fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
-		testC.GetFakeCentral().ClearReceivedBuffer()
 
 		require.NoError(t, deleteService())
 
@@ -415,7 +416,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 			),
 			"'PortConfig' for Multiple Deployment Updates test found",
 		)
-		testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+		testC.LastViolationStateByID(t, string(deployment.GetUID()), helper.AssertNoViolations(), "should have no active alerts", true)
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }
