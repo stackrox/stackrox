@@ -18,6 +18,7 @@ from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
     get_latest_helm_chart_versions,
+    get_latest_helm_chart_version_for_specific_release,
 )
 
 Release = namedtuple("Release", ["major", "minor"])
