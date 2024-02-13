@@ -3,6 +3,11 @@
 # Runs Scanner V4 tests using the Bats testing framework.
 
 init() {
+    if [[ "${BATS_CONTINUOUS_LOGGING:-}" == "true" ]]; then
+        exec >&3
+        exec 2>&1
+    fi
+
     ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
     export ROOT
 
@@ -45,7 +50,6 @@ setup_file() {
     export EARLIER_CHART_VERSION="4.3.0"
     export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL=true
-    export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
@@ -66,7 +70,6 @@ setup_file() {
     if [[ -z "${EARLIER_ROXCTL_PATH:-}" ]]; then
         EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
     fi
-    echo "EARLIER_ROXCTL_PATH=$EARLIER_ROXCTL_PATH"
     export EARLIER_ROXCTL_PATH
     if [[ ! -e "${EARLIER_ROXCTL_PATH}/roxctl" ]]; then
         curl --retry 5 -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
@@ -118,8 +121,9 @@ setup() {
 dump_env() {
     info "** Test Environment **"
     (
-        info "ROX_PRODUCT_BRANDING=$ROX_PRODUCT_BRANDING"
-        info "MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+        info "ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}"
+        info "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}"
+        info "EARLIER_ROXCTL_PATH=${EARLIER_ROXCTL_PATH}"
     ) | sort | sed -e 's/^/    /;'
 }
 
