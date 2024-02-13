@@ -11,7 +11,9 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
+    {{- if eq ._rox.env.openshift 4 }}
     openshift.io/required-scc: restricted-v2
+    {{- end }}
 spec:
   replicas: {{ ._rox.admissionControl.replicas }}
   minReadySeconds: 0

@@ -10,7 +10,10 @@ metadata:
     app: central
   annotations:
     {{- include "srox.annotations" (list . "deployment" "central") | nindent 4 }}
+    {{- if eq ._rox.env.openshift 4 }}
     openshift.io/required-scc: nonroot-v2
+    {{- end }}
+
 spec:
   replicas: 1
   minReadySeconds: 15
