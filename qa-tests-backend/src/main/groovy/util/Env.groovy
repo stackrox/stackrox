@@ -281,4 +281,8 @@ class Env {
     static String mustGetSlackAltWebhook() {
         return mustGet("SLACK_ALT_WEBHOOK")
     }
+
+    static String getDisableAuditLogAlertsTest() {
+        return envVars.get("DISABLE_AUDIT_LOG_ALERTS_TEST")
+    }
 }
