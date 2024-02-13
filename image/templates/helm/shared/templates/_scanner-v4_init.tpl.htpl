@@ -48,8 +48,9 @@
 
 
   {{/* Configure images, certificates and passwords as required. */}}
-  {{/* Note that for secured-cluster-services we don't configure certificates here, instead they will be distributed at runtime by Sensor and Central. */}}
   {{ if get $components "indexer" }}
+    {{/* Note that for secured-cluster-services we don't configure certificates here,
+         instead they will be distributed at runtime by Sensor and Central. */}}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
     {{- if eq $.Chart.Name "stackrox-central-services" -}}
       {{/* Only generate certificate when installing central-services. */}}
@@ -72,6 +73,7 @@
   {{ end }}
 
   {{ if get $components "matcher" }}
+    {{/* This is only valid when rendering the central-services chart. */}}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
     {{- if eq $.Chart.Name "stackrox-central-services" -}}
       {{/* Only generate certificate when installing central-services. */}}
