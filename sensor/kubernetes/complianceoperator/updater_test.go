@@ -111,19 +111,20 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 	}, actual)
 }
 
-func (s *UpdaterTestSuite) TestDetectWriteAccess() {
-	ds := buildComplianceOperator(defaultNS)
-
-	s.createCO(ds)
-	s.client.CoreV1().
-
-	actual := s.getInfo(1, 1*time.Minute)
-	// Compliance operator found, CRDs not found.
-	s.assertEqual(expectedInfo{
-		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
-	}, actual)
-}
+// TODO: implement write access check test
+//func (s *UpdaterTestSuite) TestDetectWriteAccess() {
+//	ds := buildComplianceOperator(defaultNS)
+//
+//	s.createCO(ds)
+//	s.client.CoreV1().
+//
+//	actual := s.getInfo(1, 1*time.Minute)
+//	// Compliance operator found, CRDs not found.
+//	s.assertEqual(expectedInfo{
+//		"v1.0.0", defaultNS, 1, 1,
+//		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+//	}, actual)
+//}
 
 // mockRequiredResources creates a list of mock required resources for testing.
 func mockRequiredResources() []metaV1.APIResource {
