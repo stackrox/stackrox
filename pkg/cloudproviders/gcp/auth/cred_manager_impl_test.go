@@ -129,7 +129,7 @@ func TestCredentialManager(t *testing.T) {
 			require.NoError(t, err)
 
 			// Assert that the secret data has been updated.
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			assert.EventuallyWithT(t, func(t *assert.CollectT) {
 				manager.mutex.RLock()
 				defer manager.mutex.RUnlock()
 				assert.Equal(t, []byte(c.expected), manager.stsConfig)

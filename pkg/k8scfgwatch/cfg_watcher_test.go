@@ -66,7 +66,7 @@ func TestConfigMapTrigger(t *testing.T) {
 			c.triggerFunc(watcher, cm)
 
 			// Assert that the config map data has been updated.
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			assert.EventuallyWithT(t, func(t *assert.CollectT) {
 				mutex.RLock()
 				defer mutex.RUnlock()
 				assert.Equal(t, cfgValue, currentCfgData)
