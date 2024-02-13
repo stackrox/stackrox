@@ -12,6 +12,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=../../scripts/ci/workload-identities/workload-identities.sh
+source "$ROOT/scripts/ci/workload-identities/workload-identities.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
@@ -135,6 +137,7 @@ export_test_environment() {
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
     ci_export USE_MIDSTREAM_IMAGES "${USE_MIDSTREAM_IMAGES:-false}"
     ci_export REMOTE_CLUSTER_ARCH "${REMOTE_CLUSTER_ARCH:-x86_64}"
+    ci_export SETUP_WORKLOAD_IDENTITIES "${SETUP_WORKLOAD_IDENTITIES:-false}"
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
@@ -413,6 +416,21 @@ deploy_optional_e2e_components() {
         install_the_compliance_operator
     else
         info "Skipping the compliance operator install"
+    fi
+
+    if [[ "${SETUP_WORKLOAD_IDENTITIES:-false}" == "true" ]]; then
+        setup_workload_identities
+    else
+        info "Skipping the workload identity setup."
+    fi
+}
+
+cleanup_optional_e2e_components() {
+    info "Cleaning up optional components used in E2E tests"
+    if [[ "${SETUP_WORKLOAD_IDENTITIES:-false}" == "true" ]]; then
+        cleanup_workload_identities
+    else
+        info "Skipping the workload identity cleanup."
     fi
 }
 

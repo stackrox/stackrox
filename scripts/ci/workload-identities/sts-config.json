@@ -1,0 +1,13 @@
+{
+  "type": "external_account",
+  "audience": "//iam.googleapis.com/projects/${PROJECT}/locations/global/workloadIdentityPools/${CLUSTER}/providers/${CLUSTER}",
+  "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
+  "token_url": "https://sts.googleapis.com/v1/token",
+  "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${SERVICE_ACCOUNT}:generateAccessToken",
+  "credential_source": {
+    "file": "/var/run/secrets/openshift/serviceaccount/token",
+    "format": {
+      "type": "text"
+    }
+  }
+}

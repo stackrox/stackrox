@@ -25,6 +25,7 @@ run_part_1() {
 
     config_part_1
     test_part_1
+    cleanup_part_1
 }
 
 config_part_1() {
@@ -106,6 +107,12 @@ test_part_1() {
 
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
+}
+
+cleanup_part_1() {
+    info "Cleaning up after running part 1 of e2e tests"
+
+    cleanup_optional_e2e_components
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
