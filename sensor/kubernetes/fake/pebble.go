@@ -63,7 +63,11 @@ func (w *WorkloadManager) getIDsForPrefix(prefix string) []string {
 	if w.db == nil {
 		return nil
 	}
-	it := w.db.NewIter(&pebble.IterOptions{})
+	it, err := w.db.NewIter(&pebble.IterOptions{})
+	if err != nil {
+		log.Warnf("error when creating new iterator: %s", err)
+		return nil
+	}
 
 	prefixKey := getPebbleKey(prefix, "")
 	var ids []string
