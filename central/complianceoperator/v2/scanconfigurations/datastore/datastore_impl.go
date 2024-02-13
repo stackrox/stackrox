@@ -238,6 +238,16 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 	return ds.statusStorage.Upsert(ctx, clusterScanStatus)
 }
 
+// RemoveClusterStatus removes the scan configuration status for the given cluster
+func (ds *datastoreImpl) RemoveClusterStatus(ctx context.Context, scanConfigID string, clusterID string) error {
+	_, err := ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery())
+
+	return err
+}
+
 // GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
 func (ds *datastoreImpl) GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error) {
 	return ds.statusStorage.GetByQuery(ctx, search.NewQueryBuilder().
@@ -276,14 +286,7 @@ func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context
 	}
 
 	// Remove the status for the cluster as well.
-	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfig.GetId()).
-		AddExactMatches(search.ClusterID, clusterID).
-		ProtoQuery())
-	if err != nil {
-		return errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", scanConfig.GetId())
-	}
-	return nil
+	return ds.RemoveClusterStatus(ctx, scanConfig.GetId(), clusterID)
 }
 
 func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error {

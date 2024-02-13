@@ -175,13 +175,13 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
 
-	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, true)
+	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false)
 	if err != nil {
 		return nil, err
 	}
 
 	// Send delete to sensor for any clusters that were deleted
-	m.processClusterDelete(scanRequest, deletedClusters)
+	m.processClusterDelete(ctx, scanRequest, deletedClusters)
 
 	return scanRequest, nil
 }
@@ -232,7 +232,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	return scanRequest, nil
 }
 
-func (m *managerImpl) processClusterDelete(scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) {
+func (m *managerImpl) processClusterDelete(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) {
 	for _, clusterID := range clusters {
 		log.Infof("SHREWS -- trying to delete cluster %q", clusterID)
 		// id for the request message to sensor
@@ -254,6 +254,12 @@ func (m *managerImpl) processClusterDelete(scanRequest *storage.ComplianceOperat
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		if err != nil {
 			log.Errorf("error sending deletion of compliance scan config to cluster %q: %v", clusterID, err)
+		}
+
+		// Remove cluster status
+		err = m.scanSettingDS.RemoveClusterStatus(ctx, scanRequest.GetId(), clusterID)
+		if err != nil {
+			log.Errorf("error removing cluster status for compliance scan config to cluster %q: %v", clusterID, err)
 		}
 	}
 }
