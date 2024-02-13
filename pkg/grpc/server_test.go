@@ -50,16 +50,14 @@ func (a *APIServerSuite) TestEnvValues() {
 }
 
 func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
-	// TODO: Use TLS mock instead of overriding this with dummy certs
-
 	api1 := NewAPI(defaultConf())
 	api2 := NewAPI(defaultConf())
 
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
+			a.T().Cleanup(func() { api.Stop() })
 			a.Assert().NoError(api.Start().Wait())
-			api.Stop()
 		})
 	}
 }
@@ -70,10 +68,8 @@ func (a *APIServerSuite) Test_CustomAPI() {
 	a.Run("fetch data from /test", func() {
 		cfg, endpointReached := configWithCustomRoute()
 		api := NewAPI(cfg)
+		a.T().Cleanup(func() { api.Stop() })
 		a.Assert().NoError(api.Start().Wait())
-		defer func() {
-			api.Stop()
-		}()
 
 		a.requestWithoutErr("https://localhost:8080/test")
 		a.waitForSignal(endpointReached)
@@ -83,7 +79,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 		cfg, endpointReached := configWithCustomRoute()
 		api := NewAPI(cfg)
 		a.Assert().NoError(api.Start().Wait())
-		api.Stop()
+		a.Require().True(api.Stop())
 
 		_, err := http.Get("https://localhost:8080/test")
 		a.Require().Error(err)
@@ -96,15 +92,15 @@ func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
 
 	a.Assert().NoError(api.Start().Wait())
 
-	a.Assert().True(api.Stop())
+	a.Require().True(api.Stop())
 	// second call should return false as stop already finished
-	a.Assert().False(api.Stop())
+	a.Require().False(api.Stop())
 }
 
 func (a *APIServerSuite) Test_CantCallStartMultipleTimes() {
 	api := NewAPI(defaultConf())
 	a.Assert().NoError(api.Start().Wait())
-	a.Assert().True(api.Stop())
+	a.Require().True(api.Stop())
 	a.Assert().Error(api.Start().Wait())
 }
 

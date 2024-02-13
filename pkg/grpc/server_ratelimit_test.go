@@ -95,8 +95,8 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 			grpcService := &pingServiceTestImpl{}
 			api.Register(grpcService)
 			a.Assert().NoError(api.Start().Wait())
-			defer func() { api.Stop() }()
 
+			a.T().Cleanup(func() { api.Stop() })
 			var urls []string
 			if tt.useHTTP {
 				urls = append(urls, "https://localhost:8080/test")
