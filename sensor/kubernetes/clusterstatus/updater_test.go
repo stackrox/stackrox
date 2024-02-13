@@ -176,13 +176,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 
 	nilGetProviders := func(_ context.Context) *storage.ProviderMetadata { return nil }
 
-	typeMeta := metav1.TypeMeta{Kind: "Infrastructure", APIVersion: "config.openshift.io/v1"}
-	objectMeta := metav1.ObjectMeta{
+	infraTypeMeta := metav1.TypeMeta{Kind: "Infrastructure", APIVersion: "config.openshift.io/v1"}
+	infraObjectMeta := metav1.ObjectMeta{
 		Name: "cluster",
 	}
+	cvTypeMeta := metav1.TypeMeta{Kind: "ClusterVersion", APIVersion: "config.openshift.io/v1"}
+	cvObjectMeta := metav1.ObjectMeta{Name: "version"}
 
 	cases := map[string]struct {
 		infra        *configv1.Infrastructure
+		cv           *configv1.ClusterVersion
 		metadata     *storage.ProviderMetadata
 		getProviders func(ctx context.Context) *storage.ProviderMetadata
 		openshift    bool
@@ -200,8 +203,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type: configv1.AWSPlatformType,
@@ -211,6 +214,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region:   "us-east1",
 				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
@@ -218,6 +226,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -225,8 +234,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type: configv1.GCPPlatformType,
@@ -237,6 +246,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region: "us-east1",
 				Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
@@ -246,6 +260,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -253,8 +268,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type:  configv1.AzurePlatformType,
@@ -263,6 +278,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region:   "",
 				Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
@@ -270,6 +290,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -277,8 +298,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type:         configv1.AlibabaCloudPlatformType,
@@ -287,10 +308,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -298,8 +325,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type: configv1.AWSPlatformType,
@@ -315,6 +342,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region:   "us-east1",
 				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
@@ -322,6 +354,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_OSD,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -329,8 +362,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type: configv1.GCPPlatformType,
@@ -347,6 +380,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region: "us-east1",
 				Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
@@ -356,6 +394,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_OSD,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -363,8 +402,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type: configv1.AWSPlatformType,
@@ -380,6 +419,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region:   "us-east1",
 				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
@@ -387,6 +431,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_ROSA,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -394,8 +439,8 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
-				TypeMeta:   typeMeta,
-				ObjectMeta: objectMeta,
+				TypeMeta:   infraTypeMeta,
+				ObjectMeta: infraObjectMeta,
 				Status: configv1.InfrastructureStatus{
 					PlatformStatus: &configv1.PlatformStatus{
 						Type: configv1.AzurePlatformType,
@@ -411,6 +456,11 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 					InfrastructureName: "cluster-1",
 				},
 			},
+			cv: &configv1.ClusterVersion{
+				TypeMeta:   cvTypeMeta,
+				ObjectMeta: cvObjectMeta,
+				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
+			},
 			metadata: &storage.ProviderMetadata{
 				Region:   "",
 				Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
@@ -418,6 +468,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				Cluster: &storage.ClusterMetadata{
 					Type: storage.ClusterMetadata_ARO,
 					Name: "cluster-1",
+					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
 				},
 			},
 		},
@@ -428,7 +479,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			s.T().Setenv(env.OpenshiftAPI.EnvVar(), strconv.FormatBool(tc.openshift))
 			config := configFake.NewSimpleClientset()
 			if tc.infra != nil {
-				config = configFake.NewSimpleClientset(tc.infra)
+				config = configFake.NewSimpleClientset(tc.infra, tc.cv)
 			}
 			s.createUpdater(tc.getProviders, getProviderMetadataFromOpenShiftConfig, config)
 			u := s.updater.(*updaterImpl)

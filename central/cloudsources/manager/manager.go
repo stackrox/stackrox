@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	pkgErrors "github.com/pkg/errors"
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
@@ -132,7 +133,11 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 		return nil
 	}
 
-	clients := createClients(cloudSources)
+	clients, err := createClients(cloudSources)
+	if err != nil {
+		log.Errorw("Received errors during creating clients from cloud sources. The result might be incomplete",
+			logging.Err(err))
+	}
 
 	var clientErrors error
 	var discoveredClusters []*discoveredclusters.DiscoveredCluster
@@ -164,8 +169,7 @@ func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters
 }
 
 func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
-	// A list of hashes of currently secured cluster. A secured cluster hash consist of:
-	//  The secured cluster ID, and type.
+	// A list of IDs of secured clusters that can be used for matching.
 	securedClusters := set.NewStringSet()
 
 	unspecifiedProviderType := set.NewStringSet()
@@ -178,8 +182,8 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 			return nil
 		}
 
-		// In case we have partial provider metadata (e.g. we miss the cluster name for EKS clusters, or the
-		// cluster type is unspecified), then mark the provider type as Unspecified.
+		// In case we have partial provider metadata (i.e. the ID of the cluster isn't set), then mark the provider
+		// type as Unspecified.
 		// This means that we will assign each discovered cluster that cannot be safely matched to a secured cluster
 		// as Unspecified instead of Unsecured. This is to avoid false-positives.
 		clusterMetadata := providerMetadata.GetCluster()
@@ -189,7 +193,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		}
 
 		// Add the cluster with the full metadata information we require as an index for matching.
-		securedClusters.Add(clusterIndexForClusterMetadata(clusterMetadata))
+		securedClusters.Add(clusterMetadata.GetId())
 		return nil
 	}); err != nil {
 		log.Errorw("Failed to list secured clusters. Matching is skipped.", logging.Err(err))
@@ -198,7 +202,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 
 	for _, cluster := range clusters {
 		switch {
-		case securedClusters.Contains(clusterIndexForDiscoveredCluster(cluster)):
+		case securedClusters.Contains(cluster.GetID()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
 		case unspecifiedProviderType.Contains(cluster.GetProviderType().String()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
@@ -209,24 +213,21 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 }
 
 // createClients creates the API clients to interact with the third-party API of the cloud source.
-func createClients(cloudSources []*storage.CloudSource) []cloudsources.Client {
+func createClients(cloudSources []*storage.CloudSource) ([]cloudsources.Client, error) {
 	clients := make([]cloudsources.Client, 0, len(cloudSources))
+	var clientCreationErrs error
 	for _, cloudSource := range cloudSources {
-		if client := cloudsources.NewClientForCloudSource(cloudSource); client != nil {
+		client, err := cloudsources.NewClientForCloudSource(cloudSource)
+		if err != nil {
+			clientCreationErrs = errors.Join(clientCreationErrs,
+				pkgErrors.Wrapf(err, "creating client for cloud source %q", cloudSource.GetName()))
+			continue
+		}
+		if client != nil {
 			clients = append(clients, client)
 		}
 	}
-	return clients
-}
-
-type clusterIndex = string
-
-func clusterIndexForClusterMetadata(obj *storage.ClusterMetadata) clusterIndex {
-	return obj.GetId() + obj.GetType().String()
-}
-
-func clusterIndexForDiscoveredCluster(obj *discoveredclusters.DiscoveredCluster) clusterIndex {
-	return obj.GetID() + obj.GetType().String()
+	return clients, clientCreationErrs
 }
 
 func debugPrintDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {

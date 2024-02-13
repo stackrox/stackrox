@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/ocm"
 	"github.com/stackrox/rox/pkg/cloudsources/paladin"
 )
 
@@ -16,12 +17,14 @@ type Client interface {
 }
 
 // NewClientForCloudSource creates a new Client based on the cloud source to fetch discovered clusters.
-func NewClientForCloudSource(source *storage.CloudSource) Client {
+func NewClientForCloudSource(source *storage.CloudSource) (Client, error) {
 	// For the time being, this only supports paladin cloud clients.
 	switch source.GetType() {
 	case storage.CloudSource_TYPE_PALADIN_CLOUD:
-		return paladin.NewClient(source)
+		return paladin.NewClient(source), nil
+	case storage.CloudSource_TYPE_OCM:
+		return ocm.NewClient(source)
 	default:
-		return nil
+		return nil, nil
 	}
 }
