@@ -10,6 +10,12 @@ VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
+# This can be adjusted if deploying into non-standard namespaces. For example, as in
+#
+#   NAMESPACE=... make -C operator stackrox-image-pull-secret
+#
+NAMESPACE ?= stackrox
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -263,9 +269,9 @@ test-bundle-helpers: ## Run Python unit tests against helper scripts.
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
-	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "stackrox" } }' | kubectl apply -f -
+	echo '{ "apiVersion": "v1", "kind": "Namespace", "metadata": { "name": "$(NAMESPACE)" } }' | kubectl apply -f -
 # Create stackrox image pull secret in stackrox namespace.
-	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox quay.io | kubectl -n stackrox apply -f -
+	$(PROJECT_DIR)/../deploy/common/pull-secret.sh stackrox quay.io | kubectl -n "$(NAMESPACE)" apply -f -
 
 .PHONY: check-ci-setup
 check-ci-setup: ## Make sure this target is not started in CI environment.
