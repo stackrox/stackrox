@@ -22,7 +22,7 @@ import { clustersBasePath } from 'routePaths';
 import { ComplianceIntegration } from 'services/ComplianceEnhancedService';
 
 import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
-import ClusterStatus from '../components/ClusterStatus';
+import ComplianceClusterStatus from '../components/ComplianceClusterStatus';
 
 export type ClusterSelectionProps = {
     clusters: ComplianceIntegration[];
@@ -88,9 +88,9 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                         isSelected: selected[rowIndex],
                     }}
                 />
-                <Td>{clusterName}</Td>
-                <Td>
-                    <ClusterStatus errors={statusErrors} />
+                <Td dataLabel="Name">{clusterName}</Td>
+                <Td dataLabel="Operator status">
+                    <ComplianceClusterStatus errors={statusErrors} />
                 </Td>
             </Tr>
         ));

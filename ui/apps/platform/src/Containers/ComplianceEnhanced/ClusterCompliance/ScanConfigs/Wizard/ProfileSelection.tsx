@@ -29,6 +29,9 @@ import { ComplianceProfileSummary } from 'services/ComplianceEnhancedService';
 
 import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
+// file can be deleted after switching to PF5, more details in the css file
+import './ProfileSelection.css';
+
 export type ProfileSelectionProps = {
     profiles: ComplianceProfileSummary[];
     isFetchingProfiles: boolean;
@@ -65,69 +68,71 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
     ) => {
         onSelect(event, isSelected, rowId);
 
-        const newSelectedIds = profiles
+        const newSelectedProfileNames = profiles
             .filter((_, index) => {
                 return index === rowId ? isSelected : selected[index];
             })
             .map((profile) => profile.name);
 
-        setFieldValue('profiles', newSelectedIds);
+        setFieldValue('profiles', newSelectedProfileNames);
     };
 
     const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
         onSelectAll(event, isSelected);
 
-        const newSelectedIds = isSelected ? profiles.map((profile) => profile.name) : [];
+        const newSelectedProfileNames = isSelected ? profiles.map((profile) => profile.name) : [];
 
-        setFieldValue('profiles', newSelectedIds);
+        setFieldValue('profiles', newSelectedProfileNames);
     };
 
     const isProfileExpanded = (name: string) => expandedProfileNames.includes(name);
 
     function renderTableContent() {
-        return profiles?.map(({ description, name, productType, ruleCount, title }, rowIndex) => (
-            <Tbody>
-                <Tr key={name}>
-                    <Td
-                        key={name}
-                        select={{
-                            rowIndex,
-                            onSelect: (event, isSelected) =>
-                                handleSelect(event, isSelected, rowIndex),
-                            isSelected: selected[rowIndex],
-                        }}
-                    />
-                    <Td
-                        expand={{
-                            rowIndex,
-                            isExpanded: isProfileExpanded(name),
-                            onToggle: () => setProfileExpanded(name, !isProfileExpanded(name)),
-                        }}
-                    />
-                    <Td>{name}</Td>
-                    <Td>{ruleCount}</Td>
-                    <Td>{productType}</Td>
-                </Tr>
-                <Tr isExpanded={isProfileExpanded(name)}>
-                    <Td colSpan={1}></Td>
-                    <Td colSpan={1}></Td>
-                    <Td dataLabel="" colSpan={3}>
-                        <ExpandableRowContent>
-                            <Text className="pf-u-font-weight-bold">{title}</Text>
-                            <Divider component="div" className="pf-u-my-md" />
-                            <Text>{description}</Text>
-                        </ExpandableRowContent>
-                    </Td>
-                </Tr>
-            </Tbody>
-        ));
+        return profiles?.map(
+            ({ description, name, productType, ruleCount, title, profileVersion }, rowIndex) => (
+                <Tbody isExpanded={isProfileExpanded(name)}>
+                    <Tr key={name}>
+                        <Td
+                            key={name}
+                            select={{
+                                rowIndex,
+                                onSelect: (event, isSelected) =>
+                                    handleSelect(event, isSelected, rowIndex),
+                                isSelected: selected[rowIndex],
+                            }}
+                        />
+                        <Td
+                            expand={{
+                                rowIndex,
+                                isExpanded: isProfileExpanded(name),
+                                onToggle: () => setProfileExpanded(name, !isProfileExpanded(name)),
+                            }}
+                        />
+                        <Td dataLabel="Profile">{name}</Td>
+                        <Td dataLabel="Rule set">{ruleCount}</Td>
+                        <Td dataLabel="Applicability">{productType}</Td>
+                        <Td dataLabel="Version">{profileVersion || '-'}</Td>
+                    </Tr>
+                    <Tr isExpanded={isProfileExpanded(name)}>
+                        <Td colSpan={2}></Td>
+                        <Td dataLabel="Profile details" colSpan={4}>
+                            <ExpandableRowContent>
+                                <Text className="pf-u-font-weight-bold">{title}</Text>
+                                <Divider component="div" className="pf-u-my-md" />
+                                <Text>{description}</Text>
+                            </ExpandableRowContent>
+                        </Td>
+                    </Tr>
+                </Tbody>
+            )
+        );
     }
 
     function renderLoadingContent() {
         return (
             <Tbody>
                 <Tr>
-                    <Td colSpan={5}>
+                    <Td colSpan={6}>
                         <Bullseye>
                             <Spinner isSVG />
                         </Bullseye>
@@ -141,7 +146,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
         return (
             <Tbody>
                 <Tr>
-                    <Td colSpan={5}>
+                    <Td colSpan={6}>
                         <Bullseye>
                             <EmptyStateTemplate
                                 title="No profiles"
@@ -194,6 +199,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
                             <Th>Profile</Th>
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>
+                            <Th>Version</Th>
                         </Tr>
                     </Thead>
                     {renderTableBodyContent()}

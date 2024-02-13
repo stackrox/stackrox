@@ -13,7 +13,7 @@ import { TableComposable, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/
 
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
 
-import ClusterStatus from './ClusterStatus';
+import ComplianceClusterStatus from './ComplianceClusterStatus';
 
 type ScanConfigClustersTableProps = {
     clusterScanStatuses: ClusterScanStatus[];
@@ -128,7 +128,7 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
                                 <Tr key={cluster.clusterId}>
                                     <Td dataLabel="Cluster">{cluster.clusterName}</Td>
                                     <Td dataLabel="Operator status">
-                                        <ClusterStatus errors={cluster.errors} />
+                                        <ComplianceClusterStatus errors={cluster.errors} />
                                     </Td>
                                 </Tr>
                             );
