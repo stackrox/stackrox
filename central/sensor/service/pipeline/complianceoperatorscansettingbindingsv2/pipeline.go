@@ -12,12 +12,15 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
+
+	log = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -41,6 +44,7 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+	log.Infof("SHREWS -- Reconcile SSB")
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil
 	}
@@ -79,8 +83,10 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
+		log.Infof("SHREWS -- Run -- Remove SSB")
 		return s.v2ScanSettingBindingDatastore.DeleteScanSettingBinding(ctx, binding.GetId())
 	default:
+		log.Infof("SHREWS -- Run -- Add SSB")
 		return s.v2ScanSettingBindingDatastore.UpsertScanSettingBinding(ctx, internaltov2storage.ComplianceOperatorScanSettingBindingObject(binding, clusterID))
 	}
 }

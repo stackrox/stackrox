@@ -60,10 +60,12 @@ func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataSto
 
 func (m *managerImpl) Sync(_ context.Context) {
 	// TODO (ROX-18711): Sync scan configurations with sensor
+	log.Infof("SHREWS -- In Sync")
 }
 
 // ProcessComplianceOperatorInfo processes and stores the compliance operator metadata coming from sensor
 func (m *managerImpl) ProcessComplianceOperatorInfo(ctx context.Context, complianceIntegration *storage.ComplianceIntegration) error {
+	log.Infof("SHREWS -- In ProcessComplianceOperatorInfo")
 	if !features.ComplianceEnhancements.Enabled() {
 		return errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(complianceIntegration))
 	}
