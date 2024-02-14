@@ -84,7 +84,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", false,
 	}, actual)
 }
 

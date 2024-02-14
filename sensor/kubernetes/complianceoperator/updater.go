@@ -166,7 +166,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		}
 	}
 
-	isReadOnly, err := isReadOnlyComplianceOperatorAccess(u.client)
+	isReadOnly, err := checkReadOnlyComplianceOperatorAccess(u.client)
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
@@ -198,8 +198,8 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	return info
 }
 
-// isReadOnlyComplianceOperatorAccess checks if Sensor has permissions to write to compliance operator CRDs.
-func isReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, error) {
+// checkReadOnlyComplianceOperatorAccess checks if Sensor has permissions to write to compliance operator CRs.
+func checkReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, error) {
 	sac := &v1.SelfSubjectAccessReview{
 		Spec: v1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &v1.ResourceAttributes{
