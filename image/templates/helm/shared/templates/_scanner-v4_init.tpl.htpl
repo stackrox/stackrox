@@ -49,11 +49,11 @@
 
   {{/* Configure images, certificates and passwords as required. */}}
   {{ if get $components "indexer" }}
-    {{/* Note that for secured-cluster-services we don't configure certificates here,
-         instead they will be distributed at runtime by Sensor and Central. */}}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
     {{- if eq $.Chart.Name "stackrox-central-services" -}}
-      {{/* Only generate certificate when installing central-services. */}}
+      {{/* Only generate certificate when installing central-services.
+           For secured-cluster-services we don't configure certificates here,
+           instead they will be distributed at runtime by Sensor and Central. */}}
       {{- if kindIs "invalid" $._rox.scannerV4.indexer.serviceTLS.generate }}
         {{/* We need special handling here, because 'generate' will default to 'false' on upgrades. */}}
         {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
