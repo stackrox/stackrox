@@ -13,8 +13,6 @@ import (
 )
 
 // DataStore is the entry point for modifying cloud sources data.
-//
-//go:generate mockgen-wrapper
 type DataStore interface {
 	CountCloudSources(ctx context.Context, query *v1.Query) (int, error)
 	GetCloudSource(ctx context.Context, id string) (*storage.CloudSource, error)
