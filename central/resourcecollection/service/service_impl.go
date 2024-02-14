@@ -190,7 +190,7 @@ func (s *serviceImpl) checkVulnerabilityReportReferences(ctx context.Context, re
 		for _, reportConfigurations := range reportConfigurations {
 			names = append(names, reportConfigurations.GetName())
 		}
-		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following report configuratios: %q", strings.Join(names, ", "))
+		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following report configuratios: %q.", strings.Join(names, ", "))
 	}
 	return nil
 }
