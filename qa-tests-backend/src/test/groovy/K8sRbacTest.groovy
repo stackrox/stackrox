@@ -182,7 +182,7 @@ class K8sRbacTest extends BaseSpecification {
                 assert role
                 assert role.labels == stackroxRole.labelsMap
                 role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-                assert role.annotations == stackroxRole.annotationsMap
+                assert Hepers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
                 assert role.rules.every { K8sPolicyRule oRule ->
                     stackroxRole.rulesList.any { Rbac.PolicyRule sRule ->
                         oRule.verbs == sRule.verbsList &&
@@ -261,7 +261,7 @@ class K8sRbacTest extends BaseSpecification {
 
                 binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
                 assert b.labelsMap == binding.labels
-                assert b.annotationsMap == binding.annotations
+                assert Helpers.compareAnnotations(binding.annotations, b.annotationsMap)
                 assert b.roleId == binding.roleRef.uid
                 assert b.subjectsCount == binding.subjects.size()
 

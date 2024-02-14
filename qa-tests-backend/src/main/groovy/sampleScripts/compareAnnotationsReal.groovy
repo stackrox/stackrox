@@ -3,6 +3,7 @@ package sampleScripts
 import common.Constants
 import io.stackrox.proto.storage.Rbac
 import objects.K8sRole
+import objects.K8sRoleBinding
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import org.slf4j.Logger
@@ -31,26 +32,15 @@ OrchestratorMain orchestrator = OrchestratorType.create(
 
 Logger log = LoggerFactory.getLogger("compare")
 
+// K8sRbacTest
+
 def stackroxRoles = RbacService.getRoles()
 def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
 
-Map<String, String> a = new HashMap<String, String>() {{
-    put("same", "value")
-    put("a_only_key", "value")
-    put("different", "a")
-}}
-
-Map<String, String> b = new HashMap<String, String>() {{
-    put("same", "value")
-    put("b_only_key", "value")
-    put("different", "b")
-}}
-
-Helpers.compareAnnotations(a, b)
-
 assert stackroxRoles.size() == orchestratorRoles.size()
+
 for (Rbac.K8sRole stackroxRole : stackroxRoles) {
-    log.info "Looking for SR Role: ${stackroxRole.name} (${stackroxRole.namespace})"
+    log.info "Looking for orchestrator role to match SR role: ${stackroxRole.name} (${stackroxRole.namespace})"
     K8sRole role = orchestratorRoles.find {
         it.name == stackroxRole.name &&
                 it.clusterRole == stackroxRole.clusterRole &&
@@ -58,6 +48,31 @@ for (Rbac.K8sRole stackroxRole : stackroxRoles) {
     }
     assert role
     role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-    // assert role.annotations == stackroxRole.annotationsMap
-    Helpers.compareAnnotations(role.annotations, stackroxRole.annotations)
+    Helpers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
+}
+
+def stackroxBindings = RbacService.getRoleBindings()
+def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
+
+stackroxBindings.each { Rbac.K8sRoleBinding b ->
+    log.info "Looking for orchestrator binding to match SR binding: ${b.name} (${b.namespace})"
+    K8sRoleBinding binding = orchestratorBindings.find {
+        it.name == b.name && it.namespace == b.namespace
+    }
+    assert binding != null
+
+    binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
+    assert Helpers.compareAnnotations(binding.annotations, b.annotationsMap)
+}
+
+// SummaryTest
+
+List<Node> stackroxNodes = NodeService.getNodes()
+List<objects.Node> orchestratorNodes = orchestrator.getNodeDetails()
+
+assert stackroxNodes.size() == orchestratorNodes.size()
+
+for (Node stackroxNode : stackroxNodes) {
+    objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
+    assert Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())
 }
