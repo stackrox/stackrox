@@ -122,3 +122,18 @@ func (mr *MockManagerMockRecorder) Sync(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockManager)(nil).Sync), ctx)
 }
+
+// UpdateScanRequest mocks base method.
+func (m *MockManager) UpdateScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateScanRequest", ctx, scanRequest, clusters)
+	ret0, _ := ret[0].(*storage.ComplianceOperatorScanConfigurationV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateScanRequest indicates an expected call of UpdateScanRequest.
+func (mr *MockManagerMockRecorder) UpdateScanRequest(ctx, scanRequest, clusters any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateScanRequest", reflect.TypeOf((*MockManager)(nil).UpdateScanRequest), ctx, scanRequest, clusters)
+}

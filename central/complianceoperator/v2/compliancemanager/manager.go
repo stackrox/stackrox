@@ -22,6 +22,8 @@ type Manager interface {
 
 	// ProcessScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
 	ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error)
+	// UpdateScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
+	UpdateScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error)
 	// HandleScanRequestResponse processes response of compliance scan configuration from a sensor.
 	HandleScanRequestResponse(ctx context.Context, requestID string, clusterID string, responsePayload string) error
 

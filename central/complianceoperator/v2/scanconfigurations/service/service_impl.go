@@ -110,8 +110,8 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	var clusterIDs []string
 	clusterIDs = append(clusterIDs, req.GetClusters()...)
 
-	// Process scan request, config may be updated in the event of errors from sensor.
-	_, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
+	// Update scan request, config may be updated in the event of errors from sensor.
+	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
 	}
