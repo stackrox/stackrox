@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from 'react';
+import React, { ReactElement, useCallback, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
@@ -40,6 +40,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     const [isCreating, setIsCreating] = useState(false);
     const [createScanConfigError, setCreateScanConfigError] = useState('');
     const [clustersUsedForProfileData, setClustersUsedForProfileData] = useState<string[]>([]);
+    const alertRef = useRef<HTMLDivElement | null>(null);
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
     const { data: clusters, loading: isFetchingClusters } = useRestQuery(listClustersQuery);
@@ -73,24 +74,51 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         }
     }
 
+    function wizardStepChanged() {
+        handleProfilesUpdate();
+        setCreateScanConfigError('');
+    }
+
+    function scrollToAlert() {
+        if (alertRef.current) {
+            alertRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+    }
+
     function onClose(): void {
         history.push(complianceEnhancedScanConfigsPath);
     }
 
     function setAllFieldsTouched(formikGroupKey: string): void {
-        const fields = Object.keys(formik.values[formikGroupKey]);
-        const touchedState = fields.reduce((acc, field) => ({ ...acc, [field]: true }), {});
-        formik.setTouched({ [formikGroupKey]: touchedState });
+        const groupHasNestedFields =
+            typeof formik.values[formikGroupKey] === 'object' &&
+            !Array.isArray(formik.values[formikGroupKey]);
+        let touchedState;
+
+        if (groupHasNestedFields) {
+            touchedState = Object.keys(formik.values[formikGroupKey]).reduce((acc, field) => {
+                acc[field] = true;
+                return acc;
+            }, {});
+            formik.setTouched({ ...formik.touched, [formikGroupKey]: touchedState });
+        } else {
+            formik.setTouched({ ...formik.touched, [formikGroupKey]: true });
+        }
     }
 
     function proceedToNextStepIfValid(
         navigateToNextStep: () => void,
         formikGroupKey: string
     ): void {
-        if (Object.keys(formik.errors?.[formikGroupKey] || {}).length === 0) {
+        const hasNoErrors = Object.keys(formik.errors?.[formikGroupKey] || {}).length === 0;
+        if (hasNoErrors) {
             navigateToNextStep();
         } else {
             setAllFieldsTouched(formikGroupKey);
+            scrollToAlert();
         }
     }
 
@@ -117,6 +145,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             id: SELECT_CLUSTERS_ID,
             component: (
                 <ClusterSelection
+                    alertRef={alertRef}
                     clusters={clusters || []}
                     isFetchingClusters={isFetchingClusters}
                 />
@@ -128,6 +157,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
             id: SELECT_PROFILES_ID,
             component: (
                 <ProfileSelection
+                    alertRef={alertRef}
                     profiles={profiles || []}
                     isFetchingProfiles={isFetchingProfiles}
                 />
@@ -159,7 +189,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                     hasNoBodyPadding
                     steps={wizardSteps}
                     onClose={onClose}
-                    onCurrentStepChanged={handleProfilesUpdate}
+                    onCurrentStepChanged={wizardStepChanged}
                     footer={
                         <ScanConfigWizardFooter
                             wizardSteps={wizardSteps}
