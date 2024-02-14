@@ -44,8 +44,14 @@
     {{- $components = $componentsCentralChart -}}
   {{- else -}}
     {{- $components = $componentsSecuredClusterChart -}}
+    {{/* scannerV4.{indexer,matcher}.disable can be used to disable deployment of specific components. */}}
+    {{- if $scannerV4Cfg.indexer.disable -}}
+      {{- $_ = set $components "indexer" false -}}
+    {{- end -}}
+    {{- if $scannerV4Cfg.indexer.matcher -}}
+      {{- $_ = set $components "matcher" false -}}
+    {{- end -}}
   {{- end -}}
-
 
   {{/* Configure images, certificates and passwords as required. */}}
   {{ if get $components "indexer" }}
@@ -137,7 +143,6 @@
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
-    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
     {{ $_ := set $components "indexer" false }}
   {{ end }}
 {{- end }}
