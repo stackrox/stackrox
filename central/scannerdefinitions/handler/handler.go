@@ -133,8 +133,9 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	fileName := r.URL.Query().Get(`file`)
-	// If only file is requested, then this is for Scanner v4.
-	if fileName != "" && uuid == "" {
+	v := r.URL.Query().Get("version")
+	// If only file is requested, then this is request for Scanner v4 mapping file.
+	if fileName != "" && uuid == "" && v == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {
 			h.getV4Files(w, r, mappingUpdaterType, mappingUpdaterKey, v4FileName)
 			return
@@ -142,7 +143,8 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		writeErrorNotFound(w)
 		return
 	}
-	if v := r.URL.Query().Get("version"); v != "" {
+	// If only version is provided, this is for Scanner V4 vuln file
+	if v != "" && uuid == "" && fileName == "" {
 		h.getV4Files(w, r, vulnerabilityUpdaterType, v, "")
 		return
 	}
