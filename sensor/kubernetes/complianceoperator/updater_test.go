@@ -112,7 +112,7 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 }
 
 // TODO: implement write access check test
-//func (s *UpdaterTestSuite) TestDetectWriteAccess() {
+// func (s *UpdaterTestSuite) TestDetectWriteAccess() {
 //	ds := buildComplianceOperator(defaultNS)
 //
 //	s.createCO(ds)
