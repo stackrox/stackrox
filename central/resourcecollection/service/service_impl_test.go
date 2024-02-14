@@ -329,6 +329,7 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	idRequest := &v1.ResourceByID{Id: "col0"}
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.Error(err)
+	suite.ErrorContains(err, "config0", "should contain referenced report name")
 
 	// Remove report configuration and test successful deletion of collection.
 	err = suite.resourceConfigDS.RemoveReportConfiguration(allAccessCtx, id)
@@ -336,11 +337,13 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 
 	// Test successful deletion
 	idRequest = &v1.ResourceByID{Id: "a"}
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(nil, nil)
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.NoError(err)
 
 	// test error when request fails
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(nil, nil)
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(errors.New("test error"))
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.Error(err)
@@ -359,13 +362,25 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	idRequest = &v1.ResourceByID{Id: "col0"}
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.Error(err)
+	suite.ErrorContains(err, "config0", "should contain referenced report name")
 
 	// Remove report configuration and test successful deletion of collection.
 	err = suite.resourceConfigDS.RemoveReportConfiguration(allAccessCtx, id)
 	suite.NoError(err)
 
+	// Test error when collectionId is embedded by another collection
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return([]*storage.ResourceCollection{{
+		Id:                  "collection-id",
+		Name:                "collection-with-embedded",
+		EmbeddedCollections: []*storage.ResourceCollection_EmbeddedResourceCollection{{Id: idRequest.GetId()}},
+	}}, nil)
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.Error(err)
+	suite.ErrorContains(err, "collection-with-embedded", "should contain collection which embeds the deleted collection")
+
 	// Test successful deletion
 	idRequest = &v1.ResourceByID{Id: "a"}
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(nil, nil)
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.NoError(err)
