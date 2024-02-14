@@ -17,15 +17,15 @@ export type UseTableSelection = {
 };
 
 type Base = {
-    id: string;
+    [key: string]: unknown;
 };
 
 const defaultPreSelectedFunc = () => false;
 
 function useTableSelection<T extends Base>(
     data: T[],
-    // determines whether value should be pre-selected or not
-    preSelectedFunc: (T) => boolean = defaultPreSelectedFunc
+    preSelectedFunc: (item: T) => boolean = defaultPreSelectedFunc,
+    identifierKey: keyof T = 'id'
 ): UseTableSelection {
     const [selected, setSelected] = React.useState(data.map(preSelectedFunc));
     const allRowsSelected = selected.length !== 0 && selected.every((val) => val);
@@ -57,8 +57,8 @@ function useTableSelection<T extends Base>(
     function getSelectedIds() {
         const ids: string[] = [];
         for (let i = 0; i < selected.length; i += 1) {
-            if (selected[i] && data[i]?.id) {
-                ids.push(data[i].id);
+            if (selected[i] && data[i]?.[identifierKey]) {
+                ids.push(String(data[i][identifierKey]));
             }
         }
         return ids;

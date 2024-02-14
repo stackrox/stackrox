@@ -2,20 +2,18 @@
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
 import {
-    Button,
     Card,
     CardActions,
     CardBody,
     CardHeader,
     CardTitle,
     Pagination,
-    Popover,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
-import IconText from 'Components/PatternFly/IconText/IconText';
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
-import { getClusterStatusObject } from '../compliance.scanConfigs.utils';
+
+import ComplianceClusterStatus from './ComplianceClusterStatus';
 
 type ScanConfigClustersTableProps = {
     clusterScanStatuses: ClusterScanStatus[];
@@ -126,37 +124,11 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
                     </Thead>
                     <Tbody>
                         {clustersWindow.map((cluster) => {
-                            const statusObj = getClusterStatusObject(cluster.errors);
-
                             return (
                                 <Tr key={cluster.clusterId}>
                                     <Td dataLabel="Cluster">{cluster.clusterName}</Td>
                                     <Td dataLabel="Operator status">
-                                        {statusObj.statusText === 'Healthy' ? (
-                                            <IconText
-                                                icon={statusObj.icon}
-                                                text={statusObj.statusText}
-                                            />
-                                        ) : (
-                                            <Popover
-                                                aria-label="Reveal errors"
-                                                headerContent={
-                                                    <div>
-                                                        {cluster.errors.length === 1
-                                                            ? 'Error'
-                                                            : 'Errors'}
-                                                    </div>
-                                                }
-                                                bodyContent={<div>{cluster.errors}</div>}
-                                            >
-                                                <Button variant="link">
-                                                    <IconText
-                                                        icon={statusObj.icon}
-                                                        text={statusObj.statusText}
-                                                    />
-                                                </Button>
-                                            </Popover>
-                                        )}
+                                        <ComplianceClusterStatus errors={cluster.errors} />
                                     </Td>
                                 </Tr>
                             );
