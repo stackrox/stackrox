@@ -56,6 +56,7 @@ const (
 	mappingUpdaterKey = "mapping"
 )
 
+//go:generate stringer -type=updaterType
 type updaterType int
 
 const (
@@ -133,11 +134,11 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	fileName := r.URL.Query().Get(`file`)
-	v := r.URL.Query().Get("version")
+	v := r.URL.Query().Get(`version`)
 	// If only file is requested, then this is request for Scanner v4 mapping file.
 	if fileName != "" && uuid == "" && v == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {
-			h.getV4Files(w, r, mappingUpdaterType, mappingUpdaterKey, v4FileName)
+			h.getV4(w, r, mappingUpdaterType, v4FileName)
 			return
 		}
 		writeErrorNotFound(w)
@@ -145,7 +146,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	}
 	// If only version is provided, this is for Scanner V4 vuln file
 	if v != "" && uuid == "" && fileName == "" {
-		h.getV4Files(w, r, vulnerabilityUpdaterType, v, "")
+		h.getV4(w, r, vulnerabilityUpdaterType, v)
 		return
 	}
 
@@ -432,7 +433,7 @@ func (h *httpHandler) openMostRecentV4File(t updaterType, updaterKey, fileName s
 		return nil, err
 	}
 	if openedFile == nil {
-		return nil, errors.New("updater file was not found")
+		return nil, fmt.Errorf("Scanner V4 %s file %s not found", t, updaterKey)
 	}
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
@@ -450,8 +451,10 @@ func (h *httpHandler) openMostRecentV4File(t updaterType, updaterKey, fileName s
 			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
 		}
 		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
-	default:
+	case vulnerabilityUpdaterType:
 		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
+	default:
+		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 	}
 	defer toClose(onlineFile)
 	file = onlineFile
@@ -511,33 +514,33 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, t updaterType, updaterKey, fileName string) {
-	log.Debugf("Fetching scanner V4 file: %s", fileName)
+func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request, t updaterType, key string) {
+	log.Debugf("Fetching scanner V4 %s file: %s", t, key)
 
 	var err error
 	var f *vulDefFile
 
 	switch t {
 	case mappingUpdaterType:
-		f, err = h.openMostRecentV4File(t, mappingUpdaterKey, fileName)
+		f, err = h.openMostRecentV4File(t, mappingUpdaterKey, key)
 	case vulnerabilityUpdaterType:
-		if version.GetVersionKind(updaterKey) == version.NightlyKind {
+		if version.GetVersionKind(key) == version.NightlyKind {
 			// get dev for nightly at this moment
-			updaterKey = "dev"
+			key = "dev"
 		}
-		f, err = h.openMostRecentV4File(t, updaterKey, "")
+		f, err = h.openMostRecentV4File(t, key, "")
 		if err == nil {
 			w.Header().Set("Content-Type", "application/zstd")
 		}
 	default:
-		errMsg := "unknown updater type"
+		errMsg := fmt.Sprintf("unknown Scanner V4 updater type: %s", t)
 		log.Error(errMsg)
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not read file: %v", err)
+		errMsg := fmt.Sprintf("could not read %s file %q: %v", t, key, err)
 		log.Error(errMsg)
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
