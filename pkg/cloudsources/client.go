@@ -9,6 +9,8 @@ import (
 )
 
 // Client exposes functionality to fetch discovered cluster from cloud sources.
+//
+//go:generate mockgen-wrapper
 type Client interface {
 	GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error)
 }
