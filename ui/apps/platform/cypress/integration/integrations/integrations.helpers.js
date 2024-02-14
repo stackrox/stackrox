@@ -305,7 +305,8 @@ export function clickIntegrationTileOnDashboard(integrationSource, integrationTy
 export function clickCreateNewIntegrationInTable(
     integrationSource,
     integrationType,
-    createLinkText = 'New integration'
+    createLinkText = 'New integration',
+    createPageTitleText = 'Create integration'
 ) {
     cy.get(`a:contains("${createLinkText}")`).click();
 
@@ -316,7 +317,7 @@ export function clickCreateNewIntegrationInTable(
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationTitle}")`);
-    cy.get(`${selectors.breadcrumbItem}:contains("Create integration")`); // TODO Title Case
+    cy.get(`${selectors.breadcrumbItem}:contains("${createPageTitleText}")`); // TODO Title Case
 }
 
 export function deleteIntegrationInTable(integrationSource, integrationType, integrationName) {
