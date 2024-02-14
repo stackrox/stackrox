@@ -68,6 +68,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
             return '/v1/notifiers';
         case 'signatureIntegrations': // camelCase in page address
             return '/v1/signatureintegrations'; // lowercase in endpoint address
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -94,6 +96,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return 'notifiers';
         case 'signatureIntegrations': // camelCase in page address
             return 'signatureintegrations'; // lowercase in endpoint alias
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -188,6 +192,9 @@ const integrationTitleMap = {
     },
     signatureIntegrations: {
         signature: 'Signature',
+    },
+    cloudSources: {
+        paladinCloud: 'Paladin Cloud',
     },
 };
 
