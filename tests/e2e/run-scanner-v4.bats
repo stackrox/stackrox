@@ -251,6 +251,8 @@ teardown_file() {
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
       export ROX_OPENSHIFT_VERSION=4
     fi
+    export GENERATE_SCANNER_DEPLOYMENT_BUNDLE="true"
+    local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
 
     _deploy_stackrox
 
@@ -258,7 +260,6 @@ teardown_file() {
     verify_no_scannerV4_deployed
     run ! verify_central_scannerV4_env_var_set
 
-    local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
     assert [ -d "${scanner_bundle}" ]
     assert [ -d "${scanner_bundle}/scanner-v4" ]
 

@@ -743,16 +743,17 @@ function launch_sensor {
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
+        if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
+            roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" scanner generate \
+                  --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
+            mv "scanner-deploy" "${k8s_dir}/scanner-deploy"
+            echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"
+        fi
       else
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
       fi
-
-      roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" scanner generate \
-            --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
-      mv "scanner-deploy" "${k8s_dir}/scanner-deploy"
-      echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"
 
       if [[ -n "${NAMESPACE_OVERRIDE}" ]]; then
         if [[ "${sensor_namespace}" != "stackrox" && "${sensor_namespace}" != "${NAMESPACE_OVERRIDE}" ]]; then
