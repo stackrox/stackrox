@@ -23,7 +23,6 @@ scannerV4:
       key: null # string
       generate: null # bool
   matcher:
-    disable: null # bool
     metricsPort: null # int
     logLevel: null # string
     image:

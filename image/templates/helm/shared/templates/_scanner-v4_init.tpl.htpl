@@ -44,12 +44,10 @@
     {{- $components = $componentsCentralChart -}}
   {{- else -}}
     {{- $components = $componentsSecuredClusterChart -}}
-    {{/* scannerV4.{indexer,matcher}.disable can be used to disable deployment of specific components. */}}
+    {{/* scannerV4.indexer.disable can be used to disable the deployment of indexer.
+         This is required for the operator use-case. */}}
     {{- if $scannerV4Cfg.indexer.disable -}}
       {{- $_ = set $components "indexer" false -}}
-    {{- end -}}
-    {{- if $scannerV4Cfg.indexer.matcher -}}
-      {{- $_ = set $components "matcher" false -}}
     {{- end -}}
   {{- end -}}
 
