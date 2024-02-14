@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -82,7 +83,7 @@ func buildNode(node *v1.Node) *storage.Node {
 		Name:                    node.Name,
 		Taints:                  convertTaints(node.Spec.Taints),
 		Labels:                  node.GetLabels(),
-		Annotations:             node.GetAnnotations(),
+		Annotations:             stringutils.SanitizeMapValues(node.GetAnnotations()),
 		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
 		InternalIpAddresses:     internal,
 		ExternalIpAddresses:     external,

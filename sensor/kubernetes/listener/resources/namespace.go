@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -35,7 +36,7 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 		Id:           string(ns.GetUID()),
 		Name:         ns.GetName(),
 		Labels:       ns.GetLabels(),
-		Annotations:  ns.GetAnnotations(),
+		Annotations:  stringutils.SanitizeMapValues(ns.GetAnnotations()),
 		CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
 	}
 

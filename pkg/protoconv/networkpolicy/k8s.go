@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	k8sCoreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
@@ -59,7 +60,7 @@ func (np KubernetesNetworkPolicyWrap) ToRoxNetworkPolicy() *storage.NetworkPolic
 		Name:        np.GetName(),
 		Namespace:   np.GetNamespace(),
 		Labels:      np.GetLabels(),
-		Annotations: np.GetAnnotations(),
+		Annotations: stringutils.SanitizeMapValues(np.GetAnnotations()),
 		Created:     protoconv.ConvertTimeToTimestamp(np.GetCreationTimestamp().Time),
 		ApiVersion:  np.APIVersion,
 		Spec: &storage.NetworkPolicySpec{

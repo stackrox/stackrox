@@ -113,7 +113,7 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 			Type:           kind,
 			Namespace:      stringutils.OrDefault(meta.GetNamespace(), "default"),
 			Labels:         meta.GetLabels(),
-			Annotations:    meta.GetAnnotations(),
+			Annotations:    stringutils.SanitizeMapValues(meta.GetAnnotations()),
 			Created:        createdTime,
 			StateTimestamp: int64(timestamp.Now()),
 		},

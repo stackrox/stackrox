@@ -18,6 +18,7 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"gorm.io/gorm"
 )
 
@@ -50,6 +51,7 @@ func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacySt
 
 	return walk(ctx, legacyStore, func(obj *storage.Node) error {
 		nodeConverter.FillV2NodeVulnerabilities(obj)
+		obj.Annotations = stringutils.SanitizeMapValues(obj.GetAnnotations())
 		if err := store.Upsert(ctx, obj); err != nil {
 			log.WriteToStderrf("failed to persist nodes to store %v", err)
 			return err
