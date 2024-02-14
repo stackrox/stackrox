@@ -60,6 +60,7 @@ scannerV4:
       generate: null # bool
     nodeSelector: null # string | dict
     tolerations: null # [dict]
+    affinity: null # dict
     resources: null # string | dict
     serviceTLS:
       cert: null # string

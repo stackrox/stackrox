@@ -7,8 +7,41 @@ scannerV4:
     logLevel: INFO
     autoscaling:
       disable: false
-      minReplicas: 1
+      minReplicas: 2
       maxReplicas: 5
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: scanner-v4-indexer
+            topologyKey: kubernetes.io/hostname
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: DoesNotExist
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
     resources:
       requests:
         memory: "1500Mi"
@@ -21,6 +54,39 @@ scannerV4:
     hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
     source:
       statementTimeoutMs: 60000
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        # Scanner V4 DB is single-homed, so avoid preemptible nodes.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: DoesNotExist
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
     resources:
       requests:
         cpu: "200m"
