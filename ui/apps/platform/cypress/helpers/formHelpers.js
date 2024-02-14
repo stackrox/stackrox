@@ -35,7 +35,6 @@ export function getHelperElementByLabel(label) {
         .contains('label', label)
         .invoke('attr', 'for')
         .then((id) => {
-            // console.log(`ID: ${id}`);
             const helperTextId = `${id}-helper`;
             cy.get(`#${CSS.escape(helperTextId)}`);
         });
