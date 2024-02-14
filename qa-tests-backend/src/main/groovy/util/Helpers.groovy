@@ -9,6 +9,8 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
+import org.javers.core.Javers
+import org.javers.core.JaversBuilder
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
 
@@ -172,5 +174,32 @@ class Helpers {
                  " QA_TEST_DEBUG_LOGS: ${Env.QA_TEST_DEBUG_LOGS}]")
 
         return false
+    }
+
+    static void compareAnnotations(Map<String, String> orchestratorAnnotations, 
+                                   Map<String, String> stackroxAnnotations) {
+        // assert orchestratorAnnotations == stackroxAnnotations
+        if (stackroxAnnotations != orchestratorAnnotations) {
+            Map<String, String> orchestratorTruncated = orchestratorAnnotations.clone()
+            Map<String, String> stackroxTruncated = new HashMap<>(stackroxAnnotations)
+            orchestratorAnnotations.keySet().each { name ->
+                if (orchestratorTruncated[name].length() > Constants.STACKROX_ANNOTATION_TRUNCATION_LENGTH) {
+                    // Assert that the stackrox node has an entry for that annotation
+                    assert stackroxTruncated[name].length() > 0
+
+                    log.info "Removing long annotation: ${name}"
+                    // Remove the annotation because the logic for truncation tries to maintain words and
+                    // is more complicated than we'd like to test
+                    stackroxTruncated.remove(name)
+                    orchestratorTruncated.remove(name)
+                }
+            }
+            if (stackroxTruncated != orchestratorTruncated) {
+                log.info "There is an annotation difference - StackRox -v- Orchestrator:"
+                Javers javers = JaversBuilder.javers().build()
+                log.info javers.compare(stackroxTruncated, orchestratorTruncated).prettyPrint()
+                assert false
+            }
+        }
     }
 }
