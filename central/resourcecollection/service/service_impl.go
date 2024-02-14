@@ -171,7 +171,7 @@ func (s *serviceImpl) checkCollectionReferences(ctx context.Context, request *v1
 		for _, referencedCollection := range referencedCollections {
 			names = append(names, referencedCollection.GetName())
 		}
-		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by one or more other collections by following collections: %q", strings.Join(names, ", "))
+		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following collections: %q.", strings.Join(names, ", "))
 	}
 	return nil
 }
@@ -190,7 +190,7 @@ func (s *serviceImpl) checkVulnerabilityReportReferences(ctx context.Context, re
 		for _, reportConfigurations := range reportConfigurations {
 			names = append(names, reportConfigurations.GetName())
 		}
-		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by one or more report configurations by following reports: %q", strings.Join(names, ", "))
+		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following report configuratios: %q", strings.Join(names, ", "))
 	}
 	return nil
 }
