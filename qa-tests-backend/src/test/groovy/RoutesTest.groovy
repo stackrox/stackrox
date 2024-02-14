@@ -26,6 +26,8 @@ class RoutesTest extends BaseSpecification {
     def "Verify that routes are detected correctly"() {
         given:
         Assume.assumeTrue(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+        // ROX-22502 - ROSA HCP is missing LoadBalancer support
+        Assume.assumeTrue({ !loadBalancer || Env.getSupportsLoadBalancerSvc()})
 
         boolean resourcesCreated = false
         when:

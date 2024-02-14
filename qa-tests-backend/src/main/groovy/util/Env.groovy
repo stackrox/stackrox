@@ -289,4 +289,8 @@ class Env {
     static String getManagedControlPlane() {
         return get("MANAGED_CP", "false")
     }
+
+    static String getSupportsLoadBalancerSvc() {
+        return get("SUPPORTS_LOAD_BALANCER_SVC", "true")
+    }
 }
