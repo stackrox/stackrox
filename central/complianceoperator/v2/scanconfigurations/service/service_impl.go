@@ -77,7 +77,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
 
-	validName := domainRegexp.MatchString(req.GetScanName())
+	validName := configNameRegexp.MatchString(req.GetScanName())
 
 	if !validName {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
