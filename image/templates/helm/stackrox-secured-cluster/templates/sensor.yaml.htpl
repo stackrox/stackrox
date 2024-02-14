@@ -27,6 +27,9 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: restricted-v2
+        {{- end }}
     spec:
       {{- if ._rox.sensor._nodeSelector }}
       nodeSelector:
