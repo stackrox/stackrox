@@ -285,4 +285,8 @@ class Env {
     static String getDisableAuditLogAlertsTest() {
         return get("DISABLE_AUDIT_LOG_ALERTS_TEST")
     }
+
+    static String getManagedControlPlane() {
+        return get("MANAGED_CP", "false")
+    }
 }

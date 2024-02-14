@@ -25,7 +25,10 @@ class DeploymentTest extends BaseSpecification {
         "b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
     private static final String CVE_NO = "CVE-2018-18314"
     private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
-    private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = "apiserver"
+    private static final String OPENSHIFT_ORCHESTRATOR_NAMESPACE = Env.getManagedControlPlane() ?
+        "openshift-console" : "openshift-apiserver"
+    private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = Env.getManagedControlPlane() ?
+        "openshift-console" : "apiserver"
     private static final String STACKROX_DEPLOYMENT_NAME = "sensor"
 
     private static final Deployment DEPLOYMENT = new Deployment()
@@ -158,7 +161,7 @@ class DeploymentTest extends BaseSpecification {
         "Data inputs are: "
         deploymentName   |   query    |  result
         "${OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME}" | "Deployment:${OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME}" + \
-                "+Namespace:openshift-apiserver" | true
+                "+Namespace:${OPENSHIFT_ORCHESTRATOR_NAMESPACE}" | true
         "${STACKROX_DEPLOYMENT_NAME}"  | "Deployment:${STACKROX_DEPLOYMENT_NAME}+Namespace:stackrox" | false
     }
 
