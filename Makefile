@@ -132,6 +132,7 @@ $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
+$(call go-tool, SHFMT_BIN, mvdan.cc/sh/v3/cmd/shfmt, tools/linters)
 
 ###########
 ## Style ##
@@ -189,6 +190,11 @@ proto-style: $(BUF_BIN) deps
 	@echo "+ $@"
 	$(BUF_BIN) format --exit-code --diff -w
 
+.PHONY: shell-fmt
+shell-fmt: $(SHFMT_BIN) deps
+	@echo "+ $@"
+	git ls-files '*.sh' | xargs $(SHFMT_BIN) -w -l
+
 .PHONY: qa-tests-style
 qa-tests-style:
 	@echo "+ $@"
@@ -205,7 +211,7 @@ openshift-ci-style:
 	make -C .openshift-ci/ style
 
 .PHONY: shell-style
-shell-style:
+shell-style: shell-fmt
 	@echo "+ $@"
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
 
