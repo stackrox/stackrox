@@ -193,7 +193,7 @@ proto-style: $(BUF_BIN) deps
 .PHONY: shell-fmt
 shell-fmt: $(SHFMT_BIN) deps
 	@echo "+ $@"
-	git ls-files '*.sh' | xargs $(SHFMT_BIN) -w -l
+	git ls-files '*.sh' | xargs $(SHFMT_BIN) -w -l -d
 
 .PHONY: qa-tests-style
 qa-tests-style:
