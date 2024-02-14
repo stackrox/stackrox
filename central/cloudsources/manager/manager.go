@@ -159,8 +159,10 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 }
 
 func (m *managerImpl) reconcileDiscoveredClusters(clusters []*discoveredclusters.DiscoveredCluster) {
+	log.Info("Fetching discovered clusters from cloud sources")
 	m.matchDiscoveredClusters(clusters)
 
+	log.Infof("Received %d discovered clusters from cloud sources", len(clusters))
 	debugPrintDiscoveredClusters(clusters)
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx, clusters...); err != nil {

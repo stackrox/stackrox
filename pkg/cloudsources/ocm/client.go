@@ -48,11 +48,11 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 	// Filter for all subscriptions which have:
 	//	- a cluster associated with it
 	// 	- the cluster is a valid OpenShift plan
-	//	- the status is "Active", "Disconnected", or "Stale"
+	//	- the status is "Active", "Disconnected"
 	//  - name / cluster_id / external_cluster_id are given
 	subscriptionSearch := "(cluster_id!='') " +
 		"AND (plan.id IN ('ARO', 'OCP', 'MOA', 'OCP-AssistedInstall', 'MOA-HostedControlPlane', 'OSD', 'OSDTrial')) " +
-		"AND (status IN  ('Active', 'Disconnected', 'Stale')) " +
+		"AND (status IN  ('Active', 'Disconnected')) " +
 		"AND (display_name ILIKE '%%' OR external_cluster_id ILIKE '%%' OR cluster_id ILIKE '%%')"
 
 	for {
@@ -106,7 +106,7 @@ func getClusterMetadataType(sub *accountsmgmtv1.Subscription) storage.ClusterMet
 		return storage.ClusterMetadata_OSD
 	case "aro":
 		return storage.ClusterMetadata_ARO
-	case "rosa":
+	case "mao", "mao-hostedcontrolplane":
 		return storage.ClusterMetadata_ROSA
 	default:
 		return storage.ClusterMetadata_UNSPECIFIED
@@ -122,6 +122,16 @@ func getProviderType(sub *accountsmgmtv1.Subscription) storage.DiscoveredCluster
 	case "azure":
 		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
 	default:
+
+		// For older clusters, the cloud provider ID may not be specified. In some cases we can infer the provider type
+		// from the cluster type.
+		clusterType := getClusterMetadataType(sub)
+		if clusterType == storage.ClusterMetadata_ARO {
+			return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
+		}
+		if clusterType == storage.ClusterMetadata_ROSA {
+			return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS
+		}
 		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
 	}
 }
