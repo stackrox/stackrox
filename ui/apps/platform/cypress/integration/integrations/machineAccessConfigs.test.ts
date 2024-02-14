@@ -19,7 +19,7 @@ const integrationSource = 'authProviders';
 describe('Machine Access Configs', () => {
     withAuth();
 
-    it('should create a new Paladin Cloud integration and then view and delete', () => {
+    it('should create a new Machine Access integration and then view and delete', () => {
         const integrationType = 'machineAccess';
 
         visitIntegrationsTable(integrationSource, integrationType);
@@ -33,7 +33,7 @@ describe('Machine Access Configs', () => {
         // Check inital state.
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // // Check empty values are not accepted.
+        // Check that issuer is automatically determined when Github action type is selected.
         getSelectButtonByLabel('Select configuration type').click();
         getSelectOption('Github action').click();
         getInputByLabel('Issuer').should('be.disabled');
@@ -42,6 +42,7 @@ describe('Machine Access Configs', () => {
             'https://token.actions.githubusercontent.com'
         );
 
+        // Check that empty values are not accepted.
         getSelectButtonByLabel('Select configuration type').click();
         getSelectOption('Generic').click();
         getInputByLabel('Issuer').clear().type(' ');
@@ -51,7 +52,7 @@ describe('Machine Access Configs', () => {
         getHelperElementByLabel('Token lifetime').contains('Token lifetime is required');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // // Save integration.
+        // Save integration.
         getSelectButtonByLabel('Select configuration type').click();
         getSelectOption('Github action').click();
         getInputByLabel('Token lifetime').clear().type('3h20m');
@@ -64,6 +65,7 @@ describe('Machine Access Configs', () => {
         getInputByLabel('Key').clear().type('  ');
         getInputByLabel('Value').clear().type('  ').blur();
 
+        // Check that empty rule is not accepted.
         getHelperElementByLabel('Key').contains('Key is required');
         getHelperElementByLabel('Value').contains('Value expression is required');
 
