@@ -19,7 +19,7 @@ export const validationSchema = yup.object().shape({
         credentials: yup.object().shape({
             secret: yup
                 .string()
-                .test('secret-test', 'A token is required', (value, context: yup.TestContext) => {
+                .test('secret-test', 'Token is required', (value, context: yup.TestContext) => {
                     const requireSecretField =
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
@@ -34,7 +34,7 @@ export const validationSchema = yup.object().shape({
                 }),
         }),
         paladinCloud: yup.object().shape({
-            endpoint: yup.string().required('Endpoint is required'),
+            endpoint: yup.string().trim().required('Endpoint is required'),
         }),
         skipTestIntegration: yup.bool(),
     }),
