@@ -9,6 +9,8 @@ source "$ROOT/scripts/ci/gcp.sh"
 source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../scripts/ci/scanner-v4-wait.sh
+source "$ROOT/scripts/ci/scanner-v4-wait.sh"
 # shellcheck source=../../scripts/ci/create-webhookserver.sh
 source "$ROOT/scripts/ci/create-webhookserver.sh"
 # shellcheck source=../../tests/e2e/lib.sh

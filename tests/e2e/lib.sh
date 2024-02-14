@@ -25,6 +25,7 @@ deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
+    local scanner_namespace=${4:-stackrox}
 
     setup_podsecuritypolicies_config
 
@@ -47,6 +48,8 @@ deploy_stackrox() {
     sensor_wait "${sensor_namespace}"
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
+
+    scanner_v4_wait "${scanner_namespace}"
 
     touch "${STATE_DEPLOYED}"
 }
