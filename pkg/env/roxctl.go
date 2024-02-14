@@ -40,4 +40,10 @@ var (
 	// UseCurrentKubeContext instructs roxctl to use port-forwarding for central
 	// service connections in the current kubeconfig context.
 	UseCurrentKubeContext = RegisterBooleanSetting("ROX_USE_KUBECONTEXT", false)
+
+	// ClientMaxRetries specifies the maximum number of times a client should retry a request.
+	ClientMaxRetries = RegisterIntegerSetting("ROX_CLIENT_MAX_RETRIES", 3)
+
+	// ScannerDBDownloadBaseURL specifies the base URL to use when downloading offline scanner definitions.
+	ScannerDBDownloadBaseURL = RegisterSetting("ROX_SCAN_DB_DL_BASE_URL", WithDefault("https://install.stackrox.io/scanner"))
 )
