@@ -200,22 +200,20 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 
 // isReadOnlyComplianceOperatorAccess checks if Sensor has permissions to write to compliance operator CRDs.
 func isReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, error) {
-	sar := v1.SelfSubjectAccessReviewSpec{
-		ResourceAttributes: &v1.ResourceAttributes{
-			Verb:     "*",
-			Resource: "*",
-			Group:    "compliance.openshift.io",
-		},
-	}
 	sac := &v1.SelfSubjectAccessReview{
-		Spec: sar,
+		Spec: v1.SelfSubjectAccessReviewSpec{
+			ResourceAttributes: &v1.ResourceAttributes{
+				Verb:     "*",
+				Resource: "*",
+				Group:    "compliance.openshift.io",
+			},
+		},
 	}
 
 	response, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sac, metav1.CreateOptions{})
 	if err != nil {
 		return true, errors.Wrap(err, "could not perform compliance operator access review")
 	}
-	log.Infof("Sensor has Compliance Operator writes access: %+v", response.Status.Allowed)
 	return !response.Status.Allowed, nil
 }
 

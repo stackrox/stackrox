@@ -14,9 +14,13 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/authorization/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/client-go/kubernetes/fake"
+	k8sTesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -61,6 +65,9 @@ func (s *UpdaterTestSuite) SetupTest() {
 
 	_, err = s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(customNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)
+
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	s.prependSSAReactorToFakeClient(true)
 }
 
 func (s *UpdaterTestSuite) TearDownTest() {
@@ -89,7 +96,7 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", false,
 	}, actual)
 }
 
@@ -107,24 +114,51 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", false,
 	}, actual)
 }
 
-// TODO: implement write access check test
-// func (s *UpdaterTestSuite) TestDetectWriteAccess() {
-//	ds := buildComplianceOperator(defaultNS)
-//
-//	s.createCO(ds)
-//	s.client.CoreV1().
-//
-//	actual := s.getInfo(1, 1*time.Minute)
-//	// Compliance operator found, CRDs not found.
-//	s.assertEqual(expectedInfo{
-//		"v1.0.0", defaultNS, 1, 1,
-//		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
-//	}, actual)
-//}
+func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
+	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
+	s.client.PrependReactor("*", "*", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		if _, ok := action.(k8sTesting.CreateAction); !ok {
+			return false, nil, nil
+		}
+		obj, ok := action.(k8sTesting.CreateAction).GetObject().(*v1.SelfSubjectAccessReview)
+		if !ok {
+			return false, nil, nil
+		}
+
+		//obj.SetName(names.SimpleNameGenerator.GenerateName("ssa"))
+		obj.ObjectMeta.Name = names.SimpleNameGenerator.GenerateName("test-")
+
+		// Set allowed to false indicates that Sensor has write access
+		obj.Status.Allowed = allowed
+		return true, obj, nil
+	})
+}
+
+func (s *UpdaterTestSuite) TestDetectSensorAccess() {
+	ds := buildComplianceOperator(defaultNS)
+
+	s.createCO(ds)
+
+	// Test sensor has write access
+
+	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
+	s.prependSSAReactorToFakeClient(true)
+
+	actual := s.getInfo(1, 1*time.Minute)
+	s.Assert().False(actual.ReadOnly, "expected compliance integration to have write access")
+
+	// Test has only read access
+
+	// Prepend another reactor to return a SelfSubjectAccessReview without write access.
+	s.prependSSAReactorToFakeClient(false)
+
+	actualReadOnly := s.getInfo(1, 1*time.Minute)
+	s.Assert().True(actualReadOnly.ReadOnly, "expected compliance integration to be read only")
+}
 
 // mockRequiredResources creates a list of mock required resources for testing.
 func mockRequiredResources() []metaV1.APIResource {
