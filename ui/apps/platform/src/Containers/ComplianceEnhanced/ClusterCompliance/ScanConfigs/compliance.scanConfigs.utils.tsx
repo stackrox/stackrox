@@ -1,6 +1,3 @@
-import React, { ReactElement } from 'react';
-import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-
 import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import {
     ComplianceScanConfigurationStatus,
@@ -12,11 +9,6 @@ import {
     WeeklySchedule,
 } from 'services/ComplianceEnhancedService';
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
-
-type ClusterStatusObject = {
-    icon: ReactElement;
-    statusText: string;
-};
 
 export type ScanConfigParameters = {
     name: string;
@@ -210,16 +202,4 @@ export function formatScanSchedule(schedule: Schedule) {
         default:
             return 'Invalid Schedule';
     }
-}
-
-export function getClusterStatusObject(errors: string[]): ClusterStatusObject {
-    return errors && errors.length && errors[0] !== ''
-        ? {
-              icon: <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />,
-              statusText: 'Unhealthy',
-          }
-        : {
-              icon: <CheckCircleIcon color="var(--pf-global--success-color--100)" />,
-              statusText: 'Healthy',
-          };
 }
