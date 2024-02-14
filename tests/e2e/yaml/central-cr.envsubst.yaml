@@ -52,3 +52,20 @@ metadata:
 data:
   tls.key: $centralDefaultTlsSecretKeyBase64
   tls.crt: $centralDefaultTlsSecretCertBase64
+
+# Don't judge me...
+# btw, this could introduce a race condition 1) bad path probably won't happen 2) this is temporary
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
