@@ -138,7 +138,7 @@ func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
 	})
 }
 
-func (s *UpdaterTestSuite) TestDetectSensorAccess() {
+func (s *UpdaterTestSuite) TestDetectSensorReadOnlyAccess() {
 	ds := buildComplianceOperator(defaultNS)
 
 	s.createCO(ds)
