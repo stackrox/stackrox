@@ -44,7 +44,7 @@ function DiscoveredClustersTable({
                     <Th width={25} sort={getSortParams(nameField)}>
                         Cluster
                     </Th>
-                    <Th width={15}>State</Th>
+                    <Th width={15}>Status</Th>
                     <Th width={10}>Type</Th>
                     <Th width={15} modifier="nowrap">
                         Provider (region)
