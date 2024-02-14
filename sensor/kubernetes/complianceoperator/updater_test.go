@@ -129,7 +129,7 @@ func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
 			return false, nil, nil
 		}
 
-		//obj.SetName(names.SimpleNameGenerator.GenerateName("ssa"))
+		// Generate name, fake this server behaviour.
 		obj.ObjectMeta.Name = names.SimpleNameGenerator.GenerateName("test-")
 
 		// Set allowed to false indicates that Sensor has write access
