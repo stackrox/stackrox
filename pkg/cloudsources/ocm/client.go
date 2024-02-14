@@ -46,13 +46,13 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 
 	// Taken from console.redhat.com/openshift.
 	// Filter for all subscriptions which have:
-	//	- a cluster associated with it,
+	//	- a cluster associated with it
 	// 	- the cluster is a valid OpenShift plan
-	//	- the status is "Active"
-	//  - and name / cluster_id / external_cluster_id are given.
+	//	- the status is "Active", "Disconnected", or "Stale"
+	//  - name / cluster_id / external_cluster_id are given
 	subscriptionSearch := "(cluster_id!='') " +
-		"AND (plan.id NOT IN ('RHACS', 'RHACSTrial', 'RHOSR', 'RHOSRTrial', 'RHOSAK', 'RHOSAKTrial', 'RHOSE', 'RHOSETrial')) " +
-		"AND (status = 'Active') " +
+		"AND (plan.id IN ('ARO', 'OCP', 'MOA', 'OCP-AssistedInstall', 'MOA-HostedControlPlane', 'OSD', 'OSDTrial')) " +
+		"AND (status IN  ('Active', 'Disconnected', 'Stale')) " +
 		"AND (display_name ILIKE '%%' OR external_cluster_id ILIKE '%%' OR cluster_id ILIKE '%%')"
 
 	for {
