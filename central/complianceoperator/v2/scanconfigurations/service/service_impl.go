@@ -80,7 +80,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	validName := domainRegexp.MatchString(req.GetScanName())
 
 	if !validName {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is not comptaible with DNS name")
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
 	}
 
 	if err := validateScanConfiguration(req); err != nil {
