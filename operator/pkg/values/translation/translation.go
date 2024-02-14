@@ -344,6 +344,13 @@ func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, compone
 	sv.AddChild(componentKey, &componentVB)
 }
 
+// DisableScannerV4Component produces Helm values that disable the provided Scanner V4 component
+func DisableScannerV4Component(sv *ValuesBuilder, componentKey string) {
+	componentVB := NewValuesBuilder()
+	componentVB.SetBoolValue("disable", true)
+	sv.AddChild(componentKey, &componentVB)
+}
+
 func setScannerComponentScaling(sv *ValuesBuilder, scaling *platform.ScannerComponentScaling) {
 	if scaling == nil {
 		return
