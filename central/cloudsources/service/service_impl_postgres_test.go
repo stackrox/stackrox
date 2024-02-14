@@ -420,7 +420,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 	_, err := s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	// 2. Call test with UpdateCredentials without any error during calling client.
 	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil)
@@ -428,7 +428,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 		CloudSource:       cloudSource,
 		UpdateCredentials: true,
 	})
-	s.NoError(err)
+	s.Assert().NoError(err)
 
 	// 3. Call test with UpdateCredentials with an error during calling client.
 	clientErr := errors.New("failed calling client")
@@ -438,7 +438,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 		CloudSource:       cloudSource,
 		UpdateCredentials: true,
 	})
-	s.ErrorContains(err, clientErr.Error())
+	s.Assert().ErrorContains(err, clientErr.Error())
 
 	// 4. Call test without UpdateCredentials with an existent cloud source.
 	cloudSource.Id = ""
@@ -452,7 +452,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
-	s.NoError(err)
+	s.Assert().NoError(err)
 }
 
 func (s *servicePostgresTestSuite) addCloudSources(num int) []*v1.CloudSource {
