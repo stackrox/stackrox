@@ -75,24 +75,21 @@
   {{ if get $components "matcher" }}
     {{/* This is only valid when rendering the central-services chart. */}}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
-    {{- if eq $.Chart.Name "stackrox-central-services" -}}
-      {{/* Only generate certificate when installing central-services. */}}
-      {{- if kindIs "invalid" $._rox.scannerV4.matcher.serviceTLS.generate }}
-        {{/* We need special handling here, because 'generate' will default to 'false' on upgrades. */}}
-        {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
-        {{- if $.Release.IsUpgrade -}}
-          {{- $lookupOut := dict -}}
-          {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "scanner-v4-matcher-tls") -}}
-          {{- if not $lookupOut.result -}}
-            {{/* If generate=null and the resource does not exist yet, attempt to create it. */}}
-            {{/* If lookup is not possible (e.g. in the operator), then 'generate' needs to be set correctly. */}}
-            {{- $_ := set $._rox.scannerV4.matcher.serviceTLS "generate" true -}}
-          {{- end -}}
-        {{- end }}
+    {{- if kindIs "invalid" $._rox.scannerV4.matcher.serviceTLS.generate }}
+      {{/* We need special handling here, because 'generate' will default to 'false' on upgrades. */}}
+      {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
+      {{- if $.Release.IsUpgrade -}}
+        {{- $lookupOut := dict -}}
+        {{- $_ := include "srox.safeLookup" (list $ $lookupOut "v1" "Secret" $.Release.Namespace "scanner-v4-matcher-tls") -}}
+        {{- if not $lookupOut.result -}}
+          {{/* If generate=null and the resource does not exist yet, attempt to create it. */}}
+          {{/* If lookup is not possible (e.g. in the operator), then 'generate' needs to be set correctly. */}}
+          {{- $_ := set $._rox.scannerV4.matcher.serviceTLS "generate" true -}}
+        {{- end -}}
       {{- end }}
-      {{ $cryptoSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4-matcher" }}
-      {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
-    {{- end -}}
+    {{- end }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4-matcher" }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
   {{ end }}
 
   {{ if or (get $components "indexer") (get $components "matcher") }}
