@@ -56,17 +56,18 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 		"AND (display_name ILIKE '%%' OR external_cluster_id ILIKE '%%' OR cluster_id ILIKE '%%')"
 
 	for {
+		// As an alternative, there's also the clustermgmt API. However, during testing the subscription API
+		// performed better on queries. The console also favors the subscription API for creating the list view.
 		resp, err := c.conn.AccountsMgmt().V1().Subscriptions().List().Size(100).Page(page).Search(subscriptionSearch).SendContext(ctx)
 		if err != nil {
 			return nil, pkgErrors.Wrap(err, "retrieving cluster subscriptions")
 		}
 		total = resp.Total()
 		subs = append(subs, resp.Items().Slice()...)
-		// We've fetched all clusters
 		if len(subs) == total {
+			// We've fetched all clusters.
 			break
 		}
-		// Increase the page.
 		page++
 	}
 
@@ -80,6 +81,7 @@ func (c *ocmClient) mapToDiscoveredClusters(subs []*accountsmgmtv1.Subscription)
 		createdTime, err := gogoProto.TimestampProto(sub.CreatedAt())
 		if err != nil {
 			createClusterErrs = errors.Join(createClusterErrs, errox.InvariantViolation.New("converting timestamp").CausedBy(err))
+			continue
 		}
 		clusters = append(clusters, &discoveredclusters.DiscoveredCluster{
 			ID:                sub.ExternalClusterID(),
@@ -122,7 +124,6 @@ func getProviderType(sub *accountsmgmtv1.Subscription) storage.DiscoveredCluster
 	case "azure":
 		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE
 	default:
-
 		// For older clusters, the cloud provider ID may not be specified. In some cases we can infer the provider type
 		// from the cluster type.
 		clusterType := getClusterMetadataType(sub)
