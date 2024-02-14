@@ -88,8 +88,13 @@ sensor:
     # sensor reaching out to a scanner instance.
     # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
     enabled: null # bool
+  localImageScanningV4:
+    # Enables the local image scanning feature in Sensor, using Scanner V4. This disabled if local image scanning should
+    # not be used to prevent sensor reaching out to a scanner instance.
+    # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
+    enabled: null # bool
 admissionControl:
-  listenOnCreates: null # bool
+  listenOnCreates: null # bools
   listenOnUpdates: null # bool
   listenOnEvents:  null # bool
   dynamic:

@@ -31,6 +31,8 @@ sensor:
   endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
   localImageScanning:
     enabled: false
+  localImageScanningV4:
+    enabled: false
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:

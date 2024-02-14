@@ -116,7 +116,7 @@ spec:
           value: {{ quote ._rox._configFP }}
         [<- end >]
         [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
-        {{- if ._rox._scannerV4Enabled }}
+        {{- if ._rox.sensor.localImageScanningV4.enabled }}
         - name: ROX_SCANNER_V4_GRPC_ENDPOINT
           value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
         - name: ROX_SCANNER_V4

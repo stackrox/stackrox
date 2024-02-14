@@ -298,7 +298,7 @@ already activated, we let `scanner.disable: false` have the implicit side-effect
 {{ end }}
 
 {{ if ._rox.scannerV4._indexerEnabled }}
-  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+  {{ $_ := set $._rox.sensor.localImageScanningV4 "enabled" "true" }}
 [</* Due to historical reasons the image specifications for the secured-cluster-services chart
      are not found under <component-name>.image, but instead under image.<image identifier>.
      Since the image setup code in srox.scannerV4Init configures scannerV4.<scanner V4 component name>

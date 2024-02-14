@@ -176,7 +176,7 @@
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
-    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $._rox.sensor.localImageScanningV4 "enabled" "true" }}
     {{ $_ := set $components "indexer" false }}
     {{/* Matcher on secured-cluster is unsupported, but just in case make sure it is disabled. */}}
     {{ $_ := set $components "matcher" false }}

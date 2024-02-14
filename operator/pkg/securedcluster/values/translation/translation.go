@@ -194,8 +194,12 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scanne
 		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
 	}
 
-	if scannerAutosense.EnableLocalImageScanning || scannerV4Autosense.EnableLocalImageScanning {
+	if scannerAutosense.EnableLocalImageScanning {
 		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(true))
+	}
+
+	if scannerV4Autosense.EnableLocalImageScanning {
+		sv.SetPathValue("localImageScanningV4.enabled", strconv.FormatBool(true))
 	}
 
 	return &sv

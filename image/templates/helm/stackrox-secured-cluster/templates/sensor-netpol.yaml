@@ -22,7 +22,7 @@ spec:
       - podSelector:
           matchLabels:
             app: admission-control
-{{ if ._rox.sensor.localImageScanning.enabled }}
+{{ if or ._rox.sensor.localImageScanning.enabled ._rox.sensor.localImageScanningV4.enabled }}
       - podSelector:
           matchLabels:
             app: scanner
