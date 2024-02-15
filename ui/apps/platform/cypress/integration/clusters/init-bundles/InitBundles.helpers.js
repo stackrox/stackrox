@@ -2,7 +2,7 @@ import { interactAndWaitForResponses } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
 
 const pagePath = '/main/clusters/init-bundles';
-const formSearch = '?action=create';
+const formAction = '?action=create';
 
 // routeMatcherMap
 
@@ -21,7 +21,7 @@ const routeMatcherMapForInitBundles = {
 
 export function assertInitBundleForm() {
     cy.location('pathname').should('eq', pagePath);
-    cy.location('search').should('eq', formSearch);
+    cy.location('search').should('eq', formAction);
     cy.get('h1:contains("Create bundle")');
 }
 
@@ -100,7 +100,7 @@ export function interactAndWaitForRevokeBundle(interactionCallback, staticRespon
 // visit
 
 export function visitInitBundleForm() {
-    visit(`${pagePath}${formSearch}`);
+    visit(`${pagePath}${formAction}`);
 
     assertInitBundleForm();
 }
