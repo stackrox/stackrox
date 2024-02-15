@@ -14,7 +14,8 @@ jobs:
   e2e-run:
     runs-on: ubuntu-latest
     env:
-      SCANNER_E2E_IMAGE_TAG: 4.3.x-1163-g61a55af9c8
+      # 4.3.x-1163-g61a55af9c8
+      SCANNER_E2E_IMAGE_TAG: 4.3.x-1165-g862a40727a
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +35,9 @@ jobs:
           
       - name: Deploy chart
         run: |
-          make tag
+          v="${{ runner.temp }}"/pgdata
+          mkdir -m 777 -p "$v"
+
           while sleep 2; do
               kubectl -n stackrox get pod
               [ $(( c++ % 5 )) -eq 0 ] && {
@@ -43,12 +46,9 @@ jobs:
                   kubectl -n stackrox logs deployment/scanner-v4-db init-db || true                  
               }
           done&
-          v="${{ runner.temp }}"/pgdata
-          mkdir -p "$v"
-          chmod 777 $v
-          ls -ld $v
+          p=$!
           make -C scanner e2e-deploy db-host-path="$v"
-          kill %1
+          kill -9 $p
       - name: Services
         run: |
           minikube service list

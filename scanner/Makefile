@@ -381,7 +381,6 @@ e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	helm $(if $(debug),template --debug,upgrade --install) $(release) $< \
 	    --namespace $(namespace) \
 	    --atomic \
-	    --wait-for-jobs \
 	    --timeout 2h \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \
