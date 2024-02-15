@@ -74,7 +74,6 @@ class SummaryTest extends BaseSpecification {
         expect:
         "verify Node Details"
         assert stackroxNodes.size() == orchestratorNodes.size()
-        Javers javers = JaversBuilder.javers().build()
         for (Node stackroxNode : stackroxNodes) {
             objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
             assert stackroxNode.clusterId == ClusterService.getClusterId()
