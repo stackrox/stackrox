@@ -17,7 +17,6 @@ message ComplianceIntegration {
   string namespace = 5;
   // Collection of errors that occurred while trying to obtain compliance operator health info.
   repeated string status_errors = 6;
-  bool read_only = 7;
 }
 
 message ComplianceIntegrationStatusRequest {

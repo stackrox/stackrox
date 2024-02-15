@@ -33,7 +33,6 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
-				ReadOnly:            true,
 			},
 			expected: &apiV2.ComplianceIntegration{
 				Id:           uuid.NewDummy().String(),
@@ -42,7 +41,6 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				ClusterName:  mockClusterName,
 				Namespace:    fixtureconsts.Namespace1,
 				StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
-				ReadOnly:     true,
 			},
 			clusterError: false,
 		},

@@ -243,9 +243,6 @@
             "type": "string"
           },
           "description": "Collection of errors that occurred while trying to obtain compliance operator health info."
-        },
-        "readOnly": {
-          "type": "boolean"
         }
       },
       "title": "Next Tag: 8"

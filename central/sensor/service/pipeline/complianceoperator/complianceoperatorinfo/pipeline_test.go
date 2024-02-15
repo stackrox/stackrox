@@ -56,7 +56,6 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
 			TotalReadyPods: 2,
 		},
-		ReadOnly: true,
 	}
 
 	statusErrors := []string{"compliance operator not ready.  Only 2 pods are ready when 5 are desired."}
@@ -65,7 +64,6 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 		ClusterId:           fixtureconsts.Cluster1,
 		ComplianceNamespace: fixtureconsts.Namespace1,
 		StatusErrors:        statusErrors,
-		ReadOnly:            true,
 	}
 
 	suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)

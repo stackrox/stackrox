@@ -45,7 +45,6 @@ type expectedInfo struct {
 	namespace      string
 	desired, ready int32
 	error          string
-	readOnly       bool
 }
 
 func (s *UpdaterTestSuite) SetupSuite() {
@@ -84,7 +83,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", false,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
 }
 
@@ -96,7 +95,7 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", false,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
 }
 
@@ -114,7 +113,7 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", false,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
 }
 
@@ -138,26 +137,26 @@ func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
 	})
 }
 
-func (s *UpdaterTestSuite) TestDetectSensorReadOnlyAccess() {
+func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissions() {
 	ds := buildComplianceOperator(defaultNS)
 
 	s.createCO(ds)
 
-	// Test sensor has write access
+	// Test sensor has all * access to compliance.openshift.io
 
 	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
 	s.prependSSAReactorToFakeClient(true)
 
-	actual := s.getInfo(1, 1*time.Minute)
-	s.Assert().False(actual.ReadOnly, "expected compliance integration to have write access")
+	actualSuccess := s.getInfo(1, 1*time.Millisecond)
+	s.NotContains(actualSuccess.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
 
-	// Test has only read access
+	// Test Sensor has not all (*) access to compliance.openshift.io
 
 	// Prepend another reactor to return a SelfSubjectAccessReview without write access.
 	s.prependSSAReactorToFakeClient(false)
 
-	actualReadOnly := s.getInfo(1, 1*time.Minute)
-	s.Assert().True(actualReadOnly.ReadOnly, "expected compliance integration to be read only")
+	actualError := s.getInfo(1, 1*time.Millisecond)
+	s.Assert().Contains(actualError.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
 }
 
 // mockRequiredResources creates a list of mock required resources for testing.
@@ -330,7 +329,6 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 		Version:     expected.version,
 		Namespace:   expected.namespace,
 		StatusError: expected.error,
-		ReadOnly:    expected.readOnly,
 	}
 
 	if expected.desired > 0 {

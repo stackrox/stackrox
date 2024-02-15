@@ -166,8 +166,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		}
 	}
 
-	isReadOnly, err := checkReadOnlyComplianceOperatorAccess(u.client)
-	if err != nil {
+	if err := checkWriteAccess(u.client); err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
 		}
@@ -181,8 +180,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
 			TotalReadyPods: complianceOperator.Status.ReadyReplicas,
 		},
-		Version:  version,
-		ReadOnly: isReadOnly,
+		Version: version,
 	}
 
 	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
@@ -198,8 +196,8 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	return info
 }
 
-// checkReadOnlyComplianceOperatorAccess checks if Sensor has permissions to write to compliance operator CRs.
-func checkReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, error) {
+// checkWriteAccess checks if Sensor has permissions to write to compliance operator CRs.
+func checkWriteAccess(client kubernetes.Interface) error {
 	sac := &v1.SelfSubjectAccessReview{
 		Spec: v1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &v1.ResourceAttributes{
@@ -212,9 +210,13 @@ func checkReadOnlyComplianceOperatorAccess(client kubernetes.Interface) (bool, e
 
 	response, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sac, metav1.CreateOptions{})
 	if err != nil {
-		return true, errors.Wrap(err, "could not perform compliance operator access review")
+		return errors.Wrap(err, "could not perform compliance operator access review")
 	}
-	return !response.Status.Allowed, nil
+
+	if !response.Status.Allowed {
+		return errors.New("Sensor cannot write compliance.openshift.io API group resources. Please check Sensor's RBAC permissions.")
+	}
+	return nil
 }
 
 func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {

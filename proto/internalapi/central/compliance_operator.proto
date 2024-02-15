@@ -21,7 +21,6 @@ message ComplianceOperatorInfo {
 
   // Collection of errors that occurred while trying to obtain compliance health info.
   string status_error = 5;
-  bool read_only = 6;
 }
 
 message EnableComplianceRequest {

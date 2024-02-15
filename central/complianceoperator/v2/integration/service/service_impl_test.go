@@ -94,7 +94,6 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 						ClusterName:  mockClusterName,
 						Namespace:    fixtureconsts.Namespace1,
 						StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
-						ReadOnly:     true,
 					},
 				},
 			}
@@ -108,7 +107,6 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 					ClusterId:           fixtureconsts.Cluster1,
 					ComplianceNamespace: fixtureconsts.Namespace1,
 					StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
-					ReadOnly:            true,
 				},
 				}, nil).Times(1)
 
