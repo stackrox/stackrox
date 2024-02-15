@@ -38,8 +38,7 @@ export function assertInitBundlesPage() {
 // interact
 
 /**
- * Visit init bundles by interaction from another container.
- * Filter or sort init bundles table.
+ * Visit init bundles or init bundle page.
  *
  * @param {function} interactionCallback
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
