@@ -41,7 +41,7 @@ jobs:
           wait_deployment() {
               local ns
               local name
-              ns="${1:?missing required arg 'ns'}
+              ns="${1:?missing required arg 'ns'}"
               name="${1:?missing required arg 'name'}"
               while ! kubectl wait -n "$ns" --for=condition=available --timeout=5s deployment/"$name"; do
                   echo "Deployment $name is not ready. Checking status..."
