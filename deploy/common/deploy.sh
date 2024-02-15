@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -eoux pipefail
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-pushd "$DIR"
+#pushd "$DIR"
 
 export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-"$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)"}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
