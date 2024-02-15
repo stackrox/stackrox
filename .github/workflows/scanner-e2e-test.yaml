@@ -58,10 +58,10 @@ jobs:
           kubectl -n stackrox describe pods -l app=scanner-v4 || true
           kubectl -n stackrox logs -l app=scanner-v4 --all-containers=true || true
 
-      - name: Services
-        run: |
-          minikube service -n stackrox --all
-
       - name: Run tests
         run: |
-          make -C scanner e2e-run
+          kubectl -n stackrox expose deployment scanner-v4 --type=NodePort --port=8443
+          kubectl -n stackrox get svc
+          url=$(minikube service -n stackrox scanner-v4 --url)
+          echo $url
+          make -C scanner e2e-run matcher-addr=${url#http://} indexer-addr=${url#http://}
