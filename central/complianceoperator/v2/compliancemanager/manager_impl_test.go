@@ -276,6 +276,21 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			isErrorTest: true,
 			expectedErr: "The scan configuration already exists and cannot be added.  ID \"mockScanID\" and name \"mockScan\"",
 		},
+		{
+			desc:        "Creating scan configuration with invalid cluster ID fails",
+			testRequest: getTestRecNoID(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
+				suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("", false, nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: "Unable to save scan configuration status for scan named \"mockScan\": could not pull config for cluster \"aaaaaaaa-bbbb-4011-0000-111111111111\" because it does not exist",
+		},
 	}
 	for _, tc := range cases {
 		suite.T().Run(tc.desc, func(t *testing.T) {

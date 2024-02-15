@@ -223,7 +223,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		err = m.updateClusterStatus(ctx, scanRequest.GetId(), clusterID, status)
 		if err != nil {
 			log.Error(err)
-			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanConfigName())
+			return nil, errors.Wrapf(err, "Unable to save scan configuration status for scan named %q", scanRequest.GetScanConfigName())
 		}
 	}
 
