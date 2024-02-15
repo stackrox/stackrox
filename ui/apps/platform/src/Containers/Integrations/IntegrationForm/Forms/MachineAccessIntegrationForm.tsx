@@ -42,7 +42,7 @@ export type MachineAccessConfig = {
 
 export const validationSchema = yup.object().shape({
     type: yup.string().trim().required('Type is required.'),
-    tokenExpirationDuration: yup.string().trim().required('Token expiration duration is required'),
+    tokenExpirationDuration: yup.string().trim().required('Token lifetime is required'),
     mappings: yup
         .array()
         .of(
