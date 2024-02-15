@@ -31,5 +31,4 @@ jobs:
       - name: Deploy E2E
         run: |
           make tag
-          echo $SCANNER_E2E_IMAGE_TAG
-          make -C scanner e2e-deploy db-host-path=/data/scanner-v4-db
+          make -C scanner e2e db-host-path=/data/scanner-v4-db
