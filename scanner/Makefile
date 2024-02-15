@@ -307,15 +307,41 @@ $(certs-d)/%/.verified: $(certs-d)/%/cert.pem
 # E2E vars
 # ========
 
-SCANNER_E2E_IMAGE_TAG ?= $(TAG)
-SCANNER_E2E_NAMESPACE ?= $(SCANNER_NAMESPACE)
+# Images
+# ------
 
-e2e-d         := e2etests
-e2e-chart     := $(e2e-d)/helmchart
-e2e-namespace := $(SCANNER_E2E_NAMESPACE)
-e2e-image-tag := $(SCANNER_E2E_IMAGE_TAG)
-e2e-go-tag    := e2etests
-e2e-timeout   := 20m
+SCANNER_E2E_IMAGE_REGISTRY ?= quay.io/stackrox-io
+SCANNER_E2E_IMAGE_NAME     ?=
+SCANNER_E2E_IMAGE_TAG      ?= $(TAG)
+
+SCANNER_E2E_DB_IMAGE_REGISTRY ?= $(SCANNER_E2E_IMAGE_REGISTRY)
+SCANNER_E2E_DB_IMAGE_NAME     ?= $(or $(SCANNER_E2E_IMAGE_NAME),scanner-v4-db)
+SCANNER_E2E_DB_IMAGE_TAG      ?= $(SCANNER_E2E_IMAGE_TAG)
+
+SCANNER_E2E_SCANNER_IMAGE_REGISTRY ?= $(SCANNER_E2E_IMAGE_REGISTRY)
+SCANNER_E2E_SCANNER_IMAGE_NAME     ?= $(or $(SCANNER_E2E_IMAGE_NAME),scanner-v4)
+SCANNER_E2E_SCANNER_IMAGE_TAG      ?= $(SCANNER_E2E_IMAGE_TAG)
+
+# Credentials
+# ---------
+
+SCANNER_E2E_QUAY_USERNAME ?=
+SCANNER_E2E_QUAY_PASSWORD ?=
+
+SCANNER_E2E_REDHAT_USERNAME ?=
+SCANNER_E2E_REDHAT_PASSWORD ?=
+
+SCANNER_E2E_DOCKER_USERNAME ?=
+SCANNER_E2E_DOCKER_PASSWORD ?=
+
+# E2E rules
+# =========
+
+e2e-d            := e2etests
+e2e-chart-d      := $(e2e-d)/helmchart
+e2e-files-d      := $(e2e-chart-d)/files
+e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
+e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
 
 e2e-conf-files := db-postgresql.conf \
                   db-pg_hba.conf
@@ -326,27 +352,60 @@ e2e-certs := ca.pem \
              scanner-v4-db-key.pem \
              scanner-v4-db-cert.pem
 
-e2e-files-d      := $(e2e-chart)/files
-e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
-e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
-
-# E2E rules
-# =========
-
 .PHONY: e2e-deploy clean-e2e
 
-e2e-deploy: $(e2e-conf-files-t) $(e2e-certs-t)
-	@echo "+ $@" $(e2e-image-tag)
-	$(SILENT)-kubectl create namespace $(e2e-namespace)
-	helm upgrade scanner-v4-e2e $(e2e-chart) \
+e2e-deploy: namespace := $(SCANNER_E2E_NAMESPACE)
+e2e-deploy: release   := scanner-v4-e2e
+
+e2e-deploy: registry :=
+e2e-deploy: name     := 
+e2e-deploy: tag      :=
+
+e2e-deploy: db-registry := $(or $(registry),$(SCANNER_E2E_DB_IMAGE_REGISTRY))
+e2e-deploy: db-name     := $(or $(name),$(SCANNER_E2E_DB_IMAGE_NAME))
+e2e-deploy: db-tag      := $(or $(tag),$(SCANNER_E2E_DB_IMAGE_TAG))
+
+e2e-deploy: scanner-registry := $(or $(registry),$(SCANNER_E2E_SCANNER_IMAGE_REGISTRY))
+e2e-deploy: scanner-name     := $(or $(name),$(SCANNER_E2E_SCANNER_IMAGE_NAME))
+e2e-deploy: scanner-tag      := $(or $(tag),$(SCANNER_E2E_SCANNER_IMAGE_TAG))
+
+# If set will set DB's volume under the specified host path. 
+e2e-deploy: db-host-path :=
+
+e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
+	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
+	$(SILENT)-kubectl create namespace $(namespace)
+	helm upgrade $(release) $< \
 	    --install \
-	    --namespace $(e2e-namespace) \
-	    --set image.tag="$(e2e-image-tag)"
+	    --namespace $(namespace) \
+	    --set app.db.image.registry=$(db-registry) \
+	    --set app.db.image.name=$(db-name) \
+	    --set app.db.image.tag=$(db-tag) \
+	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
+	    --set app.scanner.image.registry=$(scanner-registry) \
+	    --set app.scanner.image.name=$(scanner-name) \
+	    --set app.scanner.image.tag=$(scanner-tag)
 
 .PHONY: e2e-run
+
+e2e-run: matcher-addr := :8443
+e2e-run: indexer-addr := :8443
+
+e2e-run: go-tag  := scanner_e2e_tests
+e2e-run: timeout := 20m
+
+e2e-run: export SCANNER_E2E_MATCHER_ADDRESS=$(matcher-addr)
+e2e-run: export SCANNER_E2E_INDEXER_ADDRESS=$(indexer-addr)
+e2e-run: export QUAY_RHACS_ENG_RO_USERNAME=$(SCANNER_E2E_QUAY_USERNAME)
+e2e-run: export QUAY_RHACS_ENG_RO_PASSWORD=$(SCANNER_E2E_QUAY_PASSWORD)
+e2e-run: export REDHAT_USERNAME=$(SCANNER_E2E_REDHAT_USERNAME)
+e2e-run: export REDHAT_PASSWORD=$(SCANNER_E2E_REDHAT_PASSWORD)
+e2e-run: export DOCKER_USERNAME=$(SCANNER_E2E_DOCKER_USERNAME)
+e2e-run: export DOCKER_PASSWORD=$(SCANNER_E2E_DOCKER_PASSWORD)
+
 e2e-run: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(e2e-go-tag) -count=1 -timeout=$(e2e-timeout) -v ./$(e2e-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(go-tag) -count=1 -timeout=$(timeout) -v ./$(e2e-d)/...
 
 .PHONY: e2e
 e2e: e2e-deploy e2e-run
