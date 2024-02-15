@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -19,10 +20,11 @@ type SecretInformer struct {
 	secretName string
 
 	k8sClient  kubernetes.Interface
+	handler    cache.ResourceEventHandlerRegistration
 	onAddFn    func(*v1.Secret)
 	onUpdateFn func(*v1.Secret)
 	onDeleteFn func()
-	stopCh     chan struct{}
+	stopCh     concurrency.Signal
 }
 
 var _ cache.ResourceEventHandler = &SecretInformer{}
@@ -43,7 +45,7 @@ func NewSecretInformer(
 		onAddFn:    onAddFn,
 		onUpdateFn: onUpdateFn,
 		onDeleteFn: onDeleteFn,
-		stopCh:     make(chan struct{}),
+		stopCh:     concurrency.NewSignal(),
 	}
 }
 
@@ -55,18 +57,31 @@ func (c *SecretInformer) Start() error {
 	})
 	sif := informers.NewSharedInformerFactoryWithOptions(c.k8sClient, resyncTime, nsOption, labelOption)
 
-	if _, err := sif.Core().V1().Secrets().Informer().AddEventHandler(c); err != nil {
-		return errors.Wrap(err, "could not add event handler")
+	handler, err := sif.Core().V1().Secrets().Informer().AddEventHandler(c)
+	if err != nil {
+		return errors.Wrapf(err,
+			"could not add event handler to informer for secret %q/%q",
+			c.namespace,
+			c.secretName,
+		)
 	}
-	sif.Start(c.stopCh)
-	sif.WaitForCacheSync(c.stopCh)
-
+	c.handler = handler
+	sif.Start(c.stopCh.WaitC())
 	return nil
 }
 
 // Stop ends the secret informer loop.
 func (c *SecretInformer) Stop() {
-	close(c.stopCh)
+	c.stopCh.Signal()
+}
+
+// HasSynced reports if the informer handler has synced, meaning it has had
+// all items in the initial list delivered.
+func (c *SecretInformer) HasSynced() bool {
+	if c == nil || c.handler == nil {
+		return false
+	}
+	return c.handler.HasSynced()
 }
 
 // OnAdd is called when the secret is added.

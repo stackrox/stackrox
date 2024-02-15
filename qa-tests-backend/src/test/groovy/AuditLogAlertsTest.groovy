@@ -13,6 +13,7 @@ import services.ClusterService
 import services.PolicyService
 
 import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
@@ -21,6 +22,9 @@ import util.Env
 
 // Audit Log alerts are only supported on OpenShift 4
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
+// Some OpenShift cluster flavors do not provide access to the audit log e.g.
+// hosted control planes. ROX-22448
+@IgnoreIf({ Env.getDisableAuditLogAlertsTest() == "true" })
 @Stepwise
 @Tag("PZ")
 class AuditLogAlertsTest extends BaseSpecification {

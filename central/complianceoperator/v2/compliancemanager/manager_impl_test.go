@@ -2,6 +2,7 @@ package compliancemanager
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ type processScanConfigTestCase struct {
 	desc        string
 	setMocks    func()
 	isErrorTest bool
-	expectedErr error
+	expectedErr string
 	testContext context.Context
 	clusters    []string
 	testRequest *storage.ComplianceOperatorScanConfigurationV2
@@ -204,7 +205,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(getTestRec(), nil).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Scan configuration named %q already exists.", mockScanName),
+			expectedErr: fmt.Sprintf("Scan configuration named %q already exists.", mockScanName),
 		},
 		{
 			desc:        "Scan configuration has duplicate profiles",
@@ -216,7 +217,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName),
+			expectedErr: fmt.Sprintf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName),
 		},
 		{
 			desc:        "Unable to store scan configuration",
@@ -229,7 +230,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(errors.Errorf("Unable to save scan config named %q", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Unable to save scan config named %q", mockScanName),
+			expectedErr: fmt.Sprintf("Unable to save scan configuration named %q", mockScanName),
 		},
 		{
 			desc:        "Error from sensor",
@@ -254,7 +255,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			setMocks: func() {
 			},
 			isErrorTest: true,
-			expectedErr: errors.New("access to resource denied"),
+			expectedErr: "access to resource denied",
 		},
 		{
 			desc:        "Error due to only having write access to one of the clusters",
@@ -264,7 +265,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			setMocks: func() {
 			},
 			isErrorTest: true,
-			expectedErr: errors.New("access to resource denied"),
+			expectedErr: "access to resource denied",
 		},
 		{
 			desc:        "Failure try to re-add a scan configuration",
@@ -273,7 +274,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks:    func() {},
 			isErrorTest: true,
-			expectedErr: errors.New("The scan configuration already exists and cannot be added.  ID \"mockScanID\" and name \"mockScan\""),
+			expectedErr: "The scan configuration already exists and cannot be added.  ID \"mockScanID\" and name \"mockScan\"",
 		},
 	}
 	for _, tc := range cases {
@@ -282,7 +283,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 
 			config, err := suite.manager.ProcessScanRequest(tc.testContext, tc.testRequest, tc.clusters)
 			if tc.isErrorTest {
-				suite.Require().Error(err, tc.expectedErr)
+				suite.Require().ErrorContains(err, tc.expectedErr)
 				suite.Require().Nil(config)
 			} else {
 				suite.Require().NoError(err)
@@ -301,7 +302,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks:    func() {},
 			isErrorTest: true,
-			expectedErr: errors.New("Scan Configuration ID is required for an update"),
+			expectedErr: "Scan Configuration ID is required for an update",
 		},
 		{
 			desc:        "Scan configuration has duplicate profiles",
@@ -313,7 +314,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName),
+			expectedErr: fmt.Sprintf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName),
 		},
 		{
 			desc:        "Unable to store scan configuration",
@@ -326,7 +327,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(errors.Errorf("Unable to save scan config named %q", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Unable to save scan config named %q", mockScanName),
+			expectedErr: fmt.Sprintf("Unable to save scan configuration named %q", mockScanName),
 		},
 		{
 			desc:        "Error from sensor",
@@ -351,7 +352,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			setMocks: func() {
 			},
 			isErrorTest: true,
-			expectedErr: errors.New("access to resource denied"),
+			expectedErr: fmt.Sprintf("Scan Configuration ID is required for an update, scan_config_name:%q profiles:<profile_name:\"ocp4-cis\" > ", mockScanName),
 		},
 		{
 			desc:        "Error due to only having write access to one of the clusters",
@@ -361,7 +362,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			setMocks: func() {
 			},
 			isErrorTest: true,
-			expectedErr: errors.New("access to resource denied"),
+			expectedErr: fmt.Sprintf("Scan Configuration ID is required for an update, scan_config_name:%q profiles:<profile_name:\"ocp4-cis\" > ", mockScanName),
 		},
 		{
 			desc:        "Successful update of scan configuration",
@@ -402,7 +403,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 
 			config, err := suite.manager.UpdateScanRequest(tc.testContext, tc.testRequest, tc.clusters)
 			if tc.isErrorTest {
-				suite.Require().Error(err, tc.expectedErr)
+				suite.Require().ErrorContains(err, tc.expectedErr)
 				suite.Require().Nil(config)
 			} else {
 				suite.Require().NoError(err)
@@ -430,7 +431,7 @@ func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
 					errors.New("Unable to delete scan configuration")).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.New("Unable to delete scan configuration"),
+			expectedErr: "Unable to delete scan configuration",
 		},
 		{
 			desc: "Empty scan configuration name",
@@ -439,7 +440,7 @@ func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
 					nil).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Unable to find scan configuration name for ID %q", mockScanID),
+			expectedErr: fmt.Sprintf("Unable to find scan configuration name for ID %q", mockScanID),
 		},
 	}
 	for _, tc := range cases {
@@ -449,6 +450,7 @@ func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
 			err := suite.manager.DeleteScan(suite.hasWriteCtx, getTestRec().Id)
 			if tc.isErrorTest {
 				suite.Require().NotNil(err)
+				suite.Require().ErrorContains(err, tc.expectedErr)
 			} else {
 				suite.Require().NoError(err)
 			}

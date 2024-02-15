@@ -141,6 +141,7 @@ func TestSecretInformer(t *testing.T) {
 			err := informer.Start()
 			require.NoError(t, err)
 			defer informer.Stop()
+			require.Eventually(t, informer.HasSynced, 5*time.Second, 100*time.Millisecond)
 			err = c.setupFn(k8sClient)
 			require.NoError(t, err)
 

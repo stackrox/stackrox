@@ -12,6 +12,7 @@ import {
     Modal,
 } from '@patternfly/react-core';
 
+import useAnalytics, { REVOKE_INIT_BUNDLE } from 'hooks/useAnalytics';
 import {
     ClusterInitBundle,
     ImpactedCluster,
@@ -25,6 +26,7 @@ export type RevokeBundleModalProps = {
 };
 
 function RevokeBundleModal({ initBundle, onCloseModal }: RevokeBundleModalProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const [errorMessage, setErrorMessage] = useState('');
     const [impactedClusters, setImpactedClusters] = useState<ImpactedCluster[]>(
         initBundle.impactedClusters
@@ -49,6 +51,7 @@ function RevokeBundleModal({ initBundle, onCloseModal }: RevokeBundleModalProps)
                     setHasMoreClusters(true);
                     setImpactedClusters(initBundleRevocationErrors[0].impactedClusters);
                 }
+                analyticsTrack(REVOKE_INIT_BUNDLE);
             })
             .catch((error) => {
                 setErrorMessage(getAxiosErrorMessage(error));
