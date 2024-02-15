@@ -60,8 +60,7 @@ jobs:
 
       - name: Services
         run: |
-          minikube service list
-          minikube -n stackrox service discover --url
+          minikube service -n stackrox --all
 
       - name: Run tests
         run: |
