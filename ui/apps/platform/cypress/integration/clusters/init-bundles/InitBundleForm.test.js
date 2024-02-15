@@ -43,7 +43,7 @@ describe('Cluster init bundles InitBundlesForm', () => {
             ).click();
         });
 
-        assertInitBundlePage();
+        assertInitBundlesPage();
     });
 
     it('creates, views, and then deletes a bundle', () => {
