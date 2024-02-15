@@ -265,7 +265,6 @@ class K8sRbacTest extends BaseSpecification {
                 assert b.labelsMap == binding.labels
                 // compareAnnotations() - asserts on difference
                 Helpers.compareAnnotations(binding.annotations, b.annotationsMap)
-                assert !diff
                 assert b.roleId == binding.roleRef.uid
                 assert b.subjectsCount == binding.subjects.size()
 
