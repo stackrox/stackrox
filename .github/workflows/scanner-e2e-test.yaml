@@ -13,6 +13,8 @@ on:
 jobs:
   e2e-run:
     runs-on: ubuntu-latest
+    env:
+      SCANNER_E2E_IMAGE_TAG: 4.3.x-1165-g862a40727a
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,8 +35,12 @@ jobs:
       - name: Deploy chart
         run: |
           make tag
-          make -C scanner e2e-deploy db-host-path=${{ github.workspace }}
-
+          t=$(mktemp)
+          while sleep 1; do
+              kubectl -n stackrox logs deployment/scanner-v4-db init-db -f
+          done&
+          make -C scanner e2e-deploy db-host-path=${{ runner.temp }}
+          kill %1
       - name: Services
         run: |
           minikube service list
