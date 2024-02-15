@@ -37,11 +37,11 @@ spec:
           value: "true"
         resources:
           limits:
-            cpu: 8
-            memory: 16Gi
-          requests:
             cpu: 4
-            memory: 15Gi
+            memory: 10Gi
+          requests:
+            cpu: 2
+            memory: 8Gi
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -66,11 +66,11 @@ spec:
           containerPort: 5432
         resources:
           limits:
-            cpu: 2
-            memory: 16Gi
+            cpu: 4
+            memory: 10Gi
           requests:
-            cpu: 1
-            memory: 15Gi
+            cpu: 2
+            memory: 8Gi
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -91,8 +91,7 @@ spec:
         hostPath:
           path: "{{ .Values.app.db.persistence.hostPath }}"
         {{- else }}
-        emptyDir:
-          medium: Memory
+        emptyDir: {}
         {{- end }}
       - name: tls-volume
         secret:

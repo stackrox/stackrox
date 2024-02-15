@@ -38,7 +38,7 @@ jobs:
           t=$(mktemp)
           while sleep 10; do
               kubectl -n stackrox get pod
-              kubectl -n stackrox logs deployment/scanner-v4-db init-db -f || true
+              [ $(( c++ % 10 )) -eq 0 ] && kubectl -n stackrox describe pod
           done&
           make -C scanner e2e-deploy db-host-path=${{ runner.temp }}
           kill %1
