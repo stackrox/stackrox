@@ -43,11 +43,10 @@ jobs:
               local name
               ns="${1:?missing required arg 'ns'}"
               name="${2:?missing required arg 'name'}"
-              while ! kubectl wait -n "$ns" --for=condition=available --timeout=5s deployment/"$name"; do
+              while ! kubectl wait -n "$ns" --for=condition=available --timeout=10s deployment/"$name"; do
                   echo "Deployment $name is not ready. Checking status..."
                   kubectl -n "$ns" describe deployment "$name" -n stackrox || true
-                  kubectl -n "$ns" get pods -n stackrox -l app="$name" -o jsonpath="{.items[*].metadata.name}" \
-                      | xargs -I {} kubectl logs {} -n stackrox --tail=10
+                  kubectl logs -n "$ns" -l app="$name" --all-containers=true --tail=10 || true
               done
               echo "Deployment $name is ready" 
           }
