@@ -28,9 +28,9 @@ jobs:
         uses: medyagh/setup-minikube@master
         with:
           driver: none # baremetal
-
+          
       - name: Deploy E2E
         run: |
           make tag
           echo $SCANNER_E2E_IMAGE_TAG
-          make -C scanner e2e-deploy
+          make -C scanner e2e-deploy db-host-path=/data/scanner-v4-db
