@@ -39,7 +39,8 @@ jobs:
               kubectl -n stackrox get pod
               [ $(( c++ % 10 )) -eq 0 ] && {
                   kubectl -n stackrox describe pod
-                  kubectl -n stackrox logs deployment/scanner-v4-db
+                  kubectl -n stackrox logs deployment/scanner-v4-db db || true
+                  kubectl -n stackrox logs deployment/scanner-v4-db init-db || true                  
               }
           done&
           v="${{ runner.temp }}"/pgdata
