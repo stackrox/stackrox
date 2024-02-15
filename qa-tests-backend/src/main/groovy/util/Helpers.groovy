@@ -176,7 +176,7 @@ class Helpers {
         return false
     }
 
-    static boolean compareAnnotations(Map<String, String> orchestratorAnnotations, 
+    static boolean compareAnnotations(Map<String, String> orchestratorAnnotations,
                                       Map<String, String> stackroxAnnotations) {
         if (stackroxAnnotations == orchestratorAnnotations) {
             return true
@@ -189,7 +189,7 @@ class Helpers {
                 // Assert that the stackrox node has an entry for that annotation
                 assert stackroxTruncated[name].length() > 0
 
-                log.info "Removing long annotation: ${name}"
+                log.info "Removing long annotation: ${name} (${orchestratorTruncated[name].length()})"
                 // Remove the annotation because the logic for truncation tries to maintain words and
                 // is more complicated than we'd like to test
                 stackroxTruncated.remove(name)

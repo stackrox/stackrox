@@ -1,6 +1,7 @@
 package sampleScripts
 
 import common.Constants
+import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.Rbac
 import objects.K8sRole
 import objects.K8sRoleBinding
@@ -9,6 +10,7 @@ import orchestratormanager.OrchestratorType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import services.BaseService
+import services.NodeService
 import services.RbacService
 import util.Env
 import util.Helpers
@@ -48,7 +50,7 @@ for (Rbac.K8sRole stackroxRole : stackroxRoles) {
     }
     assert role
     role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-    Helpers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
+    assert Helpers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
 }
 
 def stackroxBindings = RbacService.getRoleBindings()
