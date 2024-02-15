@@ -16,12 +16,12 @@ import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
 
 const codeBlock = [
-    'helm install rhacs-secured-cluster-services rhacs/secured-cluster-services -n stackrox \\',
+    'helm install stackrox-secured-cluster-services rhacs/secured-cluster-services -n stackrox \\',
     '-f <path/to/Helm-values-cluster-init-bundle.yaml> \\',
     '--set clusterName=<name_of_the_secured_cluster> \\',
     '--set centralEndpoint=<endpoint_of_central_service> \\',
-    '--set imagePullSecrets.username=<your redhat.com username> \\',
-    '--set imagePullSecrets.password=<your redhat.com password>',
+    '--set imagePullSecrets.username=<your redhat.com developer account username> \\',
+    '--set imagePullSecrets.password=<your redhat.com developer account password>',
 ].join('\n');
 
 export type SecureClusterUsingHelmChartProps = {

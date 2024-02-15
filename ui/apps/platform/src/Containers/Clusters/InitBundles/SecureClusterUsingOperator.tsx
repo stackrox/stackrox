@@ -53,7 +53,13 @@ function SecureClusterUsingOperator({
                 <strong>SecuredCluster</strong> custom resource.
             </p>
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
-            <List component="ol">
+            <List component="ul">
+                <ListItem>
+                    <p>
+                        Download the YAML file for a cluster init bundle. You can use one bundle to
+                        secure multiple clusters.
+                    </p>
+                </ListItem>
                 <ListItem>
                     <p>
                         Use the Red Hat OpenShift Container Platform web console to install the
@@ -62,12 +68,6 @@ function SecureClusterUsingOperator({
                     <p>
                         Create a new Red Hat OpenShift Container Platform project for RHACS.{' '}
                         <strong>rhacs-operator</strong> is a good name choice.
-                    </p>
-                </ListItem>
-                <ListItem>
-                    <p>
-                        Download the YAML file for a cluster init bundle. You can use one bundle to
-                        secure multiple clusters.
                     </p>
                 </ListItem>
             </List>
@@ -111,7 +111,8 @@ function SecureClusterUsingOperator({
                                 following:
                             </p>
                             <ClipboardCopy>
-                                oc -n stackrox -f Operator-secrets-cluster-init-bundle.yaml
+                                oc create -n rhacs-operator -f
+                                Operator-secrets-cluster-init-bundle.yaml
                             </ClipboardCopy>
                         </ListItem>
                     </List>
