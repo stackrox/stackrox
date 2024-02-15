@@ -68,12 +68,12 @@ function ImportPolicyJSONError({
                 <ModalBoxBody>
                     {duplicateErrorsOnly
                         ? 'Address the errors below to continue importing policies'
-                        : 'Correct the file to address the errors listed below, and then import again.'}
+                        : 'Correct the errors that are listed, and then try to import again.'}
                     <Alert
                         title={
                             duplicateErrorsOnly
-                                ? 'Policies already exist'
-                                : 'Errors trying to import policies'
+                                ? 'Policy already exists'
+                                : 'Policy errors causing import failure'
                         }
                         variant="danger"
                         className="pf-u-mt-md"

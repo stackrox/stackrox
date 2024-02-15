@@ -303,7 +303,7 @@ function PoliciesTable({
                                             >
                                                 {`Disable policies (${numEnabled})`}
                                             </DropdownItem>,
-                                            <DropdownSeparator key="Separator" />,
+                                            <DropdownSeparator key="Separator-1" />,
                                             <DropdownItem
                                                 key="Enable notification"
                                                 component="button"
@@ -322,11 +322,11 @@ function PoliciesTable({
                                             >
                                                 Disable notification
                                             </DropdownItem>,
-                                            <DropdownSeparator key="Separator" />,
+                                            <DropdownSeparator key="Separator-2" />,
                                             <DropdownItem
                                                 key="Export policy"
                                                 component="button"
-                                                isDisabled={selectedPolicies.length < 1}
+                                                isDisabled={selectedPolicies.length === 0}
                                                 onClick={() =>
                                                     exportPoliciesHandler(selectedIds, onClearAll)
                                                 }
