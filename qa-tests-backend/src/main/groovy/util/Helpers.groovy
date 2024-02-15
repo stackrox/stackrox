@@ -176,10 +176,10 @@ class Helpers {
         return false
     }
 
-    static boolean compareAnnotations(Map<String, String> orchestratorAnnotations,
-                                      Map<String, String> stackroxAnnotations) {
+    static void compareAnnotations(Map<String, String> orchestratorAnnotations,
+                                   Map<String, String> stackroxAnnotations) {
         if (stackroxAnnotations == orchestratorAnnotations) {
-            return true
+            return
         }
 
         Map<String, String> orchestratorTruncated = orchestratorAnnotations.clone()
@@ -187,24 +187,26 @@ class Helpers {
         orchestratorAnnotations.keySet().each { name ->
             if (orchestratorTruncated[name].length() > Constants.STACKROX_ANNOTATION_TRUNCATION_LENGTH) {
                 // Assert that the stackrox node has an entry for that annotation
-                assert stackroxTruncated[name].length() > 0
+                assert stackroxTruncated.get(name) && stackroxTruncated[name].length() > 0
 
-                log.info "Removing long annotation: ${name} (${orchestratorTruncated[name].length()})"
                 // Remove the annotation because the logic for truncation tries to maintain words and
                 // is more complicated than we'd like to test
+                log.info "Removing long annotation value from comparison: " +
+                         "key: ${name}, length: ${orchestratorTruncated[name].length()}"
                 stackroxTruncated.remove(name)
                 orchestratorTruncated.remove(name)
             }
         }
 
         if (stackroxTruncated == orchestratorTruncated) {
-            return true
+            return
         }
 
-        log.info "There is an annotation difference - StackRox -v- Orchestrator:"
+        log.info "There is an annotation difference"
+        // Javers helps provide an understandable error in the test log
         Javers javers = JaversBuilder.javers().build()
-        log.info javers.compare(stackroxTruncated, orchestratorTruncated).prettyPrint()
-
-        return false
+        def diff = javers.compare(stackroxTruncated, orchestratorTruncated)
+        assert diff.changes.size() == 0
+        assert diff.changes.size() != 0 // should not get here
     }
 }
