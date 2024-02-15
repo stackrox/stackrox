@@ -235,7 +235,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				}, nil).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: errors.Errorf("Invalid profiles found in scan configuration: %q.", mockScanName),
+			expectedErr: fmt.Sprintf("Unable to create scan configuration named %q.", mockScanName),
 		},
 		{
 			desc:        "Scan configuration already exists",

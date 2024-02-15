@@ -193,17 +193,12 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
+	// Check if there are any existing clusters that have a scan configuration with any of profiles being referenced by the scan request.
 	// If so, then we cannot create the scan configuration.
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
-
-	// check if cluster is selected
-	if len(clusters) == 0 {
-		return nil, errors.Errorf("No clusters selected for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
@@ -212,7 +207,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	if len(returnedProfiles) != len(profiles) {
@@ -304,7 +299,7 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 	}
 }
 
-// validateProfiles checks if the profiles are valid and returns an error if not.
+// validateProfiles checks if the profiles are compatible and returns an error if not.
 // Check if node profiles have more than one product
 // ex. we can not have rhcos node profile and ocp node profile in the same scan configuration
 // as this is not allowed on Compliance Operator ScanSettingBinding
