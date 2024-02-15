@@ -7,7 +7,7 @@ import "gogoproto/gogo.proto";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next Tag: 7
+// Next Tag: 6
 message ComplianceIntegration {
   string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
   string version = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden,store"'];
