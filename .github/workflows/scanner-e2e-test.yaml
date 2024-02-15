@@ -21,13 +21,12 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
 
-      - uses: ./.github/actions/cache-go-dependencies
-
       - name: Start minikube
         id: minikube
         uses: medyagh/setup-minikube@master
         with:
           driver: none # baremetal
+          cache: false
           
       - name: Deploy E2E
         run: |
