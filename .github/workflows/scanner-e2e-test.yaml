@@ -34,7 +34,7 @@ jobs:
           memory: max
           
       - name: Deploy chart
-        id: deploy
+        id: deploy-chart
         run: |
           d="${{ runner.temp }}"/pgdata
           mkdir -m 777 -p "$d"
@@ -52,7 +52,7 @@ jobs:
           make -C scanner e2e-deploy db-host-path="$d"
 
       - name: Deploy failure logging
-        if: ${{ steps.deploy.outcome == 'failure' }}
+        if: failure()
         run: |
           kubectl -n stackrox describe pods -l app=scanner-v4-db || true
           kubectl -n stackrox logs -l app=scanner-v4-db --all-containers=true || true
