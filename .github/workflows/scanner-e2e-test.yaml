@@ -12,6 +12,7 @@ on:
   
 jobs:
   run-e2e:
+    runs-on: ubuntu-latest
     steps:
     - name: Start minikube
       id: minikube
