@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -37,6 +38,8 @@ var (
 			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
 		},
 	})
+
+	configNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*[a-z0-9]?$`)
 )
 
 // New returns a service object for registering with grpc.
@@ -72,6 +75,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
 	if req.GetScanName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	validName := configNameRegexp.MatchString(req.GetScanName())
+
+	if !validName {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
 	}
 
 	if err := validateScanConfiguration(req); err != nil {
