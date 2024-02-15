@@ -375,13 +375,16 @@ e2e-deploy: db-host-path :=
 # If set will dry run and debug helm.
 e2e-deploy: debug :=
 
+# Wait timeout for the E2E deployment to be successful.
+e2e-run: timeout := 15m
+
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
 	$(SILENT)-kubectl create namespace $(namespace)
 	helm $(if $(debug),template --debug,upgrade --install) $(release) $< \
 	    --namespace $(namespace) \
 	    --atomic \
-	    --timeout 2h \
+	    --timeout $(timeout) \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \
 	    --set app.db.image.tag=$(db-tag) \
@@ -396,7 +399,7 @@ e2e-run: matcher-addr := :8443
 e2e-run: indexer-addr := :8443
 
 e2e-run: go-tag  := scanner_e2e_tests
-e2e-run: timeout := 20m
+e2e-run: timeout := 30m
 
 e2e-run: export SCANNER_E2E_MATCHER_ADDRESS=$(matcher-addr)
 e2e-run: export SCANNER_E2E_INDEXER_ADDRESS=$(indexer-addr)

@@ -34,27 +34,33 @@ jobs:
           memory: max
           
       - name: Deploy chart
+        id: deploy
         run: |
-          v="${{ runner.temp }}"/pgdata
-          mkdir -m 777 -p "$v"
-
+          d="${{ runner.temp }}"/pgdata
+          mkdir -m 777 -p "$d"
           wait_deployment() {
               local ns
               local name
               ns="${1:?missing required arg 'ns'}"
               name="${2:?missing required arg 'name'}"
-              while ! kubectl wait -n "$ns" --for=condition=available --timeout=10s deployment/"$name"; do
-                  echo "Deployment $name is not ready. Checking status..."
-                  kubectl -n "$ns" describe deployment "$name" -n stackrox || true
-                  kubectl logs -n "$ns" -l app="$name" --all-containers=true --tail=10 || true
+              while ! kubectl -n "$ns" wait --for=condition=available --timeout=5m deployment/"$name"; do
+                  kubectl -n "$n" describe pods -l app="$name" || true
+                  kubectl -n "$n" logs -l app="$name" --all-containers=true || true
               done
               echo "Deployment $name is ready" 
           }
-
           wait_deployment stackrox scanner-v4 &
           wait_deployment stackrox scanner-v4-db &
-          make -C scanner e2e-deploy db-host-path="$v"
-          wait
+          make -C scanner e2e-deploy db-host-path="$d"
+
+      - name: Deploy failure logging
+        if: ${{ steps.deploy.outcome == 'failure' }}
+        run: |
+          kubectl -n stackrox describe pods -l app=scanner-v4-db || true
+          kubectl -n stackrox logs -l app=scanner-v4-db --all-containers=true || true
+          kubectl -n stackrox describe pods -l app=scanner-v4 || true
+          kubectl -n stackrox logs -l app=scanner-v4 --all-containers=true || true
+
       - name: Services
         run: |
           minikube service list
