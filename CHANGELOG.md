@@ -46,9 +46,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Secret, Secret Path
 - The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
   - Secret Type, Cert Expiration,Image Pull Secret Registry
-- The `/v1/availableAuthProviders` endpoint will soon require authentication and at least READ permission on the `Access` resource.
+- The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
-- The `/v1/tls-challenge` will soon require authentication, ensure that any flow interacting with these endpoints is authenticated going forward.
+- The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,
