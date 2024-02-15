@@ -13,6 +13,7 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
+import { hasFeatureFlag } from '../../helpers/features';
 
 const integrationSource = 'authProviders';
 
