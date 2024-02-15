@@ -257,3 +257,34 @@ func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 	}
 	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))
 }
+
+func (s *handlerTestSuite) TestCompareOfflineFileVersion() {
+	t := s.T()
+	var err error
+	tempFile, err = os.CreateTemp("", "manifest-*.json")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	jsonContent := `{
+		"version": "4.2",
+		"created": "2024-02-13T15:01:47+00:00"
+	}`
+	_, err = tempFile.WriteString(jsonContent)
+	s.Require().NoError(err)
+
+	err = tempFile.Close()
+	s.Require().NoError(err)
+
+	file, err := os.Open(tempFile.Name())
+	s.Require().NoError(err)
+	defer utils.IgnoreError(file.Close)
+
+	version := "4.2.x-nightly"
+	expectedResult := true
+	result, err := compareOfflineFileVersion(file, versionToCompare)
+	if err != nil || result != expectedResult {
+		t.Errorf("compareOfflineFileVersion(%q) = %t, %v; want %t, <nil>", versionToCompare, result, err, expectedResult)
+	}
+}

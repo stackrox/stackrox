@@ -3,6 +3,7 @@ package handler
 import (
 	"archive/zip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -11,6 +12,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -37,10 +40,16 @@ const (
 	definitionsBaseDir = "scannerdefinitions"
 
 	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
-	scannerDefsSubZipName = "scanner-defs.zip"
+	scannerDefsSubZipName   = "scanner-defs.zip"
+	scannerV4DefsSubZipName = "scanner-v4-defs.zip"
+	// scannerV4DefsPrefix helps to search the v4 offline zip bundle for CVEs
+	scannerV4DefsPrefix = "scanner-v4-defs"
 
 	// offlineScannerDefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner.
 	offlineScannerDefinitionBlobName = "/offline/scanner/" + scannerDefsSubZipName
+
+	// offlineScannerV4DefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner V4.
+	offlineScannerV4DefinitionBlobName = "/offline/scanner/" + scannerV4DefsSubZipName
 
 	scannerUpdateDomain    = "https://definitions.stackrox.io"
 	scannerUpdateURLSuffix = "diff.zip"
@@ -75,11 +84,16 @@ var (
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
+	minorVersion = regexp.MustCompile(`^\d+\.\d+`)
 )
 
 type requestedUpdater struct {
 	*updater
 	lastRequestedTime time.Time
+}
+
+type Manifest struct {
+	Version string `json:"version"`
 }
 
 // httpHandler handles HTTP GET and POST requests for vulnerability data.
@@ -136,7 +150,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	// If only file is requested, then this is request for Scanner v4 mapping file.
 	if fileName != "" && uuid == "" && v == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {
-			h.getV4(w, r, mappingUpdaterType, v4FileName)
+			h.getV4(r.Context(), w, r, mappingUpdaterType, v4FileName)
 			return
 		}
 		writeErrorNotFound(w)
@@ -144,7 +158,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	}
 	// If only version is provided, this is for Scanner V4 vuln file
 	if v != "" && uuid == "" && fileName == "" {
-		h.getV4(w, r, vulnerabilityUpdaterType, v)
+		h.getV4(r.Context(), w, r, vulnerabilityUpdaterType, v)
 		return
 	}
 
@@ -246,7 +260,7 @@ func (h *httpHandler) getUpdater(t updaterType, key string) *requestedUpdater {
 	return updater
 }
 
-func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
+func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
 	r, err := zipF.Open()
 	if err != nil {
 		return errors.Wrap(err, "opening ZIP reader")
@@ -255,7 +269,7 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File)
 
 	// POST requests only update the offline feed.
 	b := &storage.Blob{
-		Name:         offlineScannerDefinitionBlobName,
+		Name:         blobName,
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: timestamp.TimestampNow(),
 		Length:       zipF.FileInfo().Size(),
@@ -281,8 +295,14 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	// expect this ZIP of a single ZIP.
 	for _, zipF := range zipR.File {
 		if zipF.Name == scannerDefsSubZipName {
-			if err := h.handleScannerDefsFile(ctx, zipF); err != nil {
+			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerDefinitionBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
+			}
+			return nil
+		}
+		if strings.HasSuffix(zipF.Name, scannerV4DefsPrefix) {
+			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefinitionBlobName); err != nil {
+				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
 			}
 			return nil
 		}
@@ -350,14 +370,14 @@ func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
 	}
 }
 
-func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) {
-	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, offlineScannerDefinitionBlobName)
+func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vulDefFile, error) {
+	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, blobName)
 	if err != nil {
 		// If the blob does not exist, return no reader.
 		if errors.Is(err, snapshot.ErrBlobNotExist) {
 			return nil, nil
 		}
-		log.Warnf("Cannnot take a snapshot of Blob %q: %v", offlineScannerDefinitionBlobName, err)
+		log.Warnf("Cannnot take a snapshot of Blob %q: %v", blobName, err)
 		return nil, err
 	}
 	modTime := time.Time{}
@@ -375,7 +395,7 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context) (*vulDefFile, error) 
 func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string) (file *vulDefFile, err error) {
 	// If in offline mode or uuid is not provided, default to the offline file.
 	if !h.online || uuid == "" {
-		file, err = h.openOfflineBlob(ctx)
+		file, err = h.openOfflineBlob(ctx, offlineScannerDefinitionBlobName)
 		if err == nil && file == nil {
 			log.Warnf("Blob %s does not exist", offlineScannerDefinitionBlobName)
 		}
@@ -404,7 +424,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	}
 
 	defer toClose(onlineFile)
-	offlineFile, err := h.openOfflineBlob(ctx)
+	offlineFile, err := h.openOfflineBlob(ctx, offlineScannerDefinitionBlobName)
 	if err != nil {
 		return
 	}
@@ -418,9 +438,10 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	}
 	return
 }
-
-func (h *httpHandler) openMostRecentV4File(t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
-	// TODO(ROX-20520): enable fetching offline file
+func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
+	if !h.online {
+		return h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
+	}
 	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(t, updaterKey)
 	var onlineFile *vulDefFile
@@ -445,9 +466,6 @@ func (h *httpHandler) openMostRecentV4File(t updaterType, updaterKey, fileName s
 		if err != nil {
 			return nil, err
 		}
-		if targetFile == nil {
-			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
-		}
 		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
 	case vulnerabilityUpdaterType:
 		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
@@ -456,6 +474,52 @@ func (h *httpHandler) openMostRecentV4File(t updaterType, updaterKey, fileName s
 	}
 	defer toClose(onlineFile)
 	file = onlineFile
+	return file, nil
+}
+
+func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
+	log.Debugf("Getting v4 offline data for updater key: %s", updaterKey)
+	openedFile, err := h.openOfflineBlob(ctx, offlineScannerV4DefinitionBlobName)
+	if err == nil && openedFile == nil {
+		log.Warnf("Blob %s does not exist", offlineScannerV4DefinitionBlobName)
+		return nil, errors.New("No valid scanner V4 file in offline mode")
+	}
+	defer func() {
+		if openedFile != nil {
+			utils.IgnoreError(openedFile.Close)
+		}
+	}()
+	var onlineFile *vulDefFile
+	switch t {
+	case mappingUpdaterType:
+		// search mapping file
+		fileName = path.Base(fileName)
+		targetFile, err := openFromArchive(openedFile.Name(), fileName)
+		if err != nil {
+			return nil, err
+		}
+		onlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
+	case vulnerabilityUpdaterType:
+		mf, err := openFromArchive(openedFile.Name(), "manifest.json")
+		if err != nil {
+			return nil, err
+		}
+		defer utils.IgnoreError(mf.Close)
+
+		_, err = compareOfflineFileVersion(mf, updaterKey)
+		if err != nil {
+			return nil, err
+		}
+		vulns, err := openFromArchive(openedFile.Name(), "vulns.json.zst")
+		if err != nil {
+			return nil, err
+		}
+		onlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
+	default:
+		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
+	}
+	file = onlineFile
+	defer utils.IgnoreError(onlineFile.Close)
 	return file, nil
 }
 
@@ -512,7 +576,7 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request, t updaterType, key string) {
+func (h *httpHandler) getV4(ctx context.Context, w http.ResponseWriter, r *http.Request, t updaterType, key string) {
 	log.Debugf("Fetching scanner V4 %s file: %s", t, key)
 
 	var err error
@@ -520,13 +584,13 @@ func (h *httpHandler) getV4(w http.ResponseWriter, r *http.Request, t updaterTyp
 
 	switch t {
 	case mappingUpdaterType:
-		f, err = h.openMostRecentV4File(t, mappingUpdaterKey, key)
+		f, err = h.openMostRecentV4File(ctx, t, mappingUpdaterKey, key)
 	case vulnerabilityUpdaterType:
 		if version.GetVersionKind(key) == version.NightlyKind {
 			// get dev for nightly at this moment
 			key = "dev"
 		}
-		f, err = h.openMostRecentV4File(t, key, "")
+		f, err = h.openMostRecentV4File(ctx, t, key, "")
 		if err == nil {
 			w.Header().Set("Content-Type", "application/zstd")
 		}
@@ -557,4 +621,27 @@ func (h *httpHandler) startUpdaterAndOpenFile(u *requestedUpdater) (*os.File, ti
 		return nil, time.Time{}, nil
 	}
 	return osFile, modTime, nil
+}
+
+func getVersionFromManifest(mf *os.File) (string, error) {
+	var manifest Manifest
+	err := json.NewDecoder(mf).Decode(&manifest)
+	if err != nil {
+		return "", err
+	}
+	return manifest.Version, nil
+}
+
+func compareOfflineFileVersion(mf *os.File, version string) (bool, error) {
+	v, err := getVersionFromManifest(mf)
+	if err != nil {
+		return false, err
+	}
+
+	// Truncate requested version to major and minor version components
+	match := minorVersion.FindString(version)
+	if match == "" || match != v {
+		return false, fmt.Errorf("no matching vulnerability data found for version %s, try upload again", version)
+	}
+	return true, nil
 }
