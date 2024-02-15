@@ -26,7 +26,7 @@ export function assertInitBundleForm() {
 }
 
 export function assertInitBundlePage() {
-    cy.location('pathname').should('eq', pagePath);
+    cy.location('pathname').should('contain', pagePath); // contain because of id
     cy.contains('h1', /^Cluster init bundle$/); // singular
 }
 
