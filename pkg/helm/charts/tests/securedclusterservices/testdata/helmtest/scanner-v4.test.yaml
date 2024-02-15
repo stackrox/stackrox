@@ -23,6 +23,7 @@ tests:
 - name: "scanner v4 with default settings with indexer enabled"
   set:
     imagePullSecrets.allowNone: true
+    scanner.disable: false
     scannerV4.disable: false
   expect: |
     container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat (. != null)
@@ -154,21 +155,37 @@ tests:
         .serviceaccounts["scanner-v4"] | saOnlyRefersTo([
           "secured-cluster-services-main", "stackrox", "stackrox-scanner-v4", "existing-secret1", "existing-secret2"])
 
-- name: "sensor only connects to local scanner V4 when it is enabled"
+- name: "local scanning is"
   set:
     imagePullSecrets.allowNone: true
   tests:
-  - name: "local scanner enabled"
-    set:
-      scannerV4.disable: false
+  - name: "enabled"
     expect: |
       envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
-  - name: "local scanner disabled"
-    set:
-      scannerV4.disable: true
+    tests:
+    - name: "if only StackRox Scanner is enabled"
+      set:
+        scanner.disable: false
+        scannerV4.disable: true
+    - name: "if both scanners are enabled"
+      set:
+        scanner.disable: false
+        scannerV4.disable: false
+    - name: "if localImageScanningScanner is enabled"
+      set:
+        sensor.localImageScanning.enabled: true
+  - name: "disabled"
     expect: |
-      envVars(.deployments.sensor; "sensor")| assertThat(has("ROX_LOCAL_IMAGE_SCANNING_ENABLED") == false)
-
+      envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. != "true")
+    tests:
+    - name: "if both scanners are disabled"
+      set:
+        scanner.disable: true
+        scannerV4.disable: true
+    - name: "if StackRox Scanner is disabled and Scanner V4 is enabled"
+      set:
+        scanner.disable: true
+        scannerV4.disable: false
 - name: "sensor connects to local scanner using the correct gRPC endpoint"
   release:
     namespace: custom-ns
