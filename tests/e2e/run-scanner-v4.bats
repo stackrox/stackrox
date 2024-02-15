@@ -190,7 +190,7 @@ teardown_file() {
 
     # Deploy earlier version without Scanner V4.
     local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
-    info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
+    info "Deploying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
 
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
@@ -202,12 +202,16 @@ teardown_file() {
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
 
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_V4_SUPPORT=true
+
     _deploy_stackrox
 
     # Verify that Scanner v2 and v4 are up.
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
@@ -219,23 +223,29 @@ teardown_file() {
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    HELM_REUSE_VALUES=true _deploy_stackrox
+    SENSOR_SCANNER_V4_SUPPORT=true HELM_REUSE_VALUES=true _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_V4_SUPPORT=true
+
     _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
@@ -312,6 +322,7 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
@@ -336,9 +347,11 @@ teardown_file() {
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
 
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "sensor"
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
@@ -372,6 +385,7 @@ teardown_file() {
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
     info "Upgrading StackRox using HEAD deployment bundles"
     _deploy_stackrox
@@ -379,6 +393,7 @@ teardown_file() {
     verify_scannerV2_deployed
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 }
 
 verify_no_scannerV4_deployed() {
