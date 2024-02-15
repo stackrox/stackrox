@@ -275,7 +275,6 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 		if v.scanID == scanConfigID && v.clusterID == clusterID {
 			// The request was found, remove it from the map
 			delete(m.runningRequests, k)
-			break
 		}
 	}
 }
