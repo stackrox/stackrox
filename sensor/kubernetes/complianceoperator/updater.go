@@ -166,12 +166,6 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		}
 	}
 
-	if err := checkWriteAccess(u.client); err != nil {
-		return &central.ComplianceOperatorInfo{
-			StatusError: err.Error(),
-		}
-	}
-
 	info := &central.ComplianceOperatorInfo{
 		Namespace: complianceOperator.GetNamespace(),
 		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
@@ -181,6 +175,12 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 			TotalReadyPods: complianceOperator.Status.ReadyReplicas,
 		},
 		Version: version,
+	}
+
+	// Check Sensor access to compliance.openshift.io resources
+	if err := checkWriteAccess(u.client); err != nil {
+		info.StatusError = err.Error()
+		return info
 	}
 
 	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
