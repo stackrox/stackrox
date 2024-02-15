@@ -13,8 +13,6 @@ on:
 jobs:
   e2e-run:
     runs-on: ubuntu-latest
-    env:
-      SCANNER_E2E_IMAGE_TAG: 4.3.x-1165-g862a40727a
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,13 +25,19 @@ jobs:
         with:
           driver: none # baremetal
           cache: false
+          cpus: max
+          memory: max
           
       - name: Deploy chart
         run: |
           make tag
-          make -C scanner e2e-deploy db-host-path=/data/scanner-v4-db
+          make -C scanner e2e-deploy db-host-path=${{ github.workspace }}
+
+      - name: Services
+        run: |
+          minikube service list
+          minikube service discover --url          
 
       - name: Run tests
         run: |
           make -C scanner e2e-run
-          

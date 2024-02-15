@@ -37,11 +37,11 @@ spec:
           value: "true"
         resources:
           limits:
-            cpu: 2
-            memory: 4Gi
+            cpu: 8
+            memory: 16Gi
           requests:
-            cpu: 200m
-            memory: 200Mi
+            cpu: 4
+            memory: 15Gi
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -67,10 +67,10 @@ spec:
         resources:
           limits:
             cpu: 2
-            memory: 4Gi
+            memory: 16Gi
           requests:
-            cpu: 200m
-            memory: 200Mi
+            cpu: 1
+            memory: 15Gi
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -90,8 +90,9 @@ spec:
         {{- if .Values.app.db.persistence.hostPath }}
         hostPath:
           path: "{{ .Values.app.db.persistence.hostPath }}"
-        {{- else -}}
-        emptyDir: {}
+        {{- else }}
+        emptyDir:
+          medium: Memory
         {{- end }}
       - name: tls-volume
         secret:

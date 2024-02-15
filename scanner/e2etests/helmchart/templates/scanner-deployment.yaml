@@ -22,7 +22,8 @@ spec:
         fsGroup: 65534  # Set the group ownership to the `nobody` group, see dockerfile.
       containers:
       - name: scanner
-        image: "{{ (printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}"
+        image: >
+          {{ ( printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}
         imagePullPolicy: IfNotPresent
         command:
           - entrypoint.sh
@@ -46,13 +47,17 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        ports:
+          - name: grpc
+            protocol: TCP
+            containerPort: 8443
         resources:
           limits:
             cpu: 2
             memory: 4Gi
           requests:
-            cpu: 200m
-            memory: 200Mi
+            cpu: 1
+            memory: 1Gi
         volumeMounts:
         - name: config
           mountPath: /etc/stackrox.d/scanner
