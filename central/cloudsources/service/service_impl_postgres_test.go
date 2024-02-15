@@ -6,10 +6,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cloudsources/datastore"
+	cloudSourcesManagerMocks "github.com/stackrox/rox/central/cloudsources/manager/mocks"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cloudsources"
+	cloudSourceClientMocks "github.com/stackrox/rox/pkg/cloudsources/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -18,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestServicePostgres(t *testing.T) {
@@ -50,7 +55,15 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 	s.datastore = datastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.service = newService(s.datastore)
+	mockManager := cloudSourcesManagerMocks.NewMockManager(gomock.NewController(s.T()))
+	mockManager.EXPECT().ShortCircuit().AnyTimes()
+	cloudSourceClientMock := cloudSourceClientMocks.NewMockClient(gomock.NewController(s.T()))
+	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil).AnyTimes()
+
+	s.service = newService(s.datastore, mockManager)
+	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) cloudsources.Client {
+		return cloudSourceClientMock
+	}
 }
 
 func (s *servicePostgresTestSuite) TearDownTest() {
@@ -78,7 +91,7 @@ func (s *servicePostgresTestSuite) TestCount() {
 	// 2.b. Filter cloud sources based on the name - one match.
 	resp, err = s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{
 		Filter: &v1.CloudSourcesFilter{
-			Names: []string{"sample name 0"},
+			Names: []string{"sample name 00"},
 		},
 	})
 	s.Require().NoError(err)
@@ -125,7 +138,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 	// 2.b. Filter cloud sources based on the name - one match.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
 		Filter: &v1.CloudSourcesFilter{
-			Names: []string{"sample name 0"},
+			Names: []string{"sample name 00"},
 		},
 	})
 	s.Require().NoError(err)
@@ -393,6 +406,53 @@ func (s *servicePostgresTestSuite) TestDeleteCloudSource() {
 
 	_, err = s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: cloudSources[0].GetId()})
 	s.Assert().ErrorIs(err, errox.NotFound)
+}
+
+func (s *servicePostgresTestSuite) TestCloudSourceTest() {
+	cloudSourceClientMock := cloudSourceClientMocks.NewMockClient(gomock.NewController(s.T()))
+	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) cloudsources.Client {
+		return cloudSourceClientMock
+	}
+
+	cloudSource := fixtures.GetV1CloudSource()
+
+	// 1. Call test without UpdateCredentials on a non-existent cloud source.
+	_, err := s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
+		CloudSource: cloudSource,
+	})
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
+
+	// 2. Call test with UpdateCredentials without any error during calling client.
+	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil)
+	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
+		CloudSource:       cloudSource,
+		UpdateCredentials: true,
+	})
+	s.Assert().NoError(err)
+
+	// 3. Call test with UpdateCredentials with an error during calling client.
+	clientErr := errors.New("failed calling client")
+	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).
+		Return(nil, clientErr)
+	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
+		CloudSource:       cloudSource,
+		UpdateCredentials: true,
+	})
+	s.Assert().ErrorContains(err, clientErr.Error())
+
+	// 4. Call test without UpdateCredentials with an existent cloud source.
+	cloudSource.Id = ""
+	resp, err := s.service.CreateCloudSource(s.writeCtx, &v1.CreateCloudSourceRequest{
+		CloudSource: cloudSource,
+	})
+	s.Require().NoError(err)
+	cloudSource = resp.GetCloudSource()
+	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil)
+
+	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
+		CloudSource: cloudSource,
+	})
+	s.Assert().NoError(err)
 }
 
 func (s *servicePostgresTestSuite) addCloudSources(num int) []*v1.CloudSource {

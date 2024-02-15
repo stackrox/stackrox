@@ -144,7 +144,7 @@ func TestSecretInformer(t *testing.T) {
 			err = c.setupFn(k8sClient)
 			require.NoError(t, err)
 
-			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			assert.EventuallyWithT(t, func(t *assert.CollectT) {
 				mutex.RLock()
 				defer mutex.RUnlock()
 				assert.Equal(t, c.expectedOnAddCnt, onAddCnt)

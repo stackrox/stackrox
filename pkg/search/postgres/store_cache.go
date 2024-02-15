@@ -153,10 +153,18 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 		obj, found := c.cache[id]
 		return obj, found
 	})
-	if !found {
+	if !c.isWriteAllowed(ctx, obj) {
+		// Special case: the query generator for global scoped resources currently returns sac.ErrResourceAccessDenied
+		// when write is not allowed. The cached store needs to respect that behavior for the time being.
+		// Ultimately, we have to convey on the behavior: either _always_ return sac.ErrResourceAccessDenied or return
+		// nil.
+		// TODO(ROX-22408): Once the behavior is fixed, remove this special casing.
+		if c.targetResource.GetScope() == permissions.GlobalScope {
+			return sac.ErrResourceAccessDenied
+		}
 		return nil
 	}
-	if !c.isWriteAllowed(ctx, obj) {
+	if !found {
 		return nil
 	}
 	err := c.underlyingStore.Delete(ctx, id)
@@ -275,7 +283,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error {
-	if proto.Equal(q, search.EmptyQuery()) {
+	if q == nil || proto.Equal(q, search.EmptyQuery()) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)

@@ -44,7 +44,6 @@ func New(
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
 ) Service {
-
 	return &serviceImpl{
 		datastore:             datastore,
 		watchedImages:         watchedImages,

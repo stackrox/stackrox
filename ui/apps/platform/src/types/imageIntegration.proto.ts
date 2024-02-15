@@ -14,6 +14,8 @@ export type ImageIntegrationCategory = 'REGISTRY' | 'SCANNER' | 'NODE_SCANNER';
 
 // For strict type checking of frontend code, although not specified in proto.
 export type CategoriesForClairifyScanner = 'SCANNER' | 'NODE_SCANNER';
+// Scanner v4 currently only supports 'SCANNER' so this is disabled in the form
+export type CategoriesForScannerV4 = 'SCANNER' | 'NODE_SCANNER';
 export type CategoriesForRegistryScanner = 'REGISTRY' | 'SCANNER';
 
 export type ImageIntegration =
@@ -29,7 +31,8 @@ export type ImageIntegration =
     | IbmImageIntegration
     | NexusImageIntegration
     | QuayImageIntegration
-    | RhelImageIntegration;
+    | RhelImageIntegration
+    | ScannerV4ImageIntegration;
 
 export type ArtifactoryImageIntegration = {
     type: 'artifactory';
@@ -168,4 +171,15 @@ export type QuayRobotAccount = {
 
 export type RhelImageIntegration = {
     type: 'rhel';
+} & BaseImageIntegration;
+
+export type ScannerV4ImageIntegration = {
+    type: 'scannerv4';
+    scannerV4: {
+        numConcurrentScans: number;
+        indexerEndpoint: string;
+        matcherEndpoint: string;
+    };
+    source: null;
+    categories: CategoriesForScannerV4[];
 } & BaseImageIntegration;

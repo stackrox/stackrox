@@ -31,6 +31,7 @@ import (
 	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
+	cloudSourcesManager "github.com/stackrox/rox/central/cloudsources/manager"
 	cloudSourcesService "github.com/stackrox/rox/central/cloudsources/service"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
@@ -68,6 +69,7 @@ import (
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
+	discoveredClustersService "github.com/stackrox/rox/central/discoveredclusters/service"
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
@@ -461,6 +463,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.CloudSources.Enabled() {
 		servicesToRegister = append(servicesToRegister, cloudSourcesService.Singleton())
+		servicesToRegister = append(servicesToRegister, discoveredClustersService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -543,6 +546,10 @@ func startGRPCServer() {
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
+
+	if features.CloudSources.Enabled() {
+		cloudSourcesManager.Singleton().Start()
 	}
 
 	clusterInitBackend := backend.Singleton()
@@ -912,21 +919,29 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
-		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+		stoppables = append(stoppables,
+			stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 	} else {
-		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
+		stoppables = append(stoppables,
+			stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
 	}
 
 	if features.AdministrationEvents.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
+		stoppables = append(stoppables,
+			stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
 	}
 
 	if features.CloudCredentials.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
+	}
+
+	if features.CloudSources.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{cloudSourcesManager.Singleton(), "cloud sources manager"})
 	}
 
 	var wg sync.WaitGroup

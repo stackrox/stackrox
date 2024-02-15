@@ -145,23 +145,54 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to delete a collection")
 	}
 
-	// error out if collection is in use by a report config
-	query := search.DisjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery(),
-	)
-	reportConfigCount, err := s.reportConfigDatastore.Count(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
+	if err := s.checkVulnerabilityReportReferences(ctx, request); err != nil {
+		return nil, err
 	}
-	if reportConfigCount != 0 {
-		return nil, errors.Wrap(errox.ReferencedByAnotherObject, "Collection is in use by one or more report configurations")
+
+	if err := s.checkCollectionReferences(ctx, request); err != nil {
+		return nil, err
 	}
 
 	if err := s.datastore.DeleteCollection(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) checkCollectionReferences(ctx context.Context, request *v1.ResourceByID) error {
+	parentCollectionsQuery := search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery()
+	referencedCollections, err := s.datastore.SearchCollections(ctx, parentCollectionsQuery)
+	if err != nil {
+		return errors.Wrap(err, "Failed to check for collection references")
+	}
+
+	if len(referencedCollections) != 0 {
+		var names []string
+		for _, referencedCollection := range referencedCollections {
+			names = append(names, referencedCollection.GetName())
+		}
+		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following collections: %q.", strings.Join(names, ", "))
+	}
+	return nil
+}
+
+func (s *serviceImpl) checkVulnerabilityReportReferences(ctx context.Context, request *v1.ResourceByID) error {
+	query := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery(),
+	)
+	reportConfigurations, err := s.reportConfigDatastore.GetReportConfigurations(ctx, query)
+	if err != nil {
+		return errors.Wrap(err, "Failed to check for Report Configuration usages")
+	}
+	if len(reportConfigurations) != 0 {
+		var names []string
+		for _, reportConfigurations := range reportConfigurations {
+			names = append(names, reportConfigurations.GetName())
+		}
+		return errors.Wrapf(errox.ReferencedByAnotherObject, "Collection is in use by the following report configuratios: %q.", strings.Join(names, ", "))
+	}
+	return nil
 }
 
 // CreateCollection creates a new collection from the given request
@@ -247,7 +278,7 @@ func resolveQuery(rawQuery *v1.RawQuery, withPagination bool) (*v1.Query, error)
 	}
 	if withPagination {
 		paginated.FillPagination(query, rawQuery.GetPagination(), defaultPageSize)
-		paginated.FillDefaultSortOption(query, defaultCollectionSortOption)
+		query = paginated.FillDefaultSortOption(query, defaultCollectionSortOption)
 	}
 	return query, nil
 }
@@ -308,6 +339,6 @@ func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *sto
 	}
 	query := search.ConjunctionQuery(collectionQuery, filterQuery)
 	paginated.FillPagination(query, matchOptions.GetFilterQuery().GetPagination(), defaultPageSize)
-	paginated.FillDefaultSortOption(query, defaultDeploymentSortOption)
+	query = paginated.FillDefaultSortOption(query, defaultDeploymentSortOption)
 	return s.deploymentDS.SearchListDeployments(ctx, query)
 }

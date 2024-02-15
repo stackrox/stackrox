@@ -1,9 +1,12 @@
+/* eslint-disable no-nested-ternary */
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-
 import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
+
+import { vulnManagementPath } from 'routePaths';
 
 const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
 
@@ -72,6 +75,8 @@ class KeyValuePairs extends Component {
                     <span className={`flex-1 min-w-0 ${className}`}>
                         {isObject(value) || isArray(value) ? (
                             <div className="ml-2">{this.getNestedValue(value)}</div>
+                        ) : label === 'Deployment ID' && typeof value === 'string' ? (
+                            <Link to={`${vulnManagementPath}/deployment/${value}`}>{value}</Link>
                         ) : (
                             value.toString()
                         )}

@@ -19,6 +19,8 @@ message User {
   string auth_provider_id = 2;
 
   repeated UserAttribute attributes = 3;
+
+  string idp_token = 4;
 }
 
 message UserAttribute {

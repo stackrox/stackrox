@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+pushd "$DIR"
+
 export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-"$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)"}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
 
@@ -37,7 +41,7 @@ export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-p
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
 function curl_central() {
-	cmd=(curl -k)
+	cmd=(curl --retry 10 --retry-delay 10 --retry-connrefused --silent --show-error --insecure)
 	local admin_user="${ROX_ADMIN_USER:-admin}"
 	if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
 		cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")

@@ -202,6 +202,13 @@ var (
 		Help:      "A gauge to track how large ResourcesSynced message is",
 	})
 
+	deploymentEnhancementQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "deployment_enhancement_queue_size",
+		Help:      "A counter to track deployments queued up in Sensor to be enhanced",
+	})
+
 	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -308,6 +315,16 @@ func IncrementProcessDedupeCacheMisses() {
 // RegisterSensorIndicatorChannelFullCounter registers the number of indicators dropped
 func RegisterSensorIndicatorChannelFullCounter() {
 	sensorIndicatorChannelFullCounter.Inc()
+}
+
+// IncrementDeploymentEnhancerQueueSize increments the deployment enhancer queue size by one.
+func IncrementDeploymentEnhancerQueueSize() {
+	deploymentEnhancementQueueSize.Inc()
+}
+
+// DecrementDeploymentEnhancerQueueSize decrements the deployment enhancer queue size by one.
+func DecrementDeploymentEnhancerQueueSize() {
+	deploymentEnhancementQueueSize.Dec()
 }
 
 // IncrementTotalResourcesSyncSent sets the number of resources synced transmitted in the last sync event

@@ -1,6 +1,7 @@
 package sensor
 
 import (
+	"context"
 	"io"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -12,12 +13,14 @@ import (
 // CreateOptions represents the custom configuration that can be provided when creating sensor
 // using CreateSensor.
 type CreateOptions struct {
-	workloadManager        *fake.WorkloadManager
-	centralConnFactory     centralclient.CentralConnectionFactory
-	localSensor            bool
-	k8sClient              client.Interface
-	traceWriter            io.Writer
-	eventPipelineQueueSize int
+	workloadManager                    *fake.WorkloadManager
+	centralConnFactory                 centralclient.CentralConnectionFactory
+	localSensor                        bool
+	k8sClient                          client.Interface
+	traceWriter                        io.Writer
+	eventPipelineQueueSize             int
+	networkFlowServiceAuthFuncOverride func(context.Context, string) (context.Context, error)
+	signalServiceAuthFuncOverride      func(context.Context, string) (context.Context, error)
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -28,12 +31,14 @@ type CreateOptions struct {
 // before running CreateSensor.
 func ConfigWithDefaults() *CreateOptions {
 	return &CreateOptions{
-		workloadManager:        nil,
-		centralConnFactory:     nil,
-		k8sClient:              nil,
-		localSensor:            false,
-		traceWriter:            nil,
-		eventPipelineQueueSize: env.EventPipelineQueueSize.IntegerSetting(),
+		workloadManager:                    nil,
+		centralConnFactory:                 nil,
+		k8sClient:                          nil,
+		localSensor:                        false,
+		traceWriter:                        nil,
+		eventPipelineQueueSize:             env.EventPipelineQueueSize.IntegerSetting(),
+		networkFlowServiceAuthFuncOverride: nil,
+		signalServiceAuthFuncOverride:      nil,
 	}
 }
 
@@ -77,5 +82,19 @@ func (cfg *CreateOptions) WithEventPipelineQueueSize(size int) *CreateOptions {
 // Default: nil
 func (cfg *CreateOptions) WithTraceWriter(trWriter io.Writer) *CreateOptions {
 	cfg.traceWriter = trWriter
+	return cfg
+}
+
+// WithNetworkFlowServiceAuthFuncOverride sets the AuthFuncOverride for the NetworkFlow service.
+// Default: nil
+func (cfg *CreateOptions) WithNetworkFlowServiceAuthFuncOverride(fn func(context.Context, string) (context.Context, error)) *CreateOptions {
+	cfg.networkFlowServiceAuthFuncOverride = fn
+	return cfg
+}
+
+// WithSignalServiceAuthFuncOverride sets the AuthFuncOverride for the Signal service.
+// Default: nil
+func (cfg *CreateOptions) WithSignalServiceAuthFuncOverride(fn func(context.Context, string) (context.Context, error)) *CreateOptions {
+	cfg.signalServiceAuthFuncOverride = fn
 	return cfg
 }

@@ -136,6 +136,15 @@ message ScanImageInternalResponseDetails {
   message TooManyParallelScans {}
 }
 
+message ExportImageRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportImageResponse {
+  storage.Image image = 1;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
   // GetImage returns the image given its ID.
@@ -143,12 +152,12 @@ service ImageService {
     option (google.api.http) = {get: "/v1/images/{id}"};
   }
 
-  // ListImages returns all the images.
+  // CountImages returns a count of images that match the input query.
   rpc CountImages(RawQuery) returns (CountImagesResponse) {
     option (google.api.http) = {get: "/v1/imagescount"};
   }
 
-  // ListImages returns all the images.
+  // ListImages returns all the images that match the input query.
   rpc ListImages(RawQuery) returns (ListImagesResponse) {
     option (google.api.http) = {get: "/v1/images"};
   }
@@ -206,5 +215,9 @@ service ImageService {
   // being watched.
   rpc GetWatchedImages(Empty) returns (GetWatchedImagesResponse) {
     option (google.api.http) = {get: "/v1/watchedimages"};
+  }
+
+  rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
+    option (google.api.http) = {get: "/v1/export/images"};
   }
 }

@@ -117,6 +117,7 @@
 {{ include "srox.applyDefaults" $ }}
 
 {{ include "srox.getStorageClasses" (list $) }}
+{{ include "srox.getPVCs" (list $) }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
@@ -273,14 +274,21 @@
 
 {{ $scannerV4Cfg := $._rox.scannerV4 }}
 
-{{/* To establish a smooth and automated activation of Scanner v4 in situations where Scanner v2 is
-     already activated, we let `scanner.disable: false` have the implicit side-effect of
-    `scannerV4.disable: false` if the latter has not been explicitly set. */}}
+[</*
+
+This can be activated again when Scanner V4 becomes the default scanner:
+
+To establish a smooth and automated activation of Scanner v4 in situations where Scanner v2 is
+already activated, we let `scanner.disable: false` have the implicit side-effect of
+`scannerV4.disable: false` if the latter has not been explicitly set.
+
 {{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
   {{- if kindIs "invalid" $scannerV4Cfg.disable -}}
     {{- $_ = set $scannerV4Cfg "disable" $._rox.scanner.disable -}}
   {{- end -}}
 {{- end -}}
+
+*/>]
 
 {{/* Disable scanner v4 always in kubectl outputs */}}
 

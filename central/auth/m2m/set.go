@@ -23,10 +23,10 @@ var (
 //
 //go:generate mockgen-wrapper
 type TokenExchangerSet interface {
-	NewTokenExchangerFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (TokenExchanger, error)
-	UpsertTokenExchanger(exchanger TokenExchanger, issuer string) error
+	UpsertTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error
 	RemoveTokenExchanger(issuer string) error
 	GetTokenExchanger(issuer string) (TokenExchanger, bool)
+	RollbackExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error
 }
 
 // TokenExchangerFactory factory for creating a new token exchanger.
@@ -63,39 +63,34 @@ type tokenExchangerSet struct {
 	tokenExchangerFactory TokenExchangerFactory
 }
 
-// NewTokenExchangerFromConfig creates a TokenExchanger from the given config.
+// UpsertTokenExchanger upserts a token exchanger based from the given config.
 // It will make sure the TokenExchanger is registered as a tokens.Source.
 // Note that during creation of the TokenExchanger, an external HTTP request is done to the OIDC issuer
 // to retrieve additional metadata for token validation (i.e. JWKS metadata).
-func (t *tokenExchangerSet) NewTokenExchangerFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (TokenExchanger, error) {
+// In case a token exchanger already exists for the given config, it will be replaced.
+func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	exchanger, exists := t.tokenExchangers[config.GetIssuer()]
 	if exists {
 		// Need to unregister the source temporarily, otherwise we receive an error on creation that the
 		// source is already registered.
 		if err := t.issuerFactory.UnregisterSource(exchanger.Provider()); err != nil {
-			return nil, pkgErrors.Wrapf(err, "unregistering source for config %s", config.GetId())
+			return pkgErrors.Wrapf(err, "unregistering source for config %s", config.GetId())
 		}
 	}
 
 	tokenExchanger, err := t.tokenExchangerFactory(ctx, config, t.roleDS, t.issuerFactory)
 	if err != nil {
-		return nil, pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
+		return pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
 	}
 
-	return tokenExchanger, nil
+	t.tokenExchangers[config.GetIssuer()] = tokenExchanger
+	return nil
 }
 
 // GetTokenExchanger retrieves a TokenExchanger based on the issuer.
 func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bool) {
 	tokenExchanger, exists := t.tokenExchangers[issuer]
 	return tokenExchanger, exists
-}
-
-// UpsertTokenExchanger upserts a token exchanger based off the given config.
-// In case a token exchanger already exists for the given config, it will be replaced.
-func (t *tokenExchangerSet) UpsertTokenExchanger(exchanger TokenExchanger, issuer string) error {
-	t.tokenExchangers[issuer] = exchanger
-	return nil
 }
 
 // RemoveTokenExchanger removes the token exchanger for the specific configuration ID.
@@ -109,9 +104,26 @@ func (t *tokenExchangerSet) RemoveTokenExchanger(id string) error {
 	// We need to unregister the source with the issuer factory.
 	// This will lead to all tokens issued by the previous token exchanger to be rejected by Central.
 	if err := t.issuerFactory.UnregisterSource(exchanger.Provider()); err != nil {
-		return pkgErrors.Wrapf(err, "unregistering source for config %s", id)
+		log.Warnf("Unregistering source for config %s failed: %v", id, err)
+		return nil
 	}
 
 	delete(t.tokenExchangers, id)
 	return nil
+}
+
+// RollbackExchanger is used to roll back any changes made to an existing exchanger.
+// In particular, it will ensure that the source is correctly registered.
+func (t *tokenExchangerSet) RollbackExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	// In case the config does not exist anymore, re-create it.
+	_, exists := t.tokenExchangers[config.GetIssuer()]
+	if !exists {
+		return t.UpsertTokenExchanger(ctx, config)
+	}
+
+	// In case the config still exists, we remove and re-create it to ensure we have the correct state in our set.
+	if err := t.RemoveTokenExchanger(config.GetIssuer()); err != nil {
+		return err
+	}
+	return t.UpsertTokenExchanger(ctx, config)
 }

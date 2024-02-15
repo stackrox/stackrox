@@ -21,6 +21,15 @@ message GetNodeRequest {
   string node_id = 2;
 }
 
+message ExportNodeRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportNodeResponse {
+  storage.Node node = 1;
+}
+
 // storage.Node represents information about a node in the cluster.
 service NodeService {
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
@@ -29,5 +38,9 @@ service NodeService {
 
   rpc GetNode(GetNodeRequest) returns (storage.Node) {
     option (google.api.http) = {get: "/v1/nodes/{cluster_id}/{node_id}"};
+  }
+
+  rpc ExportNodes(ExportNodeRequest) returns (stream ExportNodeResponse) {
+    option (google.api.http) = {get: "/v1/export/nodes"};
   }
 }

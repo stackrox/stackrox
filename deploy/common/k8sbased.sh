@@ -83,10 +83,14 @@ EOF
 
 function verify_orch {
     if [ "$ORCH" == "openshift" ]; then
-        if kubectl api-versions | grep -q openshift.io; then
+        local k8s_api_versions
+        k8s_api_versions=$(kubectl api-versions 2>&1)
+        if echo "${k8s_api_versions}" | grep -q "openshift\.io"; then
             return
         fi
         echo "Cannot find openshift orchestrator. Please check your kubeconfig for: $(kubectl config current-context)"
+        echo "API resources returned by kubectl:"
+        sed -e 's/^/    /;' <(echo "${k8s_api_versions}")
         exit 1
     fi
     if [ "$ORCH" == "k8s" ]; then
@@ -248,8 +252,10 @@ function launch_central {
       add_args "--enable-telemetry=false"
     fi
 
-    if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
-      add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
+    if [[ "${ORCH}" == "openshift" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+        add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
+      fi
     fi
 
     local unzip_dir="${k8s_dir}/central-deploy/"
@@ -581,6 +587,7 @@ function launch_sensor {
     local common_dir="${k8s_dir}/../common"
 
     local extra_config=()
+    local scanner_extra_config=()
     local extra_json_config=''
     local extra_helm_config=()
 
@@ -610,6 +617,7 @@ function launch_sensor {
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
+      scanner_extra_config+=("--timeout=$ROXCTL_TIMEOUT")
     fi
 
     SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
@@ -620,10 +628,18 @@ function launch_sensor {
 
     if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
+        scanner_extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
     fi
 
-    # Delete path
-    rm -rf "$k8s_dir/sensor-deploy"
+    if [[ "${ORCH}" == "openshift" ]]; then
+      if [[ "${ROX_OPENSHIFT_VERSION:-}" == "4" ]]; then
+        extra_config+=("--openshift-version=${ROX_OPENSHIFT_VERSION}")
+        scanner_extra_config+=("--cluster-type=openshift4")
+      fi
+    fi
+
+    rm -rf "${k8s_dir}/sensor-deploy"
+    rm -rf "${k8s_dir}/scanner-deploy"
 
     if [[ -z "$CI" && -z "${SENSOR_HELM_DEPLOY:-}" && -x "$(command -v helm)" && "$(helm version --short)" == v3.* ]]; then
       echo >&2 "================================================================================================"
@@ -686,6 +702,10 @@ function launch_sensor {
         helm_args+=(--set scanner.disable=false)
       fi
 
+      if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
+        helm_args+=(--set scannerV4.disable=false)
+      fi
+
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
@@ -727,6 +747,12 @@ function launch_sensor {
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
+        if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
+            roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" scanner generate \
+                  --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
+            mv "scanner-deploy" "${k8s_dir}/scanner-deploy"
+            echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"
+        fi
       else
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
@@ -740,7 +766,7 @@ function launch_sensor {
         fi
         sensor_namespace="${NAMESPACE_OVERRIDE}"
         echo "Changing namespace to ${NAMESPACE_OVERRIDE} due to NAMESPACE_OVERRIDE set in the environment."
-        find "${k8s_dir}/sensor-deploy" -name '*.yaml' -depth 1 | while read -r file; do
+        find "${k8s_dir}/sensor-deploy" -maxdepth 2 -name '*.yaml' | while read -r file; do
           sed -i'.original' -e 's/namespace: stackrox/namespace: '"${sensor_namespace}"'/g' "${file}"
         done
         sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"

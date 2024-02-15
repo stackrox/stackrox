@@ -1,0 +1,54 @@
+{
+  "alerts": [
+    {
+      "policy": {
+        "name": "CI Test Policy One",
+        "description": "CI policy one that is used for tests",
+        "rationale": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at justo tellus. Vivamus vel sem vel mauris cursus ullamcorper.",
+        "remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus convallis lacinia.",
+        "severity": "CRITICAL_SEVERITY",
+        "enforcementActions": [
+          "FAIL_BUILD_ENFORCEMENT"
+        ]
+      },
+      "violations": [
+        {
+          "message": "This is awesome"
+        },
+        {
+          "message": "This is more awesome"
+        }
+      ]
+    },
+    {
+      "policy": {
+        "name": "CI Test Policy Two",
+        "description": "CI policy two that is used for tests",
+        "rationale": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent pellentesque ipsum mauris, eu tempus diam interdum quis.",
+        "remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula magna.",
+        "severity": "MEDIUM_SEVERITY"
+      },
+      "violations": [
+        {
+          "message": "This is cool"
+        },
+        {
+          "message": "This is more cool"
+        }
+      ]
+    }
+  ],
+  "remarks": [
+    {
+      "name": "deployment1",
+      "permissionLevel": "CLUSTER_ADMIN",
+      "appliedNetworkPolicies": [
+        "Policy1, Policy2"
+      ]
+    },
+    {
+      "name": "deployment2",
+      "permissionLevel": "NONE"
+    }
+  ]
+}

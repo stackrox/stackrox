@@ -29,6 +29,9 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: nonroot-v2
+        {{- end }}
     spec:
       {{- if ._rox.scanner._nodeSelector }}
       nodeSelector:
@@ -181,6 +184,9 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-db") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: nonroot-v2
+        {{- end }}
     spec:
       {{- if ._rox.scanner._dbNodeSelector }}
       nodeSelector:

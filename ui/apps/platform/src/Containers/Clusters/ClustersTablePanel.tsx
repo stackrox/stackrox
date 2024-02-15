@@ -5,23 +5,27 @@ import {
     Alert,
     Bullseye,
     Button,
+    Divider,
     Dropdown,
     DropdownItem,
     DropdownPosition,
     DropdownToggle,
     PageSection,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
     Spinner,
 } from '@patternfly/react-core';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
-import PageHeader from 'Components/PageHeader';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
-import TableHeader from 'Components/TableHeader';
+import useAuthStatus from 'hooks/useAuthStatus';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
@@ -44,11 +48,13 @@ import { getVersionedDocs } from 'utils/versioning';
 import {
     clustersBasePath,
     clustersDelegatedScanningPath,
+    clustersDiscoveredClustersPath,
     clustersSecureClusterPath,
 } from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import ManageTokensButton from './Components/ManageTokensButton';
+import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import AddClusterPrompt from './AddClusterPrompt';
@@ -66,15 +72,18 @@ function ClustersTablePanel({
     const history = useHistory();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-    const hasReadAccessForDelegatedScanning = hasReadAccess('Administration');
-    const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
+    const hasReadAccessForAdministration = hasReadAccess('Administration');
     const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
+    const { currentUser } = useAuthStatus();
+    const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
 
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     function onToggleInstallMenu(newIsInstallMenuOpen) {
         setIsInstallMenuOpen(newIsInstallMenuOpen);
@@ -103,9 +112,6 @@ function ClustersTablePanel({
     const [showDialog, setShowDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
-
-    // Handle changes to applied search options.
-    const [isViewFiltered, setIsViewFiltered] = useState(false);
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
@@ -147,39 +153,6 @@ function ClustersTablePanel({
     ));
 
     const { version } = metadata;
-
-    const pageHeader = (
-        <PageHeader header="Clusters" subHeader="Resource list">
-            <div className="flex flex-1 items-center justify-end">
-                <SearchFilterInput
-                    className="w-full"
-                    searchFilter={searchFilter}
-                    searchOptions={searchOptions}
-                    searchCategory="CLUSTERS"
-                    placeholder="Filter clusters"
-                    handleChangeSearchFilter={setSearchFilter}
-                />
-                {hasReadAccessForDelegatedScanning && (
-                    <div className="flex items-center ml-4 mr-1">
-                        <Button
-                            variant="secondary"
-                            component={LinkShim}
-                            href={clustersDelegatedScanningPath}
-                        >
-                            Delegated scanning
-                        </Button>
-                    </div>
-                )}
-                {hasWriteAccessForIntegration && (
-                    <div className="flex items-center ml-1">
-                        <Button variant="tertiary">
-                            <ManageTokensButton />
-                        </Button>
-                    </div>
-                )}
-            </div>
-        </PageHeader>
-    );
 
     /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
@@ -235,12 +208,6 @@ function ClustersTablePanel({
     const filteredSearch = filterAllowedSearch(searchOptions, searchFilter || {});
     const restSearch = convertToRestSearch(filteredSearch || {});
     useDeepCompareEffect(() => {
-        if (restSearch.length) {
-            setIsViewFiltered(true);
-        } else {
-            setIsViewFiltered(false);
-        }
-
         refreshClusterList(restSearch);
     }, [restSearch, pollingCount]);
 
@@ -281,7 +248,7 @@ function ClustersTablePanel({
     // After there is a response, if there are no clusters nor search filter:
     if (currentClusters.length === 0 && !hasSearchApplied) {
         return isMoveInitBundlesEnabled ? (
-            <NoClustersPage />
+            <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
         ) : (
             <PageSection variant="light">
                 <Bullseye>
@@ -346,60 +313,6 @@ function ClustersTablePanel({
             });
     }
 
-    const headerComponent = (
-        <TableHeader
-            length={currentClusters?.length || 0}
-            type="cluster"
-            isViewFiltered={isViewFiltered}
-        />
-    );
-
-    const headerActions = (
-        <>
-            {hasWriteAccessForAdministration && (
-                <>
-                    <AutoUpgradeToggle />
-                    <Button
-                        variant="secondary"
-                        className="pf-u-ml-sm"
-                        onClick={upgradeSelectedClusters}
-                        isDisabled={upgradableClusters.length === 0 || !!selectedClusterId}
-                    >
-                        {`Upgrade (${upgradableClusters.length})`}
-                    </Button>
-                </>
-            )}
-            {hasWriteAccessForCluster && (
-                <>
-                    <Button
-                        variant="danger"
-                        className="pf-u-ml-sm pf-u-mr-sm"
-                        onClick={deleteSelectedClusters}
-                        isDisabled={checkedClusterIds.length === 0 || !!selectedClusterId}
-                    >
-                        {`Delete (${checkedClusterIds.length})`}
-                    </Button>
-                    <Dropdown
-                        className="mr-4"
-                        onSelect={onSelectInstallMenuItem}
-                        toggle={
-                            <DropdownToggle
-                                id="install-toggle"
-                                toggleVariant="secondary"
-                                onToggle={onToggleInstallMenu}
-                            >
-                                Secure a cluster
-                            </DropdownToggle>
-                        }
-                        position={DropdownPosition.right}
-                        isOpen={isInstallMenuOpen}
-                        dropdownItems={installMenuOptions}
-                    />
-                </>
-            )}
-        </>
-    );
-
     function calculateUpgradeableClusters(selection) {
         const currentlySelectedClusters = currentClusters.filter((cluster) =>
             selection.includes(cluster.id)
@@ -450,48 +363,149 @@ function ClustersTablePanel({
     // After there is a response, if there are clusters or search filter.
     // Conditionally render a subsequent error in addition to most recent successful respnse.
     return (
-        <div className="overflow-hidden w-full">
-            {pageHeader}
-            <PanelNew testid="panel">
-                <PanelHead>
-                    {headerComponent}
-                    <PanelHeadEnd>{headerActions}</PanelHeadEnd>
-                </PanelHead>
-                <PanelBody>
-                    {errorMessage && (
-                        <Alert
-                            variant="warning"
-                            isInline
-                            title="Unable to fetch clusters"
-                            component="p"
+        <>
+            <PageSection variant="light" component="div">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                    <ToolbarContent>
+                        <Title headingLevel="h1">Clusters</Title>
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            {hasReadAccessForAdministration && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersDelegatedScanningPath}
+                                    >
+                                        Delegated scanning
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasReadAccessForAdministration && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersDiscoveredClustersPath}
+                                    >
+                                        Discovered clusters
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasAdminRole && (
+                                <ToolbarItem>
+                                    <Button variant="tertiary">
+                                        <ManageTokensButton />
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasWriteAccessForCluster && (
+                                <ToolbarItem>
+                                    <Dropdown
+                                        onSelect={onSelectInstallMenuItem}
+                                        toggle={
+                                            <DropdownToggle
+                                                id="install-toggle"
+                                                toggleVariant="secondary"
+                                                onToggle={onToggleInstallMenu}
+                                            >
+                                                Secure a cluster
+                                            </DropdownToggle>
+                                        }
+                                        position={DropdownPosition.right}
+                                        isOpen={isInstallMenuOpen}
+                                        dropdownItems={installMenuOptions}
+                                    />
+                                </ToolbarItem>
+                            )}
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                    <ToolbarContent>
+                        <ToolbarGroup
+                            variant="filter-group"
+                            className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
                         >
-                            {errorMessage}
-                        </Alert>
-                    )}
-                    {messages.length > 0 && (
-                        <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
-                            {messages}
-                        </div>
-                    )}
-                    <div data-testid="clusters-table" className="h-full w-full">
-                        <CheckboxTable
-                            ref={(table) => {
-                                setTableRef(table);
-                            }}
-                            rows={currentClusters}
-                            columns={clusterColumns}
-                            onRowClick={setSelectedClusterId}
-                            toggleRow={toggleCluster}
-                            toggleSelectAll={toggleAllClusters}
-                            selection={checkedClusterIds}
-                            selectedRowId={selectedClusterId}
-                            noDataText="No clusters to show."
-                            minRows={20}
-                            pageSize={pageSize}
-                        />
+                            <ToolbarItem variant="search-filter" className="pf-u-w-100">
+                                <SearchFilterInput
+                                    className="w-full"
+                                    searchFilter={searchFilter}
+                                    searchOptions={searchOptions}
+                                    searchCategory="CLUSTERS"
+                                    placeholder="Filter clusters"
+                                    handleChangeSearchFilter={setSearchFilter}
+                                />
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            {hasWriteAccessForAdministration && (
+                                <ToolbarItem>
+                                    <AutoUpgradeToggle />
+                                </ToolbarItem>
+                            )}
+                            {hasWriteAccessForAdministration && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={upgradeSelectedClusters}
+                                        isDisabled={
+                                            upgradableClusters.length === 0 || !!selectedClusterId
+                                        }
+                                    >
+                                        {`Upgrade (${upgradableClusters.length})`}
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasWriteAccessForCluster && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="danger"
+                                        onClick={deleteSelectedClusters}
+                                        isDisabled={
+                                            checkedClusterIds.length === 0 || !!selectedClusterId
+                                        }
+                                    >
+                                        {`Delete (${checkedClusterIds.length})`}
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            </PageSection>
+            <Divider component="div" />
+            <PageSection variant="light" isFilled>
+                {errorMessage && (
+                    <Alert
+                        variant="warning"
+                        isInline
+                        title="Unable to fetch clusters"
+                        component="p"
+                    >
+                        {errorMessage}
+                    </Alert>
+                )}
+                {messages.length > 0 && (
+                    <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
+                        {messages}
                     </div>
-                </PanelBody>
-            </PanelNew>
+                )}
+                <CheckboxTable
+                    ref={(table) => {
+                        setTableRef(table);
+                    }}
+                    rows={currentClusters}
+                    columns={clusterColumns}
+                    onRowClick={setSelectedClusterId}
+                    toggleRow={toggleCluster}
+                    toggleSelectAll={toggleAllClusters}
+                    selection={checkedClusterIds}
+                    selectedRowId={selectedClusterId}
+                    noDataText="No clusters to show."
+                    minRows={20}
+                    pageSize={pageSize}
+                />
+            </PageSection>
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}
@@ -501,7 +515,8 @@ function ClustersTablePanel({
                 onCancel={hideDialog}
                 isDestructive
             />
-        </div>
+            <SecureClusterModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
+        </>
     );
 }
 

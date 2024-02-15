@@ -100,6 +100,7 @@ log_level: info
 	require.NoError(t, err)
 	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
 	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])
+	assert.NotNil(t, indexer.Options.ScannerConfig.Package["java"])
 }
 
 // loadIndexerConfig parses the provided YAML data and returns the IndexerConfig.

@@ -20,11 +20,12 @@ var (
 	// pagination with SearchAfter.
 	DocID = newFieldLabel("_id")
 
-	Cluster      = newFieldLabel("Cluster")
-	ClusterID    = newFieldLabel("Cluster ID")
-	ClusterLabel = newFieldLabel("Cluster Label")
-	ClusterScope = newFieldLabel("Cluster Scope")
-	ClusterType  = newFieldLabel("Cluster Type")
+	Cluster               = newFieldLabel("Cluster")
+	ClusterID             = newFieldLabel("Cluster ID")
+	ClusterLabel          = newFieldLabel("Cluster Label")
+	ClusterScope          = newFieldLabel("Cluster Scope")
+	ClusterType           = newFieldLabel("Cluster Type")
+	ClusterDiscoveredTime = newFieldLabel("Cluster Discovered Time")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -372,6 +373,7 @@ var (
 	EventOccurrence = newFieldLabel("Event Occurrence")
 
 	// Integration fields.
+	IntegrationID   = newFieldLabel("Integration ID")
 	IntegrationName = newFieldLabel("Integration Name")
 	IntegrationType = newFieldLabel("Integration Type")
 

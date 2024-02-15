@@ -101,6 +101,24 @@ func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestComplianceScanConfigurationName() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	request := getTestAPIRec()
+	request.ScanName = "test@scan"
+	request.Id = uuid.NewDummy().String()
+	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
+	processResponse.Id = uuid.NewDummy().String()
+
+	_, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+
+	request.ScanName = "testscan_"
+	_, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
@@ -155,7 +173,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	storageRequest := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse.Id = uuid.NewDummy().String()
-	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+	s.manager.EXPECT().UpdateScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
 
 	_, err := s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)

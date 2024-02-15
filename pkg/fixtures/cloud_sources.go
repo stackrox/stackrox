@@ -24,10 +24,11 @@ func GetStorageCloudSource() *storage.CloudSource {
 // GetV1CloudSource returns a mock cloud source.
 func GetV1CloudSource() *v1.CloudSource {
 	return &v1.CloudSource{
-		Id:          "0925514f-3a33-5931-b431-756406e1a008",
-		Name:        "test-integration",
-		Type:        v1.CloudSource_TYPE_PALADIN_CLOUD,
-		Credentials: &v1.CloudSource_Credentials{Secret: "1234"},
+		Id:                  "0925514f-3a33-5931-b431-756406e1a008",
+		Name:                "test-integration",
+		Type:                v1.CloudSource_TYPE_PALADIN_CLOUD,
+		Credentials:         &v1.CloudSource_Credentials{Secret: "1234"},
+		SkipTestIntegration: true,
 		Config: &v1.CloudSource_PaladinCloud{
 			PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "https://apiqa.paladincloud.io"},
 		},
@@ -40,7 +41,7 @@ func GetManyStorageCloudSources(num int) []*storage.CloudSource {
 	for i := 0; i < num; i++ {
 		cloudSource := &storage.CloudSource{
 			Id:          uuid.NewV4().String(),
-			Name:        fmt.Sprintf("sample name %d", i),
+			Name:        fmt.Sprintf("sample name %02d", i),
 			Credentials: &storage.CloudSource_Credentials{Secret: "1234"},
 		}
 		if i < num/2 {

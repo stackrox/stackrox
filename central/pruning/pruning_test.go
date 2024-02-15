@@ -13,6 +13,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	compliancePrunerMocks "github.com/stackrox/rox/central/complianceoperator/v2/pruner/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
@@ -54,6 +55,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -335,6 +337,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	connMgr := connectionMocks.NewMockManager(mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(mockCtrl)
 	networkBaselineMgr := networkBaselineMocks.NewMockManager(mockCtrl)
+	compliancePruner := compliancePrunerMocks.NewMockPruner(mockCtrl)
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
@@ -367,6 +370,9 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	flows.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
 	clusterCVEs.EXPECT().DeleteClusterCVEsInternal(gomock.Any(), gomock.Any()).AnyTimes()
+	if features.ComplianceEnhancements.Enabled() {
+		compliancePruner.EXPECT().RemoveComplianceResourcesByCluster(gomock.Any(), gomock.Any()).AnyTimes()
+	}
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 
@@ -393,7 +399,8 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		notifierMock,
 		ranking.NewRanker(),
 		clusterPostgres.NewIndexer(s.pool),
-		networkBaselineMgr)
+		networkBaselineMgr,
+		compliancePruner)
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore

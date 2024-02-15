@@ -53,7 +53,6 @@ jobs:
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
-      continue-on-error: true
       run: |
         DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
         FILE_NAME=$(basename "$DOWNLOAD_URL")
@@ -75,6 +74,15 @@ jobs:
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache
         ./bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+
+        # The vulnerability file created by older versions can remain the name vulns.json.zst in the GCS bucket.
+        # TODO: ROX-22285 Remove after 4.4
+        for file in output.json.{zst,ztd}; do
+          if [ -f "${{ env.ROX_PRODUCT_VERSION }}/${file}" ]; then
+            mv "${{ env.ROX_PRODUCT_VERSION }}/${file}" "${{ env.ROX_PRODUCT_VERSION }}/vulns.json.zst"
+            break
+          fi
+        done
         gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
 
   send-notification:
@@ -86,4 +94,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

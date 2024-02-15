@@ -68,6 +68,8 @@ env:
   storageClasses:
     all: {} # dict
     default: null # string
+  pvcs:
+    names: null # [string]
 ca:
   cert: null # string
 sensor:

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator-metrics-unprivileged
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator-metrics-privileged
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+# We cannot simply apply a ClusterRoleBinding resource, because of the variable $NAMESPACE
+- command: kubectl create clusterrolebinding rhacs-metrics-$NAMESPACE --clusterrole=rhacs-operator-metrics-reader --serviceaccount=$NAMESPACE:operator-metrics-privileged

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -35,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -77,6 +79,7 @@ type datastoreImpl struct {
 	serviceAccountDataStore   serviceAccountDataStore.DataStore
 	roleDataStore             roleDataStore.DataStore
 	roleBindingDataStore      roleBindingDataStore.DataStore
+	compliancePruner          compliancePruning.Pruner
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
 
@@ -287,6 +290,20 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	}
 	_, ok := ds.idToNameCache.Get(id)
 	return ok, nil
+}
+
+func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error {
+	walkFn := func() error {
+		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
+			ds.populateHealthInfos(ctx, cluster)
+			ds.updateClusterPriority(cluster)
+			return fn(cluster)
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
@@ -552,6 +569,10 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	if err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
+	}
+
+	if features.ComplianceEnhancements.Enabled() {
+		ds.compliancePruner.RemoveComplianceResourcesByCluster(ctx, cluster.GetId())
 	}
 
 	err := ds.networkBaselineMgr.ProcessPostClusterDelete(removedDeployments)

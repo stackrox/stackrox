@@ -20,6 +20,7 @@ import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import NexusIntegrationForm from './Forms/NexusIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
+import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
@@ -38,8 +39,12 @@ import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrationForm';
+import MachineAccessIntegrationForm from './Forms/MachineAccessIntegrationForm';
 // signature integrations
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
+
+// cloud source integrations
+import PaladinCloudIntegrationForm from './Forms/PaladinCloudIntegrationForm';
 
 import './IntegrationForm.css';
 
@@ -70,6 +75,7 @@ const ComponentFormMap = {
         nexus: NexusIntegrationForm,
         ibm: IbmIntegrationForm,
         rhel: RhelIntegrationForm,
+        scannerv4: ScannerV4IntegrationForm,
     },
     signatureIntegrations: {
         signature: SignatureIntegrationForm,
@@ -94,6 +100,10 @@ const ComponentFormMap = {
     authProviders: {
         apitoken: ApiTokenIntegrationForm,
         clusterInitBundle: ClusterInitBundleIntegrationForm,
+        machineAccess: MachineAccessIntegrationForm,
+    },
+    cloudSources: {
+        paladinCloud: PaladinCloudIntegrationForm,
     },
 } as Record<
     IntegrationSource,

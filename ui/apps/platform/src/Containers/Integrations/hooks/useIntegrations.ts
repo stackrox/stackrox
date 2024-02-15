@@ -8,10 +8,12 @@ import { Integration, IntegrationSource, IntegrationType } from '../utils/integr
 const selectIntegrations = createStructuredSelector({
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
+    machineAccessConfigs: selectors.getMachineAccessConfigs,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
     signatureIntegrations: selectors.getSignatureIntegrations,
+    cloudSources: selectors.getCloudSources,
 });
 
 export type UseIntegrations = {
@@ -25,10 +27,12 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
     const {
         apiTokens,
         clusterInitBundles,
+        machineAccessConfigs,
         notifiers,
         backups,
         imageIntegrations,
         signatureIntegrations,
+        cloudSources,
     } = useSelector(selectIntegrations);
 
     function findIntegrations() {
@@ -44,6 +48,9 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 if (type === 'clusterInitBundle') {
                     return clusterInitBundles;
                 }
+                if (type === 'machineAccess') {
+                    return machineAccessConfigs;
+                }
                 return [];
             }
             case 'notifiers': {
@@ -57,6 +64,9 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
             }
             case 'signatureIntegrations': {
                 return signatureIntegrations;
+            }
+            case 'cloudSources': {
+                return cloudSources;
             }
             default: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

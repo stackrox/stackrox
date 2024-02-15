@@ -76,33 +76,28 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorScanConfigName).Proto(),
-		search.NewQuerySelect(search.ComplianceOperatorScanConfig).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ClusterID.String(),
 			search.Cluster.String(),
 			search.ComplianceOperatorScanConfigName.String(),
-			search.ComplianceOperatorScanConfig.String(),
 		},
 	}
 
 	if cloned.Pagination == nil {
 		cloned.Pagination = &v1.QueryPagination{}
-		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
-			{
-				Field: search.ClusterID.String(),
-			},
-			{
-				Field: search.Cluster.String(),
-			},
-			{
-				Field: search.ComplianceOperatorScanConfigName.String(),
-			},
-			{
-				Field: search.ComplianceOperatorScanConfig.String(),
-			},
-		}
+	}
+	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+		{
+			Field: search.ComplianceOperatorScanConfigName.String(),
+		},
+		{
+			Field: search.ClusterID.String(),
+		},
+		{
+			Field: search.Cluster.String(),
+		},
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)

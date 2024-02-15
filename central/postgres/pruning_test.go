@@ -14,6 +14,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	plopPostgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
@@ -576,6 +577,51 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
 
 		})
 	}
+}
+
+func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
+	datastore := discoveredClustersDS.GetTestPostgresDataStore(s.T(), s.testDB)
+
+	clusters := []*storage.DiscoveredCluster{
+		// Should be subject to pruning.
+		{
+			Id:            "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
+			LastUpdatedAt: timestamp.TimeBeforeDays(2),
+		},
+		// Should not be subject to pruning.
+		{
+			Id:            "460c8808-9f70-51e7-9f3a-973f44ab8595",
+			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now()),
+		},
+		// Should be subject to pruning.
+		{
+			Id:            "a10c6cae-c72f-58a3-bd86-dc0363990fe6",
+			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(24*time.Hour + 30*time.Minute))),
+		},
+		// Should not be subject to pruning.
+		{
+			Id:            "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
+			LastUpdatedAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-23 * time.Hour)),
+		},
+		// Should be subject to pruning.
+		{
+			Id:            "8e1876a3-a0c0-56c3-bccc-961d89f80220",
+			LastUpdatedAt: timestamp.TimeBeforeDays(12),
+		},
+		// Should be subject to pruning.
+		{
+			Id:            "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
+			LastUpdatedAt: timestamp.TimeBeforeDays(365),
+		},
+	}
+	s.Require().NoError(discoveredClustersDS.UpsertTestDiscoveredClusters(s.ctx, s.T(),
+		datastore, clusters...))
+
+	PruneDiscoveredClusters(s.ctx, s.testDB, 24*time.Hour)
+
+	storedClusters, err := datastore.ListDiscoveredClusters(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.ElementsMatch([]*storage.DiscoveredCluster{clusters[1], clusters[3]}, storedClusters)
 }
 
 func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {

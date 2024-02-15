@@ -6,6 +6,9 @@ import bindSelectors from 'utils/bindSelectors';
 import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
 import auth, { selectors as authSelectors } from './auth';
 import clusterInitBundles, { selectors as clusterInitBundleSelectors } from './clusterInitBundles';
+import machineAccessConfigs, {
+    selectors as machineAccessConfigSelectors,
+} from './machineAccessConfigs';
 import feedback, { selectors as feedbackSelectors } from './feedback';
 import formMessages, { selectors as formMessageSelectors } from './formMessages';
 import integrations, { selectors as integrationSelectors } from './integrations';
@@ -27,6 +30,7 @@ import telemetryConfig, { selectors as telemetryConfigSelectors } from './teleme
 import centralCapabilities, {
     selectors as centralCapabilitiesSelectors,
 } from './centralCapabilities';
+import cloudSources, { selectors as cloudSourcesSelectors } from './cloudSources';
 
 // Reducers
 
@@ -34,6 +38,7 @@ const appReducer = combineReducers({
     apiTokens,
     auth,
     clusterInitBundles,
+    machineAccessConfigs,
     feedback,
     formMessages,
     integrations,
@@ -50,6 +55,7 @@ const appReducer = combineReducers({
     publicConfig,
     telemetryConfig,
     centralCapabilities,
+    cloudSources,
 });
 
 const createRootReducer = (history) => {
@@ -69,6 +75,7 @@ const getApp = (state) => state.app;
 const getAPITokens = (state) => getApp(state).apiTokens;
 const getAuth = (state) => getApp(state).auth;
 const getClusterInitBundles = (state) => getApp(state).clusterInitBundles;
+const getMachineAccessConfigs = (state) => getApp(state).machineAccessConfigs;
 const getFeedback = (state) => getApp(state).feedback;
 const getFormMessages = (state) => getApp(state).formMessages;
 const getIntegrations = (state) => getApp(state).integrations;
@@ -85,11 +92,13 @@ const getRuleGroups = (state) => getApp(state).groups;
 const getPublicConfig = (state) => getApp(state).publicConfig;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 const getCentralCapabilities = (state) => getApp(state).centralCapabilities;
+const getCloudSources = (state) => getApp(state).cloudSources;
 
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
     ...bindSelectors(getAuth, authSelectors),
     ...bindSelectors(getClusterInitBundles, clusterInitBundleSelectors),
+    ...bindSelectors(getMachineAccessConfigs, machineAccessConfigSelectors),
     ...bindSelectors(getFeedback, feedbackSelectors),
     ...bindSelectors(getFormMessages, formMessageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
@@ -107,6 +116,7 @@ const boundSelectors = {
     ...bindSelectors(getPublicConfig, publicConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
     ...bindSelectors(getCentralCapabilities, centralCapabilitiesSelectors),
+    ...bindSelectors(getCloudSources, cloudSourcesSelectors),
 };
 
 export const selectors = {

@@ -1,10 +1,5 @@
 # Static Network Policy Connectivity Diff
 
-## Technology Preview Notice
-
-The static network policy connectivity diff feature is offered as a developer preview feature.
-While we are open to receiving feedback about this feature, our technical support will not be able to assist and answer questions about it.
-
 ## About
 
 The static network policy connectivity diff is a tool that analyzes two sets of Kubernetes manifests, including network policies.

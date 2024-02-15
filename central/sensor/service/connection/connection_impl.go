@@ -304,7 +304,8 @@ func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *c
 	case *central.ComplianceResponse_ApplyComplianceScanConfigResponse_:
 		return c.complianceOperatorMgr.HandleScanRequestResponse(ctx, m.ApplyComplianceScanConfigResponse.GetId(), c.clusterID, m.ApplyComplianceScanConfigResponse.GetError())
 	case *central.ComplianceResponse_DeleteComplianceScanConfigResponse_:
-		log.Infof("received delete compliance scan config error response %v for cluster %v", m.DeleteComplianceScanConfigResponse.GetError(), c.clusterID)
+		log.Debugf("received delete compliance scan config error response %v for cluster %v", m.DeleteComplianceScanConfigResponse.GetError(), c.clusterID)
+		return nil
 	default:
 		log.Infof("Unimplemented compliance response  %T", m)
 	}

@@ -4,9 +4,9 @@ import qs from 'qs';
 
 import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
 
+import InitBundleForm from './InitBundleForm';
 import InitBundlePage from './InitBundlePage';
 import InitBundlesPage from './InitBundlesPage';
-import InitBundleWizard from './InitBundleWizard';
 
 function hasCreateAction(search: string) {
     const { action } = qs.parse(search, { ignoreQueryPrefix: true });
@@ -37,7 +37,7 @@ function InitBundlesRoute(): ReactElement {
     }
 
     if (hasWriteAccessForInitBundles && isCreateAction) {
-        return <InitBundleWizard />;
+        return <InitBundleForm />;
     }
 
     return <InitBundlesPage hasWriteAccessForInitBundles={hasWriteAccessForInitBundles} />;

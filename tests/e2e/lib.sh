@@ -15,6 +15,11 @@ source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
+# If `envsubst` is contained in a non-standard directory `env -i` won't be able to
+# execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
+# `envsubst`` before passing it to `env`.
+envsubst=$(command -v envsubst)
+
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
@@ -149,6 +154,7 @@ export_test_environment() {
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
+    ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -213,8 +219,11 @@ deploy_central() {
 deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
     info "Deploying central via operator into namespace ${central_namespace}"
+    if ! kubectl get ns "${central_namespace}" >/dev/null 2>&1; then
+        kubectl create ns "${central_namespace}"
+    fi
 
-    make -C operator stackrox-image-pull-secret
+    NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
 
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
@@ -224,10 +233,6 @@ deploy_central_via_operator() {
 
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        # Load balancer not available for ppc64le/s390x
-        LOAD_BALANCER="route"
-    fi
     case "${LOAD_BALANCER}" in
     "lb") central_exposure_loadBalancer_enabled="true" ;;
     "route") central_exposure_route_enabled="true" ;;
@@ -260,6 +265,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCANNER_V4'
     customize_envVars+=$'\n        value: "'"${ROX_SCANNER_V4:-false}"'"'
 
@@ -281,7 +288,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scanner_v4_component="$scanner_v4_component" \
-    envsubst \
+    "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
@@ -329,7 +336,17 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local scanner_component_setting="Disabled"
+    local scanner_v4_component_setting="Disabled"
+    local central_endpoint="central.${central_namespace}.svc:443"
+
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+
+    if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
+        kubectl create ns "${sensor_namespace}"
+    fi
+
+    NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
     kubectl -n "${central_namespace}" exec deploy/central -- \
     roxctl central init-bundles generate my-test-bundle \
@@ -344,10 +361,20 @@ deploy_sensor_via_operator() {
        die "COLLECTION_METHOD not set"
     fi
 
+    if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
+        scanner_component_setting="AutoSense"
+    fi
+    if [[ "${SENSOR_SCANNER_V4_SUPPORT:-}" == "true" ]]; then
+        scanner_v4_component_setting="AutoSense"
+    fi
+
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
-    envsubst \
+      scanner_component_setting="$scanner_component_setting" \
+      scanner_v4_component_setting="$scanner_v4_component_setting" \
+      central_endpoint="$central_endpoint" \
+    "${envsubst}" \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
@@ -776,6 +803,8 @@ remove_existing_stackrox_resources() {
     local psps_supported=false
     local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
     local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
+    local centrals_supported=false
+    local securedclusters_supported=false
 
     if [[ ${#namespaces[@]} == 0 ]]; then
         namespaces+=( "stackrox" )
@@ -784,24 +813,40 @@ remove_existing_stackrox_resources() {
     info "Tearing down StackRox resources for namespaces ${namespaces[*]}..."
 
     # Check API Server Capabilities.
-    if kubectl api-resources -o name | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
+    local k8s_api_resources
+    k8s_api_resources=$(kubectl api-resources -o name)
+    if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
-    if kubectl api-resources -o name | grep -q "^podsecuritypolicies\.policy$"; then
+    if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
         psps_supported=true
-        resource_types="${resource_types},psp"
+        global_resource_types="${global_resource_types},psp"
+    fi
+    if echo "${k8s_api_resources}" | grep -q "^centrals\.platform\.stackrox\.io$"; then
+        centrals_supported=true
+    fi
+    if echo "${k8s_api_resources}" | grep -q "^securedclusters\.platform\.stackrox\.io$"; then
+        securedclusters_supported=true
     fi
 
     (
+        # Delete StackRox CRs first to give the operator a chance to properly finish the resource cleanup.
+        if [[ "${securedclusters_supported}" == "true" ]]; then
+            kubectl get securedclusters -o name | while read -r securedcluster; do
+                kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
+                # Wait until resources are actually deleted.
+                kubectl wait -n "${namespace}"  --for=delete deployment/sensor --timeout=60s
+            done
+        fi
+        if [[ "${centrals_supported}" == "true" ]]; then
+            kubectl get centrals -o name | while read -r central; do
+                kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
+                kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
+            done
+        fi
         if [[ "$psps_supported" = "true" ]]; then
             kubectl delete -R -f scripts/ci/psp --wait
         fi
-
-        # midstream ocp specific
-        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
-            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
-        fi
-        kubectl delete --ignore-not-found ns stackrox-operator --wait
 
         for namespace in "${namespaces[@]}"; do
             if kubectl get ns "$namespace" >/dev/null 2>&1; then
@@ -823,6 +868,12 @@ remove_existing_stackrox_resources() {
         kubectl get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
             kubectl delete --wait "$namespace"
         done
+
+        # midstream ocp specific
+        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
+            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
+        fi
+        kubectl delete --ignore-not-found ns stackrox-operator --wait
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."
 }
@@ -882,18 +933,24 @@ wait_for_api() {
     info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
 
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        API_HOSTNAME=$(kubectl get routes/central -n "${central_namespace}" -o json | jq -r '.spec.host')
-        API_PORT=443
-    else
-        API_HOSTNAME=localhost
-        API_PORT=8000
-        LOAD_BALANCER="${LOAD_BALANCER:-}"
-        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh "${central_namespace}")
+    LOAD_BALANCER="${LOAD_BALANCER:-}"
+    case "${LOAD_BALANCER}" in
+        lb)
+            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname'
+            API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
-        fi
-    fi
+            ;;
+        route)
+            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host'
+            API_HOSTNAME="${ingress_endpoint}"
+            API_PORT=443
+            ;;
+        *)
+            API_HOSTNAME=localhost
+            API_PORT=8000
+            ;;
+    esac
+
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
     info "PING_URL is set to ${PING_URL}"
@@ -933,6 +990,41 @@ wait_for_api() {
     ci_export API_HOSTNAME "${API_HOSTNAME}"
     ci_export API_PORT "${API_PORT}"
     ci_export API_ENDPOINT "${API_ENDPOINT}"
+}
+
+get_ingress_endpoint() {
+    local namespace="$1"
+    local object="$2"
+    local field_accessor="$3"
+    local timeout="${4:-1800}"
+
+    local cli_cmd="kubectl"
+    if [[ "$object" =~ route ]]; then
+        cli_cmd="oc"
+    fi
+
+    local start_time curr_time elapsed_seconds endpoint
+    start_time="$(date '+%s')"
+
+    while true; do
+        endpoint=$("${cli_cmd}" -n "${namespace}" get "${object}" -o json | jq -r "${field_accessor}")
+        if [[ -n "${endpoint}" ]] && [[ "${endpoint}" != "null" ]]; then
+            info "Found ingress endpoint: ${endpoint}"
+            ingress_endpoint="${endpoint}"
+            return
+        fi
+
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        if (( elapsed_seconds > timeout )); then
+            "${cli_cmd}" -n "${namespace}" get "${object}" -o json
+            echo >&2 "get_ingress_endpoint() timeout after $timeout seconds."
+            exit 1
+        fi
+
+        sleep 5
+    done
 }
 
 record_build_info() {

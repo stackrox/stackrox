@@ -1,29 +1,88 @@
 package connectivitymap
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/npg"
 )
+
+// Cmd represents 'netpol connectivity map' command
+type Cmd struct {
+	// Properties that are bound to cobra flags.
+	stopOnFirstError      bool
+	treatWarningsAsErrors bool
+	inputFolderPath       string
+	outputFilePath        string
+	removeOutputPath      bool
+	outputToFile          bool
+	focusWorkload         string
+	outputFormat          string
+
+	// injected or constructed values
+	env environment.Environment
+}
 
 // Command defines the map command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cmd := NewCmd(cliEnvironment)
 	c := &cobra.Command{
 		Use:   "map <folder-path>",
-		Short: "(Technology Preview) Analyze connectivity based on network policies and other resources.",
-		Long: `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.
-
-** This is a Technology Preview feature **
-Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete.
-Red Hat does not recommend using them in production.
-These features provide early access to upcoming product features, enabling customers to test functionality and provide feedback during the development process.
-For more information about the support scope of Red Hat Technology Preview features, see https://access.redhat.com/support/offerings/techpreview/`,
+		Short: "Analyze connectivity based on network policies and other resources.",
+		Long:  `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.`,
 
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			return errors.Wrap(cmd.RunE(c, args), "building connectivity map")
+			return cmd.RunE(c, args)
 		},
 	}
 	return cmd.AddFlags(c)
+}
+
+func (cmd *Cmd) validate() error {
+	if err := cmd.setupPath(cmd.outputFilePath); err != nil {
+		return errors.Wrap(err, "failed to set up file path")
+	}
+	return nil
+}
+
+func (cmd *Cmd) setupPath(path string) error {
+	if _, err := os.Stat(path); err == nil && !cmd.removeOutputPath {
+		return errox.AlreadyExists.Newf("path %s already exists. Use --remove to overwrite or select a different path.", path)
+	} else if !os.IsNotExist(err) {
+		return errors.Wrapf(err, "failed to check if path %s exists", path)
+	}
+	return nil
+}
+
+// RunE executes the command and returns potential errors
+func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
+	analyzer, err := cmd.construct(args)
+	if err != nil {
+		return err
+	}
+	if err := cmd.validate(); err != nil {
+		return err
+	}
+	warns, errs := cmd.analyze(analyzer)
+	err = npg.SummarizeErrors(warns, errs, cmd.treatWarningsAsErrors, cmd.env.Logger())
+	if err != nil {
+		return errors.Wrap(err, "building connectivity map")
+	}
+	return nil
+}
+
+// AddFlags is for parsing flags and storing their values
+func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
+	c.Flags().BoolVar(&cmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
+	c.Flags().BoolVar(&cmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
+	c.Flags().BoolVar(&cmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
+	c.Flags().BoolVar(&cmd.outputToFile, "save-to-file", false, "whether to save connections list output into default file")
+	c.Flags().StringVarP(&cmd.outputFilePath, "output-file", "f", "", "save connections list output into specific file")
+	c.Flags().StringVarP(&cmd.focusWorkload, "focus-workload", "", "", "focus on connections of specified workload name in the output")
+	c.Flags().StringVarP(&cmd.outputFormat, "output-format", "o", defaultOutputFormat, "configure the connections list in specific format, supported formats: txt|json|md|dot|csv")
+	return c
 }

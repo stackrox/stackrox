@@ -6,7 +6,7 @@ out_dir=""
 
 setup_file() {
     # remove binaries from the previous runs
-    [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+    delete-outdated-binaries "$(roxctl-release version)"
     echo "Testing roxctl version: '$(roxctl-release version)'" >&3
 }
 

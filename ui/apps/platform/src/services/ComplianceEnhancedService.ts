@@ -12,6 +12,7 @@ import { Empty } from './types';
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 const complianceIntegrationServiceUrl = '/v2/compliance/integrations';
 const complianceResultsServiceUrl = '/v2/compliance/scan';
+const complianceProfileServiceUrl = '/v2/compliance/profiles';
 
 export type ScheduleBase = {
     hour: number;
@@ -130,7 +131,7 @@ export type ClusterCheckStatus = {
     checkUid: string;
 };
 
-type ComplianceCheckResult = {
+export type ComplianceCheckResult = {
     checkId: string;
     checkName: string;
     clusters: ClusterCheckStatus[];
@@ -175,6 +176,15 @@ export interface ComplianceProfile {
     product: string;
     title: string;
 }
+
+export type ComplianceProfileSummary = {
+    name: string;
+    productType: string;
+    description: string;
+    title: string;
+    ruleCount: number;
+    profileVersion: string;
+};
 
 // API types for Compliance Integrations:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_integration_service
@@ -447,7 +457,13 @@ export function getScanConfigsCount(): Promise<number> {
 }
 
 export function deleteScanConfig(scanConfigId: string) {
-    return axios.delete<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
+    return axios.delete<Empty>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
+        return response.data;
+    });
+}
+
+export function runComplianceScanConfiguration(scanConfigId: string) {
+    return axios.post<Empty>(`${scanScheduleUrl}/${scanConfigId}/run`).then((response) => {
         return response.data;
     });
 }
@@ -466,6 +482,17 @@ export function listComplianceProfiles(): Promise<ComplianceProfile[]> {
     //     .then((response) => {
     //         return response?.data?.profiles ?? [];
     //     });
+}
+
+export function listComplianceSummaries(clusterIds): Promise<ComplianceProfileSummary[]> {
+    const params = qs.stringify({ cluster_ids: clusterIds }, { arrayFormat: 'repeat' });
+    return axios
+        .get<{
+            profiles: ComplianceProfileSummary[];
+        }>(`${complianceProfileServiceUrl}/summary?${params}`)
+        .then((response) => {
+            return response?.data?.profiles ?? [];
+        });
 }
 
 export function listComplianceIntegrations(): Promise<ComplianceIntegration[]> {

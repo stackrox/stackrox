@@ -1,0 +1,57 @@
+{
+  "assets": [
+    {
+      "id": "subscriptions/123123213123/resourcegroups/testing/providers/Microsoft.ContainerService/managedClusters/test-cluster-1",
+      "name": "test-cluster-1",
+      "type": "aks",
+      "typeName": "AKS",
+      "source": "azure",
+      "region": "eastus",
+      "accountId": "test-account",
+      "accountName": "test-account",
+      "discoveryDate": "2024-02-06 07:00:00+0000",
+      "firstDiscoveryDate": "2023-11-28 08:00:00+0000",
+      "metadata": {}
+    },
+    {
+      "id": "1231245342513",
+      "name": "test-cluster-2",
+      "type": "gke",
+      "typeName": "GKE",
+      "source": "gcp",
+      "region": "us-central1-c",
+      "accountId": "test-account",
+      "accountName": "test-account",
+      "discoveryDate": "2024-02-06 07:41:00+0000",
+      "firstDiscoveryDate": "2024-02-01 13:52:00+0000",
+      "metadata": {}
+    },
+    {
+      "id": "1231234124123541",
+      "name": "test-cluster-3",
+      "type": "eks",
+      "typeName": "EKS",
+      "source": "aws",
+      "region": "us-central1",
+      "accountId": "test-account",
+      "accountName": "test-account",
+      "discoveryDate": "2024-02-06 07:41:00+0000",
+      "firstDiscoveryDate": "2024-02-01 13:52:00+0000",
+      "metadata": {}
+    },
+    {
+      "id": "arn:aws:eks:us-east-1:test-account:cluster/test-cluster-4",
+      "name": "",
+      "type": "eks",
+      "typeName": "EKS",
+      "source": "aws",
+      "region": "us-east-1",
+      "accountId": "test-account",
+      "accountName": "test-account",
+      "discoveryDate": "2024-02-09 08:00:00+0000",
+      "firstDiscoveryDate": "2024-02-09 08:00:00+0000",
+      "metadata": {}
+    }
+  ],
+  "total": 4
+}

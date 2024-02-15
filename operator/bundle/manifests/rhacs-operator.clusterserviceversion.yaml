@@ -58,8 +58,9 @@ spec:
           vulnerability scanning of container images.
         displayName: Scanner Component Settings
         path: scanner
-      - description: Settings for the Scanner V4 component, which can run in addition
-          to the previously existing Scanner components
+      - description: 'Settings for the Scanner V4 component, which can run in addition
+          to the previously existing Scanner components Above default is necessary
+          to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Settings related to outgoing network traffic.
@@ -507,9 +508,8 @@ spec:
           connections to the port.
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
-      - description: If you don't want to deploy the Red Hat Advanced Cluster Security
-          Scanner V4, you can disable it here
-        displayName: Scanner V4 Component
+      - description: If you want to deploy Scanner V4 components set this to "Enabled"
+        displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
         displayName: Indexer
@@ -726,8 +726,9 @@ spec:
           repository.
         displayName: Scanner Component Settings
         path: scanner
-      - description: Settings for the Scanner V4 component, which can run in addition
-          to the previously existing Scanner components
+      - description: 'Settings for the Scanner V4 component, which can run in addition
+          to the previously existing Scanner components Above default is necessary
+          to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Allows you to specify additional trusted Root CAs.
@@ -999,10 +1000,8 @@ spec:
         path: scanner.db.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: If you do not want to deploy the Red Hat Advanced Cluster Security
-          local Scanner V4, you can disable it here (not recommended). If you do so,
-          all the settings in this section will have no effect.
-        displayName: Scanner Component
+      - description: If you want to enable the Scanner V4 component set this to "AutoSense"
+        displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
         displayName: Indexer
@@ -1317,7 +1316,7 @@ spec:
               containers:
               - args:
                 - --health-probe-bind-address=:8081
-                - --metrics-bind-address=127.0.0.1:8080
+                - --metrics-bind-address=0.0.0.0:8443
                 - --leader-elect
                 env:
                 - name: RELATED_IMAGE_MAIN
@@ -1347,6 +1346,9 @@ spec:
                 - containerPort: 9443
                   name: webhook-server
                   protocol: TCP
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -1362,25 +1364,6 @@ spec:
                     memory: 200Mi
                 securityContext:
                   allowPrivilegeEscalation: false
-              - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --http2-disable
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: rhacs-operator-controller-manager

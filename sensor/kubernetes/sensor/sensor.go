@@ -127,7 +127,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, env.ProcessIndicatorBufferSize.IntegerSetting())
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
-	processSignals := signalService.New(processPipeline, indicators)
+	var processSignals signalService.Service
+	if cfg.signalServiceAuthFuncOverride != nil {
+		processSignals = signalService.New(processPipeline, indicators, signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride))
+	} else {
+		processSignals = signalService.New(processPipeline, indicators)
+	}
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
@@ -204,7 +209,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 	}
 
-	networkFlowService := service.NewService(networkFlowManager)
+	var networkFlowService service.Service
+	if cfg.networkFlowServiceAuthFuncOverride != nil {
+		networkFlowService = service.NewService(networkFlowManager, service.WithAuthFuncOverride(cfg.networkFlowServiceAuthFuncOverride))
+	} else {
+		networkFlowService = service.NewService(networkFlowManager)
+	}
 	apiServices := []grpc.APIService{
 		networkFlowService,
 		processSignals,

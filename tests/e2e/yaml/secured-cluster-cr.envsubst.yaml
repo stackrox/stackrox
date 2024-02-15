@@ -3,7 +3,51 @@ kind: SecuredCluster
 metadata:
   name: stackrox-secured-cluster-services
 spec:
+  centralEndpoint: $central_endpoint
   clusterName: remote
   perNode:
     collector:
       collection: $collection_method
+  scanner:
+    scannerComponent: $scanner_component_setting
+    analyzer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          memory: 500Mi
+          cpu: 500m
+        limits:
+          memory: 2500Mi
+          cpu: 1000m
+    db:
+      resources:
+        requests:
+          cpu: 400m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 4Gi
+  scannerV4:
+    # Explicitly enable, scannerV4 is currenlty opt-in
+    scannerComponent: $scanner_v4_component_setting
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 2Gi
+    db:
+      resources:
+        requests:
+          cpu: 300m
+          memory: 500Mi
+        limits:
+          cpu: 1000m
+          memory: 1000Mi

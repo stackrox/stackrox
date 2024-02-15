@@ -27,6 +27,9 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-db") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: nonroot-v2
+        {{- end }}
     spec:
       {{- if ._rox.scannerV4.db._nodeSelector }}
       nodeSelector:
@@ -81,6 +84,10 @@ spec:
           value: "scram-sha-256"
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
+{{- if ._rox.env.centralServices }}
+        - name: SCANNER_DB_INIT_BUNDLE_ENABLED
+          value: "true"
+{{- end }}
         command:
         - init-entrypoint.sh
         volumeMounts:

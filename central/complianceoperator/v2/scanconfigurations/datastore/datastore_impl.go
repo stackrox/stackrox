@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -24,7 +25,6 @@ var (
 type datastoreImpl struct {
 	storage       postgres.Store
 	statusStorage statusStore.Store
-	clusterDS     clusterDatastore.DataStore
 	keyedMutex    *concurrency.KeyedMutex
 }
 
@@ -60,12 +60,12 @@ func (ds *datastoreImpl) GetScanConfigurationByName(ctx context.Context, scanNam
 }
 
 // ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.
-func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) (bool, error) {
+func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) error {
 	// use areProfilesEqual to check if there are any duplicate profiles in the scan request profiles
 	for i := 0; i < len(profiles); i++ {
 		for j := i + 1; j < len(profiles); j++ {
 			if areProfilesEqual(profiles[i], profiles[j]) {
-				return true, nil
+				return errors.Errorf("the scan configuration contains duplicate profiles.  Profile %q and profile %q", profiles[i], profiles[j])
 			}
 		}
 	}
@@ -74,31 +74,36 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters...).ProtoQuery())
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Create a map for quick lookup of profiles.
-	profileMap := make(map[string]bool)
+	profileMap := make(map[string]set.StringSet)
 
 	for _, scanConfig := range scanConfigs {
 		if scanConfig.GetId() == id {
 			continue
 		}
 		for _, profile := range scanConfig.GetProfiles() {
-			profileMap[profile.GetProfileName()] = true
+			configSet, found := profileMap[profile.GetProfileName()]
+			if !found {
+				profileMap[profile.GetProfileName()] = set.NewStringSet()
+			}
+			configSet.Add(scanConfig.GetScanConfigName())
+			profileMap[profile.GetProfileName()] = configSet
 		}
 	}
 
 	// Check if any of the profiles are being used by any of the existing scan configurations.
 	for _, profile := range profiles {
-		for profileName := range profileMap {
+		for profileName, configs := range profileMap {
 			if areProfilesEqual(profile, profileName) {
-				return true, nil
+				return errors.Errorf("a cluster in scan configurations %v already uses profile %q", configs.AsSlice(), profileName)
 			}
 		}
 	}
 
-	return false, nil
+	return nil
 }
 
 // areProfilesEqual returns true if the two profiles are equal
@@ -151,6 +156,11 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
 	// Update the last updated time
+	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
+}
+
+// upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
+func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	scanConfig.LastUpdatedTime = types.TimestampNow()
 	return ds.storage.Upsert(ctx, scanConfig)
 }
@@ -193,18 +203,9 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 }
 
 // UpdateClusterStatus updates the scan configuration with the cluster status
-func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error {
+func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string, clusterName string) error {
 	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).IsAllowed(sac.ClusterScopeKey(clusterID)) {
 		return sac.ErrResourceAccessDenied
-	}
-
-	// Look up the cluster, so we can store the name for convenience AND history
-	cluster, exists, err := ds.clusterDS.GetCluster(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Errorf("could not pull config for cluster %q because it does not exist", clusterID)
 	}
 
 	ds.keyedMutex.Lock(scanConfigID)
@@ -229,12 +230,22 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
 		Id:           statusKey,
 		ClusterId:    clusterID,
-		ClusterName:  cluster.GetName(),
+		ClusterName:  clusterName,
 		ScanConfigId: scanConfigID,
 		Errors:       []string{clusterStatus},
 	}
 
 	return ds.statusStorage.Upsert(ctx, clusterScanStatus)
+}
+
+// RemoveClusterStatus removes the scan configuration status for the given cluster
+func (ds *datastoreImpl) RemoveClusterStatus(ctx context.Context, scanConfigID string, clusterID string) error {
+	_, err := ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery())
+
+	return err
 }
 
 // GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
@@ -256,4 +267,41 @@ func getScopeKeys(scanClusters []*storage.ComplianceOperatorScanConfigurationV2_
 	}
 
 	return clusterScopeKeys
+}
+
+func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context, clusterID string, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+	ds.keyedMutex.Lock(scanConfig.GetId())
+	defer ds.keyedMutex.Unlock(scanConfig.GetId())
+
+	clusters := scanConfig.GetClusters()
+	filterFunction := func(cluster *storage.ComplianceOperatorScanConfigurationV2_Cluster) bool {
+		return cluster.GetClusterId() != clusterID
+	}
+	newClusters := sliceutils.Filter(clusters, filterFunction)
+	scanConfig.Clusters = newClusters
+
+	err := ds.upsertNoLockScanConfiguration(ctx, scanConfig)
+	if err != nil {
+		return err
+	}
+
+	// Remove the status for the cluster as well.
+	return ds.RemoveClusterStatus(ctx, scanConfig.GetId(), clusterID)
+}
+
+func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error {
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	scans, err := ds.GetScanConfigurations(ctx, q)
+	if err != nil {
+		return err
+	}
+
+	for _, scan := range scans {
+		err = ds.deleteClusterFromScanConfigWithLock(ctx, clusterID, scan)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

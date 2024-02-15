@@ -21,26 +21,38 @@ function SecureClusterUsingOperator({
                 Secure a cluster using Operator installation method
             </Title>
             {version && (
-                <ExternalLink>
-                    <a
-                        href={getVersionedDocs(
-                            version,
-                            'installing/installing_ocp/install-secured-cluster-ocp.html'
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Installing secured cluster services on Red Hat OpenShift
-                    </a>
-                </ExternalLink>
+                <>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing_ocp/init-bundle-ocp.html'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Generating and applying an init bundle for RHACS on Red HatOpenShift
+                        </a>
+                    </ExternalLink>
+                    <ExternalLink>
+                        <a
+                            href={getVersionedDocs(
+                                version,
+                                'installing/installing_ocp/install-secured-cluster-ocp.html#installing-sc-operator'
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Installing RHACS on secured clusters by using the Operator
+                        </a>
+                    </ExternalLink>
+                </>
             )}
             <p>
                 You can install secured cluster services on your clusters by using the{' '}
                 <strong>SecuredCluster</strong> custom resource.
             </p>
-            <Title headingLevel={subHeadingLevel}>
-                Procedure to do only once before you secure the first cluster
-            </Title>
+            <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
             <List component="ol">
                 <ListItem>
                     <p>
@@ -59,9 +71,7 @@ function SecureClusterUsingOperator({
                     </p>
                 </ListItem>
             </List>
-            <Title headingLevel={subHeadingLevel}>
-                Procedure to repeat for each secured cluster
-            </Title>
+            <Title headingLevel={subHeadingLevel}>Repeat for each secured cluster</Title>
             <List component="ol">
                 <ListItem>
                     <p>Apply the init bundle by creating a resource on the secured cluster.</p>

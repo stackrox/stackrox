@@ -91,7 +91,7 @@ message Email {
   }
   AuthMethod startTLSAuthMethod = 8;
   // Set to true to allow unauthenticated SMTP
-  bool allow_unauthenticated_smtp = 9;
+  bool allow_unauthenticated_smtp = 9 [(gogoproto.moretags) = 'scrub:"disableDependentIfTrue"'];
 }
 
 message Splunk {

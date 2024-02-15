@@ -941,8 +941,11 @@ spec:
                     type: string
                 type: object
               scannerV4:
-                description: Settings for the Scanner V4 component, which can run
-                  in addition to the previously existing Scanner components
+                default:
+                  scannerComponent: Default
+                description: 'Settings for the Scanner V4 component, which can run
+                  in addition to the previously existing Scanner components Above
+                  default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -1228,12 +1231,11 @@ spec:
                         type: array
                     type: object
                   scannerComponent:
-                    default: AutoSense
-                    description: If you do not want to deploy the Red Hat Advanced
-                      Cluster Security local Scanner V4, you can disable it here (not
-                      recommended). If you do so, all the settings in this section
-                      will have no effect.
+                    default: Default
+                    description: If you want to enable the Scanner V4 component set
+                      this to "AutoSense"
                     enum:
+                    - Default
                     - AutoSense
                     - Disabled
                     type: string

@@ -1,12 +1,14 @@
 import axios from './instance';
 import { Empty } from './types';
+import { AuthMachineToMachineConfig, updateMachineAccessConfig } from './MachineAccessService';
 
 export type IntegrationSource =
     | 'authProviders'
     | 'backups'
     | 'imageIntegrations'
     | 'notifiers'
-    | 'signatureIntegrations';
+    | 'signatureIntegrations'
+    | 'cloudSources';
 
 function getPath(source: IntegrationSource): string {
     switch (source) {
@@ -18,6 +20,10 @@ function getPath(source: IntegrationSource): string {
             return '/v1/externalbackups';
         case 'signatureIntegrations':
             return '/v1/signatureintegrations';
+        case 'authProviders':
+            return '/v1/auth/m2m';
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -96,6 +102,10 @@ export function saveIntegrationV2(
         // If the data has a config object, use the contents of that config object.
         const config = data[getJsonFieldBySource(source)] as IntegrationBase;
         return axios.patch(`${getPath(source)}/${config.id}`, data);
+    }
+    // Machine access configs should be wrapped.
+    if (source === 'authProviders') {
+        return updateMachineAccessConfig(data as AuthMachineToMachineConfig);
     }
     return axios.put(`${getPath(source)}/${(data as IntegrationBase).id}`, data);
 }

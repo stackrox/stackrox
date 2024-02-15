@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/cloudsources/datastore"
+	"github.com/stackrox/rox/central/cloudsources/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/cloudsources"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -17,8 +19,10 @@ type Service interface {
 	v1.CloudSourcesServiceServer
 }
 
-func newService(datastore datastore.DataStore) Service {
+func newService(datastore datastore.DataStore, manager manager.Manager) Service {
 	return &serviceImpl{
-		ds: datastore,
+		ds:            datastore,
+		mgr:           manager,
+		clientFactory: cloudsources.NewClientForCloudSource,
 	}
 }

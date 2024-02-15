@@ -1,3 +1,4 @@
+import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../../helpers/title';
@@ -9,6 +10,7 @@ import {
     deferAndVisitRequestDetails,
     deniedRequestsPath,
     pendingRequestsPath,
+    visitExceptionManagement,
 } from './ExceptionManagement.helpers';
 
 describe('Exception Management', () => {
@@ -89,5 +91,43 @@ describe('Exception Management', () => {
             'match',
             getRegExpForTitleWithBranding('Exception Management - Request Details')
         );
+    });
+
+    it('should keep filters when navigating between tabs', () => {
+        const filterLabel = 'Filter by Request name';
+        const filterText = 'AA-240101-1';
+
+        cy.intercept({ method: 'POST', url: graphql('autocomplete') }).as('autocomplete');
+
+        visitExceptionManagement();
+
+        // Add a filter
+        cy.get(`input[aria-label="${filterLabel}"]`).type(filterText);
+        cy.wait('@autocomplete');
+        cy.get(
+            `ul[role="listbox"][aria-label="${filterLabel}"] li button:contains("${filterText}")`
+        ).click();
+        cy.get('body').click('topLeft'); // closes the dropdown menu
+
+        // The filter should be applied
+        cy.get('div[aria-label="applied search filters"]').should('exist');
+
+        // switch to Approved deferrals tab
+        cy.get('button[role="tab"]:contains("Approved deferrals")').click();
+
+        // The filter should be applied
+        cy.get('div[aria-label="applied search filters"]').should('exist');
+
+        // switch to Approved false positives tab
+        cy.get('button[role="tab"]:contains("Approved false positives")').click();
+
+        // The filter should be applied
+        cy.get('div[aria-label="applied search filters"]').should('exist');
+
+        // switch to Denied requests tab
+        cy.get('button[role="tab"]:contains("Denied requests")').click();
+
+        // The filter should be applied
+        cy.get('div[aria-label="applied search filters"]').should('exist');
     });
 });

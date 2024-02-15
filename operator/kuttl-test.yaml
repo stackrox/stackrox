@@ -2,6 +2,7 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:
 - ./tests/central
+- ./tests/controller
 - ./tests/securedcluster
 # central pod takes a while do become healthy, typically ~25s, but sometimes over a minute since container start.
 # We need to add CR reconciliation, pod creation and image fetch to that.

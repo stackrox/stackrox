@@ -36,10 +36,11 @@ type CentralSpec struct {
 	// images.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
-
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	//+kubebuilder:default={"scannerComponent":"Default"}
+	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
-	ScannerV4 *ScannerV4ComponentSpec `json:"scannerV4,omitempty"`
+	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
 
 	// Settings related to outgoing network traffic.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
@@ -510,12 +511,12 @@ type ScannerComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// ScannerV4ComponentSpec defines settings for the central "scanner V4" component.
-type ScannerV4ComponentSpec struct {
-	// If you don't want to deploy the Red Hat Advanced Cluster Security Scanner V4, you can disable it here
-	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 Component"
-	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
+// ScannerV4Spec defines settings for the central "scanner V4" component.
+type ScannerV4Spec struct {
+	// If you want to deploy Scanner V4 components set this to "Enabled"
+	//+kubebuilder:default=Default
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
+	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
 	// Settings pertaining to the indexer deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
@@ -536,12 +537,12 @@ type ScannerV4ComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
-func (s *ScannerV4ComponentSpec) IsEnabled() bool {
+// IsEnabled checks whether scanner v4 is enabled. This method is safe to be used with nil receivers.
+func (s *ScannerV4Spec) IsEnabled() bool {
 	if s == nil || s.ScannerComponent == nil {
-		return true // enabled by default
+		return false // disabled by default
 	}
-	return *s.ScannerComponent == ScannerComponentEnabled
+	return *s.ScannerComponent == ScannerV4ComponentEnabled
 }
 
 // GetAnalyzer returns the analyzer component even if receiver is nil
@@ -569,6 +570,22 @@ const (
 	ScannerComponentEnabled ScannerComponentPolicy = "Enabled"
 	// ScannerComponentDisabled means that scanner should not be installed.
 	ScannerComponentDisabled ScannerComponentPolicy = "Disabled"
+)
+
+// ScannerV4ComponentPolicy is a type for values of spec.scannerV4.scannerComponent
+// +kubebuilder:validation:Enum=Default;Enabled;Disabled
+type ScannerV4ComponentPolicy string
+
+const (
+	// ScannerV4ComponentDefault means that scanner V4 uses the default semantics
+	// to identify whether scanner V4 component should be used.
+	// Currently this defaults to "Disabled" semantics.
+	// TODO change default to "Enabled" semantics with version 4.5
+	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
+	// ScannerV4ComponentEnabled explicitly enables the scanner V4 component.
+	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"
+	// ScannerV4ComponentDisabled explicitly disables the scanner V4 component.
+	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
 
 // -------------------------------------------------------------

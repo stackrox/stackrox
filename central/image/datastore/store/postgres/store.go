@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -46,6 +47,8 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
+
+	cursorBatchSize = 50
 )
 
 var (
@@ -814,30 +817,19 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	return image, found, err
 }
 
-func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.Image, bool, error) {
-	row := tx.QueryRow(ctx, getImageMetaStmt, imageID)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var image storage.Image
-	if err := image.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-
-	imageCVEEdgeMap, err := getImageCVEEdges(ctx, tx, imageID)
+func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *storage.Image) error {
+	imageCVEEdgeMap, err := getImageCVEEdges(ctx, tx, image.GetId())
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 	cveIDs := make([]string, 0, len(imageCVEEdgeMap))
 	for _, val := range imageCVEEdgeMap {
 		cveIDs = append(cveIDs, val.GetImageCveId())
 	}
 
-	componentEdgeMap, err := getImageComponentEdges(ctx, tx, imageID)
+	componentEdgeMap, err := getImageComponentEdges(ctx, tx, image.GetId())
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 	componentIDs := make([]string, 0, len(componentEdgeMap))
 	for _, val := range componentEdgeMap {
@@ -846,17 +838,17 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 
 	componentMap, err := getImageComponents(ctx, tx, componentIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	cveMap, err := getCVEs(ctx, tx, cveIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
@@ -865,7 +857,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	imageParts := common.ImageParts{
-		Image:         &image,
+		Image:         image,
 		Children:      []common.ComponentParts{},
 		ImageCVEEdges: imageCVEEdgeMap,
 	}
@@ -884,7 +876,26 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 		}
 		imageParts.Children = append(imageParts.Children, child)
 	}
-	return common.Merge(imageParts), true, nil
+	common.Merge(imageParts)
+	return nil
+}
+
+func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.Image, bool, error) {
+	row := tx.QueryRow(ctx, getImageMetaStmt, imageID)
+	var data []byte
+	if err := row.Scan(&data); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var image storage.Image
+	if err := image.Unmarshal(data); err != nil {
+		return nil, false, err
+	}
+
+	if err := s.populateImage(ctx, tx, &image); err != nil {
+		return nil, false, err
+	}
+	return &image, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -1148,6 +1159,53 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// WalkByQuery returns the objects specified by the query
+func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Image")
+
+	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Errorf("error rolling back: %v", err)
+		}
+	}()
+
+	ctxWithTx := postgres.ContextWithTx(ctx, tx)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Image, *storage.Image](ctxWithTx, pkgSchema.ImagesSchema, q, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, image := range rows {
+			err := s.populateImage(ctx, tx, image)
+			if err != nil {
+				return err
+			}
+			if err := fn(image); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
 
 //// Used for testing

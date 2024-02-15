@@ -34,12 +34,12 @@ spec:
               value: https://telemetry.endpoint
             - name: ROX_TELEMETRY_STORAGE_KEY_V1
               value: my-api-key
+            - name: ROX_TELEMETRY_API_WHITELIST
+              value: "/api/splunk/ta/*"
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_INSTALL_METHOD
               value: "operator"
-            - name: ROX_SCANNER_V4
-              value: "true"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:

@@ -59,7 +59,10 @@ type gRPCScanner struct {
 
 // NewGRPCScanner creates a new gRPC scanner client.
 func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
-	o := makeOptions(opts...)
+	o, err := makeOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 	var connList []*grpc.ClientConn
 	conn, err := createGRPCConn(ctx, o.indexerOpts)
 	if err != nil {
@@ -94,15 +97,44 @@ func (c *gRPCScanner) Close() error {
 }
 
 func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
-	connOpts := []clientconn.ConnectionOption{
-		clientconn.UseInsecureNoTLS(o.skipTLS),
-		clientconn.ServerName(o.serverName),
-		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+	// Prefix address with dns:/// to use the DNS name resolver.
+	address := "dns:///" + o.address
+
+	dialOpts := []grpc.DialOption{
+		// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes Services
+		// cannot properly load balance. Kubernetes Service load balancer is connection-based
+		// (best for HTTP/1.x), while gRPC is built on top of HTTP/2 which tends to just use a single connection
+		// for all requests.
+		//
+		// We opt to do client-side load balancing, instead,
+		// via DNS name resolution, which is possible because Scanner v4 services are "headless"
+		// (clusterIP: None).
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
 	}
 
-	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
+	maxRespMsgSize := env.ScannerV4MaxRespMsgSize.IntegerSetting()
+
+	if o.skipTLSVerify {
+		connOpts := clientconn.Options{
+			TLS: clientconn.TLSConfigOptions{
+				GRPCOnly:           true,
+				InsecureSkipVerify: true,
+			},
+			DialOptions: dialOpts,
+		}
+		callOpts := []grpc.CallOption{grpc.MaxCallRecvMsgSize(maxRespMsgSize)}
+		return clientconn.GRPCConnection(ctx, o.mTLSSubject, address, connOpts, grpc.WithDefaultCallOptions(callOpts...))
+	}
+
+	connOpts := []clientconn.ConnectionOption{
+		clientconn.ServerName(o.serverName),
+		clientconn.MaxMsgReceiveSize(maxRespMsgSize),
+		clientconn.WithDialOptions(dialOpts...),
+	}
+	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
+// GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
 func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
@@ -128,9 +160,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 	return ir, true, nil
 }
 
-// GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first
-// GetIndexReport, then if not found or if the report is not successful, then
-// call CreateIndexReport.
+// GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
 func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
@@ -138,15 +168,6 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"image", ref.String(),
 	)
 	id := getImageManifestID(ref)
-	ir, exists, err := c.GetImageIndex(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	// If the report already exists, then return it.
-	if exists {
-		return ir, nil
-	}
-	// Otherwise (re-)index the image.
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
 		Host:   ref.RegistryStr(),
@@ -156,9 +177,9 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 	if err != nil {
 		return nil, fmt.Errorf("get auth: %w", err)
 	}
-	req := v4.CreateIndexReportRequest{
+	req := v4.GetOrCreateIndexReportRequest{
 		HashId: id,
-		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
+		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
 				Url:      imgURL.String(),
 				Username: authCfg.Username,
@@ -166,8 +187,9 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 			},
 		},
 	}
-	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.CreateIndexReport", func() (err error) {
-		ir, err = c.indexer.CreateIndexReport(ctx, &req)
+	var ir *v4.IndexReport
+	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
+		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req)
 		return err
 	})
 	if err != nil {
@@ -176,7 +198,7 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 	return ir, nil
 }
 
-// IndexAndScanImage get or create an index report for the image, then call the
+// IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
 func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx,

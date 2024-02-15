@@ -55,6 +55,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
                     return '/v1/apitokens'; // plural in endpoint address (and see next function)
                 case 'clusterInitBundle': // singular in page address
                     return '/v1/cluster-init/init-bundles'; // plural in endpoint address
+                case 'machineAccess':
+                    return '/v1/auth/m2m';
                 default:
                     return '';
             }
@@ -66,6 +68,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
             return '/v1/notifiers';
         case 'signatureIntegrations': // camelCase in page address
             return '/v1/signatureintegrations'; // lowercase in endpoint address
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -79,6 +83,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
                     return 'apitokens'; // plural in endpoint alias
                 case 'clusterInitBundle': // singular in page address
                     return 'cluster-init/init-bundles'; // plural in endpoint alias
+                case 'machineAccess':
+                    return '/v1/auth/m2m';
                 default:
                     return '';
             }
@@ -90,6 +96,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return 'notifiers';
         case 'signatureIntegrations': // camelCase in page address
             return 'signatureintegrations'; // lowercase in endpoint alias
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -119,7 +127,7 @@ function getIntegrationEndpointAddress(integrationSource, integrationType, integ
 const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
     [
         ['authProviders', 'apitoken'],
-        ['authProviders', 'clusterInitBundle'],
+        ['authProviders', 'machineAccess'],
         ['imageIntegrations'],
         ['signatureIntegrations'],
         ['notifiers'],
@@ -149,6 +157,7 @@ const integrationTitleMap = {
     authProviders: {
         apitoken: 'API Token',
         clusterInitBundle: 'Cluster Init Bundle',
+        machineAccess: 'Machine access configuration',
     },
     backups: {
         gcs: 'Google Cloud Storage',
@@ -183,6 +192,9 @@ const integrationTitleMap = {
     },
     signatureIntegrations: {
         signature: 'Signature',
+    },
+    cloudSources: {
+        paladinCloud: 'Paladin Cloud',
     },
 };
 
@@ -311,7 +323,7 @@ export function clickCreateNewIntegrationInTable(
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationTitle}")`);
-    cy.get(`${selectors.breadcrumbItem}:contains("Create Integration")`); // TODO Title Case
+    cy.get(`${selectors.breadcrumbItem}:contains("Create integration")`); // TODO Title Case
 }
 
 export function deleteIntegrationInTable(integrationSource, integrationType, integrationName) {

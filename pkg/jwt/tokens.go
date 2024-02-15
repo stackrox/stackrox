@@ -4,10 +4,10 @@ package jwt
 import (
 	"time"
 
+	"github.com/go-jose/go-jose/v3"
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
-	"gopkg.in/square/go-jose.v2"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 // A Validator checks JSON Web Tokens (JWTs) to ensure they are intended for

@@ -41,7 +41,6 @@ var (
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
 			ScanConfigName:     "scanConfig1",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -54,7 +53,6 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -67,7 +65,6 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig1",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -80,7 +77,6 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig2",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID2,
 		},
 	}
 
@@ -96,7 +92,6 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -109,7 +104,6 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig1",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -122,7 +116,6 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig2",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID2,
 		},
 	}
 
@@ -138,7 +131,6 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 	}
 

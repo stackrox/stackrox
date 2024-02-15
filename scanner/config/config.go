@@ -15,7 +15,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"gopkg.in/yaml.v3"
 )
 
@@ -40,7 +42,6 @@ var (
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
 			},
-			// TODO(ROX-19005): replace with a URL related to the desired version.
 			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst",
 		},
 		// Default is empty.
@@ -163,10 +164,11 @@ type MatcherConfig struct {
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
 	IndexerAddr string `yaml:"indexer_addr"`
-	// VulnerabilitiesURL sets the URL to pull vulnerability data bundles.
+	// VulnerabilitiesURL specifies the URL to query for vulnerabilities.
 	VulnerabilitiesURL string `yaml:"vulnerabilities_url"`
 	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
 	RemoteIndexerEnabled bool
+	VulnerabilityVersion string `yaml:"vulnerability_version"`
 }
 
 func (c *MatcherConfig) validate() error {
@@ -185,9 +187,22 @@ func (c *MatcherConfig) validate() error {
 			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)
 		}
 	}
-	if _, err := url.Parse(c.VulnerabilitiesURL); err != nil {
-		return fmt.Errorf("vulnerabilities_url: %w", err)
+
+	if c.VulnerabilitiesURL == "" {
+		return errors.New("vulnerabilities_url: cannot be empty")
 	}
+	if _, err := url.Parse(c.VulnerabilitiesURL); err != nil {
+		return fmt.Errorf("vulnerabilities_url: invalid URL: %w", err)
+	}
+
+	v := "dev"
+	if buildinfo.ReleaseBuild {
+		v = version.Version
+	}
+	if c.VulnerabilityVersion != "" {
+		v = c.VulnerabilityVersion
+	}
+	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", v)
 	return nil
 }
 

@@ -78,6 +78,7 @@ export const integrations = {
     externalBackups: '/v1/externalbackups',
     apiTokens: 'v1/apitokens?revoked=false',
     clusterInitBundles: '/v1/cluster-init/init-bundles',
+    machineAccessConfigs: '/v1/auth/m2m',
 };
 
 export const integration = {

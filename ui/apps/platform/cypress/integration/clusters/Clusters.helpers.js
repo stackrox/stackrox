@@ -63,6 +63,11 @@ export function assertClusterNameInHeading(clusterName) {
     cy.get(`h1:contains("${clusterName}")`);
 }
 
+export function assertClustersPage() {
+    cy.location('pathname').should('eq', clustersPath);
+    cy.get(`h1:contains("${title}")`);
+}
+
 // visit
 
 /**
@@ -85,8 +90,7 @@ export function interactAndVisitClusters(interactionCallback, staticResponseMap)
 export function visitClustersFromLeftNav() {
     visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMapForClusters);
 
-    cy.location('pathname').should('eq', clustersPath);
-    cy.get(`h1:contains("${title}")`);
+    assertClustersPage();
 }
 
 /**

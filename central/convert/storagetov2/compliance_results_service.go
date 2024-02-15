@@ -108,7 +108,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 }
 
 // ComplianceV2ClusterStats converts the counts to the v2 stats
-func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClusterScan) []*v2.ComplianceClusterScanStats {
+func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClusterScan, scanToScanID map[string]string) []*v2.ComplianceClusterScanStats {
 	var convertedResults []*v2.ComplianceClusterScanStats
 
 	for _, resultCount := range resultCounts {
@@ -119,7 +119,7 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 			},
 			ScanStats: &v2.ComplianceScanStatsShim{
 				ScanName:     resultCount.ScanConfigName,
-				ScanConfigId: resultCount.ScanConfigID,
+				ScanConfigId: scanToScanID[resultCount.ScanConfigName],
 				CheckStats: []*v2.ComplianceCheckStatusCount{
 					{
 						Count:  int32(resultCount.FailCount),
@@ -157,7 +157,7 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 }
 
 // ComplianceV2ClusterOverallStats converts the counts to the v2 stats
-func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster) []*v2.ComplianceClusterOverallStats {
+func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string) []*v2.ComplianceClusterOverallStats {
 	var convertedResults []*v2.ComplianceClusterOverallStats
 
 	for _, resultCount := range resultCounts {
@@ -166,6 +166,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 				ClusterId:   resultCount.ClusterID,
 				ClusterName: resultCount.ClusterName,
 			},
+			ClusterErrors: clusterErrors[resultCount.ClusterID],
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
