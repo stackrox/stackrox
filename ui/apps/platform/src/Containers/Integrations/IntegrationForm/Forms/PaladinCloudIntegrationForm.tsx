@@ -8,6 +8,7 @@ import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import merge from 'lodash/merge';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
 import IntegrationFormActions from '../IntegrationFormActions';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
@@ -53,7 +54,7 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
         credentials: {
             secret: '',
         },
-        skipTestIntegration: true,
+        skipTestIntegration: false,
         paladinCloud: {
             endpoint: 'https://api.paladincloud.io',
         },
@@ -82,6 +83,7 @@ function PaladinCloudIntegrationForm({
         isSubmitting,
         isTesting,
         onSave,
+        onTest,
         onCancel,
         message,
     } = useIntegrationForm<CloudSourceIntegrationFormValues>({
@@ -178,6 +180,21 @@ function PaladinCloudIntegrationForm({
                             }
                         />
                     </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="cloudSource.skipTestIntegration"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Create integration Without Testing"
+                            id="cloudSource.skipTestIntegration"
+                            aria-label="skip test integration"
+                            isChecked={values.cloudSource.skipTestIntegration}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
                 </Form>
             </PageSection>
             {isEditable && (
@@ -190,6 +207,14 @@ function PaladinCloudIntegrationForm({
                     >
                         Save
                     </FormSaveButton>
+                    <FormTestButton
+                        onTest={onTest}
+                        isSubmitting={isSubmitting}
+                        isTesting={isTesting}
+                        isDisabled={!isValid}
+                    >
+                        Test
+                    </FormTestButton>
                     <FormCancelButton onCancel={onCancel}>Cancel</FormCancelButton>
                 </IntegrationFormActions>
             )}
