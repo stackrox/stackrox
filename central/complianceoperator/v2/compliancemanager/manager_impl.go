@@ -2,6 +2,7 @@ package compliancemanager
 
 import (
 	"context"
+	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
@@ -201,12 +202,12 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// Get all profiles from the database to validate that they exist and are compatible
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
 
 	if err != nil {
-		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
@@ -306,7 +307,7 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 func validateProfiles(profiles []*storage.ComplianceOperatorProfileV2) error {
 	var product string
 	for _, profile := range profiles {
-		if profile.GetProductType() == "node" {
+		if strings.Contains(strings.ToLower(profile.GetProductType()), "node") {
 			if product == "" {
 				product = profile.GetProduct()
 			} else if product != profile.GetProduct() {

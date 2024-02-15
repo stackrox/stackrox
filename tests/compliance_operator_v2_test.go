@@ -282,6 +282,9 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 
 	// Verify that the invalid scan configuration was not created and the error message is correct
 	_, err = service.CreateComplianceScanConfiguration(ctx, invalidProfileReq)
+	if err == nil {
+		t.Fatal("expected error creating scan configuration with invalid profiles")
+	}
 	assert.Contains(t, err.Error(), "profiles must have the same product")
 
 	query = &v2.RawQuery{Query: ""}
