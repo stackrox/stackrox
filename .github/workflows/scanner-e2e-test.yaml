@@ -52,8 +52,8 @@ jobs:
               echo "Deployment $name is ready" 
           }
 
-          wait_deployment scanner-v4 &
-          wait_deployment scanner-v4-db &
+          wait_deployment stackrox scanner-v4 &
+          wait_deployment stackrox scanner-v4-db &
           make -C scanner e2e-deploy db-host-path="$v"
           wait
       - name: Services
