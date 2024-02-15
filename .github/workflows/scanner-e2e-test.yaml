@@ -33,8 +33,7 @@ jobs:
           cpus: max
           memory: max
           
-      - name: Deploy chart
-        id: deploy-chart
+      - name: Install helm chart
         run: |
           d="${{ runner.temp }}"/pgdata
           mkdir -m 777 -p "$d"
@@ -51,8 +50,8 @@ jobs:
           wait_deployment stackrox scanner-v4-db &
           make -C scanner e2e-deploy db-host-path="$d"
 
-      - name: Deploy failure logging
-        if: failure()
+      - name: Show deployment details
+        if: success() || failure()
         run: |
           kubectl -n stackrox describe pods -l app=scanner-v4-db || true
           kubectl -n stackrox logs -l app=scanner-v4-db --all-containers=true || true
