@@ -39,12 +39,14 @@ jobs:
           mkdir -m 777 -p "$v"
 
           wait_deployment() {
+              local ns
               local name
-              name="${1:?missing require argument 'name'}"
-              while ! kubectl wait -n stackrox --for=condition=available --timeout=5s deployment/"$name"; do
+              ns="${1:?missing required arg 'ns'}
+              name="${1:?missing required arg 'name'}"
+              while ! kubectl wait -n "$ns" --for=condition=available --timeout=5s deployment/"$name"; do
                   echo "Deployment $name is not ready. Checking status..."
-                  kubectl describe deployment "$name" -n stackrox || true
-                  kubectl get pods -n stackrox -l app="$name" -o jsonpath="{.items[*].metadata.name}" \
+                  kubectl -n "$ns" describe deployment "$name" -n stackrox || true
+                  kubectl -n "$ns" get pods -n stackrox -l app="$name" -o jsonpath="{.items[*].metadata.name}" \
                       | xargs -I {} kubectl logs {} -n stackrox --tail=10
               done
               echo "Deployment $name is ready" 
