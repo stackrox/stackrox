@@ -54,7 +54,7 @@ func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuiteV2 {
 
 // GetSuiteSensorMsg -- returns a suite message from sensor
 func GetSuiteSensorMsg(_ *testing.T) *central.ComplianceOperatorSuiteV2 {
-	status := &central.ComplianceOperatorSuiteV2_Status{
+	status := &central.ComplianceOperatorStatus{
 		Phase:        "DONE",
 		Result:       "NON-COMPLIANT",
 		ErrorMessage: "some error",

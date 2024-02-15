@@ -156,6 +156,7 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 func getLatestBindingError(status *storage.ComplianceOperatorStatus) string {
 	conditions := status.GetConditions()
 	for _, c := range conditions {
+		// If this either an invalid or suspended condition, only then is this an error case
 		if c.GetType() == "READY" && c.GetStatus() == "False" {
 			return c.GetMessage()
 		}
@@ -180,24 +181,26 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	var errors []string
-	bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).ProtoQuery())
-	if err != nil {
-		return nil, err
-	}
-
-	bindingError := getLatestBindingError(bindings[0].Status)
-	if bindingError != "" {
-		errors = append(errors, bindingError)
-	}
-
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
+				var errors []string
+				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
+					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
+					AddExactMatches(search.ClusterID, cluster.ClusterId).ProtoQuery())
+				if err != nil {
+					// log
+					continue
+				}
+
+				bindingError := getLatestBindingError(bindings[0].Status)
+				if bindingError != "" {
+					errors = append(errors, bindingError)
+				}
+
 				errors = append(errors, cluster.GetErrors()...)
 				clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
 					ClusterId:   cluster.GetClusterId(),

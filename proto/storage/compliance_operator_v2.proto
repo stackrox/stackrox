@@ -203,11 +203,10 @@ message ComplianceOperatorScanSettingBindingV2 {
   repeated string profile_names = 4;
   string scan_setting_name = 5 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name"'];
 
-  ComplianceOperatorStatus status = 6;
+  reserved 6;
   map<string, string> labels = 7;
   map<string, string> annotations = 8;
-
-
+  ComplianceOperatorStatus status = 9;
 }
 
 // Next Tag: 6
@@ -236,5 +235,6 @@ message ComplianceOperatorSuiteV2 {
   string name = 2 [(gogoproto.moretags) = 'search:"Compliance Suite Name,hidden"'];
   string cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
 
-  ComplianceOperatorStatus status = 4;
+  reserved 4;
+  ComplianceOperatorStatus status = 5;
 }
