@@ -48,7 +48,7 @@ jobs:
                       | xargs -I {} kubectl logs {} -n stackrox --tail=10
               done
               echo "Deployment $name is ready" 
-          done
+          }
 
           wait_deployment scanner-v4 &
           wait_deployment scanner-v4-db &
