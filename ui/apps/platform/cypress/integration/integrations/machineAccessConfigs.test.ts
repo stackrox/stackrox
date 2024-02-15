@@ -18,6 +18,13 @@ const integrationSource = 'authProviders';
 
 describe('Machine Access Configs', () => {
     withAuth();
+    
+    before(function () {
+        if (!hasFeatureFlag('ROX_AUTH_MACHINE_TO_MACHINE')) {
+            this.skip();
+        }
+    });
+
 
     it('should create a new Machine Access integration and then view and delete', () => {
         const integrationType = 'machineAccess';
