@@ -29,8 +29,6 @@ spec:
           memory: 1Gi
   customize:
     envVars:$customize_envVars
-  scannerV4:
-    scannerComponent: $scanner_v4_component
   scanner:
     analyzer:
       scaling:

@@ -267,13 +267,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_SCANNER_V4'
-    customize_envVars+=$'\n        value: "'"${ROX_SCANNER_V4:-false}"'"'
-
-    scanner_v4_component="Disabled"
-    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        scanner_v4_component="Enabled"
-    fi
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -287,9 +280,18 @@ deploy_central_via_operator() {
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
-      scanner_v4_component="$scanner_v4_component" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
+
+    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        kubectl -n "${central_namespace}" \
+            patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Enabled
+EOT
+            )
+    fi
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
 }
@@ -337,7 +339,6 @@ deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
     local scanner_component_setting="Disabled"
-    local scanner_v4_component_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -364,18 +365,43 @@ deploy_sensor_via_operator() {
     if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
         scanner_component_setting="AutoSense"
     fi
-    if [[ "${SENSOR_SCANNER_V4_SUPPORT:-}" == "true" ]]; then
-        scanner_v4_component_setting="AutoSense"
-    fi
 
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
-      scanner_v4_component_setting="$scanner_v4_component_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
+
+    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        kubectl -n "${sensor_namespace}" \
+            patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: AutoSense
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    db:
+      resources:
+        requests:
+          cpu: 300m
+          memory: 500Mi
+        limits:
+          cpu: 1000m
+          memory: 1000Mi
+EOT
+            )
+    fi
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
