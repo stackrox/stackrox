@@ -7,6 +7,8 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+// Comment out Names filter for 4.4 MVP because testers expected partial match instead of exact match.
+
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import {
     DiscoveredClusterStatus,
@@ -14,19 +16,19 @@ import {
     getDiscoveredClustersFilter,
     isStatus,
     isType,
-    replaceSearchFilterNames,
+    // replaceSearchFilterNames,
     replaceSearchFilterStatuses,
     replaceSearchFilterTypes,
 } from 'services/DiscoveredClusterService';
 import { SearchFilter } from 'types/search';
 
 import SearchFilterTypes from './SearchFilterTypes';
-import SearchFilterNames from './SearchFilterNames';
+// import SearchFilterNames from './SearchFilterNames';
 import SearchFilterStatuses from './SearchFilterStatuses';
 import { getStatusText, getTypeText } from './DiscoveredCluster';
 
 const searchFilterChipDescriptors = [
-    { displayName: 'Name', searchFilterName: 'Cluster' },
+    // { displayName: 'Name', searchFilterName: 'Cluster' },
     {
         displayName: 'Status',
         searchFilterName: 'Cluster Status',
@@ -41,7 +43,8 @@ const searchFilterChipDescriptors = [
 
 export type DiscoveredClustersToolbarProps = {
     count: number;
-    isDisabled: boolean;
+    // Comment out use of prop for MVP because testers complained about flicker.
+    isDisabled: boolean; // eslint-disable-line react/no-unused-prop-types
     page: number;
     perPage: number;
     setPage: (newPage: number) => void;
@@ -52,7 +55,8 @@ export type DiscoveredClustersToolbarProps = {
 
 function DiscoveredClustersToolbar({
     count,
-    isDisabled,
+    // Comment out for MVP because testers complained about flicker.
+    // isDisabled,
     page,
     perPage,
     setPage,
@@ -60,9 +64,11 @@ function DiscoveredClustersToolbar({
     searchFilter,
     setSearchFilter,
 }: DiscoveredClustersToolbarProps): ReactElement {
+    /*
     function setNamesSelected(names: string[] | undefined) {
         setSearchFilter(replaceSearchFilterNames(searchFilter, names));
     }
+    */
 
     function setStatusesSelected(statuses: DiscoveredClusterStatus[] | undefined) {
         setSearchFilter(replaceSearchFilterStatuses(searchFilter, statuses));
@@ -73,7 +79,7 @@ function DiscoveredClustersToolbar({
     }
 
     const {
-        names: namesSelected,
+        // names: namesSelected,
         types: typesSelected,
         statuses: statusesSelected,
     } = getDiscoveredClustersFilter(searchFilter);
@@ -81,25 +87,32 @@ function DiscoveredClustersToolbar({
     return (
         <Toolbar>
             <ToolbarContent>
+                {/*
                 <ToolbarItem variant="search-filter">
                     <SearchFilterNames
                         namesSelected={namesSelected}
-                        isDisabled={isDisabled}
+                        // Comment out for MVP because testers complained about flicker.
+                        // isDisabled={isDisabled}
                         setNamesSelected={setNamesSelected}
                     />
-                </ToolbarItem>
+                    </ToolbarItem>
+                */}
                 <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
                         <SearchFilterStatuses
                             statusesSelected={statusesSelected}
-                            isDisabled={isDisabled}
+                            // Comment out for MVP because testers complained about flicker.
+                            // isDisabled={isDisabled}
+                            isDisabled={false}
                             setStatusesSelected={setStatusesSelected}
                         />
                     </ToolbarItem>
                     <ToolbarItem>
                         <SearchFilterTypes
                             typesSelected={typesSelected}
-                            isDisabled={isDisabled}
+                            // Comment out for MVP because testers complained about flicker.
+                            // isDisabled={isDisabled}
+                            isDisabled={false}
                             setTypesSelected={setTypesSelected}
                         />
                     </ToolbarItem>
@@ -108,7 +121,8 @@ function DiscoveredClustersToolbar({
                     <ToolbarItem variant="pagination">
                         <Pagination
                             isCompact
-                            isDisabled={isDisabled}
+                            // Comment out for MVP because testers complained about flicker.
+                            // isDisabled={isDisabled}
                             itemCount={count}
                             page={page}
                             perPage={perPage}
