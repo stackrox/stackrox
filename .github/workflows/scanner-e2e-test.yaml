@@ -11,14 +11,26 @@ on:
     - jvdm/*
   
 jobs:
-  run-e2e:
+  e2e-run:
     runs-on: ubuntu-latest
+    env:
+      SCANNER_E2E_IMAGE_TAG: 4.3.x-1165-g862a40727a
     steps:
-    - name: Start minikube
-      id: minikube
-      uses: medyagh/setup-minikube@master
-      with:
-        driver: podman
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Try the cluster
-      run: kubectl get pods -A      
+      - uses: ./.github/actions/job-preamble
+
+      - uses: ./.github/actions/cache-go-dependencies
+
+      - name: Start minikube
+        id: minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          driver: none # baremetal
+
+      - name: Deploy E2E
+        run: |
+          make tag
+          echo $SCANNER_E2E_IMAGE_TAG
+          make -C scanner e2e-deploy

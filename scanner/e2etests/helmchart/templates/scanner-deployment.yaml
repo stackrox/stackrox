@@ -22,7 +22,7 @@ spec:
         fsGroup: 65534  # Set the group ownership to the `nobody` group, see dockerfile.
       containers:
       - name: scanner
-        image: "{{ ( printf "%s/%s:%s" .Values.image.repository .Values.app.scanner.name .Values.image.tag ) }}"
+        image: "{{ (printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}"
         imagePullPolicy: IfNotPresent
         command:
           - entrypoint.sh
