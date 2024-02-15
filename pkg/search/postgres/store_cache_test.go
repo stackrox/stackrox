@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -16,6 +15,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -204,6 +204,10 @@ func TestCachedCount(t *testing.T) {
 	assert.NoError(t, store.Upsert(cachedStoreCtx, testObject1))
 
 	secondCount, err2 := store.Count(cachedStoreCtx, nil)
+	assert.Equal(t, 1, secondCount)
+	assert.NoError(t, err2)
+
+	secondCount, err2 = store.Count(cachedStoreCtx, search.EmptyQuery())
 	assert.Equal(t, 1, secondCount)
 	assert.NoError(t, err2)
 

@@ -3,15 +3,11 @@ package store
 import (
 	"context"
 	"io"
-	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -58,14 +54,10 @@ func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
 }
 
 func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Blob")
-
 	return s.store.Count(ctx, q)
 }
 
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Blob")
-
 	return s.store.Search(ctx, q)
 }
 
