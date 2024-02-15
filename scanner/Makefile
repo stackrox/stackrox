@@ -354,7 +354,7 @@ e2e-certs := ca.pem \
 
 .PHONY: e2e-deploy clean-e2e
 
-e2e-deploy: namespace := $(SCANNER_E2E_NAMESPACE)
+e2e-deploy: namespace := $(SCANNER_NAMESPACE)
 e2e-deploy: release   := scanner-v4-e2e
 
 e2e-deploy: registry :=
