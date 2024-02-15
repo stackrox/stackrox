@@ -163,6 +163,25 @@ function launch_central {
     elif [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
       echo "Using $(command -v roxctl) for install due to version match with MAIN_IMAGE_TAG $MAIN_IMAGE_TAG"
       use_docker=0
+    else
+      echo "Using docker with $ROXCTL_IMAGE for install. Set USE_LOCAL_ROXCTL=true if you want to use your local version of roxctl"
+      if ! docker pull "$ROXCTL_IMAGE"; then
+        echo "Failed to pull $ROXCTL_IMAGE"
+        exit 1
+      fi
+
+      _check_images() {
+        local images=("$@")
+
+        local image
+        for image in "${images[@]}"; do
+          if ! docker manifest inspect "${image}" > /dev/null; then
+            yes_no_prompt "Couldn't find ${image}. Do you want to continue anyway?" || { echo >&2 "Exiting as requested"; exit 1; }
+          fi
+        done
+      }
+
+      _check_images "${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}"
     fi
 
     add_args() {
