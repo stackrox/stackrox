@@ -230,7 +230,7 @@ function launch_central {
         fi
     fi
 
-    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
+    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" ]]; then
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
