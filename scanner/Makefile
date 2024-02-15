@@ -412,7 +412,7 @@ e2e-run: export DOCKER_PASSWORD=$(SCANNER_E2E_DOCKER_PASSWORD)
 
 e2e-run: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(go-tag) -count=1 -timeout=$(timeout) -v ./$(e2e-d)/...
+	$(GO_TEST_CMD) -tags $(go-tag) -count=1 -timeout=$(timeout) -v ./$(e2e-d)/...
 
 .PHONY: e2e
 e2e: e2e-deploy e2e-run
