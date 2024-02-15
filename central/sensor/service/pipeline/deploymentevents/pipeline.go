@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -112,6 +113,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	deployment := event.GetDeployment()
 	deployment.ClusterId = clusterID
+
+	// ROX-22002: Remove invalid null characters in annotations
+	deployment.Annotations = stringutils.SanitizeMapValues(deployment.GetAnnotations())
 
 	var err error
 	switch event.GetAction() {
