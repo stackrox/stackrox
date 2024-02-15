@@ -45,7 +45,7 @@ jobs:
                   kubectl describe -n "$ns" pods -l app="$app" || true
                   kubectl logs -n "$ns" -l app="$app" --all-containers=true || true
               done
-              echo "Deployment $name is available" 
+              echo "Deployment $app is available" 
           }
           wait_deployment stackrox scanner-v4 &
           wait_deployment stackrox scanner-v4-db &
