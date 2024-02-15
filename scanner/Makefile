@@ -337,12 +337,6 @@ SCANNER_E2E_DOCKER_PASSWORD ?=
 # E2E rules
 # =========
 
-e2e-d            := e2etests
-e2e-chart-d      := $(e2e-d)/helmchart
-e2e-files-d      := $(e2e-chart-d)/files
-e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
-e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
-
 e2e-conf-files := db-postgresql.conf \
                   db-pg_hba.conf
 
@@ -351,6 +345,12 @@ e2e-certs := ca.pem \
              scanner-v4-cert.pem \
              scanner-v4-db-key.pem \
              scanner-v4-db-cert.pem
+
+e2e-d            := e2etests
+e2e-chart-d      := $(e2e-d)/helmchart
+e2e-files-d      := $(e2e-chart-d)/files
+e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
+e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
 
 .PHONY: e2e-deploy clean-e2e
 

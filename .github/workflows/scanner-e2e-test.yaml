@@ -13,12 +13,13 @@ on:
 jobs:
   e2e-run:
     runs-on: ubuntu-latest
+    env:
+      SCANNER_E2E_IMAGE_TAG: 4.3.x-1163-g61a55af9c8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: master
 
       - uses: ./.github/actions/job-preamble
 
@@ -44,7 +45,7 @@ jobs:
       - name: Services
         run: |
           minikube service list
-          minikube service discover --url          
+          minikube -n stackrox service discover --url
 
       - name: Run tests
         run: |
