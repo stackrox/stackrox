@@ -2,6 +2,7 @@ import React, { ReactElement, useState } from 'react';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import useAnalytics, { CREATE_INIT_BUNDLE_CLICKED } from 'hooks/useAnalytics';
 import useRestQuery from 'hooks/useRestQuery';
 import { ClusterInitBundle, fetchClusterInitBundles } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -16,12 +17,19 @@ export type InitBundlesPageProps = {
 };
 
 function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const [initBundleToRevoke, setInitBundleToRevoke] = useState<ClusterInitBundle | null>(null);
     const headerActions = hasWriteAccessForInitBundles ? (
         <Button
             variant="primary"
             component={LinkShim}
             href={`${clustersInitBundlesPath}?action=create`}
+            onClick={() => {
+                analyticsTrack({
+                    event: CREATE_INIT_BUNDLE_CLICKED,
+                    properties: { source: 'Cluster Init Bundles' },
+                });
+            }}
         >
             Create bundle
         </Button>

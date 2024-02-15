@@ -7,6 +7,7 @@ import { ClipLoader } from 'react-spinners';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import { ClusterManagerType } from 'types/cluster.proto';
+import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_YAML } from 'hooks/useAnalytics';
 
 const baseClass = 'py-6';
 
@@ -29,6 +30,8 @@ function ClusterDeployment({
     toggleSA,
     managerType,
 }: ClusterDeploymentProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
+
     let managerTypeTitle = 'Dynamic configurations are automatically applied';
     let managerTypeText =
         'If you edited static configurations or you need to redeploy, download a new bundle.';
@@ -72,7 +75,10 @@ function ClusterDeployment({
                                     <Button
                                         variant="secondary"
                                         icon={<DownloadIcon />}
-                                        onClick={onFileDownload}
+                                        onClick={() => {
+                                            onFileDownload();
+                                            analyticsTrack(LEGACY_CLUSTER_DOWNLOAD_YAML);
+                                        }}
                                         isDisabled={isDownloadingBundle}
                                         isLoading={isDownloadingBundle}
                                     >
