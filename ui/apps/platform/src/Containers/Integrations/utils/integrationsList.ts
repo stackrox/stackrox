@@ -290,7 +290,13 @@ export const paladinCloudDescriptor: CloudSourceDescriptor = {
     type: 'paladinCloud',
 };
 
-const cloudSourceDescriptors = [paladinCloudDescriptor];
+export const ocmDescriptor: CloudSourceDescriptor = {
+    image: redhat,
+    label: 'OCM',
+    type: 'ocm',
+};
+
+const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
 
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {

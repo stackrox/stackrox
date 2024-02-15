@@ -45,6 +45,8 @@ import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 // cloud source integrations
 import PaladinCloudIntegrationForm from './Forms/PaladinCloudIntegrationForm';
+import OcmIntegrationForm from "./Forms/OcmIntegrationForm";
+
 
 import './IntegrationForm.css';
 
@@ -104,6 +106,7 @@ const ComponentFormMap = {
     },
     cloudSources: {
         paladinCloud: PaladinCloudIntegrationForm,
+        ocm: OcmIntegrationForm,
     },
 } as Record<
     IntegrationSource,

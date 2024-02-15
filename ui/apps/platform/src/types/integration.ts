@@ -59,7 +59,7 @@ export type NotifierIntegrationType =
 
 export type SignatureIntegrationType = 'signature';
 
-export type CloudSourceIntegrationType = 'paladinCloud';
+export type CloudSourceIntegrationType = 'paladinCloud' | 'ocm';
 
 export type BaseIntegration = {
     id: string;
