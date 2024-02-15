@@ -42,7 +42,16 @@ function main() {
   apply_operator_manifests "${operator_ns}" "${image_tag_base}" "${index_version}" "${operator_version}"
 
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-    local -r operator_version_midstream=$(oc get csv -n "${operator_ns}" -o jsonpath='{.items[0].spec.version}')
+    if ! retry 15 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
+      log "Install plan failed to materialize."
+      log "Dumping pod descriptions..."
+      kubectl -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
+      log "Dumping catalog sources and subscriptions..."
+      kubectl -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
+      exit 1
+    fi
+    local -r current_csv=$(kubectl get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
+    local -r operator_version_midstream=$(oc get csv -n "${operator_ns}" "${current_csv}" -o jsonpath='{.spec.version}')
     nurse_deployment_until_available "${operator_ns}" "${operator_version_midstream}"
   else
     approve_install_plan "${operator_ns}" "${operator_version}"
