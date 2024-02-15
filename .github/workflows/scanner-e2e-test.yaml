@@ -35,9 +35,9 @@ jobs:
       - name: Deploy chart
         run: |
           make tag
-          while sleep 10; do
+          while sleep 2; do
               kubectl -n stackrox get pod
-              [ $(( c++ % 10 )) -eq 0 ] && {
+              [ $(( c++ % 5 )) -eq 0 ] && {
                   kubectl -n stackrox describe pod
                   kubectl -n stackrox logs deployment/scanner-v4-db db || true
                   kubectl -n stackrox logs deployment/scanner-v4-db init-db || true                  
@@ -45,6 +45,7 @@ jobs:
           done&
           v="${{ runner.temp }}"/pgdata
           mkdir -p "$v"
+          chmod 777 $v
           ls -ld $v
           make -C scanner e2e-deploy db-host-path="$v"
           kill %1
