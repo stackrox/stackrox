@@ -48,7 +48,6 @@ jobs:
 
     - name: Generate offline vulnerability bundle
       run: .github/workflows/scripts/scanner-update-offline-bundle.sh "$ROX_PRODUCT_VERSION"
-      shell: bash
 
   send-notification:
     needs:
