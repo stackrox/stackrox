@@ -1,0 +1,21 @@
+name: Scanner E2E tests
+
+on:
+  workflow_run:
+    workflows: ["Scanner build and push images"]
+    types:
+      - completed
+
+  push:
+    branches:
+    - jvdm/*
+  
+jobs:
+  run-e2e:
+    steps:
+    - name: Start minikube
+      id: minikube
+      uses: medyagh/setup-minikube@master
+
+    - name: Try the cluster
+      run: kubectl get pods -A      
