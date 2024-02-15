@@ -335,10 +335,6 @@ e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
 
 .PHONY: e2e-deploy clean-e2e
 
-ifeq ($(SILENT),@)
-.SILENT: e2e-deploy $(e2e-conf-files-t)
-endif
-
 e2e-deploy: $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" $(e2e-image-tag)
 	$(SILENT)-kubectl create namespace $(e2e-namespace)
