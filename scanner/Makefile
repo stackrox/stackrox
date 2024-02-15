@@ -385,10 +385,10 @@ e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	    --namespace $(namespace) \
 	    --atomic \
 	    --timeout $(timeout) \
+	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \
 	    --set app.db.image.tag=$(db-tag) \
-	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.scanner.image.registry=$(scanner-registry) \
 	    --set app.scanner.image.name=$(scanner-name) \
 	    --set app.scanner.image.tag=$(scanner-tag)
