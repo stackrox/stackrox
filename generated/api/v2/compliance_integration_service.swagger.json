@@ -245,7 +245,7 @@
           "description": "Collection of errors that occurred while trying to obtain compliance operator health info."
         }
       },
-      "title": "Next Tag: 8"
+      "title": "Next Tag: 7"
     },
     "v2CountComplianceIntegrationsResponse": {
       "type": "object",
