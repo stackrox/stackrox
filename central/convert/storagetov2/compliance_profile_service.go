@@ -45,6 +45,9 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, c
 	profileClusterMap := make(map[string][]string, len(incoming))
 	profileSummaryMap := make(map[string]*v2.ComplianceProfileSummary)
 
+	// Used to maintain sort order from the query since maps are unordered.
+	var orderedProfiles []string
+
 	for _, summary := range incoming {
 		profileClusters, clusterFound := profileClusterMap[summary.GetName()]
 
@@ -64,24 +67,18 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, c
 				RuleCount:      int32(len(summary.Rules)),
 				ProfileVersion: summary.ProfileVersion,
 			}
+			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
 	}
 
 	summaries := make([]*v2.ComplianceProfileSummary, 0, len(profileSummaryMap))
-	for k, v := range profileSummaryMap {
+	for _, profileName := range orderedProfiles {
 		// Verify the profile is in all clusters
-		if len(profileClusterMap[k]) != len(clusterIDs) {
+		if len(profileClusterMap[profileName]) != len(clusterIDs) {
 			continue
 		}
 
-		summaries = append(summaries, &v2.ComplianceProfileSummary{
-			Name:           v.Name,
-			ProductType:    v.ProductType,
-			Description:    v.Description,
-			Title:          v.Title,
-			RuleCount:      v.RuleCount,
-			ProfileVersion: v.ProfileVersion,
-		})
+		summaries = append(summaries, profileSummaryMap[profileName])
 	}
 
 	return summaries
