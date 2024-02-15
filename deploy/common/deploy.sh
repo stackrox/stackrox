@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eoux
+set -eoux pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
