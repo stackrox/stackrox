@@ -380,7 +380,6 @@ e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	$(SILENT)-kubectl create namespace $(namespace)
 	helm $(if $(debug),template --debug,upgrade --install) $(release) $< \
 	    --namespace $(namespace) \
-	    --verify \
 	    --atomic \
 	    --wait-for-jobs \
 	    --timeout 2h \
