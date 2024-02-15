@@ -251,7 +251,6 @@
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
-    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
     {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
 
@@ -298,7 +297,6 @@ already activated, we let `scanner.disable: false` have the implicit side-effect
 {{ end }}
 
 {{ if ._rox.scannerV4._indexerEnabled }}
-  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
 [</* Due to historical reasons the image specifications for the secured-cluster-services chart
      are not found under <component-name>.image, but instead under image.<image identifier>.
      Since the image setup code in srox.scannerV4Init configures scannerV4.<scanner V4 component name>
