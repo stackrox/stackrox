@@ -88,10 +88,10 @@ spec:
           name: {{ .Values.app.db.name }}-config
       - name: disk
 {{ if .Values.app.db.persistence.hostPath -}}
-        hostPath: {{ if .Values.app.db.persistence.hostPath -}}
+        hostPath: "{{ .Values.app.db.persistence.hostPath }}"
 {{ else }}
         emptyDir: {}
-{{ endif }]
+{{ end }}
       - name: tls-volume
         secret:
           secretName: {{ .Values.app.db.name }}-tls
