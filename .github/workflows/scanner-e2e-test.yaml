@@ -35,12 +35,17 @@ jobs:
       - name: Deploy chart
         run: |
           make tag
-          t=$(mktemp)
           while sleep 10; do
               kubectl -n stackrox get pod
-              [ $(( c++ % 10 )) -eq 0 ] && kubectl -n stackrox describe pod
+              [ $(( c++ % 10 )) -eq 0 ] && {
+                  kubectl -n stackrox describe pod
+                  kubectl -n stackrox logs deployment/scanner-v4-db
+              }
           done&
-          make -C scanner e2e-deploy db-host-path=${{ runner.temp }}
+          v="${{ runner.temp }}"/pgdata
+          mkdir -p "$v"
+          ls -ld $v
+          make -C scanner e2e-deploy db-host-path="$v"
           kill %1
       - name: Services
         run: |
