@@ -13,13 +13,12 @@ on:
 jobs:
   e2e-run:
     runs-on: ubuntu-latest
-    env:
-      SCANNER_E2E_IMAGE_TAG: 4.3.x-1165-g862a40727a
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: master
 
       - uses: ./.github/actions/job-preamble
 
@@ -37,6 +36,7 @@ jobs:
           make tag
           t=$(mktemp)
           while sleep 1; do
+              echo "logging..."
               kubectl -n stackrox logs deployment/scanner-v4-db init-db -f || true
           done&
           make -C scanner e2e-deploy db-host-path=${{ runner.temp }}
