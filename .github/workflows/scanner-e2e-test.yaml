@@ -31,7 +31,7 @@ jobs:
         uses: medyagh/setup-minikube@master
         with:
           driver: none # baremetal
-          cache: false
+          cache: true
           cpus: max
           memory: max
           
