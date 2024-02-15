@@ -203,7 +203,7 @@ class Helpers {
         }
 
         log.info "There is an annotation difference"
-        // Javers helps provide an understandable error in the test log
+        // Javers helps provide an useful error in the test log
         Javers javers = JaversBuilder.javers().build()
         def diff = javers.compare(stackroxTruncated, orchestratorTruncated)
         assert diff.changes.size() == 0

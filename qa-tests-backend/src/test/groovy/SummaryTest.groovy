@@ -74,21 +74,22 @@ class SummaryTest extends BaseSpecification {
         expect:
         "verify Node Details"
         assert stackroxNodes.size() == orchestratorNodes.size()
-        Boolean diff = false
         Javers javers = JaversBuilder.javers().build()
         for (Node stackroxNode : stackroxNodes) {
             objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
             assert stackroxNode.clusterId == ClusterService.getClusterId()
             assert stackroxNode.name == orchestratorNode.name
             if (stackroxNode.labelsMap != orchestratorNode.labels) {
-                log.info "There is a node label difference - StackRox -v- Orchestrator:"
-                log.info javers.compare(stackroxNode.labelsMap, orchestratorNode.labels).prettyPrint()
-                diff = true
+                log.info "There is a node label difference"
+                // Javers helps provide an useful error in the test log
+                Javers javers = JaversBuilder.javers().build()
+                def diff = javers.compare(stackroxNode.labelsMap, orchestratorNode.labels)
+                assert diff.changes.size() == 0
+                assert diff.changes.size() != 0 // should not get here
             }
             assert stackroxNode.labelsMap == orchestratorNode.labels
-            if (!Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())) {
-                diff = true
-            }
+            // compareAnnotations() - asserts on difference
+            Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())
             assert stackroxNode.internalIpAddressesList == orchestratorNode.internalIps
             assert stackroxNode.externalIpAddressesList == orchestratorNode.externalIps
             assert stackroxNode.containerRuntimeVersion == orchestratorNode.containerRuntimeVersion
@@ -97,7 +98,6 @@ class SummaryTest extends BaseSpecification {
             assert stackroxNode.kubeletVersion == orchestratorNode.kubeletVersion
             assert stackroxNode.kubeProxyVersion == orchestratorNode.kubeProxyVersion
         }
-        assert !diff, "See diff(s) above"
     }
 
     @Tag("BAT")

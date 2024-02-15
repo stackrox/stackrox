@@ -50,7 +50,7 @@ for (Rbac.K8sRole stackroxRole : stackroxRoles) {
     }
     assert role
     role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-    assert Helpers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
+    Helpers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
 }
 
 def stackroxBindings = RbacService.getRoleBindings()
@@ -64,7 +64,7 @@ stackroxBindings.each { Rbac.K8sRoleBinding b ->
     assert binding != null
 
     binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-    assert Helpers.compareAnnotations(binding.annotations, b.annotationsMap)
+    Helpers.compareAnnotations(binding.annotations, b.annotationsMap)
 }
 
 // SummaryTest
@@ -76,5 +76,5 @@ assert stackroxNodes.size() == orchestratorNodes.size()
 
 for (Node stackroxNode : stackroxNodes) {
     objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
-    assert Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())
+    Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())
 }
