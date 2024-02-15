@@ -37,7 +37,7 @@ jobs:
           make tag
           t=$(mktemp)
           while sleep 1; do
-              kubectl -n stackrox logs deployment/scanner-v4-db init-db -f
+              kubectl -n stackrox logs deployment/scanner-v4-db init-db -f || true
           done&
           make -C scanner e2e-deploy db-host-path=${{ runner.temp }}
           kill %1
