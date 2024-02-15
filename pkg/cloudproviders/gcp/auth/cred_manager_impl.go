@@ -101,6 +101,13 @@ func (c *gcpCredentialsManagerImpl) Stop() {
 //     for federated workload identities. Ignored if the secret does not exist.
 //  2. The default GCP credentials chain based on the pod's environment and metadata.
 func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google.Credentials, error) {
+	if !c.informer.HasSynced() {
+		log.Warnf("The informer for secret %q/%q is out of sync. STS configuration may not be available.",
+			c.namespace,
+			c.secretName,
+		)
+	}
+
 	scopes := []string{storagev1.CloudPlatformScope}
 	scopes = append(scopes, artifactv1.DefaultAuthScopes()...)
 	scopes = append(scopes, securitycenterv1.DefaultAuthScopes()...)
