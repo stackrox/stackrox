@@ -87,11 +87,11 @@ spec:
         configMap:
           name: {{ .Values.app.db.name }}-config
       - name: disk
-{{ if .Values.app.db.persistence.hostPath -}}
+        {{- if .Values.app.db.persistence.hostPath }}
         hostPath: "{{ .Values.app.db.persistence.hostPath }}"
-{{ else }}
+        {{ else }}
         emptyDir: {}
-{{ end }}
+        {{- end }}
       - name: tls-volume
         secret:
           secretName: {{ .Values.app.db.name }}-tls

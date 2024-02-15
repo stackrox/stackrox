@@ -371,12 +371,13 @@ e2e-deploy: scanner-tag      := $(or $(tag),$(SCANNER_E2E_SCANNER_IMAGE_TAG))
 
 # If set will set DB's volume under the specified host path. 
 e2e-deploy: db-host-path :=
+# If set will dry run and debug helm.
+e2e-deploy: debug :=
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
 	$(SILENT)-kubectl create namespace $(namespace)
-	helm upgrade $(release) $< \
-	    --install \
+	helm $(if $(debug),template --debug,upgrade --install) $(release) $< \
 	    --namespace $(namespace) \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \
