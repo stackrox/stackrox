@@ -56,7 +56,7 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
         },
         skipTestIntegration: true,
         ocm: {
-            endpoint: '',
+            endpoint: 'https://api.openshift.com',
         },
     },
     updateCredentials: true,
@@ -126,7 +126,7 @@ function OcmIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
-                        label="OCM endpoint"
+                        label="Endpoint"
                         fieldId="cloudSource.ocm.endpoint"
                         touched={touched}
                         errors={errors}
@@ -160,7 +160,7 @@ function OcmIntegrationForm({
                     )}
                     <FormLabelGroup
                         isRequired={values.updateCredentials}
-                        label="OCM token"
+                        label="API token"
                         fieldId="cloudSource.credentials.secret"
                         touched={touched}
                         errors={errors}

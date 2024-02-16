@@ -292,7 +292,7 @@ export const paladinCloudDescriptor: CloudSourceDescriptor = {
 
 export const ocmDescriptor: CloudSourceDescriptor = {
     image: redhat,
-    label: 'OCM',
+    label: 'OpenShift Cluster Manager',
     type: 'ocm',
 };
 
