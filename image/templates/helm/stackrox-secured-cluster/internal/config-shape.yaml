@@ -109,6 +109,7 @@ admissionControl:
   nodeSelector: null # string | dict
   tolerations: null # [dict]
 collector:
+  forceCollectionMethod: null # bool
   collectionMethod: null # string
   disableTaintTolerations: null # bool
   slimMode: null # bool
