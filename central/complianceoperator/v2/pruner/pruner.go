@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	scanResult "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,6 +18,7 @@ var (
 type pruneImpl struct {
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
+	scanResultDS  scanResult.DataStore
 }
 
 // Pruner consolidates functionality to clean up orphaned compliance operator data
@@ -27,10 +29,11 @@ type Pruner interface {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore) Pruner {
+func New(integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, scanResultDS scanResult.DataStore) Pruner {
 	return &pruneImpl{
 		integrationDS: integrationDS,
 		scanSettingDS: scanSettingDS,
+		scanResultDS:  scanResultDS,
 	}
 }
 
@@ -45,6 +48,11 @@ func (p *pruneImpl) RemoveComplianceResourcesByCluster(ctx context.Context, clus
 	if err := p.scanSettingDS.RemoveClusterFromScanConfig(ctx, clusterID); err != nil {
 		log.Errorf("failed to delete scan config for cluster %s: %v", clusterID, err)
 	}
+
+	// Remove any scan result for the cluster
+	if err := p.scanResultDS.DeleteResultsByCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete scan result for cluster %s: %v", clusterID, err)
+	}
 }
 
 // Testing
@@ -53,5 +61,6 @@ func (p *pruneImpl) RemoveComplianceResourcesByCluster(ctx context.Context, clus
 func GetTestPruner(t *testing.T, pool postgres.DB) Pruner {
 	scanSettingDS := compScanSetting.GetTestPostgresDataStore(t, pool)
 	integrationDS := compIntegration.GetTestPostgresDataStore(t, pool)
-	return New(integrationDS, scanSettingDS)
+	scanResultDS := scanResult.GetTestPostgresDataStore(t, pool)
+	return New(integrationDS, scanSettingDS, scanResultDS)
 }
