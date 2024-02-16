@@ -162,8 +162,8 @@ tests:
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.password_file | assertThat(. == "/run/secrets/stackrox.io/secrets/password")
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("sslrootcert=/run/secrets/stackrox.io/certs/ca.pem"))
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("host=scanner-v4-db.stackrox.svc"))
-    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("min_conns=") | not)
-    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("max_conns=") | not)
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("min_conns="))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("max_conns="))
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("statement_timeout=") | not)
 
 - name: "scanner v4 DB configuration can be fine-tuned"

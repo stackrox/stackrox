@@ -48,7 +48,8 @@ spec:
         - name: ROX_MEMLIMIT
           valueFrom:
             resourceFieldRef:
-              resource: limits.memory
+              {{- /* This is set to requests.memory on purpose in an attempt to minimize memory usage. */}}
+              resource: requests.memory
         - name: GOMAXPROCS
           valueFrom:
             resourceFieldRef:
