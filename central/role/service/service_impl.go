@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -53,15 +52,9 @@ var (
 		},
 		user.Authenticated(): {
 			"/v1.RoleService/GetMyPermissions",
+			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetClustersForPermissions",
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
-		},
-		allow.Anonymous(): {
-			// This endpoint is used by the UI to populate the resource list
-			// when displaying or editing permission sets.
-			// TODO(ROX-19814): move this handler to either user.Authenticated()
-			// or user.With(permissions.View(resource.Access)) group.
-			"/v1.RoleService/GetResources",
 		},
 	})
 )
