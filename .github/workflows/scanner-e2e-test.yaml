@@ -1,4 +1,4 @@
-name: Scanner E2E tests
+name: Scanner stand-alone E2E tests
 
 on:
   workflow_run:
@@ -26,10 +26,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/job-preamble
+      - name: Preamble
+        uses: ./.github/actions/job-preamble
 
       - name: Start minikube
-        id: minikube
         uses: medyagh/setup-minikube@master
         with:
           driver: docker
@@ -37,12 +37,12 @@ jobs:
           memory: max
           mount-path: ${{ runner.temp }}:/runner
           
-      - name: Install helm chart
+      - name: Deploy
         run: |
           mkdir -m 777 -p "${{ runner.temp }}"/pgdata
           make -C scanner e2e-deploy db-host-path="/runner/pgdata"
 
-      - name: Show deployment details
+      - name: Show deployment
         if: success() || failure()
         run: |
           kubectl -n stackrox describe pods -l app=scanner-v4-db || true
@@ -50,11 +50,12 @@ jobs:
           kubectl -n stackrox describe pods -l app=scanner-v4 || true
           kubectl -n stackrox logs -l app=scanner-v4 --all-containers=true || true
 
-      - name: Run tests
+      - name: Run
         run: |
-          kubectl -n stackrox expose deployment scanner-v4 --type=NodePort --port=8443
+          set -x
+          kubectl -n stackrox expose deployment scanner-v4
           kubectl -n stackrox get svc
-          minikube service -n stackrox scanner-v4 --url
-          url=$(minikube service -n stackrox scanner-v4 --url)
-          addr=${url#http://}
-          make -C scanner e2e-run matcher-addr="$addr" indexer-addr="$addr" NODEPS=1
+          kubectl -n stackrox port-forward \
+              "$(kubectl -n stackrox get pods -l app=scanner-v4 -o jsonpath="{.items[*].metadata.name}")" \
+              8443:8443
+          make -C scanner e2e-run NODEPS=1
