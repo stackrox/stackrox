@@ -98,7 +98,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 			reporter.Warnf("Evaluation error performing access review check for action %s on resource %s: %s", ra.Verb, ra.Resource, sarResult.Status.EvaluationError)
 		}
 		if !sarResult.Status.Allowed && !sarResult.Status.Denied {
-			actionResourceErr = append(actionResourceErr, fmt.Sprintf("%s: %s", ra.Verb, ra.Resource))
+			actionResourceErr = append(actionResourceErr, fmt.Sprintf("%s:%s", ra.Verb, ra.Resource))
 		} else if !sarResult.Status.Allowed {
 			reporter.Errorf("Action %s on resource %s is not allowed", ra.Verb, ra.Resource)
 		}
@@ -106,7 +106,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 	if len(actionResourceErr) > 0 {
 		reporter.Errorf("K8s authorizer did not explicitly allow or deny access to perform "+
 			"the following actions on following resources: %s. This usually means access is denied.",
-			strings.Join(actionResourceErr, ","))
+			strings.Join(actionResourceErr, ", "))
 	}
 
 	return nil
