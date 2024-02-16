@@ -39,17 +39,6 @@ jobs:
         run: |
           d="${{ runner.temp }}"/pgdata
           mkdir -m 777 -p "$d"
-          wait_deployment() {
-              local ns="${1:?missing required arg 'ns'}"
-              local app="${2:?missing required arg 'app'}"
-              while ! kubectl wait -n "$ns" --for=condition=available --timeout=5m deployment/"$app"; do
-                  kubectl describe -n "$ns" pods -l app="$app" || true
-                  kubectl logs -n "$ns" -l app="$app" --all-containers=true || true
-              done
-              echo "Deployment $app is available" 
-          }
-          wait_deployment stackrox scanner-v4 &
-          wait_deployment stackrox scanner-v4-db &
           make -C scanner e2e-deploy db-host-path="$d"
 
       - name: Show deployment details
