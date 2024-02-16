@@ -29,7 +29,7 @@ type ComplianceIntegration struct {
 	Version             string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Compliance Operator Version,hidden,store"`
 	ClusterId           string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"`
 	ComplianceNamespace string `protobuf:"bytes,4,opt,name=compliance_namespace,json=complianceNamespace,proto3" json:"compliance_namespace,omitempty"`
-	// Collection of errors that occurred while trying to obtain collector health info.
+	// Collection of errors that occurred while trying to obtain compliance health info.
 	StatusErrors         []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -15,14 +15,7 @@ rules:
   resources:
   - '*'
   verbs:
-  - create
-  - get
-  - list
-  - watch
-  - update
-  - patch
-  - delete
-  - deletecollection
+  - '*'
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
