@@ -170,22 +170,21 @@ function launch_central {
         exit 1
       fi
 
-      _check_images() {
-        local images=("$@")
+      local images_to_check=("${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}")
+      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" == "true" ]]; then
+        images_to_check+=("${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}")
+      fi
 
-        local image
-        for image in "${images[@]}"; do
-          if ! docker manifest inspect "${image}" > /dev/null; then
-            if [[ -t 1 ]]; then
-              yes_no_prompt "Couldn't find ${image}. Do you want to continue anyway?" || { echo >&2 "Exiting as requested"; exit 1; }
-            else
-              echo >&2 "WARNING: Couldn't find ${image}. Continuing the deployment, but note deployments uses this image may fail"
-            fi
+      local image
+      for image in "${images_to_check[@]}"; do
+        if ! docker manifest inspect "${image}" > /dev/null; then
+          if [[ -t 1 ]]; then
+            yes_no_prompt "Couldn't find ${image}. Do you want to continue anyway?" || { echo >&2 "Exiting as requested"; exit 1; }
+          else
+            echo >&2 "WARNING: Couldn't find ${image}. Continuing the deployment, but note workloads uses this image may fail"
           fi
-        done
-      }
-
-      _check_images "${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}"
+        fi
+      done
     fi
 
     add_args() {
