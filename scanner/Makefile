@@ -383,7 +383,7 @@ e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	$(SILENT)-kubectl create namespace $(namespace)
 	helm $(if $(debug),template --debug,upgrade --debug --install) $(release) $< \
 	    --namespace $(namespace) \
-	    --atomic \
+	    $(if $(CI),--wait,--atomic) \
 	    --timeout $(timeout) \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \
