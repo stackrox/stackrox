@@ -181,7 +181,7 @@ function launch_central {
           if [[ -t 1 ]]; then
             yes_no_prompt "Couldn't find ${image}. Do you want to continue anyway?" || { echo >&2 "Exiting as requested"; exit 1; }
           else
-            echo >&2 "WARNING: Couldn't find ${image}. Continuing the deployment, but note workloads uses this image may fail"
+            echo >&2 "WARNING: Couldn't find ${image}. Continuing the deployment, but note workloads using this image may fail"
           fi
         fi
       done
