@@ -38,7 +38,7 @@ describe('Paladin Cloud Integrations', () => {
         getHelperElementByLabel('Paladin Cloud token').contains('Token is required');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // // Save integration.
+        // Save integration.
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Paladin Cloud endpoint').clear().type('https://stackrox.io');
         getInputByLabel('Paladin Cloud token').clear().type('tokenvalue');
