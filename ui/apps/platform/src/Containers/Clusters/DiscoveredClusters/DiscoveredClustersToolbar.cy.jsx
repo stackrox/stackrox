@@ -39,11 +39,15 @@ const filterGroup = (name) => cy.findByRole('group', { name });
 const filterChip = (label) => cy.get(`li:has(*:contains("${label}"))`);
 const removeGroup = (name) =>
     filterGroup(name).within(() => cy.findByLabelText('Close chip group').click());
+// Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+/*
 const removeChip = (name) =>
     filterChip(name).within(() => cy.findByLabelText('Remove filter').click());
+*/
 
 describe(Cypress.spec.relative, () => {
-    it('should correctly handle the name text input', () => {
+    // Skip for 4.4 MVP because testers expected partial match instead of exact match.
+    it.skip('should correctly handle the name text input', () => {
         setup();
 
         // Ensure creating a chip/filter clears the input
@@ -135,9 +139,12 @@ describe(Cypress.spec.relative, () => {
         // Default is no filters
         cy.location('search').should('match', /^$/);
 
+        // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+        /*
         // Add filters of each type
         cy.findByLabelText('Filter by name').type('cluster-a{enter}');
         cy.findByLabelText('Filter by name').type('cluster-b{enter}');
+        */
 
         openDropdownAnd('Status filter menu toggle', () => {
             cy.findByLabelText('Unsecured').click();
@@ -150,10 +157,13 @@ describe(Cypress.spec.relative, () => {
         });
 
         // Verify that all filters are applied and visible as chips
+        // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+        /*
         filterGroup('Name').within(() => {
             filterChip('cluster-a');
             filterChip('cluster-b');
         });
+        */
 
         filterGroup('Status').within(() => {
             filterChip('Unsecured');
@@ -167,8 +177,11 @@ describe(Cypress.spec.relative, () => {
 
         // Verify that the filters exist in the URL
         [
+            // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+            /*
             /s\[Cluster\]\[\d\]=cluster-a/,
             /s\[Cluster\]\[\d\]=cluster-b/,
+            */
             /s\[Cluster%20Status\]\[\d\]=STATUS_UNSECURED/,
             /s\[Cluster%20Status\]\[\d\]=STATUS_UNSPECIFIED/,
             /s\[Cluster%20Type\]\[\d\]=AKS/,
@@ -177,18 +190,24 @@ describe(Cypress.spec.relative, () => {
             cy.location('search').should('match', filter);
         });
 
+        // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+        /*
         // Remove some filters and verify that the chips are removed
         filterGroup('Name').within(() => {
             removeChip('cluster-b');
         });
+        */
 
         removeGroup('Type');
 
+        // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+        /*
         // Verify that the correct filters are removed
         filterGroup('Name').within(() => {
             filterChip('cluster-a');
             filterChip('cluster-b').should('not.exist');
         });
+        */
 
         filterGroup('Status').within(() => {
             filterChip('Unsecured');
@@ -199,7 +218,10 @@ describe(Cypress.spec.relative, () => {
 
         // Verify the next URL state
         [
+            // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+            /*
             /s\[Cluster\]\[\d\]=cluster-a/,
+            */
             /s\[Cluster%20Status\]\[\d\]=STATUS_UNSECURED/,
             /s\[Cluster%20Status\]\[\d\]=STATUS_UNSPECIFIED/,
         ].forEach((filter) => {
@@ -209,7 +231,10 @@ describe(Cypress.spec.relative, () => {
         // Remove all filters and verify that the chips are removed
         cy.findByRole('button', { name: 'Clear filters' }).click();
 
+        // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
+        /*
         filterGroup('Name').should('not.exist');
+        */
         filterGroup('Status').should('not.exist');
         filterGroup('Type').should('not.exist');
 
