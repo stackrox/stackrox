@@ -32,10 +32,7 @@ function ScannerV4IntegrationBanner() {
 
     const docsLink = (
         <a
-            href={getVersionedDocs(
-                version,
-                'integration/integrate-with-image-vulnerability-scanners.html'
-            )}
+            href={getVersionedDocs(version, 'operating/examine-images-for-vulnerabilities.html')}
             target="_blank"
             rel="noopener noreferrer"
         >
