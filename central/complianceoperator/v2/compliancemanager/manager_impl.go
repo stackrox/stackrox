@@ -253,10 +253,28 @@ func (m *managerImpl) processClusterDelete(ctx context.Context, scanRequest *sto
 			log.Errorf("error sending deletion of compliance scan config to cluster %q: %v", clusterID, err)
 		}
 
+		// Remove the pending request tracker for this cluster and scan config.  If we get any
+		// responses for this cluster and scan config after this we will simply swallow the message
+		// as it will be obsolete due to the deletion of the scan configuration on the cluster.
+		m.removeSensorRequestForCluster(scanRequest.GetId(), clusterID)
+
 		// Remove cluster status
 		err = m.scanSettingDS.RemoveClusterStatus(ctx, scanRequest.GetId(), clusterID)
 		if err != nil {
 			log.Errorf("error removing cluster status for compliance scan config to cluster %q: %v", clusterID, err)
+		}
+	}
+}
+
+// removeSensorRequest removes the pending request for a scan configuration or cluster that was deleted.
+func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID string) {
+	m.runningRequestsLock.Lock()
+	defer m.runningRequestsLock.Unlock()
+
+	for k, v := range m.runningRequests {
+		if v.scanID == scanConfigID && v.clusterID == clusterID {
+			// The request was found, remove it from the map
+			delete(m.runningRequests, k)
 		}
 	}
 }
@@ -419,6 +437,7 @@ func (m *managerImpl) updateClusterStatus(ctx context.Context, scanConfigID stri
 	if !exists {
 		return errors.Errorf("could not pull config for cluster %q because it does not exist", clusterID)
 	}
+
 	return m.scanSettingDS.UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus, clusterName)
 }
 
