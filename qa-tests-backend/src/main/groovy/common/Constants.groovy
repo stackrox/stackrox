@@ -39,7 +39,7 @@ class Constants {
     ]
     static final INTERNET_EXTERNAL_SOURCE_ID = "afa12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
     static final INTERNAL_ENTITIES_SOURCE_ID = "ada12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
-    static final STACKROX_ANNOTATION_TRUNCATION_LENGTH = 512
+    static final STACKROX_ANNOTATION_TRUNCATION_LENGTH = 254
     static final CORE_IMAGE_INTEGRATION_NAME = "core quay"
     // Padding required for test feature timeouts. This is used to configure the
     // globalTimeout for long running tests. The value takes into consideration
