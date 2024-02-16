@@ -3,7 +3,6 @@ package proto
 import (
 	"sync/atomic"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/storecache"
 )
@@ -33,7 +32,7 @@ func (c *cachedMessageCrudImpl) addReadVersion(delta uint64) {
 func (c *cachedMessageCrudImpl) Read(id string) (protocompat.Message, error) {
 	if cached := c.cache.Get(id); cached != nil {
 		c.metricFunc("hit", c.metricType)
-		return proto.Clone(cached.(protocompat.Message)), nil
+		return protocompat.Clone(cached.(protocompat.Message)), nil
 	}
 	c.metricFunc("miss", c.metricType)
 	readVersion := c.getReadVersion()
@@ -50,7 +49,7 @@ func (c *cachedMessageCrudImpl) ReadBatch(ids []string) ([]protocompat.Message, 
 	for _, id := range ids {
 		if cached := c.cache.Get(id); cached != nil {
 			c.metricFunc("hit", c.metricType)
-			cachedMsgs = append(cachedMsgs, proto.Clone(cached.(protocompat.Message)))
+			cachedMsgs = append(cachedMsgs, protocompat.Clone(cached.(protocompat.Message)))
 		} else {
 			c.metricFunc("miss", c.metricType)
 			uncachedIds = append(uncachedIds, id)

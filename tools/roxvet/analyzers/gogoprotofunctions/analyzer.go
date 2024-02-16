@@ -30,6 +30,7 @@ var (
 		// - inner key is the function name in the gogo protobuf library
 		// - inner value is the replacement function name in protocompat
 		"github.com/gogo/protobuf/proto": {
+			"Clone":             "Clone",
 			"Marshal":           "Marshal",
 			"MarshalTextString": "MarshalTextString",
 			"Equal":             "Equal",
