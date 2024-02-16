@@ -35,6 +35,7 @@ const (
 	requestTimeout          = 10 * time.Second
 	tlsChallengeRoute       = "/v1/tls-challenge"
 	pingRoute               = "/v1/ping"
+	gRPCPreferences         = "/v1/grpc-preferences"
 	challengeTokenParamName = "challengeToken"
 )
 
@@ -101,6 +102,21 @@ func NewClient(endpoint string) (*Client, error) {
 		endpoint:       endpointURL,
 		nonceGenerator: cryptoutils.NewNonceGenerator(centralsensor.ChallengeTokenLength, nil),
 	}, nil
+}
+
+func (c *Client) GetGRPCPreferences(ctx context.Context) (*v1.Preferences, error) {
+	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, gRPCPreferences, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting gRPC preferences")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+
+	var preferences v1.Preferences
+	if err := jsonutil.JSONReaderToProto(resp.Body, &preferences); err != nil {
+		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", gRPCPreferences, resp.StatusCode)
+	}
+
+	return &preferences, nil
 }
 
 // GetPing pings Central.
