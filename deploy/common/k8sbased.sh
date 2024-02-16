@@ -58,7 +58,7 @@ function hotload_binary {
 
   binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_amd64/${local_name}")
   # set custom source path, e.g. when StackRox source is mounted into kind.
-  if [[ -n "$ROX_LOCAL_SOURCE_PATH" ]]; then
+  if [[ -n "${ROX_LOCAL_SOURCE_PATH:-}" ]]; then
       echo "ROX_LOCAL_SOURCE_PATH is set to $ROX_LOCAL_SOURCE_PATH."
       binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_amd64/${local_name}"
   fi
@@ -117,7 +117,7 @@ function local_dev {
 # If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
 function prompt_if_central_exists() {
     local central_namespace=${1:-stackrox}
-    if "${ORCH_CMD}" -n "${central_namespace}" get deployment central 2>&1; then
+    if "${ORCH_CMD}" -n "${central_namespace:-}" get deployment central 2>&1; then
         yes_no_prompt "Detected there is already a central running on this cluster in namespace ${central_namespace}. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
     fi
 }
@@ -179,7 +179,7 @@ function launch_central {
     	EXTRA_ARGS+=("$(realpath "$1")")
     }
 
-    if [ -n "${OUTPUT_FORMAT}" ]; then
+    if [ -n "${OUTPUT_FORMAT:-}" ]; then
         add_args "--output-format=${OUTPUT_FORMAT}"
     fi
 
@@ -187,7 +187,7 @@ function launch_central {
 
     add_args "--offline=$OFFLINE_MODE"
 
-    if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
+    if [[ -n "${ROX_DEFAULT_TLS_CERT_FILE:-}" ]]; then
     	add_args "--default-tls-cert"
     	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
     	add_args "--default-tls-key"
@@ -196,7 +196,7 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
-    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
+    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE:-}" ]]; then
         add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
     fi
 
@@ -211,19 +211,19 @@ function launch_central {
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
     fi
 
-    if [[ "${STORAGE}" == "none" && -n $STORAGE_CLASS ]]; then
+    if [[ "${STORAGE}" == "none" && -n "${STORAGE_CLASS:-}" ]]; then
         echo "Invalid deploy script config. STORAGE is set to none, but STORAGE_CLASS is set"
         exit 1
     fi
 
-    if [[ -n $STORAGE_CLASS ]]; then
+    if [[ -n "${STORAGE_CLASS:-}" ]]; then
         add_storage_args "--storage-class=$STORAGE_CLASS"
         if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
             add_storage_args "--db-storage-class=$STORAGE_CLASS"
         fi
     fi
 
-    if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
+    if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE:-}" ]]; then
 	      add_storage_args "--size=${STORAGE_SIZE}"
         if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
             add_storage_args "--db-size=${STORAGE_SIZE}"
@@ -240,21 +240,21 @@ function launch_central {
         POD_SECURITY_POLICIES="false"
     fi
 
-    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+    if [[ -n "${POD_SECURITY_POLICIES:-}" ]]; then
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
     add_args "--declarative-config-config-maps=declarative-configurations"
     add_args "--declarative-config-secrets=sensitive-declarative-configurations"
 
-    if [[ -n "${ROX_TELEMETRY_STORAGE_KEY_V1}" ]]; then
+    if [[ -n "${ROX_TELEMETRY_STORAGE_KEY_V1:-}" ]]; then
       add_args "--enable-telemetry=true"
     else
       add_args "--enable-telemetry=false"
     fi
 
     if [[ "${ORCH}" == "openshift" ]]; then
-      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION:-}" ]]; then
         add_args "--openshift-version=${ROX_OPENSHIFT_VERSION}"
       fi
     fi
@@ -274,7 +274,7 @@ function launch_central {
     fi
 
     echo
-    if [[ -n "${TRUSTED_CA_FILE}" ]]; then
+    if [[ -n "${TRUSTED_CA_FILE:-}" ]]; then
         if [[ "${central_namespace}" != "stackrox" ]]; then
           echo "CA setup using '$TRUSTED_CA_FILE' is not supported for custom namespace '${central_namespace}'." >&2
           exit 1
@@ -323,7 +323,7 @@ function launch_central {
       ${KUBE_COMMAND:-kubectl} create namespace "${central_namespace}"
 
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
-      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+      if [[ -n "${REGISTRY_USERNAME:-}" ]]; then
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/scripts"
@@ -340,7 +340,7 @@ function launch_central {
 
       if [[ "${is_local_dev}" == "true" ]]; then
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
-      elif [[ -n "$CI" ]]; then
+      elif [[ -n "${CI:-}" ]]; then
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
@@ -355,18 +355,18 @@ function launch_central {
       fi
 
       # set logging options
-      if [[ -n $LOGLEVEL ]]; then
+      if [[ -n "${LOGLEVEL:-}" ]]; then
         helm_args+=(
           --set customize.central.envVars.LOGLEVEL="${LOGLEVEL}"
         )
       fi
-      if [[ -n $MODULE_LOGLEVELS ]]; then
+      if [[ -n "${MODULE_LOGLEVELS:-}" ]]; then
         helm_args+=(
           --set customize.central.envVars.MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
         )
       fi
 
-      if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+      if [[ -n "${POD_SECURITY_POLICIES:-}" ]]; then
         helm_args+=(
           --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"
         )
@@ -378,13 +378,13 @@ function launch_central {
         )
       fi
 
-      if [[ -n "$ROX_OPENSHIFT_VERSION" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION:-}" ]]; then
         helm_args+=(
           --set env.openshift="${ROX_OPENSHIFT_VERSION}"
         )
       fi
 
-      if [[ -n "$ROX_SCANNER_V4" ]]; then
+      if [[ -n "${ROX_SCANNER_V4:-}" ]]; then
         local _disable=true
         if [[ "$ROX_SCANNER_V4" == "true" ]]; then
           _disable=false
@@ -402,19 +402,19 @@ function launch_central {
 
       local helm_chart="$unzip_dir/chart"
 
-      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
+      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE:-}" ]]; then
         echo "Using override central helm chart from ${CENTRAL_CHART_DIR_OVERRIDE}"
         helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
 
-      if [[ -n "$ROX_TELEMETRY_STORAGE_KEY_V1" ]]; then
+      if [[ -n "${ROX_TELEMETRY_STORAGE_KEY_V1:-}" ]]; then
         helm_args+=(
           --set central.telemetry.enabled=true
           --set central.telemetry.storage.key="${ROX_TELEMETRY_STORAGE_KEY_V1}"
         )
       fi
 
-      if [[ -n "$CI" ]]; then
+      if [[ -n "${CI:-}" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n "${central_namespace}"
         helm lint "${helm_chart}" -n "${central_namespace}" "${helm_args[@]}"
@@ -435,7 +435,7 @@ function launch_central {
       fi
 
       # Add a custom values file to Helm
-      if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
+      if [[ -n "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE:-}" ]]; then
         helm_args+=(
           -f "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
         )
@@ -449,7 +449,7 @@ function launch_central {
         exit 1
       fi
 
-      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+      if [[ -n "${REGISTRY_USERNAME:-}" ]]; then
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
@@ -471,10 +471,10 @@ function launch_central {
       fi
 
       # set logging options
-      if [[ -n $LOGLEVEL ]]; then
+      if [[ -n "${LOGLEVEL:-}" ]]; then
         ${ORCH_CMD} -n stackrox set env deploy/central LOGLEVEL="${LOGLEVEL}"
       fi
-      if [[ -n $MODULE_LOGLEVELS ]]; then
+      if [[ -n "${MODULE_LOGLEVELS:-}" ]]; then
         ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
       fi
 
@@ -485,7 +485,7 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
-          if [[ -n "${REGISTRY_USERNAME}" ]]; then
+          if [[ -n "${REGISTRY_USERNAME:-}" ]]; then
             "${unzip_dir}/scanner/scripts/setup.sh"
           fi
           launch_service "${unzip_dir}" scanner
@@ -503,7 +503,7 @@ function launch_central {
             fi
           fi
 
-          if [[ -n "$CI" ]]; then
+          if [[ -n "${CI:-}" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
           elif [[ "${is_local_dev}" == "true" ]]; then
@@ -514,7 +514,7 @@ function launch_central {
       fi
     fi
 
-    if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
+    if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET:-}" ]]; then
         ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${central_namespace}" &>/dev/null
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
@@ -568,7 +568,7 @@ function launch_central {
       "${COMMON_DIR}/monitoring.sh"
     fi
 
-    if [[ -n "$CI" ]]; then
+    if [[ -n "${CI:-}" ]]; then
         # Needed for GKE and OpenShift clusters
         echo "Sleep for 2 minutes to allow for stabilization"
         sleep 120
@@ -605,7 +605,7 @@ function launch_sensor {
     	extra_json_config+=', "admissionControllerUpdates": true'
     	extra_helm_config+=(--set "admissionControl.listenOnUpdates=true")
     fi
-    if [[ -n "$ADMISSION_CONTROLLER_POD_EVENTS" ]]; then
+    if [[ -n "${ADMISSION_CONTROLLER_POD_EVENTS:-}" ]]; then
       local bool_val
       bool_val="$(echo "$ADMISSION_CONTROLLER_POD_EVENTS" | tr '[:upper:]' '[:lower:]')"
       if [[ "$bool_val" != "true" ]]; then
@@ -616,7 +616,7 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ -n "$ROXCTL_TIMEOUT" ]]; then
+    if [[ -n "${ROXCTL_TIMEOUT:-}" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
       scanner_extra_config+=("--timeout=$ROXCTL_TIMEOUT")
@@ -628,7 +628,7 @@ function launch_sensor {
         POD_SECURITY_POLICIES="false"
     fi
 
-    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
+    if [[ -n "${POD_SECURITY_POLICIES:-}" ]]; then
         extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
         scanner_extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
     fi
@@ -652,7 +652,7 @@ function launch_sensor {
     fi
 
     if [[ "${SENSOR_HELM_DEPLOY:-}" == "true" ]]; then
-      if [[ -n "${SENSOR_HELM_OVERRIDE_NAMESPACE}" && "${sensor_namespace}" != "stackrox" && "${SENSOR_HELM_OVERRIDE_NAMESPACE}" != "${sensor_namespace}" ]]; then
+      if [[ -n "${SENSOR_HELM_OVERRIDE_NAMESPACE:-}" && "${sensor_namespace}" != "stackrox" && "${SENSOR_HELM_OVERRIDE_NAMESPACE}" != "${sensor_namespace}" ]]; then
         echo "Custom namespace '${sensor_namespace}' specified and SENSOR_HELM_OVERRIDE_NAMESPACE set in the environment, this does not seem reasonable." >&2
         exit 1
       fi
@@ -677,7 +677,7 @@ function launch_sensor {
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
       )
 
-      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+      if [[ -n "${ROX_OPENSHIFT_VERSION:-}" ]]; then
         helm_args+=(
           --set env.openshift="${ROX_OPENSHIFT_VERSION}"
         )
@@ -708,14 +708,14 @@ function launch_sensor {
         helm_args+=(--set scannerV4.disable=false)
       fi
 
-      if [[ -n "$LOGLEVEL" ]]; then
+      if [[ -n "${LOGLEVEL:-}" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
         )
       fi
 
       # Add a custom values file to Helm
-      if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
+      if [[ -n "${ROX_SENSOR_EXTRA_HELM_VALUES_FILE:-}" ]]; then
         helm_args+=(
           -f "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE"
         )
@@ -723,12 +723,12 @@ function launch_sensor {
 
       local helm_chart="$k8s_dir/sensor-deploy/chart"
 
-      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE:-}" ]]; then
         echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
         helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
 
-      if [[ -n "$CI" ]]; then
+      if [[ -n "${CI:-}" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n "${sensor_namespace}"
         helm lint "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
@@ -761,7 +761,7 @@ function launch_sensor {
         rm "$k8s_dir/sensor-deploy.zip"
       fi
 
-      if [[ -n "${NAMESPACE_OVERRIDE}" ]]; then
+      if [[ -n "${NAMESPACE_OVERRIDE:-}" ]]; then
         if [[ "${sensor_namespace}" != "stackrox" && "${sensor_namespace}" != "${NAMESPACE_OVERRIDE}" ]]; then
           echo "Custom namespace '${sensor_namespace}' specified and NAMESPACE_OVERRIDE set in the environment, this does not seem reasonable." >&2
           exit 1
@@ -778,7 +778,7 @@ function launch_sensor {
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
-    if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
+    if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
        kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
 
@@ -793,7 +793,7 @@ function launch_sensor {
     fi
 
     # When running CI steps or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
-    if [[ -n "${CI}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
+    if [[ -n "${CI:-}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
         if [[ -z "${IS_RACE_BUILD}" ]]; then
             kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
@@ -804,7 +804,7 @@ function launch_sensor {
     fi
 
     # If deploying with chaos proxy enabled, patch sensor to add toxiproxy proxy deployment
-    if [[ -n "${ROX_CHAOS_PROFILE}" ]]; then
+    if [[ -n "${ROX_CHAOS_PROFILE:-}" ]]; then
         original_endpoint=$(kubectl -n "${sensor_namespace}" get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
 
         echo "Patching sensor with toxiproxy container"
