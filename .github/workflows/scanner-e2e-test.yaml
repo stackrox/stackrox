@@ -24,8 +24,6 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
 
-      - uses: ./.github/actions/cache-go-dependencies
-
       - name: Start minikube
         id: minikube
         uses: medyagh/setup-minikube@master
@@ -55,4 +53,4 @@ jobs:
           kubectl -n stackrox get svc
           url=$(minikube service -n stackrox scanner-v4 --url)
           echo $url
-          make -C scanner e2e-run matcher-addr=${url#http://} indexer-addr=${url#http://}
+          make -C scanner e2e-run matcher-addr=${url#http://} indexer-addr=${url#http://} NODEPS=1
