@@ -270,6 +270,9 @@ defaults:
     db:
       postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
       hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
+      source:
+        minConns: 5
+        maxConns: 40
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
