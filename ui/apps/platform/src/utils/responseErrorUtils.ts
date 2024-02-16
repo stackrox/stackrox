@@ -38,3 +38,10 @@ export function getAxiosErrorMessage(error: unknown): string {
 
     return 'Unknown error';
 }
+
+export function isTimeoutError(error: unknown): boolean {
+    if (error instanceof Error && isAxiosError(error)) {
+        return error.code === 'ECONNABORTED';
+    }
+    return false;
+}

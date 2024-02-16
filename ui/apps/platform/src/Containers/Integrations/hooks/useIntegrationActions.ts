@@ -12,7 +12,7 @@ import {
 import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
 import { generateAPIToken } from 'services/APITokensService';
 import { generateClusterInitBundle } from 'services/ClustersService';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { createMachineAccessConfig } from 'services/MachineAccessService';
@@ -78,6 +78,9 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             }
             return { message: `The test was successful`, isError: false };
         } catch (error) {
+            if (source === 'cloudSources' && isTimeoutError(error)) {
+                return { message: 'Could not reach the cloud source endpoint.', isError: true };
+            }
             return { message: getAxiosErrorMessage(error), isError: true };
         }
     }
