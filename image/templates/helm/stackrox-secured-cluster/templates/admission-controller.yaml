@@ -209,7 +209,7 @@ webhooks:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
         values:
-          - stackrox
+          - {{ ._rox._namespace }}
           - kube-system
           - kube-public
           - istio-system

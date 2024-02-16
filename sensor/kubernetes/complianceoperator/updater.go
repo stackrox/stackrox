@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/authorization/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -177,6 +178,12 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		Version: version,
 	}
 
+	// Check Sensor access to compliance.openshift.io resources
+	if err := checkWriteAccess(u.client); err != nil {
+		info.StatusError = err.Error()
+		return info
+	}
+
 	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
 	if err != nil {
 		info.StatusError = err.Error()
@@ -188,6 +195,29 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	}
 
 	return info
+}
+
+// checkWriteAccess checks if Sensor has permissions to write to compliance operator CRs.
+func checkWriteAccess(client kubernetes.Interface) error {
+	sac := &v1.SelfSubjectAccessReview{
+		Spec: v1.SelfSubjectAccessReviewSpec{
+			ResourceAttributes: &v1.ResourceAttributes{
+				Verb:     "*",
+				Resource: "*",
+				Group:    "compliance.openshift.io",
+			},
+		},
+	}
+
+	response, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sac, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "could not perform compliance operator access review")
+	}
+
+	if !response.Status.Allowed {
+		return errors.New("Sensor cannot write compliance.openshift.io API group resources. Please check Sensor's RBAC permissions.")
+	}
+	return nil
 }
 
 func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {

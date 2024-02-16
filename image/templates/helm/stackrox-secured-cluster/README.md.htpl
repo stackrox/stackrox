@@ -125,10 +125,6 @@ For example,
   ```sh
   --set env.openshift=true
   ```
-- **Configure collection method**:
-  ```sh
-  --set collector.collectionMethod=CORE_BPF
-  ```
 
 #### Using configuration YAML files and the `-f` command-line option
 
@@ -248,6 +244,7 @@ chart and their default values:
 |`image.main.registry`| Address of the registry you are using for main image.|`[< required "" .MainRegistry >]` |
 |`image.collector.registry`| Address of the registry you are using for collector image.|`[< required "" .CollectorRegistry >]` |
 |`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
+|`collector.forceCollectionMethod`|Enabling this setting overrides the default collection method with the content of `collector.collectionMethod` |`false` |
 |`collector.collectionMethod`|Either `EBPF`, `CORE_BPF`, or `NO_COLLECTION`. |`CORE_BPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
 |`collector.slimMode`| Specify `true` if you want to use a slim Collector image for deploying Collector. Using slim Collector images and EBPF collection method requires Central to provide the matching eBPF probe. If you are running the StackRox Kubernetes Security Platform in offline mode and use EBPF collection method, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html) and upload it to Central for slim Collectors to function. Otherwise, you must ensure that Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.|`false` |

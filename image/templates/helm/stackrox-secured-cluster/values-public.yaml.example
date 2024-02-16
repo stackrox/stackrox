@@ -293,7 +293,11 @@
 ## Collector specific configuration.
 #collector:
 #
-#  # Collection method to use. Can be one of:
+#  # If enabled, the value provided in `collectionMethod` is applied to the collector configuration.
+#  # Otherwise, the default collection method is used.
+#  forceCollectionMethod: false
+#
+#  # Collection method to use when `forceCollectionMethod` is `true`. Can be one of:
 #  #   - EBPF
 #  #   - CORE_BPF
 #  #   - NO_COLLECTION
