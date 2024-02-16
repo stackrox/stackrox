@@ -290,6 +290,8 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 	cv := translation.NewValuesBuilder()
 
 	if c := collectorContainerSpec.Collection; c != nil {
+		// Override the helm-charts default collectionMethod selection logic.
+		cv.SetBoolValue("forceCollectionMethod", true)
 		switch *c {
 		case platform.CollectionEBPF:
 			// EBPF collection has been deprecated, translate it to CORE_BPF if it's not forced
