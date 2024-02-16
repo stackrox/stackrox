@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 
 function realpath {
 	[[ -n "$1" ]] || return 0

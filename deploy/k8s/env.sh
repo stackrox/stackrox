@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -ex
 
 export ORCH="k8s"
 export ORCH_CMD="kubectl"

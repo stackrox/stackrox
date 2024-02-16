@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-set -eoux pipefail
 
-#DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-#pushd "$DIR"
+pushd "$DIR"
 
 export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-"$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)"}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
@@ -40,6 +39,8 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 
 export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
+
+popd
 
 function curl_central() {
 	cmd=(curl --retry 10 --retry-delay 10 --retry-connrefused --silent --show-error --insecure)

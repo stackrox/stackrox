@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
-set -ex
 
 K8S_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../common && pwd)"
