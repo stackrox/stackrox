@@ -167,6 +167,7 @@ defaults:
   scannerV4:
     disable: true
     indexer:
+      disable: false
       logLevel: INFO
       metricsPort: 9090
       replicas: 3
