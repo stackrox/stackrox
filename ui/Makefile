@@ -4,8 +4,7 @@ YARN_NETWORK_TIMEOUT ?= 60000
 .PHONY: all
 all: deps lint test test-component build
 
-SOURCES := $(shell find packages -type d \( -name node_modules \) -prune -o -print)
-SOURCES += $(shell find apps -type d \( -name node_modules \) -prune -o -print)
+SOURCES := $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 
 # in monorepo yarn.lock might remain unchanged when new NPM packages are created,
 # tracking package.json files of monorepo packages is the easiest way to discover such situations
@@ -60,7 +59,7 @@ clean:
 	rm -f deps
 	rm -f lint
 	rm -rf build
-	rm -rf node_modules apps/*/node_modules packages/*/node_modules
+	rm -rf node_modules apps/*/node_modules
 
 .PHONY: publish-packages
 publish-packages:
