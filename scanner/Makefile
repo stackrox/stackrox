@@ -376,7 +376,7 @@ e2e-deploy: db-host-path :=
 e2e-deploy: debug :=
 
 # Wait timeout for the E2E deployment to be successful.
-e2e-deploy: timeout := 20m
+e2e-deploy: timeout := 10m
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)

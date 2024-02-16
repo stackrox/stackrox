@@ -32,16 +32,15 @@ jobs:
         id: minikube
         uses: medyagh/setup-minikube@master
         with:
-          driver: none # baremetal
-          cache: true
+          driver: docker
           cpus: max
           memory: max
+          mount-path: ${{ runner.temp }}:/runner
           
       - name: Install helm chart
         run: |
-          d="${{ runner.temp }}"/pgdata
-          mkdir -m 777 -p "$d"
-          make -C scanner e2e-deploy db-host-path="$d"
+          mkdir -m 777 -p ""${{ runner.temp }}"/pgdata
+          make -C scanner e2e-deploy db-host-path="/runner/pgdata"
 
       - name: Show deployment details
         if: success() || failure()
