@@ -17,12 +17,8 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		store := pgStore.New(globaldb.GetPostgres())
-<<<<<<< HEAD
-		ds = newDataStore(searcher, store, discoveredClustersDS.Singleton())
-=======
 		searcher := search.New(store)
-		ds = newDataStore(searcher, store)
->>>>>>> 1bbcff36b2 (ROX-22380: remove indexer from central)
+		ds = newDataStore(searcher, store, discoveredClustersDS.Singleton())
 	})
 	return ds
 }
