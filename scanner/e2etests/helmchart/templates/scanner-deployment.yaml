@@ -22,7 +22,7 @@ spec:
         fsGroup: 65534  # Set the group ownership to the `nobody` group, see dockerfile.
       containers:
       - name: scanner
-        image: {{ ( printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}
+        image: "{{ ( printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}"
         imagePullPolicy: IfNotPresent
         command:
           - entrypoint.sh
@@ -63,7 +63,7 @@ spec:
             memory: 8Gi
           requests:
             cpu: 1
-            memory: 4Gi
+            memory: 2Gi
         volumeMounts:
         - name: config
           mountPath: /etc/stackrox.d/scanner
