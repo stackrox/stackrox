@@ -163,7 +163,7 @@ function launch_central {
     elif [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
       echo "Using $(command -v roxctl) for install due to version match with MAIN_IMAGE_TAG $MAIN_IMAGE_TAG"
       use_docker=0
-    else
+    elif [[ -z "$CI" ]]; then
       echo "Using docker with $ROXCTL_IMAGE for install. Set USE_LOCAL_ROXCTL=true if you want to use your local version of roxctl"
       if ! docker pull "$ROXCTL_IMAGE"; then
         echo "Failed to pull $ROXCTL_IMAGE"
@@ -176,7 +176,11 @@ function launch_central {
         local image
         for image in "${images[@]}"; do
           if ! docker manifest inspect "${image}" > /dev/null; then
-            yes_no_prompt "Couldn't find ${image}. Do you want to continue anyway?" || { echo >&2 "Exiting as requested"; exit 1; }
+            if [[ -t 1 ]]; then
+              yes_no_prompt "Couldn't find ${image}. Do you want to continue anyway?" || { echo >&2 "Exiting as requested"; exit 1; }
+            else
+              echo >&2 "WARNING: Couldn't find ${image}. Continuing the deployment, but note deployments uses this image may fail"
+            fi
           fi
         done
       }
