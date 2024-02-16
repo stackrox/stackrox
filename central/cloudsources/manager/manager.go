@@ -9,6 +9,7 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/convert/storagetotype"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
 
@@ -61,6 +63,9 @@ type managerImpl struct {
 	cloudSourcesDataStore       cloudSourcesDS.DataStore
 	discoveredClustersDataStore discoveredClustersDS.DataStore
 	clusterDataStore            clusterDS.DataStore
+
+	unspecifiedProviderLock  sync.RWMutex
+	unspecifiedProviderTypes set.StringSet
 }
 
 func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
@@ -90,6 +95,14 @@ func (m *managerImpl) Stop() {
 // ShortCircuit the collection of assets from cloud sources.
 func (m *managerImpl) ShortCircuit() {
 	m.shortCircuitSignal.Signal()
+}
+
+func (m *managerImpl) MarkClusterSecured(id string) {
+	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_SECURED)
+}
+
+func (m *managerImpl) MarkClusterUnsecured(id string) {
+	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_UNSECURED)
 }
 
 func (m *managerImpl) discoveredClustersLoop() {
@@ -177,6 +190,11 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 	unspecifiedProviderType := set.NewStringSet()
 
 	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
+		// Explicitly ignore unhealthy clusters for the matching, as they cannot be deemed as secured.
+		if obj.GetHealthStatus().GetOverallHealthStatus() != storage.ClusterHealthStatus_HEALTHY {
+			return nil
+		}
+
 		providerMetadata := obj.GetStatus().GetProviderMetadata()
 
 		// Explicitly ignore clusters which do not have provider metadata associated with them.
@@ -202,6 +220,10 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		return
 	}
 
+	concurrency.WithLock(&m.unspecifiedProviderLock, func() {
+		m.unspecifiedProviderTypes = unspecifiedProviderType.Clone()
+	})
+
 	for _, cluster := range clusters {
 		switch {
 		case securedClusters.Contains(cluster.GetID()):
@@ -212,6 +234,78 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
 		}
 	}
+}
+
+func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status storage.DiscoveredCluster_Status) {
+	cluster, err := m.getCluster(clusterID)
+	if err != nil {
+		log.Errorw("Failed to get cluster to mark as secured",
+			logging.ClusterID(clusterID), logging.Err(err))
+		return
+	}
+
+	// If the cluster has no metadata, we can short-circuit since there won't be anything to update.
+	if cluster.GetStatus().GetProviderMetadata().GetCluster().GetId() == "" {
+		return
+	}
+
+	cloudSources, err := m.cloudSourcesDataStore.ListCloudSources(cloudSourceCtx, search.EmptyQuery())
+	if err != nil {
+		log.Errorw("Failed to list stored cloud sources for marking cluster as secured",
+			logging.Err(err), logging.ClusterID(clusterID))
+		return
+	}
+
+	discoveredClusters := m.fetchDiscoveredClusters(cluster, cloudSources)
+	// In case we found no discovered clusters, we can short-circuit here.
+	if len(discoveredClusters) == 0 {
+		return
+	}
+
+	unspecifiedProviders := concurrency.WithLock1(&m.unspecifiedProviderLock, func() set.StringSet {
+		return m.unspecifiedProviderTypes.Clone()
+	})
+
+	for _, discoveredCluster := range discoveredClusters {
+		// If we reset the status to unsecured, we need to make sure to also respect the unspecified status that
+		// the discovered cluster may contain.
+		if status == storage.DiscoveredCluster_STATUS_UNSECURED &&
+			unspecifiedProviders.Contains(discoveredCluster.GetMetadata().GetProviderType().String()) {
+			discoveredCluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
+			continue
+		}
+		discoveredCluster.Status = status
+	}
+
+	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx,
+		storagetotype.DiscoveredClusters(discoveredClusters...)...); err != nil {
+		log.Errorw("Failed marking discovered clusters as unsecured",
+			logging.Err(err), logging.ClusterID(clusterID))
+	}
+}
+
+func (m *managerImpl) getCluster(id string) (*storage.Cluster, error) {
+	cluster, exists, err := m.clusterDataStore.GetCluster(clustersCtx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	return cluster, nil
+}
+
+func (m *managerImpl) fetchDiscoveredClusters(cluster *storage.Cluster, sources []*storage.CloudSource) []*storage.DiscoveredCluster {
+	ids := createDiscoveredClusterIds(cluster, sources)
+
+	discoveredClusters := make([]*storage.DiscoveredCluster, 0, len(ids))
+	for _, id := range ids {
+		cluster, err := m.discoveredClustersDataStore.GetDiscoveredCluster(discoveredClusterCtx, id)
+		if err == nil {
+			discoveredClusters = append(discoveredClusters, cluster)
+		}
+	}
+	return discoveredClusters
 }
 
 // createClients creates the API clients to interact with the third-party API of the cloud source.
@@ -251,4 +345,17 @@ func providerMetadataToProviderType(metadata *storage.ProviderMetadata) storage.
 	default:
 		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
 	}
+}
+
+func createDiscoveredClusterIds(cluster *storage.Cluster, cloudSources []*storage.CloudSource) []string {
+	discoveredClusterIDs := make([]string, 0, len(cloudSources))
+	for _, cloudSource := range cloudSources {
+		discoveredClusterIDs = append(discoveredClusterIDs, discoveredclusters.
+			GenerateDiscoveredClusterID(&discoveredclusters.DiscoveredCluster{
+				ID:            cluster.GetStatus().GetProviderMetadata().GetCluster().GetId(),
+				Type:          cluster.GetStatus().GetProviderMetadata().GetCluster().GetType(),
+				CloudSourceID: cloudSource.GetId(),
+			}))
+	}
+	return discoveredClusterIDs
 }

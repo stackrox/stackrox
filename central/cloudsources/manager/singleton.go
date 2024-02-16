@@ -22,6 +22,14 @@ type Manager interface {
 
 	// ShortCircuit signals the manager to short circuit the collection of clusters from cloud sources.
 	ShortCircuit()
+
+	// MarkClusterSecured is received when a new secured cluster is added and marks any discovered clusters
+	// associated with the cluster ID as secured.
+	MarkClusterSecured(id string)
+
+	// MarkClusterUnsecured is received when a secured cluster is removed and marks any discovered clusters
+	// associated with the cluster ID as unsecured
+	MarkClusterUnsecured(id string)
 }
 
 // Singleton creates a singleton instance of the cloud sources Manager.
