@@ -1,6 +1,10 @@
 values:
   imagePullSecrets:
     allowNone: true
+  scannerV4:
+    disable: false
+    indexer:
+      metricsPort: 9090
 tests:
 - name: monitoring should not be exposed by default
   expect: |
@@ -10,10 +14,17 @@ tests:
     verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector")) | assertThat(not)
     .networkpolicys["collector-monitoring"] | assertThat(. == null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. == null)
+    verifyMonitoringExposed(.services["scanner-v4-indexer"]) | assertThat(not)
+    verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer")) | assertThat(not)
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. == null)
 
 - name: monitoring should be exposed when enabled
   set:
     exposeMonitoring: true
+    scannerV4:
+      disable: false
+      indexer:
+        metricsPort: 9090
   expect: |
     verifyMonitoringExposed(.services.sensor)
     verifyMonitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
@@ -21,6 +32,9 @@ tests:
     verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
     .networkpolicys["collector-monitoring"] | assertThat(. != null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+    verifyMonitoringExposed(.services["scanner-v4-indexer"])
+    verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
 
 - name: monitoring should be overridable on a per-component basis (sensor)
   set:
@@ -33,6 +47,8 @@ tests:
     verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
     .networkpolicys["collector-monitoring"] | assertThat(. != null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+    verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
 
 - name: monitoring should be overridable on a per-component basis (collector)
   set:
@@ -45,6 +61,8 @@ tests:
     verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector")) | assertThat(not)
     .networkpolicys["collector-monitoring"] | assertThat(. == null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+    verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
 
 - name: monitoring should be overridable on a per-component basis (admission control)
   set:
@@ -57,3 +75,20 @@ tests:
     verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
     .networkpolicys["collector-monitoring"] | assertThat(. != null)
     .networkpolicys["admission-control-monitoring"] | assertThat(. == null)
+    verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
+
+- name: monitoring should be overridable on a per-component basis (scanner v4)
+  set:
+    exposeMonitoring: true
+    scannerV4.indexer.metricsPort: 9090
+    scannerV4.exposeMonitoring: false
+  expect: |
+    verifyMonitoringExposed(.services.sensor)
+    verifyMonitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
+    .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
+    .networkpolicys["collector-monitoring"] | assertThat(. != null)
+    .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+    verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer")) | assertThat(not)
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. == null)

@@ -1,0 +1,42 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  sensor:
+    localImageScanning:
+      enabled: false
+  scannerV4:
+    disable: true
+    indexer:
+      metricsPort: 9090
+tests:
+- name: sensor should not allow any scanner traffic by default
+  expect: |
+    .networkpolicys["sensor"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["sensor"].spec.ingress[0].from | assertThat(length == 3)
+    .networkpolicys["sensor"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "collector")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[1].podSelector.matchLabels.service | assertThat(. == "collector")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[2].podSelector.matchLabels.app | assertThat(. == "admission-control")
+
+- name: sensor should allow scanner traffic when enabled
+  set:
+    sensor.localImageScanning.enabled: true
+  expect: |
+    .networkpolicys["sensor"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["sensor"].spec.ingress[0].from | assertThat(length == 4)
+    .networkpolicys["sensor"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "collector")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[1].podSelector.matchLabels.service | assertThat(. == "collector")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[2].podSelector.matchLabels.app | assertThat(. == "admission-control")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[3].podSelector.matchLabels.app | assertThat(. == "scanner")
+
+- name: sensor should allow scanner v4 traffic when enabled
+  set:
+    sensor.localImageScanning.enabled: true
+    scannerV4.disable: false
+  expect: |
+    .networkpolicys["sensor"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["sensor"].spec.ingress[0].from | assertThat(length == 5)
+    .networkpolicys["sensor"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "collector")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[1].podSelector.matchLabels.service | assertThat(. == "collector")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[2].podSelector.matchLabels.app | assertThat(. == "admission-control")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[3].podSelector.matchLabels.app | assertThat(. == "scanner")
+    .networkpolicys["sensor"].spec.ingress[0] | .from[4].podSelector.matchLabels.app | assertThat(. == "scanner-v4-indexer")

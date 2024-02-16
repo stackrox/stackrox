@@ -26,6 +26,11 @@ spec:
       - podSelector:
           matchLabels:
             app: scanner
+{{ if ._rox.scannerV4._indexerEnabled }}
+      - podSelector:
+          matchLabels:
+            app: scanner-v4-indexer
+{{ end }}
 {{ end }}
     ports:
     - port: 8443
