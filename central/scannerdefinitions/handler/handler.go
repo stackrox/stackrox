@@ -49,7 +49,7 @@ const (
 	offlineScannerDefinitionBlobName = "/offline/scanner/" + scannerDefsSubZipName
 
 	// offlineScannerV4DefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner V4.
-	offlineScannerV4DefinitionBlobName = "/offline/scanner/" + scannerV4DefsSubZipName
+	offlineScannerV4DefinitionBlobName = "/offline/scanner/v4/" + scannerV4DefsSubZipName
 
 	scannerUpdateDomain    = "https://definitions.stackrox.io"
 	scannerUpdateURLSuffix = "diff.zip"
@@ -84,7 +84,7 @@ var (
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
-	minorVersion = regexp.MustCompile(`^\d+\.\d+`)
+	majorVersion = regexp.MustCompile(`^\d+\.\d+`)
 )
 
 type requestedUpdater struct {
@@ -92,7 +92,7 @@ type requestedUpdater struct {
 	lastRequestedTime time.Time
 }
 
-type Manifest struct {
+type manifest struct {
 	Version string `json:"version"`
 }
 
@@ -288,7 +288,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 		return errors.Wrap(err, "couldn't open file as zip")
 	}
 	defer utils.IgnoreError(zipR.Close)
-
+	var count int
 	// It is expected a ZIP file be uploaded with a ZIP of Scanner's vulnerability definitions.
 	// Currently, this is the only desired file. In the future, we may decide to
 	// support other files (like we have in the past), which is why we
@@ -298,17 +298,20 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerDefinitionBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
-			return nil
+			count++
 		}
-		if strings.HasSuffix(zipF.Name, scannerV4DefsPrefix) {
+		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefinitionBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
 			}
-			return nil
+			log.Debugf("Successfully processed file: %s", zipF.Name)
+			count++
 		}
 		// Ignore any other files which may be in the ZIP.
 	}
-
+	if count > 0 {
+		return nil
+	}
 	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
 }
 
@@ -438,6 +441,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	}
 	return
 }
+
 func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
 	if !h.online {
 		return h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
@@ -477,6 +481,7 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 	return file, nil
 }
 
+// openMostRecentV4OfflineFile gets desired offline file from compressed bundle: offlineScannerV4DefinitionBlobName
 func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
 	log.Debugf("Getting v4 offline data for updater key: %s", updaterKey)
 	openedFile, err := h.openOfflineBlob(ctx, offlineScannerV4DefinitionBlobName)
@@ -484,12 +489,9 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		log.Warnf("Blob %s does not exist", offlineScannerV4DefinitionBlobName)
 		return nil, errors.New("No valid scanner V4 file in offline mode")
 	}
-	defer func() {
-		if openedFile != nil {
-			utils.IgnoreError(openedFile.Close)
-		}
-	}()
-	var onlineFile *vulDefFile
+
+	var offlineFile *vulDefFile
+	defer utils.IgnoreError(openedFile.Close)
 	switch t {
 	case mappingUpdaterType:
 		// search mapping file
@@ -498,28 +500,38 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		if err != nil {
 			return nil, err
 		}
-		onlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
+		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
 	case vulnerabilityUpdaterType:
+		// check version information in manifest
 		mf, err := openFromArchive(openedFile.Name(), "manifest.json")
+		if err != nil {
+			return nil, err
+		}
+
+		offlineV, err := getOfflineFileVersion(mf)
 		if err != nil {
 			return nil, err
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		_, err = compareOfflineFileVersion(mf, updaterKey)
-		if err != nil {
-			return nil, err
+		if offlineV != majorVersion.FindString(updaterKey) {
+			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, updaterKey)
+			log.Errorf(msg)
+			return nil, errors.New(msg)
 		}
+
 		vulns, err := openFromArchive(openedFile.Name(), "vulns.json.zst")
 		if err != nil {
 			return nil, err
 		}
-		onlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
+		offlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
 	default:
 		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 	}
-	file = onlineFile
-	defer utils.IgnoreError(onlineFile.Close)
+
+	// not closing offlineFile here
+	// as file will be closed in getV4() after http serves content
+	file = offlineFile
 	return file, nil
 }
 
@@ -607,7 +619,7 @@ func (h *httpHandler) getV4(ctx context.Context, w http.ResponseWriter, r *http.
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
-
+	defer utils.IgnoreError(f.Close)
 	http.ServeContent(w, r, f.Name(), f.modTime, f)
 }
 
@@ -623,25 +635,11 @@ func (h *httpHandler) startUpdaterAndOpenFile(u *requestedUpdater) (*os.File, ti
 	return osFile, modTime, nil
 }
 
-func getVersionFromManifest(mf *os.File) (string, error) {
-	var manifest Manifest
-	err := json.NewDecoder(mf).Decode(&manifest)
+func getOfflineFileVersion(mf *os.File) (string, error) {
+	var m manifest
+	err := json.NewDecoder(mf).Decode(&m)
 	if err != nil {
 		return "", err
 	}
-	return manifest.Version, nil
-}
-
-func compareOfflineFileVersion(mf *os.File, version string) (bool, error) {
-	v, err := getVersionFromManifest(mf)
-	if err != nil {
-		return false, err
-	}
-
-	// Truncate requested version to major and minor version components
-	match := minorVersion.FindString(version)
-	if match == "" || match != v {
-		return false, fmt.Errorf("no matching vulnerability data found for version %s, try upload again", version)
-	}
-	return true, nil
+	return m.Version, nil
 }
