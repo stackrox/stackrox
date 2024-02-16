@@ -344,7 +344,8 @@ function launch_central {
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
-      if [[ "${CGO_CHECKS}" == "true" ]]; then
+      
+      if [[ "${CGO_CHECKS:-false}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
         helm_args+=(
@@ -463,7 +464,7 @@ function launch_central {
       elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
         ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
-      if [[ "${CGO_CHECKS}" == "true" ]]; then
+      if [[ "${CGO_CHECKS:-false}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
         ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
