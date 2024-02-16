@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -51,9 +52,9 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 	//	- the status is "Active", "Disconnected"
 	//  - name / cluster_id / external_cluster_id are given
 	subscriptionSearch := "(cluster_id!='') " +
+		"AND (external_cluster_id!='') " +
 		"AND (plan.id IN ('ARO', 'OCP', 'MOA', 'OCP-AssistedInstall', 'MOA-HostedControlPlane', 'OSD', 'OSDTrial')) " +
-		"AND (status IN  ('Active', 'Disconnected')) " +
-		"AND (display_name ILIKE '%%' OR external_cluster_id ILIKE '%%' OR cluster_id ILIKE '%%')"
+		"AND (status IN  ('Active'))"
 
 	for {
 		// As an alternative, there's also the clustermgmt API. However, during testing the subscription API
@@ -76,11 +77,17 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 
 func (c *ocmClient) mapToDiscoveredClusters(subs []*accountsmgmtv1.Subscription) ([]*discoveredclusters.DiscoveredCluster, error) {
 	clusters := make([]*discoveredclusters.DiscoveredCluster, 0, len(subs))
+	clusterIDs := set.NewStringSet()
 	var createClusterErrs error
 	for _, sub := range subs {
 		createdTime, err := gogoProto.TimestampProto(sub.CreatedAt())
 		if err != nil {
 			createClusterErrs = errors.Join(createClusterErrs, errox.InvariantViolation.New("converting timestamp").CausedBy(err))
+			continue
+		}
+		// We've seen duplicates being returned from the API and the search query doesn't seem to support DISTINCT
+		// or unique as key-value.
+		if clusterIDs.Contains(sub.ExternalClusterID()) {
 			continue
 		}
 		clusters = append(clusters, &discoveredclusters.DiscoveredCluster{
@@ -92,6 +99,7 @@ func (c *ocmClient) mapToDiscoveredClusters(subs []*accountsmgmtv1.Subscription)
 			FirstDiscoveredAt: createdTime,
 			CloudSourceID:     c.cloudSourceID,
 		})
+		clusterIDs.Add(sub.ExternalClusterID())
 	}
 
 	if createClusterErrs != nil {
@@ -108,7 +116,7 @@ func getClusterMetadataType(sub *accountsmgmtv1.Subscription) storage.ClusterMet
 		return storage.ClusterMetadata_OSD
 	case "aro":
 		return storage.ClusterMetadata_ARO
-	case "mao", "mao-hostedcontrolplane":
+	case "moa", "moa-hostedcontrolplane":
 		return storage.ClusterMetadata_ROSA
 	default:
 		return storage.ClusterMetadata_UNSPECIFIED

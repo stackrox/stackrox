@@ -61,8 +61,8 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil).AnyTimes()
 
 	s.service = newService(s.datastore, mockManager)
-	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) cloudsources.Client {
-		return cloudSourceClientMock
+	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) (cloudsources.Client, error) {
+		return cloudSourceClientMock, nil
 	}
 }
 
@@ -410,8 +410,8 @@ func (s *servicePostgresTestSuite) TestDeleteCloudSource() {
 
 func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 	cloudSourceClientMock := cloudSourceClientMocks.NewMockClient(gomock.NewController(s.T()))
-	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) cloudsources.Client {
-		return cloudSourceClientMock
+	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) (cloudsources.Client, error) {
+		return cloudSourceClientMock, nil
 	}
 
 	cloudSource := fixtures.GetV1CloudSource()
