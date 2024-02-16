@@ -54,6 +54,7 @@ jobs:
         run: |
           kubectl -n stackrox expose deployment scanner-v4 --type=NodePort --port=8443
           kubectl -n stackrox get svc
+          minikube service -n stackrox scanner-v4 --url
           url=$(minikube service -n stackrox scanner-v4 --url)
-          echo $url
-          make -C scanner e2e-run matcher-addr=${url#http://} indexer-addr=${url#http://} NODEPS=1
+          addr=${url#http://}
+          make -C scanner e2e-run matcher-addr="$addr" indexer-addr="$addr" NODEPS=1
