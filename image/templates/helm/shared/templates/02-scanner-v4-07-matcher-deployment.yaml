@@ -54,7 +54,7 @@ spec:
             resourceFieldRef:
               resource: limits.cpu
         - name: GOGC
-          value: 75
+          value: "75"
         - name: POD_NAME
           valueFrom:
             fieldRef:

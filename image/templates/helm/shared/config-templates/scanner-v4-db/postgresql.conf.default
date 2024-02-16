@@ -11,7 +11,7 @@ hba_file = '/etc/stackrox.d/config/pg_hba.conf'
 # - Connection Settings -
 
 listen_addresses = '*'
-max_connections = 100
+max_connections = 500
 
 # - Authentication -
 
@@ -30,7 +30,11 @@ ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
 # - Memory -
 
-shared_buffers = 250MB
+# Keep this in sync with the shared-memory volume in the
+# Scanner V4 DB deployment configuration.
+shared_buffers = 1GB
+work_mem = 20MB
+maintenance_work_mem = 256MB
 dynamic_shared_memory_type = posix
 
 #------------------------------------------------------------------------------
@@ -39,7 +43,7 @@ dynamic_shared_memory_type = posix
 
 # - Checkpoints -
 
-max_wal_size = 1GB
+max_wal_size = 3GB
 min_wal_size = 80MB
 
 #------------------------------------------------------------------------------
