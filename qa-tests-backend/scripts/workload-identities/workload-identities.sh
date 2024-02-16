@@ -28,8 +28,8 @@ cleanup_workload_identities() {
 
 setup_gcp_variables() {
     cluster=$(kubectl config view --minify -o jsonpath="{.clusters[].name}")
-    service_account="stackrox-ci-workload-identity@acs-san-stackroxci.iam.gserviceaccount.com"
-    project="280228816191" # acs-san-stackroxci
+    service_account="${GCP_SERVICE_ACCOUNT_EMAIL_STACKROX_CI_WORKLOAD_IDENTITY}"
+    project="${GCP_PROJECT_NUMBER_WORKLOAD_IDENTITY}"
     subject_central="system:serviceaccount:stackrox:central"
 }
 
