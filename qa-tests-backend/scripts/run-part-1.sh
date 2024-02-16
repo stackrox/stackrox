@@ -17,6 +17,8 @@ source "$ROOT/tests/e2e/lib.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../qa-tests-backend/scripts/lib.sh
 source "$ROOT/qa-tests-backend/scripts/lib.sh"
+# shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
+source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
 set -euo pipefail
 
@@ -46,6 +48,7 @@ config_part_1() {
 
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     deploy_optional_e2e_components
+    setup_workload_identities
 
     deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
@@ -110,9 +113,9 @@ test_part_1() {
 }
 
 cleanup_part_1() {
-    info "Cleaning up after running part 1 of e2e tests"
+    info "Cleaning up after running part 1 of e2e tests."
 
-    cleanup_optional_e2e_components
+    cleanup_workload_identities
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

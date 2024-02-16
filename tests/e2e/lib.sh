@@ -12,8 +12,6 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
-# shellcheck source=../../scripts/ci/workload-identities/workload-identities.sh
-source "$ROOT/scripts/ci/workload-identities/workload-identities.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
@@ -416,21 +414,6 @@ deploy_optional_e2e_components() {
         install_the_compliance_operator
     else
         info "Skipping the compliance operator install"
-    fi
-
-    if [[ "${SETUP_WORKLOAD_IDENTITIES:-false}" == "true" ]]; then
-        setup_workload_identities
-    else
-        info "Skipping the workload identity setup."
-    fi
-}
-
-cleanup_optional_e2e_components() {
-    info "Cleaning up optional components used in E2E tests"
-    if [[ "${SETUP_WORKLOAD_IDENTITIES:-false}" == "true" ]]; then
-        cleanup_workload_identities
-    else
-        info "Skipping the workload identity cleanup."
     fi
 }
 

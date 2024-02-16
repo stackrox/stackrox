@@ -2,16 +2,27 @@
 
 # Workload identity resources for Central.
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
+# shellcheck source=../../../scripts/lib.sh
+source "$ROOT/scripts/lib.sh"
 # shellcheck source=../../../scripts/ci/gcp.sh
-source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
+source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
 setup_workload_identities() {
+    if [[ "${SETUP_WORKLOAD_IDENTITIES:-false}" == "false" ]]; then
+        info "Skipping the workload identity setup."
+        return 0
+    fi
     setup_gcp_workload_identities
 }
 
 cleanup_workload_identities() {
+    if [[ "${SETUP_WORKLOAD_IDENTITIES:-false}" == "false" ]]; then
+        info "Skipping the workload identity cleanup."
+        return 0
+    fi
     cleanup_gcp_workload_identities
 }
 
@@ -35,9 +46,9 @@ setup_gcp_workload_identities() {
 
     # Apply STS configuration.
     local -r sts_config=$(PROJECT=${project} CLUSTER=${cluster} SERVICE_ACCOUNT=${service_account} envsubst < \
-        "$SCRIPTS_ROOT/scripts/ci/workload-identities/sts-config.json" | base64 | tr -d "\n")
+        "$ROOT/qa-tests-backend/scripts/workload-identities/sts-config.json" | base64 | tr -d "\n")
     CREDENTIALS=${sts_config} envsubst < \
-        "$SCRIPTS_ROOT/scripts/ci/workload-identities/gcp-cloud-credentials.yaml" | kubectl apply -f -
+        "$ROOT/qa-tests-backend/scripts/workload-identities/gcp-cloud-credentials.yaml" | kubectl apply -f -
 }
 
 cleanup_gcp_workload_identities() {
