@@ -56,9 +56,9 @@ jobs:
           kubectl -n stackrox expose deployment scanner-v4
           kubectl -n stackrox get svc
           kubectl -n stackrox port-forward \
-              "$(kubectl -n stackrox get pods -l app=scanner-v4 -o jsonpath="{.items[*].metadata.name}")" \
+              "$(kubectl -n stackrox get pods
+                         -l app=scanner-v4
+                         -o jsonpath="{.items[*].metadata.name}")" \
               8443:8443 &
-          p=$!
+          trap 'kill $!' EXIT
           make -C scanner e2e-run NODEPS=1
-          kill "$p"
-          wait
