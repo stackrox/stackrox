@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -37,6 +38,8 @@ var (
 			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
 		},
 	})
+
+	configNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*[a-z0-9]?$`)
 )
 
 // New returns a service object for registering with grpc.
@@ -72,6 +75,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
 	if req.GetScanName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	validName := configNameRegexp.MatchString(req.GetScanName())
+
+	if !validName {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
 	}
 
 	if err := validateScanConfiguration(req); err != nil {
@@ -110,8 +119,8 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	var clusterIDs []string
 	clusterIDs = append(clusterIDs, req.GetClusters()...)
 
-	// Process scan request, config may be updated in the event of errors from sensor.
-	_, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
+	// Update scan request, config may be updated in the event of errors from sensor.
+	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
 	}

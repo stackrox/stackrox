@@ -19,6 +19,7 @@ import * as yup from 'yup';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useAnalytics, { DOWNLOAD_INIT_BUNDLE } from 'hooks/useAnalytics';
 import { generateClusterInitBundle } from 'services/ClustersService'; // ClusterInitBundle
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -61,6 +62,7 @@ const validationSchema: yup.ObjectSchema<InitBundleFormValues> = yup.object().sh
 });
 
 function InitBundleForm(): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const history = useHistory();
     const [errorMessage, setErrorMessage] = useState('');
     const {
@@ -218,7 +220,10 @@ function InitBundleForm(): ReactElement {
                             variant="primary"
                             isDisabled={isSubmitting || !isValid}
                             isLoading={isSubmitting}
-                            onClick={submitForm}
+                            onClick={() => {
+                                analyticsTrack(DOWNLOAD_INIT_BUNDLE);
+                                return submitForm();
+                            }}
                         >
                             Download
                         </Button>

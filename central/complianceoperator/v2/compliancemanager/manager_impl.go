@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -98,69 +99,100 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
 	}
 
+	if scanRequest.GetId() != "" {
+		return nil, errors.Errorf("The scan configuration already exists and cannot be added.  ID %q and name %q", scanRequest.GetId(), scanRequest.GetScanConfigName())
+	}
+
 	err := validateClusterAccess(ctx, clusters)
 	if err != nil {
 		return nil, err
 	}
 
-	var cron string
-	if scanRequest.GetSchedule() != nil {
-		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
-		if err != nil {
-			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanConfigName())
-			log.Error(err)
-			return nil, err
-		}
-		cronValidator := gronx.New()
-		if !cronValidator.IsValid(cron) {
-			err = errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanConfigName())
-			log.Error(err)
-			return nil, err
+	cron, err := convertSchedule(scanRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if scan configuration already exists by name.
+	scanConfig, err := m.scanSettingDS.GetScanConfigurationByName(ctx, scanRequest.GetScanConfigName())
+	if err != nil {
+		err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		log.Error(err)
+		return nil, err
+	}
+	if scanConfig != nil {
+		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
+	}
+
+	scanRequest.Id = uuid.NewV4().String()
+	scanRequest.CreatedTime = types.TimestampNow()
+
+	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true)
+}
+
+// UpdateScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
+func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+	if !features.ComplianceEnhancements.Enabled() {
+		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
+	}
+
+	if scanRequest.GetId() == "" {
+		return nil, errors.Errorf("Scan Configuration ID is required for an update, %+v", scanRequest)
+	}
+
+	err := validateClusterAccess(ctx, clusters)
+	if err != nil {
+		return nil, err
+	}
+
+	cron, err := convertSchedule(scanRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the scan configuration ID is valid
+	oldScanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
+	if err != nil {
+		err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
+		log.Error(err)
+		return nil, err
+	}
+	if !found {
+		return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
+	}
+
+	// Use the old config to determine which clusters were deleted from the configuration
+	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
+	var deletedClusters []string
+	for _, oldCluster := range oldScanConfig.GetClusters() {
+		if sliceutils.Find(clusters, oldCluster.GetClusterId()) == -1 {
+			deletedClusters = append(deletedClusters, oldCluster.ClusterId)
 		}
 	}
 
-	createScanRequest := scanRequest.Id == ""
+	// Use the created time from the DB
+	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
 
-	// No ID means an add so we need to make sure the name does not already exist
-	if createScanRequest {
-		// Check if scan configuration already exists by name.
-		scanConfig, err := m.scanSettingDS.GetScanConfigurationByName(ctx, scanRequest.GetScanConfigName())
-		if err != nil {
-			err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-			log.Error(err)
-			return nil, err
-		}
-		if scanConfig != nil {
-			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
-		}
-
-		scanRequest.Id = uuid.NewV4().String()
-		scanRequest.CreatedTime = types.TimestampNow()
-	} else {
-		// Verify the scan configuration ID is valid
-		scanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
-		if err != nil {
-			err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
-			log.Error(err)
-			return nil, err
-		}
-		if !found {
-			return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
-		}
-
-		// Use the created time from the DB
-		scanRequest.CreatedTime = scanConfig.GetCreatedTime()
+	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false)
+	if err != nil {
+		return nil, err
 	}
 
+	// Send delete to sensor for any clusters that were deleted
+	m.processClusterDelete(ctx, scanRequest, deletedClusters)
+
+	return scanRequest, nil
+}
+
+func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
+	// Check if any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
 	// If so, then we cannot create the scan configuration.
-	err = m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
-
+	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
@@ -191,11 +223,42 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		err = m.updateClusterStatus(ctx, scanRequest.GetId(), clusterID, status)
 		if err != nil {
 			log.Error(err)
-			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanConfigName())
+			return nil, errors.Wrapf(err, "Unable to save scan configuration status for scan named %q", scanRequest.GetScanConfigName())
 		}
 	}
 
 	return scanRequest, nil
+}
+
+func (m *managerImpl) processClusterDelete(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) {
+	for _, clusterID := range clusters {
+		// id for the request message to sensor
+		sensorRequestID := uuid.NewV4().String()
+
+		sensorMessage := &central.MsgToSensor{
+			Msg: &central.MsgToSensor_ComplianceRequest{
+				ComplianceRequest: &central.ComplianceRequest{
+					Request: &central.ComplianceRequest_DeleteScanConfig{
+						DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
+							Id:   sensorRequestID,
+							Name: scanRequest.GetScanConfigName(),
+						},
+					},
+				},
+			},
+		}
+
+		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
+		if err != nil {
+			log.Errorf("error sending deletion of compliance scan config to cluster %q: %v", clusterID, err)
+		}
+
+		// Remove cluster status
+		err = m.scanSettingDS.RemoveClusterStatus(ctx, scanRequest.GetId(), clusterID)
+		if err != nil {
+			log.Errorf("error removing cluster status for compliance scan config to cluster %q: %v", clusterID, err)
+		}
+	}
 }
 
 // trackSensorRequest adds sensor request to a map with cluster and scan config that was sent for correlating responses.
@@ -357,4 +420,25 @@ func (m *managerImpl) updateClusterStatus(ctx context.Context, scanConfigID stri
 		return errors.Errorf("could not pull config for cluster %q because it does not exist", clusterID)
 	}
 	return m.scanSettingDS.UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus, clusterName)
+}
+
+func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2) (string, error) {
+	var cron string
+	var err error
+	if scanRequest.GetSchedule() != nil {
+		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
+		if err != nil {
+			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanConfigName())
+			log.Error(err)
+			return "", err
+		}
+		cronValidator := gronx.New()
+		if !cronValidator.IsValid(cron) {
+			err = errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanConfigName())
+			log.Error(err)
+			return "", err
+		}
+	}
+
+	return cron, nil
 }

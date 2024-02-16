@@ -146,6 +146,20 @@ func (mr *MockDataStoreMockRecorder) RemoveClusterFromScanConfig(ctx, clusterID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterFromScanConfig", reflect.TypeOf((*MockDataStore)(nil).RemoveClusterFromScanConfig), ctx, clusterID)
 }
 
+// RemoveClusterStatus mocks base method.
+func (m *MockDataStore) RemoveClusterStatus(ctx context.Context, scanConfigID, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveClusterStatus", ctx, scanConfigID, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveClusterStatus indicates an expected call of RemoveClusterStatus.
+func (mr *MockDataStoreMockRecorder) RemoveClusterStatus(ctx, scanConfigID, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterStatus", reflect.TypeOf((*MockDataStore)(nil).RemoveClusterStatus), ctx, scanConfigID, clusterID)
+}
+
 // ScanConfigurationProfileExists mocks base method.
 func (m *MockDataStore) ScanConfigurationProfileExists(ctx context.Context, id string, profiles, clusters []string) error {
 	m.ctrl.T.Helper()

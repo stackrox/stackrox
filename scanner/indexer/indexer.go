@@ -194,6 +194,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 		}{
 			Repo: map[string]func(any) error{
 				"rhel-repository-scanner": castToConfig(func(cfg *rhel.RepositoryScannerConfig) {
+					cfg.DisableAPI = true
 					cfg.Repo2CPEMappingURL = indexerCfg.RepositoryToCPEURL
 					cfg.Repo2CPEMappingFile = indexerCfg.RepositoryToCPEFile
 				}),

@@ -151,7 +151,7 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 	server.RunForever()
 
 	url := fmt.Sprintf("http://localhost:%d/metrics", freePort)
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+	assert.EventuallyWithT(t, func(t *assert.CollectT) {
 		resp, err := http.Get(url)
 		require.NoError(t, err)
 		defer utils.IgnoreError(resp.Body.Close)
@@ -219,7 +219,7 @@ func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	client, err := testClient()
 	require.NoError(t, err)
 	url := fmt.Sprintf("https://localhost:%d/metrics", freePort)
-	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+	assert.EventuallyWithT(t, func(t *assert.CollectT) {
 		resp, err := client.Get(url)
 		require.NoError(t, err)
 		defer utils.IgnoreError(resp.Body.Close)

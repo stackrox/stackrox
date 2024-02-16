@@ -3,6 +3,7 @@ package scanner
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/scanner/downloaddb"
 	"github.com/stackrox/rox/roxctl/scanner/generate"
 	"github.com/stackrox/rox/roxctl/scanner/uploaddb"
 )
@@ -16,6 +17,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(
 		generate.Command(cliEnvironment),
 		uploaddb.Command(cliEnvironment),
+		downloaddb.Command(cliEnvironment),
 	)
 	return c
 }

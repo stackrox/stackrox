@@ -38,6 +38,9 @@ type DataStore interface {
 	// UpdateClusterStatus updates the scan configuration with the cluster status
 	UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string, clusterName string) error
 
+	// RemoveClusterStatus removes the scan configuration status for the given cluster
+	RemoveClusterStatus(ctx context.Context, scanConfigID string, clusterID string) error
+
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
 	GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
 

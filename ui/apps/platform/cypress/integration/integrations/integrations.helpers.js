@@ -68,6 +68,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
             return '/v1/notifiers';
         case 'signatureIntegrations': // camelCase in page address
             return '/v1/signatureintegrations'; // lowercase in endpoint address
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -94,6 +96,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return 'notifiers';
         case 'signatureIntegrations': // camelCase in page address
             return 'signatureintegrations'; // lowercase in endpoint alias
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -188,6 +192,9 @@ const integrationTitleMap = {
     },
     signatureIntegrations: {
         signature: 'Signature',
+    },
+    cloudSources: {
+        paladinCloud: 'Paladin Cloud',
     },
 };
 
@@ -305,7 +312,8 @@ export function clickIntegrationTileOnDashboard(integrationSource, integrationTy
 export function clickCreateNewIntegrationInTable(
     integrationSource,
     integrationType,
-    createLinkText = 'New integration'
+    createLinkText = 'New integration',
+    createPageTitleText = 'Create integration'
 ) {
     cy.get(`a:contains("${createLinkText}")`).click();
 
@@ -316,7 +324,7 @@ export function clickCreateNewIntegrationInTable(
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationsTitle}")`);
     cy.get(`${selectors.breadcrumbItem} a:contains("${integrationTitle}")`);
-    cy.get(`${selectors.breadcrumbItem}:contains("Create integration")`); // TODO Title Case
+    cy.get(`${selectors.breadcrumbItem}:contains("${createPageTitleText}")`);
 }
 
 export function deleteIntegrationInTable(integrationSource, integrationType, integrationName) {

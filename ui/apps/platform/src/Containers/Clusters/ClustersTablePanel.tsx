@@ -25,6 +25,10 @@ import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
+import useAnalytics, {
+    LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+    SECURE_A_CLUSTER_LINK_CLICKED,
+} from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
@@ -69,6 +73,7 @@ function ClustersTablePanel({
     selectedClusterId,
     searchOptions,
 }: ClustersTablePanelProps): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const history = useHistory();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
@@ -154,64 +159,17 @@ function ClustersTablePanel({
 
     const { version } = metadata;
 
-    const pageHeader = (
-        <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
-            <ToolbarContent>
-                <ToolbarGroup
-                    variant="filter-group"
-                    className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
-                >
-                    <ToolbarItem variant="search-filter" className="pf-u-w-100">
-                        <SearchFilterInput
-                            className="w-full"
-                            searchFilter={searchFilter}
-                            searchOptions={searchOptions}
-                            searchCategory="CLUSTERS"
-                            placeholder="Filter clusters"
-                            handleChangeSearchFilter={setSearchFilter}
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
-                <ToolbarGroup variant="button-group">
-                    {hasReadAccessForAdministration && (
-                        <ToolbarItem>
-                            <Button
-                                variant="secondary"
-                                component={LinkShim}
-                                href={clustersDelegatedScanningPath}
-                            >
-                                Delegated scanning
-                            </Button>
-                        </ToolbarItem>
-                    )}
-                    {hasReadAccessForAdministration && (
-                        <ToolbarItem>
-                            <Button
-                                variant="secondary"
-                                component={LinkShim}
-                                href={clustersDiscoveredClustersPath}
-                            >
-                                Discovered clusters
-                            </Button>
-                        </ToolbarItem>
-                    )}
-                    {hasAdminRole && (
-                        <ToolbarItem>
-                            <Button variant="tertiary">
-                                <ManageTokensButton />
-                            </Button>
-                        </ToolbarItem>
-                    )}
-                </ToolbarGroup>
-            </ToolbarContent>
-        </Toolbar>
-    );
-
     /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
         isMoveInitBundlesEnabled ? (
             <DropdownItem
                 key="init-bundle"
+                onClick={() => {
+                    analyticsTrack({
+                        event: SECURE_A_CLUSTER_LINK_CLICKED,
+                        properties: { source: 'Secure a Cluster Dropdown' },
+                    });
+                }}
                 component={
                     <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
                 }
@@ -234,7 +192,15 @@ function ClustersTablePanel({
         <DropdownItem
             key="legacy"
             component={
-                <Link to={`${clustersBasePath}/new`}>
+                <Link
+                    to={`${clustersBasePath}/new`}
+                    onClick={() =>
+                        analyticsTrack({
+                            event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                            properties: { source: 'Secure a Cluster Dropdown' },
+                        })
+                    }
+                >
                     {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
                 </Link>
             }
@@ -366,63 +332,6 @@ function ClustersTablePanel({
             });
     }
 
-    const headerActions = (
-        <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
-            <ToolbarContent>
-                <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
-                    {hasWriteAccessForAdministration && (
-                        <ToolbarItem>
-                            <AutoUpgradeToggle />
-                        </ToolbarItem>
-                    )}
-                    {hasWriteAccessForAdministration && (
-                        <ToolbarItem>
-                            <Button
-                                variant="secondary"
-                                className="pf-u-ml-sm"
-                                onClick={upgradeSelectedClusters}
-                                isDisabled={upgradableClusters.length === 0 || !!selectedClusterId}
-                            >
-                                {`Upgrade (${upgradableClusters.length})`}
-                            </Button>
-                        </ToolbarItem>
-                    )}
-                    {hasWriteAccessForCluster && (
-                        <ToolbarItem>
-                            <Button
-                                variant="danger"
-                                className="pf-u-ml-sm pf-u-mr-sm"
-                                onClick={deleteSelectedClusters}
-                                isDisabled={checkedClusterIds.length === 0 || !!selectedClusterId}
-                            >
-                                {`Delete (${checkedClusterIds.length})`}
-                            </Button>
-                        </ToolbarItem>
-                    )}
-                    {hasWriteAccessForCluster && (
-                        <ToolbarItem>
-                            <Dropdown
-                                onSelect={onSelectInstallMenuItem}
-                                toggle={
-                                    <DropdownToggle
-                                        id="install-toggle"
-                                        toggleVariant="secondary"
-                                        onToggle={onToggleInstallMenu}
-                                    >
-                                        Secure a cluster
-                                    </DropdownToggle>
-                                }
-                                position={DropdownPosition.right}
-                                isOpen={isInstallMenuOpen}
-                                dropdownItems={installMenuOptions}
-                            />
-                        </ToolbarItem>
-                    )}
-                </ToolbarGroup>
-            </ToolbarContent>
-        </Toolbar>
-    );
-
     function calculateUpgradeableClusters(selection) {
         const currentlySelectedClusters = currentClusters.filter((cluster) =>
             selection.includes(cluster.id)
@@ -475,9 +384,113 @@ function ClustersTablePanel({
     return (
         <>
             <PageSection variant="light" component="div">
-                <Title headingLevel="h1">Clusters</Title>
-                {pageHeader}
-                {headerActions}
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                    <ToolbarContent>
+                        <Title headingLevel="h1">Clusters</Title>
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            {hasReadAccessForAdministration && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersDelegatedScanningPath}
+                                    >
+                                        Delegated scanning
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasReadAccessForAdministration && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersDiscoveredClustersPath}
+                                    >
+                                        Discovered clusters
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasAdminRole && (
+                                <ToolbarItem>
+                                    <Button variant="tertiary">
+                                        <ManageTokensButton />
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasWriteAccessForCluster && (
+                                <ToolbarItem>
+                                    <Dropdown
+                                        onSelect={onSelectInstallMenuItem}
+                                        toggle={
+                                            <DropdownToggle
+                                                id="install-toggle"
+                                                toggleVariant="secondary"
+                                                onToggle={onToggleInstallMenu}
+                                            >
+                                                Secure a cluster
+                                            </DropdownToggle>
+                                        }
+                                        position={DropdownPosition.right}
+                                        isOpen={isInstallMenuOpen}
+                                        dropdownItems={installMenuOptions}
+                                    />
+                                </ToolbarItem>
+                            )}
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                    <ToolbarContent>
+                        <ToolbarGroup
+                            variant="filter-group"
+                            className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
+                        >
+                            <ToolbarItem variant="search-filter" className="pf-u-w-100">
+                                <SearchFilterInput
+                                    className="w-full"
+                                    searchFilter={searchFilter}
+                                    searchOptions={searchOptions}
+                                    searchCategory="CLUSTERS"
+                                    placeholder="Filter clusters"
+                                    handleChangeSearchFilter={setSearchFilter}
+                                />
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                            {hasWriteAccessForAdministration && (
+                                <ToolbarItem>
+                                    <AutoUpgradeToggle />
+                                </ToolbarItem>
+                            )}
+                            {hasWriteAccessForAdministration && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={upgradeSelectedClusters}
+                                        isDisabled={
+                                            upgradableClusters.length === 0 || !!selectedClusterId
+                                        }
+                                    >
+                                        {`Upgrade (${upgradableClusters.length})`}
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                            {hasWriteAccessForCluster && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="danger"
+                                        onClick={deleteSelectedClusters}
+                                        isDisabled={
+                                            checkedClusterIds.length === 0 || !!selectedClusterId
+                                        }
+                                    >
+                                        {`Delete (${checkedClusterIds.length})`}
+                                    </Button>
+                                </ToolbarItem>
+                            )}
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" isFilled>

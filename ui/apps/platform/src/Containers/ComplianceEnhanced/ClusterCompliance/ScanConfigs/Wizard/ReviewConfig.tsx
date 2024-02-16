@@ -15,7 +15,10 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { ComplianceProfile, ComplianceIntegration } from 'services/ComplianceEnhancedService';
+import {
+    ComplianceProfileSummary,
+    ComplianceIntegration,
+} from 'services/ComplianceEnhancedService';
 
 import {
     convertFormikParametersToSchedule,
@@ -25,7 +28,7 @@ import {
 
 export type ProfileSelectionProps = {
     clusters: ComplianceIntegration[];
-    profiles: ComplianceProfile[];
+    profiles: ComplianceProfileSummary[];
     errorMessage: string;
 };
 
@@ -42,7 +45,7 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
     }
 
     const selectedClusters = findById(formikValues.clusters, clusters, 'clusterId');
-    const selectedProfiles = findById(formikValues.profiles, profiles, 'id');
+    const selectedProfiles = findById(formikValues.profiles, profiles, 'name');
 
     return (
         <>
@@ -93,7 +96,7 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                     </Text>
                     <TextList isPlain>
                         {selectedProfiles.map((profile) => (
-                            <TextListItem key={profile.id}>{profile.name}</TextListItem>
+                            <TextListItem key={profile.name}>{profile.name}</TextListItem>
                         ))}
                     </TextList>
                 </StackItem>

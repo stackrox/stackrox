@@ -281,4 +281,16 @@ class Env {
     static String mustGetSlackAltWebhook() {
         return mustGet("SLACK_ALT_WEBHOOK")
     }
+
+    static String getDisableAuditLogAlertsTest() {
+        return get("DISABLE_AUDIT_LOG_ALERTS_TEST")
+    }
+
+    static String getManagedControlPlane() {
+        return get("MANAGED_CP", "false")
+    }
+
+    static String getSupportsLoadBalancerSvc() {
+        return get("SUPPORTS_LOAD_BALANCER_SVC", "true")
+    }
 }

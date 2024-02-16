@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/cloudsources"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -43,11 +44,14 @@ var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
+type cloudSourceClientFactory = func(source *storage.CloudSource) cloudsources.Client
+
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
 
-	ds  datastore.DataStore
-	mgr manager.Manager
+	ds            datastore.DataStore
+	mgr           manager.Manager
+	clientFactory cloudSourceClientFactory
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -125,6 +129,14 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 	}
 	v1CloudSource.Id = uuid.NewV4().String()
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
+
+	if !v1CloudSource.GetSkipTestIntegration() {
+		if err := s.testCloudSource(ctx, storageCloudSource); err != nil {
+			return nil, errox.InvalidArgs.
+				Newf("failed to test cloud source %q", v1CloudSource.GetName()).CausedBy(err)
+		}
+	}
+
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
 		return nil, errors.Wrapf(err, "failed to create cloud source %q", v1CloudSource.GetName())
 	}
@@ -153,6 +165,13 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 		}
 	}
 
+	if !v1CloudSource.GetSkipTestIntegration() {
+		if err := s.testCloudSource(ctx, storageCloudSource); err != nil {
+			return nil, errox.InvalidArgs.
+				Newf("failed to test cloud source %q", v1CloudSource.GetName()).CausedBy(err)
+		}
+	}
+
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
 		return nil, errors.Wrapf(err, "failed to update cloud source %q", v1CloudSource.GetId())
 	}
@@ -177,9 +196,34 @@ func (s *serviceImpl) DeleteCloudSource(ctx context.Context, request *v1.DeleteC
 }
 
 // TestCloudSource tests a cloud source.
-func (s *serviceImpl) TestCloudSource(_ context.Context, _ *v1.TestCloudSourceRequest,
-) (*v1.Empty, error) {
-	return nil, errox.NotImplemented.New("TestCloudSource is not implemented yet")
+func (s *serviceImpl) TestCloudSource(ctx context.Context, req *v1.TestCloudSourceRequest) (*v1.Empty, error) {
+	v1CloudSource := req.GetCloudSource()
+	if v1CloudSource == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "empty cloud source")
+	}
+	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
+
+	if !req.GetUpdateCredentials() {
+		if err := s.enrichWithStoredCredentials(ctx, storageCloudSource); err != nil {
+			if errors.Is(err, errox.NotFound) {
+				return nil, errox.InvalidArgs.CausedByf(
+					"cannot fetch existing credentials: cloud source %q does not exist", v1CloudSource.GetId(),
+				)
+			}
+			return nil, errors.Wrapf(err, "cannot fetch existing credentials for cloud source %q", v1CloudSource.GetId())
+		}
+	}
+	if err := s.testCloudSource(ctx, storageCloudSource); err != nil {
+		return nil, errox.InvalidArgs.
+			Newf("test for cloud source %q failed", storageCloudSource.GetName()).CausedBy(err)
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) testCloudSource(ctx context.Context, storageCloudSource *storage.CloudSource) error {
+	client := s.clientFactory(storageCloudSource)
+	_, err := client.GetDiscoveredClusters(ctx)
+	return err
 }
 
 func (s *serviceImpl) enrichWithStoredCredentials(ctx context.Context,
