@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -69,6 +70,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	namespace := event.GetNamespace()
 	namespace.ClusterId = clusterID
+
+	// ROX-22002: Remove invalid null characters in annotations
+	stringutils.SanitizeMapValues(namespace.GetAnnotations())
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

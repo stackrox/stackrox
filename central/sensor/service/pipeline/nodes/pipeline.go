@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -89,6 +90,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if err == nil && ok {
 		node.ClusterName = clusterName
 	}
+
+	// ROX-22002: Remove invalid null characters in annotations
+	stringutils.SanitizeMapValues(node.GetAnnotations())
 
 	if enricher.SupportsNodeScanning(node) {
 		// If supports node scanning, this pipeline should only update the node's

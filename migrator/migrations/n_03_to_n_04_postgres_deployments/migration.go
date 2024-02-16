@@ -17,6 +17,7 @@ import (
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"gorm.io/gorm"
 )
 
@@ -46,6 +47,7 @@ func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacySt
 
 	var deployments []*storage.Deployment
 	err := walk(ctx, legacyStore, func(obj *storage.Deployment) error {
+		stringutils.SanitizeMapValues(obj.GetAnnotations())
 		deployments = append(deployments, obj)
 		if len(deployments) == batchSize {
 			if err := store.UpsertMany(ctx, deployments); err != nil {
