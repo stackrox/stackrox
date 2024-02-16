@@ -1,7 +1,7 @@
 import React from 'react';
-import { Banner, Flex, FlexItem } from '@patternfly/react-core';
-import { InfoCircleIcon } from '@patternfly/react-icons';
+import { Banner } from '@patternfly/react-core';
 
+import { getProductBranding } from 'constants/productBranding';
 import useRestQuery from 'hooks/useRestQuery';
 import useMetadata from 'hooks/useMetadata';
 import { fetchImageIntegrations } from 'services/ImageIntegrationsService';
@@ -11,6 +11,7 @@ import { scannerV4ImageIntegrationType } from 'types/imageIntegration.proto';
 function ScannerV4IntegrationBanner() {
     const { version } = useMetadata();
     const { data, loading, error } = useRestQuery(fetchImageIntegrations);
+    const branding = getProductBranding();
 
     // Don't show the banner if we don't have successful responses
     if (!data || loading || error || !version) {
@@ -24,31 +25,27 @@ function ScannerV4IntegrationBanner() {
         return null;
     }
 
+    const brandedText =
+        branding.type === 'RHACS_BRANDING'
+            ? 'New Scanner V4 now generally available in RHACS 4.4.'
+            : 'New Scanner V4 now generally available in StackRox 4.4.';
+
+    const docsLink = (
+        <a
+            href={getVersionedDocs(
+                version,
+                'integration/integrate-with-image-vulnerability-scanners.html'
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            RHACS documentation
+        </a>
+    );
+
     return (
-        <Banner variant="info">
-            <Flex
-                alignItems={{ default: 'alignItemsCenter' }}
-                justifyContent={{ default: 'justifyContentCenter' }}
-            >
-                <FlexItem>
-                    <InfoCircleIcon />
-                </FlexItem>
-                <FlexItem>
-                    New Scanner V4 now generally available in RHACS 4.4. Refer to the{' '}
-                    {/* TODO When we have a more specific link to Scanner v4 we may want to change this URL */}
-                    <a
-                        href={getVersionedDocs(
-                            version,
-                            'integration/integrate-with-image-vulnerability-scanners.html'
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        RHACS documentation
-                    </a>{' '}
-                    to learn more.
-                </FlexItem>
-            </Flex>
+        <Banner variant="info" className="pf-u-text-align-center">
+            {brandedText} Refer to the {docsLink} to learn more.
         </Banner>
     );
 }
