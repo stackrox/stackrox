@@ -40,6 +40,8 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
+popd
+
 function curl_central() {
 	cmd=(curl --retry 10 --retry-delay 10 --retry-connrefused --silent --show-error --insecure)
 	local admin_user="${ROX_ADMIN_USER:-admin}"
