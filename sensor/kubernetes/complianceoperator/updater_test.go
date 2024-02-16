@@ -14,9 +14,13 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/authorization/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/client-go/kubernetes/fake"
+	k8sTesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -60,6 +64,9 @@ func (s *UpdaterTestSuite) SetupTest() {
 
 	_, err = s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(customNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)
+
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	s.prependSSAReactorToFakeClient(true)
 }
 
 func (s *UpdaterTestSuite) TearDownTest() {
@@ -108,6 +115,48 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 		"v1.0.0", defaultNS, 1, 1,
 		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
+}
+
+func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
+	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
+	s.client.PrependReactor("*", "*", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+		if _, ok := action.(k8sTesting.CreateAction); !ok {
+			return false, nil, nil
+		}
+		obj, ok := action.(k8sTesting.CreateAction).GetObject().(*v1.SelfSubjectAccessReview)
+		if !ok {
+			return false, nil, nil
+		}
+
+		// Generate name, fake this server behaviour.
+		obj.ObjectMeta.Name = names.SimpleNameGenerator.GenerateName("test-")
+
+		// Set allowed to false indicates that Sensor has write access
+		obj.Status.Allowed = allowed
+		return true, obj, nil
+	})
+}
+
+func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissions() {
+	ds := buildComplianceOperator(defaultNS)
+
+	s.createCO(ds)
+
+	// Test sensor has all * access to compliance.openshift.io
+
+	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
+	s.prependSSAReactorToFakeClient(true)
+
+	actualSuccess := s.getInfo(1, 1*time.Millisecond)
+	s.NotContains(actualSuccess.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
+
+	// Test Sensor has not all (*) access to compliance.openshift.io
+
+	// Prepend another reactor to return a SelfSubjectAccessReview without write access.
+	s.prependSSAReactorToFakeClient(false)
+
+	actualError := s.getInfo(1, 1*time.Millisecond)
+	s.Assert().Contains(actualError.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
 }
 
 // mockRequiredResources creates a list of mock required resources for testing.

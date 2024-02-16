@@ -26,7 +26,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Next Tag: 6
+// Next Tag: 7
 type ComplianceIntegration struct {
 	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Version     string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
