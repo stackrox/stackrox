@@ -235,6 +235,5 @@ message ComplianceOperatorSuiteV2 {
   string name = 2 [(gogoproto.moretags) = 'search:"Compliance Suite Name,hidden"'];
   string cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
 
-  reserved 4;
-  ComplianceOperatorStatus status = 5;
+  ComplianceOperatorStatus status = 4;
 }
