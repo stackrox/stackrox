@@ -9,6 +9,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestClone(t *testing.T) {
+	m1 := &storage.NamespaceMetadata{
+		Id:          testconsts.NamespaceA,
+		Name:        "Namespace A",
+		ClusterId:   testconsts.Cluster1,
+		ClusterName: "Cluster 1",
+	}
+
+	cloned := Clone(m1)
+
+	assert.Equal(t, m1, cloned)
+
+	// Change a field value to ensure the clone does not point
+	// to the original struct.
+	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
+	assert.True(t, casted)
+	clonedNamespace.Name = "Namespace AA"
+	assert.NotEqual(t, m1, cloned)
+}
+
 func TestEqual(t *testing.T) {
 
 	m1 := &storage.NamespaceMetadata{

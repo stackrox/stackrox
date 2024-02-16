@@ -7,6 +7,11 @@ import (
 // Message is implemented by generated protocol buffer messages.
 type Message = proto.Message
 
+// Clone returns a deep copy of a protocol buffer.
+func Clone(msg proto.Message) proto.Message {
+	return proto.Clone(msg)
+}
+
 // Equal returns true iff protocol buffers a and b are equal. The arguments must both be pointers to protocol buffer structs.
 //
 // Equality is defined in this way:
