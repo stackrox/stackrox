@@ -18,6 +18,7 @@ import objects.K8sSubject
 import services.RbacService
 import services.ServiceAccountService
 import util.Env
+import util.Helpers
 
 import spock.lang.IgnoreIf
 import spock.lang.Stepwise
@@ -182,7 +183,8 @@ class K8sRbacTest extends BaseSpecification {
                 assert role
                 assert role.labels == stackroxRole.labelsMap
                 role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-                assert role.annotations == stackroxRole.annotationsMap
+                // compareAnnotations() - asserts on difference
+                Helpers.compareAnnotations(role.annotations, stackroxRole.annotationsMap)
                 assert role.rules.every { K8sPolicyRule oRule ->
                     stackroxRole.rulesList.any { Rbac.PolicyRule sRule ->
                         oRule.verbs == sRule.verbsList &&
@@ -261,7 +263,8 @@ class K8sRbacTest extends BaseSpecification {
 
                 binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
                 assert b.labelsMap == binding.labels
-                assert b.annotationsMap == binding.annotations
+                // compareAnnotations() - asserts on difference
+                Helpers.compareAnnotations(binding.annotations, b.annotationsMap)
                 assert b.roleId == binding.roleRef.uid
                 assert b.subjectsCount == binding.subjects.size()
 
