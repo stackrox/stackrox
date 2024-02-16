@@ -50,6 +50,13 @@ spec:
           - name: grpc
             protocol: TCP
             containerPort: 8443
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /health/readiness
+            port: 9443
+          periodSeconds: 5
+          timeoutSeconds: 1
         resources:
           limits:
             cpu: 2

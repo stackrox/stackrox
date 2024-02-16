@@ -380,9 +380,9 @@ e2e-deploy: timeout := 20m
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
-	$(SILENT)-kubectl create namespace $(namespace)
 	helm $(if $(debug),template --debug,upgrade --debug --install) $(release) $< \
 	    --namespace $(namespace) \
+	    --create-namespace \
 	    $(if $(CI),--wait,--atomic) \
 	    --timeout $(timeout) \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \

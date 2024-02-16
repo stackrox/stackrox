@@ -16,6 +16,10 @@ jobs:
     env:
       # 4.3.x-1163-g61a55af9c8
       SCANNER_E2E_IMAGE_TAG: 4.3.x-1165-g862a40727a
+      SCANNER_E2E_QUAY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      SCANNER_E2E_QUAY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      SCANNER_E2E_REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
+      SCANNER_E2E_REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
