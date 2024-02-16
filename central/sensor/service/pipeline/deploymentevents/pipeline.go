@@ -115,7 +115,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	deployment.ClusterId = clusterID
 
 	// ROX-22002: Remove invalid null characters in annotations
-	deployment.Annotations = stringutils.SanitizeMapValues(deployment.GetAnnotations())
+	stringutils.SanitizeMapValues(deployment.GetAnnotations())
 
 	var err error
 	switch event.GetAction() {

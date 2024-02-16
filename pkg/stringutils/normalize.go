@@ -11,13 +11,8 @@ func sanitizeString(s string) string {
 }
 
 // SanitizeMapValues cleans up invalid characters from a map to string
-func SanitizeMapValues(m map[string]string) map[string]string {
-	if m == nil {
-		return nil
-	}
-	sanitized := make(map[string]string, len(m))
+func SanitizeMapValues(m map[string]string) {
 	for k, v := range m {
-		sanitized[k] = sanitizeString(v)
+		m[k] = sanitizeString(v)
 	}
-	return sanitized
 }

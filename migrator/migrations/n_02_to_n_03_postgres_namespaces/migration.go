@@ -48,7 +48,7 @@ func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacySt
 
 	var namespaces []*storage.NamespaceMetadata
 	err := walk(ctx, legacyStore, func(obj *storage.NamespaceMetadata) error {
-		obj.Annotations = stringutils.SanitizeMapValues(obj.GetAnnotations())
+		stringutils.SanitizeMapValues(obj.GetAnnotations())
 		namespaces = append(namespaces, obj)
 		if len(namespaces) == batchSize {
 			if err := store.UpsertMany(ctx, namespaces); err != nil {

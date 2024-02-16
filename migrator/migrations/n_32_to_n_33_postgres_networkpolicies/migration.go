@@ -45,7 +45,7 @@ func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacySt
 
 	var networkpolicies []*storage.NetworkPolicy
 	err := walk(ctx, legacyStore, func(obj *storage.NetworkPolicy) error {
-		obj.Annotations = stringutils.SanitizeMapValues(obj.GetAnnotations())
+		stringutils.SanitizeMapValues(obj.GetAnnotations())
 		networkpolicies = append(networkpolicies, obj)
 		if len(networkpolicies) == batchSize {
 			if err := store.UpsertMany(ctx, networkpolicies); err != nil {

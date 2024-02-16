@@ -39,8 +39,8 @@ func TestNormalizeValues(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			sanitized := SanitizeMapValues(c.input)
-			assert.Equal(t, c.expected, sanitized)
+			SanitizeMapValues(c.input)
+			assert.Equal(t, c.expected, c.input)
 		})
 	}
 

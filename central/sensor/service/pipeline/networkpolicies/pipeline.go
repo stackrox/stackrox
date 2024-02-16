@@ -83,7 +83,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	networkPolicy.ClusterId = clusterID
 
 	// ROX-22002: Remove invalid null characters in annotations
-	networkPolicy.Annotations = stringutils.SanitizeMapValues(networkPolicy.GetAnnotations())
+	stringutils.SanitizeMapValues(networkPolicy.GetAnnotations())
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

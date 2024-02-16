@@ -51,7 +51,7 @@ func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacySt
 
 	return walk(ctx, legacyStore, func(obj *storage.Node) error {
 		nodeConverter.FillV2NodeVulnerabilities(obj)
-		obj.Annotations = stringutils.SanitizeMapValues(obj.GetAnnotations())
+		stringutils.SanitizeMapValues(obj.GetAnnotations())
 		if err := store.Upsert(ctx, obj); err != nil {
 			log.WriteToStderrf("failed to persist nodes to store %v", err)
 			return err
