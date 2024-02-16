@@ -39,7 +39,7 @@ jobs:
           
       - name: Install helm chart
         run: |
-          mkdir -m 777 -p ""${{ runner.temp }}"/pgdata
+          mkdir -m 777 -p "${{ runner.temp }}"/pgdata
           make -C scanner e2e-deploy db-host-path="/runner/pgdata"
 
       - name: Show deployment details
