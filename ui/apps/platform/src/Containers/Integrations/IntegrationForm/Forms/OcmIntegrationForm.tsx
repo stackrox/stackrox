@@ -6,6 +6,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import merge from 'lodash/merge';
 import IntegrationFormActions from '../IntegrationFormActions';
@@ -82,6 +83,7 @@ function OcmIntegrationForm({
         isSubmitting,
         isTesting,
         onSave,
+        onTest,
         onCancel,
         message,
     } = useIntegrationForm<CloudSourceIntegrationFormValues>({
@@ -190,6 +192,14 @@ function OcmIntegrationForm({
                     >
                         Save
                     </FormSaveButton>
+                    <FormTestButton
+                        onTest={onTest}
+                        isSubmitting={isSubmitting}
+                        isTesting={isTesting}
+                        isDisabled={!isValid}
+                    >
+                        Test
+                    </FormTestButton>
                     <FormCancelButton onCancel={onCancel}>Cancel</FormCancelButton>
                 </IntegrationFormActions>
             )}
