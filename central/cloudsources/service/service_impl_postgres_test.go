@@ -58,7 +58,7 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	mockManager := cloudSourcesManagerMocks.NewMockManager(gomock.NewController(s.T()))
 	mockManager.EXPECT().ShortCircuit().AnyTimes()
 	cloudSourceClientMock := cloudSourceClientMocks.NewMockClient(gomock.NewController(s.T()))
-	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil).AnyTimes()
+	cloudSourceClientMock.EXPECT().Ping(gomock.Any()).Return(nil).AnyTimes()
 
 	s.service = newService(s.datastore, mockManager)
 	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) (cloudsources.Client, error) {
@@ -423,7 +423,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	// 2. Call test with UpdateCredentials without any error during calling client.
-	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil)
+	cloudSourceClientMock.EXPECT().Ping(gomock.Any()).Return(nil)
 	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
 		CloudSource:       cloudSource,
 		UpdateCredentials: true,
@@ -432,8 +432,8 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 
 	// 3. Call test with UpdateCredentials with an error during calling client.
 	clientErr := errors.New("failed calling client")
-	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).
-		Return(nil, clientErr)
+	cloudSourceClientMock.EXPECT().Ping(gomock.Any()).
+		Return(clientErr)
 	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
 		CloudSource:       cloudSource,
 		UpdateCredentials: true,
@@ -447,7 +447,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 	})
 	s.Require().NoError(err)
 	cloudSource = resp.GetCloudSource()
-	cloudSourceClientMock.EXPECT().GetDiscoveredClusters(gomock.Any()).Return(nil, nil)
+	cloudSourceClientMock.EXPECT().Ping(gomock.Any()).Return(nil)
 
 	_, err = s.service.TestCloudSource(s.writeCtx, &v1.TestCloudSourceRequest{
 		CloudSource: cloudSource,

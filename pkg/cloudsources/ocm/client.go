@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	gogoProto "github.com/gogo/protobuf/types"
 	sdkClient "github.com/openshift-online/ocm-sdk-go"
@@ -36,6 +37,14 @@ func NewClient(config *storage.CloudSource) (*ocmClient, error) {
 		conn:          connection,
 		cloudSourceID: config.GetId(),
 	}, nil
+}
+
+func (c *ocmClient) Ping(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	_, err := c.conn.AccountsMgmt().V1().CurrentAccount().Get().SendContext(ctx)
+	return err
 }
 
 func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error) {

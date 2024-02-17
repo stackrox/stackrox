@@ -223,8 +223,7 @@ func (s *serviceImpl) testCloudSource(ctx context.Context, storageCloudSource *s
 	if err != nil {
 		return err
 	}
-	_, err = client.GetDiscoveredClusters(ctx)
-	return err
+	return client.Ping(ctx)
 }
 
 func (s *serviceImpl) enrichWithStoredCredentials(ctx context.Context,

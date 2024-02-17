@@ -14,6 +14,8 @@ import (
 //go:generate mockgen-wrapper
 type Client interface {
 	GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error)
+
+	Ping(ctx context.Context) error
 }
 
 // NewClientForCloudSource creates a new Client based on the cloud source to fetch discovered clusters.

@@ -209,6 +209,14 @@ func NewClient(cfg *storage.CloudSource) *paladinClient {
 	}
 }
 
+func (c *paladinClient) Ping(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	// TODO: Need to check whether there's a good ping API for Paladin Cloud that requires authN.
+	_, err := c.getAssets(ctx)
+	return err
+}
+
 // GetDiscoveredClusters returns the discovered clusters from the Paladin Cloud API.
 func (c *paladinClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error) {
 	response, err := c.getAssets(ctx)
