@@ -98,10 +98,12 @@ func (m *managerImpl) ShortCircuit() {
 }
 
 func (m *managerImpl) MarkClusterSecured(id string) {
+	log.Infof("Marking discovered clusters matching cluster %q as secured", id)
 	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_SECURED)
 }
 
 func (m *managerImpl) MarkClusterUnsecured(id string) {
+	log.Infof("Marking discovered clusters matching cluster %q as unsecured", id)
 	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_UNSECURED)
 }
 
