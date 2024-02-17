@@ -190,8 +190,6 @@ func (s *serviceImpl) DeleteCloudSource(ctx context.Context, request *v1.DeleteC
 	if err := s.ds.DeleteCloudSource(ctx, resourceID); err != nil {
 		return nil, errors.Wrapf(err, "failed to delete cloud source %q", resourceID)
 	}
-	// Short-circuit the cloud sources manager to ensure the latest changes are propagated.
-	s.mgr.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
