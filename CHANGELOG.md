@@ -49,6 +49,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
 - The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
+- The Helm setting `central.db.persistence.hostPath` for hostPath storage will be deprecated in 2 releases. It is recommended to switch to an alternative persistent storage.
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,

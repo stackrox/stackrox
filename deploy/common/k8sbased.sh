@@ -229,6 +229,10 @@ function launch_central {
         fi
     fi
 
+    if [[ "${STORAGE}" == "hostpath" && -n "${STORAGE_HOSTPATH_PATH}" ]]; then
+        add_storage_args "--db-hostpath=${STORAGE_HOSTPATH_PATH}"
+    fi
+
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
