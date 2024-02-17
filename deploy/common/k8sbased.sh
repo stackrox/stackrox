@@ -673,6 +673,7 @@ function launch_sensor {
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
+	--set "collector.forceCollectionMethod=true"
       )
 
       if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
