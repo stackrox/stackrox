@@ -17,6 +17,8 @@ source "$ROOT/tests/e2e/lib.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../qa-tests-backend/scripts/lib.sh
 source "$ROOT/qa-tests-backend/scripts/lib.sh"
+# shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
+source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
 set -euo pipefail
 
@@ -45,6 +47,7 @@ config_part_1() {
 
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     deploy_optional_e2e_components
+    setup_workload_identities
 
     deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
@@ -104,6 +107,7 @@ test_part_1() {
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
+    cleanup_workload_identities
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
 }
