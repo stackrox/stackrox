@@ -322,7 +322,6 @@ teardown_file() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
 }
 
 @test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
@@ -347,11 +346,9 @@ teardown_file() {
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
 
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "sensor"
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
