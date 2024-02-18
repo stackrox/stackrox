@@ -117,14 +117,14 @@ describe_pods_in_namespace() {
     info "==============================="
     info "Pods in namespace ${namespace}:"
     info "==============================="
-    "${ORCH_CMD}" -n "${namespace}" get pods
+    "${ORCH_CMD}" -n "${namespace}" get pods || true
     echo
     "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
       echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}"
+      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}" || true
       echo
       echo "** LOGS FOR POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}"
+      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}" || true
       echo
 
     done
@@ -135,11 +135,11 @@ describe_deployments_in_namespace() {
     info "====================================="
     info "Deployments in namespace ${namespace}:"
     info "====================================="
-    "${ORCH_CMD}" -n "${namespace}" get deployments
+    "${ORCH_CMD}" -n "${namespace}" get deployments || true
     echo
     "${ORCH_CMD}" -n "${namespace}" get deployments -o name | while read -r name; do
       echo "** DESCRIBING DEPLOYMENT: ${namespace}/${name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${name}"
+      "${ORCH_CMD}" -n "${namespace}" describe "${name}" || true
     done
 }
 
