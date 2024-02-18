@@ -298,8 +298,6 @@ teardown_file() {
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
     # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
-    # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
@@ -321,8 +319,6 @@ teardown_file() {
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
 
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
@@ -565,6 +561,58 @@ _deploy_central() {
 }
 
 patch_down_central() {
+    local central_namespace="$1"
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
+        patch_down_central_cr "${central_namespace}"
+    else
+        patch_down_central_directly "${central_namespace}"
+    fi
+}
+
+patch_down_central_cr() {
+    local central_namespace="$1"
+    if [[ "${ROX_SCANNER_V4}" != "true" ]]; then
+        return
+    fi
+
+    "${ORCH_CMD}" -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    matcher:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "2000Mi"
+        limits:
+          cpu: "6000m"
+          memory: "2000Mi"
+    db:
+      resources:
+        requests:
+          cpu: 300m
+          memory: 500Mi
+        limits:
+          cpu: 1000m
+          memory: 1000Mi
+EOT
+    )
+}
+
+patch_down_central_directly() {
    local central_namespace="$1"
 
     if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
@@ -648,6 +696,48 @@ _deploy_sensor() {
 }
 
 patch_down_sensor() {
+    local sensor_namespace="$1"
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
+        patch_down_secured_cluster_cr "${sensor_namespace}"
+    else
+        patch_down_sensor_directly "${sensor_namespace}"
+    fi
+}
+
+patch_down_secured_cluster_cr() {
+    local sensor_namespace="$1"
+
+    if [[ "${ROX_SCANNER_V4}" != "true" ]]; then
+        return
+    fi
+
+    "${ORCH_CMD}" -n "${sensor_namespace}" patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    db:
+      resources:
+        requests:
+          cpu: 300m
+          memory: 500Mi
+        limits:
+          cpu: 1000m
+          memory: 1000Mi
+EOT
+    )
+}
+
+patch_down_sensor_directly() {
    local sensor_namespace="$1"
 
     "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/sensor" --patch-file <(cat <<EOF

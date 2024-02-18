@@ -289,6 +289,36 @@ deploy_central_via_operator() {
 spec:
   scannerV4:
     scannerComponent: Enabled
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 1Gi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    matcher:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "2000Mi"
+        limits:
+          cpu: "6000m"
+          memory: "2000Mi"
+    db:
+      resources:
+        requests:
+          cpu: 300m
+          memory: 500Mi
+        limits:
+          cpu: 1000m
+          memory: 1000Mi
 EOT
             )
     fi
