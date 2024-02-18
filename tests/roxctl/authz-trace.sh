@@ -22,7 +22,7 @@ curl_central() {
   url="$1"
   shift
   [[ -n "${url}" ]] || die "No URL specified"
-  curl -Sskf "https://${API_ENDPOINT}${url}" "$@"
+  curl -Sskf --retry 5 "https://${API_ENDPOINT}${url}" "$@"
 }
 
 curl_central_admin() {
