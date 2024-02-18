@@ -340,6 +340,80 @@ teardown_file() {
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
 }
 
+@test "[Operator] Upgrade multi-namespace installation" {
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
+    fi
+
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+
+    # Install old version of the operator & deploy StackRox.
+    (
+      VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
+      #  cd operator
+      #  ./hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator 4.3.0 4.3.0
+    )
+    ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+
+    # Upgrade operator
+    info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
+    VERSION="${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm
+    info "Waiting for rhacs-operator pods to be ready"
+    "${ORCH_CMD}" -n stackrox-operator wait  --for=condition=Ready pods -l app=rhacs-operator
+
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_no_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+
+    # Wait until ValidationWebhook is completely functional.
+    info "Waiting for AdmissionWebhook to be functional by trying to patch Central..."
+    patch_test_file=$(mktemp)
+    cat >"${patch_test_file}" <<EOT
+spec:
+  customize:
+    envVars:
+      - name: IGNORE_THIS_PLEASE
+        value: it-is-just-about-checking-validationhook-readiness
+EOT
+    retry 7 true "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
+
+    # Enable Scanner V4 on central side.
+    info "Patching Central"
+    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" \
+      patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Enabled
+EOT
+    )
+
+    info "Patching SecuredCluster"
+    # Enable Scanner V4 on secured-cluster side
+    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
+      patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: AutoSense
+EOT
+    )
+
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_central_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+}
+
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
@@ -452,8 +526,6 @@ _deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
-
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
 
     _deploy_central "${central_namespace}"
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" && "${HELM_REUSE_VALUES:-}" != "true" ]]; then
