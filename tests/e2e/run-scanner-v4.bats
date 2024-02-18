@@ -476,8 +476,10 @@ verify_no_scannerV4_matcher_deployed() {
 # This must be removed when Scanner v2 will be phased out.
 verify_scannerV2_deployed() {
     local namespace=${1:-stackrox}
+    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner 300
-    wait_for_object_to_appear "$namespace" deploy/scanner-db 300
+    info "** Scanner V2 is deployed in namespace ${namespace}"
 }
 
 verify_scannerV4_deployed() {
@@ -488,18 +490,22 @@ verify_scannerV4_deployed() {
 
 verify_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
-    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
+    info "Waiting for Scanner V4 Indexer to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
     wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 120
+    info "** Scanner V4 Indexer is deployed in namespace ${namespace}"
 }
 
 verify_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
-    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
+    info "Waiting for Scanner V4 Matcher to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
     wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 120
+    info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
 }
 
 verify_central_scannerV4_env_var_set() {
