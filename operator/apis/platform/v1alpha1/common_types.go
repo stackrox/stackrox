@@ -307,7 +307,6 @@ type GlobalMonitoring struct {
 
 // OpenShiftMonitoring defines settings related to OpenShift Monitoring
 type OpenShiftMonitoring struct {
-	//+kubebuilder:validation:Default=true
 	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Enabled bool `json:"enabled"`
