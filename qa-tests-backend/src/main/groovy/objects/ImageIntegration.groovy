@@ -267,15 +267,21 @@ class GoogleArtifactRegistry implements ImageIntegration {
                 project: "stackrox-ci",
                 endpoint: "us-west1-docker.pkg.dev",
                 serviceAccount: Env.mustGet("GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT"),
+                wifEnabled: false,
                 skipTestIntegration: false,
         ]
         Map args = defaultArgs + customArgs
+
+        if (args.wifEnabled) {
+            args.serviceAccount = ""
+        }
 
         ImageIntegrationOuterClass.GoogleConfig.Builder config =
                 ImageIntegrationOuterClass.GoogleConfig.newBuilder()
                         .setProject(args.project as String)
                         .setServiceAccount(args.serviceAccount as String)
                         .setEndpoint(args.endpoint as String)
+                        .setWifEnabled(args.wifEnabled as Boolean)
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
@@ -302,15 +308,21 @@ class GCRImageIntegration implements ImageIntegration {
                 endpoint: "us.gcr.io",
                 includeScanner: true,
                 serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                wifEnabled: false,
                 skipTestIntegration: false,
         ]
         Map args = defaultArgs + customArgs
+
+        if (args.wifEnabled) {
+            args.serviceAccount = ""
+        }
 
         ImageIntegrationOuterClass.GoogleConfig.Builder config =
                 ImageIntegrationOuterClass.GoogleConfig.newBuilder()
                         .setProject(args.project as String)
                         .setServiceAccount(args.serviceAccount as String)
                         .setEndpoint(args.endpoint as String)
+                        .setWifEnabled(args.wifEnabled as Boolean)
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
