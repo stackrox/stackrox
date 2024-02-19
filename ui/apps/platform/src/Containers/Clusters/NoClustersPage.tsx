@@ -13,6 +13,8 @@ import {
     Spinner,
     Title,
     Text,
+    Toolbar,
+    ToolbarContent,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
@@ -64,7 +66,6 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
     const [isLoading, setIsLoading] = useState(false);
 
     const { basePageTitle } = getProductBranding();
-    const textForSuccessAlert = `You have successfully deployed a ${basePageTitle} platform. Now you can configure the clusters you want to secure.`;
 
     useEffect(() => {
         // TODO after 4.4 release: if (hasAdminRole) {
@@ -83,16 +84,19 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
         // TODO after 4.4 releaes: }
     }, []); // TODO after 4.4 release [hasAdminRole]
 
+    // Why is some EmptyState content outside of EmptyStateBody element?
+    // Because  Button is inside, it has same width at the text :(
+
     // TODO after 4.4 release add hasAdminRole to conditional rendering.
     /* eslint-disable no-nested-ternary */
     return (
         <>
-            <PageSection variant="light" component="div" padding={{ default: 'noPadding' }}>
-                <Alert isInline variant="success" title="You are ready to go!">
-                    {textForSuccessAlert}
-                </Alert>
-            </PageSection>
             <PageSection variant="light">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                    <ToolbarContent>
+                        <Title headingLevel="h1">Clusters</Title>
+                    </ToolbarContent>
+                </Toolbar>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner isSVG />
@@ -107,27 +111,32 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                         {errorMessage}
                     </Alert>
                 ) : (
-                    <EmptyState variant="large">
+                    <EmptyState variant="xl">
                         <EmptyStateIcon icon={CloudSecurityIcon} />
-                        <Title headingLevel="h1">Secure clusters with a reusable init bundle</Title>
+                        <Title headingLevel="h2">Secure clusters with a reusable init bundle</Title>
                         <EmptyStateBody>
                             <Flex
                                 direction={{ default: 'column' }}
                                 spaceItems={{ default: 'spaceItemsLg' }}
                             >
-                                <FlexItem>
-                                    <Text component="p">
-                                        Follow the instructions to install secured cluster services.
-                                    </Text>
-                                    <Text component="p">
-                                        Upon successful installation, secured clusters are listed
-                                        here.
-                                    </Text>
-                                </FlexItem>
-                                {initBundlesCount !== 0 && (
+                                {initBundlesCount === 0 ? (
                                     <FlexItem>
                                         <Text component="p">
-                                            You have successfully created cluster init bundles.
+                                            {`You have successfully deployed a ${basePageTitle} platform.`}
+                                        </Text>
+                                        <Text component="p">
+                                            Before you can secure clusters, create an init bundle.
+                                        </Text>
+                                    </FlexItem>
+                                ) : (
+                                    <FlexItem>
+                                        <Text component="p">
+                                            Use your preferred method to install secured cluster
+                                            services.
+                                        </Text>
+                                        <Text component="p">
+                                            After successful installation, it might take a few
+                                            moments for this page to display secured clusters.
                                         </Text>
                                     </FlexItem>
                                 )}
@@ -146,7 +155,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     })
                                 }
                             >
-                                Create bundle
+                                Create init bundle
                             </Button>
                         ) : (
                             <Button
@@ -160,10 +169,10 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     });
                                 }}
                             >
-                                Review installation methods
+                                View installation methods
                             </Button>
                         )}
-                        <div className="pf-u-mt-xl">
+                        <Flex direction={{ default: 'column' }} className="pf-u-mt-xl">
                             <Link
                                 to={`${clustersBasePath}/new`}
                                 onClick={() => {
@@ -175,7 +184,23 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             >
                                 Legacy installation method
                             </Link>
-                        </div>
+                            {initBundlesCount !== 0 && (
+                                <Text component="p">
+                                    If you lost the YAML file that you downloaded,{' '}
+                                    <Link
+                                        to={`${clustersInitBundlesPath}?action=create`}
+                                        onClick={() => {
+                                            analyticsTrack({
+                                                event: CREATE_INIT_BUNDLE_CLICKED,
+                                                properties: { source: 'No Clusters' },
+                                            });
+                                        }}
+                                    >
+                                        create another init bundle
+                                    </Link>
+                                </Text>
+                            )}
+                        </Flex>
                         <SecureClusterModal
                             isModalOpen={isModalOpen}
                             setIsModalOpen={setIsModalOpen}
