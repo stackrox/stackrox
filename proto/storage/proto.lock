@@ -5136,13 +5136,18 @@
               {
                 "id": 5,
                 "name": "scan_setting_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Config Name\""
+                  }
+                ]
               },
               {
-                "id": 6,
-                "name": "conditions",
-                "type": "ComplianceOperatorCondition",
-                "is_repeated": true
+                "id": 9,
+                "name": "status",
+                "type": "ComplianceOperatorStatus"
               }
             ],
             "maps": [
@@ -5162,6 +5167,9 @@
                   "type": "string"
                 }
               }
+            ],
+            "reserved_ids": [
+              6
             ]
           },
           {
@@ -5191,6 +5199,32 @@
                 "id": 5,
                 "name": "last_transition_time",
                 "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "phase",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "result",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "error_message",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "conditions",
+                "type": "ComplianceOperatorCondition",
+                "is_repeated": true
               }
             ]
           },
@@ -5233,35 +5267,7 @@
               {
                 "id": 4,
                 "name": "status",
-                "type": "Status"
-              }
-            ],
-            "messages": [
-              {
-                "name": "Status",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "phase",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "result",
-                    "type": "string"
-                  },
-                  {
-                    "id": 3,
-                    "name": "error_message",
-                    "type": "string"
-                  },
-                  {
-                    "id": 4,
-                    "name": "conditions",
-                    "type": "ComplianceOperatorCondition",
-                    "is_repeated": true
-                  }
-                ]
+                "type": "ComplianceOperatorStatus"
               }
             ]
           }
