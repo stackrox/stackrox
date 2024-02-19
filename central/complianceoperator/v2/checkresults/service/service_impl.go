@@ -227,6 +227,8 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
 
+	log.Infof("SHREWS -- 0 %v+", request)
+
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -234,6 +236,7 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 	}
 
 	log.Infof("SHREWS -- 1 %v+", parsedQuery)
+	log.Infof("SHREWS -- 1.5 %v+", request.GetQuery().GetPagination())
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 

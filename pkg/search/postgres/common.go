@@ -802,7 +802,9 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
 func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
+	log.Infof("SHREWS -- Run -- incoming %v+", q)
 	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	log.Infof("SHREWS -- Run -- after standardize %v+", query)
 	if err != nil {
 		return nil, err
 	}
