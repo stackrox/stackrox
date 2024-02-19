@@ -57,7 +57,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should defer multiple selected CVEs', () => {
-        visitAnyImageSinglePage().then(([image, tag]) => {
+        visitAnyImageSinglePage().then(([image]) => {
             selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
@@ -68,7 +68,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
                 verifyExceptionConfirmationDetails({
                     expectedAction: 'Deferral',
                     cves: cveNames,
-                    scope: `${image}:${tag}`,
+                    scope: `${image}:*`,
                     expiry: `${getDateString(getFutureDateByDays(30))} (30 days)`,
                 });
             });
@@ -90,7 +90,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should mark multiple selected CVEs as false positive', () => {
-        visitAnyImageSinglePage().then(([image, tag]) => {
+        visitAnyImageSinglePage().then(([image]) => {
             selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
@@ -99,7 +99,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
                 verifyExceptionConfirmationDetails({
                     expectedAction: 'False positive',
                     cves: cveNames,
-                    scope: `${image}:${tag}`,
+                    scope: `${image}:*`,
                 });
             });
         });
