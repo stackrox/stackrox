@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,8 +29,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	expectedClusterScanCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
@@ -396,7 +393,6 @@ func (s *complianceCheckResultDataStoreTestSuite) TestSearchResultsSac() {
 	}
 
 	for _, tc := range testCases {
-		log.Infof("SHREWS -- %q", tc.desc)
 		results, err := s.dataStore.SearchComplianceCheckResults(s.testContexts[tc.scopeKey], tc.query)
 		s.NoError(err)
 		s.Equal(tc.expectedCount, len(results))

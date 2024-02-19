@@ -235,21 +235,14 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	log.Infof("SHREWS -- 1 %v+", parsedQuery)
-
 	// Add the scan config name as an exact match
 	parsedQuery = search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
 		parsedQuery,
 	)
 
-	log.Infof("SHREWS -- 2 %v+", parsedQuery)
-
-	log.Infof("SHREWS -- 1.5 %v+", request.GetQuery().GetPagination())
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
-
-	log.Infof("SHREWS -- 3 %v+", parsedQuery)
 
 	return s.searchComplianceCheckResults(ctx, parsedQuery)
 }

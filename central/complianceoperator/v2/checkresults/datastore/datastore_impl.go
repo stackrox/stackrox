@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -22,8 +21,6 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
-
-	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -58,7 +55,6 @@ func (d *datastoreImpl) DeleteResult(ctx context.Context, id string) error {
 
 // SearchComplianceCheckResults retrieves the scan results specified by query
 func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
-	log.Infof("SHREWS -- DS -- %v+", query)
 	return d.store.GetByQuery(ctx, query)
 }
 
