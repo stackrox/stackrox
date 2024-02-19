@@ -20,6 +20,8 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
     exit 0 # not fatal but worth highlighting
 fi
 
+# TODO:: Remove ocp-stable if it's deleted from the OSCI, e.g.,
+# https://github.com/openshift/release/blob/a14f76e0918b047d2406e9eb6baac82b55ced05a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-stable-scanner-v4.yaml
 if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     # https://github.com/stackrox/automation-flavors/blob/e6daf10b7df49fc003584790e25def036b2a3b0b/openshift-4/entrypoint.sh#L76
