@@ -233,7 +233,7 @@ teardown_file() {
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 }
 
-@test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
+@test "Fresh installation of HEAD Helm chart with Scanner v4 enabled, and disabling it later" {
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
@@ -246,6 +246,13 @@ teardown_file() {
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    ROX_SCANNER_V4=false SENSOR_SCANNER_V4_SUPPORT=false HELM_REUSE_VALUES=true _deploy_stackrox
+
+    verify_scannerV2_deployed "stackrox"
+    verify_no_scannerV4_deployed "stackrox"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
