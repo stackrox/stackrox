@@ -374,17 +374,7 @@ teardown_file() {
     verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_no_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
 
-    # Wait until ValidationWebhook is completely functional.
-    info "Waiting for AdmissionWebhook to be functional by trying to patch Central..."
-    patch_test_file=$(mktemp)
-    cat >"${patch_test_file}" <<EOT
-spec:
-  customize:
-    envVars:
-      - name: IGNORE_THIS_PLEASE
-        value: it-is-just-about-checking-validationhook-readiness
-EOT
-    retry 7 true "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
+    wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
@@ -826,4 +816,20 @@ remove_earlier_roxctl_binary() {
       rmdir "${EARLIER_ROXCTL_PATH}"
       echo "Removed earlier roxctl binary"
     fi
+}
+
+# Waits until ValidationWebhook is completely functional.
+wait_until_central_validation_webhook_is_ready() {
+    let central_namespace=$1
+
+    info "Waiting for AdmissionWebhook to be functional by trying to patch Central in namespace ${central_namespace}..."
+    patch_test_file=$(mktemp)
+    cat >"${patch_test_file}" <<EOT
+spec:
+  customize:
+    envVars:
+      - name: IGNORE_THIS_PLEASE
+        value: it-is-just-about-checking-validationhook-readiness
+EOT
+    retry 7 true "${ORCH_CMD}" -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
 }
