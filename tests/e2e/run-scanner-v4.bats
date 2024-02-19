@@ -823,6 +823,7 @@ wait_until_central_validation_webhook_is_ready() {
     local central_namespace=$1
 
     info "Waiting for AdmissionWebhook to be functional by trying to patch Central in namespace ${central_namespace}..."
+    sleep 1m
     patch_test_file=$(mktemp)
     cat >"${patch_test_file}" <<EOT
 spec:
