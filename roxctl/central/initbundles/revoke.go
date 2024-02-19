@@ -1,8 +1,11 @@
 package initbundles
 
 import (
+	"bufio"
 	"context"
+	"io"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,16 +21,23 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
-func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
+func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet, force bool) error {
 	resp, err := svc.GetInitBundles(ctx, &v1.Empty{})
 	if err != nil {
 		return err
 	}
 
+	var impactedClusterIds []string
+	var impactedClusterNames []string
+
 	var revokeInitBundleIds []string
 	for _, meta := range resp.Items {
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeInitBundleIds = append(revokeInitBundleIds, meta.GetId())
+			for _, impactedCluster := range meta.GetImpactedClusters() {
+				impactedClusterIds = append(impactedClusterIds, impactedCluster.GetId())
+				impactedClusterNames = append(impactedClusterNames, impactedCluster.GetName())
+			}
 		}
 	}
 
@@ -35,7 +45,17 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 		return errox.NotFound.Newf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
 	}
 
-	revokeResp, err := svc.RevokeInitBundle(ctx, &v1.InitBundleRevokeRequest{Ids: revokeInitBundleIds})
+	if !force {
+		confirm, err := confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds, cliEnvironment.InputOutput().Out(), cliEnvironment.InputOutput().In())
+		if err != nil {
+			return err
+		}
+		if !confirm {
+			return nil
+		}
+	}
+
+	revokeResp, err := svc.RevokeInitBundle(ctx, &v1.InitBundleRevokeRequest{Ids: revokeInitBundleIds, ConfirmImpactedClustersIds: impactedClusterIds})
 	if err != nil {
 		return errors.Wrap(err, "revoking init bundles")
 	}
@@ -49,6 +69,40 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	return nil
 }
 
+func confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds []string, out io.Writer, in io.Reader) (bool, error) {
+	if len(impactedClusterIds) != len(impactedClusterNames) {
+		return false, errors.New("number of impacted cluster IDs and names do not match")
+	}
+	if len(impactedClusterIds) == 0 {
+		return true, nil
+	}
+
+	_, _ = out.Write([]byte("Revoking init bundle(s) %s will impact the following cluster(s):\n"))
+
+	t := tabwriter.NewWriter(out, 4, 8, 2, '\t', 0)
+	_, _ = t.Write([]byte("Cluster ID\tCluster Name\n"))
+	for i := 0; i < len(impactedClusterIds); i++ {
+		_, _ = t.Write([]byte(impactedClusterIds[i] + "\t" + impactedClusterNames[i] + "\n"))
+	}
+	_ = t.Flush()
+
+	_, _ = out.Write([]byte("Are you sure you want to revoke the init bundle(s)? [y/N]"))
+
+	confirm, err := bufio.NewReader(in).ReadString('\n')
+	if err != nil {
+		return false, errors.Wrap(err, "reading user input")
+	}
+
+	confirm = strings.ToLower(confirm)
+	if confirm != "y\n" && confirm != "n\n" && confirm != "\n" {
+		return false, errors.New("invalid confirmation. Must be 'y' or 'n'")
+	}
+	if strings.ToLower(confirm) != "y\n" {
+		return false, nil
+	}
+	return true, nil
+}
+
 func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse) {
 	for _, id := range resp.GetInitBundleRevokedIds() {
 		logger.InfofLn("Revoked %q", id)
@@ -58,7 +112,7 @@ func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse
 	}
 }
 
-func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string,
+func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string, force bool,
 	timeout time.Duration, retryTimeout time.Duration,
 ) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
@@ -72,7 +126,7 @@ func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []stri
 	svc := v1.NewClusterInitServiceClient(conn)
 
 	idsOrNamesSet := set.NewStringSet(idsOrNames...)
-	if err = applyRevokeInitBundles(ctx, cliEnvironment, svc, idsOrNamesSet); err != nil {
+	if err = applyRevokeInitBundles(ctx, cliEnvironment, svc, idsOrNamesSet, force); err != nil {
 		return err
 	}
 	return nil
@@ -86,9 +140,20 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return revokeInitBundles(cliEnvironment, args, flags.Timeout(cmd), flags.RetryTimeout(cmd))
+			var clusterNameOrIds []string
+			var force bool
+			for _, arg := range args {
+				if arg == "--force" || arg == "-f" {
+					force = true
+				} else {
+					clusterNameOrIds = append(clusterNameOrIds, arg)
+				}
+			}
+			return revokeInitBundles(cliEnvironment, clusterNameOrIds, force, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
+
+	c.Flags().BoolP("force", "f", false, "Force revocation without confirmation")
 
 	return c
 }
