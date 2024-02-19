@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -96,24 +95,19 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"component", "scanner/service/indexer.GetIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	// Create index report.
 	zlog.Info(ctx).Msg("getting index report for container image")
-	clairReport, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
+	ccIR, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	if err != nil {
-		zlog.Error(ctx).Err(err).Send()
+		zlog.Warn(ctx).Err(err).Send()
 		return nil, err
 	}
-	zlog.Info(ctx).Bool("exists", exists).Send()
-	if !exists {
-		return nil, errox.NotFound.Newf("index report not found: %s", req.GetHashId())
-	}
-	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
+	v4IR, err := mappers.ToProtoV4IndexReport(ccIR)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
-	indexReport.HashId = req.GetHashId()
-	return indexReport, nil
+	v4IR.HashId = req.GetHashId()
+	return v4IR, nil
 }
 
 func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.GetOrCreateIndexReportRequest) (*v4.IndexReport, error) {
@@ -129,7 +123,8 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 	case errors.Is(err, nil):
 		return ir, nil
 	case errors.Is(err, errox.NotFound):
-		// OK
+		// Not found, log and go create.
+		zlog.Debug(ctx).Err(err).Msg("index report not found")
 	default:
 		return nil, err
 	}
@@ -150,26 +145,18 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		"component", "scanner/service/indexer.HasIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	_, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
-	if err != nil {
+	_, err := getClairIndexReport(ctx, s.indexer, req.GetHashId())
+	var exists bool
+	switch {
+	case errors.Is(err, nil):
+		exists = true
+	case errors.Is(err, errox.NotFound):
+		exists = false
+	default:
+		zlog.Error(ctx).Err(err).Msg("failed retrieve index report")
 		return nil, err
 	}
-	return &v4.HasIndexReportResponse{
-		Exists: exists,
-	}, nil
-}
-
-// getClairIndexReport query and return a claircore index report, return a "not
-// found" error when the report does not exist.
-func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
-	clairReport, ok, err := s.indexer.GetIndexReport(ctx, hashID)
-	if err != nil {
-		return nil, false, err
-	}
-	if !ok {
-		return nil, false, nil
-	}
-	return clairReport, true, nil
+	return &v4.HasIndexReportResponse{Exists: exists}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
