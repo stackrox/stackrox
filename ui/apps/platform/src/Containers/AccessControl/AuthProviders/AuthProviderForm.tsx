@@ -127,6 +127,18 @@ function AuthProviderForm({
                 attributeValue: yup.string().required('Value is a required field'),
             })
         ),
+        claimMappings: yup
+            .array()
+            .of(yup.array().of(yup.string().required('Empty value is not allowed')).length(2))
+            .test('uniqueness test', 'Claim mappings should contain unique keys', (value) => {
+                if (!value) {
+                    return true;
+                }
+                const keys = value.map((mapping) => {
+                    return mapping ? mapping[0] : '';
+                });
+                return keys.length === new Set(keys).size;
+            }),
         /* eslint-disable @typescript-eslint/no-unsafe-return */
         config: yup
             .object()
@@ -600,6 +612,115 @@ function AuthProviderForm({
                                                         }
                                                     >
                                                         Add required attribute
+                                                    </Button>
+                                                </FlexItem>
+                                            </Flex>
+                                        )}
+                                    </>
+                                )}
+                            />
+                        </FormSection>
+                    )}
+                    {selectedAuthProvider.type === 'oidc' && (
+                        <FormSection
+                            title="Claim mappings for the authentication provider"
+                            titleElement="h3"
+                        >
+                            <Alert
+                                isInline
+                                variant="info"
+                                title="Note: the claim mappings are used to map claims returned in underlying identity provider's token to ACS token."
+                            >
+                                <p>
+                                    In case claim mapping is not configured for a certain claim,
+                                    this claim will not be returned from authentication provider.
+                                </p>
+                            </Alert>
+                            {(!values.claimMappings ||
+                                (Array.isArray(values.claimMappings) &&
+                                    values.claimMappings.length === 0)) && (
+                                <p>No claim mappings defined</p>
+                            )}
+                            <FieldArray
+                                name="claimMappings"
+                                render={(arrayHelpers) => (
+                                    <>
+                                        {values.claimMappings &&
+                                            Array.isArray(values.claimMappings) &&
+                                            values.claimMappings.map((mapping, index: number) => (
+                                                <Flex key={`claim_mapping_${index}`}>
+                                                    <FormGroup
+                                                        label="Key"
+                                                        fieldId={`claimMappings[${index}][0]`}
+                                                    >
+                                                        <TextInput
+                                                            type="text"
+                                                            id={`claimMappings[${index}][0]`}
+                                                            value={mapping[0]}
+                                                            onChange={onChange}
+                                                            isDisabled={isDisabled}
+                                                        />
+                                                    </FormGroup>
+                                                    <FormGroup
+                                                        label="Value"
+                                                        fieldId={`claimMappings[${index}][1]`}
+                                                    >
+                                                        <TextInput
+                                                            type="text"
+                                                            id={`claimMappings[${index}][1]`}
+                                                            value={mapping[1]}
+                                                            onChange={onChange}
+                                                            isDisabled={isDisabled}
+                                                        />
+                                                    </FormGroup>
+                                                    {!isDisabled && (
+                                                        <FlexItem>
+                                                            <Button
+                                                                variant="plain"
+                                                                aria-label="Delete claim mapping"
+                                                                style={{
+                                                                    transform: 'translate(0, 42px)',
+                                                                }}
+                                                                onClick={() =>
+                                                                    arrayHelpers.remove(index)
+                                                                }
+                                                            >
+                                                                <TrashIcon />
+                                                            </Button>
+                                                        </FlexItem>
+                                                    )}
+                                                    {!isUserResource(
+                                                        selectedAuthProvider.traits
+                                                    ) && (
+                                                        <FlexItem>
+                                                            <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
+                                                                <Button
+                                                                    variant="plain"
+                                                                    aria-label="Information button"
+                                                                    style={{
+                                                                        transform:
+                                                                            'translate(0, 42px)',
+                                                                    }}
+                                                                >
+                                                                    <InfoCircleIcon />
+                                                                </Button>
+                                                            </Tooltip>
+                                                        </FlexItem>
+                                                    )}
+                                                </Flex>
+                                            ))}
+                                        {!isDisabled && (
+                                            <Flex>
+                                                <FlexItem>
+                                                    <Button
+                                                        variant="link"
+                                                        isInline
+                                                        icon={
+                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                        }
+                                                        onClick={() => arrayHelpers.push(['', ''])}
+                                                    >
+                                                        Add claim mapping
                                                     </Button>
                                                 </FlexItem>
                                             </Flex>
