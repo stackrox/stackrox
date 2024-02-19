@@ -26,10 +26,16 @@ func getProviderMetadataFromOpenShiftConfig(ctx context.Context,
 		return nil, errors.Wrap(err, "retrieving cluster infrastructure CR")
 	}
 
-	return infraCRToProviderMetadata(infraCR), nil
+	clusterVersionCR, err := client.ConfigV1().ClusterVersions().Get(ctx, "version", metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving cluster version CR")
+	}
+
+	return openShiftCRsToProviderMetadata(infraCR, clusterVersionCR), nil
 }
 
-func infraCRToProviderMetadata(infra *configv1.Infrastructure) *storage.ProviderMetadata {
+func openShiftCRsToProviderMetadata(infra *configv1.Infrastructure,
+	clusterVersion *configv1.ClusterVersion) *storage.ProviderMetadata {
 	// The platform status is required to read out the provider specific information. If it is unset,
 	// we can short-circuit here.
 	if infra.Status.PlatformStatus == nil {
@@ -45,6 +51,7 @@ func infraCRToProviderMetadata(infra *configv1.Infrastructure) *storage.Provider
 			Cluster: &storage.ClusterMetadata{
 				Type: clusterTypeFromAWSResourceTags(infra.Status.PlatformStatus.AWS.ResourceTags),
 				Name: infra.Status.InfrastructureName,
+				Id:   string(clusterVersion.Spec.ClusterID),
 			},
 		}
 	case configv1.GCPPlatformType:
@@ -57,6 +64,7 @@ func infraCRToProviderMetadata(infra *configv1.Infrastructure) *storage.Provider
 			Cluster: &storage.ClusterMetadata{
 				Type: clusterTypeFromGCPResourceTags(infra.Status.PlatformStatus.GCP.ResourceTags),
 				Name: infra.Status.InfrastructureName,
+				Id:   string(clusterVersion.Spec.ClusterID),
 			},
 		}
 	case configv1.AzurePlatformType:
@@ -67,6 +75,7 @@ func infraCRToProviderMetadata(infra *configv1.Infrastructure) *storage.Provider
 			Cluster: &storage.ClusterMetadata{
 				Type: clusterTypeFromAzureResourceTags(infra.Status.PlatformStatus.Azure.ResourceTags),
 				Name: infra.Status.InfrastructureName,
+				Id:   string(clusterVersion.Spec.ClusterID),
 			},
 		}
 	default:
@@ -74,6 +83,7 @@ func infraCRToProviderMetadata(infra *configv1.Infrastructure) *storage.Provider
 			Cluster: &storage.ClusterMetadata{
 				Type: storage.ClusterMetadata_OCP,
 				Name: infra.Status.InfrastructureName,
+				Id:   string(clusterVersion.Spec.ClusterID),
 			},
 		}
 	}

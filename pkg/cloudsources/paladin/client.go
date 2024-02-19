@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 const (
@@ -181,7 +180,6 @@ type paladinClient struct {
 type paladinTransportWrapper struct {
 	baseTransport http.RoundTripper
 	token         string
-	acsVersion    string
 }
 
 func (p *paladinTransportWrapper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -200,7 +198,6 @@ func NewClient(cfg *storage.CloudSource) *paladinClient {
 	retryClient.HTTPClient.Transport = &paladinTransportWrapper{
 		baseTransport: proxy.RoundTripper(),
 		token:         cfg.GetCredentials().GetSecret(),
-		acsVersion:    version.GetMainVersion(),
 	}
 	retryClient.HTTPClient.Timeout = 30 * time.Second
 	retryClient.RetryWaitMin = 10 * time.Second
@@ -297,7 +294,7 @@ func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclu
 
 	firstDiscoveredAt, err := gogoProto.TimestampProto(asset.FirstDiscoveredAt)
 	if err != nil {
-		return nil, errox.InvariantViolation.New("converting timestamps")
+		return nil, errox.InvariantViolation.New("converting timestamps").CausedBy(err)
 	}
 	d.FirstDiscoveredAt = firstDiscoveredAt
 
