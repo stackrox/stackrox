@@ -528,7 +528,7 @@ func (c *TestContext) WaitForMessageWithEventID(id string, timeout time.Duration
 // EventMatcher function definition to match events.
 type EventMatcher func(*central.MsgFromSensor) bool
 
-// WaitForMessageWithMatcher given an EventMatcher, waits for an event to match said matcher.
+// WaitForMessageWithMatcher waits until the given EventMatcher matches an event message or times out.
 func (c *TestContext) WaitForMessageWithMatcher(matcher EventMatcher, timeout time.Duration) (*central.MsgFromSensor, error) {
 	timeoutTimer := time.NewTicker(timeout)
 	ticker := time.NewTicker(defaultTicker)
