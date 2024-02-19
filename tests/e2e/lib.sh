@@ -272,6 +272,8 @@ deploy_central_via_operator() {
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
+    elif [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-with-scanner-v4.envsubst.yaml"
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -282,46 +284,6 @@ deploy_central_via_operator() {
       customize_envVars="$customize_envVars" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
-
-    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        kubectl -n "${central_namespace}" \
-            patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
-spec:
-  scannerV4:
-    scannerComponent: Enabled
-    indexer:
-      scaling:
-        autoScaling: Disabled
-        replicas: 1
-      resources:
-        requests:
-          cpu: 400m
-          memory: 1Gi
-        limits:
-          cpu: 1000m
-          memory: 2Gi
-    matcher:
-      scaling:
-        autoScaling: Disabled
-        replicas: 1
-      resources:
-        requests:
-          cpu: "400m"
-          memory: "2000Mi"
-        limits:
-          cpu: "6000m"
-          memory: "2000Mi"
-    db:
-      resources:
-        requests:
-          cpu: 300m
-          memory: 500Mi
-        limits:
-          cpu: 1000m
-          memory: 1000Mi
-EOT
-            )
-    fi
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
 }
@@ -396,42 +358,17 @@ deploy_sensor_via_operator() {
         scanner_component_setting="AutoSense"
     fi
 
+    local secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr.envsubst.yaml"
+    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
+    fi
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
-      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
-
-    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        kubectl -n "${sensor_namespace}" \
-            patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
-spec:
-  scannerV4:
-    scannerComponent: AutoSense
-    indexer:
-      scaling:
-        autoScaling: Disabled
-        replicas: 1
-      resources:
-        requests:
-          cpu: 400m
-          memory: 1Gi
-        limits:
-          cpu: 1000m
-          memory: 2Gi
-    db:
-      resources:
-        requests:
-          cpu: 300m
-          memory: 500Mi
-        limits:
-          cpu: 1000m
-          memory: 1000Mi
-EOT
-            )
-    fi
+      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
