@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -42,6 +43,8 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -230,14 +233,19 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
+	log.Infof("SHREWS -- 1 %v+", parsedQuery)
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	log.Infof("SHREWS -- 2 %v+", parsedQuery)
 
 	// Add the scan config name as an exact match
 	parsedQuery = search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
 		parsedQuery,
 	)
+
+	log.Infof("SHREWS -- 3 %v+", parsedQuery)
 
 	return s.searchComplianceCheckResults(ctx, parsedQuery)
 }
