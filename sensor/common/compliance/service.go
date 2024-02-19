@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -20,6 +21,7 @@ type Service interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
 	sensor.ComplianceServiceServer
+	common.SensorComponent
 
 	RunScrape(msg *sensor.MsgToCompliance) int
 
@@ -31,6 +33,8 @@ type Service interface {
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
 func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan common.MessageToComplianceWithAddress) Service {
+	offlineMode := &atomic.Bool{}
+	offlineMode.Store(true)
 	return &serviceImpl{
 		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
@@ -39,5 +43,6 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 		auditEvents:               auditEventsInput,
 		auditLogCollectionManager: auditLogCollectionManager,
 		connectionManager:         newConnectionManager(),
+		offlineMode:               offlineMode,
 	}
 }
