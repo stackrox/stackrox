@@ -44,7 +44,7 @@ var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
-type cloudSourceClientFactory = func(source *storage.CloudSource) cloudsources.Client
+type cloudSourceClientFactory = func(source *storage.CloudSource) (cloudsources.Client, error)
 
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
@@ -219,8 +219,11 @@ func (s *serviceImpl) TestCloudSource(ctx context.Context, req *v1.TestCloudSour
 }
 
 func (s *serviceImpl) testCloudSource(ctx context.Context, storageCloudSource *storage.CloudSource) error {
-	client := s.clientFactory(storageCloudSource)
-	_, err := client.GetDiscoveredClusters(ctx)
+	client, err := s.clientFactory(storageCloudSource)
+	if err != nil {
+		return err
+	}
+	_, err = client.GetDiscoveredClusters(ctx)
 	return err
 }
 
