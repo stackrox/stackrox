@@ -9,9 +9,9 @@
     "external_cluster_id": "11b0e5a3-0a38-4484-8272-1fd690bd65b5",
     "plan": {
       "href": "/api/accounts_mgmt/v1/plans/MAO",
-      "id": "MAO",
+      "id": "MOA",
       "kind": "Plan",
-      "type": "MAO"
+      "type": "MOA"
     },
     "region_id": "us-east1",
     "status": "Active"
