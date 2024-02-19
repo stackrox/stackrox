@@ -14,9 +14,13 @@ import (
 	reflect "reflect"
 
 	runtime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	central "github.com/stackrox/rox/generated/internalapi/central"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
+	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	common "github.com/stackrox/rox/sensor/common"
+	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )
@@ -73,6 +77,20 @@ func (mr *MockServiceMockRecorder) AuthFuncOverride(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthFuncOverride", reflect.TypeOf((*MockService)(nil).AuthFuncOverride), arg0, arg1)
 }
 
+// Capabilities mocks base method.
+func (m *MockService) Capabilities() []centralsensor.SensorCapability {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Capabilities")
+	ret0, _ := ret[0].([]centralsensor.SensorCapability)
+	return ret0
+}
+
+// Capabilities indicates an expected call of Capabilities.
+func (mr *MockServiceMockRecorder) Capabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockService)(nil).Capabilities))
+}
+
 // Communicate mocks base method.
 func (m *MockService) Communicate(arg0 sensor.ComplianceService_CommunicateServer) error {
 	m.ctrl.T.Helper()
@@ -101,6 +119,18 @@ func (mr *MockServiceMockRecorder) NodeInventories() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NodeInventories", reflect.TypeOf((*MockService)(nil).NodeInventories))
 }
 
+// Notify mocks base method.
+func (m *MockService) Notify(arg0 common.SensorComponentEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Notify", arg0)
+}
+
+// Notify indicates an expected call of Notify.
+func (mr *MockServiceMockRecorder) Notify(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockService)(nil).Notify), arg0)
+}
+
 // Output mocks base method.
 func (m *MockService) Output() chan *compliance.ComplianceReturn {
 	m.ctrl.T.Helper()
@@ -113,6 +143,20 @@ func (m *MockService) Output() chan *compliance.ComplianceReturn {
 func (mr *MockServiceMockRecorder) Output() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Output", reflect.TypeOf((*MockService)(nil).Output))
+}
+
+// ProcessMessage mocks base method.
+func (m *MockService) ProcessMessage(arg0 *central.MsgToSensor) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessMessage", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessMessage indicates an expected call of ProcessMessage.
+func (mr *MockServiceMockRecorder) ProcessMessage(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), arg0)
 }
 
 // RegisterServiceHandler mocks base method.
@@ -141,6 +185,20 @@ func (mr *MockServiceMockRecorder) RegisterServiceServer(arg0 any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterServiceServer", reflect.TypeOf((*MockService)(nil).RegisterServiceServer), arg0)
 }
 
+// ResponsesC mocks base method.
+func (m *MockService) ResponsesC() <-chan *message.ExpiringMessage {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResponsesC")
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
+	return ret0
+}
+
+// ResponsesC indicates an expected call of ResponsesC.
+func (mr *MockServiceMockRecorder) ResponsesC() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponsesC", reflect.TypeOf((*MockService)(nil).ResponsesC))
+}
+
 // RunScrape mocks base method.
 func (m *MockService) RunScrape(arg0 *sensor.MsgToCompliance) int {
 	m.ctrl.T.Helper()
@@ -153,4 +211,30 @@ func (m *MockService) RunScrape(arg0 *sensor.MsgToCompliance) int {
 func (mr *MockServiceMockRecorder) RunScrape(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockService)(nil).RunScrape), arg0)
+}
+
+// Start mocks base method.
+func (m *MockService) Start() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockServiceMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockService)(nil).Start))
+}
+
+// Stop mocks base method.
+func (m *MockService) Stop(arg0 error) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop", arg0)
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockServiceMockRecorder) Stop(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockService)(nil).Stop), arg0)
 }

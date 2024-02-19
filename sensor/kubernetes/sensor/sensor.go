@@ -154,6 +154,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		delegatedRegistryHandler,
 		imageService,
 		enhancer,
+		complianceService,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
