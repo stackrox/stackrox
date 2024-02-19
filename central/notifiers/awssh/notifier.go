@@ -161,21 +161,23 @@ type configuration struct {
 	canceler func()
 }
 
-func (c *configuration) getCredentials() (*storage.AWSSecurityHub_Credentials, error) {
+// Returns AccessKeyID and SecretAccessKey from the given awssh notifier
+func (c *configuration) getCredentials() (string, string, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
-		return c.descriptor.GetAwsSecurityHub().GetCredentials(), nil
+		creds := c.descriptor.GetAwsSecurityHub().GetCredentials()
+		return creds.GetAccessKeyId(), creds.GetSecretAccessKey(), nil
 	}
 
 	decCredsStr, err := c.cryptoCodec.Decrypt(c.cryptoKey, c.descriptor.GetNotifierSecret())
 	if err != nil {
-		return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
+		return "", "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
 	}
 	creds := &storage.AWSSecurityHub_Credentials{}
 	err = creds.Unmarshal([]byte(decCredsStr))
 	if err != nil {
-		return nil, errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
+		return "", "", errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
 	}
-	return creds, err
+	return creds.GetAccessKeyId(), creds.GetSecretAccessKey(), nil
 }
 
 // notifier is an AlertNotifier implementation.
@@ -203,14 +205,14 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		awsConfig = awsConfig.WithRegion(awssh.GetRegion())
 	}
 
-	creds, err := configuration.getCredentials()
+	accessKeyId, secretAccessKey, err := configuration.getCredentials()
 	if err != nil {
 		return nil, err
 	}
-	if !creds.GetStsEnabled() {
+	if !configuration.descriptor.GetAwsSecurityHub().GetCredentials().GetStsEnabled() {
 		awsConfig = awsConfig.WithCredentials(credentials.NewStaticCredentials(
-			creds.GetAccessKeyId(),
-			creds.GetSecretAccessKey(),
+			accessKeyId,
+			secretAccessKey,
 			"",
 		))
 	}
