@@ -192,7 +192,6 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
 					AddExactMatches(search.ClusterID, cluster.ClusterId).ProtoQuery())
 				if err != nil {
-					// log
 					continue
 				}
 
