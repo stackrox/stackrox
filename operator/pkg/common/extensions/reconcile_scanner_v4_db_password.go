@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// ScannerV4DBPasswordKey is the key used in the secret data for scanner V4 db password
+	// ScannerV4DBPasswordKey is the key used in the secret data for Scanner V4 db password
 	ScannerV4DBPasswordKey          = `password`
 	scannerV4DBPasswordResourceName = "scanner-v4-db-password" // #nosec G101
 )
@@ -21,7 +21,7 @@ type ScannerV4BearingCustomResource interface {
 	IsScannerV4Enabled() bool
 }
 
-// ReconcileScannerV4DBPassword reconciles a scanner v4 db password
+// ReconcileScannerV4DBPassword reconciles a Scanner V4 db password
 func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
 	return reconcileScannerV4DBPassword(ctx, obj, client)
 }
@@ -42,7 +42,7 @@ type reconcileScannerV4DBPasswordExtensionRun struct {
 }
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) Execute(ctx context.Context) error {
-	// Delete any scanner-v4-db password only if the CR is being deleted, or scanner V4 is not enabled.
+	// Delete any scanner-v4-db password only if the CR is being deleted, or Scanner V4 is not enabled.
 	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.IsScannerV4Enabled()
 
 	if err := r.reconcilePasswordSecret(ctx, shouldExist); err != nil {

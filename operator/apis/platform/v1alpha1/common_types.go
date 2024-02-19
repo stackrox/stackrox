@@ -146,6 +146,9 @@ type ScannerV4Component struct {
 
 // ScannerV4DB defines configuration for the Scanner V4 database component.
 type ScannerV4DB struct {
+	// Configures how Scanner V4 should store its persistent data.
+	// You can use a persistent volume claim (the recommended default), a host path,
+	// or an emptyDir volume if Scanner V4 is running on a secured cluster without default StorageClass.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Persistence    *ScannerV4Persistence `json:"persistence,omitempty"`
 	DeploymentSpec `json:",inline"`
@@ -159,7 +162,7 @@ func (sdb *ScannerV4DB) GetPersistence() *ScannerV4Persistence {
 	return sdb.Persistence
 }
 
-// ScannerV4Persistence defines persistence settings for scanner V4.
+// ScannerV4Persistence defines persistence settings for Scanner V4.
 type ScannerV4Persistence struct {
 	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
 	// Recommended for most users.

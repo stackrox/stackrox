@@ -194,7 +194,7 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 // The operator creates this PVC through the helm chart. This means it is managed
 // by the default helm lifecycle, instead of the operator extension. The difference is
 // that the extension prevents central DB's PVC deletion on deletion of the CR.
-// Since scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
+// Since Scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
 // through the helm uninstall if a CR is deleted.
 func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) {
 	dbVB := NewValuesBuilder()
@@ -309,7 +309,7 @@ func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Client, pvcName st
 		if apiErrors.IsNotFound(err) {
 			return false, nil
 		}
-		return false, fmt.Errorf("looking for existing scanner v4 pvc: %w", err)
+		return false, fmt.Errorf("looking for existing scanner-v4-db pvc: %w", err)
 	}
 
 	return false, nil

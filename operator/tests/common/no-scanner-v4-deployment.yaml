@@ -1,4 +1,4 @@
-# Make sure there are no scanner v4 deployments
+# Make sure there are no Scanner V4 deployments
 # since they have to be enabled explicitly
 apiVersion: apps/v1
 kind: Deployment
