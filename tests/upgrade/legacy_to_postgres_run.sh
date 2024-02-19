@@ -14,6 +14,8 @@ source "$TEST_ROOT/scripts/lib.sh"
 source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../scripts/ci/scanner-v4-wait.sh
+source "$TEST_ROOT/scripts/ci/scanner-v4-wait.sh"
 # shellcheck source=../../tests/scripts/setup-certs.sh
 source "$TEST_ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
