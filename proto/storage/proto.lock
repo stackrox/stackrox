@@ -5143,6 +5143,11 @@
                     "value": "search:\"Compliance Scan Config Name\""
                   }
                 ]
+              },
+              {
+                "id": 9,
+                "name": "status",
+                "type": "ComplianceOperatorStatus"
               }
             ],
             "maps": [
