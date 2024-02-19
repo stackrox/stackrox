@@ -112,6 +112,7 @@ export type ComplianceClusterScanStats = {
 export interface ComplianceClusterOverallStats {
     cluster: ComplianceScanCluster;
     checkStats: ComplianceCheckStatusCount[];
+    clusterErrors: string[];
 }
 
 export interface ComplianceScanResultsOverview {
