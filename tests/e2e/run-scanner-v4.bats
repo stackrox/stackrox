@@ -820,7 +820,7 @@ remove_earlier_roxctl_binary() {
 
 # Waits until ValidationWebhook is completely functional.
 wait_until_central_validation_webhook_is_ready() {
-    let central_namespace=$1
+    local central_namespace=$1
 
     info "Waiting for AdmissionWebhook to be functional by trying to patch Central in namespace ${central_namespace}..."
     patch_test_file=$(mktemp)
