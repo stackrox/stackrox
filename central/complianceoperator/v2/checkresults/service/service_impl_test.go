@@ -10,6 +10,7 @@ import (
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -467,11 +468,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			expectedResp: convertUtils.GetConvertedComplianceResults(s.T()),
 			found:        true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				expectedQ = search.ConjunctionQuery(
+				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
-					expectedQ,
+					search.EmptyQuery(),
 				)
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetComplianceStorageResults(s.T()), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
@@ -487,12 +489,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			expectedErr: nil,
 			found:       true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 				expectedQ = search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
 					expectedQ,
 				)
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetOneClusterComplianceStorageResults(s.T(), fixtureconsts.Cluster1), nil).Times(1)
 				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
@@ -510,11 +512,11 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 			expectedErr: nil,
 			found:       true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery()
-				expectedQ = search.ConjunctionQuery(
+				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
-					expectedQ,
+					search.EmptyQuery(),
 				)
+				expectedQ.Pagination = &v1.QueryPagination{Limit: 1}
 				returnResults := []*storage.ComplianceOperatorCheckResultV2{
 					convertUtils.GetComplianceStorageResults(s.T())[0],
 				}
