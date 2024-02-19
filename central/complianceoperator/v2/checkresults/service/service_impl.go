@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -43,8 +42,6 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
 		},
 	})
-
-	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -226,8 +223,6 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 	if request.GetScanConfigName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
-
-	log.Infof("SHREWS -- 0 %v+", request)
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
