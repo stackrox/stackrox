@@ -146,7 +146,11 @@ spec:
           effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - displayName: Persistence
+      - description: Configures how Scanner V4 should store its persistent data. You
+          can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without
+          default StorageClass.
+        displayName: Persistence
         path: scannerV4.db.persistence
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
@@ -329,9 +333,8 @@ spec:
         path: scanner.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: 'Settings for the Scanner V4 component, which can run in addition
-          to the previously existing Scanner components Above default is necessary
-          to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
+      - description: Settings for the Scanner V4 component, which can run in addition
+          to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: The name of the storage class to use for the PVC. If your cluster
@@ -751,7 +754,11 @@ spec:
           settings in this section will have no effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - displayName: Persistence
+      - description: Configures how Scanner V4 should store its persistent data. You
+          can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without
+          default StorageClass.
+        displayName: Persistence
         path: scannerV4.db.persistence
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
@@ -930,9 +937,8 @@ spec:
       - description: The number of replicas of the admission control pod.
         displayName: Replicas
         path: admissionControl.replicas
-      - description: 'Settings for the Scanner V4 component, which can run in addition
-          to the previously existing Scanner components Above default is necessary
-          to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622'
+      - description: Settings for the Scanner V4 components, which can run in addition
+          to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Allows you to specify additional trusted Root CAs.

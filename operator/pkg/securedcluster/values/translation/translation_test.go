@@ -212,7 +212,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
-		"scannerV4.db.persistence.none for scanner v4 db without default StorageClass": {
+		"scannerV4.db.persistence.none for Scanner V4 db without default StorageClass": {
 			args: args{
 				// no default storage class in this fake client, so we expect to default to scannerV4.db.persistence.none
 				client: newDefaultFakeClientWithoutStorageClass(t),

@@ -36,11 +36,12 @@ type CentralSpec struct {
 	// images.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
+
 	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
 	//+kubebuilder:default={"scannerComponent":"Default"}
-	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`
+	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 
 	// Settings related to outgoing network traffic.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
@@ -510,7 +511,7 @@ type ScannerComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// ScannerV4Spec defines settings for the central "scanner V4" component.
+// ScannerV4Spec defines settings for the central "Scanner V4" component.
 type ScannerV4Spec struct {
 	// If you want to deploy Scanner V4 components set this to "Enabled"
 	//+kubebuilder:default=Default
@@ -536,7 +537,7 @@ type ScannerV4Spec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// IsEnabled checks whether scanner v4 is enabled. This method is safe to be used with nil receivers.
+// IsEnabled checks whether Scanner V4 is enabled. This method is safe to be used with nil receivers.
 func (s *ScannerV4Spec) IsEnabled() bool {
 	if s == nil || s.ScannerComponent == nil {
 		return false // disabled by default
@@ -576,14 +577,14 @@ const (
 type ScannerV4ComponentPolicy string
 
 const (
-	// ScannerV4ComponentDefault means that scanner V4 uses the default semantics
-	// to identify whether scanner V4 component should be used.
+	// ScannerV4ComponentDefault means that Scanner V4 uses the default semantics
+	// to identify whether Scanner V4 component should be used.
 	// Currently this defaults to "Disabled" semantics.
 	// TODO change default to "Enabled" semantics with version 4.5
 	ScannerV4ComponentDefault ScannerV4ComponentPolicy = "Default"
-	// ScannerV4ComponentEnabled explicitly enables the scanner V4 component.
+	// ScannerV4ComponentEnabled explicitly enables the Scanner V4 component.
 	ScannerV4ComponentEnabled ScannerV4ComponentPolicy = "Enabled"
-	// ScannerV4ComponentDisabled explicitly disables the scanner V4 component.
+	// ScannerV4ComponentDisabled explicitly disables the Scanner V4 component.
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
 
@@ -653,7 +654,7 @@ func (c *Central) IsScannerEnabled() bool {
 	return c.Spec.Scanner.IsEnabled()
 }
 
-// IsScannerV4Enabled returns true if scanner V4 is enabled.
+// IsScannerV4Enabled returns true if Scanner V4 is enabled.
 func (c *Central) IsScannerV4Enabled() bool {
 	return c.Spec.ScannerV4.IsEnabled()
 }

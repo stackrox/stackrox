@@ -38,7 +38,7 @@ func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, 
 	return autoSenseScanner(ctx, client, scannerComponent, s.Namespace)
 }
 
-// AutoSenseLocalScannerV4Config detects whether the local scanner V4 should be deployed and/or used by sensor.
+// AutoSenseLocalScannerV4Config detects whether the local Scanner V4 should be deployed and/or used by sensor.
 // Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
 // Modifies the provided SecuredCluster object to set a default Spec.ScannerV4 if missing.
 func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
@@ -68,7 +68,7 @@ func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymen
 		return AutoSenseResult{}, nil
 	}
 
-	return AutoSenseResult{}, errors.Errorf("invalid scanner V4 deployment setting: %q", deploymentPolicy)
+	return AutoSenseResult{}, errors.Errorf("invalid Scanner V4 deployment setting: %q", deploymentPolicy)
 }
 
 func autoSense(ctx context.Context, client ctrlClient.Client, namespace string) (AutoSenseResult, error) {
