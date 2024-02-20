@@ -90,7 +90,8 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 }
 
 // ToClairCoreIndexReport converts v4.Contents to a claircore.IndexReport.
-func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
+func ToClairCoreIndexReport(r *v4.IndexReport) (*claircore.IndexReport, error) {
+	contents := r.GetContents()
 	if contents == nil {
 		return nil, errors.New("internal error: empty contents")
 	}
@@ -120,6 +121,9 @@ func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, erro
 		}
 	}
 	return &claircore.IndexReport{
+		State:         r.GetState(),
+		Success:       r.GetSuccess(),
+		Err:           r.GetErr(),
 		Packages:      pkgs,
 		Distributions: dists,
 		Repositories:  repos,

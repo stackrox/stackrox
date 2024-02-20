@@ -51,7 +51,7 @@ func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string) (*cla
 	if !exists {
 		return nil, false, nil
 	}
-	ir, err := mappers.ToClairCoreIndexReport(resp.GetContents())
+	ir, err := mappers.ToClairCoreIndexReport(resp)
 	if err != nil {
 		return nil, true, err
 	}
