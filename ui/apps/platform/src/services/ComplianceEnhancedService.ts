@@ -338,7 +338,6 @@ export function getSingleClusterResultsByScanConfig(
     }
     const searchQuery = getRequestQueryStringForSearchFilter({
         'Cluster ID': clusterId,
-        'Compliance Scan Config Name': scanName,
         ...searchFilter,
     });
 
@@ -346,16 +345,18 @@ export function getSingleClusterResultsByScanConfig(
     if (typeof page === 'number' && typeof pageSize === 'number') {
         offset = page > 0 ? page * pageSize : 0;
     }
-    const query = {
-        query: searchQuery,
-        pagination: { offset, limit: pageSize, sortOption },
+    const queryParameters = {
+        query: {
+            query: searchQuery,
+            pagination: { offset, limit: pageSize, sortOption },
+        },
     };
-    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
 
     return axios
         .get<{
             scanResults: ComplianceScanResult[];
-        }>(`${complianceResultsServiceUrl}/results?${params}`)
+        }>(`${complianceResultsServiceUrl}/results/${scanName}?${params}`)
         .then((response) => {
             const results = response?.data?.scanResults ?? [];
             if (results.length > 1) {
@@ -372,19 +373,20 @@ export function getSingleClusterResultsByScanConfigCount(
 ): Promise<number> {
     const searchQuery = getRequestQueryStringForSearchFilter({
         'Cluster ID': clusterId,
-        'Compliance Scan Config Name': scanName,
         ...searchFilter,
     });
 
-    const query = {
-        query: searchQuery,
+    const queryParameters = {
+        query: {
+            query: searchQuery,
+        },
     };
-    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+    const params = qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
 
     return axios
         .get<{
             count: number;
-        }>(`${complianceResultsServiceUrl}/count/results?${params}`)
+        }>(`${complianceResultsServiceUrl}/count/results/${scanName}?${params}`)
         .then((response) => {
             return response?.data?.count ?? 0;
         });
