@@ -3,7 +3,6 @@ import { generatePath, Link } from 'react-router-dom';
 import {
     Alert,
     Bullseye,
-    Button,
     Flex,
     FlexItem,
     PageSection,
@@ -37,16 +36,6 @@ import {
     getCompliancePfClassName,
     getStatusCounts,
 } from './compliance.coverage.utils';
-
-const CreateScanConfigButton = () => {
-    return (
-        <Link to={complianceEnhancedScanConfigsPath}>
-            <Button variant="link" isInline>
-                Go to scan schedules
-            </Button>
-        </Link>
-    );
-};
 
 function ClustersCoverageTable() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
@@ -129,7 +118,9 @@ function ClustersCoverageTable() {
                                 </Text>
                             </FlexItem>
                             <FlexItem>
-                                <CreateScanConfigButton />
+                                <Link to={complianceEnhancedScanConfigsPath}>
+                                    Go to scan schedules
+                                </Link>
                             </FlexItem>
                         </Flex>
                     </EmptyStateTemplate>
