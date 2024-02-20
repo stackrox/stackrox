@@ -64,9 +64,6 @@ func (s *UpdaterTestSuite) SetupTest() {
 
 	_, err = s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(customNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)
-
-	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
-	s.prependSSAReactorToFakeClient(true)
 }
 
 func (s *UpdaterTestSuite) TearDownTest() {
@@ -75,6 +72,9 @@ func (s *UpdaterTestSuite) TearDownTest() {
 }
 
 func (s *UpdaterTestSuite) TestDefaultNamespace() {
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	s.prependSSAReactorToFakeClient(true)
+
 	ds := buildComplianceOperator(defaultNS)
 
 	s.createCO(ds)
@@ -88,6 +88,9 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 }
 
 func (s *UpdaterTestSuite) TestMultipleTries() {
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	s.prependSSAReactorToFakeClient(true)
+
 	ds := buildComplianceOperator(defaultNS)
 	s.createCO(ds)
 
@@ -105,6 +108,9 @@ func (s *UpdaterTestSuite) TestNotFound() {
 }
 
 func (s *UpdaterTestSuite) TestDelayedTicker() {
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	s.prependSSAReactorToFakeClient(true)
+
 	ds := buildComplianceOperator(defaultNS)
 
 	s.createCO(ds)
@@ -138,19 +144,24 @@ func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
 }
 
 func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissions() {
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	s.prependSSAReactorToFakeClient(true)
+
 	ds := buildComplianceOperator(defaultNS)
 
 	s.createCO(ds)
 
-	// Test sensor has all * access to compliance.openshift.io
-	// Access prepended in test setup
 	actualSuccess := s.getInfo(1, 1*time.Millisecond)
-	s.NotContains(actualSuccess.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
+	s.Assert().NotContains(actualSuccess.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
+}
 
-	// Test Sensor has not all (*) access to compliance.openshift.io
-
-	// Prepend another reactor to return a SelfSubjectAccessReview without write access.
+func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissionsNotFound() {
+	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
 	s.prependSSAReactorToFakeClient(false)
+
+	ds := buildComplianceOperator(defaultNS)
+
+	s.createCO(ds)
 
 	actualError := s.getInfo(1, 1*time.Millisecond)
 	s.Assert().Contains(actualError.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
