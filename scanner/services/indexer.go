@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -80,13 +81,15 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
+	if !clairReport.Success {
+		return nil, fmt.Errorf("internal error: create index report failed in state %q: %s", clairReport.State, clairReport.Err)
+	}
 	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
 	indexReport.HashId = req.GetHashId()
-	// TODO Define behavior for indexReport.Err != "".
 	return indexReport, nil
 }
 

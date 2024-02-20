@@ -65,19 +65,19 @@ func (s *indexerServiceTestSuite) TestAuthz() {
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {
-	s.setupMock(hashID, 1, &claircore.IndexReport{}, nil)
+	s.setupMock(hashID, 1, &claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, imageURL, "sample username")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, Contents: &v4.Contents{}}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
-	s.setupMock(hashID, 0, &claircore.IndexReport{}, nil)
+	s.setupMock(hashID, 0, &claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, Contents: &v4.Contents{}}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
@@ -94,11 +94,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	s.indexerMock.
 		EXPECT().
 		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(0)).
-		Return(&claircore.IndexReport{}, nil)
+		Return(&claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, iURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, Contents: &v4.Contents{}}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
@@ -257,7 +257,7 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 			Return(nil, false, nil)
 		s.indexerMock.EXPECT().
 			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(&claircore.IndexReport{State: "sample state"}, nil)
+			Return(&claircore.IndexReport{State: "sample state", Success: true}, nil)
 		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
 		s.NoError(err)
 		// Just make sure something is returned. Other tests ensure the conversion is correct.
@@ -270,7 +270,7 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 			Return(&claircore.IndexReport{}, true, nil)
 		s.indexerMock.EXPECT().
 			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(&claircore.IndexReport{State: "sample state"}, nil)
+			Return(&claircore.IndexReport{State: "sample state", Success: true}, nil)
 		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
 		s.NoError(err)
 		// Just make sure something is returned. Other tests ensure the conversion is correct.
