@@ -117,14 +117,14 @@ describe_pods_in_namespace() {
     info "==============================="
     info "Pods in namespace ${namespace}:"
     info "==============================="
-    "${ORCH_CMD}" -n "${namespace}" get pods
+    "${ORCH_CMD}" -n "${namespace}" get pods || true
     echo
     "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
       echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}"
+      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}" || true
       echo
       echo "** LOGS FOR POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}"
+      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}" || true
       echo
 
     done
@@ -135,11 +135,11 @@ describe_deployments_in_namespace() {
     info "====================================="
     info "Deployments in namespace ${namespace}:"
     info "====================================="
-    "${ORCH_CMD}" -n "${namespace}" get deployments
+    "${ORCH_CMD}" -n "${namespace}" get deployments || true
     echo
     "${ORCH_CMD}" -n "${namespace}" get deployments -o name | while read -r name; do
       echo "** DESCRIBING DEPLOYMENT: ${namespace}/${name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${name}"
+      "${ORCH_CMD}" -n "${namespace}" describe "${name}" || true
     done
 }
 
@@ -309,8 +309,6 @@ teardown_file() {
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
     # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
-    # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
@@ -318,6 +316,8 @@ teardown_file() {
     export SENSOR_SCANNER_SUPPORT=true
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
+
+    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
@@ -333,8 +333,6 @@ teardown_file() {
     fi
 
     # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
-    # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     # shellcheck disable=SC2030,SC2031
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
@@ -342,11 +340,125 @@ teardown_file() {
     export SENSOR_SCANNER_SUPPORT=true
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
+    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
 
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+}
+
+@test "[Operator] Upgrade multi-namespace installation" {
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
+    fi
+
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+
+    # Install old version of the operator & deploy StackRox.
+    (
+      VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
+      #  cd operator
+      #  ./hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator 4.3.0 4.3.0
+    )
+    ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+
+    # Upgrade operator
+    info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
+    VERSION="${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm
+    info "Waiting for rhacs-operator pods to be ready"
+    "${ORCH_CMD}" -n stackrox-operator wait  --for=condition=Ready pods -l app=rhacs-operator
+
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_no_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+
+    wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
+
+    # Enable Scanner V4 on central side.
+    info "Patching Central"
+    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" \
+      patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Enabled
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "1500Mi"
+        limits:
+          cpu: "1000m"
+          memory: "2Gi"
+    matcher:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "4Gi"
+        limits:
+          cpu: "1000m"
+          memory: "5Gi"
+    db:
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "2Gi"
+        limits:
+          cpu: "1000m"
+          memory: "2500Mi"
+EOT
+    )
+
+    info "Patching SecuredCluster"
+    # Enable Scanner V4 on secured-cluster side
+    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
+      patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: AutoSense
+    indexer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          cpu: "400m"
+          memory: "1500Mi"
+        limits:
+          cpu: "1000m"
+          memory: "2Gi"
+    db:
+      resources:
+        requests:
+          cpu: "200m"
+          memory: "2Gi"
+        limits:
+          cpu: "1000m"
+          memory: "2500Mi"
+EOT
+    )
+
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_central_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
 }
@@ -415,8 +527,10 @@ verify_no_scannerV4_matcher_deployed() {
 # This must be removed when Scanner v2 will be phased out.
 verify_scannerV2_deployed() {
     local namespace=${1:-stackrox}
+    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner 300
-    wait_for_object_to_appear "$namespace" deploy/scanner-db 300
+    info "** Scanner V2 is deployed in namespace ${namespace}"
 }
 
 verify_scannerV4_deployed() {
@@ -427,18 +541,22 @@ verify_scannerV4_deployed() {
 
 verify_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
-    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
+    info "Waiting for Scanner V4 Indexer to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 120
+    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 300
+    info "** Scanner V4 Indexer is deployed in namespace ${namespace}"
 }
 
 verify_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
-    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
+    info "Waiting for Scanner V4 Matcher to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 120
+    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 300
+    info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
 }
 
 verify_deployment_scannerV4_env_var_set() {
@@ -466,8 +584,6 @@ _deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
-
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
 
     _deploy_central "${central_namespace}"
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" && "${HELM_REUSE_VALUES:-}" != "true" ]]; then
@@ -501,6 +617,13 @@ _deploy_central() {
 }
 
 patch_down_central() {
+    local central_namespace="$1"
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" != "true" ]]; then
+        patch_down_central_directly "${central_namespace}"
+    fi
+}
+
+patch_down_central_directly() {
    local central_namespace="$1"
 
     if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
@@ -584,6 +707,13 @@ _deploy_sensor() {
 }
 
 patch_down_sensor() {
+    local sensor_namespace="$1"
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" != "true" ]]; then
+        patch_down_sensor_directly "${sensor_namespace}"
+    fi
+}
+
+patch_down_sensor_directly() {
    local sensor_namespace="$1"
 
     "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/sensor" --patch-file <(cat <<EOF
@@ -701,4 +831,21 @@ remove_earlier_roxctl_binary() {
       rmdir "${EARLIER_ROXCTL_PATH}"
       echo "Removed earlier roxctl binary"
     fi
+}
+
+# Waits until ValidationWebhook is completely functional.
+wait_until_central_validation_webhook_is_ready() {
+    local central_namespace=$1
+
+    info "Waiting for AdmissionWebhook to be functional by trying to patch Central in namespace ${central_namespace}..."
+    sleep 1m
+    patch_test_file=$(mktemp)
+    cat >"${patch_test_file}" <<EOT
+spec:
+  customize:
+    envVars:
+      - name: IGNORE_THIS_PLEASE
+        value: it-is-just-about-checking-validationhook-readiness
+EOT
+    retry 7 true "${ORCH_CMD}" -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
 }
