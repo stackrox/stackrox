@@ -236,9 +236,10 @@ message ComplianceOperatorScanSettingBindingV2 {
   repeated string profile_names = 3;
   string scan_setting_name = 4;
 
-  repeated ComplianceOperatorCondition conditions = 5;
+  reserved 5;
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
+  ComplianceOperatorStatus status = 8;
 }
 
 message ComplianceOperatorCondition {
@@ -249,16 +250,17 @@ message ComplianceOperatorCondition {
   google.protobuf.Timestamp last_transition_time = 5;
 }
 
+message ComplianceOperatorStatus {
+  string phase = 1;
+  string result = 2;
+  string error_message = 3;
+  repeated ComplianceOperatorCondition conditions = 4;
+}
+
 message ComplianceOperatorSuiteV2 {
   string id = 1;
   string name = 2;
 
-  message Status {
-    string phase = 1;
-    string result = 2;
-    string error_message = 3;
-    repeated ComplianceOperatorCondition conditions = 4;
-  }
-
-  Status status = 3;
+  reserved 3;
+  ComplianceOperatorStatus status = 4;
 }

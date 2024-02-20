@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -68,6 +69,21 @@ func (m *MockDataStore) GetScanSettingBinding(ctx context.Context, id string) (*
 func (mr *MockDataStoreMockRecorder) GetScanSettingBinding(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanSettingBinding", reflect.TypeOf((*MockDataStore)(nil).GetScanSettingBinding), ctx, id)
+}
+
+// GetScanSettingBindings mocks base method.
+func (m *MockDataStore) GetScanSettingBindings(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanSettingBindingV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScanSettingBindings", ctx, query)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorScanSettingBindingV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScanSettingBindings indicates an expected call of GetScanSettingBindings.
+func (mr *MockDataStoreMockRecorder) GetScanSettingBindings(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanSettingBindings", reflect.TypeOf((*MockDataStore)(nil).GetScanSettingBindings), ctx, query)
 }
 
 // GetScanSettingBindingsByCluster mocks base method.
