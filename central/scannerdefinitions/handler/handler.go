@@ -84,7 +84,7 @@ var (
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
-	majorVersion = regexp.MustCompile(`^\d+\.\d+`)
+	minorVersionPattern = regexp.MustCompile(`^\d+\.\d+`)
 )
 
 type requestedUpdater struct {
@@ -299,6 +299,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
 			count++
+			continue
 		}
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefinitionBlobName); err != nil {
@@ -478,11 +479,21 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 	}
 	defer toClose(onlineFile)
 	file = onlineFile
+
+	offlineFile, err := h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
+	if err != nil {
+		log.Errorf("failed to access offline file: %v", err)
+	}
+	defer toClose(offlineFile)
+
+	if offlineFile != nil && offlineFile.modTime.After(onlineTime) {
+		file = offlineFile
+	}
 	return file, nil
 }
 
 // openMostRecentV4OfflineFile gets desired offline file from compressed bundle: offlineScannerV4DefinitionBlobName
-func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, updaterKey, fileName string) (file *vulDefFile, err error) {
+func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updaterType, updaterKey, fileName string) (*vulDefFile, error) {
 	log.Debugf("Getting v4 offline data for updater key: %s", updaterKey)
 	openedFile, err := h.openOfflineBlob(ctx, offlineScannerV4DefinitionBlobName)
 	if err == nil && openedFile == nil {
@@ -495,7 +506,7 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 	switch t {
 	case mappingUpdaterType:
 		// search mapping file
-		fileName = path.Base(fileName)
+		fileName = filepath.Base(fileName)
 		targetFile, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
@@ -514,7 +525,7 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		if offlineV != majorVersion.FindString(updaterKey) {
+		if offlineV != minorVersionPattern.FindString(updaterKey) {
 			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, updaterKey)
 			log.Errorf(msg)
 			return nil, errors.New(msg)
@@ -529,10 +540,7 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
 	}
 
-	// not closing offlineFile here
-	// as file will be closed in getV4() after http serves content
-	file = offlineFile
-	return file, nil
+	return offlineFile, nil
 }
 
 // openFromArchive returns a file object for a name within the definitions
