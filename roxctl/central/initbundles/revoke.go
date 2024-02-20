@@ -133,9 +133,8 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 				return errors.Wrap(err, "getting force flag")
 			}
 			for _, arg := range args {
-				if arg == "--force" || arg == "-f" {
+				if arg != "--force" && arg != "-f" {
 					// ignore the force flag
-				} else {
 					clusterNameOrIds = append(clusterNameOrIds, arg)
 				}
 			}
