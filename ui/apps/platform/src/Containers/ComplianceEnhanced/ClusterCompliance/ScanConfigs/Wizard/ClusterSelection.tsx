@@ -1,7 +1,8 @@
-import React, { ReactElement, useCallback } from 'react';
+import React, { ReactElement, RefObject, useCallback } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
 import { Link } from 'react-router-dom';
 import {
+    Alert,
     Bullseye,
     Button,
     Divider,
@@ -25,6 +26,7 @@ import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 import ComplianceClusterStatus from '../components/ComplianceClusterStatus';
 
 export type ClusterSelectionProps = {
+    alertRef: RefObject<HTMLDivElement>;
     clusters: ComplianceIntegration[];
     isFetchingClusters: boolean;
 };
@@ -37,11 +39,19 @@ function InstallClustersButton() {
     );
 }
 
-function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProps): ReactElement {
+function ClusterSelection({
+    alertRef,
+    clusters,
+    isFetchingClusters,
+}: ClusterSelectionProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForClusters = isRouteEnabled('clusters');
-    const { setFieldValue, values: formikValues }: FormikContextType<ScanConfigFormValues> =
-        useFormikContext();
+    const {
+        setFieldValue,
+        setTouched,
+        values: formikValues,
+        touched: formikTouched,
+    }: FormikContextType<ScanConfigFormValues> = useFormikContext();
 
     const clusterIsPreSelected = useCallback(
         (row) => formikValues.clusters.includes(row.clusterId),
@@ -66,6 +76,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             })
             .map((cluster) => cluster.clusterId);
 
+        setTouched({ ...formikTouched, clusters: true });
         setFieldValue('clusters', newSelectedIds);
     };
 
@@ -74,6 +85,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
 
         const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.clusterId) : [];
 
+        setTouched({ ...formikTouched, clusters: true });
         setFieldValue('clusters', newSelectedIds);
     };
 
@@ -149,9 +161,19 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg">
+            <Form className="pf-u-py-lg pf-u-px-lg" ref={alertRef}>
+                {formikTouched.clusters && formikValues.clusters.length === 0 && (
+                    <Alert
+                        title="At least one cluster is required to proceed"
+                        variant="danger"
+                        isInline
+                    />
+                )}
                 <TableComposable>
-                    <Caption>At least one cluster is required.</Caption>
+                    <Caption>
+                        <span className="pf-u-danger-color-100">* </span>
+                        At least one cluster is required
+                    </Caption>
                     <Thead noWrap>
                         <Tr>
                             <Th
