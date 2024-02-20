@@ -1,6 +1,7 @@
-import React, { ReactElement, useCallback, useState } from 'react';
+import React, { ReactElement, RefObject, useCallback, useState } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
 import {
+    Alert,
     Bullseye,
     Divider,
     Flex,
@@ -33,13 +34,22 @@ import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 import './ProfileSelection.css';
 
 export type ProfileSelectionProps = {
+    alertRef: RefObject<HTMLDivElement>;
     profiles: ComplianceProfileSummary[];
     isFetchingProfiles: boolean;
 };
 
-function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProps): ReactElement {
-    const { setFieldValue, values: formikValues }: FormikContextType<ScanConfigFormValues> =
-        useFormikContext();
+function ProfileSelection({
+    alertRef,
+    profiles,
+    isFetchingProfiles,
+}: ProfileSelectionProps): ReactElement {
+    const {
+        setFieldValue,
+        setTouched,
+        values: formikValues,
+        touched: formikTouched,
+    }: FormikContextType<ScanConfigFormValues> = useFormikContext();
 
     const [expandedProfileNames, setExpandedProfileNames] = useState<string[]>([]);
     const setProfileExpanded = (name: string, isExpanding = true) =>
@@ -74,6 +84,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
             })
             .map((profile) => profile.name);
 
+        setTouched({ ...formikTouched, profiles: true });
         setFieldValue('profiles', newSelectedProfileNames);
     };
 
@@ -82,6 +93,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
 
         const newSelectedProfileNames = isSelected ? profiles.map((profile) => profile.name) : [];
 
+        setTouched({ ...formikTouched, profiles: true });
         setFieldValue('profiles', newSelectedProfileNames);
     };
 
@@ -90,10 +102,9 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
     function renderTableContent() {
         return profiles?.map(
             ({ description, name, productType, ruleCount, title, profileVersion }, rowIndex) => (
-                <Tbody isExpanded={isProfileExpanded(name)}>
-                    <Tr key={name}>
+                <Tbody isExpanded={isProfileExpanded(name)} key={name}>
+                    <Tr>
                         <Td
-                            key={name}
                             select={{
                                 rowIndex,
                                 onSelect: (event, isSelected) =>
@@ -184,9 +195,19 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg">
+            <Form className="pf-u-py-lg pf-u-px-lg" ref={alertRef}>
+                {formikTouched.profiles && formikValues.profiles.length === 0 && (
+                    <Alert
+                        title="At least one profile is required to proceed"
+                        variant="danger"
+                        isInline
+                    />
+                )}
                 <TableComposable>
-                    <Caption>At least one profile is required.</Caption>
+                    <Caption>
+                        <span className="pf-u-danger-color-100">* </span>
+                        At least one profile is required
+                    </Caption>
                     <Thead noWrap>
                         <Tr>
                             <Th
