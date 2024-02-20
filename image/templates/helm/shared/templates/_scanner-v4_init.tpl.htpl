@@ -132,8 +132,6 @@
     {{- end -}}
   {{ end }}
 
-{{- end -}} {{/* if not $scannerV4Cfg.disable */}}
-
 {{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
   {{/* Special handling for the secured-cluster-services chart in case it gets deployed
        to the same namespace as central-services. */}}
@@ -144,6 +142,8 @@
     {{ $_ := set $components "indexer" false }}
   {{ end }}
 {{- end }}
+
+{{- end -}} {{/* if not $scannerV4Cfg.disable */}}
 
 {{/* Propagate information about which Scanner V4 components to deploy. */}}
 {{- $_ := set $._rox "_scannerV4Enabled" (not $scannerV4Cfg.disable) -}}
