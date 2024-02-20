@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -74,10 +75,11 @@ type ComplianceScanConfigServiceTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	ctx                 context.Context
-	manager             *managerMocks.MockManager
-	scanConfigDatastore *scanConfigMocks.MockDataStore
-	service             Service
+	ctx                         context.Context
+	manager                     *managerMocks.MockManager
+	scanConfigDatastore         *scanConfigMocks.MockDataStore
+	scanSettingBindingDatastore *scanSettingBindingMocks.MockDataStore
+	service                     Service
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) SetupSuite() {
@@ -94,7 +96,8 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.manager)
+	s.scanSettingBindingDatastore = scanSettingBindingMocks.NewMockDataStore(s.mockCtrl)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.manager)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -317,9 +320,25 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 				},
 			}, nil).Times(1)
 
+			s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+				{
+					ClusterId: fixtureconsts.Cluster1,
+					Status: &storage.ComplianceOperatorStatus{
+						Phase: "READY",
+						Conditions: []*storage.ComplianceOperatorCondition{
+							{
+								Type:    "READY",
+								Status:  "False",
+								Message: "This binding is not ready",
+							},
+						},
+					},
+				},
+			}, nil).Times(1)
+
 			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			s.Require().Equal(expectedResp, configs)
+			s.Require().EqualValues(expectedResp, configs)
 		})
 	}
 }
@@ -417,6 +436,22 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						Errors:       []string{"Error 1", "Error 2", "Error 3"},
 					},
 				}, nil).Times(1)
+
+				s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+					{
+						ClusterId: fixtureconsts.Cluster1,
+						Status: &storage.ComplianceOperatorStatus{
+							Phase: "READY",
+							Conditions: []*storage.ComplianceOperatorCondition{
+								{
+									Type:    "READY",
+									Status:  "False",
+									Message: "This binding is not ready",
+								},
+							},
+						},
+					},
+				}, nil).Times(1)
 			} else {
 				s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, tc.scanID).
 					Return(nil, false, errors.New("record not found")).Times(1)
@@ -465,7 +500,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.C
 			{
 				ClusterId:   fixtureconsts.Cluster1,
 				ClusterName: mockClusterName,
-				Errors:      []string{"Error 1", "Error 2", "Error 3"},
+				Errors:      []string{"This binding is not ready", "Error 1", "Error 2", "Error 3"},
 			},
 		},
 		CreatedTime:     createdTime,

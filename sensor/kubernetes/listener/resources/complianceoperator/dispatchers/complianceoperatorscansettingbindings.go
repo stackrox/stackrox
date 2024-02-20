@@ -93,10 +93,12 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorScanSettingBindingV2{
 				ComplianceOperatorScanSettingBindingV2: &central.ComplianceOperatorScanSettingBindingV2{
-					Id:              id,
-					Name:            scanSettingBindings.Name,
-					ProfileNames:    getProfileNames(scanSettingBindings.Profiles),
-					Conditions:      getStatusConditions(scanSettingBindings.Status.Conditions),
+					Id:           id,
+					Name:         scanSettingBindings.Name,
+					ProfileNames: getProfileNames(scanSettingBindings.Profiles),
+					Status: &central.ComplianceOperatorStatus{
+						Conditions: getStatusConditions(scanSettingBindings.Status.Conditions),
+					},
 					ScanSettingName: scanSettingBindings.SettingsRef.Name,
 					Labels:          scanSettingBindings.Labels,
 					Annotations:     scanSettingBindings.Annotations,
