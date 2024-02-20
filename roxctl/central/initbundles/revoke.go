@@ -128,7 +128,6 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var clusterNameOrIds []string
-			var force bool
 			force, err := cmd.Flags().GetBool("force")
 			if err != nil {
 				return errors.Wrap(err, "getting force flag")
