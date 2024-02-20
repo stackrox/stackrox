@@ -170,7 +170,7 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 			if err := c.runRecv(ctx, client, config); err != nil {
 				log.Errorf("Error running recv: %v", err)
 			}
-			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next  call to initializeStream
+			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
 		}
 	}
 }
@@ -187,12 +187,12 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 	for {
 		msg, err := client.Recv()
 		if err != nil {
-			return errors.Wrap(err, "error receiving msg from sensor")
+			return errors.Wrap(err, "receiving msg from sensor")
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgToCompliance_Trigger:
 			if err := runChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
-				return errors.Wrap(err, "error running checks")
+				return errors.Wrap(err, "running compliance checks")
 			}
 		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:
 			switch r := t.AuditLogCollectionRequest.GetReq().(type) {

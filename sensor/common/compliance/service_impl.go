@@ -196,7 +196,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 	for {
 		msg, err := server.Recv()
 		if err != nil {
-			log.Errorf("error receiving from compliance %q: %v", hostname, err)
+			log.Errorf("receiving from compliance %q: %v", hostname, err)
 			return err
 		}
 		switch t := msg.Msg.(type) {
