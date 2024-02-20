@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -75,14 +74,9 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
-		// Assume the indexing to produce these contents was successful.
-		report := &v4.IndexReport{
-			HashId:   req.GetHashId(),
-			State:    controller.IndexFinished.String(),
-			Success:  true,
-			Contents: req.GetContents(),
-		}
-		ir, err = s.parseIndexReport(report)
+		// Note: libvuln.Scan does not check the Index Report's status at this time,
+		// so it's ok to not set Success = true.
+		ir, err = s.parseIndexReport(&v4.IndexReport{Contents: req.GetContents()})
 	}
 	if err != nil {
 		return nil, err

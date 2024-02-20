@@ -154,7 +154,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 		return nil, false, fmt.Errorf("get index: %w", err)
 	}
 	// Return not found if report doesn't exist or is unsuccessful.
-	if ir == nil || !ir.GetSuccess() || ir.GetErr() != "" {
+	if ir == nil || !ir.GetSuccess() {
 		return nil, false, nil
 	}
 	return ir, true, nil

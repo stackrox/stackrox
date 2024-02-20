@@ -81,7 +81,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	if !clairReport.Success || clairReport.Err != "" {
+	if !clairReport.Success {
 		return nil, fmt.Errorf("internal error: create index report failed in state %q: %s", clairReport.State, clairReport.Err)
 	}
 	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
