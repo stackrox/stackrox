@@ -39,7 +39,7 @@ spec:
   # - name: hermetic
   #   value: "true"
   - name: prefetch-input
-    value: '{"type": "gomod", "path": "."}'
+    value: '[{"type": "gomod", "path": "."}, {"type": "gomod", "path": "scanner/tools"}]'
   - name: build-source-image
     value: 'true'
 

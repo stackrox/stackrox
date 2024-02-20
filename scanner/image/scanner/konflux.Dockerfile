@@ -16,7 +16,7 @@ ENV CI=1
 COPY . /src
 WORKDIR /src
 
-RUN make -C scanner NODEPS=1 CGO_ENABLED=${CGO_ENABLED} image/scanner/bin/scanner copy-scripts
+RUN make -C scanner NODEPS=1 CGO_ENABLED=${CGO_ENABLED} image/scanner/bin/scanner copy-scripts ossls-notice
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -44,7 +44,7 @@ COPY --from=builder \
     /src/scanner/image/scanner/bin/scanner \
     /usr/local/bin/
 
-# COPY --from=builder /src/scanner/image/scanner/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=builder /src/scanner/image/scanner/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 
 # The mapping files are not optional.
 # The helm chart hard codes in the indexer config the path to the mapping
