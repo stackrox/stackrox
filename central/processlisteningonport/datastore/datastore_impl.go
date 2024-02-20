@@ -614,39 +614,7 @@ func (ds *datastoreImpl) readRowsToFindPLOPsWithNoProcessInformation(rows pgx.Ro
 	return ids, nil
 }
 
-func (ds *datastoreImpl) deletePLOPsInBatches(ctx context.Context, ids []string) (int64, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-	batchSize := 5000
-	numRecordsToDelete := len(ids)
-	for {
-
-		if len(ids) == 0 {
-			break
-		}
-
-		if len(ids) < batchSize {
-			batchSize = len(ids)
-		}
-
-		identifierBatch := ids[:batchSize]
-
-		if err := ds.storage.DeleteMany(ctx, identifierBatch); err != nil {
-			recordsDeleted := numRecordsToDelete - len(ids)
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", recordsDeleted, numRecordsToDelete)
-			return int64(recordsDeleted), err
-		}
-
-		// Move the slice forward to start the next batch
-		ids = ids[batchSize:]
-	}
-	return int64(numRecordsToDelete), nil
-}
-
 func (ds *datastoreImpl) getPLOPsToDelete(ctx context.Context) ([]string, error) {
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	rows, err := ds.pool.Query(ctx, getPotentiallyOrphanedPLOPs)
 
 	if err != nil {
@@ -668,5 +636,15 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 		return 0, err
 	}
 
-	return ds.deletePLOPsInBatches(ctx, plopsToDelete)
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	err = ds.storage.DeleteMany(ctx, plopsToDelete)
+	numRecordsToDelete := len(plopsToDelete)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return numRecordsToDelete, nil
 }
