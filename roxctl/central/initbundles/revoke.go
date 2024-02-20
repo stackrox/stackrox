@@ -1,7 +1,6 @@
 package initbundles
 
 import (
-	"bufio"
 	"context"
 	"io"
 	"strings"
@@ -77,7 +76,7 @@ func confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds []string
 		return true, nil
 	}
 
-	_, _ = out.Write([]byte("Revoking init bundle(s) %s will impact the following cluster(s):\n"))
+	_, _ = out.Write([]byte("Revoking init bundle(s) will impact the following cluster(s):\n"))
 
 	t := tabwriter.NewWriter(out, 4, 8, 2, '\t', 0)
 	_, _ = t.Write([]byte("Cluster ID\tCluster Name\n"))
@@ -88,19 +87,7 @@ func confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds []string
 
 	_, _ = out.Write([]byte("Are you sure you want to revoke the init bundle(s)? [y/N]"))
 
-	confirm, err := bufio.NewReader(in).ReadString('\n')
-	if err != nil {
-		return false, errors.Wrap(err, "reading user input")
-	}
-
-	confirm = strings.ToLower(confirm)
-	if confirm != "y\n" && confirm != "n\n" && confirm != "\n" {
-		return false, errors.New("invalid confirmation. Must be 'y' or 'n'")
-	}
-	if strings.ToLower(confirm) != "y\n" {
-		return false, nil
-	}
-	return true, nil
+	return flags.ReadUserYesNoConfirmation(in)
 }
 
 func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse) {
@@ -142,9 +129,13 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var clusterNameOrIds []string
 			var force bool
+			force, err := cmd.Flags().GetBool("force")
+			if err != nil {
+				return errors.Wrap(err, "getting force flag")
+			}
 			for _, arg := range args {
 				if arg == "--force" || arg == "-f" {
-					force = true
+					// ignore the force flag
 				} else {
 					clusterNameOrIds = append(clusterNameOrIds, arg)
 				}
