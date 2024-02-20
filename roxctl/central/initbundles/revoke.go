@@ -85,7 +85,7 @@ func confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds []string
 	}
 	_ = t.Flush()
 
-	_, _ = out.Write([]byte("Are you sure you want to revoke the init bundle(s)? [y/N]"))
+	_, _ = out.Write([]byte("Are you sure you want to revoke the init bundle(s)? [y/N] "))
 
 	return flags.ReadUserYesNoConfirmation(in)
 }
