@@ -19,7 +19,7 @@ func getClairIndexReport(ctx context.Context, indexer indexer.ReportGetter, hash
 		return nil, errox.NotFound.Newf("report %q not found", hashID)
 	}
 	if !ir.Success {
-		return nil, errox.NotFound.Newf("unsuccessful state %q: %s", ir.State, ir.Err)
+		return nil, errox.NotFound.Newf("report failed in state %q: %s", ir.State, ir.Err)
 	}
 	return ir, nil
 }

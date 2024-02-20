@@ -55,5 +55,8 @@ func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string) (*cla
 	if err != nil {
 		return nil, true, err
 	}
+	ir.State = resp.GetState()
+	ir.Success = resp.GetSuccess()
+	ir.Err = resp.GetErr()
 	return ir, true, nil
 }
