@@ -173,7 +173,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate-rev-4"},
+			Profiles:    []string{"rhcos4-e8"},
 			Description: "test config",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -232,7 +232,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate-rev-4"},
+			Profiles:    []string{"rhcos4-e8"},
 			Description: "test config with duplicate profile",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -257,7 +257,9 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 
 	// Create a scan configuration with invalid profiles configuration
-	// contains both rhcos4-moderate and ocp4-cis-node profiles
+	// contains both rhcos4-high and ocp4-e8 profiles. This is going
+	// to fail validation, so we don't need to worry about running a larger
+	// profile (e.g., rhcos4-high), since it won't increase test times.
 	invalidProfileTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
 	invalidProfileReq := &v2.ComplianceScanConfiguration{
 		ScanName: invalidProfileTestName,
@@ -310,7 +312,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate-rev-4"},
+			Profiles:    []string{"rhcos4-e8"},
 			Description: "test config",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -361,7 +363,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate-rev-4"},
+			Profiles:    []string{"rhcos4-e8"},
 			Description: "test config",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -435,18 +437,18 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 	}
 	clusterId := resp.Integrations[0].ClusterId
 
-	scanConfigName := "cis-scan-schedule"
+	scanConfigName := "e8-scan-schedule"
 	sc := v2.ComplianceScanConfiguration{
 		ScanName: scanConfigName,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"ocp4-cis", "ocp4-cis-node"},
+			Profiles:    []string{"ocp4-e8"},
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 3,
 				Hour:         0,
 				Minute:       0,
 			},
-			Description: "Scan schedule for CIS profiles to run daily.",
+			Description: "Scan schedule for the Austrailian Essential Eight profile to run daily.",
 		},
 		Clusters: []string{clusterId},
 	}
