@@ -9,6 +9,7 @@ import (
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
+	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -79,6 +80,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 	manager                     *managerMocks.MockManager
 	scanConfigDatastore         *scanConfigMocks.MockDataStore
 	scanSettingBindingDatastore *scanSettingBindingMocks.MockDataStore
+	suiteDataStore              *suiteMocks.MockDataStore
 	service                     Service
 }
 
@@ -97,7 +99,8 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 	s.scanSettingBindingDatastore = scanSettingBindingMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.manager)
+	s.suiteDataStore = suiteMocks.NewMockDataStore(s.mockCtrl)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -335,7 +338,28 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 					},
 				},
 			}, nil).Times(1)
-
+			s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
+				{
+					Id:        uuid.NewDummy().String(),
+					ClusterId: fixtureconsts.Cluster1,
+					Status: &storage.ComplianceOperatorStatus{
+						Phase:  "DONE",
+						Result: "NON-COMPLIANT",
+						Conditions: []*storage.ComplianceOperatorCondition{
+							{
+								Type:               "Processing",
+								Status:             "False",
+								LastTransitionTime: &types.Timestamp{Seconds: lastUpdatedTime.GetSeconds() - 10},
+							},
+							{
+								Type:               "Ready",
+								Status:             "True",
+								LastTransitionTime: lastUpdatedTime,
+							},
+						},
+					},
+				},
+			}, nil).Times(1)
 			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
 			s.Require().NoError(err)
 			s.Require().EqualValues(expectedResp, configs)
@@ -428,6 +452,30 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						Description:     "test-description",
 					}, true, nil).Times(1)
 
+				s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
+					{
+						Id:        uuid.NewDummy().String(),
+						ClusterId: fixtureconsts.Cluster1,
+						Name:      "test-scan",
+						Status: &storage.ComplianceOperatorStatus{
+							Phase:  "DONE",
+							Result: "NON-COMPLIANT",
+							Conditions: []*storage.ComplianceOperatorCondition{
+								{
+									Type:               "Ready",
+									Status:             "True",
+									LastTransitionTime: lastUpdatedTime,
+								},
+								{
+									Type:               "Processing",
+									Status:             "False",
+									LastTransitionTime: &types.Timestamp{Seconds: lastUpdatedTime.GetSeconds() - 10},
+								},
+							},
+						},
+					},
+				}, nil).Times(1)
+
 				s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 					{
 						ClusterId:    fixtureconsts.Cluster1,
@@ -501,6 +549,11 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.C
 				ClusterId:   fixtureconsts.Cluster1,
 				ClusterName: mockClusterName,
 				Errors:      []string{"This binding is not ready", "Error 1", "Error 2", "Error 3"},
+				SuiteStatus: &apiV2.ClusterScanStatus_SuiteStatus{
+					Phase:              "DONE",
+					Result:             "NON-COMPLIANT",
+					LastTransitionTime: lastUpdatedTime,
+				},
 			},
 		},
 		CreatedTime:     createdTime,

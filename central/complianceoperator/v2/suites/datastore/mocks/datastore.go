@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -68,6 +69,21 @@ func (m *MockDataStore) GetSuite(ctx context.Context, id string) (*storage.Compl
 func (mr *MockDataStoreMockRecorder) GetSuite(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuite", reflect.TypeOf((*MockDataStore)(nil).GetSuite), ctx, id)
+}
+
+// GetSuites mocks base method.
+func (m *MockDataStore) GetSuites(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorSuiteV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSuites", ctx, query)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorSuiteV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSuites indicates an expected call of GetSuites.
+func (mr *MockDataStoreMockRecorder) GetSuites(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSuites", reflect.TypeOf((*MockDataStore)(nil).GetSuites), ctx, query)
 }
 
 // GetSuitesByCluster mocks base method.

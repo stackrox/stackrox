@@ -323,6 +323,25 @@
     }
   },
   "definitions": {
+    "ClusterScanStatusSuiteStatus": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "lastTransitionTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "Additional scan status gathered from ComplianceSuite"
+    },
     "ScheduleDaysOfMonth": {
       "type": "object",
       "properties": {
@@ -448,9 +467,12 @@
         },
         "clusterName": {
           "type": "string"
+        },
+        "suiteStatus": {
+          "$ref": "#/definitions/ClusterScanStatusSuiteStatus"
         }
       },
-      "title": "ClusterScanStatus holds status based on cluster in the event that a scan configuration\nwas successfully applied to some clusters but not others.\nNext available tag: 3"
+      "title": "ClusterScanStatus holds status based on cluster in the event that a scan configuration\nwas successfully applied to some clusters but not others.\nNext available tag: 5"
     },
     "v2ComplianceScanConfiguration": {
       "type": "object",

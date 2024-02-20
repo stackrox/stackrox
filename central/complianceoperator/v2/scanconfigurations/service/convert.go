@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
+	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -166,7 +169,7 @@ func getLatestBindingError(status *storage.ComplianceOperatorStatus) string {
 
 func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore,
-	bindingsDS bindingsDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
+	bindingsDS bindingsDS.DataStore, suiteDS suiteDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfig == nil {
 		return nil, nil
 	}
@@ -181,6 +184,27 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
+	suiteClusters, err := suiteDS.GetSuites(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorSuiteName, scanConfig.GetScanConfigName()).ProtoQuery())
+	if err != nil {
+		return nil, err
+	}
+	clusterToSuiteMap := make(map[string]*v2.ClusterScanStatus_SuiteStatus, len(suiteClusters))
+	for _, suite := range suiteClusters {
+		var lastTransitionTime *types.Timestamp
+		conditions := suite.GetStatus().GetConditions()
+		for _, c := range conditions {
+			if lastTransitionTime == nil || protoutils.After(c.LastTransitionTime, lastTransitionTime) {
+				lastTransitionTime = c.LastTransitionTime
+			}
+		}
+		clusterToSuiteMap[suite.ClusterId] = &v2.ClusterScanStatus_SuiteStatus{
+			Phase:              suite.GetStatus().GetPhase(),
+			Result:             suite.GetStatus().GetResult(),
+			ErrorMessage:       suite.GetStatus().GetErrorMessage(),
+			LastTransitionTime: lastTransitionTime,
+		}
+	}
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
@@ -205,6 +229,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 					ClusterId:   cluster.GetClusterId(),
 					ClusterName: cluster.GetClusterName(),
 					Errors:      errors,
+					SuiteStatus: clusterToSuiteMap[cluster.GetClusterId()],
 				})
 			}
 			return clusterStatuses
@@ -226,14 +251,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 
 func convertStorageScanConfigToV2ScanStatuses(ctx context.Context,
 	scanConfigs []*storage.ComplianceOperatorScanConfigurationV2,
-	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
+	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore, suiteDS suiteDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfigs == nil {
 		return nil, nil
 	}
 
 	scanStatuses := make([]*v2.ComplianceScanConfigurationStatus, 0, len(scanConfigs))
 	for _, scanConfig := range scanConfigs {
-		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS, bindingDS)
+		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS, bindingDS, suiteDS)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanConfigName())
 		}
