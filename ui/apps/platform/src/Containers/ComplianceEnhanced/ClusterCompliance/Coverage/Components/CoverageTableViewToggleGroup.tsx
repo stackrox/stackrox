@@ -14,10 +14,7 @@ function CoverageTableViewToggleGroup() {
     }
 
     return (
-        <ToggleGroup
-            aria-label="Toggle for coverage view"
-            className="pf-u-background-color-100 pf-u-p-lg"
-        >
+        <ToggleGroup aria-label="Toggle for coverage view">
             <ToggleGroupItem
                 text="Clusters"
                 buttonId="compliance-clusters-toggle-group"
