@@ -24,11 +24,11 @@ type googleTransport struct {
 	config      *docker.Config
 	token       *oauth2.Token
 	tokenSource oauth2.TokenSource
-	mutex       sync.RWMutex
+	mutex       *sync.RWMutex
 }
 
-func newGoogleTransport(name string, config *docker.Config, tokenSource oauth2.TokenSource) *googleTransport {
-	transport := &googleTransport{name: name, config: config, tokenSource: tokenSource}
+func newGoogleTransport(name string, mutex *sync.RWMutex, config *docker.Config, tokenSource oauth2.TokenSource) *googleTransport {
+	transport := &googleTransport{name: name, mutex: mutex, config: config, tokenSource: tokenSource}
 	if err := transport.refreshNoLock(); err != nil {
 		log.Error("Failed to refresh token: ", err)
 	}
@@ -41,14 +41,23 @@ func (t *googleTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// a) we only need a write lock every hour to refresh the token.
 	// b) refreshing the token multiple times is idempotent.
 	// c) we do not want to block the entire read path for performance reasons.
-	if !concurrency.WithRLock1(&t.mutex, t.token.Valid) {
-		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
-			return nil, err
-		}
+	if err := t.ensureValid(); err != nil {
+		return nil, err
 	}
-	return concurrency.WithRLock2(&t.mutex,
+	return concurrency.WithRLock2(t.mutex,
 		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
 	)
+}
+
+// ensureValid refreshes the access token if it is invalid.
+// oauth2.Token has a hard-coded expiry delta of 10 seconds.
+func (t *googleTransport) ensureValid() error {
+	if !concurrency.WithRLock1(t.mutex, t.token.Valid) {
+		if err := concurrency.WithLock1(t.mutex, t.refreshNoLock); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *googleTransport) refreshNoLock() error {

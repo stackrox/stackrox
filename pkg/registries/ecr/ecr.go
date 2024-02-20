@@ -16,17 +16,25 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var log = logging.LoggerForModule()
 
 var _ types.Registry = (*ecr)(nil)
 
+// ecr implements docker registry access to AWS ECR. The docker credentials
+// are either taken from the datastore, in which case they have been synced
+// by Sensor, or they are derived from short-lived access tokens. The access
+// token is refreshed as part of the transport. ecr holds the mutex to the
+// docker credentials.
 type ecr struct {
 	*docker.Registry
 
 	config      *storage.ECRConfig
 	integration *storage.ImageIntegration
+	transport   *awsTransport
+	mutex       sync.RWMutex
 }
 
 // sanitizeConfiguration validates and cleans-up the integration configuration.
@@ -71,6 +79,20 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 		errorList.AddString("Region must be specified")
 	}
 	return errorList.ToError()
+}
+
+// Config returns an up to date docker registry configuration.
+func (e *ecr) Config() *types.Config {
+	// No need for synchronization if there is no transport.
+	if e.transport == nil {
+		return e.Registry.Config()
+	}
+	if err := e.transport.ensureValid(); err != nil {
+		log.Errorf("Failed to ensure access token validity for image integration %q: %v", e.transport.name, err)
+	}
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.Registry.Config()
 }
 
 // Test tests the current registry and makes sure that it is working properly.
@@ -135,7 +157,9 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 			log.Error("Failed to create ECR client: ", err)
 			return nil, err
 		}
-		cfg.Transport = newAWSTransport(integration.GetName(), cfg, client)
+		transport := newAWSTransport(integration.GetName(), &reg.mutex, cfg, client)
+		reg.transport = transport
+		cfg.Transport = reg.transport
 	}
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, reg.integration)
 	if err != nil {
