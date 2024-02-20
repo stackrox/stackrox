@@ -165,10 +165,12 @@
   {{- $_ = set $._rox.scannerV4 "_installMode" "" -}}
 {{- end -}}
 
-{{- if eq $._rox.scannerV4._installMode "" }}
-  {{ include "srox.note" (list $ (printf "Scanner V4 is enabled and Scanner V4 components are already deployed.")) }}
-{{- else }}
-  {{ include "srox.note" (list $ (printf "Scanner V4 is enabled and the following Scanner V4 components will be deployed: %s" $._rox.scannerV4._installMode)) }}
+{{- if not $scannerV4Cfg.disable }}
+  {{- if eq $._rox.scannerV4._installMode "" }}
+    {{ include "srox.note" (list $ (printf "Scanner V4 is enabled and Scanner V4 components are already deployed.")) }}
+  {{- else }}
+    {{ include "srox.note" (list $ (printf "Scanner V4 is enabled and the following Scanner V4 components will be deployed: %s" $._rox.scannerV4._installMode)) }}
+  {{- end }}
 {{- end }}
 
 {{- end -}}
