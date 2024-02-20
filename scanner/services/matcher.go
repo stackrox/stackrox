@@ -74,9 +74,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
-		// Note: libvuln.Scan does not check the Index Report's status at this time,
-		// so it's ok to not set Success = true.
-		ir, err = s.parseIndexReport(&v4.IndexReport{Contents: req.GetContents()})
+		ir, err = s.parseIndexReport(req.GetContents())
 	}
 	if err != nil {
 		return nil, err
@@ -98,8 +96,8 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 }
 
 // parseIndexReport will generate an index report from a Contents payload.
-func (s *matcherService) parseIndexReport(report *v4.IndexReport) (*claircore.IndexReport, error) {
-	ir, err := mappers.ToClairCoreIndexReport(report)
+func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
+	ir, err := mappers.ToClairCoreIndexReport(contents)
 	if err != nil {
 		// Validation should have captured all conversion errors.
 		return nil, fmt.Errorf("internal error: %w", err)

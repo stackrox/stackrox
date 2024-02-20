@@ -141,82 +141,59 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 
 func Test_ToClairCoreIndexReport(t *testing.T) {
 	tests := map[string]struct {
-		arg     *v4.IndexReport
+		arg     *v4.Contents
 		want    *claircore.IndexReport
 		wantErr string
 	}{
 		"when content is nil then error": {
 			wantErr: "empty content",
 		},
-
-		"when report is default then default": {
-			arg: &v4.IndexReport{
-				Contents: &v4.Contents{},
-			},
+		"when content is default then report is default": {
+			arg:  &v4.Contents{},
 			want: &claircore.IndexReport{},
 		},
-
 		"when content package has source with source then error": {
-			arg: &v4.IndexReport{
-				State:   "IndexFinished",
-				Success: true,
-				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
-							Id:  "sample package",
-							Cpe: "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-							Source: &v4.Package{
-								Id:     "source",
-								Cpe:    "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-								Source: &v4.Package{Id: "deep source"},
-							},
+			arg: &v4.Contents{
+				Packages: []*v4.Package{
+					{
+						Id:  "sample package",
+						Cpe: "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+						Source: &v4.Package{
+							Id:     "source",
+							Cpe:    "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+							Source: &v4.Package{Id: "deep source"},
 						},
 					},
 				},
 			},
 			wantErr: "source specifies source",
 		},
-
 		"when content package has invalid CPE then error": {
-			arg: &v4.IndexReport{
-				State:   "IndexFinished",
-				Success: true,
-				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
-							Id:  "sample package",
-							Cpe: "something that is not a cpe",
-						},
+			arg: &v4.Contents{
+				Packages: []*v4.Package{
+					{
+						Id:  "sample package",
+						Cpe: "something that is not a cpe",
 					},
 				},
 			},
 			wantErr: `internal error: package "sample package": "something that is not a cpe"`,
 		},
-
 		"when distribution contains invalid cpe then error": {
-			arg: &v4.IndexReport{
-				State:   "IndexFinished",
-				Success: true,
-				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
-							Cpe: "something that is not a cpe",
-						},
+			arg: &v4.Contents{
+				Distributions: []*v4.Distribution{
+					{
+						Cpe: "something that is not a cpe",
 					},
 				},
 			},
 			wantErr: `internal error: distribution "": "something that is not a cpe"`,
 		},
-
 		"when repository contains invalid cpe then error": {
-			arg: &v4.IndexReport{
-				State:   "IndexFinished",
-				Success: true,
-				Contents: &v4.Contents{
-					Repositories: []*v4.Repository{
-						{
-							Cpe: "something that is not a cpe",
-						},
+			arg: &v4.Contents{
+				Repositories: []*v4.Repository{
+					{
+						Cpe: "something that is not a cpe",
 					},
 				},
 			},
@@ -224,63 +201,59 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 		},
 
 		"when all fields are valid then return success": {
-			arg: &v4.IndexReport{
-				State:   "IndexFinished",
-				Success: true,
-				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
-							Id:      "sample pkg id",
-							Name:    "sample pkg name",
-							Version: "sample pkg version",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "test",
-								V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
-							},
-							Kind: "sample pkg kind",
-							Source: &v4.Package{
-								Id:   "sample source id",
-								Name: "sample source name",
-								Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-							},
-							PackageDb:      "sample pkg db",
-							RepositoryHint: "sample pkg repo hint",
-							Module:         "sample pkg module",
-							Arch:           "sample pkg arch",
-							Cpe:            "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+			arg: &v4.Contents{
+				Packages: []*v4.Package{
+					{
+						Id:      "sample pkg id",
+						Name:    "sample pkg name",
+						Version: "sample pkg version",
+						NormalizedVersion: &v4.NormalizedVersion{
+							Kind: "test",
+							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-					},
-					Distributions: []*v4.Distribution{
-						{
-							Id:              "sample dist id",
-							Did:             "sample dist did",
-							Name:            "sample dist name",
-							Version:         "sample dist version",
-							VersionCodeName: "sample dist version codename",
-							VersionId:       "sample dist version id",
-							Arch:            "sample dist arch",
-							Cpe:             "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-							PrettyName:      "sample dist pretty",
-						},
-					},
-					Repositories: []*v4.Repository{
-						{
-							Id:   "sample id",
-							Name: "sample name",
-							Key:  "sample key",
-							Uri:  "sample URI",
+						Kind: "sample pkg kind",
+						Source: &v4.Package{
+							Id:   "sample source id",
+							Name: "sample source name",
 							Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
 						},
+						PackageDb:      "sample pkg db",
+						RepositoryHint: "sample pkg repo hint",
+						Module:         "sample pkg module",
+						Arch:           "sample pkg arch",
+						Cpe:            "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
 					},
-					Environments: map[string]*v4.Environment_List{
-						"sample env": {
-							Environments: []*v4.Environment{
-								{
-									PackageDb:      "sample env pkg db",
-									IntroducedIn:   "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
-									DistributionId: "sample env distribution id",
-									RepositoryIds:  []string{"sample env repository id"},
-								},
+				},
+				Distributions: []*v4.Distribution{
+					{
+						Id:              "sample dist id",
+						Did:             "sample dist did",
+						Name:            "sample dist name",
+						Version:         "sample dist version",
+						VersionCodeName: "sample dist version codename",
+						VersionId:       "sample dist version id",
+						Arch:            "sample dist arch",
+						Cpe:             "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+						PrettyName:      "sample dist pretty",
+					},
+				},
+				Repositories: []*v4.Repository{
+					{
+						Id:   "sample id",
+						Name: "sample name",
+						Key:  "sample key",
+						Uri:  "sample URI",
+						Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
+					},
+				},
+				Environments: map[string]*v4.Environment_List{
+					"sample env": {
+						Environments: []*v4.Environment{
+							{
+								PackageDb:      "sample env pkg db",
+								IntroducedIn:   "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
+								DistributionId: "sample env distribution id",
+								RepositoryIds:  []string{"sample env repository id"},
 							},
 						},
 					},
@@ -288,7 +261,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 			},
 			want: &claircore.IndexReport{
 				Hash:  claircore.Digest{},
-				State: "IndexFinished",
+				State: "",
 				Packages: map[string]*claircore.Package{
 					"sample pkg id": {
 						ID:      "sample pkg id",
@@ -341,22 +314,8 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						RepositoryIDs:  []string{"sample env repository id"},
 					}},
 				},
-				Success: true,
-				Err:     "",
-			},
-		},
-
-		"when indexing fails": {
-			arg: &v4.IndexReport{
-				State:    "IndexError",
-				Success:  false,
-				Err:      "error",
-				Contents: &v4.Contents{},
-			},
-			want: &claircore.IndexReport{
-				State:   "IndexError",
 				Success: false,
-				Err:     "error",
+				Err:     "",
 			},
 		},
 	}
