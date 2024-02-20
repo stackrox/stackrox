@@ -11,6 +11,7 @@ import objects.Pagination
 import objects.SortOption
 import services.GraphQLService
 import services.ImageService
+import services.ClusterService
 import util.Env
 
 import spock.lang.Tag
@@ -22,7 +23,11 @@ import spock.lang.Unroll
 @Tag("PZDebug")
 class CSVTest extends BaseSpecification {
 
-    private static final IMAGE_SHA = "sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e"
+    //FIXME: GKE can't fetch multi-arch sha value, OCP does!
+    //private static final IMAGE_SHA = "sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
+    private static final IMAGE_SHA = ((ClusterService.isOpenShift4()) ?
+        "a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e":
+        "6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec")
 
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
