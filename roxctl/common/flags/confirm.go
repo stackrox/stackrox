@@ -44,6 +44,7 @@ func CheckConfirmation(c *cobra.Command, logger logger.Logger, io io.IO) error {
 	return nil
 }
 
+// ReadUserYesNoConfirmation reads a yes/no confirmation from the user. Empty response defaults to no.
 func ReadUserYesNoConfirmation(reader io2.Reader) (bool, error) {
 	confirm, err := bufio.NewReader(reader).ReadString('\n')
 	if err != nil {
