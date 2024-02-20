@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -74,12 +75,11 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
-		// Assume indexing was successful.
+		// Assume the indexing to produce these contents was successful.
 		report := &v4.IndexReport{
 			HashId:   req.GetHashId(),
-			State:    "IndexFinished",
+			State:    controller.IndexFinished.String(),
 			Success:  true,
-			Err:      "",
 			Contents: req.GetContents(),
 		}
 		ir, err = s.parseIndexReport(report)
