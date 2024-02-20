@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources"
 	cloudSourceClientMocks "github.com/stackrox/rox/pkg/cloudsources/mocks"
+	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -61,7 +62,7 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	cloudSourceClientMock.EXPECT().Ping(gomock.Any()).Return(nil).AnyTimes()
 
 	s.service = newService(s.datastore, mockManager)
-	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) (cloudsources.Client, error) {
+	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource, _ ...opts.ClientOpts) (cloudsources.Client, error) {
 		return cloudSourceClientMock, nil
 	}
 }
@@ -410,7 +411,7 @@ func (s *servicePostgresTestSuite) TestDeleteCloudSource() {
 
 func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 	cloudSourceClientMock := cloudSourceClientMocks.NewMockClient(gomock.NewController(s.T()))
-	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource) (cloudsources.Client, error) {
+	s.service.(*serviceImpl).clientFactory = func(_ *storage.CloudSource, _ ...opts.ClientOpts) (cloudsources.Client, error) {
 		return cloudSourceClientMock, nil
 	}
 

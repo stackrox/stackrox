@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -191,15 +192,20 @@ func (p *paladinTransportWrapper) RoundTrip(req *http.Request) (*http.Response, 
 }
 
 // NewClient creates a client to interact with Paladin Cloud APIs.
-func NewClient(cfg *storage.CloudSource) *paladinClient {
+func NewClient(cfg *storage.CloudSource, options ...opts.ClientOpts) *paladinClient {
+	opt := opts.DefaultOpts()
+	for _, option := range options {
+		option(opt)
+	}
+
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 3
+	retryClient.RetryMax = opt.Retries
 	retryClient.Logger = nil
 	retryClient.HTTPClient.Transport = &paladinTransportWrapper{
 		baseTransport: proxy.RoundTripper(),
 		token:         cfg.GetCredentials().GetSecret(),
 	}
-	retryClient.HTTPClient.Timeout = 30 * time.Second
+	retryClient.HTTPClient.Timeout = opt.Timeout
 	retryClient.RetryWaitMin = 10 * time.Second
 
 	return &paladinClient{
@@ -210,9 +216,8 @@ func NewClient(cfg *storage.CloudSource) *paladinClient {
 }
 
 func (c *paladinClient) Ping(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	// TODO: Need to check whether there's a good ping API for Paladin Cloud that requires authN.
+	// At the current time, no better API is known besides the asset API to confirm correct authN/Z setup and
+	// connectivity. In case we find a better API, we may switch to that.
 	_, err := c.getAssets(ctx)
 	return err
 }

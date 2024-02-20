@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -24,8 +25,14 @@ type ocmClient struct {
 }
 
 // NewClient creates a client to interact with OCM APIs.
-func NewClient(config *storage.CloudSource) (*ocmClient, error) {
+func NewClient(config *storage.CloudSource, options ...opts.ClientOpts) (*ocmClient, error) {
+	opt := opts.DefaultOpts()
+	for _, option := range options {
+		option(opt)
+	}
+
 	connection, err := sdkClient.NewConnectionBuilder().
+		RetryLimit(opt.Retries).
 		URL(urlfmt.FormatURL(config.GetOcm().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)).
 		Tokens(config.GetCredentials().GetSecret()).Agent(clientconn.GetUserAgent()).Build()
 
@@ -40,7 +47,10 @@ func NewClient(config *storage.CloudSource) (*ocmClient, error) {
 }
 
 func (c *ocmClient) Ping(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// For the ocm-sdk, it is currently not possible to set the request timeout on the created client, instead it
+	// needs to be set on the given context passed to the request. This has the disadvantage of creating
+	// "context cancelled" error messages in case of hitting a timeout while reaching the endpoint.
+	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 
 	_, err := c.conn.AccountsMgmt().V1().CurrentAccount().Get().SendContext(ctx)
