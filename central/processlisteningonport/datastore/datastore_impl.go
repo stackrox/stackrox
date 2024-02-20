@@ -8,7 +8,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v5"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -628,6 +627,9 @@ func (ds *datastoreImpl) getPLOPsToDelete(ctx context.Context) ([]string, error)
 	return plopsToDelete, err
 }
 
+// RemovePLOPsWithoutProcessIndicatorOrProcessInfo Finds PLOPs without a matching process indicator and no
+// process information and deletes them. PLOPs can have no matching process indicators, but such PLOPs need
+// to have process information.
 func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error) {
 
 	plopsToDelete, err := ds.getPLOPsToDelete(ctx)
@@ -646,5 +648,5 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 		return 0, err
 	}
 
-	return numRecordsToDelete, nil
+	return int64(numRecordsToDelete), nil
 }
