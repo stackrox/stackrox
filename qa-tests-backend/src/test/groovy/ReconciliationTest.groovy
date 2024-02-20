@@ -104,7 +104,7 @@ class ReconciliationTest extends BaseSpecification {
         String secretID
         String networkPolicyID
 
-        def ns = "reconciliation"
+        def ns = "qa-reconciliation"
         // Deploy a new resource of each type
         // Not possible to test node in this circumstance
         // Requires manual testing
