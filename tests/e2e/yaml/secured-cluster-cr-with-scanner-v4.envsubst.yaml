@@ -61,16 +61,16 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: "400m"
-          memory: "1Gi"
-        limits:
           cpu: "1000m"
+          memory: "1500Mi"
+        limits:
+          cpu: "2000m"
           memory: "2Gi"
     db:
       resources:
         requests:
-          cpu: "300m"
-          memory: "500Mi"
+          cpu: "200m"
+          memory: "2Gi"
         limits:
           cpu: "1000m"
-          memory: "1000Mi"
+          memory: "2500Mi"

@@ -55,30 +55,30 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: 400m
-          memory: 1Gi
+          cpu: "600m"
+          memory: "1500Mi"
         limits:
-          cpu: 1
-          memory: 2Gi
+          cpu: "1000m"
+          memory: "2Gi"
     matcher:
       scaling:
         autoScaling: Disabled
         replicas: 1
       resources:
         requests:
-          cpu: 400m
-          memory: 1Gi
+          cpu: "600m"
+          memory: "4Gi"
         limits:
-          cpu: 1
-          memory: 5Gi
+          cpu: "1000m"
+          memory: "5Gi"
     db:
       resources:
         requests:
-          cpu: 300m
-          memory: 500Mi
+          cpu: "200m"
+          memory: "2Gi"
         limits:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: "1000m"
+          memory: "2500Mi"
 ---
 apiVersion: v1
 kind: Secret

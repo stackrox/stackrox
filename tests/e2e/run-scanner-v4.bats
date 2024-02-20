@@ -390,7 +390,7 @@ spec:
       resources:
         requests:
           cpu: "400m"
-          memory: "1Gi"
+          memory: "1500Mi"
         limits:
           cpu: "1000m"
           memory: "2Gi"
@@ -401,18 +401,18 @@ spec:
       resources:
         requests:
           cpu: "400m"
-          memory: "2000Mi"
+          memory: "4Gi"
         limits:
-          cpu: "6000m"
-          memory: "2000Mi"
+          cpu: "1000m"
+          memory: "5Gi"
     db:
       resources:
         requests:
-          cpu: "300m"
-          memory: "500Mi"
+          cpu: "400m"
+          memory: "2Gi"
         limits:
           cpu: "1000m"
-          memory: "1000Mi"
+          memory: "2500Mi"
 EOT
     )
 
@@ -420,6 +420,7 @@ EOT
     # Enable Scanner V4 on secured-cluster side
     "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
       patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
   scannerV4:
     scannerComponent: AutoSense
     indexer:
@@ -429,18 +430,18 @@ EOT
       resources:
         requests:
           cpu: "400m"
-          memory: "1Gi"
+          memory: "1500Mi"
         limits:
           cpu: "1000m"
           memory: "2Gi"
     db:
       resources:
         requests:
-          cpu: "300m"
-          memory: "500Mi"
+          cpu: "200m"
+          memory: "2Gi"
         limits:
           cpu: "1000m"
-          memory: "1000Mi"
+          memory: "2500Mi"
 EOT
     )
 
@@ -531,7 +532,7 @@ verify_scannerV4_indexer_deployed() {
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 120
+    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 300
     info "** Scanner V4 Indexer is deployed in namespace ${namespace}"
 }
 
@@ -541,7 +542,7 @@ verify_scannerV4_matcher_deployed() {
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 120
+    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 300
     info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
 }
 
