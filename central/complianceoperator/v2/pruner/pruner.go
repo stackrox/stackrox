@@ -6,7 +6,12 @@ import (
 
 	scanResult "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
+	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	compRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	scanSettingBindingDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
+	suitesDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -16,9 +21,14 @@ var (
 )
 
 type pruneImpl struct {
-	integrationDS compIntegration.DataStore
-	scanSettingDS compScanSetting.DataStore
-	scanResultDS  scanResult.DataStore
+	integrationDS          compIntegration.DataStore
+	scanSettingDS          compScanSetting.DataStore
+	scanResultDS           scanResult.DataStore
+	compRuleDS             compRuleDS.DataStore
+	profileDS              profileDS.DataStore
+	scanSettingsBindingsDS scanSettingBindingDS.DataStore
+	scanDS                 scanDS.DataStore
+	suitesDS               suitesDS.DataStore
 }
 
 // Pruner consolidates functionality to clean up orphaned compliance operator data
@@ -29,11 +39,16 @@ type Pruner interface {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, scanResultDS scanResult.DataStore) Pruner {
+func New(integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, scanResultDS scanResult.DataStore, compRuleDS compRuleDS.DataStore, profileDS profileDS.DataStore, scanSettingsBindingsDS scanSettingBindingDS.DataStore, scanDS scanDS.DataStore, suitesDS suitesDS.DataStore) Pruner {
 	return &pruneImpl{
-		integrationDS: integrationDS,
-		scanSettingDS: scanSettingDS,
-		scanResultDS:  scanResultDS,
+		integrationDS:          integrationDS,
+		scanSettingDS:          scanSettingDS,
+		scanResultDS:           scanResultDS,
+		compRuleDS:             compRuleDS,
+		profileDS:              profileDS,
+		scanSettingsBindingsDS: scanSettingsBindingsDS,
+		scanDS:                 scanDS,
+		suitesDS:               suitesDS,
 	}
 }
 
@@ -53,6 +68,31 @@ func (p *pruneImpl) RemoveComplianceResourcesByCluster(ctx context.Context, clus
 	if err := p.scanResultDS.DeleteResultsByCluster(ctx, clusterID); err != nil {
 		log.Errorf("failed to delete scan result for cluster %s: %v", clusterID, err)
 	}
+
+	// Remove any rule for the cluster
+	if err := p.compRuleDS.DeleteRulesByCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete cluster from rule for cluster id  %s: %v", clusterID, err)
+	}
+
+	// Remove any profile for the cluster
+	if err := p.profileDS.DeleteProfileOfCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete profile for cluster %s: %v", clusterID, err)
+	}
+
+	// Remove any scan for the cluster
+	if err := p.scanDS.DeleteScanByCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete scan for cluster %s: %v", clusterID, err)
+	}
+
+	// Remove any scan setting for the cluster
+	if err := p.scanSettingsBindingsDS.DeleteScanSettingByCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete scan setting binding for cluster %s: %v", clusterID, err)
+	}
+
+	// Remove any scan suite for the cluster
+	if err := p.suitesDS.DeleteSuitesByCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete scan suite for cluster %s: %v", clusterID, err)
+	}
 }
 
 // Testing
@@ -62,5 +102,10 @@ func GetTestPruner(t *testing.T, pool postgres.DB) Pruner {
 	scanSettingDS := compScanSetting.GetTestPostgresDataStore(t, pool)
 	integrationDS := compIntegration.GetTestPostgresDataStore(t, pool)
 	scanResultDS := scanResult.GetTestPostgresDataStore(t, pool)
-	return New(integrationDS, scanSettingDS, scanResultDS)
+	compRuleDS := compRuleDS.GetTestPostgresDataStore(t, pool)
+	profileDS := profileDS.GetTestPostgresDataStore(t, pool, nil)
+	scanSettingsBindingsDS := scanSettingBindingDS.GetTestPostgresDataStore(t, pool)
+	scanDS := scanDS.GetTestPostgresDataStore(t, pool)
+	suitesDS := suitesDS.GetTestPostgresDataStore(t, pool)
+	return New(integrationDS, scanSettingDS, scanResultDS, compRuleDS, profileDS, scanSettingsBindingsDS, scanDS, suitesDS)
 }

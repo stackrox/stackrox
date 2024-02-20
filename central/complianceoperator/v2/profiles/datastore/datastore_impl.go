@@ -54,6 +54,16 @@ func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string,
 	return err
 }
 
+// DeleteProfilesOfCluster deletes profiles of cluster with a specific id
+func (d *datastoreImpl) DeleteProfileOfCluster(ctx context.Context, clusterID string) error {
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetProfilesByClusters gets the list of profiles for a given clusters
 func (d *datastoreImpl) GetProfilesByClusters(ctx context.Context, clusterIDs []string) ([]*storage.ComplianceOperatorProfileV2, error) {
 	query := search.NewQueryBuilder().

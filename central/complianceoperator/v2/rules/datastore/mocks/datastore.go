@@ -54,6 +54,20 @@ func (mr *MockDataStoreMockRecorder) DeleteRule(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRule", reflect.TypeOf((*MockDataStore)(nil).DeleteRule), ctx, id)
 }
 
+// DeleteRulesByCluster mocks base method.
+func (m *MockDataStore) DeleteRulesByCluster(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRulesByCluster", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRulesByCluster indicates an expected call of DeleteRulesByCluster.
+func (mr *MockDataStoreMockRecorder) DeleteRulesByCluster(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRulesByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteRulesByCluster), ctx, clusterID)
+}
+
 // GetRulesByCluster mocks base method.
 func (m *MockDataStore) GetRulesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorRuleV2, error) {
 	m.ctrl.T.Helper()

@@ -27,3 +27,13 @@ func (d *datastoreImpl) GetRulesByCluster(ctx context.Context, clusterID string)
 	return d.store.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 }
+
+// delete rule by cluster id
+func (d *datastoreImpl) DeleteRulesByCluster(ctx context.Context, clusterID string) error {
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
+}

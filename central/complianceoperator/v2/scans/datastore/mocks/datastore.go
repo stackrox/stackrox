@@ -54,6 +54,20 @@ func (mr *MockDataStoreMockRecorder) DeleteScan(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScan", reflect.TypeOf((*MockDataStore)(nil).DeleteScan), ctx, id)
 }
 
+// DeleteScanByCluster mocks base method.
+func (m *MockDataStore) DeleteScanByCluster(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteScanByCluster", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteScanByCluster indicates an expected call of DeleteScanByCluster.
+func (mr *MockDataStoreMockRecorder) DeleteScanByCluster(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteScanByCluster), ctx, clusterID)
+}
+
 // GetScan mocks base method.
 func (m *MockDataStore) GetScan(ctx context.Context, id string) (*storage.ComplianceOperatorScanV2, bool, error) {
 	m.ctrl.T.Helper()

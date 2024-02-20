@@ -55,6 +55,20 @@ func (mr *MockDataStoreMockRecorder) DeleteScanSettingBinding(ctx, id any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanSettingBinding", reflect.TypeOf((*MockDataStore)(nil).DeleteScanSettingBinding), ctx, id)
 }
 
+// DeleteScanSettingByCluster mocks base method.
+func (m *MockDataStore) DeleteScanSettingByCluster(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteScanSettingByCluster", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteScanSettingByCluster indicates an expected call of DeleteScanSettingByCluster.
+func (mr *MockDataStoreMockRecorder) DeleteScanSettingByCluster(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanSettingByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteScanSettingByCluster), ctx, clusterID)
+}
+
 // GetScanSettingBinding mocks base method.
 func (m *MockDataStore) GetScanSettingBinding(ctx context.Context, id string) (*storage.ComplianceOperatorScanSettingBindingV2, bool, error) {
 	m.ctrl.T.Helper()

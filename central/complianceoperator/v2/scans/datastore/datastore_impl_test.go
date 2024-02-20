@@ -231,6 +231,20 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	s.Require().Equal(testScan3.LastExecutedTime, retrievedObject.LastExecutedTime)
 }
 
+func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {
+	testScan1 := getTestScan("scan1", "profile-1", testconsts.Cluster1)
+	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan1))
+
+	count, err := s.storage.Count(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
+
+	s.Require().NoError(s.dataStore.DeleteScanByCluster(s.hasWriteCtx, testconsts.Cluster1))
+	count, err = s.storage.Count(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Equal(0, count)
+}
+
 func (s *complianceScanDataStoreTestSuite) TestDeleteScan() {
 	// make sure we have nothing
 	ScanIDs, err := s.storage.GetIDs(s.hasReadCtx)

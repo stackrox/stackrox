@@ -109,6 +109,23 @@ func (s *complianceProfileDataStoreTestSuite) TestUpsertProfile() {
 	s.Require().Equal(rec1, retrieveRec1)
 }
 
+func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileOfCluster() {
+
+	rec1 := getTestProfile(profileUID1, "ocp4", "1.2", testconsts.Cluster1, 0)
+	rec2 := getTestProfile(profileUID2, "rhcos-moderate", "7.6", testconsts.Cluster2, 0)
+	ids := []string{rec1.GetId(), rec2.GetId()}
+
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec2))
+	count, err := s.storage.Count(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Equal(len(ids), count)
+	err = s.dataStore.DeleteProfileOfCluster(s.hasWriteCtx, rec1.GetClusterId())
+	count, err = s.storage.Count(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
+}
+
 func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileForCluster() {
 	// make sure we have nothing
 	profileIDs, err := s.storage.GetIDs(s.hasReadCtx)
