@@ -651,7 +651,7 @@ endif
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
-	cp -r ui/build image/rhel/ui/
+	cp -r ui/apps/platform/build image/rhel/ui/
 ifdef CI
 	$(SILENT)[ -d image/rhel/THIRD_PARTY_NOTICES ] || { echo "image/rhel/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
 else
