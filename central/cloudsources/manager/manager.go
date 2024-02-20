@@ -271,6 +271,8 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 	for _, discoveredCluster := range discoveredClusters {
 		// If we reset the status to unsecured, we need to make sure to also respect the unspecified status that
 		// the discovered cluster may contain.
+		// We currently set this to unspecified because we do not distinguish between clusters being removed
+		// or the cluster just lost connectivity.
 		if status == storage.DiscoveredCluster_STATUS_UNSECURED &&
 			unspecifiedProviders.Contains(discoveredCluster.GetMetadata().GetProviderType().String()) {
 			discoveredCluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
