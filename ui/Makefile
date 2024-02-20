@@ -14,7 +14,7 @@ ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. produ
 export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
 deps: yarn.lock $(PACKAGE_JSON_FILES)
-	yarn install --frozen-lockfile --prefer-offline --network-timeout=$(YARN_NETWORK_TIMEOUT)
+	yarn install --immutable --network-timeout=$(YARN_NETWORK_TIMEOUT)
 	@touch deps
 
 .PHONY: printsrcs
