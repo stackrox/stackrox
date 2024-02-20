@@ -17,7 +17,7 @@ import spock.lang.IgnoreIf
 @Tag("PZ")
 class VulnReportingTest extends BaseSpecification {
 
-    static final private String SECONDARY_NAMESPACE = "vulnreport-2nd-namespace"
+    static final private String SECONDARY_NAMESPACE = "qa-vulnreport-2nd-namespace"
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName("struts-deployment")
