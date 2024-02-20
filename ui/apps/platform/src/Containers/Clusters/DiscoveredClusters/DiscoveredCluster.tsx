@@ -43,6 +43,17 @@ export function getStatusText(status: DiscoveredClusterStatus) {
     return statusMap[status] ?? statusMap.STATUS_UNSPECIFIED;
 }
 
+const statusTipMap: Record<DiscoveredClusterStatus, string> = {
+    STATUS_SECURED: 'This cluster is already secured.',
+    STATUS_UNSECURED: 'This cluster has been discovered by a cloud source, but is not yet secured.',
+    STATUS_UNSPECIFIED:
+        'This cluster has has been discovered by a cloud source, but has undetermined status because metadata collected from secured clusters does not guarantee a unique match. Sensor requires access to the AWS EC2 instance tags to determine the cluster state.',
+};
+
+export function getStatusTip(status: DiscoveredClusterStatus) {
+    return statusTipMap[status] ?? statusTipMap.STATUS_UNSPECIFIED;
+}
+
 // type
 
 export function getTypeText(type: DiscoveredClusterType) {

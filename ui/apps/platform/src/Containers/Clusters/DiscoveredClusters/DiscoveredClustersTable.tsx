@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
@@ -16,6 +17,7 @@ import {
     getProviderRegionText,
     getStatusIcon,
     getStatusText,
+    getStatusTip,
     getTypeText,
 } from './DiscoveredCluster';
 import DiscoveredClustersEmptyState from './DiscoveredClustersEmptyState';
@@ -76,10 +78,12 @@ function DiscoveredClustersTable({
                             <Tr key={id}>
                                 <Td dataLabel="Cluster">{name}</Td>
                                 <Td dataLabel="Status">
-                                    <IconText
-                                        icon={getStatusIcon(status)}
-                                        text={getStatusText(status)}
-                                    />
+                                    <Tooltip content={getStatusTip(status)}>
+                                        <IconText
+                                            icon={getStatusIcon(status)}
+                                            text={getStatusText(status)}
+                                        />
+                                    </Tooltip>
                                 </Td>
                                 <Td dataLabel="Type">{getTypeText(type)}</Td>
                                 <Td dataLabel="Provider (region)" modifier="nowrap">
@@ -89,7 +93,9 @@ function DiscoveredClustersTable({
                                     {sourceNameMap.get(source.id) ?? 'Not available'}
                                 </Td>
                                 <Td dataLabel="First discovered" modifier="nowrap">
-                                    {firstDiscoveredAsPhrase}
+                                    <Tooltip content={firstDiscoveredAt}>
+                                        <span>{firstDiscoveredAsPhrase}</span>
+                                    </Tooltip>
                                 </Td>
                             </Tr>
                         );

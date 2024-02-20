@@ -13,6 +13,7 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -102,6 +103,21 @@ function DiscoveredClustersPage(): ReactElement {
                         <Text>
                             Discovered clusters might not yet have secured cluster services.
                         </Text>
+                        <Alert
+                            variant="info"
+                            isInline
+                            title="Solution for discovered clusters that have undetermined status"
+                        >
+                            <ExternalLink>
+                                <a
+                                    href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#allow-access-to-tags-in-IMDS"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Grant access to instance tags via the metadata service
+                                </a>
+                            </ExternalLink>
+                        </Alert>
                     </Flex>
                 </Flex>
             </PageSection>
