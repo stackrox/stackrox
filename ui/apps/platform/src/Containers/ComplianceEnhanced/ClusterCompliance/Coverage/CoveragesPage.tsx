@@ -6,7 +6,6 @@ import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import { complianceEnhancedCoveragePath, complianceEnhancedScanConfigsPath } from 'routePaths';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 
-import CoverageTableViewToggleGroup from './Components/CoverageTableViewToggleGroup';
 import ClustersCoverageTable from './ClustersCoverageTable';
 
 function CoveragesPage() {
@@ -34,8 +33,6 @@ function CoveragesPage() {
             />
             <Divider component="div" />
             <PageSection>
-                <CoverageTableViewToggleGroup />
-                <Divider component="div" />
                 {activeEntityTabKey === 'Clusters' && <ClustersCoverageTable />}
             </PageSection>
         </>
