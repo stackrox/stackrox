@@ -130,7 +130,7 @@ message ComplianceOperatorClusterScanConfigStatus {
   string cluster_name = 5;
 }
 
-// Next Tag: 20
+// Next Tag: 18
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
 // as the rules can change without impacting the historical result.
@@ -149,7 +149,6 @@ message ComplianceOperatorCheckResultV2 {
   string check_id = 2 [(gogoproto.moretags) = 'search:"Compliance Check ID,hidden"'];
   string check_name = 3 [(gogoproto.moretags) = 'search:"Compliance Check Name,hidden"'];
   string cluster_id = 4 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
-  string cluster_name = 15;
   CheckStatus status = 5 [(gogoproto.moretags) = 'search:"Compliance Check Status,hidden"'];
   RuleSeverity severity = 6 [(gogoproto.moretags) = 'search:"Compliance Rule Severity,hidden"'];
   string description = 7;
@@ -157,13 +156,12 @@ message ComplianceOperatorCheckResultV2 {
   map<string, string> labels = 9;
   map<string, string> annotations = 10;
   google.protobuf.Timestamp created_time = 11 [(gogoproto.moretags) = 'search:"Compliance Check Result Created Time,hidden"'];
-  string standard = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden"'];
-  string control = 13;
+  repeated string valuesUsed = 12;
+  repeated string warnings = 13;
   string scan_name = 14 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden" sql:"fk(ComplianceOperatorScanV2:scan_name),no-fk-constraint"'];
+  string cluster_name = 15;
   string scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"'];
   string rationale = 17;
-  repeated string valuesUsed = 18;
-  repeated string warnings = 19;
 }
 
 //Next Tag: 4

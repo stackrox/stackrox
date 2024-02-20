@@ -28,12 +28,13 @@ var (
 )
 
 // ComplianceOperatorCheckResult converts internal api V2 check result to a V2 storage check result
-func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) *storage.ComplianceOperatorCheckResultV2 {
+func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string, clusterName string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             sensorData.GetId(),
 		CheckId:        sensorData.GetCheckId(),
 		CheckName:      sensorData.GetCheckName(),
 		ClusterId:      clusterID,
+		ClusterName:    clusterName,
 		Status:         statusToV2[sensorData.GetStatus()],
 		Severity:       severityToV2[sensorData.GetSeverity()],
 		Description:    sensorData.GetDescription(),

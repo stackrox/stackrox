@@ -4878,22 +4878,6 @@
                 ]
               },
               {
-                "id": 12,
-                "name": "standard",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Standard,hidden\""
-                  }
-                ]
-              },
-              {
-                "id": 13,
-                "name": "control",
-                "type": "string"
-              },
-              {
                 "id": 14,
                 "name": "scan_name",
                 "type": "string",
@@ -4921,13 +4905,13 @@
                 "type": "string"
               },
               {
-                "id": 18,
+                "id": 12,
                 "name": "valuesUsed",
                 "type": "string",
                 "is_repeated": true
               },
               {
-                "id": 19,
+                "id": 13,
                 "name": "warnings",
                 "type": "string",
                 "is_repeated": true
