@@ -143,10 +143,7 @@ func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissions() {
 	s.createCO(ds)
 
 	// Test sensor has all * access to compliance.openshift.io
-
-	// Prepend a reactor to add a status to the returns SelfSubjectAccessReview.
-	s.prependSSAReactorToFakeClient(true)
-
+	// Access prepended in test setup
 	actualSuccess := s.getInfo(1, 1*time.Millisecond)
 	s.NotContains(actualSuccess.GetStatusError(), "Sensor cannot write compliance.openshift.io API group resources.")
 
