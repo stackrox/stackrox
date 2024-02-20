@@ -72,7 +72,7 @@ func (s *UpdaterTestSuite) TearDownTest() {
 }
 
 func (s *UpdaterTestSuite) TestDefaultNamespace() {
-	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	// Prepend a SelfSubjectAccessReview reactor to report write access.
 	s.prependSSAReactorToFakeClient(true)
 
 	ds := buildComplianceOperator(defaultNS)
@@ -88,7 +88,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 }
 
 func (s *UpdaterTestSuite) TestMultipleTries() {
-	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	// Prepend a SelfSubjectAccessReview reactor to report write access.
 	s.prependSSAReactorToFakeClient(true)
 
 	ds := buildComplianceOperator(defaultNS)
@@ -108,7 +108,7 @@ func (s *UpdaterTestSuite) TestNotFound() {
 }
 
 func (s *UpdaterTestSuite) TestDelayedTicker() {
-	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	// Prepend a SelfSubjectAccessReview reactor to report write access.
 	s.prependSSAReactorToFakeClient(true)
 
 	ds := buildComplianceOperator(defaultNS)
@@ -144,7 +144,7 @@ func (s *UpdaterTestSuite) prependSSAReactorToFakeClient(allowed bool) {
 }
 
 func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissions() {
-	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	// Prepend a SelfSubjectAccessReview reactor to report write access.
 	s.prependSSAReactorToFakeClient(true)
 
 	ds := buildComplianceOperator(defaultNS)
@@ -156,7 +156,7 @@ func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissions() {
 }
 
 func (s *UpdaterTestSuite) TestCheckSensorComplianceAPIGroupPermissionsNotFound() {
-	// Prepend a SelfSubjectAccessReview reactor to report write access by default.
+	// Prepend a SelfSubjectAccessReview reactor to report NO write access.
 	s.prependSSAReactorToFakeClient(false)
 
 	ds := buildComplianceOperator(defaultNS)
