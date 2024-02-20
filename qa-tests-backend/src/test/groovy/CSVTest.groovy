@@ -19,6 +19,7 @@ import spock.lang.Unroll
 @Unroll
 @Tag("BAT")
 @Tag("PZ")
+@Tag("PZDebug")
 class CSVTest extends BaseSpecification {
 
     private static final IMAGE_SHA = "sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
@@ -233,6 +234,7 @@ class CSVTest extends BaseSpecification {
         "Query fixable CVEs from graphQL"
         def gqlService = new GraphQLService()
         def ret = gqlService.Call(graphQLQuery, graphQLPayload)
+        sleep(5000) // wait 5s for the vulnerabilities to list
         assert ret.getCode() == 200
         assert ret.value.result.vulnerabilities.toList().size() > 0
 

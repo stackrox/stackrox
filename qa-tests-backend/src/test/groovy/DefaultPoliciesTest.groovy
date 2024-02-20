@@ -45,6 +45,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("PZ")
+@Tag("PZDebug")
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
