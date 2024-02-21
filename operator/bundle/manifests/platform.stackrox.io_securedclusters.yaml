@@ -1231,6 +1231,20 @@ spec:
                           type: object
                         type: array
                     type: object
+                  monitoring:
+                    description: Configures monitoring endpoint for Scanner V4. The
+                      monitoring endpoint allows other services to collect metrics
+                      from Scanner V4, provided in Prometheus compatible format.
+                    properties:
+                      exposeEndpoint:
+                        description: Expose the monitoring endpoint. A new service,
+                          "monitoring", with port 9090, will be created as well as
+                          a network policy allowing inbound connections to the port.
+                        enum:
+                        - Enabled
+                        - Disabled
+                        type: string
+                    type: object
                   scannerComponent:
                     default: Default
                     description: If you want to enable the Scanner V4 component set
