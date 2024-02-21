@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2"
 )
 
@@ -22,13 +21,11 @@ var _ types.Registry = (*googleRegistry)(nil)
 
 // googleRegistry implements docker registry access to Google Artifact registry and
 // Google container registry. The docker credentials are derived from short-lived
-// access tokens. The access token is refreshed as part of the transport. googleRegistry
-// holds the mutex to the docker credentials.
+// access tokens. The access token is refreshed as part of the transport.
 type googleRegistry struct {
 	types.Registry
 	project   string
 	transport *googleTransport
-	mutex     sync.RWMutex
 }
 
 // Match overrides the underlying Match function in types.Registry because our google registries are scoped by
@@ -45,8 +42,6 @@ func (g *googleRegistry) Config() *types.Config {
 	if err := g.transport.ensureValid(); err != nil {
 		log.Errorf("Failed to ensure access token validity for image integration %q: %v", g.transport.name, err)
 	}
-	g.mutex.RLock()
-	defer g.mutex.RUnlock()
 	return g.Registry.Config()
 }
 
@@ -124,7 +119,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	reg := &googleRegistry{
 		project: strings.ToLower(config.GetProject()),
 	}
-	transport := newGoogleTransport(integration.GetName(), &reg.mutex, dockerConfig, tokenSource)
+	transport := newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
 	dockerConfig.Transport = transport
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration)
 	if err != nil {
