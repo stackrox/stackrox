@@ -132,7 +132,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.8
 	google.golang.org/api v0.157.0
 	google.golang.org/genproto v0.0.0-20240116215550-a9fa1716bcac
-	google.golang.org/grpc v1.61.0
+	google.golang.org/grpc v1.61.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
