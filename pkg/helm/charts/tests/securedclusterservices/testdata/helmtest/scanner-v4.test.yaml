@@ -335,3 +335,19 @@ tests:
               name: a-default-sc
               annotations:
                 storageclass.kubernetes.io/is-default-class: true
+
+- name: "Installation log contains"
+  values:
+    imagePullSecrets:
+      allowNone: true
+    scanner:
+      disable: false
+  tests:
+  - name: "no reference to Scanner V4 if Scanner V4 is not enabled"
+    expect: |
+      .notes | assertThat(contains("Scanner V4 is enabled") | not)
+  - name: "reference to Scanner V4 if Scanner V4 is enabled"
+    set:
+      scannerV4.disable: false
+    expect: |
+      .notes | assertThat(contains("Scanner V4 is enabled"))
