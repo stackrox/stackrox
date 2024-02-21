@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
+	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -44,10 +45,11 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceScanSettingsDS complianceDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore, manager compliancemanager.Manager) Service {
+func New(complianceScanSettingsDS complianceDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore, suiteDS suiteDS.DataStore, manager compliancemanager.Manager) Service {
 	return &serviceImpl{
 		complianceScanSettingsDS:        complianceScanSettingsDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
+		suiteDS:                         suiteDS,
 		manager:                         manager,
 	}
 }
@@ -57,6 +59,7 @@ type serviceImpl struct {
 
 	complianceScanSettingsDS        complianceDS.DataStore
 	complianceScanSettingBindingsDS scanSettingBindingsDS.DataStore
+	suiteDS                         suiteDS.DataStore
 	manager                         compliancemanager.Manager
 }
 
@@ -159,7 +162,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
 	}
 
-	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.complianceScanSettingsDS, s.complianceScanSettingBindingsDS)
+	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.complianceScanSettingsDS, s.complianceScanSettingBindingsDS, s.suiteDS)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
@@ -182,7 +185,7 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 		return nil, errors.Errorf("failed to retrieve compliance scan configuration with id %q.", req.GetId())
 	}
 
-	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.complianceScanSettingsDS, s.complianceScanSettingBindingsDS)
+	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.complianceScanSettingsDS, s.complianceScanSettingBindingsDS, s.suiteDS)
 }
 
 func (s *serviceImpl) GetComplianceScanConfigurationsCount(ctx context.Context, request *v2.RawQuery) (*v2.ComplianceScanConfigurationsCount, error) {

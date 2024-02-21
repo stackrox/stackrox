@@ -4,8 +4,15 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/suites/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
 type datastoreImpl struct {
@@ -36,4 +43,24 @@ func (d *datastoreImpl) DeleteSuite(ctx context.Context, id string) error {
 func (d *datastoreImpl) GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuiteV2, error) {
 	return d.store.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+}
+
+// GetSuites retrieves the suites for the query.
+func (d *datastoreImpl) GetSuites(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorSuiteV2, error) {
+	suites, err := d.store.GetByQuery(ctx, query)
+
+	// Follow the existing all or nothing approach to check status.
+	// We must ensure the user has access to all the clusters in a config.
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(getScopeKeys(suites)) {
+		return nil, nil
+	}
+	return suites, err
+}
+
+func getScopeKeys(suites []*storage.ComplianceOperatorSuiteV2) [][]sac.ScopeKey {
+	clusterScopeKeys := make([][]sac.ScopeKey, 0, len(suites))
+	for _, suite := range suites {
+		clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(suite.GetClusterId())})
+	}
+	return clusterScopeKeys
 }

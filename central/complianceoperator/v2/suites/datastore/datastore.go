@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/suites/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -15,6 +16,9 @@ import (
 type DataStore interface {
 	// GetSuite returns the suite for the given id
 	GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuiteV2, bool, error)
+
+	// GetSuites return the suites matching the query
+	GetSuites(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorSuiteV2, error)
 
 	// GetSuitesByCluster retrieve suites by the cluster
 	GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuiteV2, error)
