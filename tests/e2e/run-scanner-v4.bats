@@ -60,6 +60,8 @@ setup_file() {
     export OS
     export ORCH_CMD=kubectl
     export SENSOR_HELM_MANAGED=true
+    export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
+    export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
 
     # Prepare earlier Helm chart version.
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
@@ -246,6 +248,18 @@ teardown_file() {
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    # Deactivate Scanner V4 for both releases.
+    info "Disabling Scanner V4 for Central"
+    helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    info "Disabling Scanner V4 for SecuredCluster"
+    helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    sleep 30 # Give the deployments time to terminate.
+
+    verify_no_scannerV4_deployed "stackrox"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
@@ -282,6 +296,17 @@ teardown_file() {
     verify_deployment_scannerV4_env_var_set "$central_namespace" "central"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
     verify_deployment_scannerV4_env_var_set "$sensor_namespace" "sensor"
+
+    # Deactivate Scanner V4 for both releases.
+    helm upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    helm upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    sleep 30 # Give the deployments time to terminate.
+
+    verify_no_scannerV4_deployed "${central_namespace}"
+    verify_no_scannerV4_deployed "${sensor_namespace}"
+    run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
+    run ! verify_deployment_scannerV4_env_var_set "${sensor_namespace}" "sensor"
+
 }
 
 @test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
@@ -397,6 +422,11 @@ teardown_file() {
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm
     info "Waiting for rhacs-operator pods to be ready"
+    # Give the old pods some time to terminate, otherwise we can end up
+    # in a situation where the old pods are just about to terminate and this
+    # would confuse the kubectl wait invocation below, which notices pods
+    # vanishing while actually waiting for them to become ready.
+    sleep 30
     "${ORCH_CMD}" -n stackrox-operator wait  --for=condition=Ready pods -l app=rhacs-operator
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -483,6 +513,32 @@ EOT
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
+    # Test disabling of Scanner V4.
+    info "Disabling Scanner V4 for Central"
+    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" \
+      patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Disabled
+EOT
+    )
+
+    info "Disabling Scanner V4 for SecuredCluster"
+    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
+      patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Disabled
+EOT
+    )
+
+    sleep 2m # Give the operator some time to reconcile and the deployments to terminate.
+    verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_no_scannerV4_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
+    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
