@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,6 +36,7 @@ type PipelineTestSuite struct {
 	suite.Suite
 
 	v2ResultDS *v2ResultMocks.MockDataStore
+	clusterDS  *clusterMocks.MockDataStore
 	mockCtrl   *gomock.Controller
 }
 
@@ -49,6 +51,7 @@ func (suite *PipelineTestSuite) SetupSuite() {
 func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.v2ResultDS = v2ResultMocks.NewMockDataStore(suite.mockCtrl)
+	suite.clusterDS = clusterMocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -58,8 +61,9 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
+	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v2ResultDS)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -98,7 +102,7 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
 	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v2ResultDS)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -139,6 +143,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		CheckId:        checkID,
 		CheckName:      mockCheckRuleName,
 		ClusterId:      clusterID,
+		ClusterName:    "cluster1",
 		Status:         storage.ComplianceOperatorCheckResultV2_FAIL,
 		Severity:       storage.RuleSeverity_HIGH_RULE_SEVERITY,
 		Description:    "this is a test",
