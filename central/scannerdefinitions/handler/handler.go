@@ -48,7 +48,6 @@ const (
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
 
-	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
 	v4VulnSubDir      = "vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
 	v4VulnFile        = "vulns.json.zst"
