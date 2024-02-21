@@ -119,13 +119,11 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	reg := &googleRegistry{
 		project: strings.ToLower(config.GetProject()),
 	}
-	transport := newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
-	dockerConfig.Transport = transport
-	dockerRegistry, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration)
+	reg.transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
+	dockerRegistry, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration, reg.transport)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create docker registry")
 	}
 	reg.Registry = dockerRegistry
-	reg.transport = transport
 	return reg, nil
 }

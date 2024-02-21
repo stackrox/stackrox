@@ -66,7 +66,7 @@ type Registry struct {
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
-func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration) (*Registry, error) {
+func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration, transports ...registry.Transport) (*Registry, error) {
 	url := cfg.formatURL()
 	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
 	registryServer := urlfmt.GetServerFromURL(url)
@@ -74,7 +74,13 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		registryServer = "docker.io"
 	}
 
-	client, err := registry.NewFromTransport(url, cfg.GetTransport(), registry.Quiet)
+	var transport registry.Transport
+	if len(transports) == 0 {
+		transport = DefaultTransport(cfg)
+	} else {
+		transport = transports[0]
+	}
+	client, err := registry.NewFromTransport(url, transport, registry.Quiet)
 	if err != nil {
 		return nil, err
 	}

@@ -21,8 +21,6 @@ type Config struct {
 	Insecure bool
 	// DisableRepoList when true disables populating list of repos from remote registry.
 	DisableRepoList bool
-	// Transport defines a transport for authenticating to the Docker registry.
-	Transport registry.Transport
 }
 
 func (c *Config) formatURL() string {
@@ -31,15 +29,6 @@ func (c *Config) formatURL() string {
 		endpoint = "https://registry-1.docker.io"
 	}
 	return urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-}
-
-// GetTransport returns the transport which provides authentication to the Docker registry.
-// Returns `Config.Transport` if it is set. Otherwise returns a default transport.
-func (c *Config) GetTransport() registry.Transport {
-	if c.Transport != nil {
-		return c.Transport
-	}
-	return DefaultTransport(c)
 }
 
 // DefaultTransport returns the default transport based on the configuration.
