@@ -23,7 +23,7 @@ type ExpectedSignalMessageFn func(*sensor.SignalStreamMessage) bool
 // ExpectedNetworkConnectionMessageFn signature for a function to match NetworkConnectionInfoMessage.
 type ExpectedNetworkConnectionMessageFn func(*sensor.NetworkConnectionInfoMessage) bool
 
-// WaitToReceiveMessagesFromCollector waits until sensor receives the expected messages from collector.
+// WaitToReceiveMessagesFromCollector waits until sensor receives the expected messages from collector with a default timeout.
 func WaitToReceiveMessagesFromCollector(ctx context.Context, signal *concurrency.ErrorSignal,
 	signalC <-chan *sensor.SignalStreamMessage,
 	flowC <-chan *sensor.NetworkConnectionInfoMessage,
@@ -37,7 +37,8 @@ func WaitToReceiveMessagesFromCollectorWithTimeout(ctx context.Context, signal *
 	signalC <-chan *sensor.SignalStreamMessage,
 	flowC <-chan *sensor.NetworkConnectionInfoMessage,
 	expectedSignalMessages []ExpectedSignalMessageFn,
-	expectedNetworkMessages []ExpectedNetworkConnectionMessageFn, timeoutDuration time.Duration) {
+	expectedNetworkMessages []ExpectedNetworkConnectionMessageFn,
+	timeoutDuration time.Duration) {
 	timeout := time.NewTicker(timeoutDuration)
 	for {
 		select {
