@@ -3,6 +3,7 @@ package initbundles
 import (
 	"context"
 	"io"
+	"sort"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -26,16 +27,14 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 		return err
 	}
 
-	var impactedClusterIds []string
-	var impactedClusterNames []string
+	impactedIdNameMap := map[string]string{}
 
 	var revokeInitBundleIds []string
 	for _, meta := range resp.Items {
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeInitBundleIds = append(revokeInitBundleIds, meta.GetId())
 			for _, impactedCluster := range meta.GetImpactedClusters() {
-				impactedClusterIds = append(impactedClusterIds, impactedCluster.GetId())
-				impactedClusterNames = append(impactedClusterNames, impactedCluster.GetName())
+				impactedIdNameMap[impactedCluster.GetId()] = impactedCluster.GetName()
 			}
 		}
 	}
@@ -44,8 +43,13 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 		return errox.NotFound.Newf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
 	}
 
+	impactedClusterIds := make([]string, 0, len(impactedIdNameMap))
+	for id := range impactedIdNameMap {
+		impactedClusterIds = append(impactedClusterIds, id)
+	}
+
 	if !force {
-		confirm, err := confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds, cliEnvironment.InputOutput().Out(), cliEnvironment.InputOutput().In())
+		confirm, err := confirmImpactedClusterIds(impactedIdNameMap, cliEnvironment.InputOutput().Out(), cliEnvironment.InputOutput().In())
 		if err != nil {
 			return err
 		}
@@ -68,20 +72,26 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	return nil
 }
 
-func confirmImpactedClusterIds(impactedClusterNames, impactedClusterIds []string, out io.Writer, in io.Reader) (bool, error) {
-	if len(impactedClusterIds) != len(impactedClusterNames) {
-		return false, errors.New("number of impacted cluster IDs and names do not match")
-	}
-	if len(impactedClusterIds) == 0 {
+func confirmImpactedClusterIds(impactedClusterIdNameMap map[string]string, out io.Writer, in io.Reader) (bool, error) {
+
+	if len(impactedClusterIdNameMap) == 0 {
 		return true, nil
 	}
+
+	impactedClusters := make([][2]string, 0, len(impactedClusterIdNameMap))
+	for id, name := range impactedClusterIdNameMap {
+		impactedClusters = append(impactedClusters, [2]string{id, name})
+	}
+	sort.Slice(impactedClusters, func(i, j int) bool {
+		return impactedClusters[i][1] < impactedClusters[j][1]
+	})
 
 	_, _ = out.Write([]byte("Revoking init bundle(s) will impact the following cluster(s):\n"))
 
 	t := tabwriter.NewWriter(out, 4, 8, 2, '\t', 0)
 	_, _ = t.Write([]byte("Cluster ID\tCluster Name\n"))
-	for i := 0; i < len(impactedClusterIds); i++ {
-		_, _ = t.Write([]byte(impactedClusterIds[i] + "\t" + impactedClusterNames[i] + "\n"))
+	for i := 0; i < len(impactedClusters); i++ {
+		_, _ = t.Write([]byte(impactedClusters[i][0] + "\t" + impactedClusters[i][1] + "\n"))
 	}
 	_ = t.Flush()
 
@@ -133,10 +143,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 				return errors.Wrap(err, "getting force flag")
 			}
 			for _, arg := range args {
-				if arg != "--force" && arg != "-f" {
-					// ignore the force flag
-					clusterNameOrIds = append(clusterNameOrIds, arg)
-				}
+				clusterNameOrIds = append(clusterNameOrIds, arg)
 			}
 			return revokeInitBundles(cliEnvironment, clusterNameOrIds, force, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
