@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import {
-    paladinCloudDescriptor as descriptor,
+    ocmDescriptor as descriptor,
     cloudSourcesSource as source,
     getIntegrationsListPath,
 } from '../utils/integrationsList';
@@ -11,7 +11,7 @@ import { integrationTypeCounter } from './integrationTiles.utils';
 
 const { image, label, type } = descriptor;
 
-function PaladinCloudTile(): ReactElement {
+function OcmTile(): ReactElement {
     const integrations = useSelector(selectors.getCloudSources);
     const countIntegrations = integrationTypeCounter(integrations);
 
@@ -20,9 +20,9 @@ function PaladinCloudTile(): ReactElement {
             image={image}
             label={label}
             linkTo={getIntegrationsListPath(source, type)}
-            numIntegrations={countIntegrations('TYPE_PALADIN_CLOUD')}
+            numIntegrations={countIntegrations('TYPE_OCM')}
         />
     );
 }
 
-export default PaladinCloudTile;
+export default OcmTile;
