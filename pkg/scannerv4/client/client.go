@@ -110,6 +110,14 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		// via DNS name resolution, which is possible because Scanner v4 services are "headless"
 		// (clusterIP: None).
 		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
+		// The gRPC library does not respect NO_PROXY settings when using the DNS name resolver.
+		// Outside from testing, the only users of this client library are Central and Sensor,
+		// which only communicate with namespace-local Scanner v4 services.
+		// Because of this, we just disable proxy settings when talking to Scanner v4 services.
+		//
+		// See https://github.com/grpc/grpc-go/issues/3401 for more information about using
+		// proxy settings with DNS name resolution.
+		grpc.WithNoProxy(),
 	}
 
 	maxRespMsgSize := env.ScannerV4MaxRespMsgSize.IntegerSetting()
