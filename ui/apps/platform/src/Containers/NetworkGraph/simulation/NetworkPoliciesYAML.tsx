@@ -3,8 +3,11 @@ import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-
 import { DownloadIcon } from '@patternfly/react-icons';
 
 import { useTheme } from 'Containers/ThemeProvider';
+import useAnalytics, { DOWNLOAD_NETWORK_POLICIES } from 'hooks/useAnalytics';
+import useURLSearch from 'hooks/useURLSearch';
 import download from 'utils/download';
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
+import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
 import './NetworkPoliciesYAML.css';
 
@@ -18,21 +21,31 @@ const labels = {
     downloadYAML: 'Download YAML',
 };
 
-const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
-    download(`${fileName}.yml`, fileContent, 'yml');
-};
-
 function NetworkPoliciesYAML({
     yaml,
     height = '300px',
     additionalControls = [],
 }: NetworkPoliciesYAMLProp) {
+    const { analyticsTrack } = useAnalytics();
+    const { searchFilter } = useURLSearch();
+
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
 
     function onToggleDarkMode() {
         setCustomDarkMode((prevValue) => !prevValue);
     }
+
+    const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
+        const properties = getPropertiesForAnalytics(searchFilter);
+
+        analyticsTrack({
+            event: DOWNLOAD_NETWORK_POLICIES,
+            properties,
+        });
+
+        download(`${fileName}.yml`, fileContent, 'yml');
+    };
 
     const downloadYAMLControl = (
         <CodeEditorControl
