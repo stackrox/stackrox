@@ -31,15 +31,6 @@ init() {
 
 export TEST_SUITE_ABORTED="false"
 
-# Function useful during development of this test suite.
-# Allows to abort a test in such a way that any cleanups are skipped and the state
-# of the cluster can me inspected or manually modified further right way.
-bats_suite_abort() {
-    echo "TERMINATING IMMEDIATELY" >&3
-    TEST_SUITE_ABORTED="true"
-    exit 1
-}
-
 setup_file() {
     init
 
@@ -86,6 +77,7 @@ setup_file() {
 
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
+    export TEST_NAMESPACES=("${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox")
 
     export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
@@ -102,7 +94,7 @@ setup_file() {
 test_case_no=0
 
 setup() {
-    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return
+    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return 1
     init
     set -euo pipefail
 
@@ -114,7 +106,7 @@ setup() {
 
     if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
-        teardown
+        remove_existing_stackrox_resources "${TEST_NAMESPACES[@]}"
     fi
     if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
         echo "Only tearing down resources, exiting now..."
@@ -157,28 +149,33 @@ describe_deployments_in_namespace() {
     done
 }
 
-
 teardown() {
-    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return
+    if [[ "${TEST_SUITE_ABORTED}" == "true" ]]; then
+        echo "Skipping teardown due to previous failure." >&3
+        return
+    fi
+
+    if [[ "${BATS_TEST_COMPLETED:-}" != "1" ]]; then
+        # Previous test failed.
+        if [[ "${ABORT_ON_FAILURE:-}" == "true" ]]; then
+            TEST_SUITE_ABORTED="true"
+            echo "Aborting due to test failure." >&3
+            return 1
+        fi
+    fi
 
     local central_namespace=""
     local sensor_namespace=""
-    local namespaces=( )
 
     if "${ORCH_CMD}" get ns "stackrox" >/dev/null 2>&1; then
         central_namespace="stackrox"
         sensor_namespace="stackrox"
-        namespaces=( "stackrox" "${namespaces[@]}" )
     fi
     if "${ORCH_CMD}" get ns "${CUSTOM_CENTRAL_NAMESPACE}" >/dev/null 2>&1; then
         central_namespace="${CUSTOM_CENTRAL_NAMESPACE}"
-        namespaces=( "${central_namespace}" "${namespaces[@]}" )
     fi
     if "${ORCH_CMD}" get ns "${CUSTOM_SENSOR_NAMESPACE}" >/dev/null 2>&1; then
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
-        if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
-            namespaces=( "${sensor_namespace}" "${namespaces[@]}" )
-        fi
     fi
 
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
@@ -192,11 +189,10 @@ teardown() {
         fi
     fi
 
-    run remove_existing_stackrox_resources "${namespaces[@]}"
+    run remove_existing_stackrox_resources "${TEST_NAMESPACES[@]}"
 }
 
 teardown_file() {
-    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return
     remove_earlier_roxctl_binary
 }
 
