@@ -189,7 +189,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 	// A list of IDs of secured clusters that can be used for matching.
 	securedClusters := set.NewStringSet()
 
-	unspecifiedProviderType := set.NewStringSet()
+	unspecifiedProviderTypes := set.NewStringSet()
 
 	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
 		// Explicitly ignore unhealthy clusters for the matching, as they cannot be deemed as secured.
@@ -210,7 +210,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		// as Unspecified instead of Unsecured. This is to avoid false-positives.
 		clusterMetadata := providerMetadata.GetCluster()
 		if clusterMetadata.GetId() == "" {
-			unspecifiedProviderType.Add(providerMetadataToProviderType(providerMetadata).String())
+			unspecifiedProviderTypes.Add(providerMetadataToProviderType(providerMetadata).String())
 			return nil
 		}
 
@@ -223,14 +223,14 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 	}
 
 	concurrency.WithLock(&m.unspecifiedProviderLock, func() {
-		m.unspecifiedProviderTypes = unspecifiedProviderType.Clone()
+		m.unspecifiedProviderTypes = unspecifiedProviderTypes.Clone()
 	})
 
 	for _, cluster := range clusters {
 		switch {
 		case securedClusters.Contains(cluster.GetID()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
-		case unspecifiedProviderType.Contains(cluster.GetProviderType().String()):
+		case unspecifiedProviderTypes.Contains(cluster.GetProviderType().String()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
 		default:
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
@@ -241,19 +241,19 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status storage.DiscoveredCluster_Status) {
 	cluster, err := m.getCluster(clusterID)
 	if err != nil {
-		log.Errorw("Failed to get cluster to mark as secured",
+		log.Errorw("Failed to get cluster to change status",
 			logging.ClusterID(clusterID), logging.Err(err))
 		return
 	}
 
-	// If the cluster has no metadata, we can short-circuit since there won't be anything to update.
+	// If the cluster has no metadata, we can short-circuit since it cannot match with any discovered cluster.
 	if cluster.GetStatus().GetProviderMetadata().GetCluster().GetId() == "" {
 		return
 	}
 
 	cloudSources, err := m.cloudSourcesDataStore.ListCloudSources(cloudSourceCtx, search.EmptyQuery())
 	if err != nil {
-		log.Errorw("Failed to list stored cloud sources for marking cluster as secured",
+		log.Errorw("Failed to list stored cloud sources for changing cluster status",
 			logging.Err(err), logging.ClusterID(clusterID))
 		return
 	}
@@ -264,7 +264,7 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 		return
 	}
 
-	unspecifiedProviders := concurrency.WithLock1(&m.unspecifiedProviderLock, func() set.StringSet {
+	unspecifiedProviders := concurrency.WithRLock1(&m.unspecifiedProviderLock, func() set.StringSet {
 		return m.unspecifiedProviderTypes.Clone()
 	})
 
@@ -283,7 +283,7 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx,
 		storagetotype.DiscoveredClusters(discoveredClusters...)...); err != nil {
-		log.Errorw("Failed marking discovered clusters as unsecured",
+		log.Errorw("Failed changing status of discovered clusters",
 			logging.Err(err), logging.ClusterID(clusterID))
 	}
 }
