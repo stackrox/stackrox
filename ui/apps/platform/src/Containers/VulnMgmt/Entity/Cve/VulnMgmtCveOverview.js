@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import React from 'react';
 import { ExternalLink } from 'react-feather';
 import { format } from 'date-fns';
@@ -11,7 +12,8 @@ import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
 const emptyCve = {
-    componentCount: 0,
+    imageComponentCount: 0,
+    nodeComponentCount: 0,
     cve: '',
     cvss: 0,
     deploymentCount: 0,
@@ -46,6 +48,8 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         lastModified,
         scoreVersion,
         vulnerabilityTypes,
+        imageComponentCount,
+        nodeComponentCount,
     } = safeData;
     const operatingSystem = safeData?.operatingSystem;
 
@@ -104,15 +108,23 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
     ];
 
-    const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
+    const splitCveType =
+        imageComponentCount > 0
+            ? entityTypes.IMAGE_CVE
+            : nodeComponentCount > 0
+              ? entityTypes.NODE_CVE
+              : entityTypes.CLUSTER_CVE;
+    const newEntityContext = { ...entityContext, [splitCveType]: cve };
 
-    // TODO: change the CveType to handle one of the new split types: IMAGE_CVE, NODE_CVE, or CLUSTER_CVE
-    //       but for now, we are going to translate the new data to the old type format
     const cveType = Object.keys(newEntityContext).shift();
-    const legacyTypeList =
-        cveType === entityTypes.CVE || cveType === entityTypes.CLUSTER_CVE
-            ? vulnerabilityTypes
-            : [cveType];
+    let legacyTypeList = [];
+    if (cveType === entityTypes.CLUSTER && splitCveType === entityTypes.CLUSTER_CVE) {
+        legacyTypeList = vulnerabilityTypes;
+    } else if (splitCveType === entityTypes.IMAGE_CVE || splitCveType === entityTypes.NODE_CVE) {
+        legacyTypeList = [splitCveType];
+    } else {
+        legacyTypeList = [cveType];
+    }
 
     const metaDataDetails = [
         {
