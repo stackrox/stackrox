@@ -110,7 +110,7 @@ setup() {
         setup_deployment_env false false
     fi
 
-    if (( test_case_no == 0 )); then
+    if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
         teardown
     fi
