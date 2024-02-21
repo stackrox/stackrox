@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const expiryDelta = time.Minute
+const earlyExpiry = 5 * time.Minute
 
 type awsTransport struct {
 	registry.Transport
@@ -58,7 +58,7 @@ func (t *awsTransport) ensureValid() error {
 }
 
 func (t *awsTransport) isValidNoLock() bool {
-	return t.expiresAt != nil && time.Now().Before(t.expiresAt.Add(-expiryDelta))
+	return t.expiresAt != nil && time.Now().Before(t.expiresAt.Add(-earlyExpiry))
 }
 
 func (t *awsTransport) refreshNoLock() error {

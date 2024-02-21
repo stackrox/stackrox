@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/pkg/auth/tokensource"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"golang.org/x/oauth2"
@@ -12,13 +14,18 @@ type stsTokenManagerImpl struct {
 	tokenSource *tokensource.ReuseTokenSourceWithInvalidate
 }
 
+const expiryDelta = 5 * time.Minute
+
 var _ STSTokenManager = &stsTokenManagerImpl{}
 
 func fallbackSTSClientManager() STSTokenManager {
 	credManager := &defaultCredentialsManager{}
 	mgr := &stsTokenManagerImpl{
 		credManager: credManager,
-		tokenSource: tokensource.NewReuseTokenSourceWithInvalidate(&CredentialManagerTokenSource{credManager}),
+		tokenSource: tokensource.NewReuseTokenSourceWithInvalidate(
+			&CredentialManagerTokenSource{credManager},
+			expiryDelta,
+		),
 	}
 	return mgr
 }
@@ -37,7 +44,10 @@ func NewSTSTokenManager(namespace string, secretName string) STSTokenManager {
 	}
 	mgr := &stsTokenManagerImpl{}
 	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.invalidateToken)
-	mgr.tokenSource = tokensource.NewReuseTokenSourceWithInvalidate(&CredentialManagerTokenSource{mgr.credManager})
+	mgr.tokenSource = tokensource.NewReuseTokenSourceWithInvalidate(
+		&CredentialManagerTokenSource{mgr.credManager},
+		expiryDelta,
+	)
 	return mgr
 }
 
