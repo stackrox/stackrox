@@ -195,9 +195,12 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 					continue
 				}
 
-				bindingError := getLatestBindingError(bindings[0].Status)
-				if bindingError != "" {
-					errors = append(errors, bindingError)
+				// We may not have received any bindings from sensor
+				if len(bindings) != 0 {
+					bindingError := getLatestBindingError(bindings[0].Status)
+					if bindingError != "" {
+						errors = append(errors, bindingError)
+					}
 				}
 
 				errors = append(errors, cluster.GetErrors()...)
