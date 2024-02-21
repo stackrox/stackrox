@@ -334,6 +334,10 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'name', Header: 'Name' },
             { accessor: 'paladinCloud.endpoint', Header: 'Endpoint' },
         ],
+        ocm: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'ocm.endpoint', Header: 'Endpoint' },
+        ],
     },
 };
 

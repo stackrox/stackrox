@@ -66,6 +66,14 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 return signatureIntegrations;
             }
             case 'cloudSources': {
+                if (type === 'paladinCloud') {
+                    return cloudSources.filter(
+                        (integration) => integration.type === 'TYPE_PALADIN_CLOUD'
+                    );
+                }
+                if (type === 'ocm') {
+                    return cloudSources.filter((integration) => integration.type === 'TYPE_OCM');
+                }
                 return cloudSources;
             }
             default: {

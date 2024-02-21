@@ -10,6 +10,9 @@ export type CloudSourceCredentials = {
 export type PaladinCloudConfig = {
     endpoint: string;
 };
+export type OcmConfig = {
+    endpoint: string;
+};
 
 export type CloudSourceIntegration = {
     id: string;
@@ -18,6 +21,7 @@ export type CloudSourceIntegration = {
     credentials: CloudSourceCredentials;
     skipTestIntegration: boolean;
     paladinCloud?: PaladinCloudConfig;
+    ocm?: OcmConfig;
 };
 
 const cloudSourcesURL = `/v1/cloud-sources`;
