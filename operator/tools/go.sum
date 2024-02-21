@@ -911,8 +911,8 @@ github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3N
 github.com/miekg/dns v1.1.26/go.mod h1:bPDLeHnStXmXAq1m/Ch/hvfNHr14JKNPMBo3VZKjuso=
 github.com/miekg/dns v1.1.41/go.mod h1:p6aan82bvRIyn+zDIv9xYNUpwa73JcSh9BKwknJysuI=
 github.com/miekg/pkcs11 v1.0.3/go.mod h1:XsNlhZGX73bx86s2hdc/FuaLm2CPZJemRLMA+WTFxgs=
-github.com/mikefarah/yq/v4 v4.40.7 h1:wlEb5WSGk76ImCOrTxaFrOqDHV99uP05YESNbKMgYjo=
-github.com/mikefarah/yq/v4 v4.40.7/go.mod h1:Qpwgwtmrn3XBeeACw0z8brRNBijX8Lw2RIiJFmS0+uE=
+github.com/mikefarah/yq/v4 v4.41.1 h1:HIyr+VCctIpiMl/mhplQJkzvsFeEVv7AurigXeX4cuI=
+github.com/mikefarah/yq/v4 v4.41.1/go.mod h1:Qpwgwtmrn3XBeeACw0z8brRNBijX8Lw2RIiJFmS0+uE=
 github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible/go.mod h1:8AuVvqP/mXw1px98n46wfvcGfQ4ci2FwoAjKYxuo3Z4=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
 github.com/mitchellh/cli v1.1.0/go.mod h1:xcISNoH86gajksDmfB23e/pu+B+GeFRMYmoHXxx3xhI=
