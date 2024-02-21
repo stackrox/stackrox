@@ -2,7 +2,7 @@
 
 set -eu
 
-SCANNER_V4_DEFS_BUCKET="https://storage.googleapis.com/scanner-v4-test"
+SCANNER_V4_DEFS_BUCKET="https://storage.googleapis.com/definitions.stackrox.io"
 ROX_PRODUCT_VERSION="$1"
 PRODUCT_VERSION="${ROX_PRODUCT_VERSION}.0"
 declare -A files_to_download=(
