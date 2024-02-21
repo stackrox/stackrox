@@ -6,3 +6,5 @@ rule_data_custom:
   - brew.registry.redhat.io/rh-osbs/openshift-golang-builder
   # TODO(ROX-22195): drop a dependency on centos image
   - quay.io/centos/centos
+  # TODO(ROX-18380): Remove eBPF probes for kernel drivers
+  - brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8
