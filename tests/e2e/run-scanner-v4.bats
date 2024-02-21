@@ -50,6 +50,7 @@ setup_file() {
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
     export ORCH_CMD=kubectl
+    export SENSOR_DEV_RESOURCES=true
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
     export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
@@ -699,6 +700,57 @@ patch_down_central() {
 
 patch_down_central_directly() {
    local central_namespace="$1"
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/central --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: central
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 800m
+EOF
+    )
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/central-db --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: central-db
+          resources:
+            memory: 1Gi
+            cpu: 500m
+EOF
+    )
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/scanner --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: scanner
+          resources:
+            requests:
+              memory: 500Mi
+              cpu: 500m
+EOF
+    )
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/scanner-db --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: db
+          resources:
+            requests:
+              memory: 500Mi
+              cpu: 400m
+EOF
+    )
 
     if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
         "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
