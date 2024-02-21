@@ -27,14 +27,14 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 		return err
 	}
 
-	impactedIdNameMap := map[string]string{}
+	impactedIDNameMap := map[string]string{}
 
 	var revokeInitBundleIds []string
 	for _, meta := range resp.Items {
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeInitBundleIds = append(revokeInitBundleIds, meta.GetId())
 			for _, impactedCluster := range meta.GetImpactedClusters() {
-				impactedIdNameMap[impactedCluster.GetId()] = impactedCluster.GetName()
+				impactedIDNameMap[impactedCluster.GetId()] = impactedCluster.GetName()
 			}
 		}
 	}
@@ -43,13 +43,13 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 		return errox.NotFound.Newf("could not find init bundle(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
 	}
 
-	impactedClusterIds := make([]string, 0, len(impactedIdNameMap))
-	for id := range impactedIdNameMap {
+	impactedClusterIds := make([]string, 0, len(impactedIDNameMap))
+	for id := range impactedIDNameMap {
 		impactedClusterIds = append(impactedClusterIds, id)
 	}
 
 	if !force {
-		confirm, err := confirmImpactedClusterIds(impactedIdNameMap, cliEnvironment.InputOutput().Out(), cliEnvironment.InputOutput().In())
+		confirm, err := confirmImpactedClusterIds(impactedIDNameMap, cliEnvironment.InputOutput().Out(), cliEnvironment.InputOutput().In())
 		if err != nil {
 			return err
 		}
@@ -72,14 +72,14 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 	return nil
 }
 
-func confirmImpactedClusterIds(impactedClusterIdNameMap map[string]string, out io.Writer, in io.Reader) (bool, error) {
+func confirmImpactedClusterIds(impactedClusterIDNameMap map[string]string, out io.Writer, in io.Reader) (bool, error) {
 
-	if len(impactedClusterIdNameMap) == 0 {
+	if len(impactedClusterIDNameMap) == 0 {
 		return true, nil
 	}
 
-	impactedClusters := make([][2]string, 0, len(impactedClusterIdNameMap))
-	for id, name := range impactedClusterIdNameMap {
+	impactedClusters := make([][2]string, 0, len(impactedClusterIDNameMap))
+	for id, name := range impactedClusterIDNameMap {
 		impactedClusters = append(impactedClusters, [2]string{id, name})
 	}
 	sort.Slice(impactedClusters, func(i, j int) bool {
