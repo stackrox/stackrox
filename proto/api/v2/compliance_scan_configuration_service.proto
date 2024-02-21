@@ -13,11 +13,21 @@ option java_package = "io.stackrox.proto.api.v2";
 
 // ClusterScanStatus holds status based on cluster in the event that a scan configuration
 // was successfully applied to some clusters but not others.
-// Next available tag: 3
+// Next available tag: 5
 message ClusterScanStatus {
   string cluster_id = 1;
   repeated string errors = 2;
   string cluster_name = 3;
+
+  // Additional scan status gathered from ComplianceSuite
+  message SuiteStatus {
+    string phase = 1;
+    string result = 2;
+    string error_message = 3;
+    google.protobuf.Timestamp last_transition_time = 4;
+  }
+
+  SuiteStatus suite_status = 4;
 }
 
 // Next available tag: 5
