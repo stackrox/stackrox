@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/internal/version"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 var (
@@ -42,7 +42,7 @@ var (
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
 			},
-			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst",
+			VulnerabilitiesURL: "https://storage.googleapis.com/definitions.stackrox.io/vulnerability-bundles/dev/vulns.json.zst",
 		},
 		// Default is empty.
 		MTLS: MTLSConfig{

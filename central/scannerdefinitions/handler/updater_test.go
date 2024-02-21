@@ -23,9 +23,7 @@ const (
 
 	mappingURL = "https://storage.googleapis.com/definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 
-	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
-
-	v4VulnURL = "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst"
+	v4VulnURL = "https://storage.googleapis.com/definitions.stackrox.io/vulnerability-bundles/dev/vulns.json.zst"
 )
 
 var (
@@ -92,21 +90,6 @@ func TestV4VulnUpdate(t *testing.T) {
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
 	assertOnFileExistence(t, filePath, true)
-}
-
-func TestCvssUpdate(t *testing.T) {
-	filePath := filepath.Join(t.TempDir(), "test.tar.gz")
-	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, cvssURL, 1*time.Hour)
-
-	// Should fetch first time.
-	require.NoError(t, u.doUpdate())
-	assertOnFileExistence(t, filePath, true)
-
-	n, err := countYearlyFilesInTarGz(filePath)
-	if err != nil {
-		t.Fatalf("Failed to count files in zip: %v", err)
-	}
-	assert.Greater(t, n, 21, "Number of files should be greater than 21")
 }
 
 func countYearlyFilesInTarGz(tarGzFilePath string) (int, error) {
