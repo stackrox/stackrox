@@ -29,6 +29,17 @@ init() {
     require_environment "ORCHESTRATOR_FLAVOR"
 }
 
+export TEST_SUITE_ABORTED="false"
+
+# Function useful during development of this test suite.
+# Allows to abort a test in such a way that any cleanups are skipped and the state
+# of the cluster can me inspected or manually modified further right way.
+bats_suite_abort() {
+    echo "TERMINATING IMMEDIATELY" >&3
+    TEST_SUITE_ABORTED="true"
+    exit 1
+}
+
 setup_file() {
     init
 
@@ -89,6 +100,7 @@ setup_file() {
 test_case_no=0
 
 setup() {
+    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return
     init
     set -euo pipefail
 
@@ -145,6 +157,8 @@ describe_deployments_in_namespace() {
 
 
 teardown() {
+    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return
+
     local central_namespace=""
     local sensor_namespace=""
     local namespaces=( )
@@ -180,6 +194,7 @@ teardown() {
 }
 
 teardown_file() {
+    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return
     remove_earlier_roxctl_binary
 }
 
