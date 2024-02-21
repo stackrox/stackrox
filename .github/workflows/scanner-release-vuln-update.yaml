@@ -2,9 +2,7 @@ name: Scanner release vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
-  push:
-    branches:
-    - ross/*
+  workflow_dispatch:
 
 jobs:
   read-release-versions:
