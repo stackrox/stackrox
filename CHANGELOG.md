@@ -17,8 +17,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Export APIs have been added for deployments, nodes, pods, and images as a tech preview.
 - ROX-21950: `roxctl scanner download-db` has been added to help download version specific offline vulnerability bundles introduced with `Scanner V4`.
 - The new vulnerability scanner named "Scanner V4" has been integrated. At the moment it needs to run side-by-side with the current default scanner named "StackRox Scanner". Installation instructions can be found in the official RHACS documentation.
-- ROX-19932: ACS can pull information about available clusters to secure from Red Hat OpenShift Cluster Manager and Paladin Cloud.
-- ROX-13367: ACS now supports short-lived token integrations for GCP via workload identity federation and AWS via the Secure Token Service.
+- ROX-19932: ACS can pull information about available clusters to secure from
+  Red Hat OpenShift Cluster Manager and Paladin Cloud.
+- ROX-13367: ACS now supports short-lived token integrations for GCP via
+  workload identity federation and AWS via the Secure Token Service.
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
