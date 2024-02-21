@@ -610,7 +610,6 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 			break
 		}
 		return sev, nil
-	default:
 	}
 
 	// Default/fallback is NVD.

@@ -182,7 +182,7 @@ func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.
 			// Use the report's score if it exists.
 			if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
 				log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, vuln.GetCve())
-				c.Score = v2.GetBaseScore()
+				c.Score = baseScore
 			}
 			c.Severity = cvssv2.Severity(c.Score)
 			vuln.CvssV2 = c
@@ -203,7 +203,7 @@ func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.
 			// Use the report's score if it exists.
 			if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
 				log.Debugf("Calculated CVSSv3 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, vuln.GetCve())
-				c.Score = v3.GetBaseScore()
+				c.Score = baseScore
 			}
 			c.Severity = cvssv3.Severity(c.Score)
 			vuln.CvssV3 = c
