@@ -54,7 +54,8 @@ scannerV4:
     postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
     hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
     source:
-      statementTimeoutMs: 60000
+      minConns: 10
+      maxConns: 80
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
