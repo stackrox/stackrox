@@ -418,10 +418,10 @@ spec:
       resources:
         requests:
           cpu: "400m"
-          memory: "4Gi"
+          memory: "5Gi"
         limits:
           cpu: "1000m"
-          memory: "5Gi"
+          memory: "5500Mi"
     db:
       resources:
         requests:
