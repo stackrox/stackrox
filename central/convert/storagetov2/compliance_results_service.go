@@ -29,8 +29,6 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) 
 		},
 		Description:  incoming.GetDescription(),
 		Instructions: incoming.GetInstructions(),
-		Standard:     incoming.GetStandard(),
-		Control:      incoming.GetControl(),
 		Rationale:    incoming.GetRationale(),
 		ValuesUsed:   incoming.GetValuesUsed(),
 		Warnings:     incoming.GetWarnings(),
