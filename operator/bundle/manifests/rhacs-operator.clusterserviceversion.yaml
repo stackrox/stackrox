@@ -530,6 +530,8 @@ spec:
           in Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.scannerComponent:Enabled
       - description: Configures how Scanner V4 should store its persistent data. You
           can use a persistent volume claim (the recommended default), a host path,
           or an emptyDir volume if Scanner V4 is running on a secured cluster without
@@ -1020,6 +1022,8 @@ spec:
           in Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.scannerComponent:AutoSense
       - description: Configures how Scanner V4 should store its persistent data. You
           can use a persistent volume claim (the recommended default), a host path,
           or an emptyDir volume if Scanner V4 is running on a secured cluster without
