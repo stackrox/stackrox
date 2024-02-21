@@ -370,6 +370,12 @@ type LocalScannerV4ComponentSpec struct {
 	// Settings pertaining to the DB deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense"}
 	DB *ScannerV4DB `json:"db,omitempty"`
+
+	// Configures monitoring endpoint for Scanner V4. The monitoring endpoint
+	// allows other services to collect metrics from Scanner V4, provided in
+	// Prometheus compatible format.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.

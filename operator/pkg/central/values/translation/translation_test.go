@@ -403,6 +403,9 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointEnabled,
+							},
 						},
 						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
@@ -689,6 +692,7 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 					},
+					"exposeMonitoring": true,
 				},
 			},
 		},

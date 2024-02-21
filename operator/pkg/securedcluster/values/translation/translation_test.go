@@ -107,7 +107,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 
 	scannerComponentPolicy := platform.LocalScannerComponentAutoSense
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
-
+	motoringEnabled := platform.ExposeEndpointEnabled
 	scannerReplicas := int32(7)
 	scannerMinReplicas := int32(6)
 	scannerMaxReplicas := int32(8)
@@ -476,6 +476,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 									},
 								},
 							},
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &motoringEnabled,
+							},
 						},
 						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
@@ -695,6 +698,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 					},
+					"exposeMonitoring": true,
 				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,

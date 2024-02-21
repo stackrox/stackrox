@@ -374,5 +374,9 @@ func getCentralScannerV4ComponentValues(ctx context.Context, s *platform.Scanner
 	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)
 	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.CentralGVK.Kind, namespace, client)
 
+	if s.Monitoring != nil {
+		sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
+	}
+
 	return &sv
 }
