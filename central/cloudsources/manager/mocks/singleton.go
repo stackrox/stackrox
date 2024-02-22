@@ -38,6 +38,30 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
 }
 
+// MarkClusterSecured mocks base method.
+func (m *MockManager) MarkClusterSecured(id string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MarkClusterSecured", id)
+}
+
+// MarkClusterSecured indicates an expected call of MarkClusterSecured.
+func (mr *MockManagerMockRecorder) MarkClusterSecured(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkClusterSecured", reflect.TypeOf((*MockManager)(nil).MarkClusterSecured), id)
+}
+
+// MarkClusterUnsecured mocks base method.
+func (m *MockManager) MarkClusterUnsecured(id string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MarkClusterUnsecured", id)
+}
+
+// MarkClusterUnsecured indicates an expected call of MarkClusterUnsecured.
+func (mr *MockManagerMockRecorder) MarkClusterUnsecured(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkClusterUnsecured", reflect.TypeOf((*MockManager)(nil).MarkClusterUnsecured), id)
+}
+
 // ShortCircuit mocks base method.
 func (m *MockManager) ShortCircuit() {
 	m.ctrl.T.Helper()

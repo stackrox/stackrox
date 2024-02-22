@@ -9,6 +9,7 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/convert/storagetotype"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources"
@@ -90,6 +91,16 @@ func (m *managerImpl) Stop() {
 // ShortCircuit the collection of assets from cloud sources.
 func (m *managerImpl) ShortCircuit() {
 	m.shortCircuitSignal.Signal()
+}
+
+func (m *managerImpl) MarkClusterSecured(id string) {
+	log.Infof("Marking discovered clusters matching cluster %q as secured", id)
+	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_SECURED)
+}
+
+func (m *managerImpl) MarkClusterUnsecured(id string) {
+	log.Infof("Marking discovered clusters matching cluster %q as unsecured", id)
+	m.changeStatusForDiscoveredClusters(id, storage.DiscoveredCluster_STATUS_UNSECURED)
 }
 
 func (m *managerImpl) discoveredClustersLoop() {
@@ -174,9 +185,14 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 	// A list of IDs of secured clusters that can be used for matching.
 	securedClusters := set.NewStringSet()
 
-	unspecifiedProviderType := set.NewStringSet()
+	unspecifiedProviderTypes := set.NewStringSet()
 
 	if err := m.clusterDataStore.WalkClusters(clustersCtx, func(obj *storage.Cluster) error {
+		// Explicitly ignore unhealthy clusters for the matching, as they cannot be deemed as secured.
+		if obj.GetHealthStatus().GetOverallHealthStatus() != storage.ClusterHealthStatus_HEALTHY {
+			return nil
+		}
+
 		providerMetadata := obj.GetStatus().GetProviderMetadata()
 
 		// Explicitly ignore clusters which do not have provider metadata associated with them.
@@ -190,7 +206,7 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		// as Unspecified instead of Unsecured. This is to avoid false-positives.
 		clusterMetadata := providerMetadata.GetCluster()
 		if clusterMetadata.GetId() == "" {
-			unspecifiedProviderType.Add(providerMetadataToProviderType(providerMetadata).String())
+			unspecifiedProviderTypes.Add(providerMetadataToProviderType(providerMetadata).String())
 			return nil
 		}
 
@@ -206,12 +222,73 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		switch {
 		case securedClusters.Contains(cluster.GetID()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_SECURED
-		case unspecifiedProviderType.Contains(cluster.GetProviderType().String()):
+		case unspecifiedProviderTypes.Contains(cluster.GetProviderType().String()):
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
 		default:
 			cluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
 		}
 	}
+}
+
+func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status storage.DiscoveredCluster_Status) {
+	cluster, err := m.getCluster(clusterID)
+	if err != nil {
+		log.Errorw("Failed to get cluster to change status",
+			logging.ClusterID(clusterID), logging.Err(err))
+		return
+	}
+
+	// If the cluster has no metadata, we can short-circuit since it cannot match with any discovered cluster.
+	if cluster.GetStatus().GetProviderMetadata().GetCluster().GetId() == "" {
+		return
+	}
+
+	cloudSources, err := m.cloudSourcesDataStore.ListCloudSources(cloudSourceCtx, search.EmptyQuery())
+	if err != nil {
+		log.Errorw("Failed to list stored cloud sources for changing cluster status",
+			logging.Err(err), logging.ClusterID(clusterID))
+		return
+	}
+
+	discoveredClusters := m.fetchDiscoveredClusters(cluster, cloudSources)
+	// In case we found no discovered clusters, we can short-circuit here.
+	if len(discoveredClusters) == 0 {
+		return
+	}
+
+	for _, discoveredCluster := range discoveredClusters {
+		discoveredCluster.Status = status
+	}
+
+	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx,
+		storagetotype.DiscoveredClusters(discoveredClusters...)...); err != nil {
+		log.Errorw("Failed changing status of discovered clusters",
+			logging.Err(err), logging.ClusterID(clusterID))
+	}
+}
+
+func (m *managerImpl) getCluster(id string) (*storage.Cluster, error) {
+	cluster, exists, err := m.clusterDataStore.GetCluster(clustersCtx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	return cluster, nil
+}
+
+func (m *managerImpl) fetchDiscoveredClusters(cluster *storage.Cluster, sources []*storage.CloudSource) []*storage.DiscoveredCluster {
+	ids := createDiscoveredClusterIds(cluster, sources)
+
+	discoveredClusters := make([]*storage.DiscoveredCluster, 0, len(ids))
+	for _, id := range ids {
+		cluster, err := m.discoveredClustersDataStore.GetDiscoveredCluster(discoveredClusterCtx, id)
+		if err == nil {
+			discoveredClusters = append(discoveredClusters, cluster)
+		}
+	}
+	return discoveredClusters
 }
 
 // createClients creates the API clients to interact with the third-party API of the cloud source.
@@ -251,4 +328,17 @@ func providerMetadataToProviderType(metadata *storage.ProviderMetadata) storage.
 	default:
 		return storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED
 	}
+}
+
+func createDiscoveredClusterIds(cluster *storage.Cluster, cloudSources []*storage.CloudSource) []string {
+	discoveredClusterIDs := make([]string, 0, len(cloudSources))
+	for _, cloudSource := range cloudSources {
+		discoveredClusterIDs = append(discoveredClusterIDs, discoveredclusters.
+			GenerateDiscoveredClusterID(&discoveredclusters.DiscoveredCluster{
+				ID:            cluster.GetStatus().GetProviderMetadata().GetCluster().GetId(),
+				Type:          cluster.GetStatus().GetProviderMetadata().GetCluster().GetType(),
+				CloudSourceID: cloudSource.GetId(),
+			}))
+	}
+	return discoveredClusterIDs
 }
