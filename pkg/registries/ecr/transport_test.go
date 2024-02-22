@@ -18,12 +18,12 @@ func TestECRTransport(t *testing.T) {
 	assert.True(t, transport.isValidNoLock())
 
 	// Token is valid if more than the expiry delta is left.
-	expiredAt = time.Now().Add(120 * time.Second)
+	expiredAt = time.Now().Add(360 * time.Second)
 	transport.expiresAt = &expiredAt
 	assert.True(t, transport.isValidNoLock())
 
 	// Token is invalid if less than the expiry delta is left.
-	expiredAt = time.Now().Add(30 * time.Second)
+	expiredAt = time.Now().Add(180 * time.Second)
 	transport.expiresAt = &expiredAt
 	assert.False(t, transport.isValidNoLock())
 
