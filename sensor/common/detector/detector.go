@@ -82,12 +82,14 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	}
 	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
 		detectorStopper,
+		"FlowsQueue",
 		netFlowQueueSize,
 		detectorMetrics.DetectorNetworkFlowBufferSize,
 		detectorMetrics.DetectorNetworkFlowDroppedCount,
 	)
 	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
 		detectorStopper,
+		"PIsQueue",
 		piQueueSize,
 		detectorMetrics.DetectorProcessIndicatorBufferSize,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
