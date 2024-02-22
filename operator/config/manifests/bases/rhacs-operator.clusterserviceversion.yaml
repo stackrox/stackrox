@@ -400,6 +400,8 @@ spec:
           in Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls
@@ -922,6 +924,8 @@ spec:
           in Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense
       - description: Maximum timeout period for admission review, upon which admission
           review will fail open. Use it to set request timeouts when you enable inline
           image scanning. The default kubectl timeout is 30 seconds; taking padding
