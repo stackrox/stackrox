@@ -780,6 +780,11 @@ function launch_sensor {
             echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"
         fi
       else
+        if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
+            echo >&2 "ERROR: Unable to generate a Scanner deployment bundle, as has been requested by setting GENERATE_SCANNER_DEPLOYMENT_BUNDLE=true."
+            echo >&2 "Please make sure to have a roxctl version ${MAIN_IMAGE_TAG} in PATH."
+            exit 1
+        fi
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
