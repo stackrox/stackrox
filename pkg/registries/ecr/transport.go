@@ -80,8 +80,7 @@ func (t *awsTransport) refreshNoLock() error {
 		return errors.New("malformed basic auth response from AWS")
 	}
 	t.expiresAt = authData.ExpiresAt
-	t.config.Username = username
-	t.config.Password = password
+	t.config.SetCredentials(username, password)
 	t.Transport = docker.DefaultTransport(t.config)
 	return nil
 }

@@ -67,8 +67,7 @@ func (t *googleTransport) refreshNoLock() error {
 		return errors.Wrap(err, "failed to get access token")
 	}
 	t.token = token
-	t.config.Username = "oauth2accesstoken"
-	t.config.Password = token.AccessToken
+	t.config.SetCredentials("oauth2accesstoken", token.AccessToken)
 	t.Transport = docker.DefaultTransport(t.config)
 	return nil
 }

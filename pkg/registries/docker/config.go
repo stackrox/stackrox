@@ -6,6 +6,7 @@ import (
 
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -13,14 +14,31 @@ import (
 type Config struct {
 	// Endpoint defines the Docker Registry URL.
 	Endpoint string
-	// Username defines the Username for the Docker Registry.
-	Username string
-	// Password defines the password for the Docker Registry.
-	Password string
 	// Insecure defines if the registry should be insecure.
 	Insecure bool
 	// DisableRepoList when true disables populating list of repos from remote registry.
 	DisableRepoList bool
+
+	// username defines the Username for the Docker Registry.
+	username string
+	// password defines the password for the Docker Registry.
+	password string
+	mutex    sync.RWMutex
+}
+
+// GetCredentials returns the Docker basic auth credentials.
+func (c *Config) GetCredentials() (string, string) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	return c.username, c.password
+}
+
+// SetCredentials sets the Docker basic auth credentials.
+func (c *Config) SetCredentials(username string, password string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.username = username
+	c.password = password
 }
 
 func (c *Config) formatURL() string {
@@ -39,5 +57,6 @@ func DefaultTransport(cfg *Config) registry.Transport {
 			InsecureSkipVerify: true,
 		})
 	}
-	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), cfg.Username, cfg.Password)
+	username, password := cfg.GetCredentials()
+	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)
 }

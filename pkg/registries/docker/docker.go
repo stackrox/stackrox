@@ -121,8 +121,8 @@ func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bo
 	}
 	cfg := &Config{
 		Endpoint:        dockerConfig.Docker.GetEndpoint(),
-		Username:        dockerConfig.Docker.GetUsername(),
-		Password:        dockerConfig.Docker.GetPassword(),
+		username:        dockerConfig.Docker.GetUsername(),
+		password:        dockerConfig.Docker.GetPassword(),
 		Insecure:        dockerConfig.Docker.GetInsecure(),
 		DisableRepoList: disableRepoList,
 	}
@@ -223,9 +223,10 @@ func (r *Registry) Test() error {
 
 // Config returns the configuration of the docker registry
 func (r *Registry) Config() *types.Config {
+	username, password := r.cfg.GetCredentials()
 	return &types.Config{
-		Username:         r.cfg.Username,
-		Password:         r.cfg.Password,
+		Username:         username,
+		Password:         password,
 		Insecure:         r.cfg.Insecure,
 		URL:              r.url,
 		RegistryHostname: r.registry,

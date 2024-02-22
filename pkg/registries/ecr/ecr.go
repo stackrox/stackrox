@@ -144,8 +144,7 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 		DisableRepoList: disableRepoList,
 	}
 	if authData := conf.GetAuthorizationData(); authData != nil {
-		cfg.Username = authData.GetUsername()
-		cfg.Password = authData.GetPassword()
+		cfg.SetCredentials(authData.GetUsername(), authData.GetPassword())
 	} else {
 		client, err := createECRClient(conf)
 		if err != nil {
