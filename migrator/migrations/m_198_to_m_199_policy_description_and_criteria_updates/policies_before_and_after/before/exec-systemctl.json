@@ -1,0 +1,57 @@
+{
+  "id": "f2183906-4577-47de-9bf4-270d09e0a93c",
+  "name": "systemctl Execution",
+  "description": "Detected usage of the systemctl service manager",
+  "rationale": "The systemctl service manager is generally not used in containers, and its use could indicate suspicious activity",
+  "remediation": "Remove systemctl from the image before deploying, or consider using a base image that doesn't bundle systemctl",
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "systemctl"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0003",
+      "techniques": [
+        "T1543.002"
+      ]
+    },
+    {
+      "tactic": "TA0004",
+      "techniques": [
+        "T1543.002"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
