@@ -31,6 +31,7 @@ import (
 	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
+	cloudSourcesDS "github.com/stackrox/rox/central/cloudsources/datastore"
 	cloudSourcesManager "github.com/stackrox/rox/central/cloudsources/manager"
 	cloudSourcesService "github.com/stackrox/rox/central/cloudsources/service"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -623,6 +624,7 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(externalbackupsDS.Gather)
 				gs.AddGatherer(imageintegrationsDS.Gather)
+				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 			}
 		}
 	}
