@@ -131,7 +131,7 @@ can be configured via those files:
 
   scannerV4:
     # Enable Scanner V4, which will become the default scanner for StackRox.
-    # Note that enabling Scanner V4 while having the StackRox Scanner disable (scanner.disable=true)
+    # Note that enabling Scanner V4 while having the StackRox Scanner disabled (scanner.disable=true)
     # is not a supported configuration.
     disable: false
   
