@@ -50,7 +50,6 @@ setup_file() {
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
     export ORCH_CMD=kubectl
-    export SENSOR_DEV_RESOURCES=true
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
     export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
