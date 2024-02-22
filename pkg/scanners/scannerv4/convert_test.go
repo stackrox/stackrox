@@ -351,7 +351,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 		expected storage.VulnerabilitySeverity
 	}{
 		{
-			name: "low no overwrite",
+			name:     "low no overwrite",
 			expected: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 			vuln: &storage.EmbeddedVulnerability{
 				Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
@@ -364,7 +364,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 			},
 		},
 		{
-			name: "moderate no overwrite",
+			name:     "moderate no overwrite",
 			expected: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 			vuln: &storage.EmbeddedVulnerability{
 				Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
@@ -377,7 +377,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 			},
 		},
 		{
-			name: "important no overwrite",
+			name:     "important no overwrite",
 			expected: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			vuln: &storage.EmbeddedVulnerability{
 				Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
@@ -390,7 +390,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 			},
 		},
 		{
-			name: "critical no overwrite",
+			name:     "critical no overwrite",
 			expected: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 			vuln: &storage.EmbeddedVulnerability{
 				Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
@@ -403,7 +403,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 			},
 		},
 		{
-			name: "CVSSv3 overwrite",
+			name:     "CVSSv3 overwrite",
 			expected: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 			vuln: &storage.EmbeddedVulnerability{
 				Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
@@ -416,7 +416,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 			},
 		},
 		{
-			name: "CVSSv2 overwrite",
+			name:     "CVSSv2 overwrite",
 			expected: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 			vuln: &storage.EmbeddedVulnerability{
 				Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
