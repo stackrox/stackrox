@@ -20,6 +20,7 @@ export type PlatformKey = keyof typeof platformOptions;
 
 export function downloadBundle(
     installation: InstallationKey,
+    name: string,
     response: GenerateClusterInitBundleResponse
 ) {
     const { helmValuesBundle, kubectlBundle } = response;
@@ -30,10 +31,10 @@ export function downloadBundle(
     const file = new Blob([decoded], {
         type: 'application/x-yaml',
     });
-    const name =
+    const bundleName =
         installation === 'Helm'
             ? 'Helm-values-cluster-init-bundle'
             : 'Operator-secrets-cluster-init-bundle';
 
-    FileSaver.saveAs(file, `${name}.yaml`);
+    FileSaver.saveAs(file, `${name}-${bundleName}.yaml`);
 }

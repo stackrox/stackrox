@@ -83,7 +83,7 @@ function InitBundleForm(): ReactElement {
             generateClusterInitBundle({ name })
                 .then(({ response }) => {
                     setErrorMessage('');
-                    downloadBundle(installation, response); // TODO try catch?
+                    downloadBundle(installation, name, response); // TODO try catch?
                     setSubmitting(false);
                     goBack();
                 })
