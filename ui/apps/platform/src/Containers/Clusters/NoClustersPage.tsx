@@ -98,11 +98,6 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                 isInline
             />
             <PageSection variant="light">
-                {/* <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
-                    <ToolbarContent>
-                        <Title headingLevel="h1">Clusters</Title>
-                    </ToolbarContent>
-                </Toolbar> */}
                 {isLoading ? (
                     <Bullseye>
                         <Spinner isSVG />
