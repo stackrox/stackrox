@@ -562,6 +562,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 		return ScanNotDone, errorList.ToError()
 	}
 
+	log.Debugf("Scanning image %s", image.GetName().GetFullName())
 	for _, scanner := range scanners.GetAll() {
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
