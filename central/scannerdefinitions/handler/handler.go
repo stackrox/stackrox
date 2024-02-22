@@ -49,7 +49,8 @@ const (
 	defaultCleanupAge      = 1 * time.Hour
 
 	v4VulnSubDir      = "v4/vulnerability-bundles"
-	mappingFile       = "redhat-repository-mappings/mapping.zip"
+	v4MappingSubDir   = "v4/redhat-repository-mappings"
+	mappingFile       = "mapping.zip"
 	v4VulnFile        = "vulns.json.zst"
 	mappingUpdaterKey = "mapping"
 )
@@ -226,7 +227,7 @@ func (h *httpHandler) getUpdater(t updaterType, key string) *requestedUpdater {
 		var urlStr string
 		switch t {
 		case mappingUpdaterType:
-			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, v4MappingSubDir, mappingFile)
 			filePath += ".zip"
 		case vulnerabilityUpdaterType:
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, v4VulnSubDir, key, v4VulnFile)
