@@ -289,9 +289,10 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	}
 	defer utils.IgnoreError(zipR.Close)
 	var count int
-	// It is expected a ZIP file be uploaded with a ZIP of Scanner's vulnerability definitions.
-	// Currently, this is the only desired file. In the future, we may decide to
-	// support other files (like we have in the past), which is why we
+	// It is expected a ZIP file be uploaded with both Scanner V2 and V4 vulnerability definitions.
+	// scanner-defs.zip contains data required by Scanner V2.
+	// scanner-v4-defs-*.zip contains data required by Scanner v4.
+	// In the future, we may decide to support other files (like we have in the past), which is why we
 	// expect this ZIP of a single ZIP.
 	for _, zipF := range zipR.File {
 		if zipF.Name == scannerDefsSubZipName {
