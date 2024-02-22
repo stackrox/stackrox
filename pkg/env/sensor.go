@@ -47,16 +47,28 @@ var (
 	DeduperStateSyncTimeout = registerDurationSetting("ROX_DEDUPER_STATE_TIMEOUT", 30*time.Second)
 
 	// NetworkFlowBufferSize holds the size of how many network flows updates will be kept in Sensor while offline.
+	// 1 Item in the buffer = ~100 bytes per flow
+	// 100 (per flow) * 1000 (flows) * 100 (buffer size) = 10 MB
 	NetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_NETFLOW_OFFLINE_BUFFER_SIZE", 100)
 
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
-	ProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_PROCESS_INDICATOR_BUFFER_SIZE", 1000)
+	// 1 Item in the buffer = ~300 bytes
+	// 50000 * 300 = 15 MB
+	ProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_PROCESS_INDICATOR_BUFFER_SIZE", 50000)
 
 	// DetectorProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline in the detector.
-	DetectorProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_PROCESS_INDICATOR_BUFFER_SIZE", 1000)
+	// 1 Item in the buffer = ~1000 bytes
+	// 20000 * 1000 = 20 MB
+	// Notice: the actual size of each item is ~40 bytes since it holds pointers to the actual objects.
+	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
+	DetectorProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_PROCESS_INDICATOR_BUFFER_SIZE", 20000)
 
 	// DetectorNetworkFlowBufferSize indicates how many network flows will be kept in Sensor while offline in the detector.
-	DetectorNetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_NETWORK_FLOW_BUFFER_SIZE", 1000)
+	// 1 Item in the buffer = ~1000 bytes
+	// 20000 * 1000 = 20 MB
+	// Notice: the actual size of each item is ~40 bytes since it holds pointers to the actual objects.
+	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
+	DetectorNetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_NETWORK_FLOW_BUFFER_SIZE", 20000)
 
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
