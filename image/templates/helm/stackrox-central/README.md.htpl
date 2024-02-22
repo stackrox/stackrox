@@ -182,7 +182,7 @@ you want changes to sensitive configuration options to be applied.
 
 Alternatively, you can also use the `--reuse-values` for the `helm upgrade` command. This flag
 causes values which were previously passed via `--values / -f`, `--set` or `--set-file` to be
-automatially passed again to the Helm chart rendering.
+automatically passed again to the Helm chart rendering.
 
 ### Passing Generated Values
 
