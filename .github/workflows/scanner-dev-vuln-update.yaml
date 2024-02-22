@@ -2,10 +2,6 @@ name: Scanner dev vulnerability update
 on:
   schedule:
   - cron: "30 */4 * * *"
-  push:
-    branches:
-    - master
-    - yli3/*
 
 jobs:
   upload-dev-vulnerabilities:
