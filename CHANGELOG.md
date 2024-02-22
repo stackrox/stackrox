@@ -57,6 +57,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
 - The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
 - The Helm setting `central.db.persistence.hostPath` for hostPath storage will be deprecated in 2 releases. It is recommended to switch to an alternative persistent storage.
+- Users running ACS version 3.74.x or earlier must stop at version 4.4.x before upgrading to 4.5 or later. In version 4.0.0, ACS switched the underlying datastore to PostgreSQL. On an upgrade, data would be automatically migrated to PostgresSQL from the previous store.
+  In 4.5.0 this previous store will no longer be available, thus any existing data will not be migrated over if users jump from 3.74.x directly to 4.5.0. By stopping at any version from 4.0.0 to 4.4.x, users can ensure that the data will be properly migrated.
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,
