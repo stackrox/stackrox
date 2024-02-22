@@ -48,7 +48,7 @@ const (
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
 
-	v4VulnSubDir      = "vulnerability-bundles"
+	v4VulnSubDir      = "v4/vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
 	v4VulnFile        = "vulns.json.zst"
 	mappingUpdaterKey = "mapping"

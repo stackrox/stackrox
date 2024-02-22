@@ -19,7 +19,7 @@ const (
 
 	mappingURL = "https://definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 
-	v4VulnURL = "https://definitions.stackrox.io/vulnerability-bundles/dev/vulns.json.zst"
+	v4VulnURL = "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst"
 )
 
 var (

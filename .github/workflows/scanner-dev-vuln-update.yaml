@@ -40,7 +40,7 @@ jobs:
         make -C scanner bin/updater
         go clean -cache -modcache
         ./scanner/bin/updater -output-dir=dev
-        gsutil cp -r "dev" "gs://definitions.stackrox.io/vulnerability-bundles"
+        gsutil cp -r "dev" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 
   send-notification:
     needs:

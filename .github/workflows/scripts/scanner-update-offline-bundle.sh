@@ -6,7 +6,7 @@ SCANNER_V4_DEFS_BUCKET="https://storage.googleapis.com/definitions.stackrox.io"
 ROX_PRODUCT_VERSION="$1"
 PRODUCT_VERSION="${ROX_PRODUCT_VERSION}.0"
 declare -A files_to_download=(
-    ["v4/vulns.json.zst"]="${SCANNER_V4_DEFS_BUCKET}/vulnerability-bundles/${PRODUCT_VERSION}/vulns.json.zst"
+    ["v4/vulns.json.zst"]="${SCANNER_V4_DEFS_BUCKET}/v4/vulnerability-bundles/${PRODUCT_VERSION}/vulns.json.zst"
     ["v4/mapping.zip"]="https://definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 )
 

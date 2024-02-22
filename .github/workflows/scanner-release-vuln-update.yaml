@@ -81,7 +81,7 @@ jobs:
             break
           fi
         done
-        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://definitions.stackrox.io/vulnerability-bundles"
+        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 
   send-notification:
     needs:
