@@ -89,7 +89,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.6.0
-	github.com/prometheus/common v0.46.0
+	github.com/prometheus/common v0.47.0
 	github.com/quay/claircore v1.5.24
 	github.com/quay/claircore/toolkit v1.1.1
 	github.com/quay/goval-parser v0.8.8
