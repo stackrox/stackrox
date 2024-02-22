@@ -27,7 +27,7 @@ func EnrichImageByName(ctx context.Context, enricher ImageEnricher, enrichmentCt
 	}
 
 	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != ScanSucceeded) {
-		return nil, errors.New("scan could not be completed. Please check that an applicable registry and scanner is integrated")
+		return nil, errors.Errorf("scan could not be completed for image %s (%v): please check that an applicable registry and scanner is integrated", name, img.GetNotes())
 	}
 
 	return img, nil
