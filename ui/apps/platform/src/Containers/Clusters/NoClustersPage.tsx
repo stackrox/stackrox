@@ -185,10 +185,10 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 Legacy installation method
                             </Link>
                             {initBundlesCount !== 0 && (
-                                <Text component="p">
+                                <Text component="p" className="pf-u-w-50">
                                     If you misplaced your init bundle, we recommend locating the
                                     previously downloaded YAML on your device first by the name of
-                                    the
+                                    the{` `}
                                     <Link to={clustersInitBundlesPath}>generated init bundle</Link>,
                                     or you may need to create a new init bundle.
                                 </Text>
