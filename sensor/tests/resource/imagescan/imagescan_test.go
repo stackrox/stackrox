@@ -62,7 +62,7 @@ func Test_ImageScan(t *testing.T) {
 }
 
 func (s *ImageScanSuite) SetupSuite() {
-	customConfig := helper.DefaultCentralConfig()
+	customConfig := helper.DefaultConfig()
 	customConfig.InitialSystemPolicies = Policies
 	testContext, err := helper.NewContextWithConfig(s.T(), customConfig)
 	s.Require().NoError(err)
