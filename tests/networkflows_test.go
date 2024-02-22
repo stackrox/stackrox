@@ -30,10 +30,21 @@ func TestStackroxNetworkFlows(t *testing.T) {
 
 	clustersService := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	clusters, err := clustersService.GetClusters(ctx, &v1.GetClustersRequest{})
+
+	var clusters *v1.ClustersList
+	var err error
+	for retries := 20; retries > 0; retries-- {
+		clusters, err = clustersService.GetClusters(ctx, &v1.GetClustersRequest{})
+		if err == nil && len(clusters.GetClusters()) > 0 {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
 	cancel()
 
 	require.NoError(t, err)
+	require.NotEqual(t, 0, len(clusters.GetClusters()))
+
 	var mainCluster *storage.Cluster
 	for _, cluster := range clusters.GetClusters() {
 		if cluster.GetName() == "remote" {
