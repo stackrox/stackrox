@@ -37,7 +37,7 @@ jobs:
 
         mkdir -p redhat-repository-mappings && mv mapping.zip redhat-repository-mappings/
         # Upload mapping.zip to Google Cloud Storage
-        gsutil cp -r "redhat-repository-mappings" "gs://definitions.stackrox.io/"
+        gsutil cp -r "redhat-repository-mappings" "gs://definitions.stackrox.io/v4"
 
     - name: Send Slack notification on workflow failure
       if: failure()
