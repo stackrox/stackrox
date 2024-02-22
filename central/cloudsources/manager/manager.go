@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
 
@@ -63,9 +62,6 @@ type managerImpl struct {
 	cloudSourcesDataStore       cloudSourcesDS.DataStore
 	discoveredClustersDataStore discoveredClustersDS.DataStore
 	clusterDataStore            clusterDS.DataStore
-
-	unspecifiedProviderLock  sync.RWMutex
-	unspecifiedProviderTypes set.StringSet
 }
 
 func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
@@ -222,10 +218,6 @@ func (m *managerImpl) matchDiscoveredClusters(clusters []*discoveredclusters.Dis
 		return
 	}
 
-	concurrency.WithLock(&m.unspecifiedProviderLock, func() {
-		m.unspecifiedProviderTypes = unspecifiedProviderTypes.Clone()
-	})
-
 	for _, cluster := range clusters {
 		switch {
 		case securedClusters.Contains(cluster.GetID()):
@@ -264,20 +256,7 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 		return
 	}
 
-	unspecifiedProviders := concurrency.WithRLock1(&m.unspecifiedProviderLock, func() set.StringSet {
-		return m.unspecifiedProviderTypes.Clone()
-	})
-
 	for _, discoveredCluster := range discoveredClusters {
-		// If we reset the status to unsecured, we need to make sure to also respect the unspecified status that
-		// the discovered cluster may contain.
-		// We currently set this to unspecified because we do not distinguish between clusters being removed
-		// or the cluster just lost connectivity.
-		if status == storage.DiscoveredCluster_STATUS_UNSECURED &&
-			unspecifiedProviders.Contains(discoveredCluster.GetMetadata().GetProviderType().String()) {
-			discoveredCluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
-			continue
-		}
 		discoveredCluster.Status = status
 	}
 

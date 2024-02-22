@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +54,6 @@ func TestChangeDiscoveredClustersStatus(t *testing.T) {
 		cloudSourcesDataStore:       csDS,
 		discoveredClustersDataStore: dcDS,
 		clusterDataStore:            clusterStore,
-		unspecifiedProviderTypes:    set.NewStringSet(storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS.String()),
 	}
 
 	m.MarkClusterUnsecured("2c507da1-b882-48cc-8143-b74e14c5cd4f")
@@ -65,7 +63,7 @@ func TestChangeDiscoveredClustersStatus(t *testing.T) {
 	require.Len(t, clusters, 1)
 	storedDiscoveredCluster := clusters[0]
 	expectedDiscoveredCluster := typetostorage.DiscoveredCluster(discoveredCluster)
-	expectedDiscoveredCluster.Status = storage.DiscoveredCluster_STATUS_UNSPECIFIED
+	expectedDiscoveredCluster.Status = storage.DiscoveredCluster_STATUS_UNSECURED
 
 	assert.Equal(t, expectedDiscoveredCluster.GetId(), storedDiscoveredCluster.GetId())
 	assert.Equal(t, expectedDiscoveredCluster.GetStatus(), storedDiscoveredCluster.GetStatus())
