@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 )
 
 type fakeGRPCClient struct {
@@ -45,7 +46,11 @@ func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientCon
 	f.connMtx.Lock()
 	defer f.connMtx.Unlock()
 	ptr.Set(f.conn)
-	f.okSig.Signal()
+	if f.conn.GetState() == connectivity.Ready {
+		f.okSig.Signal()
+	} else {
+		f.stopSig.Signal()
+	}
 }
 
 // StopSignal returns a signal that is sent if there is an error.
