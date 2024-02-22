@@ -86,7 +86,11 @@
   {{ $_ := set $scannerV4DBVolumeCfg "hostPath" (dict "path" $scannerV4DBCfg.persistence.hostPath) }}
   {{ $scannerV4DBVolumeHumanReadable = printf "hostPath (%s)" $scannerV4DBCfg.persistence.hostPath}}
 {{ else }}
-  {{ include "srox.note" (list $ (printf "A PVC using the storage class %q will be used by the Scanner V4 DB." $scannerV4DBCfg.persistence.persistentVolumeClaim.storageClass)) }}
+  {{ if kindIs "invalid" $scannerV4DBCfg.persistence.persistentVolumeClaim.storageClass }}
+    {{ include "srox.note" (list $ "A PVC using the default storage class will be used for the Scanner V4 DB.") }}
+  {{ else }}
+    {{ include "srox.note" (list $ (printf "A PVC using the storage class %q will be used for the Scanner V4 DB." $scannerV4DBCfg.persistence.persistentVolumeClaim.storageClass)) }}
+  {{ end }}
   {{ $scannerV4DBPVCCfg := $scannerV4DBCfg.persistence.persistentVolumeClaim }}
   {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $extraSettings $pvcDefaults) }}
   {{ $_ = set $scannerV4DBVolumeCfg "persistentVolumeClaim" (dict "claimName" $scannerV4DBPVCCfg.claimName) }}
