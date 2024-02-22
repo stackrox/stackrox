@@ -334,6 +334,139 @@ central:
 #    key: null
 #    generate: null
 #
+## Configuration options relating to Scanner V4.
+#scannerV4:
+#
+#  # If this is set to false, Scanner V4 will be enabled and deployed.
+#  # If it is set to true, no other setting in this section will have any effect.
+#  disable: true
+#
+#  indexer:
+#    # The log level for the indexer deployment. This typically does not need to be changed.
+#    logLevel: INFO
+#
+#    image:
+#      registry: null
+#      name: [< required "" .ScannerV4ImageRemote >]
+#      tag: [< required "" .ScannerV4ImageTag >]
+#      fullRef: null
+#
+#    # Default number of indexer replicas created upon startup. The actual number might be higher
+#    # or lower if autoscaling is enabled (see below).
+#    replicas: 3
+#    # Settings related to autoscaling the indexer deployment.
+#    autoscaling:
+#      # If true, autoscaling will be disabled. None of the other settings in this section will
+#      # have any effect.
+#      disable: false
+#      minReplicas: 2
+#      maxReplicas: 5
+#
+#    # Resource settings for the indexer deployment.
+#    resources:
+#      requests:
+#        memory: "1500Mi"
+#        cpu: "1000m"
+#      limits:
+#        memory: "3Gi"
+#        cpu: "2000m"
+#
+#    # Settings for the internal service-to-service TLS certificate used by indexer.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
+#
+#  matcher:
+#    # The log level for the matcher deployment. This typically does not need to be changed.
+#    logLevel: INFO
+#
+#    image:
+#      registry: null
+#      name: [< required "" .ScannerV4ImageRemote >]
+#      tag: [< required "" .ScannerV4ImageTag >]
+#      fullRef: null
+#
+#    # Default number of matcher replicas created upon startup. The actual number might be higher
+#    # or lower if autoscaling is enabled (see below).
+#    replicas: 2
+#    # Settings related to autoscaling the matcher deployment.
+#    autoscaling:
+#      # If true, autoscaling will be disabled. None of the other settings in this section will
+#      # have any effect.
+#      disable: false
+#      minReplicas: 2
+#      maxReplicas: 3
+#
+#    # Resource settings for the matcher deployment.
+#    resources:
+#      requests:
+#        memory: "4Gi"
+#        cpu: "1000m"
+#      limits:
+#        memory: "5Gi"
+#        cpu: "2000m"
+#
+#    # Settings for the internal service-to-service TLS certificate used by matcher.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
+#
+#  db:
+#    image:
+#      registry: null
+#      name: [< required "" .ScannerV4DBImageRemote >]
+#      tag: [< required "" .ScannerV4ImageTag >]
+#      fullRef: null
+#
+#    # Resource settings for the DB deployment.
+#    resources:
+#      requests:
+#        cpu: "200m"
+#        memory: "2Gi"
+#      limits:
+#        cpu: "2000m"
+#        memory: "4Gi"
+#
+#    # Configure DB password. If `generate` is true, a new password will be
+#    # generated. If it is false, a valid password is expected in `value`.
+#    password:
+#      generate: null
+#      value: null
+#
+#    # Configure persistence backend for the DB.
+#    # By default a PVC is used. Unless a Storage Class is specified
+#    # a default Storage Class is expected.
+#    persistence:
+#      hostPath: null
+#      persistentVolumeClaim:
+#        claimName: "scanner-v4-db"
+#        size: "50Gi"
+#        createClaim: true
+#        storageClass: null
+#       none: null
+#
+#    nodeSelector: null
+#
+#    # Settings for the internal service-to-service TLS certificate used by the DB.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
+#
+#    postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
+#    hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
+#
+#    # Specifying configOverride mounts the specified config map in the same namespace which must contain
+#    # both pg_hba.conf and postgresql.conf. This should only be used when the default settings are not
+#    # sufficient and manual override is required.
+#    configOverride: null
+#
+#
 ## EXPERT SETTINGS. You usually do not need to touch those.
 #
 ## If set to true, allow deploying in a namespace other than "stackrox". This is unsupported, so
