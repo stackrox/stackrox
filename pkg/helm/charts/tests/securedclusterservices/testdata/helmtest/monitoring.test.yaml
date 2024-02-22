@@ -21,10 +21,6 @@ tests:
 - name: monitoring should be exposed when enabled
   set:
     exposeMonitoring: true
-    scannerV4:
-      disable: false
-      indexer:
-        metricsPort: 9090
   expect: |
     verifyMonitoringExposed(.services.sensor)
     verifyMonitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
