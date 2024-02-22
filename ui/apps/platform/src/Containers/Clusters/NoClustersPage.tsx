@@ -91,12 +91,18 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
     /* eslint-disable no-nested-ternary */
     return (
         <>
+            <Alert
+                variant="info"
+                title="Upon successful installation, the secured clusters might take a few moments to show up."
+                component="div"
+                isInline
+            />
             <PageSection variant="light">
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                {/* <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
                     </ToolbarContent>
-                </Toolbar>
+                </Toolbar> */}
                 {isLoading ? (
                     <Bullseye>
                         <Spinner isSVG />
@@ -185,10 +191,10 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 Legacy installation method
                             </Link>
                             {initBundlesCount !== 0 && (
-                                <Text component="p" className="pf-u-w-50">
+                                <Text component="p" className="pf-u-w-50vw">
                                     If you misplaced your init bundle, we recommend locating the
                                     previously downloaded YAML on your device first by the name of
-                                    the{` `}
+                                    the{' '}
                                     <Link to={clustersInitBundlesPath}>generated init bundle</Link>,
                                     or you may need to create a new init bundle.
                                 </Text>
