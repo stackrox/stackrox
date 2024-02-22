@@ -21,6 +21,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   Red Hat OpenShift Cluster Manager and Paladin Cloud.
 - ROX-13367: ACS now supports short-lived token integrations for GCP via
   workload identity federation and AWS via the Secure Token Service.
+- ROX-17382: An enhanced version of the ACS and Compliance Operator integration is now available under the heading "Compliance (2.0)". This feature is in Tech Preview.
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
