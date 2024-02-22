@@ -624,7 +624,7 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(externalbackupsDS.Gather)
 				gs.AddGatherer(imageintegrationsDS.Gather)
-				gs.AddGatherer(cloudSourcesDS.Gather)
+				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 			}
 		}
 	}

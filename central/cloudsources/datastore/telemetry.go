@@ -23,36 +23,38 @@ const (
 // Current properties we gather:
 // "Total Cloud Sources"
 // "Total <cloud source type> Cloud Sources"
-var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
-	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Integration),
-		),
-	)
-	props := make(map[string]any)
+func Gather(ds DataStore) phonehome.GatherFunc {
+	return func(ctx context.Context) (map[string]any, error) {
+		ctx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Integration),
+			),
+		)
+		props := make(map[string]any)
 
-	cloudSources, err := Singleton().ListCloudSources(ctx, search.EmptyQuery())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get image integrations")
+		cloudSources, err := ds.ListCloudSources(ctx, search.EmptyQuery())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get image integrations")
+		}
+
+		// Can safely ignore the error here since we already fetched integrations.
+		_ = phonehome.AddTotal(ctx, props, propertyName, func(_ context.Context) (int, error) {
+			return len(cloudSources), nil
+		})
+
+		totalCount := map[string]int{}
+
+		for _, cs := range cloudSources {
+			csType := cs.GetType()
+			totalCount[strings.TrimPrefix(csType.String(), "TYPE_")]++
+		}
+
+		for csType, count := range totalCount {
+			props[fmt.Sprintf("Total %s %s",
+				cases.Title(language.English, cases.Compact).String(csType), propertyName)] = count
+		}
+
+		return props, nil
 	}
-
-	// Can safely ignore the error here since we already fetched integrations.
-	_ = phonehome.AddTotal(ctx, props, propertyName, func(_ context.Context) (int, error) {
-		return len(cloudSources), nil
-	})
-
-	totalCount := map[string]int{}
-
-	for _, cs := range cloudSources {
-		csType := cs.GetType()
-		totalCount[strings.TrimPrefix(csType.String(), "TYPE_")]++
-	}
-
-	for csType, count := range totalCount {
-		props[fmt.Sprintf("Total %s %s",
-			cases.Title(language.English, cases.Compact).String(csType), propertyName)] = count
-	}
-
-	return props, nil
 }
