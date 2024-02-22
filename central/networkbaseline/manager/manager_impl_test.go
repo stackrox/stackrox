@@ -264,6 +264,19 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			DstPort:  13,
 		},
+		// This conn is also valid and should get incorporated into the baseline.
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
+				ID:   "INTERNALZZ",
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  13,
+		},
 		// This is to a listen endpoint, so it should not get incorporated.
 		{
 			SrcEntity: networkgraph.Entity{
@@ -305,6 +318,13 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 					},
 				}},
 				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 1)},
+			},
+			&storage.NetworkBaselinePeer{
+				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
+					Id:   "INTERNALZZ",
+				}},
+				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
 			},
 			&storage.NetworkBaselinePeer{
 				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
