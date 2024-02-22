@@ -27,7 +27,6 @@ func GenerateDiscoveredClusterID(discoveredCluster *DiscoveredCluster) string {
 	}
 	key := strings.Join([]string{
 		id,
-		discoveredCluster.GetType().String(),
 		sourceID,
 	}, ",")
 	return uuid.NewV5(rootNamespaceUUID, key).String()

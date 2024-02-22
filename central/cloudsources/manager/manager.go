@@ -336,7 +336,6 @@ func createDiscoveredClusterIds(cluster *storage.Cluster, cloudSources []*storag
 		discoveredClusterIDs = append(discoveredClusterIDs, discoveredclusters.
 			GenerateDiscoveredClusterID(&discoveredclusters.DiscoveredCluster{
 				ID:            cluster.GetStatus().GetProviderMetadata().GetCluster().GetId(),
-				Type:          cluster.GetStatus().GetProviderMetadata().GetCluster().GetType(),
 				CloudSourceID: cloudSource.GetId(),
 			}))
 	}
