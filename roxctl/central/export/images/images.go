@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/jsonpb"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"google.golang.org/grpc/codes"
 )
 
 // Command defines the central command tree
@@ -24,6 +26,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	c.RunE = func(cmd *cobra.Command, args []string) error {
+		// Override retriable codes to not included ResourceExhausted
+		grpc_retry.DefaultRetriableCodes = []codes.Code{
+			codes.Unavailable,
+		}
 		conn, err := cliEnvironment.GRPCConnection()
 		if err != nil {
 			return errors.Wrap(err, "could not establish gRPC connection to central")
