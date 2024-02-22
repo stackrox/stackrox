@@ -237,6 +237,8 @@ func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
 		}
 	case storage.NetworkEntityInfo_INTERNET:
 		return peerInfo{name: networkgraph.InternetExternalSourceName}
+	case storage.NetworkEntityInfo_INTERNAL_ENTITIES:
+		return peerInfo{name: networkgraph.InternalEntitiesName}
 	default:
 		// Unsupported type.
 		log.Warnf("unsupported entity type in network baseline: %v", entity)
