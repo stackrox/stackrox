@@ -2,9 +2,6 @@ name: Scanner dev vulnerability update
 on:
   schedule:
   - cron: "30 */4 * * *"
-  push:
-    branches:
-    - master
 
 jobs:
   upload-dev-vulnerabilities:
@@ -21,7 +18,7 @@ jobs:
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
@@ -39,7 +36,7 @@ jobs:
         make -C scanner bin/updater
         go clean -cache -modcache
         ./scanner/bin/updater -output-dir=dev
-        gsutil cp -r "dev" "gs://scanner-v4-test/vulnerability-bundles"
+        gsutil cp -r "dev" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 
   send-notification:
     needs:
