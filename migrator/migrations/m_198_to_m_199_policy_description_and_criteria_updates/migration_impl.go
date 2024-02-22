@@ -46,6 +46,19 @@ var (
 			FieldsToCompare: fieldsToCompare,
 			PolicyFileName:  "sensitive_files.json",
 		},
+
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "automount_service_account_token.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "host_pids.json",
+		},
+		{
+			FieldsToCompare: fieldsToCompare,
+			PolicyFileName:  "host_network.json",
+		},
 	}
 )
 

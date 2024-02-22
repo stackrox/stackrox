@@ -294,33 +294,6 @@
           "namespace": "openshift-cluster-csi-drivers"
         }
       }
-    },
-    {
-      "name": "Don't alert on deployment network-node-identity in namespace openshift-network-node-identity",
-      "deployment": {
-        "name": "network-node-identity",
-        "scope": {
-          "namespace": "openshift-network-node-identity"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment ovnkube-control-plane in namespace openshift-ovn-kubernetes",
-      "deployment": {
-        "name": "ovnkube-control-plane",
-        "scope": {
-          "namespace": "openshift-ovn-kubernetes"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on deployment aws-cloud-controller-manager in namespace openshift-cloud-controller-manager",
-      "deployment": {
-        "name": "aws-cloud-controller-manager",
-        "scope": {
-          "namespace": "openshift-cloud-controller-manager"
-        }
-      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",

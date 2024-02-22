@@ -548,6 +548,69 @@
           "namespace": "openshift-logging"
         }
       }
+    },
+    {
+      "name": "Don't alert on deployment osd-patch-subscription-source in namespace openshift-marketplace",
+      "deployment": {
+        "name": "osd-patch-subscription-source",
+        "scope": {
+          "namespace": "openshift-marketplace"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-delete-ownerrefs-serviceaccounts in namespace openshift-backplane-srep",
+      "deployment": {
+        "name": "osd-delete-ownerrefs-serviceaccounts",
+        "scope": {
+          "namespace": "openshift-backplane-srep"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment builds-pruner in namespace openshift-sre-pruning",
+      "deployment": {
+        "name": "builds-pruner",
+        "scope": {
+          "namespace": "openshift-sre-pruning"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment deployments-pruner in namespace openshift-sre-pruning",
+      "deployment": {
+        "name": "deployments-pruner",
+        "scope": {
+          "namespace": "openshift-sre-pruning"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment osd-delete-backplane-script-resources in namespace openshift-backplane-managed-scripts",
+      "deployment": {
+        "name": "osd-delete-backplane-script-resources",
+        "scope": {
+          "namespace": "openshift-backplane-managed-scripts"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment network-node-identity in namespace openshift-network-node-identity",
+      "deployment": {
+        "name": "network-node-identity",
+        "scope": {
+          "namespace": "openshift-network-node-identity"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-cloud-controller-manager in namespace openshift-cloud-controller-manager",
+      "deployment": {
+        "name": "aws-cloud-controller-manager",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager"
+        }
+      }
     }
   ],
   "severity": "LOW_SEVERITY",

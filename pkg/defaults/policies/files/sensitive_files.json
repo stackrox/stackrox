@@ -275,6 +275,15 @@
           "namespace": "openshift-logging"
         }
       }
+    },
+    {
+      "name": "Don't alert on deployment  in namespace openshift-cloud-controller-manager",
+      "deployment": {
+        "name": "aws-cloud-controller-manager",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager"
+        }
+      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",
