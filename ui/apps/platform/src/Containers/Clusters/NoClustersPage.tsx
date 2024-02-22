@@ -13,8 +13,6 @@ import {
     Spinner,
     Title,
     Text,
-    Toolbar,
-    ToolbarContent,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
