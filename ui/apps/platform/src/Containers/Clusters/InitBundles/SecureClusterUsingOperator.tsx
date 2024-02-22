@@ -31,7 +31,7 @@ function SecureClusterUsingOperator({
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            Generating and applying an init bundle for RHACS on Red HatOpenShift
+                            Generating and applying an init bundle for RHACS on Red Hat OpenShift
                         </a>
                     </ExternalLink>
                     <ExternalLink>
@@ -56,28 +56,29 @@ function SecureClusterUsingOperator({
             <List component="ul">
                 <ListItem>
                     <p>
-                        Download the YAML file for a cluster init bundle. You can use one bundle to
-                        secure multiple clusters.
+                        In the RHACS web portal, you have created an init bundle and downloaded the
+                        YAML file for the init bundle.
                     </p>
                 </ListItem>
                 <ListItem>
                     <p>
-                        Use the Red Hat OpenShift Container Platform web console to install the
-                        RHACS Operator from OperatorHub.
+                        In the Red Hat OpenShift Container Platform web console on the cluster that
+                        you are securing, you have installed the RHACS Operator.
                     </p>
                     <p>
-                        Create a new Red Hat OpenShift Container Platform project for RHACS.{' '}
-                        <strong>rhacs-operator</strong> is a good name choice.
+                        For Operator installation, create a new Red Hat OpenShift Container Platform
+                        project. <strong>rhacs-operator</strong> is a good name choice.
                     </p>
                 </ListItem>
             </List>
             <Title headingLevel={subHeadingLevel}>Repeat for each secured cluster</Title>
             <List component="ol">
                 <ListItem>
-                    <p>Apply the init bundle by creating a resource on the secured cluster.</p>
+                    <p>Apply the init bundle on the secured cluster. </p>
                     <p>
-                        With the RHACS project selected create the init bundle secrets in OpenShift
-                        Container Platform.
+                        Applying the init bundle creates the secrets and resources that the secured
+                        cluster needs to communicate with RHACS. Perform one of the following tasks
+                        to apply the init bundle:
                     </p>
                     {version && (
                         <ExternalLink>
@@ -96,9 +97,9 @@ function SecureClusterUsingOperator({
                     <List component="ul">
                         <ListItem>
                             <p>
-                                In the OpenShift Container Platform web console, in the top menu,
-                                click <strong>+</strong> to open the <strong>Import YAML</strong>{' '}
-                                page.
+                                In the OpenShift Container Platform web console on the cluster that
+                                you are securing, in the top menu, click <strong>+</strong> to open
+                                the <strong>Import YAML</strong> page.
                             </p>
                             <p>
                                 You can drag the init bundle file or copy and paste its contents
@@ -107,19 +108,20 @@ function SecureClusterUsingOperator({
                         </ListItem>
                         <ListItem>
                             <p>
-                                Using the Red Hat OpenShift CLI, run a command similar to the
-                                following:
+                                On the cluster that you are securing, using the Red Hat OpenShift
+                                CLI, run a command similar to the following:
                             </p>
                             <ClipboardCopy>
-                                oc create -n rhacs-operator -f
-                                Operator-secrets-cluster-init-bundle.yaml
+                                oc create -f name-Operator-secrets-cluster-init-bundle.yaml -n
+                                stackrox
                             </ClipboardCopy>
                         </ListItem>
                     </List>
                 </ListItem>
                 <ListItem>
                     <p>
-                        Install secured cluster services on each cluster using the RHACS operator.
+                        On the cluster that you are securing, install secured cluster services using
+                        the RHACS Operator.
                     </p>
                 </ListItem>
             </List>
