@@ -278,9 +278,11 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 
 	url := "https://storage.googleapis.com/scanner-support-public/offline/v1/4.3/scanner-vulns-4.3.zip"
 	resp, err := http.Get(url)
-	s.Require().NoError(err)
+	// Skip the test if file cannot be downloaded or status code is not OK.
+	if err != nil {
+		return
+	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		return
 	}
@@ -294,6 +296,10 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 
 	err = s.mockHandleZipContents(filePath)
 	s.Require().NoError(err)
+
+	req = s.getRequestWithVersionedFile(t, "4.3.0")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) error {
@@ -317,7 +323,7 @@ func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
 	defer utils.IgnoreError(zipR.Close)
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			err = s.mockHandleDefsFile(zipF, "testBlob")
+			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefinitionBlobName)
 			s.Require().NoError(err)
 			return nil
 		}
