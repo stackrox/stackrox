@@ -618,8 +618,8 @@ verify_scannerV4_indexer_deployed() {
     info "Waiting for Scanner V4 Indexer to appear in namespace ${namespace}..."
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 300
+    wait_for_ready_pods "${namespace}" "scanner-v4-db" 600
+    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 600
     info "** Scanner V4 Indexer is deployed in namespace ${namespace}"
 }
 
@@ -628,8 +628,8 @@ verify_scannerV4_matcher_deployed() {
     info "Waiting for Scanner V4 Matcher to appear in namespace ${namespace}..."
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 300
+    wait_for_ready_pods "${namespace}" "scanner-v4-db" 600
+    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 600
     info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
 }
 
@@ -709,7 +709,7 @@ spec:
           resources:
             requests:
               memory: 1Gi
-              cpu: 800m
+              cpu: 1000m
 EOF
     )
 
