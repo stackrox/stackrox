@@ -173,6 +173,9 @@ export function deleteAuthProviders(authProviderIds) {
 }
 
 function preprocessAuthProvider(provider: AuthProvider): AuthProvider {
+    if (!provider.claimMappings) {
+        return provider;
+    }
     const mappingAsArray = Object.entries(provider.claimMappings).sort((a, b) =>
         a[0].localeCompare(b[0])
     );
@@ -182,6 +185,9 @@ function preprocessAuthProvider(provider: AuthProvider): AuthProvider {
 }
 
 function postprocessAuthProvider(authProvider: AuthProvider): AuthProvider {
+    if (!authProvider.claimMappings) {
+        return authProvider;
+    }
     const newProvider = { ...authProvider };
     newProvider.claimMappings = Object.fromEntries(
         authProvider.claimMappings as [string, string][]
