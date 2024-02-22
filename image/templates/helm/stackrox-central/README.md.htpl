@@ -199,7 +199,7 @@ some component, it is required to pass in the existing CA, for example by adding
 ### Enabling Scanner V4
 
 Beginning with StackRox 4.4, a new scanner component based on ClairCore named Scanner V4 is integrated.
-In a future version of StackRox this will become the new default scanner and completely replace the existing
+In a future version of StackRox, Scanner V4 will become the new default scanner and replace the existing
 scanner named StackRox Scanner. For the time being Scanner V4 is not installed by default, but it
 can be enabled alongside StackRox Scanner using the following Helm chart setting:
 
