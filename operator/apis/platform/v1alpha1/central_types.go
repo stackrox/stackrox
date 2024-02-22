@@ -533,7 +533,7 @@ type ScannerV4Spec struct {
 	// Configures monitoring endpoint for Scanner V4. The monitoring endpoint
 	// allows other services to collect metrics from Scanner V4, provided in
 	// Prometheus compatible format.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
