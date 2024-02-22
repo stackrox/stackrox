@@ -14,7 +14,7 @@ deploymentWorkload:
       processInterval: 1m30s
   updateInterval: 25m0s
 networkWorkload:
-  batchSize: 5000
+  batchSize: 50
   flowInterval: 30s
 nodeWorkload:
   numNodes: 1000
