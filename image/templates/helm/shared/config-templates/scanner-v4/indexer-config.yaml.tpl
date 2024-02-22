@@ -33,7 +33,7 @@ indexer:
   name_to_repos_file: /run/mappings/container-name-repos-map.json
 matcher:
   enable: false
-log_level: info
+log_level: "{{ ._rox.scannerV4.indexer.logLevel }}"
 grpc_listen_addr: 0.0.0.0:8443
 http_listen_addr: 0.0.0.0:9443
 proxy:
