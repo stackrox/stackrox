@@ -187,7 +187,7 @@ automatically passed again to the Helm chart rendering.
 ### Passing Generated Values
 
 The Helm chart can conveniently automatically generate certain sensitive data objects. This includes
-passwords, keys and certificates. In case such data objects were generated during the installation
+passwords, keys and certificates. If these data objects were generated during the installation
 of the Helm chart, a command is provided as part of the post-installation notes which can be used
 for retrieving them and storing them in a file `generated-values.yaml`. In particular, this file
 might contain a CA key.
