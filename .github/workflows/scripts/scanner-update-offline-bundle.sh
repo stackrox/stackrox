@@ -28,4 +28,4 @@ jq -n \
     --arg date "$(date -u -Iseconds)" \
     '{"version": $version, "created": $date}' > v4/manifest.json
 zip -j "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" v4/*
-gsutil cp "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" "gs://scanner-v4-test/offline-bundles/"
+gsutil cp "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" "gs://definitions.stackrox.io/v4/offline-bundles/"
