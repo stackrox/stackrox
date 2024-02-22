@@ -20,7 +20,6 @@ var (
 	// Update only if the existing name, description and policy sections haven't changed.
 	fieldsToCompare = []policymigrationhelper.FieldComparator{
 		policymigrationhelper.NameComparator,
-		policymigrationhelper.RationaleComparator,
 		policymigrationhelper.DescriptionComparator,
 		policymigrationhelper.PolicySectionComparator,
 	}
