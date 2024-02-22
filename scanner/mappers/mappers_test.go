@@ -59,7 +59,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 		wantErr string
 	}{
 		"when nil then nil": {},
-		"when default values then attributes are definde": {
+		"when default values then attributes are defined": {
 			arg:  &claircore.VulnerabilityReport{},
 			want: &v4.VulnerabilityReport{Contents: &v4.Contents{}},
 		},
@@ -654,46 +654,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
-		"when vuln with range and no fixedIn then use upper limit": {
-			ccVulnerabilities: map[string]*claircore.Vulnerability{
-				"foo": {
-					Issued: now,
-					Range: &claircore.Range{
-						Upper: claircore.Version{
-							Kind: "test",
-							V:    [10]int32{0, 1, 2, 3},
-						},
-					},
-				},
-			},
-			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
-					Issued:         protoNow,
-					FixedInVersion: "1.2.3",
-				},
-			},
-		},
-		"when vuln with range and with fixeIn then use fixedIn": {
-			ccVulnerabilities: map[string]*claircore.Vulnerability{
-				"foo": {
-					Issued:         now,
-					FixedInVersion: "4.5.6",
-					Range: &claircore.Range{
-						Upper: claircore.Version{
-							Kind: "test",
-							V:    [10]int32{0, 1, 2, 3},
-						},
-					},
-				},
-			},
-			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
-					Issued:         protoNow,
-					FixedInVersion: "4.5.6",
-				},
-			},
-		},
-		"when vuln urlencoded fixeIn then use fixed value in fixedIn": {
+		"when vuln urlencoded fixedIn then use fixed value in fixedIn": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					Issued:         now,
@@ -802,7 +763,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
-		"when severity with CVSSv2 is invalid then skip": {
+		"when severity with CVSSv2 is invalid skip CVSS": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					Issued: now,
@@ -813,8 +774,14 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater: "RHEL8-updater",
 				},
 			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+				},
+			},
 		},
-		"when severity with CVSSv3 is invalid then skip": {
+		"when severity with CVSSv3 is invalid skip CVSS": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					Issued: now,
@@ -823,6 +790,12 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"cvss3_vector": []string{"invalid cvss3 vector"},
 					}.Encode(),
 					Updater: "RHEL8-updater",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
 				},
 			},
 		},
@@ -836,7 +809,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
-					Issued: protoNow,
+					Issued:   protoNow,
+					Severity: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
@@ -851,6 +825,41 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					ID:      "foo",
 					Issued:  now,
 					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					ID: "CVE-1234-567",
+					Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+						CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+							{
+								CvssData: &nvdschema.CVSSV31{
+									Version:      "3.1",
+									VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:     "foo",
+					Issued: protoNow,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+					},
+				},
+			},
+		},
+		"when OSV missing severity then return NVD scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Issued:  now,
+					Updater: "osv/sample-updater",
 				},
 			},
 			nvdVulns: map[string]*nvdschema.CVEAPIJSON20CVEItem{
