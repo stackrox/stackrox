@@ -193,7 +193,7 @@ for retrieving them and storing them in a file `generated-values.yaml`. This fil
 might contain a CA key.
 
 If, during an upgrade of the Helm release, the Helm chart needs to generate a new certificate for
-some component it is required to pass in the existing CA, for example by adding
+some component, it is required to pass in the existing CA, for example by adding
 `-f generated-values.yaml` to the arguments for `helm upgrade`.
 
 ### Enabling Scanner V4
