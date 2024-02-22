@@ -69,7 +69,9 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 		common.SensorComponentEventOfflineMode,
 		common.SensorComponentEventCentralReachable,
 	}
-	metrics := s.createNewClusterMetrics(time.Millisecond)
+	// Setting the duration too low may result in ticker emiting ticks in offline mode and the test to flake.
+	// It has been seen flaking with interval of 1 Millisecond
+	metrics := s.createNewClusterMetrics(50 * time.Millisecond)
 	s.Require().NoError(metrics.Start())
 	defer metrics.Stop(nil)
 	// Read the first message. This is needed because we call runPipeline before entering the ticker loop.
