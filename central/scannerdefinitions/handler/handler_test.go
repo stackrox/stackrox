@@ -300,6 +300,7 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	req = s.getRequestWithVersionedFile(t, "4.3.0")
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 }
 
 func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) error {
