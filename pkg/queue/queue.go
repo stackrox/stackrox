@@ -14,10 +14,15 @@ var (
 	log = logging.LoggerForModule()
 )
 
+const (
+	defaultQueueName = "Queue"
+)
+
 // Queue provides a thread-safe queue for type T.
 // The queue allows to push, pull, and blocking pull.
 // Additionally, it exposes safety guards such as a max size as well as metrics to track the queue growth and size.
 type Queue[T comparable] struct {
+	name           string
 	maxSize        int
 	counterMetric  *prometheus.CounterVec
 	droppedMetric  prometheus.Counter
@@ -53,11 +58,19 @@ func WithMaxSize[T comparable](size int) OptionFunc[T] {
 	}
 }
 
+// WithQueueName provides a name for the queue. This is useful for logging if there are multiple queue in use.
+func WithQueueName[T comparable](name string) OptionFunc[T] {
+	return func(queue *Queue[T]) {
+		queue.name = name
+	}
+}
+
 // NewQueue creates a new queue. Optionally, a metric can be included.
 func NewQueue[T comparable](opts ...OptionFunc[T]) *Queue[T] {
 	queue := &Queue[T]{
 		notEmptySignal: concurrency.NewSignal(),
 		queue:          list.New(),
+		name:           defaultQueueName,
 	}
 
 	for _, opt := range opts {
@@ -115,7 +128,7 @@ func (q *Queue[T]) Push(item T) {
 	defer q.mutex.Unlock()
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
-		log.Warnf("Queue size limit reached (%d). New items added to the queue will be dropped.", q.maxSize)
+		log.Warnf("Queue (%s) size limit reached (%d). New items added to the queue will be dropped.", q.name, q.maxSize)
 		if q.droppedMetric != nil {
 			q.droppedMetric.Inc()
 		}
