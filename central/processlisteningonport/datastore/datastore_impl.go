@@ -617,16 +617,12 @@ func (ds *datastoreImpl) readRowsToFindPLOPsWithNoProcessInformation(rows pgx.Ro
 // serialized data to check for process information.
 func (ds *datastoreImpl) getPLOPsToDelete(ctx context.Context) ([]string, error) {
 	rows, err := ds.pool.Query(ctx, getPotentiallyOrphanedPLOPs)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
-	plopsToDelete, err := ds.readRowsToFindPLOPsWithNoProcessInformation(rows)
-
-	return plopsToDelete, err
+	return ds.readRowsToFindPLOPsWithNoProcessInformation(rows)
 }
 
 // RemovePLOPsWithoutProcessIndicatorOrProcessInfo Finds PLOPs without a matching process indicator and no

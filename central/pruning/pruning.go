@@ -445,11 +445,11 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 
 	prunedCount, err := g.plops.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(pruningCtx)
 
-	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
-
 	if err != nil {
 		log.Error(errors.Wrap(err, "error removing PLOPs with no matching process indicator or process information"))
 	}
+
+	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
