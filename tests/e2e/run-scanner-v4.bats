@@ -78,7 +78,6 @@ setup_file() {
 
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
-    export TEST_NAMESPACES=("${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox")
 
     export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "${ROOT}" tag)}"
     info "Using MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
@@ -107,7 +106,7 @@ setup() {
 
     if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
-        remove_existing_stackrox_resources "${TEST_NAMESPACES[@]}"
+        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     fi
     if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
         echo "Only tearing down resources, exiting now..."
@@ -190,7 +189,7 @@ teardown() {
         fi
     fi
 
-    run remove_existing_stackrox_resources "${TEST_NAMESPACES[@]}"
+    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
 }
 
 teardown_file() {
