@@ -117,7 +117,7 @@ spec:
         [<- end >]
         [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
         {{- if ._rox._scannerV4Enabled }}
-        - name: ROX_SCANNER_V4_INDEXER_GRPC_ENDPOINT
+        - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
           value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
         - name: ROX_SCANNER_V4
           value: "true"

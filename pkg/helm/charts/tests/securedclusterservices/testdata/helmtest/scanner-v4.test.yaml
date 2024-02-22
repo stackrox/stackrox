@@ -195,7 +195,7 @@ tests:
     imagePullSecrets.allowNone: true
   expect: |
     .deployments["sensor"].spec.template.spec.containers[0].env[] |
-      select(.name == "ROX_SCANNER_V4_INDEXER_GRPC_ENDPOINT") | assertThat(.value == "scanner-v4-indexer.custom-ns.svc:8443")
+      select(.name == "ROX_SCANNER_V4_INDEXER_ENDPOINT") | assertThat(.value == "scanner-v4-indexer.custom-ns.svc:8443")
 
 - name: "Test customize for local scanner v4"
   values:
