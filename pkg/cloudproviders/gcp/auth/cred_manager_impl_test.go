@@ -124,6 +124,7 @@ func TestCredentialManager(t *testing.T) {
 			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {})
 			manager.Start()
 			defer manager.Stop()
+			require.Eventually(t, manager.informer.HasSynced, 5*time.Second, 100*time.Millisecond)
 
 			err := c.setupFn(k8sClient)
 			require.NoError(t, err)
