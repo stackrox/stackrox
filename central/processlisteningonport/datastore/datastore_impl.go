@@ -150,7 +150,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return err
 	}
 
-	plopObjects := []*storage.ProcessListeningOnPortStorage{}
+	newPlopObjects := []*storage.ProcessListeningOnPortStorage{}
+	updatePlopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
 		val.ClusterId = clusterID
 		var processInfo *storage.ProcessIndicatorUniqueKey
@@ -191,11 +192,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			existingPLOP.PodUid = val.PodUid
 			existingPLOP.ClusterId = val.ClusterId
 			existingPLOP.Namespace = val.Namespace
-			plopObjects = append(plopObjects, existingPLOP)
+			updatePlopObjects = append(updatePlopObjects, existingPLOP)
 		}
 
 		if !prevExists {
-			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			newPlopObjects = addNewPLOP(newPlopObjects, indicatorID, processInfo, val)
 		}
 	}
 
@@ -238,7 +239,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			existingPLOP.PodUid = val.PodUid
 			existingPLOP.ClusterId = val.ClusterId
 			existingPLOP.Namespace = val.Namespace
-			plopObjects = append(plopObjects, existingPLOP)
+			updatePlopObjects = append(updatePlopObjects, existingPLOP)
 		}
 
 		if !prevExists {
@@ -247,15 +248,21 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found active PLOP completed in the batch %s", plopToNoSecretsString(val))
 			}
 
-			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			newPlopObjects = addNewPLOP(newPlopObjects, indicatorID, processInfo, val)
 		}
+	}
+
+	// Save new PLOP objects
+	err = ds.storage.UpsertMany(ctx, newPlopObjects)
+	if err != nil {
+		return err
 	}
 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
-	// Now save actual PLOP objects
-	return ds.storage.UpsertMany(ctx, plopObjects)
+	// Update existing PLOP objects while using a lock
+	return ds.storage.UpsertMany(ctx, updatePlopObjects)
 }
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
