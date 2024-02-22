@@ -24,6 +24,15 @@ func (m *mockClusterStore) WalkClusters(_ context.Context, fn func(obj *storage.
 	return nil
 }
 
+func (m *mockClusterStore) GetCluster(_ context.Context, id string) (*storage.Cluster, bool, error) {
+	for _, cluster := range m.clusters {
+		if cluster.GetId() == id {
+			return cluster, true, nil
+		}
+	}
+	return nil, false, nil
+}
+
 func TestMatchDiscoveredClusters(t *testing.T) {
 	clusterStore := &mockClusterStore{clusters: []*storage.Cluster{
 		createCluster(
@@ -46,11 +55,20 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 			"test-cluster-3", storage.ClusterMetadata_EKS),
 		nil,
 		{
+			HealthStatus: &storage.ClusterHealthStatus{OverallHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 			Status: &storage.ClusterStatus{
 				ProviderMetadata: &storage.ProviderMetadata{
 					Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{
 						AccountId: "666666666666",
 					}},
+				},
+			},
+		},
+		{
+			HealthStatus: &storage.ClusterHealthStatus{OverallHealthStatus: storage.ClusterHealthStatus_UNHEALTHY},
+			Status: &storage.ClusterStatus{
+				ProviderMetadata: &storage.ProviderMetadata{
+					Cluster: &storage.ClusterMetadata{Id: "5553424234234_MC_testing_unsecured_eastus"},
 				},
 			},
 		},
@@ -115,6 +133,8 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 
 func createCluster(id, name string, clusterType storage.ClusterMetadata_Type) *storage.Cluster {
 	return &storage.Cluster{
+		Id:           id,
+		HealthStatus: &storage.ClusterHealthStatus{OverallHealthStatus: storage.ClusterHealthStatus_HEALTHY},
 		Status: &storage.ClusterStatus{
 			ProviderMetadata: &storage.ProviderMetadata{
 				Cluster: &storage.ClusterMetadata{

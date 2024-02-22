@@ -72,7 +72,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		}
 		go s.cveFetcher.HandleClusterConnection()
 		if features.CloudSources.Enabled() {
-			s.cloudSourcesManager.ShortCircuit()
+			s.cloudSourcesManager.MarkClusterSecured(clusterID)
 		}
 		return nil
 	default:
@@ -82,4 +82,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 func (s *pipelineImpl) OnFinish(clusterID string) {
 	s.deploymentEnvsMgr.MarkClusterInactive(clusterID)
+	if features.CloudSources.Enabled() {
+		s.cloudSourcesManager.MarkClusterUnsecured(clusterID)
+	}
 }
