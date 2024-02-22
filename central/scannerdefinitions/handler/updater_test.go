@@ -1,14 +1,10 @@
 package handler
 
 import (
-	"archive/tar"
 	"archive/zip"
-	"compress/gzip"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 	"time"
 
@@ -21,11 +17,9 @@ import (
 const (
 	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
 
-	mappingURL = "https://storage.googleapis.com/definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
+	mappingURL = "https://definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 
-	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
-
-	v4VulnURL = "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst"
+	v4VulnURL = "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst"
 )
 
 var (
@@ -92,62 +86,6 @@ func TestV4VulnUpdate(t *testing.T) {
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
 	assertOnFileExistence(t, filePath, true)
-}
-
-func TestCvssUpdate(t *testing.T) {
-	filePath := filepath.Join(t.TempDir(), "test.tar.gz")
-	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, cvssURL, 1*time.Hour)
-
-	// Should fetch first time.
-	require.NoError(t, u.doUpdate())
-	assertOnFileExistence(t, filePath, true)
-
-	n, err := countYearlyFilesInTarGz(filePath)
-	if err != nil {
-		t.Fatalf("Failed to count files in zip: %v", err)
-	}
-	assert.Greater(t, n, 21, "Number of files should be greater than 21")
-}
-
-func countYearlyFilesInTarGz(tarGzFilePath string) (int, error) {
-	file, err := os.Open(tarGzFilePath)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	gzr, err := gzip.NewReader(file)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if err := gzr.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	tarr := tar.NewReader(gzr)
-
-	count := 0
-	yearRegexp := regexp.MustCompile(`\b(19|20)\d{2}\b`) // Regular expression for year
-	for {
-		header, err := tarr.Next()
-		if err != nil {
-			if err == io.EOF {
-				break // End of archive
-			}
-			return 0, err
-		}
-		if header.Typeflag != tar.TypeDir && yearRegexp.MatchString(header.Name) {
-			count++
-		}
-	}
-
-	return count, nil
 }
 
 // countFilesInZip counts the number of files inside a zip archive.

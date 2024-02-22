@@ -48,9 +48,7 @@ const (
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
 
-	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
-	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
-	v4VulnSubDir      = "vulnerability-bundles"
+	v4VulnSubDir      = "v4/vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
 	v4VulnFile        = "vulns.json.zst"
 	mappingUpdaterKey = "mapping"
@@ -231,7 +229,7 @@ func (h *httpHandler) getUpdater(t updaterType, key string) *requestedUpdater {
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
 			filePath += ".zip"
 		case vulnerabilityUpdaterType:
-			urlStr, _ = url.JoinPath(v4StorageDomain, v4VulnSubDir, key, v4VulnFile)
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, v4VulnSubDir, key, v4VulnFile)
 			filePath += ".json.zst"
 		default: // uuid
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
