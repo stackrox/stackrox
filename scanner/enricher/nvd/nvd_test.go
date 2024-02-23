@@ -354,7 +354,11 @@ func newFakeGetter(t *testing.T, path string) driver.EnrichmentGetter {
 	}
 	g := &fakeGetter{items: map[string]json.RawMessage{}}
 	for _, v := range data.Vulnerabilities {
-		en, err := json.Marshal(filterFields(v.CVE))
+		info, err := filterFields(v.CVE)
+		if err != nil {
+			t.Fatal(err)
+		}
+		en, err := json.Marshal(info)
 		if err != nil {
 			t.Fatal(err)
 		}

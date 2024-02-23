@@ -166,8 +166,9 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			// Parse vulnerabilities in the API response.
 			enc := json.NewEncoder(out)
 			for _, vuln := range apiResp.Vulnerabilities {
-				item := filterFields(vuln.CVE)
-				if item == nil {
+				item, err := filterFields(vuln.CVE)
+				if err != nil {
+					zlog.Warn(ctx).Err(err).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
 					continue
 				}
 				enrichment, err := json.Marshal(item)
@@ -198,7 +199,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	return out, hint, nil
 }
 
-func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
+func filterFields(cve *schema.CVEAPIJSON20CVEItem) (*schema.CVEAPIJSON20CVEItem, error) {
 	var desc []*schema.CVEAPIJSON20LangString
 	for _, d := range cve.Descriptions {
 		if d.Lang == "en" {
@@ -213,10 +214,9 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		Published:    cve.Published,
 		LastModified: cve.LastModified,
 	}
-	// Return the item as-is if metrics are missing.
-	// We'd rather show the vulnerability without CVSS information than ignore it.
-	if cve.Metrics == nil {
-		return item
+	// Skip item if it's missing metrics.
+	if cve.Metrics == nil || (cve.Metrics.CvssMetricV31 == nil && cve.Metrics.CvssMetricV30 == nil && cve.Metrics.CvssMetricV2 == nil) {
+		return nil, errors.New("missing metrics")
 	}
 	for _, cvss := range cve.Metrics.CvssMetricV31 {
 		if cvss.Type != "Primary" && cvss.Type != "" {
@@ -254,7 +254,7 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 			},
 		})
 	}
-	return item
+	return item, nil
 }
 
 func (e *Enricher) feedURL(start time.Time, end time.Time, startIdx int) string {
