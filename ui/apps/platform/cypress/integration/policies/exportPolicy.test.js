@@ -77,6 +77,29 @@ describe('Export policy', () => {
             cy.get(`${selectors.toast.title}:contains("Could not export the policy")`);
             cy.get(`${selectors.toast.description}:contains("${message}")`);
         });
+
+        it('should allow bulk export of policies if checkbox is selected in table head', () => {
+            visitPolicies();
+
+            cy.intercept('POST', api.policies.export).as('exportPolicy');
+
+            cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
+
+            cy.get(`thead ${selectors.table.selectCheckbox}`).should('not.be.checked').click();
+            cy.get(selectors.table.bulkActionsDropdownButton).should('be.enabled').click();
+            cy.get(
+                `${selectors.table.bulkActionsDropdownItem}:contains("Export policies")`
+            ).click();
+
+            cy.wait('@exportPolicy').then(({ request, response }) => {
+                // Request has policy ids.
+                expect(request.body.policyIds).to.have.length.of.at.least(2);
+
+                // Response has multiple policies.
+                expect(response.body.policies).to.have.length.of.at.least(2);
+            });
+            cy.get(`${selectors.toast.title}:contains("Successfully exported")`);
+        });
     });
 
     describe('policy page', () => {
