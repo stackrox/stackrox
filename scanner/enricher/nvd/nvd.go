@@ -155,7 +155,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			endDate = now
 		}
 		var apiResp *schema.CVEAPIJSON20
-		for startIdx := 0; ; startIdx += apiResp.TotalResults {
+		for startIdx := 0; ; startIdx += apiResp.ResultsPerPage {
 			apiResp, err = e.query(ctx, startDate, endDate, startIdx)
 			if err != nil {
 				return nil, hint, err
