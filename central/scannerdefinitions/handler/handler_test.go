@@ -3,9 +3,12 @@
 package handler
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -256,4 +259,75 @@ func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 		LastUpdated:  types.TimestampNow(),
 	}
 	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))
+}
+
+func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
+	t := s.T()
+	t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
+	h := New(s.datastore, handlerOpts{})
+	w := mock.NewResponseWriter()
+
+	// No scanner defs found.
+	req := s.getRequestWithVersionedFile(t, "4.3.0")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	// Try download offline zip, only abort test when download fails
+	tempDir := t.TempDir()
+	filePath := tempDir + "/test.zip"
+
+	url := "https://storage.googleapis.com/scanner-support-public/offline/v1/4.3/scanner-vulns-4.3.zip"
+	resp, err := http.Get(url)
+	// Skip the test if file cannot be downloaded or status code is not OK.
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	outFile, err := os.Create(filePath)
+	s.Require().NoError(err)
+
+	_, err = io.Copy(outFile, resp.Body)
+	s.Require().NoError(err)
+	utils.IgnoreError(outFile.Close)
+
+	err = s.mockHandleZipContents(filePath)
+	s.Require().NoError(err)
+
+	req = s.getRequestWithVersionedFile(t, "4.3.0")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
+}
+
+func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) error {
+	r, err := zipF.Open()
+	s.Require().NoError(err)
+	defer utils.IgnoreError(r.Close)
+
+	b := &storage.Blob{
+		Name:         blobName,
+		LastUpdated:  types.TimestampNow(),
+		ModifiedTime: types.TimestampNow(),
+		Length:       zipF.FileInfo().Size(),
+	}
+
+	return s.datastore.Upsert(s.ctx, b, r)
+}
+
+func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
+	zipR, err := zip.OpenReader(zipPath)
+	s.Require().NoError(err)
+	defer utils.IgnoreError(zipR.Close)
+	for _, zipF := range zipR.File {
+		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefinitionBlobName)
+			s.Require().NoError(err)
+			return nil
+		}
+	}
+	return errors.New("test failed")
 }
