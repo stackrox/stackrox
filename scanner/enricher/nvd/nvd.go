@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -273,15 +274,17 @@ func (e *Enricher) feedURL(start time.Time, end time.Time, startIdx int) string 
 	utils.CrashOnError(err)
 	v, err := url.ParseQuery(e.feed.RawQuery)
 	utils.CrashOnError(err)
-	v.Set("startIndex", fmt.Sprintf("%d", startIdx))
+	v.Set("startIndex", strconv.Itoa(startIdx))
 	v.Set("pubStartDate", start.Format("2006-01-02T15:04:05Z"))
 	v.Set("pubEndDate", end.Format("2006-01-02T15:04:05Z"))
-	u.RawQuery = v.Encode()
+	// v.Encode() will always assume there is a value fo each key.
+	// noRejected does not have a value, so manually append it here.
+	u.RawQuery = v.Encode() + "&noRejected"
 	return u.String()
 }
 
 func (e *Enricher) query(ctx context.Context, start, end time.Time, startIdx int) (*schema.CVEAPIJSON20, error) {
-	ctx = zlog.ContextWithValues(ctx, "start_index", fmt.Sprintf("%d", startIdx),
+	ctx = zlog.ContextWithValues(ctx, "start_index", strconv.Itoa(startIdx),
 		"start_time", start.String(),
 		"end_time", end.String())
 	u := e.feedURL(start, end, startIdx)
@@ -357,14 +360,14 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 	}()
 	var err error
 	dec := json.NewDecoder(rc)
-	ret := make([]driver.EnrichmentRecord, 0, 1024) // Wild guess at initial capacity.
+	ret := make([]driver.EnrichmentRecord, 0, 250_000) // Wild guess at initial capacity.
 	// This is going to allocate like mad, hold onto your butts.
 	for err == nil {
 		ret = append(ret, driver.EnrichmentRecord{})
 		err = dec.Decode(&ret[len(ret)-1])
 	}
 	zlog.Debug(ctx).
-		Int("count", len(ret)).
+		Int("count", len(ret)-1).
 		Msg("decoded enrichments")
 	if !errors.Is(err, io.EOF) {
 		return nil, err
