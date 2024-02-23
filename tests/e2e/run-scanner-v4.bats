@@ -473,6 +473,10 @@ spec:
 EOT
     )
 
+    info "Waiting for central to come back up after patching CR for activating Scanner V4"
+    sleep 60
+    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
+
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
     "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
@@ -501,6 +505,10 @@ spec:
           memory: "2500Mi"
 EOT
     )
+
+    info "Waiting for sensor to come back up after patching CR for activating Scanner V4"
+    sleep 60
+    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
