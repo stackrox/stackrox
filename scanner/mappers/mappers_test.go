@@ -592,7 +592,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toProtoV4Contents(tt.args.pkgs, tt.args.dists, tt.args.repos, tt.args.envs)
+			got, err := toProtoV4Contents(tt.args.pkgs, tt.args.dists, tt.args.repos, tt.args.envs, nil)
 			if tt.wantErr != "" {
 				assert.Nil(t, got)
 				assert.ErrorContains(t, err, tt.wantErr)

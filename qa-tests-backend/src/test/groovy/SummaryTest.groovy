@@ -14,6 +14,7 @@ import services.ClusterService
 import services.NamespaceService
 import services.NodeService
 import services.SummaryService
+import util.Helpers
 
 import org.junit.Assume
 import spock.lang.IgnoreIf
@@ -73,39 +74,21 @@ class SummaryTest extends BaseSpecification {
         expect:
         "verify Node Details"
         assert stackroxNodes.size() == orchestratorNodes.size()
-        Boolean diff = false
-        Javers javers = JaversBuilder.javers().build()
         for (Node stackroxNode : stackroxNodes) {
             objects.Node orchestratorNode = orchestratorNodes.find { it.uid == stackroxNode.id }
             assert stackroxNode.clusterId == ClusterService.getClusterId()
             assert stackroxNode.name == orchestratorNode.name
             if (stackroxNode.labelsMap != orchestratorNode.labels) {
-                log.info "There is a node label difference - StackRox -v- Orchestrator:"
-                log.info javers.compare(stackroxNode.labelsMap, orchestratorNode.labels).prettyPrint()
-                diff = true
+                log.info "There is a node label difference"
+                // Javers helps provide an useful error in the test log
+                Javers javers = JaversBuilder.javers().build()
+                def diff = javers.compare(stackroxNode.labelsMap, orchestratorNode.labels)
+                assert diff.changes.size() == 0
+                assert diff.changes.size() != 0 // should not get here
             }
             assert stackroxNode.labelsMap == orchestratorNode.labels
-            Map<String, String> stackroxAnnotationsMap = new HashMap<>(stackroxNode.getAnnotationsMap())
-            if (stackroxAnnotationsMap != orchestratorNode.annotations) {
-                Map<String, String> orchestratorTruncated = orchestratorNode.annotations.clone()
-                orchestratorNode.annotations.keySet().each { name ->
-                    if (orchestratorTruncated[name].length() > Constants.STACKROX_ANNOTATION_TRUNCATION_LENGTH) {
-                        // Assert that the stackrox node has an entry for that annotation
-                        assert stackroxAnnotationsMap[name].length() > 0
-
-                        log.info "Removing node label ${name}"
-                        // Remove the annotation because the logic for truncation tries to maintain words and
-                        // is more complicated than we'd like to test
-                        stackroxAnnotationsMap.remove(name)
-                        orchestratorTruncated.remove(name)
-                    }
-                }
-                if (stackroxAnnotationsMap != orchestratorTruncated) {
-                    log.info "There is a node annotation difference - StackRox -v- Orchestrator:"
-                    log.info javers.compare(stackroxAnnotationsMap, orchestratorTruncated).prettyPrint()
-                    diff = true
-                }
-            }
+            // compareAnnotations() - asserts on difference
+            Helpers.compareAnnotations(orchestratorNode.annotations, stackroxNode.getAnnotationsMap())
             assert stackroxNode.internalIpAddressesList == orchestratorNode.internalIps
             assert stackroxNode.externalIpAddressesList == orchestratorNode.externalIps
             assert stackroxNode.containerRuntimeVersion == orchestratorNode.containerRuntimeVersion
@@ -114,7 +97,6 @@ class SummaryTest extends BaseSpecification {
             assert stackroxNode.kubeletVersion == orchestratorNode.kubeletVersion
             assert stackroxNode.kubeProxyVersion == orchestratorNode.kubeProxyVersion
         }
-        assert !diff, "See diff(s) above"
     }
 
     @Tag("BAT")

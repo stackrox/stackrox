@@ -6,18 +6,32 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/search"
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/store"
+	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
-var _ DataStore = (*datastoreImpl)(nil)
+var (
+	_ DataStore = (*datastoreImpl)(nil)
+
+	discoveredClusterCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.ResourceScopeKeys(resources.Administration),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		),
+	)
+)
 
 type datastoreImpl struct {
-	searcher search.Searcher
-	store    store.Store
+	searcher            search.Searcher
+	store               store.Store
+	discoveredClusterDS discoveredClustersDS.DataStore
 }
 
 func (ds *datastoreImpl) CountCloudSources(ctx context.Context, query *v1.Query) (int, error) {
@@ -61,7 +75,10 @@ func (ds *datastoreImpl) DeleteCloudSource(ctx context.Context, id string) error
 	if err := ds.store.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "failed to delete cloud source %q", id)
 	}
-	return nil
+
+	_, err := ds.discoveredClusterDS.DeleteDiscoveredClusters(discoveredClusterCtx,
+		searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.IntegrationID, id).ProtoQuery())
+	return err
 }
 
 func validateCloudSource(cloudSource *storage.CloudSource) error {

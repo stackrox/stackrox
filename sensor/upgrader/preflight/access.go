@@ -1,6 +1,9 @@
 package preflight
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
@@ -79,6 +82,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 		return err
 	}
 
+	actionResourceErr := make([]string, 0)
 	for i := range resourceAttribs {
 		ra := resourceAttribs[i]
 		sar := &v1.SelfSubjectAccessReview{
@@ -94,10 +98,16 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 			reporter.Warnf("Evaluation error performing access review check for action %s on resource %s: %s", ra.Verb, ra.Resource, sarResult.Status.EvaluationError)
 		}
 		if !sarResult.Status.Allowed && !sarResult.Status.Denied {
-			reporter.Errorf("K8s authorizer did not explicitly allow or deny access to perform action %s on resource %s. This usually means access is denied.", ra.Verb, ra.Resource)
+			actionResourceErr = append(actionResourceErr, fmt.Sprintf("%s:%s", ra.Verb, ra.Resource))
 		} else if !sarResult.Status.Allowed {
 			reporter.Errorf("Action %s on resource %s is not allowed", ra.Verb, ra.Resource)
 		}
 	}
+	if len(actionResourceErr) > 0 {
+		reporter.Errorf("K8s authorizer did not explicitly allow or deny access to perform "+
+			"the following actions on following resources: %s. This usually means access is denied.",
+			strings.Join(actionResourceErr, ", "))
+	}
+
 	return nil
 }

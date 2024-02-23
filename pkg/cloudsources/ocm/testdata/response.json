@@ -1,0 +1,83 @@
+[
+  {
+    "cloud_provider_id": "aws",
+    "cluster_billing_model": "standard",
+    "cluster_id": "111111",
+    "kind": "Subscription",
+    "created_at": "2024-02-13T21:34:35.11432Z",
+    "display_name": "rosa-cluster",
+    "external_cluster_id": "11b0e5a3-0a38-4484-8272-1fd690bd65b5",
+    "plan": {
+      "href": "/api/accounts_mgmt/v1/plans/MAO",
+      "id": "MOA",
+      "kind": "Plan",
+      "type": "MOA"
+    },
+    "region_id": "us-east1",
+    "status": "Active"
+  },
+  {
+    "cloud_provider_id": "azure",
+    "cluster_id": "222222",
+    "kind": "Subscription",
+    "created_at": "2024-02-13T21:34:03.763759Z",
+    "display_name": "aro-cluster",
+    "external_cluster_id": "22b0e5a3-0a38-4484-8272-1fd690bd65b5",
+    "plan": {
+      "href": "/api/accounts_mgmt/v1/plans/ARO",
+      "id": "ARO",
+      "kind": "Plan",
+      "type": "ARO"
+    },
+    "region_id": "us-east1",
+    "status": "Active"
+  },
+  {
+    "cloud_provider_id": "gcp",
+    "cluster_id": "333333",
+    "kind": "Subscription",
+    "created_at": "2024-02-13T21:30:57.000508Z",
+    "display_name": "osd-cluster",
+    "external_cluster_id": "338d4973-7a37-4559-afad-f3d75d96c7fd",
+    "plan": {
+      "href": "/api/accounts_mgmt/v1/plans/OSD",
+      "id": "OSD",
+      "kind": "Plan",
+      "type": "OSD"
+    },
+    "region_id": "us-central1",
+    "status": "Active"
+  },
+  {
+    "cloud_provider_id": "gcp",
+    "cluster_id": "444444",
+    "created_at": "2024-02-13T21:28:54.916088Z",
+    "display_name": "ocp-gcp-cluster",
+    "external_cluster_id": "44a6254c-8bc4-4724-abfe-c510747742b8",
+    "kind": "Subscription",
+    "plan": {
+      "href": "/api/accounts_mgmt/v1/plans/OCP",
+      "id": "OCP",
+      "kind": "Plan",
+      "type": "OCP"
+    },
+    "region_id": "us-central1",
+    "status": "Active"
+  },
+  {
+    "cloud_provider_id": "gcp",
+    "cluster_id": "444444",
+    "created_at": "2024-02-13T21:28:54.916088Z",
+    "display_name": "ocp-gcp-cluster",
+    "external_cluster_id": "44a6254c-8bc4-4724-abfe-c510747742b8",
+    "kind": "Subscription",
+    "plan": {
+      "href": "/api/accounts_mgmt/v1/plans/OCP",
+      "id": "OCP",
+      "kind": "Plan",
+      "type": "OCP"
+    },
+    "region_id": "us-central1",
+    "status": "Active"
+  }
+]

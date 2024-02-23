@@ -68,6 +68,7 @@ function ImportPolicyJSONModal({
                     //     and each of those elements is an array of error objeccts
                     // hence, we use .flat() to un-ravel that structure to get all the errors
                     const errorMessageArray = getErrorMessages(errors.flat()).map(({ msg }) => msg);
+
                     setErrorMessages(errorMessageArray);
                     setModalType('error');
                 }

@@ -220,12 +220,12 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	if err != nil {
 		return "", errorsPkg.Wrap(err, "getting all policies")
 	}
-	policyNameIDMap := make(map[string]string, len(allPolicies))
+	policyNameToPolicyMap := make(map[string]*storage.Policy, len(allPolicies))
 	for _, policy := range allPolicies {
-		policyNameIDMap[policy.GetName()] = policy.GetId()
+		policyNameToPolicyMap[policy.GetName()] = policy
 	}
 
-	if ds.policyNameIsNotUnique(policyNameIDMap, policy.GetName()) {
+	if ds.policyNameIsNotUnique(policyNameToPolicyMap, policy.GetName(), false) != nil {
 		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
 	}
 	policyutils.FillSortHelperFields(policy)
@@ -317,15 +317,18 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	if err != nil {
 		return nil, false, errorsPkg.Wrap(err, "getting all policies")
 	}
-	policyNameIDMap := make(map[string]string, len(allPolicies))
+	policyNameToPolicyMap := make(map[string]*storage.Policy, len(allPolicies))
 	for _, policy := range allPolicies {
-		policyNameIDMap[policy.GetName()] = policy.GetId()
+		policyNameToPolicyMap[policy.GetName()] = policy
 	}
 
 	allSucceeded := true
 	responses := make([]*v1.ImportPolicyResponse, len(importPolicies))
 	for i, policy := range importPolicies {
-		response := ds.importPolicy(ctx, policy, overwrite, policyNameIDMap)
+		err, response := ds.importPolicy(ctx, policy, overwrite, policyNameToPolicyMap)
+		if err != nil {
+			return nil, false, err
+		}
 		if !response.Succeeded {
 			allSucceeded = false
 		}
@@ -342,7 +345,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	return responses, allSucceeded, nil
 }
 
-func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Policy, overwrite bool, policyNameIDMap map[string]string) *v1.ImportPolicyResponse {
+func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Policy, overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) (error, *v1.ImportPolicyResponse) {
 	if policy.GetId() == "" {
 		// generate id here since upsert no longer generates id
 		policy.Id = uuid.NewV4().String()
@@ -352,75 +355,94 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 		Policy: policy.Clone(),
 	}
 
-	var err error
+	err, importErrors := ds.validateUniqueNameAndID(ctx, policy, result, overwrite, policyNameToPolicyMap)
+	if err != nil {
+		result.Errors = getImportErrorsFromError(err)
+		return nil, result
+	}
+	if len(importErrors) > 0 {
+		result.Errors = importErrors
+		return nil, result
+	}
+
 	if overwrite {
-		err = ds.importOverwrite(ctx, policy, policyNameIDMap)
+		err = ds.importOverwrite(ctx, policy, policyNameToPolicyMap)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return result
+			return nil, result
 		}
 	} else {
-		var importErrors []*v1.ImportPolicyError
-
-		if policy.GetId() != "" {
-			existingPolicy, exists, err := ds.storage.Get(ctx, policy.GetId())
-			if err != nil {
-				result.Errors = getImportErrorsFromError(err)
-				return result
-			}
-			if exists {
-				importErrors = append(result.Errors, &v1.ImportPolicyError{
-					Message: fmt.Sprintf("policy with id '%q' already exists, unable to import policy", policy.GetId()),
-					Type:    policiesPkg.ErrImportDuplicateID,
-					Metadata: &v1.ImportPolicyError_DuplicateName{
-						DuplicateName: existingPolicy.GetName(),
-					},
-				})
-			}
-		}
-
-		if ds.policyNameIsNotUnique(policyNameIDMap, policy.GetName()) {
-			importErrors = append(importErrors, &v1.ImportPolicyError{
-				Message: fmt.Sprintf("policy with name '%s' already exists, unable to import policy", policy.GetName()),
-				Type:    policiesPkg.ErrImportDuplicateName,
-				Metadata: &v1.ImportPolicyError_DuplicateName{
-					DuplicateName: policy.GetName(),
-				},
-			})
-		}
-		if len(importErrors) > 0 {
-			result.Errors = importErrors
-			return result
-		}
-
 		policyCategories := policy.GetCategories()
 		policy.Categories = []string{}
 		err = ds.storage.Upsert(ctx, policy)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return result
+			return nil, result
 		}
 
 		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return result
+			return nil, result
 		}
 	}
 	result.Succeeded = true
-	return result
+	return nil, result
 }
 
-func (ds *datastoreImpl) policyNameIsNotUnique(policyNameIDMap map[string]string, name string) bool {
-	for n := range policyNameIDMap {
-		if n == name {
-			return true
+func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *storage.Policy, result *v1.ImportPolicyResponse,
+	overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) (error, []*v1.ImportPolicyError) {
+	var importErrors []*v1.ImportPolicyError
+
+	if policy.GetId() != "" {
+		existingPolicy, exists, err := ds.storage.Get(ctx, policy.GetId())
+		if err != nil {
+			result.Errors = getImportErrorsFromError(err)
+			return err, importErrors
+		}
+		if exists {
+			importErr := &v1.ImportPolicyError{
+				Message: fmt.Sprintf("policy with id '%q' already exists, unable to import policy", policy.GetId()),
+				Type:    policiesPkg.ErrImportDuplicateID,
+				Metadata: &v1.ImportPolicyError_DuplicateName{
+					DuplicateName: existingPolicy.GetName(),
+				},
+			}
+			if existingPolicy.GetIsDefault() {
+				importErr.Type = policiesPkg.ErrImportDuplicateSystemPolicyID
+				importErr.Message = fmt.Sprintf("system %s", importErr.Message)
+			}
+			importErrors = append(importErrors, importErr)
 		}
 	}
-	return false
+
+	if existingPolicy := ds.policyNameIsNotUnique(policyNameToPolicyMap, policy.GetName(), overwrite); existingPolicy != nil { // Only validate name collisions against default policies if this is an overwrite operation
+		importErr := &v1.ImportPolicyError{
+			Message: fmt.Sprintf("policy with name '%s' already exists, unable to import policy", policy.GetName()),
+			Type:    policiesPkg.ErrImportDuplicateName,
+			Metadata: &v1.ImportPolicyError_DuplicateName{
+				DuplicateName: policy.GetName(),
+			},
+		}
+		if existingPolicy.GetIsDefault() {
+			importErr.Type = policiesPkg.ErrImportDuplicateSystemPolicyName
+			importErr.Message = fmt.Sprintf("system %s", importErr.Message)
+		}
+		importErrors = append(importErrors, importErr)
+	}
+	return nil, importErrors
 }
 
-func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Policy, policyNameIDMap map[string]string) error {
+func (ds *datastoreImpl) policyNameIsNotUnique(policyNameToPolicyMap map[string]*storage.Policy, name string, _ bool) *storage.Policy {
+	for n, existingPolicy := range policyNameToPolicyMap {
+		if n == name {
+			return existingPolicy
+		}
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Policy, policyNameToPolicyMap map[string]*storage.Policy) error {
 	if policy.GetId() != "" {
 		_, exists, err := ds.storage.Get(ctx, policy.GetId())
 		if err != nil {
@@ -433,9 +455,9 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 		}
 	}
 
-	if otherPolicyID, ok := policyNameIDMap[policy.GetName()]; ok && otherPolicyID != policy.GetId() {
-		if err := ds.removePolicyNoLock(ctx, otherPolicyID); err != nil {
-			return errorsPkg.Wrapf(err, "removing policy %s", otherPolicyID)
+	if otherPolicy, ok := policyNameToPolicyMap[policy.GetName()]; ok && otherPolicy.GetId() != policy.GetId() {
+		if err := ds.removePolicyNoLock(ctx, otherPolicy.GetId()); err != nil {
+			return errorsPkg.Wrapf(err, "removing policy %s", otherPolicy.GetId())
 		}
 	}
 

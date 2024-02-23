@@ -144,13 +144,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
-								"createClaim": true,
-							},
-						},
-					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -202,17 +195,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
-								"createClaim": true,
-							},
-						},
-					},
 				},
 			},
 		},
-		"scannerV4.db.persistence.none for scanner v4 db without default StorageClass": {
+		"scannerV4.db.persistence.none for Scanner V4 db without default StorageClass": {
 			args: args{
 				// no default storage class in this fake client, so we expect to default to scannerV4.db.persistence.none
 				client: newDefaultFakeClientWithoutStorageClass(t),
@@ -250,11 +236,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"none": true,
-						},
-					},
 				},
 			},
 		},
@@ -285,13 +266,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
-								"createClaim": true,
-							},
-						},
-					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -445,6 +419,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
+							ScannerComponent: platform.LocalScannerV4ComponentAutoSense.Pointer(),
 							Indexer: &platform.ScannerV4Component{
 								Scaling: &platform.ScannerComponentScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
@@ -654,7 +629,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": true,
+					"disable": false,
 					"indexer": map[string]interface{}{
 						"autoscaling": map[string]interface{}{
 							"disable":     false,
@@ -802,13 +777,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
-								"createClaim": true,
-							},
-						},
-					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
@@ -861,13 +829,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scannerV4": map[string]interface{}{
 					"disable": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
-								"createClaim": true,
-							},
-						},
-					},
 				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{

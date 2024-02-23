@@ -173,8 +173,10 @@ export type RhelImageIntegration = {
     type: 'rhel';
 } & BaseImageIntegration;
 
+export const scannerV4ImageIntegrationType = 'scannerv4';
+
 export type ScannerV4ImageIntegration = {
-    type: 'scannerv4';
+    type: typeof scannerV4ImageIntegrationType;
     scannerV4: {
         numConcurrentScans: number;
         indexerEndpoint: string;

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,7 +40,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.writeCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integration),
+			sac.ResourceScopeKeys(resources.Integration, resources.Administration),
 		),
 	)
 
@@ -129,7 +130,12 @@ func (s *datastorePostgresTestSuite) TestUpsertCloudSource_InvalidArgument() {
 
 func (s *datastorePostgresTestSuite) TestDeleteCloudSource() {
 	cloudSource := fixtures.GetStorageCloudSource()
+	discoveredClusters := fixtures.GetManyDiscoveredClusters(10)
+	cloudSource.Id = discoveredClusters[0].GetCloudSourceID()
 	err := s.datastore.UpsertCloudSource(s.writeCtx, cloudSource)
+	s.Require().NoError(err)
+
+	err = s.datastore.(*datastoreImpl).discoveredClusterDS.UpsertDiscoveredClusters(s.writeCtx, discoveredClusters...)
 	s.Require().NoError(err)
 
 	err = s.datastore.DeleteCloudSource(s.writeCtx, cloudSource.GetId())
@@ -138,6 +144,11 @@ func (s *datastorePostgresTestSuite) TestDeleteCloudSource() {
 	cloudSource, err = s.datastore.GetCloudSource(s.readCtx, cloudSource.GetId())
 	s.Assert().ErrorIs(err, errox.NotFound)
 	s.Assert().Empty(cloudSource)
+
+	storedDiscoveredClusters, err :=
+		s.datastore.(*datastoreImpl).discoveredClusterDS.ListDiscoveredClusters(s.writeCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Assert().Len(storedDiscoveredClusters, 5)
 }
 
 func (s *datastorePostgresTestSuite) addCloudSources(num int) {

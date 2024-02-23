@@ -19,6 +19,7 @@ import (
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 )
 
@@ -48,7 +49,7 @@ func ToProtoV4IndexReport(r *claircore.IndexReport) (*v4.IndexReport, error) {
 	if r == nil {
 		return nil, nil
 	}
-	contents, err := toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments)
+	contents, err := toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	contents, err := toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments)
+	pkgFixedBy, err := pkgFixedBy(r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing package-level fixedbys: %w", err)
+	}
+	contents, err := toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments, pkgFixedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +132,7 @@ func toProtoV4Contents(
 	dists map[string]*claircore.Distribution,
 	repos map[string]*claircore.Repository,
 	envs map[string][]*claircore.Environment,
+	pkgFixedBy map[string]string,
 ) (*v4.Contents, error) {
 	var environments map[string]*v4.Environment_List
 	if len(envs) > 0 {
@@ -143,11 +149,15 @@ func toProtoV4Contents(
 		}
 	}
 	var packages []*v4.Package
+	if pkgFixedBy == nil {
+		pkgFixedBy = map[string]string{}
+	}
 	for _, ccP := range pkgs {
 		pkg, err := toProtoV4Package(ccP)
 		if err != nil {
 			return nil, err
 		}
+		pkg.FixedInVersion = pkgFixedBy[pkg.GetId()]
 		packages = append(packages, pkg)
 	}
 	return &v4.Contents{
@@ -546,6 +556,23 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]*n
 		ret[id] = &i
 	}
 	return ret, nil
+}
+
+func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, error) {
+	enrichmentsList := enrichments[fixedby.Type]
+	if len(enrichmentsList) == 0 {
+		return nil, nil
+	}
+	var pkgFixedBys map[string]string
+	// The fixedby enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &pkgFixedBys)
+	if err != nil {
+		return nil, err
+	}
+	if len(pkgFixedBys) == 0 {
+		return nil, nil
+	}
+	return pkgFixedBys, nil
 }
 
 // severityValues contains severity information that can retrieved from a

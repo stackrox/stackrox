@@ -52,8 +52,9 @@ const (
 
 // ComplianceOperatorScanSettingBindingV2 holds the Gorm model for Postgres table `compliance_operator_scan_setting_binding_v2`.
 type ComplianceOperatorScanSettingBindingV2 struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string `gorm:"column:name;type:varchar"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:complianceoperatorscansettingbindingv2_sac_filter,type:hash"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID              string `gorm:"column:id;type:varchar;primaryKey"`
+	Name            string `gorm:"column:name;type:varchar"`
+	ClusterID       string `gorm:"column:clusterid;type:uuid;index:complianceoperatorscansettingbindingv2_sac_filter,type:hash"`
+	ScanSettingName string `gorm:"column:scansettingname;type:varchar"`
+	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

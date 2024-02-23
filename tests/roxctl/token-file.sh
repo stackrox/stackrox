@@ -18,6 +18,7 @@ TOKEN_FILE=$(mktemp)
 curl -k -f \
   -u "admin:$ROX_PASSWORD" \
   -d '{"name": "test", "role": "Admin"}' \
+  --retry 5 \
   "https://$API_ENDPOINT/v1/apitokens/generate" \
   | jq -r .token \
   > "$TOKEN_FILE"

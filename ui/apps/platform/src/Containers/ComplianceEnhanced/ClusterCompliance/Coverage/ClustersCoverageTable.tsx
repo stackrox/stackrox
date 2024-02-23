@@ -3,7 +3,8 @@ import { generatePath, Link } from 'react-router-dom';
 import {
     Alert,
     Bullseye,
-    Button,
+    Flex,
+    FlexItem,
     PageSection,
     Pagination,
     Progress,
@@ -16,14 +17,19 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
-import { SearchIcon } from '@patternfly/react-icons';
+import { CubesIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
-import { complianceEnhancedCoverageClustersPath } from 'routePaths';
+import {
+    complianceEnhancedCoverageClustersPath,
+    complianceEnhancedScanConfigsPath,
+} from 'routePaths';
 import { getAllClustersCombinedStats } from 'services/ComplianceEnhancedService';
+
+import ComplianceClusterStatus from '../ScanConfigs/components/ComplianceClusterStatus';
+import CoverageTableViewToggleGroup from './Components/CoverageTableViewToggleGroup';
 
 import {
     calculateCompliancePercentage,
@@ -32,7 +38,6 @@ import {
 } from './compliance.coverage.utils';
 
 function ClustersCoverageTable() {
-    const { setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
 
     const listQuery = useCallback(
@@ -42,13 +47,13 @@ function ClustersCoverageTable() {
     const { data: clusterScanStats, loading: isLoading, error } = useRestQuery(listQuery);
 
     const renderTableContent = () => {
-        return clusterScanStats?.map(({ cluster, checkStats }, index) => {
+        return clusterScanStats?.map(({ cluster, checkStats, clusterErrors }, index) => {
             const { passCount, totalCount } = getStatusCounts(checkStats);
             const passPercentage = calculateCompliancePercentage(passCount, totalCount);
 
             return (
                 <Tr key={cluster.clusterId}>
-                    <Td>
+                    <Td dataLabel="Cluster">
                         <Link
                             to={generatePath(complianceEnhancedCoverageClustersPath, {
                                 clusterId: cluster.clusterId,
@@ -57,14 +62,16 @@ function ClustersCoverageTable() {
                             {cluster.clusterName}
                         </Link>
                     </Td>
-                    <Td>WIP</Td>
-                    <Td>WIP</Td>
-                    <Td>
+                    <Td dataLabel="Operator status">
+                        <ComplianceClusterStatus errors={clusterErrors} />
+                    </Td>
+                    <Td dataLabel="Compliance">
                         <Progress
                             id={`progress-bar-${index}`}
                             value={passPercentage}
                             measureLocation={ProgressMeasureLocation.outside}
                             className={getCompliancePfClassName(passPercentage)}
+                            aria-label={`${cluster.clusterName} compliance percentage`}
                         />
                         <Tooltip
                             content={
@@ -86,7 +93,7 @@ function ClustersCoverageTable() {
 
     const renderLoadingContent = () => (
         <Tr>
-            <Td colSpan={4}>
+            <Td colSpan={3}>
                 <Bullseye>
                     <Spinner isSVG />
                 </Bullseye>
@@ -96,17 +103,26 @@ function ClustersCoverageTable() {
 
     const renderEmptyContent = () => (
         <Tr>
-            <Td colSpan={4}>
+            <Td colSpan={3}>
                 <Bullseye>
                     <EmptyStateTemplate
-                        title="No results found"
+                        title="No scan data available"
                         headingLevel="h2"
-                        icon={SearchIcon}
+                        icon={CubesIcon}
                     >
-                        <Text>Clear all filters and try again.</Text>
-                        <Button variant="link" onClick={() => setSearchFilter({})}>
-                            Clear filters
-                        </Button>
+                        <Flex direction={{ default: 'column' }}>
+                            <FlexItem>
+                                <Text>
+                                    Schedule a scan to view results. If you have already configured
+                                    a scan to run, then please check back later for page results.
+                                </Text>
+                            </FlexItem>
+                            <FlexItem>
+                                <Link to={complianceEnhancedScanConfigsPath}>
+                                    Go to scan schedules
+                                </Link>
+                            </FlexItem>
+                        </Flex>
                     </EmptyStateTemplate>
                 </Bullseye>
             </Td>
@@ -135,6 +151,9 @@ function ClustersCoverageTable() {
                 <>
                     <Toolbar>
                         <ToolbarContent>
+                            <ToolbarItem>
+                                <CoverageTableViewToggleGroup />
+                            </ToolbarItem>
                             <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                                 <Pagination
                                     isCompact
@@ -153,7 +172,6 @@ function ClustersCoverageTable() {
                             <Tr>
                                 <Th>Cluster</Th>
                                 <Th>Operator status</Th>
-                                <Th>Build date</Th>
                                 <Th
                                     info={{
                                         tooltip:

@@ -178,6 +178,12 @@ func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int
 	return d.searcher.Count(ctx, q)
 }
 
+func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID string) error {
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+	return err
+}
+
 func withCountQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = []*v1.QuerySelect{

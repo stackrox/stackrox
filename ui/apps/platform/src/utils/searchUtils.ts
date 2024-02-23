@@ -253,3 +253,37 @@ export function convertToExactMatch(item): unknown {
     }
     return `r/^${item}$`;
 }
+
+/**
+ * Adds acs regex flag to values in the searchFilter object
+ *
+ * All values are prefixed by default
+ * If keysToTransform is provided, only those keys will be modified
+ *
+ * @param {Object} searchFilter Original searchFilter object
+ * @param {Array<string>} [keysToTransform] Optional – The keys in the searchFilter object to transform
+ * @returns {Object} New SearchFilter object where values (determined by keysToTransform) are prefixed with 'r/'
+ */
+export function addRegexPrefixToFilters(
+    searchFilter: SearchFilter,
+    keysToTransform: string[] | null = null
+) {
+    const modifiedFilter: SearchFilter = {};
+
+    Object.keys(searchFilter).forEach((key) => {
+        const value = searchFilter[key];
+        const shouldTransform = !keysToTransform || keysToTransform.includes(key);
+
+        if (shouldTransform) {
+            if (Array.isArray(value)) {
+                modifiedFilter[key] = value.map((item) => `r/${item}`);
+            } else {
+                modifiedFilter[key] = `r/${value}`;
+            }
+        } else {
+            modifiedFilter[key] = value;
+        }
+    });
+
+    return modifiedFilter;
+}

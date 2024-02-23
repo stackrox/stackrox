@@ -12,6 +12,7 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    Tooltip,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -31,7 +32,7 @@ import {
 } from 'services/ComplianceEnhancedService';
 import { SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { addRegexPrefixToFilters, searchValueAsArray } from 'utils/searchUtils';
 
 // TODO: move to a shared location
 import TableErrorComponent from 'Containers/Vulnerabilities/WorkloadCves/components/TableErrorComponent';
@@ -72,7 +73,7 @@ function ClusterDetailsTable({
             getSingleClusterResultsByScanConfig(
                 clusterId,
                 scanName,
-                searchFilter,
+                addRegexPrefixToFilters(searchFilter, ['Compliance Check Name']),
                 sortOption,
                 page - 1,
                 perPage
@@ -82,7 +83,12 @@ function ClusterDetailsTable({
     const { data: scanResults, loading: isLoading, error } = useRestQuery(listQuery);
 
     const countQuery = useCallback(
-        () => getSingleClusterResultsByScanConfigCount(clusterId, scanName, searchFilter),
+        () =>
+            getSingleClusterResultsByScanConfigCount(
+                clusterId,
+                scanName,
+                addRegexPrefixToFilters(searchFilter, ['Compliance Check Name'])
+            ),
         [clusterId, scanName, searchFilter]
     );
     const { data: scanResultsCount } = useRestQuery(countQuery);
@@ -96,6 +102,10 @@ function ClusterDetailsTable({
             setSearchCheckValue('');
         }
     }, [searchFilter]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [scanName, searchFilter, setPage]);
 
     function getMatchingCluster(clusters: ClusterCheckStatus[]): ClusterCheckStatus | null {
         return (
@@ -158,13 +168,15 @@ function ClusterDetailsTable({
                     </Td>
                     <Td>
                         {statusObj && (
-                            <Button
-                                isInline
-                                variant={ButtonVariant.link}
-                                onClick={() => setSelectedCheckResult(checkResult)}
-                            >
-                                <IconText icon={statusObj.icon} text={statusObj.statusText} />
-                            </Button>
+                            <Tooltip content={statusObj.tooltipText}>
+                                <Button
+                                    isInline
+                                    variant={ButtonVariant.link}
+                                    onClick={() => setSelectedCheckResult(checkResult)}
+                                >
+                                    <IconText icon={statusObj.icon} text={statusObj.statusText} />
+                                </Button>
+                            </Tooltip>
                         )}
                     </Td>
                 </Tr>

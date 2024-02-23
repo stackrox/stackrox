@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -22,6 +23,9 @@ type DataStore interface {
 
 	// GetScanSettingBindingsByCluster retrieves scan setting bindings by cluster
 	GetScanSettingBindingsByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorScanSettingBindingV2, error)
+
+	// GetScanSettingBindings retrieves scan setting bindings matching the query
+	GetScanSettingBindings(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanSettingBindingV2, error)
 }
 
 // New returns an instance of DataStore.

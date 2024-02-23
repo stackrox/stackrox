@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/search"
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/cloudsources/datastore/internal/store/postgres"
+	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -21,16 +22,18 @@ type DataStore interface {
 	DeleteCloudSource(ctx context.Context, id string) error
 }
 
-func newDataStore(searcher search.Searcher, storage store.Store) DataStore {
+func newDataStore(searcher search.Searcher, storage store.Store,
+	discoveredClusterDS discoveredClustersDS.DataStore) DataStore {
 	return &datastoreImpl{
-		searcher: searcher,
-		store:    storage,
+		searcher:            searcher,
+		store:               storage,
+		discoveredClusterDS: discoveredClusterDS,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	searcher := search.New(pgStore.NewIndexer(pool))
 	store := pgStore.New(pool)
-	return newDataStore(searcher, store)
+	return newDataStore(searcher, store, discoveredClustersDS.GetTestPostgresDataStore(t, pool))
 }

@@ -15,7 +15,7 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import TabNav from 'Components/TabNav/TabNav';
-import { clustersBasePath, clustersSecureClusterPath } from 'routePaths';
+import { clustersBasePath, clustersInitBundlesPath, clustersSecureClusterPath } from 'routePaths';
 
 import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';
@@ -50,6 +50,9 @@ function SecureClusterPage(): ReactElement {
                     <Flex direction={{ default: 'column' }}>
                         <Breadcrumb>
                             <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
+                            <BreadcrumbItemLink to={clustersInitBundlesPath}>
+                                Cluster init bundles
+                            </BreadcrumbItemLink>
                             <BreadcrumbItem isActive>{title}</BreadcrumbItem>
                         </Breadcrumb>
                         <Title headingLevel="h1">Secure a cluster with an init bundle</Title>

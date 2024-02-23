@@ -28,8 +28,11 @@ func ComplianceOperatorScanSettingBindingObject(sensorData *central.ComplianceOp
 		ClusterId:       clusterID,
 		ScanSettingName: sensorData.GetScanSettingName(),
 		ProfileNames:    sensorData.GetProfileNames(),
-		Conditions:      getConditions(sensorData.GetConditions()),
-		Labels:          sensorData.GetLabels(),
-		Annotations:     sensorData.GetAnnotations(),
+		Status: &storage.ComplianceOperatorStatus{
+			Phase:      sensorData.GetStatus().GetPhase(),
+			Conditions: getConditions(sensorData.GetStatus().GetConditions()),
+		},
+		Labels:      sensorData.GetLabels(),
+		Annotations: sensorData.GetAnnotations(),
 	}
 }

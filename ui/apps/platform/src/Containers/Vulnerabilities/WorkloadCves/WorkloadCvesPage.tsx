@@ -7,6 +7,8 @@ import PageTitle from 'Components/PageTitle';
 
 import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import TechPreviewBanner from 'Components/TechPreviewBanner';
+import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
+import usePermissions from 'hooks/usePermissions';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
@@ -19,8 +21,12 @@ const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCves
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
 function WorkloadCvesPage() {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForIntegration = hasReadAccess('Integration');
+
     return (
         <>
+            {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <TechPreviewBanner
                 featureURL={vulnManagementPath}
                 featureName="Vulnerability Management (1.0)"

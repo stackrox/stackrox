@@ -17,13 +17,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 const (
@@ -181,7 +181,6 @@ type paladinClient struct {
 type paladinTransportWrapper struct {
 	baseTransport http.RoundTripper
 	token         string
-	acsVersion    string
 }
 
 func (p *paladinTransportWrapper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -193,16 +192,20 @@ func (p *paladinTransportWrapper) RoundTrip(req *http.Request) (*http.Response, 
 }
 
 // NewClient creates a client to interact with Paladin Cloud APIs.
-func NewClient(cfg *storage.CloudSource) *paladinClient {
+func NewClient(cfg *storage.CloudSource, options ...opts.ClientOpts) *paladinClient {
+	opt := opts.DefaultOpts()
+	for _, option := range options {
+		option(opt)
+	}
+
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 3
+	retryClient.RetryMax = opt.Retries
 	retryClient.Logger = nil
 	retryClient.HTTPClient.Transport = &paladinTransportWrapper{
 		baseTransport: proxy.RoundTripper(),
 		token:         cfg.GetCredentials().GetSecret(),
-		acsVersion:    version.GetMainVersion(),
 	}
-	retryClient.HTTPClient.Timeout = 30 * time.Second
+	retryClient.HTTPClient.Timeout = opt.Timeout
 	retryClient.RetryWaitMin = 10 * time.Second
 
 	return &paladinClient{
@@ -210,6 +213,13 @@ func NewClient(cfg *storage.CloudSource) *paladinClient {
 		endpoint:      urlfmt.FormatURL(cfg.GetPaladinCloud().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash),
 		cloudSourceID: cfg.GetId(),
 	}
+}
+
+func (c *paladinClient) Ping(ctx context.Context) error {
+	// At the current time, no better API is known besides the asset API to confirm correct authN/Z setup and
+	// connectivity. In case we find a better API, we may switch to that.
+	_, err := c.getAssets(ctx)
+	return err
 }
 
 // GetDiscoveredClusters returns the discovered clusters from the Paladin Cloud API.
@@ -297,7 +307,7 @@ func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclu
 
 	firstDiscoveredAt, err := gogoProto.TimestampProto(asset.FirstDiscoveredAt)
 	if err != nil {
-		return nil, errox.InvariantViolation.New("converting timestamps")
+		return nil, errox.InvariantViolation.New("converting timestamps").CausedBy(err)
 	}
 	d.FirstDiscoveredAt = firstDiscoveredAt
 

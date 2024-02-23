@@ -2,17 +2,21 @@ package compliance
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
@@ -32,6 +36,35 @@ type serviceImpl struct {
 	orchestrator orchestrator.Orchestrator
 
 	connectionManager *connectionManager
+
+	offlineMode *atomic.Bool
+}
+
+func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		s.offlineMode.Store(false)
+	case common.SensorComponentEventOfflineMode:
+		s.offlineMode.Store(true)
+	}
+}
+
+func (s *serviceImpl) Start() error {
+	return nil
+}
+
+func (s *serviceImpl) Stop(_ error) {}
+
+func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+	return nil
+}
+
+func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
+	return nil
 }
 
 type connectionManager struct {
@@ -171,6 +204,12 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			log.Infof("Received compliance return from %q", msg.GetNode())
 			s.output <- t.Return
 		case *sensor.MsgFromCompliance_AuditEvents:
+			// if we are offline we do not send more audit logs to the manager nor the detector.
+			// Upon reconnection Central will sync the last state and Sensor will request to Compliance to start
+			// sending the audit logs based on that state.
+			if s.offlineMode.Load() {
+				continue
+			}
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeInventory:

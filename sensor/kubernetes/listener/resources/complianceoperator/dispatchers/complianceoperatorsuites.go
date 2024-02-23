@@ -45,7 +45,7 @@ func (c *SuitesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 				ComplianceOperatorSuiteV2: &central.ComplianceOperatorSuiteV2{
 					Id:   string(complianceSuite.GetUID()),
 					Name: complianceSuite.Name,
-					Status: &central.ComplianceOperatorSuiteV2_Status{
+					Status: &central.ComplianceOperatorStatus{
 						Phase:        string(complianceSuite.Status.Phase),
 						Result:       string(complianceSuite.Status.Result),
 						ErrorMessage: string(complianceSuite.Status.ErrorMessage),

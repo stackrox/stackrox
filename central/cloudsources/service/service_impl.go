@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/cloudsources"
+	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -44,7 +46,7 @@ var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
-type cloudSourceClientFactory = func(source *storage.CloudSource) cloudsources.Client
+type cloudSourceClientFactory = func(source *storage.CloudSource, opts ...opts.ClientOpts) (cloudsources.Client, error)
 
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
@@ -190,8 +192,6 @@ func (s *serviceImpl) DeleteCloudSource(ctx context.Context, request *v1.DeleteC
 	if err := s.ds.DeleteCloudSource(ctx, resourceID); err != nil {
 		return nil, errors.Wrapf(err, "failed to delete cloud source %q", resourceID)
 	}
-	// Short-circuit the cloud sources manager to ensure the latest changes are propagated.
-	s.mgr.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
@@ -221,9 +221,13 @@ func (s *serviceImpl) TestCloudSource(ctx context.Context, req *v1.TestCloudSour
 }
 
 func (s *serviceImpl) testCloudSource(ctx context.Context, storageCloudSource *storage.CloudSource) error {
-	client := s.clientFactory(storageCloudSource)
-	_, err := client.GetDiscoveredClusters(ctx)
-	return err
+	// Use a lower timeout as well as no retries for the test call. This is required to ensure that the UI request
+	// does not time out, which has a default timeout of 10 seconds.
+	client, err := s.clientFactory(storageCloudSource, opts.WithTimeout(8*time.Second), opts.WithRetries(0))
+	if err != nil {
+		return err
+	}
+	return client.Ping(ctx)
 }
 
 func (s *serviceImpl) enrichWithStoredCredentials(ctx context.Context,

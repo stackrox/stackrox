@@ -1,7 +1,9 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import { visit } from '../../../helpers/visit';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 const basePath = '/main/vulnerabilities/workload-cves/';
 
@@ -212,6 +214,11 @@ export function verifySelectedCvesInModal(cveNames) {
 
 export function visitAnyImageSinglePage() {
     visitWorkloadCveOverview();
+    // Clear any filters that may be applied to increase the likelihood of finding a deployment
+    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+        cy.get(vulnSelectors.clearFiltersButton).click();
+    }
+
     selectEntityTab('Image');
     cy.get('tbody tr td[data-label="Image"] a').first().click();
 

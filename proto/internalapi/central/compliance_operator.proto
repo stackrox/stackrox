@@ -137,7 +137,7 @@ enum ComplianceOperatorRuleSeverity {
 }
 
 // ComplianceOperatorCheckResultV2 is a message from Sensor (to Central) representing a compliance check result.
-// Next tag: 19.
+// Next tag: 17.
 message ComplianceOperatorCheckResultV2 {
   enum CheckStatus {
     UNSET = 0;
@@ -161,8 +161,8 @@ message ComplianceOperatorCheckResultV2 {
   map<string, string> labels = 9;
   map<string, string> annotations = 10;
   google.protobuf.Timestamp created_time = 11;
-  string standard = 12;
-  string control = 13;
+  reserved 12;
+  reserved 13;
   string scan_name = 14;
   string suite_name = 15;
   string rationale = 16;
@@ -236,9 +236,10 @@ message ComplianceOperatorScanSettingBindingV2 {
   repeated string profile_names = 3;
   string scan_setting_name = 4;
 
-  repeated ComplianceOperatorCondition conditions = 5;
+  reserved 5;
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
+  ComplianceOperatorStatus status = 8;
 }
 
 message ComplianceOperatorCondition {
@@ -249,16 +250,17 @@ message ComplianceOperatorCondition {
   google.protobuf.Timestamp last_transition_time = 5;
 }
 
+message ComplianceOperatorStatus {
+  string phase = 1;
+  string result = 2;
+  string error_message = 3;
+  repeated ComplianceOperatorCondition conditions = 4;
+}
+
 message ComplianceOperatorSuiteV2 {
   string id = 1;
   string name = 2;
 
-  message Status {
-    string phase = 1;
-    string result = 2;
-    string error_message = 3;
-    repeated ComplianceOperatorCondition conditions = 4;
-  }
-
-  Status status = 3;
+  reserved 3;
+  ComplianceOperatorStatus status = 4;
 }

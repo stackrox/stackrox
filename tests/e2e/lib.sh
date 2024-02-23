@@ -135,6 +135,7 @@ export_test_environment() {
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
     ci_export USE_MIDSTREAM_IMAGES "${USE_MIDSTREAM_IMAGES:-false}"
     ci_export REMOTE_CLUSTER_ARCH "${REMOTE_CLUSTER_ARCH:-x86_64}"
+    ci_export SETUP_WORKLOAD_IDENTITIES "${SETUP_WORKLOAD_IDENTITIES:-false}"
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
@@ -267,18 +268,13 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_SCANNER_V4'
-    customize_envVars+=$'\n        value: "'"${ROX_SCANNER_V4:-false}"'"'
-
-    scanner_v4_component="Disabled"
-    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
-        scanner_v4_component="Enabled"
-    fi
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
+    elif [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-with-scanner-v4.envsubst.yaml"
     fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -287,7 +283,6 @@ deploy_central_via_operator() {
       central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
-      scanner_v4_component="$scanner_v4_component" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
@@ -337,7 +332,6 @@ deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
     local scanner_component_setting="Disabled"
-    local scanner_v4_component_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -364,18 +358,18 @@ deploy_sensor_via_operator() {
     if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
         scanner_component_setting="AutoSense"
     fi
-    if [[ "${SENSOR_SCANNER_V4_SUPPORT:-}" == "true" ]]; then
-        scanner_v4_component_setting="AutoSense"
-    fi
 
+    local secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr.envsubst.yaml"
+    if [[ "${ROX_SCANNER_V4:-false}" == "true" ]]; then
+        secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
+    fi
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
     env - \
       collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
-      scanner_v4_component_setting="$scanner_v4_component_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
-      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
+      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
@@ -620,8 +614,8 @@ check_for_stackrox_restarts() {
         local check_out=""
         # shellcheck disable=SC2086
         if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
-            pods=$(echo $check_out | grep "copied to Artifacts" | cut -d- -f1,3 | sort -u | tr '\n' ' ')
-            save_junit_failure "Pod Restarts" "${pods}" "${check_out}"
+            names=$(echo "${check_out}" | grep "copied to Artifacts" | cut -d- -f1 | sort -u | tr '\n' ' ')
+            save_junit_failure "Pod Restarts" "${names}" "${check_out}"
             die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
         info "Restarts were considered benign"

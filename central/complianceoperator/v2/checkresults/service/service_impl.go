@@ -230,14 +230,14 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
-
 	// Add the scan config name as an exact match
 	parsedQuery = search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, request.GetScanConfigName()).ProtoQuery(),
 		parsedQuery,
 	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
 	return s.searchComplianceCheckResults(ctx, parsedQuery)
 }

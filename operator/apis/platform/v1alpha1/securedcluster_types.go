@@ -68,11 +68,11 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Scanner Component Settings"
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
-	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
 	//+kubebuilder:default={"scannerComponent":"Default"}
-	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
+	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 
 	// Allows you to specify additional trusted Root CAs.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9
@@ -356,7 +356,7 @@ type LocalScannerComponentSpec struct {
 	DB *DeploymentSpec `json:"db,omitempty"`
 }
 
-// LocalScannerV4ComponentSpec defines settings for the "scanner V4" component in SecuredClusters
+// LocalScannerV4ComponentSpec defines settings for the "Scanner V4" component in SecuredClusters
 type LocalScannerV4ComponentSpec struct {
 	// If you want to enable the Scanner V4 component set this to "AutoSense"
 	//+kubebuilder:default=Default
@@ -395,14 +395,14 @@ func (l LocalScannerComponentPolicy) Pointer() *LocalScannerComponentPolicy {
 type LocalScannerV4ComponentPolicy string
 
 const (
-	// LocalScannerV4ComponentDefault means that local scanner V4 will use the default semantics
+	// LocalScannerV4ComponentDefault means that local Scanner V4 will use the default semantics
 	// to determine whether scannerV4 components should be used.
 	// Currently this defaults to "Disabled" semantics.
 	// TODO: change default to "AutoSense" semantics with version 4.5
 	LocalScannerV4ComponentDefault LocalScannerV4ComponentPolicy = "Default"
-	// LocalScannerV4ComponentAutoSense means that scanner v4 should be installed,
+	// LocalScannerV4ComponentAutoSense means that Scanner V4 should be installed,
 	// unless there is a Central resource in the same namespace.
-	// In that case typically a central scanner V4 will be deployed as a component of Central
+	// In that case typically a central Scanner V4 will be deployed as a component of Central
 	LocalScannerV4ComponentAutoSense LocalScannerV4ComponentPolicy = "AutoSense"
 	// LocalScannerV4ComponentDisabled means that scanner should not be installed.
 	LocalScannerV4ComponentDisabled LocalScannerV4ComponentPolicy = "Disabled"

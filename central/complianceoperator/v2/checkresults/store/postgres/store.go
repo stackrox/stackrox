@@ -118,13 +118,12 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		obj.GetStatus(),
 		obj.GetSeverity(),
 		pgutils.NilOrTime(obj.GetCreatedTime()),
-		obj.GetStandard(),
 		obj.GetScanName(),
 		obj.GetScanConfigName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, Standard, ScanName, ScanConfigName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, Standard = EXCLUDED.Standard, ScanName = EXCLUDED.ScanName, ScanConfigName = EXCLUDED.ScanConfigName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanName, ScanConfigName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanName = EXCLUDED.ScanName, ScanConfigName = EXCLUDED.ScanConfigName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -149,7 +148,6 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"status",
 		"severity",
 		"createdtime",
-		"standard",
 		"scanname",
 		"scanconfigname",
 		"serialized",
@@ -174,7 +172,6 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetStatus(),
 			obj.GetSeverity(),
 			pgutils.NilOrTime(obj.GetCreatedTime()),
-			obj.GetStandard(),
 			obj.GetScanName(),
 			obj.GetScanConfigName(),
 			serialized,

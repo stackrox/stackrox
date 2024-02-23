@@ -15,6 +15,7 @@ import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
+import objects.GoogleArtifactRegistry
 import objects.GCRImageIntegration
 import objects.GenericNotifier
 import objects.NetworkPolicy
@@ -642,6 +643,7 @@ class IntegrationsTest extends BaseSpecification {
 
         Assume.assumeTrue(imageIntegration.isTestable())
         Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
+        Assume.assumeTrue(!testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES)
 
         when:
         "the integration is tested"
@@ -659,15 +661,20 @@ class IntegrationsTest extends BaseSpecification {
         where:
         "tests are:"
 
-        imageIntegration                 | customArgs      | testAspect
-        new StackroxScannerIntegration() | [:]             | "default config"
-        new ClairScannerIntegration()    | [:]             | "default config"
-        new QuayImageIntegration()       | [:]             | "default config"
-        new GCRImageIntegration()        | [:]             | "default config"
-        new AzureRegistryIntegration()   | [:]             | "default config"
-        new ECRRegistryIntegration()     | [:]             | "default config"
-        new ECRRegistryIntegration()     | [endpoint: "",] | "without endpoint"
-        new ECRRegistryIntegration()     | [useIam: true,] | "requires IAM"
+        imageIntegration                 | customArgs         | testAspect
+        new StackroxScannerIntegration() | [:]                | "default config"
+        new ClairScannerIntegration()    | [:]                | "default config"
+        new QuayImageIntegration()       | [:]                | "default config"
+        new GoogleArtifactRegistry()     | [:]                | "default config"
+        new GoogleArtifactRegistry()     | [project: "acs-san-stackroxci", wifEnabled: true]
+                                                              | "requires workload identity"
+        new GCRImageIntegration()        | [:]                | "default config"
+        new GCRImageIntegration()        | [project: "acs-san-stackroxci", includeScanner: false, wifEnabled: true]
+                                                              | "requires workload identity"
+        new AzureRegistryIntegration()   | [:]                | "default config"
+        new ECRRegistryIntegration()     | [:]                | "default config"
+        new ECRRegistryIntegration()     | [endpoint: ""]     | "without endpoint"
+        new ECRRegistryIntegration()     | [useIam: true]     | "requires IAM"
     }
 
     @Unroll

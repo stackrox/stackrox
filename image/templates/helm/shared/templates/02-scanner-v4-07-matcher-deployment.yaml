@@ -17,7 +17,7 @@ spec:
     matchLabels:
       app: scanner-v4-matcher
   strategy:
-    type: Recreate
+    type: RollingUpdate
   template:
     metadata:
       namespace: {{ .Release.Namespace }}

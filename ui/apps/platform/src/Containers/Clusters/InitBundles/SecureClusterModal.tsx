@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import {
+    Alert,
     Button,
     Divider,
     Flex,
@@ -35,7 +36,7 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
 
     return (
         <Modal
-            variant="large"
+            variant="medium"
             title="Review installation methods"
             isOpen={isModalOpen}
             onClose={onClose}
@@ -58,6 +59,12 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
                 ) : (
                     <SecureClusterUsingHelmChart headingLevel={headingLevel} />
                 )}
+                <Alert
+                    variant="info"
+                    isInline
+                    title="You can use one bundle to secure multiple clusters that have the same installation method."
+                    component="p"
+                />
             </Flex>
         </Modal>
     );

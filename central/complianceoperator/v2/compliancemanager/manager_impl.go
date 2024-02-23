@@ -2,12 +2,14 @@ package compliancemanager
 
 import (
 	"context"
+	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
+	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -40,6 +42,7 @@ type managerImpl struct {
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
 	clusterDS     clusterDatastore.DataStore
+	profileDS     profileDatastore.DataStore
 
 	// Map used to correlate requests to a sensor with a response.  Each request will generate
 	// a unique entry in the map
@@ -48,13 +51,14 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
 		scanSettingDS:   scanSettingDS,
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
+		profileDS:       profileDS,
 	}
 }
 
@@ -190,11 +194,28 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	// Check if any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
+	// Check if there are any existing clusters that have a scan configuration with any of profiles being referenced by the scan request.
 	// If so, then we cannot create the scan configuration.
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
+	// Get all profiles from the database to validate that they exist and are compatible
+	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusters[0]).
+		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
+	if len(returnedProfiles) != len(profiles) {
+		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+	err = validateProfiles(returnedProfiles)
+	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
@@ -277,6 +298,24 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 			delete(m.runningRequests, k)
 		}
 	}
+}
+
+// validateProfiles checks if the profiles are compatible and returns an error if not.
+// Check if node profiles have more than one product
+// ex. we can not have rhcos node profile and ocp node profile in the same scan configuration
+// as this is not allowed on Compliance Operator ScanSettingBinding
+func validateProfiles(profiles []*storage.ComplianceOperatorProfileV2) error {
+	var product string
+	for _, profile := range profiles {
+		if strings.Contains(strings.ToLower(profile.GetProductType()), "node") {
+			if product == "" {
+				product = profile.GetProduct()
+			} else if product != profile.GetProduct() {
+				return errors.New("Node profiles must have the same product")
+			}
+		}
+	}
+	return nil
 }
 
 // trackSensorRequest adds sensor request to a map with cluster and scan config that was sent for correlating responses.

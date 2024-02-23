@@ -90,7 +90,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 	}
 
 	s.Run("when empty content is enable and empty contents then retrieve index report", func() {
-		ir := &claircore.IndexReport{}
+		ir := &claircore.IndexReport{Success: true}
 		s.indexerMock.
 			EXPECT().
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).

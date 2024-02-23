@@ -20,8 +20,9 @@ message Package {
   string name = 2;
   string version = 3;
   NormalizedVersion normalized_version = 4;
-  string kind = 5;
-  Package source = 6;
+  string fixed_in_version = 5;
+  string kind = 6;
+  Package source = 7;
   string package_db = 8;
   string repository_hint = 9;
   string module = 10;

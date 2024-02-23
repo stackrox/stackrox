@@ -114,10 +114,11 @@ func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *sto
 		obj.GetId(),
 		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
+		obj.GetScanSettingName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_setting_binding_v2 (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_binding_v2 (Id, Name, ClusterId, ScanSettingName, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ScanSettingName = EXCLUDED.ScanSettingName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -138,6 +139,7 @@ func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSea
 		"id",
 		"name",
 		"clusterid",
+		"scansettingname",
 		"serialized",
 	}
 
@@ -156,6 +158,7 @@ func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSea
 			obj.GetId(),
 			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetScanSettingName(),
 			serialized,
 		})
 

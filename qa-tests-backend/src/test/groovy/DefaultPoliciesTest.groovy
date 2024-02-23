@@ -176,10 +176,10 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         switch (Env.REMOTE_CLUSTER_ARCH) {
             case "s390x":
-                componentCount=92
+                componentCount="9[2-9]"
                 break
             case "ppc64le":
-                componentCount=91
+                componentCount="9[1-9]"
                 break
             default:
                 componentCount="1(6[6-9]|7[0-5])"

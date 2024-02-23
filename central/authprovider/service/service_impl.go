@@ -31,6 +31,10 @@ var (
 		allow.Anonymous(): {
 			"/v1.AuthProviderService/ListAvailableProviderTypes",
 			"/v1.AuthProviderService/GetLoginAuthProviders",
+			// The ExchangeToken endpoint is used by the UI as part of the
+			// user login flow, where user authentication data is not always
+			// available. This endpoint should therefore remain
+			// anonymous / public.
 			"/v1.AuthProviderService/ExchangeToken",
 		},
 		user.With(permissions.View(resources.Access)): {

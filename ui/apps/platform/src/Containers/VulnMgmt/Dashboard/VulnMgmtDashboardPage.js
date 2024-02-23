@@ -2,12 +2,14 @@ import React, { useContext } from 'react';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
+import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
 import DashboardLayout from 'Components/DashboardLayout';
 import PageTitle from 'Components/PageTitle';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
+import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
 import ImagesCountTile from '../Components/ImagesCountTile';
@@ -28,6 +30,8 @@ const entityMenuTypes = [
 ];
 
 const VulnDashboardPage = ({ history }) => {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForIntegration = hasReadAccess('Integration');
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
 
@@ -92,6 +96,7 @@ const VulnDashboardPage = ({ history }) => {
     return (
         <>
             <DashboardLayout
+                banner={hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
                 headerText="Vulnerability Management"
                 headerComponents={headerComponents}
             >
