@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -141,6 +142,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			}
 		}
 	}()
+	var totalCVEs, totalSkippedCVEs int
 	// Doing this serially is slower, but much less complicated than using an
 	// ErrGroup or the like.
 	//
@@ -154,7 +156,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			endDate = now
 		}
 		var apiResp *schema.CVEAPIJSON20
-		for startIdx := 0; ; startIdx += apiResp.TotalResults {
+		for startIdx := 0; ; startIdx += apiResp.ResultsPerPage {
 			apiResp, err = e.query(ctx, startDate, endDate, startIdx)
 			if err != nil {
 				return nil, hint, err
@@ -162,11 +164,14 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			if apiResp.ResultsPerPage == 0 {
 				break
 			}
+			var cvesFromQuery int
 			// Parse vulnerabilities in the API response.
 			enc := json.NewEncoder(out)
 			for _, vuln := range apiResp.Vulnerabilities {
 				item := filterFields(vuln.CVE)
 				if item == nil {
+					zlog.Warn(ctx).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
+					totalSkippedCVEs++
 					continue
 				}
 				enrichment, err := json.Marshal(item)
@@ -180,13 +185,22 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 				if err := enc.Encode(&r); err != nil {
 					return nil, hint, fmt.Errorf("encoding enrichment: %w", err)
 				}
+				totalCVEs++
+				cvesFromQuery++
 			}
-			zlog.Info(ctx).Int("count", len(apiResp.Vulnerabilities)).Msg("loaded vulnerabilities")
+			zlog.Info(ctx).
+				Int("count", cvesFromQuery).
+				Int("total", totalCVEs).
+				Msg("loaded vulnerabilities")
 			// Rudimentary rate-limiting.
 			time.Sleep(e.callInterval)
 		}
 		startDate = endDate.Add(time.Second)
 	}
+	zlog.Info(ctx).
+		Int("skipped", totalSkippedCVEs).
+		Int("total", totalCVEs).
+		Msg("loaded vulnerabilities")
 	// Reset so clients can read the items.
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
@@ -211,8 +225,7 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		Published:    cve.Published,
 		LastModified: cve.LastModified,
 	}
-	// Return the item as-is if metrics are missing.
-	// We'd rather show the vulnerability without CVSS information than ignore it.
+	// Return the item as-is if metrics are missing, as the description may still be useful.
 	if cve.Metrics == nil {
 		return item
 	}
@@ -261,15 +274,17 @@ func (e *Enricher) feedURL(start time.Time, end time.Time, startIdx int) string 
 	utils.CrashOnError(err)
 	v, err := url.ParseQuery(e.feed.RawQuery)
 	utils.CrashOnError(err)
-	v.Set("startIndex", fmt.Sprintf("%d", startIdx))
+	v.Set("startIndex", strconv.Itoa(startIdx))
 	v.Set("pubStartDate", start.Format("2006-01-02T15:04:05Z"))
 	v.Set("pubEndDate", end.Format("2006-01-02T15:04:05Z"))
-	u.RawQuery = v.Encode()
+	// v.Encode() will always assume there is a value fo each key.
+	// noRejected does not have a value, so manually append it here.
+	u.RawQuery = v.Encode() + "&noRejected"
 	return u.String()
 }
 
 func (e *Enricher) query(ctx context.Context, start, end time.Time, startIdx int) (*schema.CVEAPIJSON20, error) {
-	ctx = zlog.ContextWithValues(ctx, "start_index", fmt.Sprintf("%d", startIdx),
+	ctx = zlog.ContextWithValues(ctx, "start_index", strconv.Itoa(startIdx),
 		"start_time", start.String(),
 		"end_time", end.String())
 	u := e.feedURL(start, end, startIdx)
@@ -345,14 +360,14 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 	}()
 	var err error
 	dec := json.NewDecoder(rc)
-	ret := make([]driver.EnrichmentRecord, 0, 1024) // Wild guess at initial capacity.
+	ret := make([]driver.EnrichmentRecord, 0, 250_000) // Wild guess at initial capacity.
 	// This is going to allocate like mad, hold onto your butts.
 	for err == nil {
 		ret = append(ret, driver.EnrichmentRecord{})
 		err = dec.Decode(&ret[len(ret)-1])
 	}
 	zlog.Debug(ctx).
-		Int("count", len(ret)).
+		Int("count", len(ret)-1).
 		Msg("decoded enrichments")
 	if !errors.Is(err, io.EOF) {
 		return nil, err
