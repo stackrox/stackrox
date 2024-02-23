@@ -29,6 +29,7 @@ const (
 
 	// Finds PLOPs without matching process indicators. Not all of these PLOPs are orphaned. There is a further check to see
 	// if the serialized data has process information. PLOPs without process information are then deleted.
-	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop LEFT OUTER JOIN process_indicators proc
-		ON plop.processindicatorid = proc.id WHERE proc.id IS NULL`
+	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop where NOT EXISTS
+			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
+
 )
