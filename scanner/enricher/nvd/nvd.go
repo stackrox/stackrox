@@ -163,6 +163,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			if apiResp.ResultsPerPage == 0 {
 				break
 			}
+			var cvesFromQuery int
 			// Parse vulnerabilities in the API response.
 			enc := json.NewEncoder(out)
 			for _, vuln := range apiResp.Vulnerabilities {
@@ -183,13 +184,18 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 					return nil, hint, fmt.Errorf("encoding enrichment: %w", err)
 				}
 				totalCVEs++
+				cvesFromQuery++
 			}
-			zlog.Info(ctx).Int("count", totalCVEs).Msg("loaded vulnerabilities")
+			zlog.Info(ctx).
+				Int("count", cvesFromQuery).
+				Int("total", totalCVEs).
+				Msg("loaded vulnerabilities")
 			// Rudimentary rate-limiting.
 			time.Sleep(e.callInterval)
 		}
 		startDate = endDate.Add(time.Second)
 	}
+	zlog.Info(ctx).Int("total", totalCVEs).Msg("loaded vulnerabilities")
 	// Reset so clients can read the items.
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
