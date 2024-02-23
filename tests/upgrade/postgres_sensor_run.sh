@@ -11,8 +11,6 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
-# shellcheck source=../../scripts/ci/sensor-wait.sh
-source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
 # shellcheck source=../../scripts/setup-certs.sh
 source "$TEST_ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh

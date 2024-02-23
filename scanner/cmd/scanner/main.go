@@ -54,6 +54,7 @@ func init() {
 	}
 
 	memlimit.SetMemoryLimit()
+	golog.Println("Hi")
 }
 
 func main() {

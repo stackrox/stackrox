@@ -20,7 +20,7 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
     exit 0 # not fatal but worth highlighting
 fi
 
-if [[ "${JOB_NAME:-}" =~ -ocp-4- ]]; then
+if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     # https://github.com/stackrox/automation-flavors/blob/e6daf10b7df49fc003584790e25def036b2a3b0b/openshift-4/entrypoint.sh#L76
     set_ci_shared_export WORKER_NODE_COUNT 2

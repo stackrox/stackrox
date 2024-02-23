@@ -13,6 +13,9 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
+# shellcheck source=../../scripts/ci/scanner-v4-wait.sh
+source "$ROOT/scripts/ci/scanner-v4-wait.sh"
+
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
@@ -25,6 +28,7 @@ deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
     local sensor_namespace=${3:-stackrox}
+    local scanner_namespace=${4:-stackrox}
 
     setup_podsecuritypolicies_config
 
@@ -47,6 +51,8 @@ deploy_stackrox() {
     sensor_wait "${sensor_namespace}"
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
+
+    scanner_v4_wait "${scanner_namespace}"
 
     touch "${STATE_DEPLOYED}"
 }
