@@ -141,7 +141,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			}
 		}
 	}()
-	var totalCVEs int
+	var totalCVEs, totalSkippedCVEs int
 	// Doing this serially is slower, but much less complicated than using an
 	// ErrGroup or the like.
 	//
@@ -170,6 +170,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 				item := filterFields(vuln.CVE)
 				if item == nil {
 					zlog.Warn(ctx).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
+					totalSkippedCVEs++
 					continue
 				}
 				enrichment, err := json.Marshal(item)
@@ -195,7 +196,10 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		}
 		startDate = endDate.Add(time.Second)
 	}
-	zlog.Info(ctx).Int("total", totalCVEs).Msg("loaded vulnerabilities")
+	zlog.Info(ctx).
+		Int("skipped", totalSkippedCVEs).
+		Int("total", totalCVEs).
+		Msg("loaded vulnerabilities")
 	// Reset so clients can read the items.
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
