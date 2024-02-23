@@ -636,9 +636,7 @@ func (ds *datastoreImpl) getPLOPsToDelete(ctx context.Context) ([]string, error)
 // process information and deletes them. PLOPs can have no matching process indicators, but such PLOPs need
 // to have process information.
 func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error) {
-
 	plopsToDelete, err := ds.getPLOPsToDelete(ctx)
-
 	if err != nil {
 		return 0, err
 	}
@@ -647,11 +645,9 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	defer ds.mutex.Unlock()
 
 	err = ds.storage.DeleteMany(ctx, plopsToDelete)
-	numRecordsToDelete := len(plopsToDelete)
-
 	if err != nil {
 		return 0, err
 	}
 
-	return int64(numRecordsToDelete), nil
+	return int64(len(plopsToDelete)), nil
 }
