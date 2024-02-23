@@ -439,16 +439,13 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 // or have a PodUid and belong to a deployment or pod that does not exist.
 func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	prunedCount := g.plops.PruneOrphanedPLOPs(pruningCtx, orphanWindow)
-
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
 		prunedCount)
 
 	prunedCount, err := g.plops.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(pruningCtx)
-
 	if err != nil {
-		log.Error(errors.Wrap(err, "error removing PLOPs with no matching process indicator or process information"))
+		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
 	}
-
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 }
 
