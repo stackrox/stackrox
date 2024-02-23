@@ -141,6 +141,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			}
 		}
 	}()
+	var totalCVEs int
 	// Doing this serially is slower, but much less complicated than using an
 	// ErrGroup or the like.
 	//
@@ -180,8 +181,9 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 				if err := enc.Encode(&r); err != nil {
 					return nil, hint, fmt.Errorf("encoding enrichment: %w", err)
 				}
+				totalCVEs++
 			}
-			zlog.Info(ctx).Int("count", len(apiResp.Vulnerabilities)).Msg("loaded vulnerabilities")
+			zlog.Info(ctx).Int("count", totalCVEs).Msg("loaded vulnerabilities")
 			// Rudimentary rate-limiting.
 			time.Sleep(e.callInterval)
 		}
