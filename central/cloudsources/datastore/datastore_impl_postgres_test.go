@@ -81,6 +81,18 @@ func (s *datastorePostgresTestSuite) TestGetCloudSource() {
 	s.Assert().Equal(cloudSource, roundtripCloudSource)
 }
 
+func (s *datastorePostgresTestSuite) TestGetAllCloudSources() {
+	cloudSources, err := s.datastore.GetAllCloudSources(s.readCtx)
+	s.Require().NoError(err)
+	s.Assert().Empty(cloudSources)
+
+	s.addCloudSources(100)
+
+	cloudSources, err = s.datastore.GetAllCloudSources(s.readCtx)
+	s.Require().NoError(err)
+	s.Assert().Len(cloudSources, 100)
+}
+
 func (s *datastorePostgresTestSuite) TestListCloudSources() {
 	cloudSources, err := s.datastore.ListCloudSources(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)

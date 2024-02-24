@@ -99,6 +99,9 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, cloudSources))
+	allCloudSource, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.ElementsMatch(cloudSources, allCloudSource)
 
 	cloudSourceCount, err = store.Count(ctx)
 	s.NoError(err)
