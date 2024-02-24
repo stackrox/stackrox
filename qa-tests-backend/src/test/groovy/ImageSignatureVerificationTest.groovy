@@ -1,6 +1,7 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
 
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -8,6 +9,7 @@ import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyV
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 
 import objects.Deployment
+import services.ImageService
 import services.PolicyService
 import services.SignatureIntegrationService
 
@@ -143,6 +145,15 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             SAME_DIGEST_WITH_SIGNATURE,
     ]
 
+    static final private List<String> IMAGE_DIGESTS = [
+            "sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766",
+            "sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6",
+            "sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7",
+            "sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e",
+            "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534",
+            "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534",
+    ]
+
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
     static final private Policy.Builder BASE_POLICY = Policy.newBuilder()
             .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
@@ -226,6 +237,12 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             assert policyID
             CREATED_POLICY_IDS.add(policyID)
         }
+
+        // Reassessing policies will trigger a re-enrichment of images.
+        PolicyService.reassessPolicies()
+
+        // Allow reassess policies to finish.
+        sleep 5000
     }
 
     def cleanupSpec() {
@@ -244,9 +261,12 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     }
 
     def setup() {
-        // Reassessing policies will trigger a re-enrichment of images, ensuring we cover potential timeouts occurred
-        // during enriching images.
-        PolicyService.reassessPolicies()
+        // For each image digest, verify whether Central successfully scanned the image. This way we fail in the setup
+        // in case image scanning failed instead of a test failure.
+        for (digest in IMAGE_DIGESTS) {
+            ImageOuterClass.Image image = ImageService.getImage(digest, false)
+            assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+        }
     }
 
     @Unroll
