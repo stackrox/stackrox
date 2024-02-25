@@ -75,7 +75,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 	}
 
 	var transport registry.Transport
-	if len(transports) == 0 {
+	if len(transports) == 0 || transports[0] == nil {
 		transport = DefaultTransport(cfg)
 	} else {
 		transport = transports[0]
