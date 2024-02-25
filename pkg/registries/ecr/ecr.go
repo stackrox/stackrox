@@ -143,8 +143,11 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 		Endpoint:        endpoint,
 		DisableRepoList: disableRepoList,
 	}
+	var dockerRegistry *docker.Registry
+	var registryErr error
 	if authData := conf.GetAuthorizationData(); authData != nil {
 		cfg.SetCredentials(authData.GetUsername(), authData.GetPassword())
+		dockerRegistry, registryErr = docker.NewDockerRegistryWithConfig(cfg, reg.integration)
 	} else {
 		client, err := createECRClient(conf)
 		if err != nil {
@@ -152,10 +155,10 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 			return nil, err
 		}
 		reg.transport = newAWSTransport(integration.GetName(), cfg, client)
+		dockerRegistry, registryErr = docker.NewDockerRegistryWithConfig(cfg, reg.integration, reg.transport)
 	}
-	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, reg.integration, reg.transport)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create docker registry")
+	if registryErr != nil {
+		return nil, errors.Wrap(registryErr, "failed to create docker registry")
 	}
 	reg.Registry = dockerRegistry
 	return reg, nil

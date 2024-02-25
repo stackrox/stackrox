@@ -76,10 +76,13 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	var transport registry.Transport
 	if len(transports) == 0 || transports[0] == nil {
+		log.Info("Default transport")
 		transport = DefaultTransport(cfg)
 	} else {
+		log.Infof("Custom transport: %+v", transports[0])
 		transport = transports[0]
 	}
+	log.Infof("Transport is now: %+v", transport)
 	client, err := registry.NewFromTransport(url, transport, registry.Quiet)
 	if err != nil {
 		return nil, err
