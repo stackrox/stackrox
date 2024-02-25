@@ -2,7 +2,7 @@ package enricher
 
 import (
 	"context"
-	"fmt"
+	stdErrors "errors"
 	"sort"
 	"time"
 
@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -226,7 +225,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		log.Warnf("Error attempting to delegate: %v", err)
 	}
 
-	errorList := errorhelpers.NewErrorList("image enrichment")
+	var enrichmentErrs error
 
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
@@ -250,8 +249,9 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
 	// here.
 	if err != nil {
-		errorList.AddError(err)
-		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
+		enrichmentErrs = stdErrors.Join(enrichmentErrs, err)
+		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone},
+			errors.Wrap(enrichmentErrs, "image enrichment")
 	}
 
 	updated = updated || didUpdateMetadata
@@ -261,7 +261,10 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
 
 	scanResult, err := e.enrichWithScan(ctx, enrichContext, image, useExistingScanIfPossible)
-	errorList.AddError(err)
+	if err != nil {
+		enrichmentErrs = stdErrors.Join(enrichmentErrs, err)
+	}
+
 	if scanResult == ScanNotDone && image.GetScan() == nil {
 		imageNoteSet[storage.Image_MISSING_SCAN_DATA] = struct{}{}
 	} else {
@@ -270,7 +273,9 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	updated = updated || scanResult != ScanNotDone
 
 	didUpdateSignature, err := e.enrichWithSignature(ctx, enrichContext, image)
-	errorList.AddError(err)
+	if err != nil {
+		enrichmentErrs = stdErrors.Join(enrichmentErrs, err)
+	}
 	if len(image.GetSignature().GetSignatures()) == 0 {
 		imageNoteSet[storage.Image_MISSING_SIGNATURE] = struct{}{}
 	} else {
@@ -279,7 +284,9 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	updated = updated || didUpdateSignature
 
 	didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(ctx, enrichContext, image)
-	errorList.AddError(err)
+	if err != nil {
+		enrichmentErrs = stdErrors.Join(enrichmentErrs, err)
+	}
 	if len(image.GetSignatureVerificationData().GetResults()) == 0 {
 		imageNoteSet[storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA] = struct{}{}
 	} else {
@@ -294,7 +301,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	return EnrichmentResult{
 		ImageUpdated: updated,
 		ScanResult:   scanResult,
-	}, errorList.ToError()
+	}, errors.Wrap(enrichmentErrs, "image enrichment")
 }
 
 func setImageNotes(image *storage.Image, imageNoteSet map[storage.Image_Note]struct{}) {
@@ -345,17 +352,15 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, nil
 	}
 
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
+	var metadataErrs error
 
 	if err := e.checkRegistryForImage(image); err != nil {
-		errorList.AddError(err)
-		return false, errorList.ToError()
+		return false, errors.Wrapf(err, "error getting metadata for image: %s", image.GetName().GetFullName())
 	}
 
 	registries, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
-		errorList.AddError(err)
-		return false, errorList.ToError()
+		return false, errors.Wrapf(err, "error getting metadata for image: %s", image.GetName().GetFullName())
 	}
 
 	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
@@ -378,7 +383,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 					ErrorMessage:  err.Error(),
 				})
 			}
-			errorList.AddError(err)
+			metadataErrs = stdErrors.Join(metadataErrs, err)
 			continue
 		}
 		if updated {
@@ -409,11 +414,12 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		}
 	}
 
-	if !enrichmentContext.Internal && errorList.Empty() {
-		errorList.AddError(errors.Errorf("no matching image registries found: please add an image integration for %s", image.GetName().GetRegistry()))
+	if !enrichmentContext.Internal && metadataErrs == nil {
+		metadataErrs = stdErrors.Join(metadataErrs,
+			errors.Errorf("no matching image registries found: please add an image integration for %s", image.GetName().GetRegistry()))
 	}
 
-	return false, errorList.ToError()
+	return false, errors.Wrapf(metadataErrs, "error getting metadata for image: %s", image.GetName().GetFullName())
 }
 
 func getRef(image *storage.Image) string {
@@ -555,11 +561,11 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 		return ScanNotDone, nil
 	}
 
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
+	var scanErrs error
 	scanners := e.integrations.ScannerSet()
 	if !enrichmentContext.Internal && scanners.IsEmpty() {
-		errorList.AddError(errors.New("no image scanners are integrated"))
-		return ScanNotDone, errorList.ToError()
+		return ScanNotDone, errors.Wrapf(errors.New("no image scanners are integrated"),
+			"error scanning image: %s", image.GetName().GetFullName())
 	}
 
 	log.Debugf("Scanning image %s", image.GetName().GetFullName())
@@ -581,7 +587,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 					ErrorMessage:  err.Error(),
 				})
 			}
-			errorList.AddError(err)
+			scanErrs = stdErrors.Join(scanErrs, err)
 
 			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == types.ScannerV4 {
 				// Do not try to scan with additional scanners if Scanner V4 enabled and fails to scan an image.
@@ -615,7 +621,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			return result, nil
 		}
 	}
-	return ScanNotDone, errorList.ToError()
+	return ScanNotDone, errors.Wrapf(scanErrs, "error scanning image: %s", image.GetName().GetFullName())
 }
 
 // enrichWithSignatureVerificationData enriches the image with signature verification data and returns a bool,

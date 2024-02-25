@@ -1,13 +1,13 @@
 package deduperkey
 
 import (
+	stdErrors "errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -59,17 +59,17 @@ func (k *Key) String() string {
 // ParseKeySlice returns a list of Key objects from a list a string formatted keys. An error returned means that some
 // of the keys might have failed when being parsed.
 func ParseKeySlice(keys []string) ([]Key, error) {
-	errList := errorhelpers.NewErrorList("malformed key entries")
+	var parseErrs error
 	result := make([]Key, len(keys))
 	for i, v := range keys {
 		parsedKey, err := KeyFrom(v)
 		if err != nil {
-			errList.AddError(errors.Wrapf(err, "key: %s", v))
+			parseErrs = stdErrors.Join(parseErrs, errors.Wrapf(err, "key: %s", v))
 			continue
 		}
 		result[i] = parsedKey
 	}
-	return result, errList.ToError()
+	return result, errors.Wrap(parseErrs, "malformed key entries")
 }
 
 // ParseDeduperState makes a copy of the deduper state.

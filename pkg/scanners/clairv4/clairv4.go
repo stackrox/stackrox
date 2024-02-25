@@ -13,7 +13,6 @@ import (
 	"github.com/quay/claircore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -104,14 +103,13 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 }
 
 func validate(cfg *storage.ClairV4Config) error {
-	errorList := errorhelpers.NewErrorList("Clair v4 Validation")
 	if cfg == nil {
-		errorList.AddString("configuration required")
+		return errors.New("configuration required")
 	}
 	if cfg.GetEndpoint() == "" {
-		errorList.AddString("endpoint must be specified")
+		return errors.Wrap(errors.New("endpoint must be specified"), "validating clair v4 config")
 	}
-	return errorList.ToError()
+	return nil
 }
 
 func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {

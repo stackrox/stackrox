@@ -2,11 +2,13 @@ package policies
 
 import (
 	"embed"
+	stdErrors "errors"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -35,7 +37,7 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 
 	var policies []*storage.Policy
 
-	errList := errorhelpers.NewErrorList("Default policy validation")
+	var validationErrs error
 	for _, f := range files {
 		if flag, ok := featureFlagFileGuard[f.Name()]; ok && !flag.Enabled() {
 			continue
@@ -43,23 +45,24 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 
 		p, err := ReadPolicyFile(filepath.Join(policiesDir, f.Name()))
 		if err != nil {
-			errList.AddError(err)
+			validationErrs = stdErrors.Join(validationErrs, err)
 			continue
 		}
 		if p.GetId() == "" {
-			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.Newf("policy %s does not have an ID defined", p.GetName()))
 			continue
 		}
 
 		if err := policyversion.EnsureConvertedToLatest(p); err != nil {
-			errList.AddWrapf(err, "converting policy %s", p.GetName())
+			validationErrs = stdErrors.Join(validationErrs, errors.Wrapf(err, "converting policy %s", p.GetName()))
 			continue
 		}
 
 		policies = append(policies, p)
 	}
 
-	return policies, errList.ToError()
+	return policies, errors.Wrap(validationErrs, "default policy validation")
 }
 
 // ReadPolicyFile reads a policy from the file with path

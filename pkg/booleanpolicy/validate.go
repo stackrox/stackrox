@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -56,16 +57,16 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 		option(configuration)
 	}
 
-	errorList := errorhelpers.NewErrorList("policy validation")
+	var validationErrs error
 	if err := validateBooleanPolicyVersion(p); err != nil {
-		errorList.AddErrors(err)
+		validationErrs = errors.Join(validationErrs, err)
 	}
 	if p.GetName() == "" {
-		errorList.AddString("no name specified")
+		validationErrs = errors.Join(validationErrs, errors.New("no name specified"))
 	}
 
 	for _, section := range p.GetPolicySections() {
-		errorList.AddError(validatePolicySection(section, configuration, p.GetEventSource()))
+		validationErrs = errors.Join(validationErrs, validatePolicySection(section, configuration, p.GetEventSource()))
 	}
 
 	// Special case for ImageSignatureVerifiedBy policy for which we don't allow
@@ -73,12 +74,13 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	for _, ps := range p.PolicySections {
 		for _, pg := range ps.PolicyGroups {
 			if pg.FieldName == fieldnames.ImageSignatureVerifiedBy && pg.BooleanOperator == storage.BooleanOperator_AND {
-				errorList.AddStringf("operator AND is not allowed for field %q", fieldnames.ImageSignatureVerifiedBy)
+				validationErrs = errors.Join(validationErrs,
+					fmt.Errorf("operator AND is not allowed for field %q", fieldnames.ImageSignatureVerifiedBy))
 			}
 		}
 	}
 
-	return errorList.ToError()
+	return pkgErrors.Wrap(validationErrs, "policy validation")
 }
 
 func validateBooleanPolicyVersion(policy *storage.Policy) error {
@@ -97,8 +99,7 @@ func validateBooleanPolicyVersion(policy *storage.Policy) error {
 
 // validatePolicySection validates the format of a policy section
 func validatePolicySection(s *storage.PolicySection, configuration *validateConfiguration, eventSource storage.EventSource) error {
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation of section %q", s.GetSectionName()))
-
+	var validationErrs error
 	seenFields := set.NewStringSet()
 	for _, g := range s.GetPolicyGroups() {
 		m, err := FieldMetadataSingleton().findFieldMetadata(g.GetFieldName(), configuration)
@@ -106,28 +107,36 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		case nil:
 			// All good, proceed
 		case errNoSuchField:
-			errorList.AddStringf("policy criteria name %q is invalid", g.GetFieldName())
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("policy criteria name %q is invalid", g.GetFieldName()))
 			continue
 		default:
-			errorList.AddWrapf(err, "failed to resolve metadata for field %q", g.GetFieldName())
+			validationErrs = errors.Join(validationErrs,
+				pkgErrors.Wrapf(err, "failed to resolve metadata for field %q", g.GetFieldName()))
 			continue
 		}
 
 		if len(g.GetValues()) == 0 {
-			errorList.AddStringf("no values for field %q", g.GetFieldName())
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("no values for field %q", g.GetFieldName()))
 		}
 		if !seenFields.Add(g.GetFieldName()) {
-			errorList.AddStringf("field name %q found in multiple groups", g.GetFieldName())
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("field name %q found in multiple groups", g.GetFieldName()))
 		}
 		if g.GetNegate() && m.negationForbidden {
-			errorList.AddStringf("policy criteria %q cannot be negated", g.GetFieldName())
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("policy criteria %q cannot be negated", g.GetFieldName()))
 		}
 		if len(g.GetValues()) > 1 && m.operatorsForbidden {
-			errorList.AddStringf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues())
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues()))
 		}
 		for idx, v := range g.GetValues() {
 			if !m.valueRegex(configuration).MatchString(v.GetValue()) {
-				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex(configuration).String())
+				validationErrs = errors.Join(validationErrs,
+					errox.InvalidArgs.Newf("policy criteria %q has invalid value[%d]=%q must match regex %q",
+						g.GetFieldName(), idx, v.GetValue(), m.valueRegex(configuration).String()))
 			}
 		}
 	}
@@ -135,20 +144,22 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 	if eventSource == storage.EventSource_AUDIT_LOG_EVENT {
 		// For Audit Log source based policies, both the k8s resource and verb must be provided.
 		if !seenFields.Contains(fieldnames.KubeResource) {
-			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeResource)
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("policies with audit log event source must have the %q criteria", fieldnames.KubeResource))
 		}
 		if !seenFields.Contains(fieldnames.KubeAPIVerb) {
-			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeAPIVerb)
+			validationErrs = errors.Join(validationErrs,
+				errox.InvalidArgs.Newf("policies with audit log event source must have the %q criteria", fieldnames.KubeAPIVerb))
 		}
 	}
 
 	if eventSource == storage.EventSource_DEPLOYMENT_EVENT {
 		if seenFields.Contains(fieldnames.KubeUserName) || seenFields.Contains(fieldnames.KubeUserGroups) {
 			if !seenFields.Contains(fieldnames.KubeResource) {
-				errorList.AddString("kubernetes events policy must have the `Kubernetes Action` criteria")
+				validationErrs = errors.Join(validationErrs,
+					errox.InvalidArgs.New("kubernetes events policy must have the `Kubernetes Action` criteria"))
 			}
 		}
 	}
-
-	return errorList.ToError()
+	return pkgErrors.Wrapf(validationErrs, "validation of section %q", s.GetSectionName())
 }

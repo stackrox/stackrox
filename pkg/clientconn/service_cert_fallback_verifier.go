@@ -3,9 +3,9 @@ package clientconn
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
+	"errors"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/tlscheck"
 )
@@ -42,8 +42,8 @@ func (v *serviceCertFallbackVerifier) VerifyPeerCertificate(leaf *x509.Certifica
 		return systemVerifyErr
 	}
 
-	verifyErrs := errorhelpers.NewErrorList(fmt.Sprintf("verifying %s certificate", v.subject.Identifier))
-	verifyErrs.AddError(systemVerifyErr)
+	var verifyErrs error
+	verifyErrs = errors.Join(verifyErrs, systemVerifyErr)
 
 	serviceVerifyOpts := x509.VerifyOptions{
 		DNSName:       v.subject.Hostname(),
@@ -55,6 +55,6 @@ func (v *serviceCertFallbackVerifier) VerifyPeerCertificate(leaf *x509.Certifica
 	if serviceVerifyErr == nil {
 		return nil
 	}
-	verifyErrs.AddError(serviceVerifyErr)
-	return verifyErrs.ToError()
+	verifyErrs = errors.Join(verifyErrs, serviceVerifyErr)
+	return pkgErrors.Wrapf(verifyErrs, "verifying %s certificate", v.subject.Identifier)
 }

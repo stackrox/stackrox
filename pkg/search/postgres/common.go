@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"runtime/debug"
 	"strconv"
@@ -15,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -967,7 +967,7 @@ func qualifyColumn(table, column, cast string) string {
 }
 
 func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) error {
-	errList := errorhelpers.NewErrorList("validating supported derived field datatype")
+	var validationErrs error
 	for _, queryField := range queryFields {
 		if queryField.derivedMetadata == nil {
 			continue
@@ -979,8 +979,8 @@ func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) er
 
 		dataType := dbField.DataType
 		if postgres.UnsupportedDerivedFieldDataTypes.Contains(dataType) {
-			errList.AddError(errors.Errorf("datatype %s is not supported in aggregation", string(dataType)))
+			validationErrs = stdErrors.Join(validationErrs, errors.Errorf("datatype %s is not supported in aggregation", string(dataType)))
 		}
 	}
-	return errList.ToError()
+	return errors.Wrap(validationErrs, "validating supported derived field data type")
 }

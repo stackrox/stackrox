@@ -976,7 +976,7 @@ func normalizeCluster(cluster *storage.Cluster) error {
 }
 
 func validateInput(cluster *storage.Cluster) error {
-	return clusterValidation.Validate(cluster).ToError()
+	return clusterValidation.Validate(cluster)
 }
 
 // addDefaults enriches the provided non-nil cluster object with defaults for

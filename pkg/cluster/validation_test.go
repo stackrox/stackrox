@@ -26,7 +26,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid main image 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid main image \"invalid image\": invalid reference format"},
 		},
 		"Cluster with empty main image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -37,7 +37,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
 			},
-			expectedErrors: []string{"collector image may not specify a tag.  Please remove tag '3.2.0-slim' to continue"},
+			expectedErrors: []string{"collector image may not specify a tag.  Please remove tag \"3.2.0-slim\" to continue"},
 		},
 		"Cluster with configured collector image without tag is valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -48,7 +48,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CollectorImage = "invalid image"
 			},
-			expectedErrors: []string{"invalid collector image 'invalid image': invalid reference format"},
+			expectedErrors: []string{"invalid collector image \"invalid image\": invalid reference format"},
 		},
 		"Cluster with empty collector image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -65,7 +65,7 @@ func TestPartialValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.CentralApiEndpoint = ""
 			},
-			expectedErrors: []string{"Central API Endpoint is required", "Central API Endpoint must be a valid endpoint. Error: empty endpoint specified"},
+			expectedErrors: []string{"Central API Endpoint is required", "Central API Endpoint must be a valid endpoint: empty endpoint specified"},
 		},
 		"Cluster without central endpoint port fails": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -109,11 +109,11 @@ func TestPartialValidation(t *testing.T) {
 			gotErrors := ValidatePartial(cluster)
 
 			if len(c.expectedErrors) == 0 {
-				assert.NoError(t, gotErrors.ToError(), "expected a valid cluster but received errors")
+				assert.NoError(t, gotErrors, "expected a valid cluster but received errors")
 			}
 
 			for _, expectedErr := range c.expectedErrors {
-				assert.Contains(t, gotErrors.String(), expectedErr)
+				assert.Contains(t, gotErrors.Error(), expectedErr)
 			}
 		})
 	}
@@ -140,11 +140,11 @@ func TestFullValidation(t *testing.T) {
 			gotErrors := Validate(cluster)
 
 			if len(c.expectedErrors) == 0 {
-				assert.NoError(t, gotErrors.ToError(), "expected a valid cluster but received errors")
+				assert.NoError(t, gotErrors, "expected a valid cluster but received errors")
 			}
 
 			for _, expectedErr := range c.expectedErrors {
-				assert.Contains(t, gotErrors.String(), expectedErr)
+				assert.Contains(t, gotErrors.Error(), expectedErr)
 			}
 		})
 	}

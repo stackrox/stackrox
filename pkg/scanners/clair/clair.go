@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -45,11 +44,10 @@ type clair struct {
 }
 
 func validate(clair *storage.ClairConfig) error {
-	errorList := errorhelpers.NewErrorList("Clair Validation")
 	if clair.GetEndpoint() == "" {
-		errorList.AddString("Endpoint must be specified")
+		return errors.Wrap(errors.New("endpoint must be specified"), "validating config")
 	}
-	return errorList.ToError()
+	return nil
 }
 
 func newScanner(integration *storage.ImageIntegration) (*clair, error) {

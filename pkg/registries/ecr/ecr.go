@@ -1,6 +1,7 @@
 package ecr
 
 import (
+	stdErrors "errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -11,7 +12,6 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -31,9 +31,9 @@ type ecr struct {
 
 // sanitizeConfiguration validates and cleans-up the integration configuration.
 func sanitizeConfiguration(ecr *storage.ECRConfig) error {
-	errorList := errorhelpers.NewErrorList("ECR Validation")
+	var validationErrs error
 	if ecr.GetRegistryId() == "" {
-		errorList.AddString("Registry ID must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errors.New("Registry ID must be specified"))
 	}
 	// Erase authorization data if any other auth mechanism was set.
 	if ecr.GetUseIam() || ecr.GetAccessKeyId() != "" || ecr.GetSecretAccessKey() != "" || ecr.GetUseAssumeRole() {
@@ -41,36 +41,44 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 	}
 	if ecr.GetAuthorizationData() != nil {
 		if ecr.GetAuthorizationData().GetUsername() == "" {
-			errorList.AddString("Username must be specified in authorization data.")
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.New("Username must be specified in authorization data"))
 		}
 		if ecr.GetAuthorizationData().GetPassword() == "" {
-			errorList.AddString("Password must be specified in authorization data.")
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.New("Password must be specified in authorization data"))
 		}
 		if ecr.GetAuthorizationData().GetExpiresAt() == nil {
-			errorList.AddString("Expires At must be specified in authorization data.")
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.New("Expires At must be specified in authorization data"))
 		}
 	} else {
 		if !ecr.GetUseIam() {
 			if ecr.GetAccessKeyId() == "" {
-				errorList.AddString("Access Key ID must be specified if not using IAM")
+				validationErrs = stdErrors.Join(validationErrs,
+					errors.New("Access Key ID must be specified if not using IAM"))
 			}
 			if ecr.GetSecretAccessKey() == "" {
-				errorList.AddString("Secret Access Key must be specified if not using IAM")
+				validationErrs = stdErrors.Join(validationErrs,
+					errors.New("Secret Access Key must be specified if not using IAM"))
 			}
 		}
 		if ecr.GetUseAssumeRole() {
 			if ecr.GetEndpoint() != "" {
-				errorList.AddString("AssumeRole cannot be done with an endpoint defined")
+				validationErrs = stdErrors.Join(validationErrs,
+					errors.New("AssumeRole cannot be done with an endpoint defined"))
 			}
 			if ecr.GetAssumeRoleId() == "" {
-				errorList.AddString("AssumeRole ID must be set to use AssumeRole")
+				validationErrs = stdErrors.Join(validationErrs,
+					errors.New("AssumeRole ID must be set to use AssumeRole"))
 			}
 		}
 	}
 	if ecr.GetRegion() == "" {
-		errorList.AddString("Region must be specified")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("Region must be specified"))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "validating ECR config")
 }
 
 // Test tests the current registry and makes sure that it is working properly.

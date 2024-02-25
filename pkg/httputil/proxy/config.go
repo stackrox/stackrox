@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	stdErrors "errors"
 	"net"
 	"net/http"
 	"net/url"
@@ -8,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"golang.org/x/net/http/httpproxy"
 )
@@ -86,17 +86,17 @@ type proxyConfig struct {
 }
 
 func (c *proxyConfig) Validate() error {
-	errs := errorhelpers.NewErrorList("proxy configuration failed validation")
+	var validationErrs error
 	if err := c.proxyEndpointConfig.Validate(); err != nil {
-		errs.AddWrap(err, "default proxy config")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "default proxy config"))
 	}
 	if err := c.HTTP.Validate(); err != nil {
-		errs.AddWrap(err, "HTTP proxy config")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "HTTP proxy config"))
 	}
 	if err := c.HTTPS.Validate(); err != nil {
-		errs.AddWrap(err, "HTTPS proxy config")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "HTTPS proxy config"))
 	}
-	return errs.ToError()
+	return errors.Wrap(validationErrs, "proxy configuration failed validation")
 }
 
 type compiledConfig struct {
@@ -129,19 +129,19 @@ func (c *compiledConfig) SetEnv() {
 }
 
 func getProxyURL(envSetting string, endpointCfg proxyEndpointConfig) (*url.URL, error) {
-	errs := errorhelpers.NewErrorList("could not determine a valid proxy URL")
+	var validationErrs error
 	if envSetting != "" {
 		u, err := url.Parse(envSetting)
 		if u != nil {
 			return u, nil
 		}
-		errs.AddWrap(err, "parsing setting from environment variable")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "parsing setting from environment variable"))
 	}
 	u, err := endpointCfg.toURL()
 	if err != nil {
-		errs.AddWrap(err, "parsing setting from config file")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "parsing setting from config file"))
 	}
-	return u, nil
+	return u, errors.Wrap(validationErrs, "could not determine a valid proxy URL")
 }
 
 func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {

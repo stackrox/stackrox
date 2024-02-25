@@ -1,11 +1,11 @@
 package v2backuprestore
 
 import (
+	stdErrors "errors"
 	"strings"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // DetermineFormat determines which of the given formats is applicable for the given manifest. The first matching format
@@ -15,15 +15,15 @@ func DetermineFormat(manifest *v1.DBExportManifest, formats []*v1.DBExportFormat
 		return nil, -1, errors.New("the list of supported formats is empty")
 	}
 
-	formatErrorList := errorhelpers.NewErrorList("no format matched manifest")
+	var formatErrs error
 	for i, format := range formats {
 		err := CheckManifest(manifest, format)
 		if err == nil {
 			return format, i, nil
 		}
-		formatErrorList.AddWrapf(err, "format %s is not applicable", format.GetFormatName())
+		formatErrs = stdErrors.Join(formatErrs, errors.Wrapf(err, "format %s is not applicable", format.GetFormatName()))
 	}
-	return nil, -1, formatErrorList.ToError()
+	return nil, -1, errors.Wrap(formatErrs, "no format matched manifest")
 }
 
 // CheckManifest checks if the given manifest is valid with respect to the given format.

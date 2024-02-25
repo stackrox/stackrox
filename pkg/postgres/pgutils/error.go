@@ -53,13 +53,6 @@ func IsTransientError(err error) bool {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false
 	}
-	if multiError := (*errorhelpers.ErrorList)(nil); errors.As(err, &multiError) {
-		for _, err := range multiError.Errors() {
-			if IsTransientError(err) {
-				return true
-			}
-		}
-	}
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
 		return transientPGCodes.Contains(pgErr.Code)
 	}

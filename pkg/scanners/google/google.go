@@ -2,6 +2,7 @@ package google
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -52,23 +52,27 @@ type googleScanner struct {
 }
 
 func validate(google *storage.GoogleConfig) error {
-	errorList := errorhelpers.NewErrorList("Google Validation")
+	var validationErrs error
 	if google.GetEndpoint() == "" {
-		errorList.AddString("Endpoint must be specified for Google Container Analysis (e.g. gcr.io, us.gcr.io, eu.gcr.io)")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("Endpoint must be specified for Google Container Analysis (e.g. gcr.io, us.gcr.io, eu.gcr.io)"))
 	}
 	if google.GetServiceAccount() == "" {
-		errorList.AddString("Service account must be specified for Google Container Analysis")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("Service account must be specified for Google Container Analysis"))
 	}
 	if google.GetProject() == "" {
-		errorList.AddString("ProjectID must be specified for Google Container Analysis")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("ProjectID must be specified for Google Container Analysis"))
 	}
 	// Workload identities are only supported for registry image integrations. This is because
 	// we intend to remove the Google scanner in the future, and want to keep its features
 	// minimal for the time being.
 	if google.GetWifEnabled() {
-		errorList.AddString("Workload identities are not supported for Scanner integrations")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("Workload identities are not supported for Scanner integrations"))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "validating config")
 }
 
 func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {

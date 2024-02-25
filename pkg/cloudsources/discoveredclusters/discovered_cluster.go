@@ -1,12 +1,13 @@
 package discoveredclusters
 
 import (
+	stdErrors "errors"
 	"strings"
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -116,15 +117,18 @@ func (d *DiscoveredCluster) Validate() error {
 	if d == nil {
 		return errors.New("empty discovered cluster")
 	}
-	errorList := errorhelpers.NewErrorList("Validation")
+	var validationErrs error
 	if d.GetID() == "" {
-		errorList.AddString("discovered cluster ID must be defined")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("discovered cluster ID must be defined"))
 	}
 	if d.GetName() == "" {
-		errorList.AddString("discovered cluster name must be defined")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("discovered cluster name must be defined"))
 	}
 	if d.GetCloudSourceID() == "" {
-		errorList.AddString("cloud source ID must be defined")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("cloud source ID must be defined"))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "validating discovered cluster")
 }

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -10,11 +11,11 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -89,11 +90,11 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 
 // Close closes the gRPC connection.
 func (c *gRPCScanner) Close() error {
-	errList := errorhelpers.NewErrorList("closing connections")
+	var closeErrs error
 	for _, conn := range c.gRPCConnections {
-		errList.AddError(conn.Close())
+		closeErrs = errors.Join(closeErrs, conn.Close())
 	}
-	return errList.ToError()
+	return pkgErrors.Wrap(closeErrs, "closing connections")
 }
 
 func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {

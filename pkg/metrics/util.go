@@ -1,9 +1,11 @@
 package metrics
 
 import (
+	"errors"
+
+	pkgErrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -25,14 +27,14 @@ func CollectToSlice(vec *prometheus.GaugeVec) ([]*dto.Metric, error) {
 		defer close(metricC)
 		vec.Collect(metricC)
 	}()
-	errList := errorhelpers.NewErrorList("errors collecting metrics for vector")
+	var metricsErrs error
 	var metricSlice []*dto.Metric
 	for metric := range metricC {
 		dtoMetric := &dto.Metric{}
-		errList.AddError(metric.Write(dtoMetric))
+		metricsErrs = errors.Join(metricsErrs, metric.Write(dtoMetric))
 		metricSlice = append(metricSlice, dtoMetric)
 	}
-	return metricSlice, errList.ToError()
+	return metricSlice, pkgErrors.Wrap(metricsErrs, "collecting metrics for vector")
 }
 
 // GetBuildType returns the build type of the binary for telemetry purposes.

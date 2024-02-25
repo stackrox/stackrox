@@ -1,17 +1,18 @@
 package scannerv4
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	gogotypes "github.com/gogo/protobuf/types"
+	pkgErrors "github.com/pkg/errors"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -172,12 +173,12 @@ func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.
 	if vulnCVSS == nil {
 		return nil
 	}
-	errList := errorhelpers.NewErrorList("failed to parse vector")
+	var parseErrs error
 	if v2 := vulnCVSS.GetV2(); v2 != nil {
 		if c, err := cvssv2.ParseCVSSV2(v2.GetVector()); err == nil {
 			err = cvssv2.CalculateScores(c)
 			if err != nil {
-				errList.AddError(fmt.Errorf("calculating CVSS v2 scores: %w", err))
+				parseErrs = errors.Join(parseErrs, fmt.Errorf("calculating CVSS v2 scores: %w", err))
 			}
 			// Use the report's score if it exists.
 			if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
@@ -191,14 +192,14 @@ func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.
 			vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
 			vuln.Cvss = c.Score
 		} else {
-			errList.AddError(fmt.Errorf("v2: %w", err))
+			parseErrs = errors.Join(parseErrs, fmt.Errorf("v2: %w", err))
 		}
 	}
 	if v3 := vulnCVSS.GetV3(); v3 != nil {
 		if c, err := cvssv3.ParseCVSSV3(v3.GetVector()); err == nil {
 			err = cvssv3.CalculateScores(c)
 			if err != nil {
-				errList.AddError(fmt.Errorf("calculating CVSS v3 scores: %w", err))
+				parseErrs = errors.Join(parseErrs, fmt.Errorf("calculating CVSS v3 scores: %w", err))
 			}
 			// Use the report's score if it exists.
 			if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
@@ -211,10 +212,10 @@ func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.
 			vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
 			vuln.Cvss = c.Score
 		} else {
-			errList.AddError(fmt.Errorf("v3: %w", err))
+			parseErrs = errors.Join(parseErrs, fmt.Errorf("v3: %w", err))
 		}
 	}
-	return errList.ToError()
+	return pkgErrors.Wrap(parseErrs, "failed to parse vector")
 }
 
 // link returns the first link from space separated list of links (which is how ClairCore provides links).

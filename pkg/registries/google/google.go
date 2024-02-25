@@ -2,6 +2,7 @@ package google
 
 import (
 	"context"
+	stdErrors "errors"
 	"strings"
 
 	artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -53,17 +53,19 @@ func CreatorWithoutRepoList() (string, types.Creator) {
 }
 
 func validate(google *storage.GoogleConfig) error {
-	errorList := errorhelpers.NewErrorList("Google Validation")
+	var validationErrs error
 	if google.GetEndpoint() == "" {
-		errorList.AddString("Endpoint must be specified for Google registry (e.g. gcr.io, us.gcr.io, eu.gcr.io)")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("Endpoint must be specified for Google registry (e.g. gcr.io, us.gcr.io, eu.gcr.io)"))
 	}
 	if !google.GetWifEnabled() && google.GetServiceAccount() == "" {
-		errorList.AddString("Service account must be specified for Google registry")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("Service account must be specified for Google registry"))
 	}
 	if google.GetWifEnabled() && !features.CloudCredentials.Enabled() {
 		return errors.Errorf("cannot use workload identities without the feature flag %s being enabled", features.CloudCredentials.Name())
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "validating config")
 }
 
 // NewRegistry creates an image integration based on the Google config. It also checks against
