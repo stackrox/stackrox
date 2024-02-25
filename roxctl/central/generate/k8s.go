@@ -111,6 +111,8 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "central-db image to use"+defaultImageHelp, "central")
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
+	flagWrap.StringVar(&k8sConfig.ScannerV4Image, flags.FlagNameScannerV4Image, "", "scanner-v4 image to use"+defaultImageHelp, "scanner-v4")
+	flagWrap.StringVar(&k8sConfig.ScannerV4DBImage, flags.FlagNameScannerV4DBImage, "", "scanner-v4-db image to use"+defaultImageHelp, "scanner-v4")
 	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", version.IsReleaseVersion(), "whether to enable telemetry", "central")
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
