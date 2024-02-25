@@ -2,6 +2,7 @@ package externalsrcs
 
 import (
 	"bytes"
+	stdErrors "errors"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sync"
@@ -111,19 +111,20 @@ func (h *handlerImpl) run() {
 func (h *handlerImpl) saveEntitiesNoLock(entities []*storage.NetworkEntityInfo) {
 	// We assume that the network entity object validation is already performed by Central.
 	h.entities = make(map[pkgNet.IPNetwork]*storage.NetworkEntityInfo)
-	var errList errorhelpers.ErrorList
+	var validationErrs error
 	for _, entity := range entities {
 		ipNet := pkgNet.IPNetworkFromCIDR(entity.GetExternalSource().GetCidr())
 		if !ipNet.IsValid() {
-			errList.AddStringf("%s (cidr=%s) ", entity.GetId(), entity.GetExternalSource().GetCidr())
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Errorf("%s (cidr=%s) ", entity.GetId(), entity.GetExternalSource().GetCidr()))
 			continue
 		}
 		h.entities[ipNet] = entity
 		h.entitiesByID[entity.GetId()] = entity
 	}
 
-	if err := errList.ToError(); err != nil {
-		log.Errorf("could not process some external sources received from Central: %v", err)
+	if validationErrs != nil {
+		log.Errorf("could not process some external sources received from Central: %v", validationErrs)
 	}
 }
 

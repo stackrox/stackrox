@@ -1,10 +1,12 @@
 package admissioncontroller
 
 import (
+	"errors"
+
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 )
@@ -66,13 +68,13 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 }
 
 func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	errorList := errorhelpers.NewErrorList("ProcessMessage in AdmCtrlMsgForwarder")
+	var processMsgErrs error
 	for _, component := range h.components {
 		if err := component.ProcessMessage(msg); err != nil {
-			errorList.AddError(err)
+			processMsgErrs = errors.Join(processMsgErrs, err)
 		}
 	}
-	return errorList.ToError()
+	return pkgErrors.Wrap(processMsgErrs, "processing messages in AdmCtrlMsgForwarder")
 }
 
 func (h *admCtrlMsgForwarderImpl) ResponsesC() <-chan *message.ExpiringMessage {

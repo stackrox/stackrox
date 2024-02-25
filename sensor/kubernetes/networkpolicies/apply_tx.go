@@ -2,11 +2,11 @@ package networkpolicies
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
@@ -137,11 +137,11 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 }
 
 func (t *applyTx) Rollback(ctx context.Context) error {
-	var errList errorhelpers.ErrorList
+	var rollBackErrs error
 	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
-		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
+		rollBackErrs = stdErrors.Join(rollBackErrs, t.rollbackActions[i].Execute(ctx, t.networkingClient))
 	}
-	return errList.ToError()
+	return rollBackErrs
 }
 
 func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {

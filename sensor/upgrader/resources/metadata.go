@@ -1,9 +1,10 @@
 package resources
 
 import (
+	"errors"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -130,20 +131,20 @@ func GetAvailableResources(client discovery.ServerResourcesInterface, expectedGV
 			}
 		}
 	}
-	errorList := errorhelpers.NewErrorList("finding metadata for missing group versions")
-
+	var metadataErrs error
 	for gv := range missingGVs {
 		resourceListForGroupVersion, err := client.ServerResourcesForGroupVersion(gv.String())
 		if err != nil {
 			// If the resource doesn't exist on the server, that's okay. This is a definitive response.
 			// If we need to create the resource downstream, we will fatal out then, which is fine.
 			if !k8sErrors.IsNotFound(err) {
-				errorList.AddWrapf(err, "fetching resourceList for group version %s: %v", gv, err)
+				metadataErrs = errors.Join(metadataErrs,
+					pkgErrors.Wrapf(err, "fetching resourceList for group version %s", gv))
 			}
 			continue
 		}
 		populateFromResourceList(resourceListForGroupVersion, expectedGVKs, &result)
 	}
 
-	return result, errorList.ToError()
+	return result, pkgErrors.Wrap(metadataErrs, "finding metadata for missing group versions")
 }

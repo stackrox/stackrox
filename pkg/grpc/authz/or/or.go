@@ -2,8 +2,9 @@ package or
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -14,15 +15,16 @@ type or struct {
 }
 
 func (o *or) Authorized(ctx context.Context, fullMethodName string) error {
-	var errors []error
+	var errs []error
 	for _, a := range o.authorizers {
 		err := a.Authorized(ctx, fullMethodName)
 		if err == nil {
 			return nil
 		}
-		errors = append(errors, err)
+		errs = append(errs, err)
 	}
-	return errox.NotAuthorized.CausedBy(errorhelpers.NewErrorListWithErrors("no authorizer could authorize this request:", errors).String())
+	return errox.NotAuthorized.CausedBy(fmt.Errorf("no authorizer could authorize this request: %w",
+		errors.Join(errs...)))
 }
 
 // Or creates an Authorizer that succeeds if any of the provided Authorizers succeed.

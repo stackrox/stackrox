@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -131,21 +130,23 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), namespace, requestID, force)
 
-	errorList := errorhelpers.NewErrorList("image enrichment")
+	var enrichmentErrs error
 
 	// Enrich image with metadata from one of registries.
-	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, namespace, srcImage)
+	reg, pullSourceImage, err := s.getImageWithMetadata(ctx, namespace, srcImage)
+	enrichmentErrs = errors.Join(enrichmentErrs, err)
 	if pullSourceImage == nil {
 		// A nil pullSourceImage indicates that the source image and all
 		// mirrors were invalid images.
-		return nil, errors.Join(errorList.ToError(), ErrEnrichNotStarted)
+		return nil, errors.Join(enrichmentErrs, ErrEnrichNotStarted)
 	}
 
 	// Perform partial scan (image analysis / identify components) via local scanner.
-	scannerResp := s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage)
+	scannerResp, err := s.fetchImageAnalysis(ctx, enrichmentErrs, reg, pullSourceImage)
+	enrichmentErrs = errors.Join(enrichmentErrs, err)
 
 	// Fetch signatures associated with image from registry.
-	sigs := s.fetchSignatures(ctx, errorList, reg, pullSourceImage)
+	sigs := s.fetchSignatures(ctx, err, reg, pullSourceImage)
 
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
@@ -159,7 +160,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		IndexerVersion: scannerResp.GetIndexerVersion(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 		ImageNotes:     pullSourceImage.GetNotes(),
-		Error:          errorList.String(),
+		Error:          enrichmentErrs.Error(),
 		RequestId:      requestID,
 		Force:          force,
 	})
@@ -168,32 +169,30 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, pkgErrors.Wrapf(err, "enriching image %q via central", srcImage.GetName())
 	}
 
-	if errorList.Empty() {
+	if enrichmentErrs == nil {
 		log.Debugf("Retrieved image enrichment results from Central for %q with id %q (%d) components", srcImage.GetName().GetFullName(), srcImage.GetId(), centralResp.GetImage().GetComponents())
 	}
 
-	return centralResp.GetImage(), errorList.ToError()
+	return centralResp.GetImage(), pkgErrors.Wrap(enrichmentErrs, "image enrichment")
 }
 
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
 // The image returned may represent the source image or an image from a registry mirror.
-func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, namespace string, sourceImage *storage.ContainerImage) (registryTypes.ImageRegistry, *storage.Image) {
+func (s *LocalScan) getImageWithMetadata(ctx context.Context, namespace string, sourceImage *storage.ContainerImage) (registryTypes.ImageRegistry, *storage.Image, error) {
 	// Obtain the pull sources, which will include mirrors.
 	pullSources := s.getPullSources(sourceImage)
 	if len(pullSources) == 0 {
-		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", sourceImage.GetName().GetFullName()))
-		return nil, nil
+		return nil, nil, pkgErrors.Errorf("zero valid pull sources found for image %q", sourceImage.GetName().GetFullName())
 	}
 
 	// errs are only added to errorList when attempts from all pull sources + all registries fail.
-	errs := errorhelpers.NewErrorList("")
-
+	var pullErrs error
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
 		registries, err := s.getRegistries(ctx, namespace, pullSource.GetName())
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
-			errs.AddError(err)
+			pullErrs = errors.Join(pullErrs, err)
 			continue
 		}
 
@@ -201,7 +200,8 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 		// Create an image and attempt to enrich it with metadata.
 		pullSourceImage := types.ToImage(pullSource)
-		reg := s.enrichImageWithMetadata(errs, registries, pullSourceImage)
+		reg, err := s.enrichImageWithMetadata(registries, pullSourceImage)
+		pullErrs = errors.Join(pullErrs, err)
 		if reg != nil {
 			// Successful enrichment.
 			enrichImageDataSource(sourceImage, reg, pullSourceImage)
@@ -212,16 +212,15 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 			pullID := pullSourceImage.GetId()
 			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and registry %q", srcName, srcID, pullName, pullID, reg.Name())
 			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
-			return reg, pullSourceImage
+			return reg, pullSourceImage, nil
 		}
 	}
 
 	// Attempts for every pull source and registry have failed.
-	errorList.AddErrors(errs.Errors()...)
 
 	image := types.ToImage(sourceImage)
 	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
-	return nil, image
+	return nil, image, pullErrs
 }
 
 func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryTypes.ImageRegistry, targetImg *storage.Image) {
@@ -305,13 +304,13 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 }
 
 // enrichImageWithMetadata will loop through registries returning the first that succeeds in enriching image with metadata.
-func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, registries []registryTypes.ImageRegistry, image *storage.Image) registryTypes.ImageRegistry {
-	var errs []error
+func (s *LocalScan) enrichImageWithMetadata(registries []registryTypes.ImageRegistry, image *storage.Image) (registryTypes.ImageRegistry, error) {
+	var metadataErrs error
 	for _, reg := range registries {
 		metadata, err := reg.Metadata(image)
 		if err != nil {
 			log.Debugf("Failed fetching metadata for image %q with id %q: %v", image.GetName().GetFullName(), image.GetId(), err)
-			errs = append(errs, err)
+			metadataErrs = errors.Join(metadataErrs, err)
 			continue
 		}
 
@@ -319,18 +318,16 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 		// image, the signature will not be attempted to be fetched.
 		// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
 		image.Metadata = metadata
-		return reg
+		return reg, nil
 	}
-
-	errorList.AddErrors(errs...)
-	return nil
+	return nil, metadataErrs
 }
 
 // fetchImageAnalysis analyzes an image via the local scanner. Does nothing if errorList contains errors.
-func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) *scannerclient.ImageAnalysis {
-	if !errorList.Empty() {
+func (s *LocalScan) fetchImageAnalysis(ctx context.Context, err error, registry registryTypes.ImageRegistry, image *storage.Image) (*scannerclient.ImageAnalysis, error) {
+	if err != nil {
 		// do nothing if errors previously encountered.
-		return nil
+		return nil, nil
 	}
 
 	// Scan the image via local scanner.
@@ -338,16 +335,15 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 	if err != nil {
 		log.Debugf("Scan for image %q with id %v failed: %v", image.GetName().GetFullName(), image.GetId(), err)
 		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
-		errorList.AddError(pkgErrors.Wrapf(err, "scanning image %q locally", image.GetName()))
-		return nil
+		return nil, pkgErrors.Wrapf(err, "scanning image %q locally", image.GetName())
 	}
 
-	return scannerResp
+	return scannerResp, nil
 }
 
 // fetchSignatures fetches signatures from the registry for an image. Does nothing if errorList contains errors.
-func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) []*storage.Signature {
-	if !errorList.Empty() {
+func (s *LocalScan) fetchSignatures(ctx context.Context, err error, registry registryTypes.ImageRegistry, image *storage.Image) []*storage.Signature {
+	if err != nil {
 		// do nothing if errors previously encountered.
 		return nil
 	}

@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -12,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
@@ -380,14 +380,14 @@ func (f *FakeEventsManager) forEachResource(client reflect.Value, execFunc func(
 	if !items.IsValid() {
 		return errors.New("invalid kind: missing `Items` property")
 	}
-	errorList := errorhelpers.NewErrorList("for each resource")
+	var resourceErrs error
 	for i := 0; i < items.Len(); i++ {
 		resource := items.Index(i)
 		if err := execFunc(resource); err != nil {
-			errorList.AddError(err)
+			resourceErrs = stdErrors.Join(resourceErrs, err)
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(resourceErrs, "for each resource")
 }
 
 // getNameFromObjectMeta returns the name of the resource
@@ -409,10 +409,10 @@ func getNameFromObjectMeta(obj reflect.Value) (string, error) {
 
 // DeleteAllResources deletes all resources in the cluster
 func (f *FakeEventsManager) DeleteAllResources() error {
-	errorList := errorhelpers.NewErrorList("delete all resources")
+	var deleteErrs error
 	namespaceClientFunc, ok := f.clientMap[namespaceKind]
 	if !ok {
-		errorList.AddStringf("kind %s not found", namespaceKind)
+		deleteErrs = stdErrors.Join(deleteErrs, errors.Errorf("kind %s not found", namespaceKind))
 	}
 	cl := reflect.ValueOf(namespaceClientFunc(""))
 	var namespaces []string
@@ -424,7 +424,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 		namespaces = append(namespaces, name)
 		return nil
 	}); err != nil {
-		errorList.AddError(err)
+		deleteErrs = stdErrors.Join(deleteErrs, err)
 	}
 	resourcesList := []string{
 		secretKind,
@@ -445,7 +445,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 	for _, kind := range resourcesList {
 		clFunc, ok := f.clientMap[kind]
 		if !ok {
-			errorList.AddStringf("kind %s not found", kind)
+			deleteErrs = stdErrors.Join(deleteErrs, errors.Errorf("kind %s not found", kind))
 			continue
 		}
 		for _, ns := range namespaces {
@@ -465,7 +465,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 				}
 				return errI.(error)
 			}); err != nil {
-				errorList.AddError(err)
+				deleteErrs = stdErrors.Join(deleteErrs, err)
 			}
 		}
 	}
@@ -478,7 +478,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 	for _, kind := range clusterWideResources {
 		clFunc, ok := f.clientMap[kind]
 		if !ok {
-			errorList.AddStringf("kind %s not found", kind)
+			deleteErrs = stdErrors.Join(deleteErrs, errors.Errorf("kind %s not found", kind))
 			continue
 		}
 		cl = reflect.ValueOf(clFunc(""))
@@ -497,8 +497,8 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 			}
 			return errI.(error)
 		}); err != nil {
-			errorList.AddError(err)
+			deleteErrs = stdErrors.Join(deleteErrs, err)
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(deleteErrs, "deleting all resources")
 }

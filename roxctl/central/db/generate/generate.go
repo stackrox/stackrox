@@ -1,6 +1,7 @@
 package generate
 
 import (
+	stdErrors "errors"
 	"net/http"
 	"os"
 	"time"
@@ -8,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -142,20 +142,22 @@ func render(config renderer.Config) ([]*zip.File, error) {
 }
 
 func verifyCentralDBBundleFiles(fm map[string]*zip.File) error {
-	var errs errorhelpers.ErrorList
-
+	var validationErrs error
 	checkList := centralDBCertBundle.Unfreeze()
 	for k, v := range fm {
 		if len(v.Content) == 0 {
-			errs.AddError(errors.Errorf("empty file in Central DB certificate bundle: %s", v.Name))
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Errorf("empty file in Central DB certificate bundle: %s", v.Name))
 		}
 		if !centralDBCertBundle.Contains(k) {
-			errs.AddError(errors.Errorf("unexpected file in Central DB certificate bundle: %s", k))
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Errorf("unexpected file in Central DB certificate bundle: %s", k))
 		}
 		checkList.Remove(k)
 	}
 	if checkList.Cardinality() != 0 {
-		errs.AddError(errors.Errorf("missing file(s) in Central DB certificate bundle %s", checkList.ElementsString(",")))
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.Errorf("missing file(s) in Central DB certificate bundle %s", checkList.ElementsString(",")))
 	}
-	return errs.ToError()
+	return validationErrs
 }

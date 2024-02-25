@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // NewPersistor returns a new instance of a Persistor, which can be used to apply modifications to the persisted graph.
@@ -19,12 +18,12 @@ func NewPersistor(prefix []byte, txn transactions.DBTransaction) *Persistor {
 type Persistor struct {
 	prefix []byte
 	txn    transactions.DBTransaction
-	errors errorhelpers.ErrorList
+	errors error
 }
 
 // ToError returns an error if any errors were encountered when persisting the modification it was applied to.
 func (prv *Persistor) ToError() error {
-	return prv.errors.ToError()
+	return prv.errors
 }
 
 // Implement applyableGraph.

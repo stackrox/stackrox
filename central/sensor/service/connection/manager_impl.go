@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	stdErrors "errors"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -491,17 +491,18 @@ func (m *manager) PushExternalNetworkEntitiesToSensor(ctx context.Context, clust
 }
 
 func (m *manager) PushExternalNetworkEntitiesToAllSensors(ctx context.Context) error {
-	var errs errorhelpers.ErrorList
+	var errs error
 	for _, conn := range m.GetActiveConnections() {
 		// This is not perfect, however, the closest.
 		if !conn.HasCapability(centralsensor.NetworkGraphExternalSrcsCap) {
-			errs.AddError(errors.Errorf("sensor version for cluster %q is not up-to-date with Central", conn.ClusterID()))
+			errs = stdErrors.Join(errs,
+				errors.Errorf("sensor version for cluster %q is not up-to-date with Central", conn.ClusterID()))
 			continue
 		}
 
 		if err := conn.NetworkEntities().SyncNow(ctx); err != nil {
-			errs.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 	}
-	return errs.ToError()
+	return errs
 }

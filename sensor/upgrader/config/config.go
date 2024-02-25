@@ -1,12 +1,12 @@
 package config
 
 import (
+	stdErrors "errors"
 	"os"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
@@ -32,24 +32,28 @@ type UpgraderConfig struct {
 // Validate checks if this upgrader config is complete and well-formed. It does *not* check whether the values stored
 // in this config actually work in practice.
 func (c *UpgraderConfig) Validate() error {
-	errs := errorhelpers.NewErrorList("validating upgrader config")
+	var validationErrs error
 	if c.ProcessID != "" {
 		if _, err := uuid.FromString(c.ProcessID); err != nil {
-			errs.AddWrap(err, "upgrade process ID must be a valid UUID")
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Wrap(err, "upgrade process ID must be a valid UUID"))
 		}
 	}
 	if c.CentralEndpoint != "" {
 		if _, _, _, err := netutil.ParseEndpoint(c.CentralEndpoint); err != nil {
-			errs.AddWrapf(err, "central endpoint %q is invalid", c.CentralEndpoint)
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Wrapf(err, "central endpoint %q is invalid", c.CentralEndpoint))
 		}
 	}
 	if c.K8sRESTConfig == nil {
-		errs.AddString("kubernetes REST config not present")
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.New("kubernetes REST config not present"))
 	}
 	if c.Owner != nil && c.Owner.Namespace != common.Namespace {
-		errs.AddStringf("owner %v is in disallowed namespace", c.Owner)
+		validationErrs = stdErrors.Join(validationErrs,
+			errors.Errorf("owner %v is in disallowed namespace", c.Owner))
 	}
-	return errs.ToError()
+	return errors.Wrap(validationErrs, "validating upgrader config")
 }
 
 // Create instantiates a new upgrader config using environment variables and well-known config files.

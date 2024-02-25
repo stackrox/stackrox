@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -339,15 +339,14 @@ func (p *process) watchUpgraderDeployment() {
 }
 
 func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
-	errs := errorhelpers.NewErrorList("polling")
-
+	var pollingErrs error
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
 	foundDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, true, nil
 		}
-		errs.AddWrap(err, "upgrader deployment")
+		pollingErrs = stdErrors.Join(pollingErrs, errors.Wrap(err, "upgrader deployment"))
 	} else if foundDeployment != nil && foundDeployment.Labels[processIDLabelKey] != p.GetID() {
 		return nil, true, nil // new upgrader deployment
 	}
@@ -357,8 +356,8 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 		LabelSelector: metav1.FormatLabelSelector(foundDeployment.Spec.Selector),
 	})
 	if err != nil {
-		errs.AddWrap(err, "upgrader pods")
-		return nil, false, errs.ToError()
+		pollingErrs = stdErrors.Join(pollingErrs, errors.Wrap(err, "upgrader pods"))
+		return nil, false, pollingErrs
 	}
 
 	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(pods.Items))

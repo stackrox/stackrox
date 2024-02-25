@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -202,8 +202,7 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 	if m.IsGKEOrEKSVersion(versionToMatch) {
 		versionToMatch = strings.Split(versionToMatch, "-")[0]
 	}
-
-	var errList errorhelpers.ErrorList
+	var matchErrs error
 	for _, cpeMatch := range node.CPEMatch {
 		// It might be possible that the node contains non kube cpes too, so keep iterating. For example,
 		// "cpe23Uri": "cpe:2.3:a:cncf:portmap:*:*:*:*:*:container_networking_interface:*:*", and
@@ -215,11 +214,11 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 
 		// The version is N/A, treating it as a match
 		if cpeVersionAndUpdate == "-:*" {
-			return true, errList.ToError()
+			return true, matchErrs
 		}
 
 		if versionToMatch == "" {
-			return false, errList.ToError()
+			return false, matchErrs
 		}
 
 		targetVersion, err := version.NewVersion(versionToMatch)
@@ -234,9 +233,11 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 			// This means this version and all prelease, build versions of this version. For example 1.6.4:*
 			if strings.HasSuffix(cpeVersionAndUpdate, ":*") {
 				if match, err := matchBaseVersion(strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch); err != nil {
-					errList.AddError(errors.Wrapf(err, "could not compare base version %q with cluster version: %q", strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch))
+					matchErrs = stdErrors.Join(matchErrs, errors.Wrapf(err,
+						"could not compare base version %q with cluster version: %q",
+						strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch))
 				} else if match {
-					return true, errList.ToError()
+					return true, matchErrs
 				}
 				continue
 			}
@@ -244,10 +245,11 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 			// Case of specific version and prerelease. Example 1.6.4:beta0
 			cpeVersion := strings.Join(strings.Split(cpeVersionAndUpdate, ":"), "-")
 			if match, err := matchExactVersion(cpeVersion, versionToMatch); err != nil {
-				errList.AddError(errors.Wrapf(err, "could not compare exact version %q with cluster version: %q", cpeVersion, versionToMatch))
+				matchErrs = stdErrors.Join(matchErrs, errors.Wrapf(err,
+					"could not compare exact version %q with cluster version: %q", cpeVersion, versionToMatch))
 				continue
 			} else if match {
-				return true, errList.ToError()
+				return true, matchErrs
 			}
 		} else {
 			// This is case where we're dealing with block of versions
@@ -277,11 +279,11 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 				val = val && c.Check(targetVersion)
 			}
 			if val {
-				return true, errList.ToError()
+				return true, matchErrs
 			}
 		}
 	}
-	return false, errList.ToError()
+	return false, matchErrs
 }
 
 func getConstraints(s string) []*version.Constraint {
