@@ -98,7 +98,7 @@ export type AuthProviderRequiredAttribute = {
 export function fetchAuthProviders(): Promise<{ response: AuthProvider[] }> {
     return axios.get(`${authProvidersUrl}`).then((response) => {
         const authProviders = response?.data?.authProviders ?? [];
-        return { response: authProviders.map((ap) => preprocessAuthProvider(ap)) };
+        return { response: authProviders.map((ap) => convertAuthProviderClaimMappingsToArray(ap)) };
     });
 }
 
@@ -143,12 +143,12 @@ export function saveAuthProvider(authProvider: AuthProvider): string | Promise<A
         ? axios
               .put<AuthProvider>(
                   `${authProvidersUrl}/${authProvider.id}`,
-                  postprocessAuthProvider(authProvider)
+                  convertAuthProviderClaimMappingsToObject(authProvider)
               )
               .then((response) => {
-                  return preprocessAuthProvider(response.data);
+                  return convertAuthProviderClaimMappingsToArray(response.data);
               })
-        : axios.post(authProvidersUrl, postprocessAuthProvider(authProvider));
+        : axios.post(authProvidersUrl, convertAuthProviderClaimMappingsToObject(authProvider));
 }
 
 /**
