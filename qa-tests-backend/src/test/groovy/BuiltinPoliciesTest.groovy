@@ -156,7 +156,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Netcat Execution Detected"                                  | TRIGGER_MOST
         "Network Management Execution"                               | TRIGGER_MOST
         "nmap Execution"                                             | TRIGGER_MOST
-        "No resource requests or limits specified"                   | TRIGGER_MOST
+        "No CPU request or memory limit specified"                   | TRIGGER_MOST
         "Password Binaries"                                          | TRIGGER_MOST
         "Process Targeting Cluster Kubelet Endpoint"                 | TRIGGER_MOST
         "Process Targeting Cluster Kubernetes Docker Stats Endpoint" | TRIGGER_MOST
@@ -174,7 +174,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "SetUID Processes"                                           | TRIGGER_MOST
         "Shadow File Modification"                                   | TRIGGER_MOST
         "Shell Spawned by Java Application"                          | TRIGGER_MOST
-        "systemctl Execution"                                        | TRIGGER_MOST
+        // ROX-22691: The test for systemctl execution is disabled until the trigger-most image is rebuilt to not use
+        // the --version argument which now no longer triggers the violation
+        // "systemctl Execution"                                        | TRIGGER_MOST
         "systemd Execution"                                          | TRIGGER_MOST
         "Ubuntu Package Manager Execution"                           | TRIGGER_MOST
         "Wget in Image"                                              | TRIGGER_MOST

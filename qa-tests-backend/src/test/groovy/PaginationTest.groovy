@@ -237,13 +237,13 @@ class PaginationTest extends BaseSpecification {
         given:
         "6 violations exist for pagination"
         for (int i = 1; i <= 6; i++) {
-            assert Services.waitForViolation("pagination${i}", "No resource requests or limits specified", 30)
+            assert Services.waitForViolation("pagination${i}", "No CPU request or memory limit specified", 30)
         }
 
         when:
         "Set pagination limit to 3"
         AlertServiceOuterClass.ListAlertsRequest request = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setLimit(3)
@@ -258,7 +258,7 @@ class PaginationTest extends BaseSpecification {
         and:
         "Set limit to 10 with offset to 5 on a total count of 10"
         AlertServiceOuterClass.ListAlertsRequest request2 = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setLimit(6)
@@ -273,7 +273,7 @@ class PaginationTest extends BaseSpecification {
         and:
         "Get the same violation set in reversed and non-reversed order"
         AlertServiceOuterClass.ListAlertsRequest request3 = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setSortOption(
@@ -283,7 +283,7 @@ class PaginationTest extends BaseSpecification {
         ).build()
         def alerts3 = AlertService.getViolations(request3).collect { it.policy.name }
         AlertServiceOuterClass.ListAlertsRequest request4 = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setSortOption(

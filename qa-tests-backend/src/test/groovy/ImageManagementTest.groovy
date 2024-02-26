@@ -171,7 +171,7 @@ class ImageManagementTest extends BaseSpecification {
         when:
         "Update Policy to build time"
         def startStages = Services.updatePolicyLifecycleStage(
-                "No resource requests or limits specified",
+                "No CPU request or memory limit specified",
                 [LifecycleStage.BUILD,]
         )
 

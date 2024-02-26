@@ -71,15 +71,6 @@
           "namespace": "openshift-monitoring"
         }
       }
-    },
-    {
-      "name": "Don't alert on deployment multus in namespace openshift-multus",
-      "deployment": {
-        "name": "multus",
-        "scope": {
-          "namespace": "openshift-multus"
-        }
-      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",
