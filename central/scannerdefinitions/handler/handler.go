@@ -527,7 +527,8 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		if offlineV != minorVersionPattern.FindString(updaterKey) {
+		if (updaterKey != "dev" && offlineV != minorVersionPattern.FindString(updaterKey)) ||
+			(updaterKey == "dev" && offlineV != "dev") {
 			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, updaterKey)
 			log.Errorf(msg)
 			return nil, errors.New(msg)
