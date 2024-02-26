@@ -115,7 +115,6 @@ class BaseSpecification extends Specification {
                 LOG.info metadata.toString()
                 LOG.info "isGKE: ${orchestrator.isGKE()}"
                 LOG.info "isEKS: ${ClusterService.isEKS()}"
-                LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
                 LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
             }
             catch (Exception ex) {
@@ -125,7 +124,7 @@ class BaseSpecification extends Specification {
             }
         }
 
-        if (ClusterService.isOpenShift3() || ClusterService.isOpenShift4()) {
+        if (ClusterService.isOpenShift4()) {
             assert Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT,
                     "Set CLUSTER=OPENSHIFT when testing OpenShift"
         }

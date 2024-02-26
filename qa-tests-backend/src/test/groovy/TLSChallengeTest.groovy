@@ -73,12 +73,6 @@ class TLSChallengeTest extends BaseSpecification {
         orchestrator.scaleDeployment("stackrox", "sensor", 1)
         ApplicationHealth ah = new ApplicationHealth(orchestrator, 600)
         ah.waitForSensorHealthiness()
-        if (ClusterService.isOpenShift3()) {
-            // OpenShift 3.11 networking needs a kick to ensure sensor is reachable (ROX-7869)
-            sleep(5000)
-            orchestrator.addOrUpdateServiceLabel("sensor", "stackrox", "kick",
-                    System.currentTimeSeconds().toString())
-        }
 
         orchestrator.deleteAllPodsAndWait("stackrox", [app: "collector"])
         ah.waitForCollectorHealthiness()
