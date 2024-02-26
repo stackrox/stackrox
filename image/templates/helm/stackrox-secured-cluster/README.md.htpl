@@ -2,7 +2,9 @@
 
 This Helm chart allows you to deploy the necessary services on a StackRox
 secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
-Control.
+Control. Optionally StackRox Scanner can be deployed, either alone or together
+with the new Scanner V4.
+
 If you want to install Secured Cluster Services for Red Hat Advanced Cluster Security,
 refer to [Installing the secured-cluster-services Helm chart](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html#installing-secured-cluster-services-quickly_acs-install-helm-quick).
 
@@ -61,7 +63,7 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 
 ### Deploy Secured Cluster Services
 
-You can use the following command to deploy secured cluster services by using
+You can use the following command to deploy secured cluster services using
 this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
@@ -80,7 +82,7 @@ helm install -n stackrox --create-namespace \
 After you deploy the StackRox Kubernetes Security Platform Secured Cluster
 Services using the `helm install` command, you will see informative notes and
 warnings related to the installation. The new cluster automatically registers
-itself to StackRox Central, and it is visible in the StackRox portal as a
+itself to StackRox Central, and is visible in the StackRox portal as a
 Helm-managed cluster. If the provided cluster name is already associated with
 an existing secured cluster, the name will be reused and associated with the
 cluster on which the chart is installed.
@@ -133,6 +135,10 @@ We recommended that you store all custom configuration options in persisted file
 The Secured Cluster Services Helm chart contains example configuration files
 (called `values-public.yaml.example` and `values-private.yaml.example`), that list
 all the available configuration options, along with documentation.
+
+Furthermore, the files `values-scanner.yaml.example`, `values-public-scanner-v4.yaml.example`
+and `values-private-scanner-v4.yaml.example` list the most commonly used configuration options
+for StackRox Scanner resp. Scanner V4.
 
 The following sample configuration file (`secured-cluster.yaml`) uses a few of
 the options which you can configure:
@@ -290,21 +296,24 @@ non-standard environments:
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
-|`scanner.disable`| Scan images stored in the cluster's local registries. This variable is only available for the OpenShift Container Platform. | `true` |
-
+|`scanner.disable`| Scan images stored in the cluster's local registries. | `true` |
+|`scannerV4.disable`| Enable Scanner V4. StackRox Scanner must be enabled as well (`scanner.disable=false``). | `true` |
 ### Default resources
 
-Each container's default resource settings are defined in the
-`internal/defaults.yaml` file in this chart. The following table lists the YAML
+Each of the standard container's default resource settings are defined in the
+`internal/defaults/40-resources.yaml` file in this chart. The following table lists the YAML
 paths to the respective defaults for each container that this chart deploys:
 
-|Container        |Path in `internal/defaults.yaml`           |
-|:----------------|:------------------------------------------|
-|Sensor           |`defaults.sensor.resources`                |
-|Collector        |`defaults.collector.resources`             |
-|Compliance       |`defaults.collector.complianceResources`   |
-|NodeInventory    |`defaults.collector.nodeScanningResources`|
-|Admission Control|`defaults.admissionControl.resources`      |
+|Container        |Path in `internal/defaults/40-resources.yaml` |
+|:----------------|:---------------------------------------------|
+|Sensor           |`sensor.resources`                            |
+|Collector        |`collector.resources`                         |
+|Compliance       |`collector.complianceResources`               |
+|NodeInventory    |`collector.nodeScanningResources`             |
+|Admission Control|`admissionControl.resources`                  |
+
+Furthermore, default resource settings for StackRox Scanner and Scanner V4 can be
+found in the files `internal/defaults/70-scanner.yaml` and `internal/defaults/70-scanner-v4.yaml`.
 
 ### Customization settings
 
