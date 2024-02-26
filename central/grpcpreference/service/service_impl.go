@@ -32,7 +32,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // Get implements v1.GRPCPreferencesServiceServer
 func (s *serviceImpl) Get(_ context.Context, _ *v1.Empty) (*v1.Preferences, error) {
 	result := &v1.Preferences{
-		MaxGrpcReceive: uint64(pkgGrpc.MaxMsgSizeSetting.IntegerSetting()),
+		MaxGrpcReceiveSizeBytes: uint64(pkgGrpc.MaxMsgSizeSetting.IntegerSetting()),
 	}
 	return result, nil
 }

@@ -9,7 +9,7 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message Preferences {
-    uint64 max_grpc_receive = 1;
+    uint64 max_grpc_receive_size_bytes = 1;
 }
 
 service GRPCPreferencesService {
