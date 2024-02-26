@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"time"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
 	googleStorage "cloud.google.com/go/storage"
@@ -13,6 +14,8 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 )
+
+const earlyExpiry = 5 * time.Minute
 
 // CreateStorageClientFromConfig creates a client based on the GCS integration configuration.
 //
@@ -78,13 +81,13 @@ func CreateTokenSourceFromConfig(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		return oauth2.ReuseTokenSource(nil, creds.TokenSource), nil
+		return oauth2.ReuseTokenSourceWithExpiry(nil, creds.TokenSource, earlyExpiry), nil
 	}
 	creds, err := google.CredentialsFromJSON(ctx, credsJSON, scopes...)
 	if err != nil {
 		return nil, err
 	}
-	return oauth2.ReuseTokenSource(nil, creds.TokenSource), nil
+	return oauth2.ReuseTokenSourceWithExpiry(nil, creds.TokenSource, earlyExpiry), nil
 }
 
 // CreateTokenSourceFromConfigWithManager creates a token source based on the config.
@@ -98,5 +101,5 @@ func CreateTokenSourceFromConfigWithManager(ctx context.Context, manager auth.ST
 	if err != nil {
 		return nil, err
 	}
-	return oauth2.ReuseTokenSource(nil, creds.TokenSource), nil
+	return oauth2.ReuseTokenSourceWithExpiry(nil, creds.TokenSource, earlyExpiry), nil
 }
