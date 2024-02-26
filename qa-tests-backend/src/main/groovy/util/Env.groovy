@@ -294,4 +294,8 @@ class Env {
     static String getSupportsLoadBalancerSvc() {
         return get("SUPPORTS_LOAD_BALANCER_SVC", "true")
     }
+
+    static String mustGetOcmOfflineToken() {
+        return get("OCM_OFFLINE_TOKEN")
+    }
 }
