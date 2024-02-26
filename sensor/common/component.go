@@ -40,6 +40,8 @@ func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string)
 		mode = "Online"
 	case SensorComponentEventOfflineMode:
 		mode = "Offline"
+	case SensorComponentEventSyncFinished:
+		return fmt.Sprintf("%s has received the SyncFinished notification", name)
 	}
 	return fmt.Sprintf("%s runs now in %s mode", name, mode)
 
