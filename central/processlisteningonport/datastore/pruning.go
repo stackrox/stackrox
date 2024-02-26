@@ -31,5 +31,4 @@ const (
 	// if the serialized data has process information. PLOPs without process information are then deleted.
 	getPotentiallyOrphanedPLOPs = `SELECT plop.serialized FROM listening_endpoints plop where NOT EXISTS
 			(select 1 FROM process_indicators proc where plop.processindicatorid = proc.id)`
-
 )
