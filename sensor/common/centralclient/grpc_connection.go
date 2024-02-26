@@ -121,7 +121,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 		log.Warnf("Couldn't get gRPC preferences from central (%s). Using sensor env config (%d): %s", gRPCPreferences, maxGRPCSize, err)
 	} else {
 		maxGRPCSize = int(p.GetMaxGrpcReceiveSizeBytes())
-		log.Infof("Received max gRPC size from central: %d. Overwriting sensor config", maxGRPCSize)
+		log.Infof("Received max gRPC size from central: %d. Overwriting default sensor value of %d.", maxGRPCSize, env.MaxMsgSizeSetting.IntegerSetting())
 	}
 	opts = append(opts, clientconn.MaxMsgReceiveSize(maxGRPCSize))
 

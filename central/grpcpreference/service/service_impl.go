@@ -5,7 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	pkgGrpc "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
 )
@@ -32,7 +32,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // Get implements v1.GRPCPreferencesServiceServer
 func (s *serviceImpl) Get(_ context.Context, _ *v1.Empty) (*v1.Preferences, error) {
 	result := &v1.Preferences{
-		MaxGrpcReceiveSizeBytes: uint64(pkgGrpc.MaxMsgSizeSetting.IntegerSetting()),
+		MaxGrpcReceiveSizeBytes: uint64(env.MaxMsgSizeSetting.IntegerSetting()),
 	}
 	return result, nil
 }
