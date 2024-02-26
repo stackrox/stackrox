@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
 )
@@ -138,7 +137,7 @@ func (m *managerImpl) discoverClustersFromCloudSources() {
 func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclusters.DiscoveredCluster {
 	// Fetch the cloud sources from the datastore. This will ensure that we will always use the latest updates.
 	// For the time being we do not foresee this to be a high cardinality store.
-	cloudSources, err := m.cloudSourcesDataStore.ListCloudSources(cloudSourceCtx, search.EmptyQuery())
+	cloudSources, err := m.cloudSourcesDataStore.GetAllCloudSources(cloudSourceCtx)
 	if err != nil {
 		log.Errorw("Failed listing stored cloud sources", logging.Err(err))
 		return nil
@@ -243,7 +242,7 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 		return
 	}
 
-	cloudSources, err := m.cloudSourcesDataStore.ListCloudSources(cloudSourceCtx, search.EmptyQuery())
+	cloudSources, err := m.cloudSourcesDataStore.GetAllCloudSources(cloudSourceCtx)
 	if err != nil {
 		log.Errorw("Failed to list stored cloud sources for changing cluster status",
 			logging.Err(err), logging.ClusterID(clusterID))

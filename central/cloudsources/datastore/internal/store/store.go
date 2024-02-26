@@ -11,6 +11,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
+	GetAll(ctx context.Context) ([]*storage.CloudSource, error)
 	Get(ctx context.Context, id string) (*storage.CloudSource, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.CloudSource, error)
 	Upsert(ctx context.Context, obj *storage.CloudSource) error
