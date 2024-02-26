@@ -32,6 +32,28 @@ deploy_stackrox() {
 
     deploy_central "${central_namespace}"
 
+    echo "Start scanner v4 patching ..."
+    # Konflux testing
+    kubectl patch deployment scanner-v4-indexer -n stackrox \
+    --type=json \
+    -p='[
+            {
+                "op": "replace",
+                "path": "/spec/template/spec/containers/0/image",
+                "value": "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4:on-pr-4738c02bec3f8161404dbcd5460ef6e8eae5b645"
+            }
+        ]'
+
+    kubectl patch deployment scanner-v4-matcher -n stackrox \
+    --type=json \
+    -p='[
+            {
+                "op": "replace",
+                "path": "/spec/template/spec/containers/0/image",
+                "value": "quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4:on-pr-4738c02bec3f8161404dbcd5460ef6e8eae5b645"
+            }
+        ]'
+
     export_central_basic_auth_creds
     wait_for_api "${central_namespace}"
     setup_client_TLS_certs "${tls_client_certs}"
@@ -40,6 +62,8 @@ deploy_stackrox() {
     deploy_sensor "${sensor_namespace}" "${central_namespace}"
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
+
+    echo "Scanner patched"
 
     # Bounce collectors to avoid restarts on initial module pull
     kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
@@ -153,7 +177,7 @@ export_test_environment() {
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
-    ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
+    ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-true}"
     ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
 
