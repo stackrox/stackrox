@@ -32,7 +32,6 @@ export function deferAndVisitRequestDetails({
     scope: string;
 }) {
     visitWorkloadCveOverview();
-    cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
     // defer a single cve
     selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -69,7 +68,6 @@ export function markFalsePositiveAndVisitRequestDetails({
     scope: string;
 }) {
     visitWorkloadCveOverview();
-    cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
     // mark a single cve as false positive
     selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {

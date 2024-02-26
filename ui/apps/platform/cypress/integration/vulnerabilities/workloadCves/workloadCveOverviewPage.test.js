@@ -37,16 +37,8 @@ describe('Workload CVE overview page tests', () => {
         );
     });
 
-    it('should correctly handle applied filters across entity tabs', function () {
-        if (!hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            this.skip();
-        }
-
+    it('should correctly handle applied filters across entity tabs', () => {
         visitWorkloadCveOverview();
-
-        // We want to manually test filter application, so clear the default filters
-        cy.get(vulnSelectors.clearFiltersButton).click();
-        cy.get(selectors.isUpdatingTable).should('not.exist');
 
         const entityOpnameMap = {
             CVE: 'getImageCVEList',

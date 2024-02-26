@@ -21,8 +21,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
     before(function () {
         if (
             !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') ||
-            !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             this.skip();
         }
@@ -31,8 +30,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
     beforeEach(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }
@@ -41,8 +39,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
     after(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }
@@ -91,7 +88,6 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should defer a single CVE', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectSingleCveForException('DEFERRAL').then((cveName) => {
             verifySelectedCvesInModal([cveName]);
@@ -110,7 +106,6 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should defer multiple selected CVEs', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
             verifySelectedCvesInModal(cveNames);
@@ -127,7 +122,6 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should allow selecting multiple CVEs but enable undoing some selections in the exception modal', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
             const cveToUnselect = cveNames[0];
@@ -150,7 +144,6 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should mark a single CVE false positive', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
             verifySelectedCvesInModal([cveName]);
@@ -165,7 +158,6 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should mark multiple selected CVEs as false positive', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
             verifySelectedCvesInModal(cveNames);
