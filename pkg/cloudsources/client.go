@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/cloudsources/ocm"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/cloudsources/paladin"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // Client exposes functionality to fetch discovered cluster from cloud sources.
@@ -27,6 +28,6 @@ func NewClientForCloudSource(source *storage.CloudSource, options ...opts.Client
 	case storage.CloudSource_TYPE_OCM:
 		return ocm.NewClient(source, options...)
 	default:
-		return nil, nil
+		return nil, errox.InvalidArgs.Newf("unsupported type %q given", source.GetType().String())
 	}
 }
