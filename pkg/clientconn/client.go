@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
@@ -424,6 +425,7 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+3)
 
 	clientConnOpts.TLS.GRPCOnly = true
+	clientConnOpts.MaxMsgRecvSize = env.MaxMsgSizeSetting.IntegerSetting()
 
 	var tlsConf *tls.Config
 	if !clientConnOpts.InsecureNoTLS {
@@ -441,6 +443,9 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 			perRPCCreds = util.ForceInsecureCreds(perRPCCreds)
 		}
 		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(perRPCCreds))
+	}
+	if clientConnOpts.MaxMsgRecvSize > 0 {
+		allDialOpts = append(allDialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
 	}
 	allDialOpts = append(allDialOpts, dialOpts...)
 	allDialOpts = append(allDialOpts, grpc.WithUserAgent(GetUserAgent()))

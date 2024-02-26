@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
 )
@@ -111,7 +110,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	// Use pkg/grpc configuration for MaxMsgSize on client connections as well. This will overwrite the 4MB threshold
 	// set by gRPC lib.
-	opts = append(opts, clientconn.MaxMsgReceiveSize(grpc.MaxMsgSizeSetting.IntegerSetting()))
+	opts = append(opts, clientconn.MaxMsgReceiveSize(env.MaxMsgSizeSetting.IntegerSetting()))
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
