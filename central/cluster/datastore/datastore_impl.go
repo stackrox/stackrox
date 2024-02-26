@@ -295,9 +295,10 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error {
 	walkFn := func() error {
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-			ds.populateHealthInfos(ctx, cluster)
-			ds.updateClusterPriority(cluster)
-			return fn(cluster)
+			clonedCluster := cluster.Clone()
+			ds.populateHealthInfos(ctx, clonedCluster)
+			ds.updateClusterPriority(clonedCluster)
+			return fn(clonedCluster)
 		})
 	}
 	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
