@@ -113,7 +113,8 @@ export function getListDiscoveredClustersArg({
     sortOption,
 }): ListDiscoveredClustersRequest {
     const filter = getDiscoveredClustersFilter(searchFilter);
-    const pagination: Pagination = { limit: perPage, offset: page - 1, sortOption };
+    const offset = (page - 1) * perPage;
+    const pagination: Pagination = { limit: perPage, offset, sortOption };
     return { filter, pagination };
 }
 
