@@ -9,7 +9,6 @@ import {
     typeAndSelectCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image Single page', () => {
     withAuth();

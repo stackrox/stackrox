@@ -10,7 +10,6 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import { selectors as workloadCVESelectors } from '../workloadCves/WorkloadCves.selectors';
 import { selectors } from './ExceptionManagement.selectors';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { visit } from '../../../helpers/visit';
 
 const deferralComment = 'Defer me';

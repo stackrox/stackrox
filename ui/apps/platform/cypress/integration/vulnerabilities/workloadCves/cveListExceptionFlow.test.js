@@ -13,7 +13,6 @@ import {
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE List deferral and false positive flows', () => {
     withAuth();

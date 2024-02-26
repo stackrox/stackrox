@@ -7,7 +7,6 @@ import {
     visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
 import { selectors as workloadCVESelectors } from '../workloadCves/WorkloadCves.selectors';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 const basePath = '/main/vulnerabilities/exception-management';
 export const pendingRequestsPath = `${basePath}/pending-requests`;
