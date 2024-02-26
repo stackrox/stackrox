@@ -205,13 +205,13 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		awsConfig = awsConfig.WithRegion(awssh.GetRegion())
 	}
 
-	accessKeyId, secretAccessKey, err := configuration.getCredentials()
+	accessKeyID, secretAccessKey, err := configuration.getCredentials()
 	if err != nil {
 		return nil, err
 	}
 	if !configuration.descriptor.GetAwsSecurityHub().GetCredentials().GetStsEnabled() {
 		awsConfig = awsConfig.WithCredentials(credentials.NewStaticCredentials(
-			accessKeyId,
+			accessKeyID,
 			secretAccessKey,
 			"",
 		))
