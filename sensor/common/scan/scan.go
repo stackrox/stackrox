@@ -146,10 +146,15 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	enrichmentErrs = errors.Join(enrichmentErrs, err)
 
 	// Fetch signatures associated with image from registry.
-	sigs := s.fetchSignatures(ctx, err, reg, pullSourceImage)
+	sigs := s.fetchSignatures(ctx, enrichmentErrs, reg, pullSourceImage)
 
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
+	var errorString string
+	if enrichmentErrs != nil {
+		errorString = enrichmentErrs.Error()
+	}
+
 	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
 		ImageId:        srcImage.GetId(),
 		ImageName:      srcImage.GetName(),
@@ -160,7 +165,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		IndexerVersion: scannerResp.GetIndexerVersion(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 		ImageNotes:     pullSourceImage.GetNotes(),
-		Error:          enrichmentErrs.Error(),
+		Error:          errorString,
 		RequestId:      requestID,
 		Force:          force,
 	})

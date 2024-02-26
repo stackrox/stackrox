@@ -355,12 +355,12 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 	var metadataErrs error
 
 	if err := e.checkRegistryForImage(image); err != nil {
-		return false, errors.Wrapf(err, "error getting metadata for image: %s", image.GetName().GetFullName())
+		return false, errors.Wrapf(err, "error getting metadata for image %q", image.GetName().GetFullName())
 	}
 
 	registries, err := e.getRegistriesForContext(enrichmentContext)
 	if err != nil {
-		return false, errors.Wrapf(err, "error getting metadata for image: %s", image.GetName().GetFullName())
+		return false, errors.Wrapf(err, "error getting metadata for image %q", image.GetName().GetFullName())
 	}
 
 	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
@@ -419,7 +419,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 			errors.Errorf("no matching image registries found: please add an image integration for %s", image.GetName().GetRegistry()))
 	}
 
-	return false, errors.Wrapf(metadataErrs, "error getting metadata for image: %s", image.GetName().GetFullName())
+	return false, errors.Wrapf(metadataErrs, "error getting metadata for image %q", image.GetName().GetFullName())
 }
 
 func getRef(image *storage.Image) string {

@@ -128,7 +128,7 @@ func TestFullValidation(t *testing.T) {
 			configureClusterFn: func(cluster *storage.Cluster) {
 				cluster.MainImage = ""
 			},
-			expectedErrors: []string{"invalid main image '': invalid reference format"},
+			expectedErrors: []string{"invalid main image \"\": invalid reference format"},
 		},
 	}
 

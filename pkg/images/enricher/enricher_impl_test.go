@@ -537,7 +537,7 @@ func TestZeroIntegrations(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: not found: " +
+	expectedErrMsg := "image enrichment: error getting metadata for image \"\": not found: " +
 		"no image registries are integrated: please add an image integration"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
@@ -596,8 +596,8 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := fmt.Sprintf("image enrichment error: error getting metadata for image: %s "+
-		"error: invalid arguments: no registry is indicated for image %q",
+	expectedErrMsg := fmt.Sprintf("image enrichment: error getting metadata for image %[1]q: invalid arguments: "+
+		"no registry is indicated for image %[1]q",
 		img.GetName().GetFullName(), img.GetName().GetFullName())
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
@@ -630,7 +630,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: not found: " +
+	expectedErrMsg := "image enrichment: error getting metadata for image \"\": not found: " +
 		"no image registries are integrated: please add an image integration"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
@@ -664,8 +664,8 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no matching image " +
-		"registries found: please add an image integration for reg"
+	expectedErrMsg := "image enrichment: error getting metadata for image \"\": no matching image registries found: " +
+		"please add an image integration for reg"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
@@ -701,7 +701,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error scanning image:  error: no image scanners are integrated"
+	expectedErrMsg := "image enrichment: error scanning image \"\": no image scanners are integrated"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
