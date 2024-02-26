@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import {
     TextInput,
     PageSection,
@@ -8,10 +8,8 @@ import {
     DescriptionListGroup,
     DescriptionListDescription,
     SelectOption,
-    Title,
     DatePicker,
     yyyyMMddFormat,
-    FlexItem,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
@@ -24,7 +22,6 @@ import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import dateFns from 'date-fns';
 import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
 import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
@@ -88,7 +85,6 @@ function ApiTokenIntegrationForm({
     }
 
     function onRoleChange(id, selection) {
-        console.log(`Here is the id:${id}`);
         return setFieldValue(id, [selection]);
     }
 
@@ -189,6 +185,7 @@ function ApiTokenIntegrationForm({
                                 label="Expiration date"
                                 fieldId="expiration"
                                 touched={touched}
+                                helperText="when left unset, the value defaults to 1 year from the generation date"
                                 errors={errors}
                             >
                                 <DatePicker
@@ -199,8 +196,6 @@ function ApiTokenIntegrationForm({
                                             : ''
                                     }
                                     onChange={(event, value, date) => {
-                                        console.log(`Here's the value:${value}`);
-                                        console.log(`Here's the date${date}`);
                                         if (date) {
                                             setFieldValue('expiration', date.toISOString());
                                         }

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package v1;
 
+import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 import "api/v1/common.proto";
