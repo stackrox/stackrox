@@ -891,6 +891,10 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
 func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) error {
+	if q == nil {
+		return nil
+	}
+
 	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, DELETE)
 	if err != nil || query == nil {
 		return err
@@ -909,7 +913,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 // RunDeleteRequestReturningIDsForSchema executes a request for the delete query against the database returning IDs.
 func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]string, error) {
 	if q == nil {
-		q = searchPkg.EmptyQuery()
+		return nil, nil
 	}
 
 	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, DELETERETURNINGIDS)

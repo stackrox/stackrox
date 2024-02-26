@@ -227,7 +227,7 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 
 // Count returns the number of objects in the store matching the query.
 func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if q == nil || q.GetQuery() == search.EmptyQuery().GetQuery() {
+	if q == nil || proto.Equal(q, search.EmptyQuery()) {
 		return c.countFromCache(ctx)
 	}
 	return c.underlyingStore.Count(ctx, q)
