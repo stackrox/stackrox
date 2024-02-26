@@ -76,13 +76,7 @@ func (f *centralConnectionFactoryImpl) pingCentral() error {
 func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferences, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	p, err := f.httpClient.GetGRPCPreferences(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
-
+	return f.httpClient.GetGRPCPreferences(ctx)
 }
 
 // getCentralTLSCerts only logs errors because this feature should not break
