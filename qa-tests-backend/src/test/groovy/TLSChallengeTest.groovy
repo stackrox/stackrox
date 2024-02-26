@@ -12,7 +12,6 @@ import io.stackrox.proto.storage.ClusterOuterClass
 import objects.ConfigMap
 import objects.Deployment
 import objects.Secret
-import services.ClusterService
 import util.ApplicationHealth
 import util.Timer
 
