@@ -4,4 +4,4 @@ export CYPRESS_VIDEOS_FOLDER="${artifacts_dir}/videos"
 export CYPRESS_SCREENSHOTS_FOLDER="${artifacts_dir}/screenshots"
 
 mkdir -p "$artifacts_dir" && touch "${artifacts_dir:-/tmp}/cypress-err.txt"
-DEBUG="*" NO_COLOR=1 cypress "$@" 2> "${artifacts_dir:-/tmp}/cypress-err.txt"
+CYPRESS_INTERNAL_BROWSER_CONNECT_TIMEOUT=180000 DEBUG="cypress:*" NO_COLOR=1 cypress "$@" 2> "${artifacts_dir:-/tmp}/cypress-err.txt"
