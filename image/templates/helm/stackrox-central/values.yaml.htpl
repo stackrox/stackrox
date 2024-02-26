@@ -355,16 +355,16 @@ central:
 #
 #    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
 #    affinity:
+#      podAntiAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 100
+#          podAffinityTerm:
+#            labelSelector:
+#              matchLabels:
+#                app: scanner-v4-indexer
+#            topologyKey: kubernetes.io/hostname
 #      nodeAffinity:
 #        preferredDuringSchedulingIgnoredDuringExecution:
-#        # Scanner V4 DB is single-homed, so avoid preemptible nodes.
-#        - weight: 100
-#          preference:
-#            matchExpressions:
-#            - key: cloud.google.com/gke-preemptible
-#              operator: NotIn
-#              values:
-#                - "true"
 #        - weight: 50
 #          preference:
 #            matchExpressions:
@@ -386,7 +386,7 @@ central:
 #          preference:
 #            matchExpressions:
 #            - key: node-role.kubernetes.io/control-plane
-#              operator: DoesNotExis
+#              operator: DoesNotExist
 #
 #    image:
 #      registry: null
@@ -436,16 +436,16 @@ central:
 #
 #    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
 #    affinity:
+#      podAntiAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 100
+#          podAffinityTerm:
+#            labelSelector:
+#              matchLabels:
+#                app: scanner-v4-matcher
+#            topologyKey: kubernetes.io/hostname
 #      nodeAffinity:
 #        preferredDuringSchedulingIgnoredDuringExecution:
-#        # Scanner V4 DB is single-homed, so avoid preemptible nodes.
-#        - weight: 100
-#          preference:
-#            matchExpressions:
-#            - key: cloud.google.com/gke-preemptible
-#              operator: NotIn
-#              values:
-#                - "true"
 #        - weight: 50
 #          preference:
 #            matchExpressions:
@@ -467,7 +467,7 @@ central:
 #          preference:
 #            matchExpressions:
 #            - key: node-role.kubernetes.io/control-plane
-#              operator: DoesNotExis
+#              operator: DoesNotExist
 #
 #    image:
 #      registry: null
