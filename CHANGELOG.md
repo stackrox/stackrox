@@ -79,6 +79,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-21729: - ROX-21729: When deleting a collection that is referenced by other objects such as report configurations, the error message now includes the names of the collection being deleted and its referencing object (report configuration).
 - ROX_SCAN_TIMEOUT environment variable in Central and Sensor now defaults to 10m instead of 6m.
 - ROX-19814: As announced in 4.2, the /v1/resources endpoint now requires authenticated access.
+- The default policy "systemctl Execution" has been updated to not trigger when the process argument `--version` is used. This does not pose a security issue because the information printed relates to features supported by systemd at the build time and not the capabilities of the host OS.
+- The default policy "No resource requests or limits specified" has been renamed to "No CPU request or memory limit specified" and now no longer checks CPU limit or memory request. Rather it only detects that the CPU request and memory limits are set.
 
 ## [4.3.0]
 
