@@ -22,11 +22,16 @@ var log = logging.LoggerForModule()
 
 var _ types.Registry = (*ecr)(nil)
 
+// ecr implements docker registry access to AWS ECR. The docker credentials
+// are either taken from the datastore, in which case they have been synced
+// by Sensor, or they are derived from short-lived access tokens. The access
+// token is refreshed as part of the transport.
 type ecr struct {
 	*docker.Registry
 
 	config      *storage.ECRConfig
 	integration *storage.ImageIntegration
+	transport   *awsTransport
 }
 
 // sanitizeConfiguration validates and cleans-up the integration configuration.
@@ -71,6 +76,18 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 		errorList.AddString("Region must be specified")
 	}
 	return errorList.ToError()
+}
+
+// Config returns an up to date docker registry configuration.
+func (e *ecr) Config() *types.Config {
+	// No need for synchronization if there is no transport.
+	if e.transport == nil {
+		return e.Registry.Config()
+	}
+	if err := e.transport.ensureValid(); err != nil {
+		log.Errorf("Failed to ensure access token validity for image integration %q: %v", e.transport.name, err)
+	}
+	return e.Registry.Config()
 }
 
 // Test tests the current registry and makes sure that it is working properly.
@@ -126,20 +143,22 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 		Endpoint:        endpoint,
 		DisableRepoList: disableRepoList,
 	}
+	var dockerRegistry *docker.Registry
+	var registryErr error
 	if authData := conf.GetAuthorizationData(); authData != nil {
-		cfg.Username = authData.GetUsername()
-		cfg.Password = authData.GetPassword()
+		cfg.SetCredentials(authData.GetUsername(), authData.GetPassword())
+		dockerRegistry, registryErr = docker.NewDockerRegistryWithConfig(cfg, reg.integration)
 	} else {
 		client, err := createECRClient(conf)
 		if err != nil {
 			log.Error("Failed to create ECR client: ", err)
 			return nil, err
 		}
-		cfg.Transport = newAWSTransport(integration.GetName(), cfg, client)
+		reg.transport = newAWSTransport(integration.GetName(), cfg, client)
+		dockerRegistry, registryErr = docker.NewDockerRegistryWithConfig(cfg, reg.integration, reg.transport)
 	}
-	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, reg.integration)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create docker registry")
+	if registryErr != nil {
+		return nil, errors.Wrap(registryErr, "failed to create docker registry")
 	}
 	reg.Registry = dockerRegistry
 	return reg, nil

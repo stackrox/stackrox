@@ -6,6 +6,7 @@ import (
 
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -13,16 +14,31 @@ import (
 type Config struct {
 	// Endpoint defines the Docker Registry URL.
 	Endpoint string
-	// Username defines the Username for the Docker Registry.
-	Username string
-	// Password defines the password for the Docker Registry.
-	Password string
 	// Insecure defines if the registry should be insecure.
 	Insecure bool
 	// DisableRepoList when true disables populating list of repos from remote registry.
 	DisableRepoList bool
-	// Transport defines a transport for authenticating to the Docker registry.
-	Transport registry.Transport
+
+	// username defines the Username for the Docker Registry.
+	username string
+	// password defines the password for the Docker Registry.
+	password string
+	mutex    sync.RWMutex
+}
+
+// GetCredentials returns the Docker basic auth credentials.
+func (c *Config) GetCredentials() (string, string) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	return c.username, c.password
+}
+
+// SetCredentials sets the Docker basic auth credentials.
+func (c *Config) SetCredentials(username string, password string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.username = username
+	c.password = password
 }
 
 func (c *Config) formatURL() string {
@@ -33,15 +49,6 @@ func (c *Config) formatURL() string {
 	return urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
-// GetTransport returns the transport which provides authentication to the Docker registry.
-// Returns `Config.Transport` if it is set. Otherwise returns a default transport.
-func (c *Config) GetTransport() registry.Transport {
-	if c.Transport != nil {
-		return c.Transport
-	}
-	return DefaultTransport(c)
-}
-
 // DefaultTransport returns the default transport based on the configuration.
 func DefaultTransport(cfg *Config) registry.Transport {
 	transport := proxy.RoundTripper()
@@ -50,5 +57,6 @@ func DefaultTransport(cfg *Config) registry.Transport {
 			InsecureSkipVerify: true,
 		})
 	}
-	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), cfg.Username, cfg.Password)
+	username, password := cfg.GetCredentials()
+	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)
 }
