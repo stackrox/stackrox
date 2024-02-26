@@ -19,9 +19,13 @@ import (
 
 var _ types.Registry = (*googleRegistry)(nil)
 
+// googleRegistry implements docker registry access to Google Artifact registry and
+// Google container registry. The docker credentials are derived from short-lived
+// access tokens. The access token is refreshed as part of the transport.
 type googleRegistry struct {
 	types.Registry
-	project string
+	project   string
+	transport *googleTransport
 }
 
 // Match overrides the underlying Match function in types.Registry because our google registries are scoped by
@@ -31,6 +35,14 @@ func (g *googleRegistry) Match(image *storage.ImageName) bool {
 		return false
 	}
 	return g.Registry.Match(image)
+}
+
+// Config returns an up to date docker registry configuration.
+func (g *googleRegistry) Config() *types.Config {
+	if err := g.transport.ensureValid(); err != nil {
+		log.Errorf("Failed to ensure access token validity for image integration %q: %v", g.transport.name, err)
+	}
+	return g.Registry.Config()
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
@@ -104,13 +116,14 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")
 	}
-	dockerConfig.Transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
-	reg, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration)
+	reg := &googleRegistry{
+		project: strings.ToLower(config.GetProject()),
+	}
+	reg.transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
+	dockerRegistry, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration, reg.transport)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create docker registry")
 	}
-	return &googleRegistry{
-		Registry: reg,
-		project:  strings.ToLower(config.GetProject()),
-	}, nil
+	reg.Registry = dockerRegistry
+	return reg, nil
 }

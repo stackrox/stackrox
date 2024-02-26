@@ -2,6 +2,7 @@ package auth
 
 import (
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokensource"
@@ -20,7 +21,10 @@ func TestTokenManager(t *testing.T) {
 	dummyErr := errors.New("dummy error")
 	mockCredManager.EXPECT().GetCredentials(gomock.Any()).Return(nil, dummyErr).Times(2)
 
-	ts := tokensource.NewReuseTokenSourceWithInvalidate(&CredentialManagerTokenSource{credManager: mockCredManager})
+	ts := tokensource.NewReuseTokenSourceWithInvalidate(
+		&CredentialManagerTokenSource{credManager: mockCredManager},
+		time.Minute,
+	)
 	manager := &stsTokenManagerImpl{credManager: mockCredManager, tokenSource: ts}
 
 	_, err := ts.Token()

@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+const earlyExpiry = 5 * time.Minute
+
 type awsTransport struct {
 	registry.Transport
 	name      string
@@ -37,18 +39,26 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// a) we only need a write lock every 12 hours to refresh the token.
 	// b) refreshing the token multiple times is idempotent.
 	// c) we do not want to block the entire read path for performance reasons.
-	if !concurrency.WithRLock1(&t.mutex, t.isValidNoLock) {
-		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
-			return nil, err
-		}
+	if err := t.ensureValid(); err != nil {
+		return nil, err
 	}
 	return concurrency.WithRLock2(&t.mutex,
 		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
 	)
 }
 
+// ensureValid refreshes the access token if it is invalid.
+func (t *awsTransport) ensureValid() error {
+	if !concurrency.WithRLock1(&t.mutex, t.isValidNoLock) {
+		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (t *awsTransport) isValidNoLock() bool {
-	return t.expiresAt != nil && time.Now().Before(*t.expiresAt)
+	return t.expiresAt != nil && time.Now().Before(t.expiresAt.Add(-earlyExpiry))
 }
 
 func (t *awsTransport) refreshNoLock() error {
@@ -70,8 +80,7 @@ func (t *awsTransport) refreshNoLock() error {
 		return errors.New("malformed basic auth response from AWS")
 	}
 	t.expiresAt = authData.ExpiresAt
-	t.config.Username = username
-	t.config.Password = password
+	t.config.SetCredentials(username, password)
 	t.Transport = docker.DefaultTransport(t.config)
 	return nil
 }
