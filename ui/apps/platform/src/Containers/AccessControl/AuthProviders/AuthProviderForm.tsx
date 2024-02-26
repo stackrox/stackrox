@@ -638,15 +638,13 @@ function AuthProviderForm({
                             </Alert>
                             {(!values.claimMappings ||
                                 (Array.isArray(values.claimMappings) &&
-                                    values.claimMappings.length === 0)) && (
+                                    values.claimMappings.length === 0)) ? (
                                 <p>No claim mappings defined</p>
-                            )}
+                            ) : (
                             <FieldArray
                                 name="claimMappings"
                                 render={(arrayHelpers) => (
                                     <>
-                                        {values.claimMappings &&
-                                            Array.isArray(values.claimMappings) &&
                                             values.claimMappings.map((mapping, index: number) => (
                                                 <Flex key={`claim_mapping_${index}`}>
                                                     <FormGroup

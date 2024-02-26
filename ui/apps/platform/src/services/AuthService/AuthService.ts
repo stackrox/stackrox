@@ -78,7 +78,7 @@ export type AuthProvider = {
     defaultRole?: string;
     requiredAttributes: AuthProviderRequiredAttribute[];
     traits?: Traits;
-    claimMappings: { [k: string]: string } | [string, string][];
+    claimMappings: Record<string, string> | [string, string][];
     lastUpdated: string;
 };
 
@@ -172,7 +172,7 @@ export function deleteAuthProviders(authProviderIds) {
     return Promise.all(authProviderIds.map((id) => deleteAuthProvider(id)));
 }
 
-function preprocessAuthProvider(provider: AuthProvider): AuthProvider {
+function convertAuthProviderClaimMappingsToArray(provider: AuthProvider): AuthProvider {
     if (!provider.claimMappings) {
         return provider;
     }
@@ -184,7 +184,7 @@ function preprocessAuthProvider(provider: AuthProvider): AuthProvider {
     return newProvider;
 }
 
-function postprocessAuthProvider(authProvider: AuthProvider): AuthProvider {
+function convertAuthProviderClaimMappingsToObject(authProvider: AuthProvider): AuthProvider {
     if (!authProvider.claimMappings) {
         return authProvider;
     }
