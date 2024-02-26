@@ -104,6 +104,7 @@ func NewClient(endpoint string) (*Client, error) {
 	}, nil
 }
 
+// GetGRPCPreferences returns central's gRPC connection preference.
 func (c *Client) GetGRPCPreferences(ctx context.Context) (*v1.Preferences, error) {
 	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, gRPCPreferences, nil, nil)
 	if err != nil {
