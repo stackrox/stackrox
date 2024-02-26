@@ -22,7 +22,17 @@ import (
 )
 
 const (
-	registryTimeout  = 5 * time.Second
+	// This timeout is used as http.Client.Timeout for the registry's HTTP
+	// client and hence includes everything from connection to reading the
+	// response body. The timeout has been chosen rather arbitrarily, it is
+	// probably less harm in waiting a bit longer than in aborting early a
+	// request that is about to succeed.
+	//
+	// TODO(alexr): Consider setting ResponseHeaderTimeout for registry's
+	//   transport to make timeout errors more specific and hence facilitate
+	//   retries and troubleshooting.
+	registryClientTimeout = 90 * time.Second
+
 	repoListInterval = 10 * time.Minute
 )
 
@@ -79,7 +89,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		return nil, err
 	}
 
-	client.Client.Timeout = registryTimeout
+	client.Client.Timeout = registryClientTimeout
 
 	var repoSet set.Set[string]
 	var ticker *time.Ticker
