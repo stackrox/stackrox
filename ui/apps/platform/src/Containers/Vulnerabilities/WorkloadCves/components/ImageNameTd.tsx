@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCopyButton, Flex, FlexItem, Truncate } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
+import { OutlinedCopyIcon } from '@patternfly/react-icons';
 
 import { getEntityPagePath } from '../searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -32,33 +33,36 @@ function ImageNameTd({ name, id, children }: ImageNameTdProps) {
         <Flex
             direction={{ default: 'row' }}
             flexWrap={{ default: 'nowrap' }}
-            justifyContent={{ default: 'justifyContentSpaceBetween' }}
             alignItems={{ default: 'alignItemsFlexStart' }}
             spaceItems={{ default: 'spaceItemsNone' }}
         >
-            <Flex
-                grow={{ default: 'grow' }}
-                direction={{ default: 'column' }}
-                spaceItems={{ default: 'spaceItemsNone' }}
-            >
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
                 <Link to={getEntityPagePath('Image', id, vulnerabilityState)}>
                     <Truncate position="middle" content={`${remote}:${tag}`} />
                 </Link>{' '}
                 <span className="pf-u-color-200 pf-u-font-size-sm">in {registry}</span>
                 <div>{children}</div>
             </Flex>
-            <FlexItem shrink={{ default: 'shrink' }}>
-                <ClipboardCopyButton
-                    id={`copy-image-name-button-${id}`}
-                    textId={`copy-image-name-text-${id}`}
-                    className="pf-u-pt-xs"
-                    variant="plain"
+            <FlexItem>
+                <Tooltip
+                    trigger="mouseenter focus click"
+                    aria-live="polite"
+                    aria="none"
                     exitDelay={1000}
                     onTooltipHidden={() => setCopyIconTooltip('Copy image name')}
-                    onClick={copyImageName}
+                    content={<div>{copyIconTooltip}</div>}
                 >
-                    {copyIconTooltip}
-                </ClipboardCopyButton>
+                    <Button
+                        className="pf-u-pt-xs"
+                        id={`copy-image-name-button-${id}`}
+                        aria-labelledby={`copy-image-name-text-${id}`}
+                        type="button"
+                        variant="plain"
+                        onClick={copyImageName}
+                    >
+                        <OutlinedCopyIcon />
+                    </Button>
+                </Tooltip>
             </FlexItem>
         </Flex>
     );
