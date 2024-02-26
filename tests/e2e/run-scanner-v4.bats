@@ -29,6 +29,8 @@ init() {
     require_environment "ORCHESTRATOR_FLAVOR"
 }
 
+export TEST_SUITE_ABORTED="false"
+
 setup_file() {
     init
 
@@ -49,6 +51,8 @@ setup_file() {
     export OS
     export ORCH_CMD=kubectl
     export SENSOR_HELM_MANAGED=true
+    export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
+    export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
 
     # Prepare earlier Helm chart version.
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
@@ -89,6 +93,7 @@ setup_file() {
 test_case_no=0
 
 setup() {
+    [[ "${TEST_SUITE_ABORTED}" == "true" ]] && return 1
     init
     set -euo pipefail
 
@@ -98,9 +103,9 @@ setup() {
         setup_deployment_env false false
     fi
 
-    if (( test_case_no == 0 )); then
+    if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
-        teardown
+        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     fi
     if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
         echo "Only tearing down resources, exiting now..."
@@ -143,26 +148,33 @@ describe_deployments_in_namespace() {
     done
 }
 
-
 teardown() {
+    if [[ "${TEST_SUITE_ABORTED}" == "true" ]]; then
+        echo "Skipping teardown due to previous failure." >&3
+        return
+    fi
+
+    if [[ "${BATS_TEST_COMPLETED:-}" != "1" ]]; then
+        # Previous test failed.
+        if [[ "${ABORT_ON_FAILURE:-}" == "true" ]]; then
+            TEST_SUITE_ABORTED="true"
+            echo "Aborting due to test failure." >&3
+            return 1
+        fi
+    fi
+
     local central_namespace=""
     local sensor_namespace=""
-    local namespaces=( )
 
     if "${ORCH_CMD}" get ns "stackrox" >/dev/null 2>&1; then
         central_namespace="stackrox"
         sensor_namespace="stackrox"
-        namespaces=( "stackrox" "${namespaces[@]}" )
     fi
     if "${ORCH_CMD}" get ns "${CUSTOM_CENTRAL_NAMESPACE}" >/dev/null 2>&1; then
         central_namespace="${CUSTOM_CENTRAL_NAMESPACE}"
-        namespaces=( "${central_namespace}" "${namespaces[@]}" )
     fi
     if "${ORCH_CMD}" get ns "${CUSTOM_SENSOR_NAMESPACE}" >/dev/null 2>&1; then
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
-        if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
-            namespaces=( "${sensor_namespace}" "${namespaces[@]}" )
-        fi
     fi
 
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
@@ -176,7 +188,7 @@ teardown() {
         fi
     fi
 
-    run remove_existing_stackrox_resources "${namespaces[@]}"
+    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
 }
 
 teardown_file() {
@@ -231,6 +243,18 @@ teardown_file() {
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    # Deactivate Scanner V4 for both releases.
+    info "Disabling Scanner V4 for Central"
+    helm upgrade -n stackrox stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    info "Disabling Scanner V4 for SecuredCluster"
+    helm upgrade -n stackrox stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    sleep 30 # Give the deployments time to terminate.
+
+    verify_no_scannerV4_deployed "stackrox"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
@@ -267,6 +291,17 @@ teardown_file() {
     verify_deployment_scannerV4_env_var_set "$central_namespace" "central"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
     verify_deployment_scannerV4_env_var_set "$sensor_namespace" "sensor"
+
+    # Deactivate Scanner V4 for both releases.
+    helm upgrade -n "${central_namespace}" stackrox-central-services "${CENTRAL_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    helm upgrade -n "${sensor_namespace}" stackrox-secured-cluster-services "${SENSOR_CHART_DIR}" --reuse-values --set scannerV4.disable=true
+    sleep 30 # Give the deployments time to terminate.
+
+    verify_no_scannerV4_deployed "${central_namespace}"
+    verify_no_scannerV4_deployed "${sensor_namespace}"
+    run ! verify_deployment_scannerV4_env_var_set "${central_namespace}" "central"
+    run ! verify_deployment_scannerV4_env_var_set "${sensor_namespace}" "sensor"
+
 }
 
 @test "[Manifest Bundle] Fresh installation without Scanner V4, adding Scanner V4 later" {
@@ -423,10 +458,10 @@ spec:
       resources:
         requests:
           cpu: "400m"
-          memory: "4Gi"
+          memory: "5Gi"
         limits:
           cpu: "1000m"
-          memory: "5Gi"
+          memory: "5500Mi"
     db:
       resources:
         requests:
@@ -437,6 +472,10 @@ spec:
           memory: "2500Mi"
 EOT
     )
+
+    info "Waiting for central to come back up after patching CR for activating Scanner V4"
+    sleep 60
+    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
@@ -467,12 +506,42 @@ spec:
 EOT
     )
 
+    info "Waiting for sensor to come back up after patching CR for activating Scanner V4"
+    sleep 60
+    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
+
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
+    # Test disabling of Scanner V4.
+    info "Disabling Scanner V4 for Central"
+    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" \
+      patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Disabled
+EOT
+    )
+
+    info "Disabling Scanner V4 for SecuredCluster"
+    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
+      patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
+spec:
+  scannerV4:
+    scannerComponent: Disabled
+EOT
+    )
+
+    sleep 2m # Give the operator some time to reconcile and the deployments to terminate.
+    verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_no_scannerV4_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
+    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
 }
 
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
@@ -556,8 +625,8 @@ verify_scannerV4_indexer_deployed() {
     info "Waiting for Scanner V4 Indexer to appear in namespace ${namespace}..."
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 300
+    wait_for_ready_pods "${namespace}" "scanner-v4-db" 600
+    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 600
     info "** Scanner V4 Indexer is deployed in namespace ${namespace}"
 }
 
@@ -566,8 +635,8 @@ verify_scannerV4_matcher_deployed() {
     info "Waiting for Scanner V4 Matcher to appear in namespace ${namespace}..."
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 600
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
-    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 300
+    wait_for_ready_pods "${namespace}" "scanner-v4-db" 600
+    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 600
     info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
 }
 
@@ -637,6 +706,57 @@ patch_down_central() {
 
 patch_down_central_directly() {
    local central_namespace="$1"
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/central --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: central
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 1000m
+EOF
+    )
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/central-db --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: central-db
+          resources:
+            memory: 1Gi
+            cpu: 500m
+EOF
+    )
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/scanner --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: scanner
+          resources:
+            requests:
+              memory: 500Mi
+              cpu: 500m
+EOF
+    )
+
+   "${ORCH_CMD}" -n "${central_namespace}" patch deployment/scanner-db --patch-file=<(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: db
+          resources:
+            requests:
+              memory: 500Mi
+              cpu: 400m
+EOF
+    )
 
     if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
         "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
