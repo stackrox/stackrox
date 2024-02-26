@@ -17,6 +17,7 @@ class CloudSourcesTest extends BaseSpecification {
         "OCM cloud source is created and tested"
         def cloudSourceId = CloudSourcesService.createCloudSource(CloudSourceService.CloudSource.newBuilder().
                 setName(CLOUD_SOURCE_NAME).
+                setType(CloudSourceService.CloudSource.Type.TYPE_OCM).
                 setOcm(CloudSourceService.OCMConfig.newBuilder().
                         setEndpoint("https://api.openshift.com").build()).
                 setCredentials(CloudSourceService.CloudSource.Credentials.newBuilder().
