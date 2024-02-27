@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -336,7 +337,12 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
 		return
 	}
-
+	if features.ScannerV4.Enabled() {
+		if err := validateV4DefsVersion(tempFile); err != nil {
+			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
+			return
+		}
+	}
 	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 		return
@@ -653,4 +659,33 @@ func getOfflineFileVersion(mf *os.File) (string, error) {
 		return "", err
 	}
 	return m.Version, nil
+}
+
+func validateV4DefsVersion(zipPath string) error {
+	zipR, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return errors.Wrap(err, "couldn't open file as zip")
+	}
+	defer utils.IgnoreError(zipR.Close)
+
+	for _, zipF := range zipR.File {
+		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+			mf, err := openFromArchive(zipF.Name, "manifest.json")
+			if err != nil {
+				return errors.Wrap(err, "couldn't open v4 defs manifest.json")
+			}
+
+			offlineV, err := getOfflineFileVersion(mf)
+			if err != nil {
+				return errors.Wrap(err, "couldn't read v4 defs manifest.json")
+			}
+			utils.IgnoreError(mf.Close)
+			if offlineV != "dev" && offlineV != minorVersionPattern.FindString(version.GetMainVersion()) {
+				msg := fmt.Sprintf("failed to upload offline vuln file, uploaded file is version: %s and system version is: %s", offlineV, version.GetMainVersion())
+				log.Errorf(msg)
+				return errors.New(msg)
+			}
+		}
+	}
+
 }
