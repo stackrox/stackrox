@@ -76,9 +76,9 @@ export type AuthProvider = {
     active?: boolean;
     groups?: Group[];
     defaultRole?: string;
-    requiredAttributes: AuthProviderRequiredAttributes[];
+    requiredAttributes: AuthProviderRequiredAttribute[];
     traits?: Traits;
-    claimMappings: Record<string, string>;
+    claimMappings: Record<string, string> | [string, string][];
     lastUpdated: string;
 };
 
@@ -87,7 +87,7 @@ export type AuthProviderInfo = {
     value: AuthProviderType;
 };
 
-export type AuthProviderRequiredAttributes = {
+export type AuthProviderRequiredAttribute = {
     attributeKey: string;
     attributeValue: string;
 };
@@ -96,9 +96,10 @@ export type AuthProviderRequiredAttributes = {
  * Fetch authentication providers.
  */
 export function fetchAuthProviders(): Promise<{ response: AuthProvider[] }> {
-    return axios.get(`${authProvidersUrl}`).then((response) => ({
-        response: response?.data?.authProviders ?? [],
-    }));
+    return axios.get(`${authProvidersUrl}`).then((response) => {
+        const authProviders = response?.data?.authProviders ?? [];
+        return { response: authProviders.map((ap) => convertAuthProviderClaimMappingsToArray(ap)) };
+    });
 }
 
 export type AuthProviderLogin = {
@@ -130,26 +131,6 @@ export function fetchAvailableProviderTypes(): Promise<{ response: AuthProviderI
     }));
 }
 
-/*
- * Create entity and return object with id assigned by backend.
- */
-export function createAuthProvider(authProvider: AuthProvider): Promise<AuthProvider> {
-    return axios.post<AuthProvider>(authProvidersUrl, authProvider).then((response) => {
-        return response.data;
-    });
-}
-
-/*
- * Update entity and return object.
- */
-export function updateAuthProvider(authProvider: AuthProvider): Promise<AuthProvider> {
-    return axios
-        .put<AuthProvider>(`${authProvidersUrl}/${authProvider.id}`, authProvider)
-        .then((response) => {
-            return response.data;
-        });
-}
-
 /**
  * Saves auth provider either by creating a new one (in case ID is missed) or by updating existing one by ID.
  */
@@ -157,9 +138,17 @@ export function saveAuthProvider(authProvider: AuthProvider): string | Promise<A
     if (authProvider.active || getIsAuthProviderImmutable(authProvider)) {
         return authProvider.id;
     }
+
     return authProvider.id
-        ? axios.put(`${authProvidersUrl}/${authProvider.id}`, authProvider)
-        : axios.post(authProvidersUrl, authProvider);
+        ? axios
+              .put<AuthProvider>(
+                  `${authProvidersUrl}/${authProvider.id}`,
+                  convertAuthProviderClaimMappingsToObject(authProvider)
+              )
+              .then((response) => {
+                  return convertAuthProviderClaimMappingsToArray(response.data);
+              })
+        : axios.post(authProvidersUrl, convertAuthProviderClaimMappingsToObject(authProvider));
 }
 
 /**
@@ -181,6 +170,27 @@ export function deleteAuthProvider(authProviderId: string): Promise<Empty> {
  */
 export function deleteAuthProviders(authProviderIds) {
     return Promise.all(authProviderIds.map((id) => deleteAuthProvider(id)));
+}
+
+function convertAuthProviderClaimMappingsToArray(provider: AuthProvider): AuthProvider {
+    if (!provider.claimMappings) {
+        return provider;
+    }
+    const mappingAsArray = Object.entries(provider.claimMappings).sort((a, b) =>
+        a[0].localeCompare(b[0])
+    );
+    const newProvider = { ...provider };
+    newProvider.claimMappings = mappingAsArray;
+    return newProvider;
+}
+
+function convertAuthProviderClaimMappingsToObject(authProvider: AuthProvider): AuthProvider {
+    if (!Array.isArray(authProvider.claimMappings)) {
+        return authProvider;
+    }
+    const newProvider = { ...authProvider };
+    newProvider.claimMappings = Object.fromEntries(authProvider.claimMappings);
+    return newProvider;
 }
 
 /*
