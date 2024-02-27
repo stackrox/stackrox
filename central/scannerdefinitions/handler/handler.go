@@ -196,11 +196,12 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	// A specific file was requested, so extract from definitions bundle to a
 	// temporary file and serve that instead.
-	namedFile, err := openFromArchive(f.Name(), fileName)
+	namedFile, cleanUp, err := openFromArchive(f.Name(), fileName)
 	if err != nil {
 		writeErrorForFile(w, err, fileName)
 		return
 	}
+	defer cleanUp()
 	defer utils.IgnoreError(namedFile.Close)
 	serveContent(w, r, namedFile.Name(), f.modTime, namedFile)
 }
@@ -476,10 +477,11 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 	}
 	switch t {
 	case mappingUpdaterType:
-		targetFile, err := openFromArchive(openedFile.Name(), fileName)
+		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
+		defer cleanUp()
 		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
 	case vulnerabilityUpdaterType:
 		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
@@ -491,7 +493,7 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 
 	offlineFile, err := h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
 	if err != nil {
-		log.Errorf("failed to access offline file: %v", err)
+		log.Errorf("failed to access offline file: %v, ignore the message if offline mode is not activated", err)
 	}
 	defer toClose(offlineFile)
 
@@ -516,18 +518,19 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 	case mappingUpdaterType:
 		// search mapping file
 		fileName = filepath.Base(fileName)
-		targetFile, err := openFromArchive(openedFile.Name(), fileName)
+		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
+		defer cleanUp()
 		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
 	case vulnerabilityUpdaterType:
 		// check version information in manifest
-		mf, err := openFromArchive(openedFile.Name(), "manifest.json")
+		mf, cleanUp, err := openFromArchive(openedFile.Name(), "manifest.json")
 		if err != nil {
 			return nil, err
 		}
-
+		defer cleanUp()
 		offlineV, err := getOfflineFileVersion(mf)
 		if err != nil {
 			return nil, err
@@ -540,10 +543,11 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 			return nil, errors.New(msg)
 		}
 
-		vulns, err := openFromArchive(openedFile.Name(), "vulns.json.zst")
+		vulns, cleanUp, err := openFromArchive(openedFile.Name(), "vulns.json.zst")
 		if err != nil {
 			return nil, err
 		}
+		defer cleanUp()
 		offlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
 	default:
 		return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
@@ -556,53 +560,55 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 // bundle. The file object has a file descriptor allocated on the filesystem, but
 // its name is removed. Meaning once the file object is closed, the data will be
 // freed in filesystem by the OS.
-func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
+func openFromArchive(archiveFile string, fileName string) (*os.File, func(), error) {
 	// Open zip archive and extract the fileName.
 	zipReader, err := zip.OpenReader(archiveFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "opening zip archive")
+		return nil, nil, errors.Wrap(err, "opening zip archive")
 	}
 	defer utils.IgnoreError(zipReader.Close)
 	fileReader, err := zipReader.Open(fileName)
 	if err != nil {
-		return nil, errors.Wrap(err, "extracting")
+		return nil, nil, errors.Wrap(err, "extracting")
 	}
 	defer utils.IgnoreError(fileReader.Close)
 
 	// Create a temporary file and remove it, keeping the file descriptor.
 	tmpDir, err := os.MkdirTemp("", definitionsBaseDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating temporary directory")
+		return nil, nil, errors.Wrap(err, "creating temporary directory")
 	}
 	tmpFile, err := os.Create(filepath.Join(tmpDir, path.Base(fileName)))
 	if err != nil {
 		// Best effort to clean.
 		_ = os.RemoveAll(tmpDir)
-		return nil, errors.Wrap(err, "opening temporary file")
+		return nil, nil, errors.Wrap(err, "opening temporary file")
 	}
 	defer func() {
 		if err != nil {
 			_ = tmpFile.Close()
 		}
 	}()
-	err = os.RemoveAll(tmpDir)
+	cleanup := func() {
+		_ = os.RemoveAll(tmpDir)
+	}
 	if err != nil {
-		return nil, errors.Wrap(err, "removing temporary file")
+		return nil, nil, errors.Wrap(err, "removing temporary file")
 	}
 
 	// Extract the file and copy contents to the temporary file, notice we
 	// intentionally don't Sync(), to benefit from filesystem caching.
 	_, err = io.Copy(tmpFile, fileReader)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing to temporary file")
+		return nil, nil, errors.Wrap(err, "writing to temporary file")
 	}
 
 	// Reset for caller's convenience.
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing to temporary file")
+		return nil, nil, errors.Wrap(err, "writing to temporary file")
 	}
-	return tmpFile, nil
+	return tmpFile, cleanup, nil
 }
 
 func (h *httpHandler) getV4(ctx context.Context, w http.ResponseWriter, r *http.Request, t updaterType, key string) {
@@ -670,15 +676,18 @@ func validateV4DefsVersion(zipPath string) error {
 
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, err := openFromArchive(zipPath, zipF.Name)
-			utils.IgnoreError(defs.Close)
-			mf, err := openFromArchive(defs.Name(), "manifest.json")
+			defs, _, err := openFromArchive(zipPath, zipF.Name)
 			if err != nil {
-				utils.IgnoreError(mf.Close)
+				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
+			}
+			utils.IgnoreError(defs.Close)
+			mf, removeDefs, err := openFromArchive(defs.Name(), "manifest.json")
+			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
 			offlineV, err := getOfflineFileVersion(mf)
 			utils.IgnoreError(mf.Close)
+			removeDefs()
 			if err != nil {
 				return errors.Wrap(err, "couldn't get v4 offline defs version")
 			}
