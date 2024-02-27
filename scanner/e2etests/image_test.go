@@ -60,8 +60,8 @@ type TestCase struct {
 	TestArgs
 	TestWant
 	// Test flags.
-	DisabledReason           string `json:"disabled_reason"`
-	OnlyCheckSpecifiedVulns  bool   `json:"only_check_specified_vulns"`
+	DisabledReason          string `json:"disabled_reason"`
+	OnlyCheckSpecifiedVulns bool   `json:"only_check_specified_vulns"`
 }
 
 // TestImage is the E2E test for container image scans.
@@ -316,13 +316,13 @@ func (tc *TestCase) mapFillVuln(v *v4.VulnerabilityReport_Vulnerability, featVul
 		scores := map[string]any{}
 		if v.GetCvss().GetV2() != nil {
 			scores["CVSSv2"] = map[string]any{
-				"Score": f64(v.GetCvss().GetV2().GetBaseScore()),
+				"Score":   f64(v.GetCvss().GetV2().GetBaseScore()),
 				"Vectors": v.GetCvss().GetV2().GetVector(),
 			}
 		}
 		if v.GetCvss().GetV3() != nil {
 			scores["CVSSv3"] = map[string]any{
-				"Score": f64(v.GetCvss().GetV3().GetBaseScore()),
+				"Score":   f64(v.GetCvss().GetV3().GetBaseScore()),
 				"Vectors": v.GetCvss().GetV3().GetVector(),
 			}
 		}
