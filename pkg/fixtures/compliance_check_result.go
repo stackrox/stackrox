@@ -1,6 +1,8 @@
 package fixtures
 
 import (
+	"math/rand"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -12,7 +14,7 @@ func GetComplianceCheckResult(name, clusterID, clusterName, scanName, scanConfig
 		CheckId:        name,
 		CheckName:      name,
 		ClusterId:      clusterID,
-		Status:         0,
+		Status:         storage.ComplianceOperatorCheckResultV2_CheckStatus(rand.Intn(7) + 1),
 		Severity:       0,
 		Description:    "test description " + name,
 		Instructions:   "test instruction " + name,

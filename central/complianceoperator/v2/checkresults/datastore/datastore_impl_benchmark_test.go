@@ -83,7 +83,7 @@ func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, num
 func BenchmarkComplianceCheckResultStats(b *testing.B) {
 	pool := pgtest.ForT(b)
 	b.Cleanup(func() {
-		pool.Close()
+		pool.Teardown(b)
 	})
 	datastore := GetTestPostgresDataStore(b, pool)
 
@@ -124,13 +124,4 @@ func BenchmarkComplianceCheckResultStats(b *testing.B) {
 		require.NoError(b, err)
 		require.NotEmpty(b, results)
 	})
-	cleanupDatabase(b, pool)
 }
-
-//func BenchmarkComplianceClusterStats(b *testing.B) {
-//	pool := pgtest.ForT(b)
-//	b.Cleanup(func() {
-//		pool.Close()
-//	})
-//	datastore := GetTestPostgresDataStore(b, pool)
-//}
