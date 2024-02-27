@@ -185,13 +185,11 @@ function convertAuthProviderClaimMappingsToArray(provider: AuthProvider): AuthPr
 }
 
 function convertAuthProviderClaimMappingsToObject(authProvider: AuthProvider): AuthProvider {
-    if (!authProvider.claimMappings) {
+    if (!Array.isArray(authProvider.claimMappings)) {
         return authProvider;
     }
     const newProvider = { ...authProvider };
-    newProvider.claimMappings = Object.fromEntries(
-        authProvider.claimMappings as [string, string][]
-    );
+    newProvider.claimMappings = Object.fromEntries(authProvider.claimMappings);
     return newProvider;
 }
 
