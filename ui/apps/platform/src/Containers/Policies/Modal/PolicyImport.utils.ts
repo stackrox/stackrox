@@ -59,9 +59,23 @@ export function parsePolicyImportErrors(responses: ImportPolicyResponse[]): Poli
                         incomingId: res.policy?.id,
                         message: err.message,
                     });
-                } else if (err.type === 'duplicate_name') {
+                } else if (err.type === 'duplicate_system_policy_id') {
+                    errList.push({
+                        type: 'duplicate_system_policy_id',
+                        duplicateName: err.duplicateName,
+                        incomingName: res.policy?.name,
+                        incomingId: res.policy?.id,
+                        message: err.message,
+                    });
+                }else if (err.type === 'duplicate_name') {
                     errList.push({
                         type: 'duplicate_name',
+                        duplicateName: err.duplicateName,
+                        message: err.message,
+                    });
+                } else if (err.type === 'duplicate_system_policy_name') {
+                    errList.push({
+                        type: 'duplicate_system_policy_name',
                         duplicateName: err.duplicateName,
                         message: err.message,
                     });
@@ -114,6 +128,7 @@ type PolicyErrorMessage = {
  */
 export function getErrorMessages(policyErrors: PolicyImportError[]): PolicyErrorMessage[] {
     const errorMessages = policyErrors.map((err) => {
+        // debugger;
         let msg = '';
         switch (err.type) {
             case 'duplicate_id': {
@@ -186,8 +201,21 @@ export function getResolvedPolicies(
  * @return  {boolean}              true if the only error is a duplicate policy ID
  */
 export function hasDuplicateIdOnly(importErrors: PolicyImportError[]): boolean {
-    return importErrors?.length === 1 && importErrors[0].type === 'duplicate_id';
+    return importErrors?.length === 1 && (importErrors[0].type === 'duplicate_id' || importErrors[0].type === 'duplicate_system_policy_id');
 }
+
+/**
+ * simple function to abstract the check if the error returned by the backend allows for the policy to be overwritten
+ * which is only allowed for non-system policy
+ *
+ * @param   {array}  importErrors  Array< type: string, value: string } >
+ *
+ * @return  {boolean}              true if the only error allows for policy to be overwritten (i.e. non system)
+ */
+export function policyOverwriteAllowed(importErrors: PolicyImportError[]): boolean {
+    return importErrors?.length === 1 && !importErrors[0].type.startsWith('duplicate_system_policy');
+}
+
 
 /**
  * simple function to abstract the test for only duplicate errors

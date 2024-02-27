@@ -7,6 +7,7 @@ import { Policy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
     hasDuplicateIdOnly,
+    policyOverwriteAllowed,
     checkForBlockedSubmit,
     PolicyImportError,
     PolicyResolution,
@@ -38,8 +39,10 @@ function ImportPolicyJSONError({
         setDuplicateResolution({ ...duplicateResolution, [key]: value });
     }
 
+    // debugger;
     const duplicateErrorsOnly = duplicateErrors.length > 0;
     const showKeepBothPolicies = hasDuplicateIdOnly(duplicateErrors);
+    const allowOverwriteOption = policyOverwriteAllowed(duplicateErrors);
     const isBlocked = checkForBlockedSubmit({
         numPolicies: policies?.length ?? 0,
         messageType: 'error',
@@ -90,6 +93,7 @@ function ImportPolicyJSONError({
                             <DuplicatePolicyForm
                                 updateResolution={updateResolution}
                                 showKeepBothPolicies={showKeepBothPolicies}
+                                allowOverwriteOption={allowOverwriteOption}
                             />
                         )}
                     </Alert>
