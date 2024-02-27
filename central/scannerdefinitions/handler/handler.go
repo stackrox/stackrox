@@ -493,7 +493,7 @@ func (h *httpHandler) openMostRecentV4File(ctx context.Context, t updaterType, u
 
 	offlineFile, err := h.openMostRecentV4OfflineFile(ctx, t, updaterKey, fileName)
 	if err != nil {
-		log.Errorf("failed to access offline file: %v, ignore the message if offline mode is not activated", err)
+		log.Debugf("failed to access offline file: %v, ignore the message if no offline bundle has been uploaded", err)
 	}
 	defer toClose(offlineFile)
 
