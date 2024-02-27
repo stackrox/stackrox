@@ -4,22 +4,29 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,6 +45,7 @@ type PLOPDataStoreTestSuite struct {
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
+	hasAllCtx   context.Context
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupSuite() {
@@ -50,6 +58,8 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+
+	suite.hasAllCtx = sac.WithAllAccess(context.Background())
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupTest() {
@@ -62,7 +72,7 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, suite.store, indicatorSearcher, nil)
-	suite.datastore = New(suite.store, suite.indicatorDataStore)
+	suite.datastore = New(suite.store, suite.indicatorDataStore, suite.postgres)
 }
 
 func (suite *PLOPDataStoreTestSuite) TearDownTest() {
@@ -1332,6 +1342,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
 		suite.hasWriteCtx, idsToDelete))
 
+	_, err := suite.datastore.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(suite.hasWriteCtx)
+	suite.NoError(err)
+
 	// Verify the state of the PLOP table after deleting the process indicator
 	plopsFromDB2 := suite.getPlopsFromDB()
 	suite.Len(plopsFromDB2, 0)
@@ -2131,4 +2144,367 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 		suite.Equal(plop.PodUid != "", true)
 	}
 
+}
+
+// TestDeletePods: The purpose of this test is to check for a race condition between RemovePlopsByPod
+// and AddProcessListeningOnPort. They should not delete PLOPs simultaneously.
+func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
+	nport := 30
+	nprocess := 30
+	npod := 30
+
+	// Create a map to associate PodIds and PodUids. This is done to assign PodUids since makeRandomPlops
+	// doesn't do that. Also it is used in deleting PLOPs by PodUids.
+	podUIDMap := make(map[string]string)
+
+	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+	for _, plop := range plopObjects {
+		podUID, exists := podUIDMap[plop.Process.PodId]
+		if !exists {
+			plop.PodUid = uuid.NewV4().String()
+			podUIDMap[plop.Process.PodId] = plop.PodUid
+		} else {
+			plop.PodUid = podUID
+		}
+	}
+
+	// Add the PLOPs
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+
+	// Close the PLOPs
+	for _, plop := range plopObjects {
+		plop.CloseTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
+	}
+
+	// Add the closed PLOPs. The PLOPs are opened and then closed.
+	// The reason for this is that we need to have UpsertMany delete PLOPs.
+	// This can only happen if there are updates for existing PLOPs.
+	// It is done async so that the UpsertMany in AddProcessListeningOnPort
+	// runs at the same time as PLOPs are deleted by pod
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		suite.NoError(suite.datastore.AddProcessListeningOnPort(
+			suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+	}()
+
+	// The pods are deleted and all PLOPs are deleted by pod
+	for _, podUID := range podUIDMap {
+		suite.NoError(suite.datastore.RemovePlopsByPod(suite.hasWriteCtx, podUID))
+		// Sleep a little bit to increase the chance that the PLOPs will be deleted by RemovePlopsByPod at
+		// the same time as they are being deleted by the call to UpsertMany in AddProcessListeningOnPort.
+		// Without the sleeps this loop will finish before UpsertMany is reached in AddProcessListeningOnPort.
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	wg.Wait()
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPs() {
+	orphanWindow := 30 * time.Minute
+
+	cases := []struct {
+		name                  string
+		initialPlops          []*storage.ProcessListeningOnPortStorage
+		deployments           set.FrozenStringSet
+		pods                  set.FrozenStringSet
+		expectedPlopDeletions []string
+	}{
+		{
+			name: "no deployments nor pods - remove plops since there are no pods",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments:           set.NewFrozenStringSet(),
+			pods:                  set.NewFrozenStringSet(),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3, fixtureconsts.PlopUID4, fixtureconsts.PlopUID5, fixtureconsts.PlopUID6},
+		},
+		{
+			name: "deployments one missing pod - remove plops with PodUid with no matching pod even though there are deployments",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID6},
+		},
+		{
+			name: "one missing deployments no missing pods - remove plops with no matching deployments even though there are matching pods",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID4},
+		},
+		{
+			name: "no missing deployments or pods but plops are expired - remove all expired plops",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorageExpired1(),
+				fixtures.GetPlopStorageExpired2(),
+				fixtures.GetPlopStorageExpired3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID7, fixtureconsts.PlopUID8, fixtureconsts.PlopUID9},
+		},
+	}
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			suite.TearDownTest()
+			suite.SetupTest()
+			// Add deployments if necessary
+			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
+			suite.Nil(err)
+			for _, deploymentID := range c.deployments.AsSlice() {
+				suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+			}
+
+			for _, podID := range c.pods.AsSlice() {
+				insertPod := fmt.Sprintf("INSERT INTO pods (id, clusterid) VALUES ('%s', '%s')", podID, fixtureconsts.Cluster1)
+				_, err := suite.postgres.DB.Exec(suite.hasWriteCtx, insertPod)
+				suite.Nil(err)
+			}
+
+			err = suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
+			suite.NoError(err)
+			plopCount, err := suite.store.Count(suite.hasReadCtx)
+			suite.NoError(err)
+			suite.Equal(len(c.initialPlops), plopCount)
+
+			suite.datastore.PruneOrphanedPLOPs(suite.hasWriteCtx, orphanWindow)
+
+			plopCount, err = suite.store.Count(suite.hasReadCtx)
+			suite.NoError(err)
+			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
+
+			ids, err := suite.store.GetIDs(suite.hasReadCtx)
+			suite.NoError(err)
+			for id := range ids {
+				suite.NotContains(c.expectedPlopDeletions, id)
+			}
+
+		})
+	}
+}
+
+func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Id:            id,
+		DeploymentId:  deploymentID,
+		ContainerName: "",
+		PodId:         "",
+		Signal: &storage.ProcessSignal{
+			Time: timestamp.NowMinus(age),
+		},
+	}
+}
+
+func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID, podUID string) *storage.ProcessIndicator {
+	indicator := newIndicatorWithDeployment(id, age, deploymentID)
+	indicator.PodUid = podUID
+	return indicator
+}
+
+func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
+	orphanWindow := 30 * time.Minute
+
+	cases := []struct {
+		name                  string
+		initialProcesses      []*storage.ProcessIndicator
+		initialPlops          []*storage.ProcessListeningOnPortStorage
+		deployments           set.FrozenStringSet
+		pods                  set.FrozenStringSet
+		expectedPlopDeletions []string
+	}{
+		{
+			name: "no deployments nor pods - remove all old indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments: set.NewFrozenStringSet(),
+			pods:        set.NewFrozenStringSet(),
+			expectedPlopDeletions: []string{
+				fixtureconsts.PlopUID1,
+				fixtureconsts.PlopUID2,
+				fixtureconsts.PlopUID3,
+				fixtureconsts.PlopUID4,
+				fixtureconsts.PlopUID5,
+				fixtureconsts.PlopUID6,
+			},
+		},
+		{
+			name: "no deployments nor pods - remove no new orphaned indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 20*time.Minute, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 20*time.Minute, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(),
+			pods:                  set.NewFrozenStringSet(),
+			expectedPlopDeletions: nil,
+		},
+		{
+			name: "all pods separate deployments - remove no indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedPlopDeletions: nil,
+		},
+		{
+			name: "all pods same deployment - remove no indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedPlopDeletions: nil,
+		},
+		{
+			name: "some pods separate deployments - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
+		},
+		{
+			name: "some pods same deployment - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
+			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
+		},
+	}
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			suite.TearDownTest()
+			suite.SetupTest()
+			// Add deployments if necessary
+			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
+			suite.Nil(err)
+			for _, deploymentID := range c.deployments.AsSlice() {
+				suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+			}
+
+			for _, podID := range c.pods.AsSlice() {
+				insertPod := fmt.Sprintf("INSERT INTO pods (id, clusterid) VALUES ('%s', '%s')", podID, fixtureconsts.Cluster1)
+				_, err := suite.postgres.DB.Exec(suite.hasWriteCtx, insertPod)
+				suite.Nil(err)
+			}
+
+			suite.NoError(suite.indicatorDataStore.AddProcessIndicators(suite.hasWriteCtx, c.initialProcesses...))
+			countFromDB, err := suite.indicatorDataStore.Count(suite.hasReadCtx, nil)
+			suite.NoError(err)
+			suite.Equal(len(c.initialProcesses), countFromDB)
+
+			err = suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
+			suite.NoError(err)
+			plopCount, err := suite.store.Count(suite.hasReadCtx)
+			suite.NoError(err)
+			suite.Equal(len(c.initialPlops), plopCount)
+
+			suite.datastore.PruneOrphanedPLOPsByProcessIndicators(suite.hasAllCtx, orphanWindow)
+
+			plopCount, err = suite.store.Count(suite.hasReadCtx)
+			suite.NoError(err)
+			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
+
+		})
+	}
+}
+
+// RemovePLOPsWithoutProcessIndicatorOrProcessInfo Adds a PLOP with a matching process indicator.
+// The process indicator is then deleted. This means that the PLOP has no matching
+// process indicator and does not have any process information. A pruning function
+// which removes such PLOPs is then called.
+func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcessInfo() {
+	indicators := getIndicators()
+
+	var indicatorIds []string
+
+	for _, indicator := range indicators {
+		indicatorIds = append(indicatorIds, indicator.Id)
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+
+	suite.NoError(suite.indicatorDataStore.RemoveProcessIndicators(
+		suite.hasWriteCtx, indicatorIds))
+
+	_, err := suite.datastore.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(suite.hasWriteCtx)
+	suite.NoError(err)
+
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 0)
 }

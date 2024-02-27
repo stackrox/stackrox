@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -89,6 +90,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store,
 	reportSnapshotDS snapshotDS.DataStore,
+	plops plopDataStore.DataStore,
 	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
@@ -111,6 +113,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		stopper:         concurrency.NewStopper(),
 		postgres:        globaldb.GetPostgres(),
 		reportSnapshot:  reportSnapshotDS,
+		plops:           plops,
 		blobStore:       blobStore,
 	}
 }
@@ -137,6 +140,7 @@ type garbageCollectorImpl struct {
 	logimbueStore   logimbueDataStore.Store
 	stopper         concurrency.Stopper
 	reportSnapshot  snapshotDS.DataStore
+	plops           plopDataStore.DataStore
 	blobStore       blobDatastore.Datastore
 }
 
@@ -365,6 +369,10 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses() {
+	g.plops.PruneOrphanedPLOPsByProcessIndicators(pruningCtx, orphanWindow)
+
+	log.Info("[PLOP pruning by processes] Pruning of orphaned PLOPs by processes complete")
+
 	postgres.PruneOrphanedProcessIndicators(pruningCtx, g.postgres, orphanWindow)
 	log.Info("[Process pruning] Pruning of orphaned processes complete")
 }
@@ -430,10 +438,15 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 // removeOrphanedPLOPs: cleans up ProcessListeningOnPort objects that are expired
 // or have a PodUid and belong to a deployment or pod that does not exist.
 func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
-	prunedCount := postgres.PruneOrphanedPLOPs(pruningCtx, g.postgres, orphanWindow)
-
+	prunedCount := g.plops.PruneOrphanedPLOPs(pruningCtx, orphanWindow)
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
 		prunedCount)
+
+	prunedCount, err := g.plops.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(pruningCtx)
+	if err != nil {
+		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
+	}
+	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
