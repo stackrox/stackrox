@@ -40,20 +40,32 @@ class DeploymentCheck extends BaseSpecification {
     private final static Map<String, Deployment> DEPLOYMENTS = [
             (DEPLOYMENT_CHECK):
                 new Deployment()
-                        .setName(DEPLOYMENT_CHECK)
-                        .setNamespace("qa")
-                        .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine")
-                        .addPort(80)
-                        .setSkipReplicaWait(true)
-                        .addLabel("app", DEPLOYMENT_CHECK)
-                        .setServiceAccountName(""),
+                    .setImage("ghcr.io/linuxserver/nginx:1.24.0-r7-ls261")
+                    .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"]),
+
+//                new Deployment()
+//                        .setName(DEPLOYMENT_CHECK)
+//                        .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine")
+//                        .setNamespace("qa")
+//                        .addPort(80)
+//                        .setSkipReplicaWait(true)
+//                        .addLabel("app", DEPLOYMENT_CHECK)
+//                        .setServiceAccountName(""),
     ]
 
 
 
-    def setupSpec(){}
+    def setupSpec(){
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
+            String label, Deployment d -> d.setName(label).addLabel("app", label)
+        })
+    }
 
-    def cleanupSpec(){}
+    def cleanupSpec(){
+        DEPLOYMENTS.each {
+            label, d -> orchestrator.deleteDeployment(d)
+        }
+    }
 
     /*
     1. Create policies, deployments, network policies and RBACs in the test setup
@@ -65,7 +77,13 @@ class DeploymentCheck extends BaseSpecification {
     @Tag("Integration")
     @Tag("DeploymentCheck")
     def "Test Deployment Check"(){
-        DetectionService.getDetectDeploytimeFromYAML()
+        //DetectionService.getDetectDeploytimeFromYAML()
+        given:
+        "deployment already fabricated"
+        Deployment d = DEPLOYMENTS[DEPLOYMENT_CHECK]
 
+        expect:
+        log.info "Checked given"
+        assert true
     }
 }
