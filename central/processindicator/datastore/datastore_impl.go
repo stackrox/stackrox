@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/pruner"
@@ -18,10 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-)
-
-const (
-	maxBatchSize = 5000
 )
 
 var (
@@ -126,37 +121,6 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	}
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
-	}
-
-	// Clean up correlated ProcessListeningOnPort objects. Probably could be
-	// done using a proper FK and CASCADE, but it's usually a thing you would
-	// not like to do automatically. search.ProcessID is not a PID, but UUID of
-	// the record in the table
-
-	// Batch the deletes as scaled pruning can result in many process indicators being deleted.
-	localBatchSize := maxBatchSize
-	numRecordsToDelete := len(ids)
-	for {
-		if len(ids) == 0 {
-			break
-		}
-
-		if len(ids) < localBatchSize {
-			localBatchSize = len(ids)
-		}
-
-		identifierBatch := ids[:localBatchSize]
-		deleteQuery := pkgSearch.NewQueryBuilder().
-			AddStrings(pkgSearch.ProcessID, identifierBatch...).
-			ProtoQuery()
-
-		if _, err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
-			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
-			return err
-		}
-
-		// Move the slice forward to start the next batch
-		ids = ids[localBatchSize:]
 	}
 
 	return nil

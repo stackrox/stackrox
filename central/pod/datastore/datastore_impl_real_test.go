@@ -72,7 +72,7 @@ func (s *PodDatastoreSuite) SetupTest() {
 	s.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, plopStorage, indicatorSearcher, nil)
 
-	s.plopDS = plopDataStore.New(plopStorage, s.indicatorDataStore)
+	s.plopDS = plopDataStore.New(plopStorage, s.indicatorDataStore, s.postgres.DB)
 
 	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 

@@ -16,7 +16,8 @@ var (
 func initialize() {
 	plopStore := pgStore.NewFullStore(globaldb.GetPostgres())
 	indicatorDataStore := processIndicatorDataStore.Singleton()
-	dataStore = New(plopStore, indicatorDataStore)
+	pool := globaldb.GetPostgres()
+	dataStore = New(plopStore, indicatorDataStore, pool)
 }
 
 // Singleton provides the interface for non-service external interaction.

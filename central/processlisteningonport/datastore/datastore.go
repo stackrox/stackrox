@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
@@ -30,6 +31,9 @@ type DataStore interface {
 	WalkAll(ctx context.Context, fn WalkFn) error
 	RemoveProcessListeningOnPort(ctx context.Context, ids []string) error
 	RemovePlopsByPod(ctx context.Context, id string) error
+	PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64
+	PruneOrphanedPLOPsByProcessIndicators(ctx context.Context, orphanWindow time.Duration)
+	RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx context.Context) (int64, error)
 }
 
 // New creates a data store object to access the database. Since some
@@ -38,8 +42,9 @@ type DataStore interface {
 func New(
 	plopStorage store.Store,
 	indicatorDataStore processIndicatorStore.DataStore,
+	pool postgres.DB,
 ) DataStore {
-	ds := newDatastoreImpl(plopStorage, indicatorDataStore)
+	ds := newDatastoreImpl(plopStorage, indicatorDataStore, pool)
 	return ds
 }
 
@@ -50,5 +55,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	if err != nil {
 		log.Infof("getting test store %v", err)
 	}
-	return newDatastoreImpl(plopDBstore, indicatorDS)
+	return newDatastoreImpl(plopDBstore, indicatorDS, pool)
 }
