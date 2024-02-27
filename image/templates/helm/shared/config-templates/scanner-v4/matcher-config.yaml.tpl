@@ -18,9 +18,15 @@ matcher:
       sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
       user=postgres
       sslmode=verify-full
-      {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.statementTimeoutMs) -}} statement_timeout={{._rox.scannerV4.db.source.statementTimeoutMs}} {{- end }}
-      {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.minConns) -}} pool_min_conns={{._rox.scannerV4.db.source.minConns}} {{- end }}
-      {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
+{{- if not (kindIs "invalid" ._rox.scannerV4.db.source.statementTimeoutMs) }}
+      statement_timeout={{._rox.scannerV4.db.source.statementTimeoutMs}}
+{{- end }}
+{{- if not (kindIs "invalid" ._rox.scannerV4.db.source.minConns) }}
+      pool_min_conns={{._rox.scannerV4.db.source.minConns}}
+{{- end }}
+{{- if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) }}
+      pool_max_conns={{._rox.scannerV4.db.source.maxConns}}
+{{- end }}
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
   vulnerabilities_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VERSION
