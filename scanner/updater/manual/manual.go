@@ -10,37 +10,30 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// Factory is the UpdaterSetFactory exposed by this package.
-// All configuration is done on the returned updaters.
-type Factory struct {
-}
+// Name provides the name for the updater.
+const Name = `stackrox-manual`
 
 // UpdaterSet creates a new updater set with the provided vulnerability data.
-func UpdaterSet(_ context.Context, vulns []*claircore.Vulnerability) (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	res := driver.NewUpdaterSet()
-	err := res.Add(&updater{data: vulns})
+	err := res.Add(&updater{})
 	if err != nil {
 		return res, err
 	}
 	return res, nil
 }
 
-type updater struct {
-	data []*claircore.Vulnerability
-}
+type updater struct{}
 
-// Name provides a name for the updater.
-func (u *updater) Name() string { return `ManualUpdater` }
+// Name provides the name for the updater.
+func (u *updater) Name() string { return Name }
 
-// Fetch returns nil values as the manual updater does not fetch data.
+// Fetch returns nil values, as the updater does not fetch data.
 func (u *updater) Fetch(_ context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	return nil, "", nil
 }
 
-// Parse returns the provided vulnerability data or defaults to manuallyEnrichedVulns.
+// Parse returns the manually added vulnerabilities.
 func (u *updater) Parse(_ context.Context, _ io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	if u.data == nil || len(u.data) == 0 {
-		return manuallyEnrichedVulns, nil
-	}
-	return u.data, nil
+	return u.vulns(), nil
 }

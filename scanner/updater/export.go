@@ -62,7 +62,7 @@ func Export(ctx context.Context, outputDir string) error {
 	var opts [][]updates.ManagerOption
 
 	// Manual CVEs.
-	manualSet, err := manual.UpdaterSet(ctx, nil)
+	manualSet, err := manual.UpdaterSet(ctx)
 	if err != nil {
 		return err
 	}
