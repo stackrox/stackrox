@@ -138,7 +138,7 @@ all the available configuration options, along with documentation.
 
 Furthermore, the files `values-scanner.yaml.example`, `values-public-scanner-v4.yaml.example`
 and `values-private-scanner-v4.yaml.example` list the most commonly used configuration options
-for StackRox Scanner resp. Scanner V4.
+for StackRox Scanner and Scanner V4.
 
 The following sample configuration file (`secured-cluster.yaml`) uses a few of
 the options which you can configure:
