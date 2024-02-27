@@ -167,16 +167,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-10-20T22:15Z",
-                                "PublishedDateTime": "2020-06-14T21:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.5"
@@ -188,16 +182,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-10-20T22:15Z",
-                                "PublishedDateTime": "2020-06-14T20:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.5"
@@ -209,16 +197,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-10-20T22:15Z",
-                                "PublishedDateTime": "2020-06-14T20:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.5"
@@ -230,16 +212,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-10-20T22:15Z",
-                                "PublishedDateTime": "2020-06-16T16:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.5"
@@ -251,16 +227,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-09-04T14:59Z",
-                                "PublishedDateTime": "2020-08-25T18:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.6"
@@ -272,16 +242,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-10-09T12:15Z",
-                                "PublishedDateTime": "2020-09-17T19:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.6"
@@ -293,16 +257,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:N/I:P/A:N"
-                                },
                                 "CVSSv3": {
-                                    "Score": 7.5,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
-                                },
-                                "LastModifiedDateTime": "2020-12-07T15:08Z",
-                                "PublishedDateTime": "2020-12-03T17:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.7"
@@ -314,16 +272,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-12-18T19:32Z",
-                                "PublishedDateTime": "2020-12-17T19:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.8"
@@ -335,16 +287,10 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 6.8,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 8.1,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2020-12-18T19:27Z",
-                                "PublishedDateTime": "2020-12-17T19:15Z"
+                                }
                             }
                         },
                         "FixedBy": "2.9.10.8"
@@ -356,12 +302,8 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 7.5,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
                                 }
                             }
@@ -371,7 +313,7 @@
                 ],
                 "AddedBy": "sha256:36e8e9714b9a509fae9e515ff16237928c3d809f5ae228b14d2f7d7605c02623",
                 "Location": "maven:jars/jackson-databind-2.9.10.4.jar",
-                "FixedBy": "2.16.0"
+                "FixedBy": "2.12.7.1"
             }
         ],
         "unexpected_features": [
@@ -380,8 +322,7 @@
                 "Version": "2.6.6"
             }
         ],
-        "only_check_specified_vulns": true,
-        "uncertified_rhel": false
+        "only_check_specified_vulns": true
     },
     {
         "image": "quay.io/rhacs-eng/qa:sandbox-zookeeper-fatjar-remove",
@@ -405,8 +346,7 @@
                 "Version": "3.10.6.final"
             }
         ],
-        "only_check_specified_vulns": false,
-        "uncertified_rhel": false
+        "only_check_specified_vulns": false
     },
     {
         "image": "quay.io/rhacs-eng/qa:sandbox-oci-manifest",
@@ -449,10 +389,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -480,10 +416,6 @@
                         "Severity": "Low",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"
@@ -534,10 +466,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -565,10 +493,6 @@
                         "Severity": "Low",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"
@@ -611,10 +535,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 8.1,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -631,10 +551,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -662,10 +578,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 8.6,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H"
@@ -693,10 +605,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -713,10 +621,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -733,10 +637,6 @@
                         "Severity": "Low",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 3.3,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
@@ -802,7 +702,7 @@
                     {
                         "Name": "CVE-2021-30139",
                         "NamespaceName": "alpine:v3.13",
-                        "Description": "",
+                        "Description": "In Alpine Linux apk-tools before 2.12.5, the tarball parser allows a buffer overflow and crash.",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2021-30139",
                         "Severity": "Unspecified",
                         "Metadata": {
@@ -822,7 +722,7 @@
                     {
                         "Name": "CVE-2021-36159",
                         "NamespaceName": "alpine:v3.13",
-                        "Description": "",
+                        "Description": "libfetch before 2021-07-26, as used in apk-tools, xbps, and other products, mishandles numeric strings for the FTP and HTTP protocols. The FTP passive mode implementation allows an out-of-bounds read because strtol is used to parse the relevant numbers into address bytes. It does not check if the line ends prematurely. If it does, the for-loop condition checks for the '\\0' terminator one byte too late.",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2021-36159",
                         "Severity": "Unspecified",
                         "Metadata": {
@@ -853,7 +753,7 @@
                     {
                         "Name": "CVE-2021-28831",
                         "NamespaceName": "alpine:v3.13",
-                        "Description": "",
+                        "Description": "decompress_gunzip.c in BusyBox through 1.32.1 mishandles the error bit on the huft_build result pointer, with a resultant invalid free or segmentation fault, via malformed gzip data.",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2021-28831",
                         "Severity": "Unspecified",
                         "Metadata": {
@@ -896,6 +796,7 @@
                     {
                         "Name": "CVE-2021-36159",
                         "NamespaceName": "alpine:v3.14",
+                        "Description": "libfetch before 2021-07-26, as used in apk-tools, xbps, and other products, mishandles numeric strings for the FTP and HTTP protocols. The FTP passive mode implementation allows an out-of-bounds read because strtol is used to parse the relevant numbers into address bytes. It does not check if the line ends prematurely. If it does, the for-loop condition checks for the '\\0' terminator one byte too late.",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2021-36159",
                         "Severity": "Unspecified",
                         "Metadata": {
@@ -1015,7 +916,7 @@
                     {
                         "Name": "CVE-2022-2097",
                         "NamespaceName": "alpine:v3.16",
-                        "Description": "",
+                        "Description": "AES OCB mode for 32-bit x86 platforms using the AES-NI assembly optimised implementation will not encrypt the entirety of the data under some circumstances. This could reveal sixteen bytes of data that was preexisting in the memory that wasn't written. In the special case of \"in place\" encryption, sixteen bytes of the plaintext would be revealed. Since OpenSSL does not support OCB based cipher suites for TLS and DTLS, they are both unaffected. Fixed in OpenSSL 3.0.5 (Affected 3.0.0-3.0.4). Fixed in OpenSSL 1.1.1q (Affected 1.1.1-1.1.1p).",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2022-2097",
                         "Severity": "Unspecified",
                         "Metadata": {
@@ -1125,12 +1026,8 @@
                         "Severity": "Low",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 4.3,
-                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:N/A:N"
-                                },
                                 "CVSSv3": {
-                                    "Score": 3.7,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N"
                                 }
                             }
@@ -1144,12 +1041,8 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 8.5,
-                                    "Vectors": "AV:N/AC:M/Au:S/C:C/I:C/A:C"
-                                },
                                 "CVSSv3": {
-                                    "Score": 6.6,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1163,13 +1056,9 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
-                                    "Score": 5.9,
-                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                    "Score": 0.0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:N/A:H"
                                 }
                             }
                         },
@@ -1182,10 +1071,7 @@
             }
         ],
         "unexpected_features": null,
-        "only_check_specified_vulns": false,
-        "uncertified_rhel": false,
-        "check_provided_executables": false,
-        "required_feature_flag": null
+        "only_check_specified_vulns": false
     },
     {
         "image": "quay.io/rhacs-eng/qa:sandbox-springboot-2.6.5",
@@ -1203,18 +1089,18 @@
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2022-22965",
-                        "Description": "A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. If the application is deployed as a Spring Boot executable jar, i.e. the default, it is not vulnerable to the exploit. However, the nature of the vulnerability is more general, and there may be other ways to exploit it.",
+                        "Description": "Remote Code Execution in Spring Framework",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22965",
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
                                 "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
+                                    "Score": 7.5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
                                 },
                                 "CVSSv3": {
                                     "Score": 9.8,
-                                    "Vectors": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
                         },
@@ -1227,10 +1113,7 @@
             }
         ],
         "unexpected_features": null,
-        "only_check_specified_vulns": true,
-        "uncertified_rhel": false,
-        "check_provided_executables": false,
-        "required_feature_flag": null
+        "only_check_specified_vulns": true
     },
     {
         "image": "quay.io/rhacs-eng/qa:sandbox-springboot-2.6.5-flux",
@@ -1248,18 +1131,18 @@
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2022-22965",
-                        "Description": "A Spring MVC or Spring WebFlux application running on JDK 9+ may be vulnerable to remote code execution (RCE) via data binding. The specific exploit requires the application to run on Tomcat as a WAR deployment. If the application is deployed as a Spring Boot executable jar, i.e. the default, it is not vulnerable to the exploit. However, the nature of the vulnerability is more general, and there may be other ways to exploit it.",
+                        "Description": "Remote Code Execution in Spring Framework",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22965",
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
                                 "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
+                                    "Score": 7.5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
                                 },
                                 "CVSSv3": {
                                     "Score": 9.8,
-                                    "Vectors": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
                         },
@@ -1272,10 +1155,7 @@
             }
         ],
         "unexpected_features": null,
-        "only_check_specified_vulns": true,
-        "uncertified_rhel": false,
-        "check_provided_executables": false,
-        "required_feature_flag": null
+        "only_check_specified_vulns": true
     },
     {
         "image": "quay.io/rhacs-eng/qa:sandbox-springboot-web-cloud-function-2.6.6",
@@ -1298,10 +1178,6 @@
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 9.8,
                                     "Vectors": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -1399,10 +1275,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -1430,10 +1302,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -1469,10 +1337,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.8,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
@@ -1518,10 +1382,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 9.3,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:N"
@@ -1549,10 +1409,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 9.3,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:N"
@@ -1590,10 +1446,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 8.2,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N"
@@ -1633,10 +1485,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -1653,10 +1501,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -1717,10 +1561,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.4,
                                     "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
@@ -1736,10 +1576,6 @@
                         "Severity": "Important",
                         "Metadata": {
                             "Red Hat": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
@@ -1798,12 +1634,8 @@
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 7.5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 9.8,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1813,7 +1645,7 @@
                 ],
                 "AddedBy": "sha256:3078c14ffbc62cd9a56f8951d08d6b55a45394fbb5a0aa8f9eca1b1472e3f21d",
                 "Location": "maven:org.drools.drools-core-6.4.0.Final.jar",
-                "FixedBy": "7.60.0.Final"
+                "FixedBy": "7.69.0.Final"
             }
         ],
         "unexpected_features": null,
@@ -1858,10 +1690,6 @@
                         "Severity": "Moderate",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 4.3,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N"
@@ -1976,15 +1804,11 @@
                     {
                         "Name": "CVE-2023-3138",
                         "NamespaceName": "alpine:v3.17",
-                        "Description": "",
+                        "Description": "A vulnerability was found in libX11. The security flaw occurs because the functions in src/InitExt.c in libX11 do not check that the values provided for the Request, Event, or Error IDs are within the bounds of the arrays that those functions write to, using those IDs as array indexes. They trust that they were called with values provided by an Xserver adhering to the bounds specified in the X11 protocol, as all X servers provided by X.Org do. As the protocol only specifies a single byte for these values, an out-of-bounds value provided by a malicious server (or a malicious proxy-in-the-middle) can only overwrite other portions of the Display structure and not write outside the bounds of the Display structure itself, possibly causing the client to crash with this memory corruption.",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2023-3138",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -2007,15 +1831,11 @@
                     {
                         "Name": "CVE-2023-35945",
                         "NamespaceName": "alpine:v3.17",
-                        "Description": "",
+                        "Description": "Envoy is a cloud-native high-performance edge/middle/service proxy. Envoy’s HTTP/2 codec may leak a header map and bookkeeping structures upon receiving `RST_STREAM` immediately followed by the `GOAWAY` frames from an upstream server. In nghttp2, cleanup of pending requests due to receipt of the `GOAWAY` frame skips de-allocation of the bookkeeping structure and pending compressed header. The error return [code path] is taken if connection is already marked for not sending more requests due to `GOAWAY` frame. The clean-up code is right after the return statement, causing memory leak. Denial of service through memory exhaustion. This vulnerability was patched in versions(s) 1.26.3, 1.25.8, 1.24.9, 1.23.11.",
                         "Link": "https://www.cve.org/CVERecord?id=CVE-2023-35945",
                         "Severity": "Unspecified",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
                                     "Score": 7.5,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
@@ -2054,13 +1874,9 @@
                         "Severity": "Important",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 0,
-                                    "Vectors": ""
-                                },
                                 "CVSSv3": {
-                                    "Score": 7.5,
-                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                    "Score": 7.3,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L"
                                 }
                             }
                         },
@@ -2092,7 +1908,7 @@
                             "NVD": {
                                 "CVSSv3": {
                                     "Score": 0,
-        	            	    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
                                 }
                             }
                         }
@@ -2158,12 +1974,12 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv2": {
-                                    "Score": 5,
-        	            	    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+                                    "Score": 2.6,
+                                    "Vectors": "AV:N/AC:H/Au:N/C:P/I:N/A:N"
                                 },
                                 "CVSSv3": {
-                                    "Score": 7.5,
-        	            	    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                                    "Score": 5.9,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
                                 }
                             }
                         }
@@ -2178,11 +1994,11 @@
                             "NVD": {
                                 "CVSSv2": {
                                     "Score": 5,
-        	            	    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
                                 },
                                 "CVSSv3": {
                                     "Score": 7.5,
-        	            	    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
                                 }
                             }
                         }
@@ -2208,7 +2024,15 @@
                         "Description": "This update upgrade curl-libs to 8.1.2-4.ph3 #Fixes {'CVE-2023-38546', 'CVE-2023-38545'}",
                         "FixedBy": "0:8.1.2-4.ph3",
                         "Severity": "Critical",
-                        "Link": "https://github.com/vmware/photon/wiki/Security-Updates-3.0-667"
+                        "Link": "https://github.com/vmware/photon/wiki/Security-Updates-3.0-667",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 3.7,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+                                }
+                            }
+                        }
                     }
                 ]
             }
