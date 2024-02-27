@@ -319,6 +319,7 @@ func verifyDefaultPolicyDuplicateImportFails(t *testing.T) {
 		},
 	})
 	cancel()
+	require.NoError(t, err)
 	markPolicyAsCustom(policy)
 	validateImportPoliciesErrors(t, overwriteImportResp, policy, []string{duplicateSystemPolicyID, duplicateSystemPolicyName})
 }
