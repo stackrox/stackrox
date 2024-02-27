@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/central/blob/snapshot"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -527,8 +528,7 @@ func (h *httpHandler) openMostRecentV4OfflineFile(ctx context.Context, t updater
 		}
 		defer utils.IgnoreError(mf.Close)
 
-		if (updaterKey != "dev" && offlineV != minorVersionPattern.FindString(updaterKey)) ||
-			(updaterKey == "dev" && offlineV != "dev") {
+		if offlineV != minorVersionPattern.FindString(updaterKey) && (updaterKey != "dev" || buildinfo.ReleaseBuild) {
 			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, updaterKey)
 			log.Errorf(msg)
 			return nil, errors.New(msg)
