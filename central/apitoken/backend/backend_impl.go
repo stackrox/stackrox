@@ -29,7 +29,9 @@ func (c *backendImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest
 
 func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *types.Timestamp) (string, *storage.TokenMetadata, error) {
 	time, err := types.TimestampFromProto(expireAt)
-	tokenInfo, err := c.issuer.Issue(ctx, tokens.RoxClaims{RoleNames: roleNames, Name: name, ExpireAt: utils.IfThenElse(err != nil || expireAt == nil, nil, &time)})
+	expirationClaim := utils.IfThenElse(err != nil || expireAt == nil, nil, &time)
+	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name, ExpireAt: expirationClaim}
+	tokenInfo, err := c.issuer.Issue(ctx, claims)
 	if err != nil {
 		return "", nil, err
 	}
