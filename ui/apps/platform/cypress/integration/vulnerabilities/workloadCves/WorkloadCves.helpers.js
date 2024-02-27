@@ -25,6 +25,16 @@ export function visitWorkloadCveOverview() {
 
     cy.get('h1:contains("Workload CVEs")');
     cy.location('pathname').should('eq', basePath);
+
+    // Clear the default filters that will be applied to increase the likelihood of finding entities with
+    // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
+    // there will be no results across entity tabs on the overview page.
+    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+        cy.get(vulnSelectors.clearFiltersButton).click();
+    }
+
+    // Ensure the data in the table has settled before continuing with the test
+    cy.get(selectors.isUpdatingTable).should('not.exist');
 }
 
 /**
@@ -214,10 +224,6 @@ export function verifySelectedCvesInModal(cveNames) {
 
 export function visitAnyImageSinglePage() {
     visitWorkloadCveOverview();
-    // Clear any filters that may be applied to increase the likelihood of finding a deployment
-    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-        cy.get(vulnSelectors.clearFiltersButton).click();
-    }
 
     selectEntityTab('Image');
     cy.get('tbody tr td[data-label="Image"] a').first().click();

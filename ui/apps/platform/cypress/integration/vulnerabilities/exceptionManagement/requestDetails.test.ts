@@ -10,7 +10,6 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import { selectors as workloadCVESelectors } from '../workloadCves/WorkloadCves.selectors';
 import { selectors } from './ExceptionManagement.selectors';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { visit } from '../../../helpers/visit';
 
 const deferralComment = 'Defer me';
@@ -23,8 +22,7 @@ describe('Exception Management Request Details Page', () => {
     before(function () {
         if (
             !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') ||
-            !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             this.skip();
         }
@@ -33,8 +31,7 @@ describe('Exception Management Request Details Page', () => {
     beforeEach(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }
@@ -42,7 +39,6 @@ describe('Exception Management Request Details Page', () => {
 
     beforeEach(() => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -73,8 +69,7 @@ describe('Exception Management Request Details Page', () => {
     after(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }

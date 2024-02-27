@@ -19,8 +19,7 @@ describe('Exception Management Pending Requests Page', () => {
     before(function () {
         if (
             !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') ||
-            !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             this.skip();
         }
@@ -29,8 +28,7 @@ describe('Exception Management Pending Requests Page', () => {
     beforeEach(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }
@@ -39,8 +37,7 @@ describe('Exception Management Pending Requests Page', () => {
     after(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }
@@ -48,7 +45,6 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to view deferred pending requests', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -75,7 +71,6 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to view false positive pending requests', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // mark a single cve as false positive
         selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
@@ -98,7 +93,6 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectSingleCveForException('FALSE_POSITIVE')
             // mark a single cve as false positive
@@ -245,7 +239,6 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to filter by "Request name"', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -273,7 +266,6 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to filter by "Requester"', () => {
         visitWorkloadCveOverview();
-        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
