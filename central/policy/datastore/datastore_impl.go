@@ -325,10 +325,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	allSucceeded := true
 	responses := make([]*v1.ImportPolicyResponse, len(importPolicies))
 	for i, policy := range importPolicies {
-		err, response := ds.importPolicy(ctx, policy, overwrite, policyNameToPolicyMap)
-		if err != nil {
-			return nil, false, err
-		}
+		response := ds.importPolicy(ctx, policy, overwrite, policyNameToPolicyMap)
 		if !response.Succeeded {
 			allSucceeded = false
 		}
@@ -345,7 +342,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 	return responses, allSucceeded, nil
 }
 
-func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Policy, overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) (error, *v1.ImportPolicyResponse) {
+func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Policy, overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) *v1.ImportPolicyResponse {
 	if policy.GetId() == "" {
 		// generate id here since upsert no longer generates id
 		policy.Id = uuid.NewV4().String()
@@ -355,21 +352,21 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 		Policy: policy.Clone(),
 	}
 
-	err, importErrors := ds.validateUniqueNameAndID(ctx, policy, result, overwrite, policyNameToPolicyMap)
+	importErrors, err := ds.validateUniqueNameAndID(ctx, policy, result, overwrite, policyNameToPolicyMap)
 	if err != nil {
 		result.Errors = getImportErrorsFromError(err)
-		return nil, result
+		return result
 	}
 	if len(importErrors) > 0 {
 		result.Errors = importErrors
-		return nil, result
+		return result
 	}
 
 	if overwrite {
 		err = ds.importOverwrite(ctx, policy, policyNameToPolicyMap)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return nil, result
+			return result
 		}
 	} else {
 		policyCategories := policy.GetCategories()
@@ -377,28 +374,28 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 		err = ds.storage.Upsert(ctx, policy)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return nil, result
+			return result
 		}
 
 		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return nil, result
+			return result
 		}
 	}
 	result.Succeeded = true
-	return nil, result
+	return result
 }
 
 func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *storage.Policy, result *v1.ImportPolicyResponse,
-	overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) (error, []*v1.ImportPolicyError) {
+	overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) ([]*v1.ImportPolicyError, error) {
 	var importErrors []*v1.ImportPolicyError
 
 	if policy.GetId() != "" {
 		existingPolicy, exists, err := ds.storage.Get(ctx, policy.GetId())
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
-			return err, importErrors
+			return importErrors, err
 		}
 		if exists {
 			// New policy cannot have the same id as default policies (aka system policies) and it cannot be overwritten, so always return an error
@@ -423,7 +420,7 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 				duplicateNameImportErr(fmt.Sprintf("policy with name '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateName, policy.GetName()))
 		}
 	}
-	return nil, importErrors
+	return importErrors, nil
 }
 
 func duplicateNameImportErr(errMsg string, errType string, duplicateName string) *v1.ImportPolicyError {
