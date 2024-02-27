@@ -300,7 +300,7 @@ non-standard environments:
 |`scannerV4.disable`| Enable Scanner V4. StackRox Scanner must be enabled as well (`scanner.disable=false``). | `true` |
 ### Default resources
 
-Each of the standard container's default resource settings are defined in the
+Each of the baseline container's default resource settings are defined in the
 `internal/defaults/40-resources.yaml` file in this chart. The following table lists the YAML
 paths to the respective defaults for each container that this chart deploys:
 
