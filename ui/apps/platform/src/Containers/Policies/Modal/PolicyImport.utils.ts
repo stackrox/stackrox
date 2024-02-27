@@ -67,7 +67,7 @@ export function parsePolicyImportErrors(responses: ImportPolicyResponse[]): Poli
                         incomingId: res.policy?.id,
                         message: err.message,
                     });
-                }else if (err.type === 'duplicate_name') {
+                } else if (err.type === 'duplicate_name') {
                     errList.push({
                         type: 'duplicate_name',
                         duplicateName: err.duplicateName,
@@ -200,7 +200,11 @@ export function getResolvedPolicies(
  * @return  {boolean}              true if the only error is a duplicate policy ID
  */
 export function hasDuplicateIdOnly(importErrors: PolicyImportError[]): boolean {
-    return importErrors?.length === 1 && (importErrors[0].type === 'duplicate_id' || importErrors[0].type === 'duplicate_system_policy_id');
+    return (
+        importErrors?.length === 1 &&
+        (importErrors[0].type === 'duplicate_id' ||
+            importErrors[0].type === 'duplicate_system_policy_id')
+    );
 }
 
 /**
@@ -212,11 +216,13 @@ export function hasDuplicateIdOnly(importErrors: PolicyImportError[]): boolean {
  * @return  {boolean}              true if the only error allows for policy to be overwritten (i.e. non system)
  */
 export function policyOverwriteAllowed(importErrors: PolicyImportError[]): boolean {
-    return importErrors?.length >= 1 && importErrors.every((policyErrors) => {
-        return !policyErrors.type.startsWith('duplicate_system_policy')
-    });
+    return (
+        importErrors?.length >= 1 &&
+        importErrors.every((policyErrors) => {
+            return !policyErrors.type.startsWith('duplicate_system_policy');
+        })
+    );
 }
-
 
 /**
  * simple function to abstract the test for only duplicate errors
