@@ -8,8 +8,20 @@ export type PolicyImportErrorDuplicateName = {
     duplicateName: string;
 } & PolicyImportErrorBase;
 
+export type PolicyImportErrorDuplicateSystemPolicyName = {
+    type: 'duplicate_system_policy_name';
+    duplicateName: string;
+} & PolicyImportErrorBase;
+
 export type PolicyImportErrorDuplicateId = {
     type: 'duplicate_id';
+    duplicateName: string;
+    incomingName: string;
+    incomingId: string;
+} & PolicyImportErrorBase;
+
+export type PolicyImportErrorDuplicateSystemPolicyId = {
+    type: 'duplicate_system_policy_id';
     duplicateName: string;
     incomingName: string;
     incomingId: string;
@@ -27,7 +39,9 @@ type PolicyImportErrorBase = {
 
 export type PolicyImportError =
     | PolicyImportErrorDuplicateName
+    | PolicyImportErrorDuplicateSystemPolicyName
     | PolicyImportErrorDuplicateId
+    | PolicyImportErrorDuplicateSystemPolicyId
     | PolicyImportErrorInvalidPolicy;
 
 /**
@@ -98,25 +112,24 @@ type PolicyErrorMessage = {
 /**
  * stringify any import errors to display to the user
  */
-export function getErrorMessages(policyErrors: PolicyImportError[], overwrite?: boolean): PolicyErrorMessage[] {
+export function getErrorMessages(policyErrors: PolicyImportError[]): PolicyErrorMessage[] {
     const errorMessages = policyErrors.map((err) => {
-        // debugger;
         let msg = '';
         switch (err.type) {
             case 'duplicate_id': {
-                if (overwrite) {
-                    msg = `An existing system policy with the name “${err.duplicateName}” has the same ID—${err.incomingId}—as the policy “${err.incomingName}” you are trying to import. System policies cannot be overwritten.`;
-                } else {
-                    msg = `An existing policy with the name “${err.duplicateName}” has the same ID—${err.incomingId}—as the policy “${err.incomingName}” you are trying to import.`;
-                }
+                msg = `An existing policy with the name “${err.duplicateName}” has the same ID—${err.incomingId}—as the policy “${err.incomingName}” you are trying to import.`;
+                break;
+            }
+            case 'duplicate_system_policy_id': {
+                msg = `An existing system policy with the name “${err.duplicateName}” has the same ID—${err.incomingId}—as the policy “${err.incomingName}” you are trying to import. System policies cannot be overwritten.`;
                 break;
             }
             case 'duplicate_name': {
-                if (overwrite) {
-                    msg = `An existing system policy has the same name, “${err.duplicateName}”, as the one you are trying to import. System policies cannot be overwritten.`;
-                } else {
-                    msg = `An existing policy has the same name, “${err.duplicateName}”, as the one you are trying to import.`;
-                }
+                msg = `An existing policy has the same name, “${err.duplicateName}”, as the one you are trying to import.`;
+                break;
+            }
+            case 'duplicate_system_policy_name': {
+                msg = `An existing system policy has the same name, “${err.duplicateName}”, as the one you are trying to import. System policies cannot be overwritten.`;
                 break;
             }
             case 'invalid_policy':

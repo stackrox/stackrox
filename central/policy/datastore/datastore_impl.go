@@ -225,7 +225,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		policyNameToPolicyMap[policy.GetName()] = policy
 	}
 
-	if ds.policyNameIsNotUnique(policyNameToPolicyMap, policy.GetName(), false) != nil {
+	if findPolicyWithSameName(policyNameToPolicyMap, policy.GetName()) != nil {
 		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
 	}
 	policyutils.FillSortHelperFields(policy)
@@ -401,39 +401,42 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 			return err, importErrors
 		}
 		if exists {
-			importErr := &v1.ImportPolicyError{
-				Message: fmt.Sprintf("policy with id '%q' already exists, unable to import policy", policy.GetId()),
-				Type:    policiesPkg.ErrImportDuplicateID,
-				Metadata: &v1.ImportPolicyError_DuplicateName{
-					DuplicateName: existingPolicy.GetName(),
-				},
-			}
+			// New policy cannot have the same id as default policies (aka system policies) and it cannot be overwritten, so always return an error
 			if existingPolicy.GetIsDefault() {
-				importErr.Type = policiesPkg.ErrImportDuplicateSystemPolicyID
-				importErr.Message = fmt.Sprintf("system %s", importErr.Message)
+				importErrors = append(importErrors,
+					duplicateNameImportErr(fmt.Sprintf("system policy with id '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyID, existingPolicy.GetName()))
+			} else if !overwrite {
+				// If existing policy is a custom one, then it's only an error if the user hasn't explicitly enabled overwrite
+				importErrors = append(importErrors,
+					duplicateNameImportErr(fmt.Sprintf("policy with id '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateID, existingPolicy.GetName()))
 			}
-			importErrors = append(importErrors, importErr)
 		}
 	}
 
-	if existingPolicy := ds.policyNameIsNotUnique(policyNameToPolicyMap, policy.GetName(), overwrite); existingPolicy != nil { // Only validate name collisions against default policies if this is an overwrite operation
-		importErr := &v1.ImportPolicyError{
-			Message: fmt.Sprintf("policy with name '%s' already exists, unable to import policy", policy.GetName()),
-			Type:    policiesPkg.ErrImportDuplicateName,
-			Metadata: &v1.ImportPolicyError_DuplicateName{
-				DuplicateName: policy.GetName(),
-			},
-		}
+	if existingPolicy := findPolicyWithSameName(policyNameToPolicyMap, policy.GetName()); existingPolicy != nil { // Only validate name collisions against default policies if this is an overwrite operation
+		// Similarly, new policy cannot have the same name as default policies
 		if existingPolicy.GetIsDefault() {
-			importErr.Type = policiesPkg.ErrImportDuplicateSystemPolicyName
-			importErr.Message = fmt.Sprintf("system %s", importErr.Message)
+			importErrors = append(importErrors,
+				duplicateNameImportErr(fmt.Sprintf("system policy with name '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyName, policy.GetName()))
+		} else if !overwrite { // And if not system policy, then it's only an error if it's an overwrite operation
+			importErrors = append(importErrors,
+				duplicateNameImportErr(fmt.Sprintf("policy with name '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateName, policy.GetName()))
 		}
-		importErrors = append(importErrors, importErr)
 	}
 	return nil, importErrors
 }
 
-func (ds *datastoreImpl) policyNameIsNotUnique(policyNameToPolicyMap map[string]*storage.Policy, name string, _ bool) *storage.Policy {
+func duplicateNameImportErr(errMsg string, errType string, duplicateName string) *v1.ImportPolicyError {
+	return &v1.ImportPolicyError{
+		Message: errMsg,
+		Type:    errType,
+		Metadata: &v1.ImportPolicyError_DuplicateName{
+			DuplicateName: duplicateName,
+		},
+	}
+}
+
+func findPolicyWithSameName(policyNameToPolicyMap map[string]*storage.Policy, name string) *storage.Policy {
 	for n, existingPolicy := range policyNameToPolicyMap {
 		if n == name {
 			return existingPolicy
