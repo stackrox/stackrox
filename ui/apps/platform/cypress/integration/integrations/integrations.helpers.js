@@ -195,6 +195,7 @@ const integrationTitleMap = {
     },
     cloudSources: {
         paladinCloud: 'Paladin Cloud',
+        ocm: 'OpenShift Cluster Manager',
     },
 };
 
