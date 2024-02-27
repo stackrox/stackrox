@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,8 +47,8 @@ func (s *networkFlowTestSuite) TestStackroxNetworkFlows() {
 
 	cancel()
 
-	s.Require.NoError(err)
-	s.Require.NotEqual(0, len(clusters.GetClusters()))
+	s.Require().NoError(err)
+	s.Require().NotEqual(0, len(clusters.GetClusters()))
 
 	var mainCluster *storage.Cluster
 	for _, cluster := range clusters.GetClusters() {
@@ -58,7 +57,7 @@ func (s *networkFlowTestSuite) TestStackroxNetworkFlows() {
 			break
 		}
 	}
-	s.Require.NotNil(mainCluster, "cluster with name remote not found")
+	s.Require().NotNil(mainCluster, "cluster with name remote not found")
 
 	clusterID := mainCluster.GetId()
 
@@ -71,6 +70,7 @@ func (s *networkFlowTestSuite) TestStackroxNetworkFlows() {
 		select {
 		case <-timeout.C:
 			s.T().Fatal("Failed to get the correct edges in 5 minutes")
+
 		case <-ticker.C:
 			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 			graph, err = service.GetNetworkGraph(ctx, &v1.NetworkGraphRequest{
@@ -88,7 +88,7 @@ func (s *networkFlowTestSuite) TestStackroxNetworkFlows() {
 		}
 	}
 
-	s.Require.NoError(err)
+	s.Require().NoError(err)
 
 	type deploymentConn struct {
 		srcName, targetName string
