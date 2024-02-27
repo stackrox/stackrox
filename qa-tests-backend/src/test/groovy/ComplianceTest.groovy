@@ -1069,7 +1069,7 @@ class ComplianceTest extends BaseSpecification {
         "deploy image with fixable CVEs"
         Deployment cveDeployment = new Deployment()
                 .setName("cve-compliance-deployment")
-                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
+                .setImage(TEST_IMAGE)
                 .addLabel("app", "cve-compliance-deployment")
         orchestrator.createDeployment(cveDeployment)
 

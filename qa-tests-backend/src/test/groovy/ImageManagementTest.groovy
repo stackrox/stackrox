@@ -285,7 +285,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"
-        def image = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", true)
+        def image = ImageService.scanImage(TEST_IMAGE, true)
         assert hasOpenSSLVuln(image)
 
         image = ImageService.getImage(image.id, true)
@@ -295,10 +295,10 @@ class ImageManagementTest extends BaseSpecification {
         CVEService.suppressImageCVE(cve)
 
         when:
-        def scanIncludeSnoozed = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", true)
+        def scanIncludeSnoozed = ImageService.scanImage(TEST_IMAGE, true)
         assert hasOpenSSLVuln(scanIncludeSnoozed)
 
-        def scanExcludedSnoozed = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", false)
+        def scanExcludedSnoozed = ImageService.scanImage(TEST_IMAGE, false)
         assert !hasOpenSSLVuln(scanExcludedSnoozed)
 
         def getIncludeSnoozed  = ImageService.getImage(image.id, true)
@@ -309,7 +309,7 @@ class ImageManagementTest extends BaseSpecification {
 
         CVEService.unsuppressImageCVE(cve)
 
-        def unsuppressedScan = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12", false)
+        def unsuppressedScan = ImageService.scanImage(TEST_IMAGE, false)
         def unsuppressedGet  = ImageService.getImage(image.id, false)
 
         then:
