@@ -2,10 +2,12 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -65,6 +67,8 @@ func (d *datastoreImpl) GetComplianceCheckResult(ctx context.Context, compliance
 
 // ComplianceCheckResultStats retrieves the scan results stats specified by query for the scan configuration
 func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceCheckResultStats")
+
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
@@ -111,6 +115,8 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 
 // ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
 func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceClusterStats")
+
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
