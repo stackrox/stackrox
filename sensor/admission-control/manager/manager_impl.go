@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
@@ -229,7 +230,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return
 	}
 
-	if m.lastSettingsUpdate != nil && newSettings.GetTimestamp().Compare(m.lastSettingsUpdate) <= 0 {
+	if m.lastSettingsUpdate != nil && protocompat.CompareTimestamps(newSettings.GetTimestamp(), m.lastSettingsUpdate) <= 0 {
 		return // no update
 	}
 

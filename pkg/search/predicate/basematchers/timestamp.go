@@ -32,23 +32,23 @@ func timestampComparator(cmp string) (func(instance, value *types.Timestamp) boo
 	switch cmp {
 	case LessThanOrEqualTo:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) >= 0
+			return protocompat.CompareTimestamps(value, instance) >= 0
 		}, nil
 	case GreaterThanOrEqualTo:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) <= 0
+			return protocompat.CompareTimestamps(value, instance) <= 0
 		}, nil
 	case LessThan:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) > 0
+			return protocompat.CompareTimestamps(value, instance) > 0
 		}, nil
 	case GreaterThan:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) < 0
+			return protocompat.CompareTimestamps(value, instance) < 0
 		}, nil
 	case "":
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) == 0
+			return protocompat.CompareTimestamps(value, instance) == 0
 		}, nil
 	default:
 		return nil, fmt.Errorf("unrecognized comparator: %s", cmp)

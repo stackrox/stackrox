@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -91,7 +92,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	suite.NotNil(id)
 	suite.NotNil(baseline.Created)
 	suite.Equal(baseline.Created, baseline.LastUpdate)
-	suite.True(baseline.StackRoxLockedTimestamp.Compare(baseline.Created) >= 0)
+	suite.True(protocompat.CompareTimestamps(baseline.StackRoxLockedTimestamp, baseline.Created) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
 	suite.Equal(id, baseline.Id)
@@ -135,7 +136,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
-	suite.True(updated.GetLastUpdate().Compare(updated.GetCreated()) > 0)
+	suite.True(protocompat.CompareTimestamps(updated.GetLastUpdate(), updated.GetCreated()) > 0)
 	suite.NotNil(updated.Elements)
 	suite.Equal(expectedResults.Cardinality(), len(updated.Elements))
 	actualResults := set.NewStringSet()
@@ -177,13 +178,13 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestLockAndUnlockBaseline() {
 	suite.NoError(err)
 	suite.NotNil(updatedBaseline.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedBaseline)
-	suite.True(updatedBaseline.GetLastUpdate().Compare(updatedBaseline.GetCreated()) > 0)
+	suite.True(protocompat.CompareTimestamps(updatedBaseline.GetLastUpdate(), updatedBaseline.GetCreated()) > 0)
 
 	updatedBaseline, err = suite.datastore.UserLockProcessBaseline(suite.requestContext, key, false)
 	suite.NoError(err)
 	suite.Nil(updatedBaseline.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedBaseline)
-	suite.True(updatedBaseline.GetLastUpdate().Compare(updatedBaseline.GetCreated()) > 0)
+	suite.True(protocompat.CompareTimestamps(updatedBaseline.GetLastUpdate(), updatedBaseline.GetCreated()) > 0)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
@@ -225,7 +226,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: secondProcess}}}
@@ -238,7 +239,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	}
 	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) > 0)
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) > 0)
 }
 
 func makeItemList(elementList []*storage.BaselineElement) []*storage.BaselineItem {
@@ -354,7 +355,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	suite.NoError(err)
 
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements != nil)
 
@@ -407,7 +408,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	suite.NoError(err)
 
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements != nil)
 	suite.True(len(baseline.Elements) == len(indicators)-2)
@@ -423,7 +424,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	suite.NoError(err)
 
 	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
 	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
 

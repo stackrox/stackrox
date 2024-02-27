@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -100,7 +101,7 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 
 func sortIndicators(indicators []*storage.ProcessIndicator) {
 	sort.SliceStable(indicators, func(i, j int) bool {
-		return indicators[i].GetSignal().GetTime().Compare(indicators[j].GetSignal().GetTime()) == -1
+		return protocompat.CompareTimestamps(indicators[i].GetSignal().GetTime(), indicators[j].GetSignal().GetTime()) == -1
 	})
 }
 
