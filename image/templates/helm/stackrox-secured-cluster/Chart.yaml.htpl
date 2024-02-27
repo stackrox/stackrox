@@ -7,5 +7,6 @@ name: stackrox-secured-cluster-services
 icon: [< required "" .ChartRepo.IconURL >]
 description: Helm Chart for StackRox Secured Clusters
 type: application
-version: [< required "" .Versions.ChartVersion >]
-appVersion: [< required "" .Versions.MainVersion >]
+[</* Shorten the version strings for local builds to avoid exceeding the Kubernetes 63 character limit for labels */>]
+version: [< required "" (.Versions.ChartVersion | replace "-dirty" "-d") >]
+appVersion: [< required "" (.Versions.MainVersion | replace "-dirty" "-d") >]

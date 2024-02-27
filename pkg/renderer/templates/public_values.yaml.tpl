@@ -168,33 +168,33 @@ scanner:
 scannerV4:
   disable: true
   indexer:
-    {{- if .K8sConfig.ImageOverrides.Main }}
+    {{- if .K8sConfig.ImageOverrides.ScannerV4 }}
     image:
-      {{- if .K8sConfig.ImageOverrides.Main.Name }}
-      name: {{ .K8sConfig.ImageOverrides.Main.Name }}
+      {{- if .K8sConfig.ImageOverrides.ScannerV4.Name }}
+      name: {{ .K8sConfig.ImageOverrides.ScannerV4.Name }}
       {{- end }}
-      {{- if .K8sConfig.ImageOverrides.Main.Tag }}
-      tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
+      {{- if .K8sConfig.ImageOverrides.ScannerV4.Tag }}
+      tag: {{ .K8sConfig.ImageOverrides.ScannerV4.Tag }}
       {{- end }}
     {{- end }}
   matcher:
-    {{- if .K8sConfig.ImageOverrides.Main }}
+    {{- if .K8sConfig.ImageOverrides.ScannerV4 }}
     image:
-      {{- if .K8sConfig.ImageOverrides.Main.Name }}
-      name: {{ .K8sConfig.ImageOverrides.Main.Name }}
+      {{- if .K8sConfig.ImageOverrides.ScannerV4.Name }}
+      name: {{ .K8sConfig.ImageOverrides.ScannerV4.Name }}
       {{- end }}
-      {{- if .K8sConfig.ImageOverrides.Main.Tag }}
-      tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
+      {{- if .K8sConfig.ImageOverrides.ScannerV4.Tag }}
+      tag: {{ .K8sConfig.ImageOverrides.ScannerV4.Tag }}
       {{- end }}
     {{- end }}
   db:
-    {{- if .K8sConfig.ImageOverrides.Main }}
+    {{- if .K8sConfig.ImageOverrides.ScannerV4DB }}
     image:
-      {{- if .K8sConfig.ImageOverrides.Main.Name }}
-      name: {{ .K8sConfig.ImageOverrides.Main.Name }}
+      {{- if .K8sConfig.ImageOverrides.ScannerV4DB.Name }}
+      name: {{ .K8sConfig.ImageOverrides.ScannerV4DB.Name }}
       {{- end }}
-      {{- if .K8sConfig.ImageOverrides.Main.Tag }}
-      tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
+      {{- if .K8sConfig.ImageOverrides.ScannerV4DB.Tag }}
+      tag: {{ .K8sConfig.ImageOverrides.ScannerV4DB.Tag }}
       {{- end }}
     {{- end }}
 

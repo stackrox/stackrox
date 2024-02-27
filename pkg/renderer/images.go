@@ -92,6 +92,10 @@ func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
 		imageFlavor.ScannerImageTag)
 	imageOverrides["ScannerDB"] = ComputeImageOverrides(c.K8sConfig.ScannerDBImage, registry, imageFlavor.ScannerDBImageName,
 		imageFlavor.ScannerImageTag)
+	imageOverrides["ScannerV4"] = ComputeImageOverrides(c.K8sConfig.ScannerV4Image, registry, imageFlavor.ScannerV4ImageName,
+		imageFlavor.ScannerV4ImageTag)
+	imageOverrides["ScannerV4DB"] = ComputeImageOverrides(c.K8sConfig.ScannerV4DBImage, registry, imageFlavor.ScannerV4DBImageName,
+		imageFlavor.ScannerV4ImageTag)
 
 	c.K8sConfig.ImageOverrides = imageOverrides
 }

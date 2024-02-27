@@ -19,8 +19,7 @@ describe('Exception Management', () => {
     before(function () {
         if (
             !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') ||
-            !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             this.skip();
         }
@@ -29,8 +28,7 @@ describe('Exception Management', () => {
     beforeEach(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }
@@ -39,8 +37,7 @@ describe('Exception Management', () => {
     after(() => {
         if (
             hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
-            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
         ) {
             cancelAllCveExceptions();
         }

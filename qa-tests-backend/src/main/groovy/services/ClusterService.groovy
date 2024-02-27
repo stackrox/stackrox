@@ -123,10 +123,6 @@ class ClusterService extends BaseService {
         isAKS
     }
 
-    static Boolean isOpenShift3() {
-        return getCluster().getType() == ClusterOuterClass.ClusterType.OPENSHIFT_CLUSTER
-    }
-
     static Boolean isOpenShift4() {
         return getCluster().getType() == ClusterOuterClass.ClusterType.OPENSHIFT4_CLUSTER
     }

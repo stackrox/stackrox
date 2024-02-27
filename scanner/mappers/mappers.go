@@ -20,6 +20,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	"github.com/stackrox/rox/scanner/updater/manual"
 )
 
 var (
@@ -600,8 +601,8 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 	switch {
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
 		return rhelSeverityAndScores(vuln)
-	case osvUpdaterPattern.MatchString(vuln.Updater):
-		sev, err := osvVectors(vuln)
+	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, manual.Name):
+		sev, err := cvssVector(vuln.Severity)
 		if err != nil {
 			zlog.Debug(ctx).
 				Err(err).
@@ -662,33 +663,33 @@ func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error
 	return values, nil
 }
 
-// osvVectors parses the CVSS vectors from the give OSV vulnerability.
+// cvssVector parses the given CVSS vector.
 //
-// Note: we do not populate severity nor the scores here. It is up to the client to determine those.
+// Note: we do not populate the scores here. It is up to the client to calculate.
 // See pkg/scanners/scannerv4/convert.go.
-func osvVectors(vuln *claircore.Vulnerability) (severityValues, error) {
-	if vuln.Severity == "" {
+func cvssVector(cvssVector string) (severityValues, error) {
+	if cvssVector == "" {
 		return severityValues{}, errors.New("severity is empty")
 	}
 
 	values := severityValues{
-		severity: vuln.Severity,
+		severity: cvssVector,
 	}
 
-	// ClairCore has no CVSS version indicator for OSV data, so guess via the prefix.
-	if strings.HasPrefix(vuln.Severity, "CVSS:3") {
-		if _, err := cvss3.VectorFromString(vuln.Severity); err != nil {
+	// Guess the CVSS version by prefix.
+	if strings.HasPrefix(cvssVector, "CVSS:3") {
+		if _, err := cvss3.VectorFromString(cvssVector); err != nil {
 			return values, fmt.Errorf("parsing CVSS v3 vector: %w", err)
 		}
-		values.v3Vector = vuln.Severity
+		values.v3Vector = cvssVector
 		return values, nil
 	}
 
 	// We do not support CVSS v4 yet, so if it's not 3, then it's 2.
-	if _, err := cvss2.VectorFromString(vuln.Severity); err != nil {
+	if _, err := cvss2.VectorFromString(cvssVector); err != nil {
 		return values, fmt.Errorf("parsing CVSS v2 vector: %w", err)
 	}
-	values.v2Vector = vuln.Severity
+	values.v2Vector = cvssVector
 	return values, nil
 }
 

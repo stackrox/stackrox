@@ -86,6 +86,7 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
+	grpcPreferences "github.com/stackrox/rox/central/grpcpreference/service"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -406,6 +407,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		nodeService.Singleton(),
 		notifierService.Singleton(),
 		pingService.Singleton(),
+		grpcPreferences.Singleton(),
 		podService.Singleton(),
 		policyService.Singleton(),
 		probeUploadService.Singleton(),

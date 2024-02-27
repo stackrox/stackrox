@@ -21,14 +21,6 @@ describe('Workload CVE Image CVE Single page', () => {
     function visitFirstCve() {
         visitWorkloadCveOverview();
 
-        // Clear any filters that may be applied to increase the likelihood of finding valid data
-        if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            cy.get(vulnSelectors.clearFiltersButton).click();
-        }
-
-        // Ensure the data in the table has settled
-        cy.get(selectors.isUpdatingTable).should('not.exist');
-
         cy.get('tbody tr td[data-label="CVE"] a').first().click();
     }
 
