@@ -70,18 +70,18 @@ func (mr *MockDataStoreMockRecorder) DeleteProfileForCluster(ctx, uid, clusterID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfileForCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteProfileForCluster), ctx, uid, clusterID)
 }
 
-// DeleteProfileOfCluster mocks base method.
-func (m *MockDataStore) DeleteProfileOfCluster(ctx context.Context, clusterID string) error {
+// DeleteProfilesByCluster mocks base method.
+func (m *MockDataStore) DeleteProfilesByCluster(ctx context.Context, clusterID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteProfileOfCluster", ctx, clusterID)
+	ret := m.ctrl.Call(m, "DeleteProfilesByCluster", ctx, clusterID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteProfileOfCluster indicates an expected call of DeleteProfileOfCluster.
-func (mr *MockDataStoreMockRecorder) DeleteProfileOfCluster(ctx, clusterID any) *gomock.Call {
+// DeleteProfilesByCluster indicates an expected call of DeleteProfilesByCluster.
+func (mr *MockDataStoreMockRecorder) DeleteProfilesByCluster(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfileOfCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteProfileOfCluster), ctx, clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfilesByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteProfilesByCluster), ctx, clusterID)
 }
 
 // GetProfile mocks base method.

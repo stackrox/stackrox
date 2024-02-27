@@ -54,8 +54,8 @@ func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string,
 	return err
 }
 
-// DeleteProfilesOfCluster deletes profiles of cluster with a specific id
-func (d *datastoreImpl) DeleteProfileOfCluster(ctx context.Context, clusterID string) error {
+// DeleteProfilesByCluster deletes profiles of cluster with a specific id
+func (d *datastoreImpl) DeleteProfilesByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	_, err := d.store.DeleteByQuery(ctx, query)
 	if err != nil {
