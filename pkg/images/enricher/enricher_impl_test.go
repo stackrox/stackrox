@@ -1337,3 +1337,35 @@ func TestUpdateFromDatabase_ImageNames(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateImageFromDatabase_NameChanges(t *testing.T) {
+	const imageSHA = "some-SHA-for-testing"
+	cimg, err := utils.GenerateImageFromString("docker.io/test")
+	require.NoError(t, err)
+	img := imgTypes.ToImage(cimg)
+	img.Id = imageSHA
+	img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+		Results: []*storage.ImageSignatureVerificationResult{
+			createSignatureVerificationResult("test",
+				storage.ImageSignatureVerificationResult_VERIFIED)}}
+
+	cimg, err = utils.GenerateImageFromString("docker.io/test2")
+	require.NoError(t, err)
+	existingImg := imgTypes.ToImage(cimg)
+	existingImg.Id = imageSHA
+
+	e := &enricherImpl{
+		imageGetter: func(_ context.Context, id string) (*storage.Image, bool, error) {
+			existingImg.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+				Results: []*storage.ImageSignatureVerificationResult{
+					createSignatureVerificationResult("test2",
+						storage.ImageSignatureVerificationResult_VERIFIED)}}
+			return existingImg, true, nil
+		},
+	}
+	e.updateImageFromDatabase(context.Background(), img, UseCachesIfPossible)
+	assert.Equal(t, imageSHA, img.GetId())
+	// Changes to names should lead to discarding any previously found signature verification results, even if the
+	// fetch option indicates to use caches.
+	assert.Empty(t, img.GetSignatureVerificationData().GetResults())
+}

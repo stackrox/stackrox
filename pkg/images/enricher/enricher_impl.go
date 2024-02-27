@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -163,6 +164,8 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 		if updated {
 			e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+			// Errors for signature verification will be logged, so we can safely ignore them for the time being.
+			_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, image)
 
 			log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
 			return true, nil
@@ -207,10 +210,11 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 
 	image.Metadata = existingImage.GetMetadata()
 	image.Notes = existingImage.GetNotes()
+	hasChangedNames := !protoutils.SlicesEqual(existingImage.GetNames(), image.GetNames())
 	image.Names = utils.UniqueImageNames(existingImage.GetNames(), image.GetNames())
 
 	e.useExistingSignature(image, existingImage, option)
-	e.useExistingSignatureVerificationData(image, existingImage, option)
+	e.useExistingSignatureVerificationData(image, existingImage, option, hasChangedNames)
 	return e.useExistingScan(image, existingImage, option)
 }
 
@@ -523,9 +527,17 @@ func (e *enricherImpl) useExistingSignature(img *storage.Image, existingImg *sto
 	}
 }
 
-func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, existingImg *storage.Image, option FetchOption) {
+func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, existingImg *storage.Image,
+	option FetchOption, hasChangedNames bool) {
 	if option == ForceRefetchSignaturesOnly {
 		// When forced to refetch values, disregard existing ones.
+		img.SignatureVerificationData = nil
+		return
+	}
+
+	// In case the existing image and the current image have a divergence in names, we will disregard existing
+	// signature verification data, ensuring that we will always verify signatures, if any exist.
+	if hasChangedNames {
 		img.SignatureVerificationData = nil
 		return
 	}
