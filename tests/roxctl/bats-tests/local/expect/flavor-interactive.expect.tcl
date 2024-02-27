@@ -146,6 +146,53 @@ expect {
     send "\n"
   }
 }
+
+# Enter scanner-v4-db image to use (if unset, a default will be used according to --image-defaults) (default: "quay.io/rhacs-eng/scanner-v4:4.3.x-1304-g0b0cc2d4f7"):
+expect {
+  default {
+    send_user "\nFATAL: No question about Scanner V4 DB image\n"
+    exit 8
+  }
+  "Enter scanner-v4-db * (if unset, the default will be used):" {
+    send_user "WARNING: roxctl does not suggest any registry for scanner-v4-db"
+    send "\n"
+    set exitWith [expr {$exitWith + 2}]
+  }
+  "Enter scanner-v4-db * (default: \"$registry/scanner-v4-db:*\"):" {
+    send_user "roxctl suggests correct registry for scanner-v4-db"
+    send "\n"
+  }
+  # Special case for RHACS to avoid writing a regexp in TCL
+  "Enter scanner-v4-db * (default: \"$registry/rhacs-scanner-v4-db-rhel8:*\"):" {
+    send_user "roxctl suggests correct registry for scanner-v4-db"
+    send "\n"
+  }
+}
+
+# Enter scanner-v4 image to use (if unset, a default will be used according to --image-defaults) (default: "quay.io/rhacs-eng/scanner-v4:4.3.x-1304-g0b0cc2d4f7"):
+expect {
+  default {
+    send_user "\nFATAL: No question about scanner-v4 image\n"
+    exit 8
+  }
+  "Enter scanner-v4 * (if unset, the default will be used):" {
+    send_user "exitWith before $exitWith"
+    send_user "WARNING: roxctl does not suggest any registry for scanner-v4"
+    send "\n"
+    set exitWith [expr {$exitWith + 1}]
+    send_user "exitWith is now $exitWith"
+  }
+  "Enter scanner-v4 * (default: \"$registry/scanner-v4:*\"):" {
+    send_user "roxctl suggests correct registry for scanner-v4"
+    send "\n"
+  }
+  # Special case for RHACS to avoid writing a regexp in TCL
+  "Enter scanner-v4 * (default: \"$registry/rhacs-scanner-v4-rhel8:*\"):" {
+    send_user "roxctl suggests correct registry for scanner-v4"
+    send "\n"
+  }
+}
+
 expect "Enter Central volume type*:" { send "pvc\n" }
 expect "Enter external volume name for Central*:" { send "\n" }
 expect "Enter external volume size in Gi for Central*:" { send "\n" }

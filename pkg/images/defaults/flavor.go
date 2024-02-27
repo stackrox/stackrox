@@ -372,6 +372,16 @@ func (f *ImageFlavor) ScannerDBImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerImageTag)
 }
 
+// ScannerV4Image is the container image reference (full name) for the scanner-v4 image.
+func (f *ImageFlavor) ScannerV4Image() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerV4ImageName, f.ScannerV4ImageTag)
+}
+
+// ScannerV4DBImage is the container image reference (full name) for the scanner-v4-db image.
+func (f *ImageFlavor) ScannerV4DBImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerV4DBImageName, f.ScannerV4ImageTag)
+}
+
 // MainImage is the container image reference (full name) for the "main" image.
 func (f *ImageFlavor) MainImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.MainImageName, f.MainImageTag)
