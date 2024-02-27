@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// GetComplianceCheckResult returns a test compliance check result
 func GetComplianceCheckResult(name, clusterID, clusterName, scanName, scanConfigName string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             uuid.NewV4().String(),
