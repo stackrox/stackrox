@@ -22,7 +22,7 @@ spec:
         fsGroup: 70  # Set the group ownership to the `postgres` group, see dockerfile.
       initContainers:
       - name: init-db
-        image: "{{ (printf "%s/%s:%s" .Values.image.repository .Values.app.db.name .Values.image.tag ) }}"
+        image: "{{ (printf "%s/%s:%s" .Values.app.db.image.registry .Values.app.db.image.name .Values.app.db.image.tag ) }}"
         imagePullPolicy: IfNotPresent
         command:
         - init-entrypoint.sh
@@ -33,13 +33,15 @@ spec:
           value: "scram-sha-256"
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
+        - name: SCANNER_DB_INIT_BUNDLE_ENABLED
+          value: "true"
         resources:
           limits:
-            cpu: 2
+            cpu: 4
             memory: 4Gi
           requests:
-            cpu: 200m
-            memory: 200Mi
+            cpu: 1
+            memory: 1Gi
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -51,7 +53,7 @@ spec:
           readOnly: true
       containers:
       - name: db
-        image: "{{ (printf "%s/%s:%s" .Values.image.repository .Values.app.db.name .Values.image.tag ) }}"
+        image: "{{ (printf "%s/%s:%s" .Values.app.db.image.registry .Values.app.db.image.name .Values.app.db.image.tag ) }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA
@@ -67,8 +69,8 @@ spec:
             cpu: 2
             memory: 4Gi
           requests:
-            cpu: 200m
-            memory: 200Mi
+            cpu: 1
+            memory: 1Gi
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -85,7 +87,12 @@ spec:
         configMap:
           name: {{ .Values.app.db.name }}-config
       - name: disk
+        {{- if .Values.app.db.persistence.hostPath }}
+        hostPath:
+          path: "{{ .Values.app.db.persistence.hostPath }}"
+        {{- else }}
         emptyDir: {}
+        {{- end }}
       - name: tls-volume
         secret:
           secretName: {{ .Values.app.db.name }}-tls

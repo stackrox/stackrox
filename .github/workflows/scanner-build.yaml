@@ -149,3 +149,12 @@ jobs:
         architectures="amd64,arm64,ppc64le,s390x"
 
         push_scanner_image_manifest_lists "$architectures"
+
+  run-e2e-tests:
+    name: Run standalone E2E test
+    # The test requires the DB init bundle.
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
+    needs:
+      - push-manifests
+    uses: ./.github/workflows/scanner-e2e-test.yaml
+    secrets: inherit
