@@ -311,14 +311,14 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 
+	w = mock.NewResponseWriter()
 	req = s.getRequestWithJSONFile(t, "repo2cpe")
-	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
+	w = mock.NewResponseWriter()
 	req = s.getRequestWithJSONFile(t, "name2repos")
-	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))

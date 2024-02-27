@@ -670,18 +670,22 @@ func validateV4DefsVersion(zipPath string) error {
 
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			mf, err := openFromArchive(zipF.Name, "manifest.json")
+			defs, err := openFromArchive(zipPath, zipF.Name)
+			utils.IgnoreError(defs.Close)
+			mf, err := openFromArchive(defs.Name(), "manifest.json")
 			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 defs manifest.json")
+				utils.IgnoreError(mf.Close)
+				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
-
 			offlineV, err := getOfflineFileVersion(mf)
-			if err != nil {
-				return errors.Wrap(err, "couldn't read v4 defs manifest.json")
-			}
 			utils.IgnoreError(mf.Close)
-			if offlineV != "dev" && offlineV != minorVersionPattern.FindString(version.GetMainVersion()) {
-				msg := fmt.Sprintf("failed to upload offline vuln file, uploaded file is version: %s and system version is: %s", offlineV, version.GetMainVersion())
+			if err != nil {
+				return errors.Wrap(err, "couldn't get v4 offline defs version")
+			}
+			v := minorVersionPattern.FindString(version.GetMainVersion())
+			if offlineV != "dev" && offlineV != v {
+				msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
+					"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
 				log.Errorf(msg)
 				return errors.New(msg)
 			}
