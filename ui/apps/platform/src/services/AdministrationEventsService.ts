@@ -153,7 +153,8 @@ export function getListAdministrationEventsArg({
     sortOption,
 }: GetAdministrationEventResponseArg): ListAdministrationEventsRequest {
     const filter = getAdministrationEventsFilter(searchFilter);
-    const pagination: Pagination = { limit: perPage, offset: page - 1, sortOption };
+    const offset = (page - 1) * perPage;
+    const pagination: Pagination = { limit: perPage, offset, sortOption };
     return { filter, pagination };
 }
 
