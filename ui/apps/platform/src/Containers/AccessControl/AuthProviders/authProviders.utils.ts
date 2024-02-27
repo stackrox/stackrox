@@ -1,7 +1,7 @@
 import {
     AuthProvider,
     AuthProviderConfig,
-    AuthProviderRequiredAttributes,
+    AuthProviderRequiredAttribute,
     Group,
 } from 'services/AuthService';
 import { isUserResource } from '../traits';
@@ -100,7 +100,8 @@ export function transformValuesBeforeSaving(
         | string[]
         | boolean
         | AuthProviderConfig
-        | AuthProviderRequiredAttributes[]
+        | AuthProviderRequiredAttribute[]
+        | [string, string][]
         | Group[]
         | undefined
     >
@@ -110,7 +111,8 @@ export function transformValuesBeforeSaving(
     | string[]
     | boolean
     | AuthProviderConfig
-    | AuthProviderRequiredAttributes[]
+    | AuthProviderRequiredAttribute[]
+    | [string, string][]
     | Group[]
     | undefined
 > {
