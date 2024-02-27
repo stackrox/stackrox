@@ -46,7 +46,6 @@ function ImportPolicyJSONModal({
         );
         importPolicies(policiesToImport, metadata)
             .then((response) => {
-                // debugger;
                 if (response.allSucceeded) {
                     setModalType('success');
 

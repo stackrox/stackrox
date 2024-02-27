@@ -128,7 +128,6 @@ type PolicyErrorMessage = {
  */
 export function getErrorMessages(policyErrors: PolicyImportError[]): PolicyErrorMessage[] {
     const errorMessages = policyErrors.map((err) => {
-        // debugger;
         let msg = '';
         switch (err.type) {
             case 'duplicate_id': {
@@ -213,7 +212,9 @@ export function hasDuplicateIdOnly(importErrors: PolicyImportError[]): boolean {
  * @return  {boolean}              true if the only error allows for policy to be overwritten (i.e. non system)
  */
 export function policyOverwriteAllowed(importErrors: PolicyImportError[]): boolean {
-    return importErrors?.length === 1 && !importErrors[0].type.startsWith('duplicate_system_policy');
+    return importErrors?.length >= 1 && importErrors.every((policyErrors) => {
+        return !policyErrors.type.startsWith('duplicate_system_policy')
+    });
 }
 
 

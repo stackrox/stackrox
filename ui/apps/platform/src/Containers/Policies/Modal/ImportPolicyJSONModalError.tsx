@@ -39,7 +39,6 @@ function ImportPolicyJSONError({
         setDuplicateResolution({ ...duplicateResolution, [key]: value });
     }
 
-    // debugger;
     const duplicateErrorsOnly = duplicateErrors.length > 0;
     const showKeepBothPolicies = hasDuplicateIdOnly(duplicateErrors);
     const allowOverwriteOption = policyOverwriteAllowed(duplicateErrors);
