@@ -687,5 +687,5 @@ func validateV4DefsVersion(zipPath string) error {
 			}
 		}
 	}
-
+	return nil
 }
