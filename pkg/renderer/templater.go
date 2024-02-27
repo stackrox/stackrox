@@ -59,10 +59,12 @@ func (h *HostPathPersistenceInstance) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage      string
-	CentralDBImage string
-	ScannerImage   string
-	ScannerDBImage string
+	MainImage        string
+	CentralDBImage   string
+	ScannerImage     string
+	ScannerDBImage   string
+	ScannerV4Image   string
+	ScannerV4DBImage string
 }
 
 // TelemetryConfig contains config to set up the transimission of telemtry and diagnostic data.

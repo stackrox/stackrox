@@ -93,8 +93,10 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{
 			CommonConfig: renderer.CommonConfig{
-				ScannerImage:   stringutils.OrDefault(params.ScannerImage, flavor.ScannerImage()),
-				ScannerDBImage: stringutils.OrDefault(params.ScannerDBImage, flavor.ScannerDBImage()),
+				ScannerImage:     stringutils.OrDefault(params.ScannerImage, flavor.ScannerImage()),
+				ScannerDBImage:   stringutils.OrDefault(params.ScannerDBImage, flavor.ScannerDBImage()),
+				ScannerV4Image:   stringutils.OrDefault(params.ScannerV4Image, flavor.ScannerV4Image()),
+				ScannerV4DBImage: stringutils.OrDefault(params.ScannerV4DBImage, flavor.ScannerV4DBImage()),
 			},
 			OfflineMode:  params.OfflineMode,
 			IstioVersion: params.IstioVersion,

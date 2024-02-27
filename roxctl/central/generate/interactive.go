@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	orderedFlagGroupNames = []string{"central", "central-db", "scanner"}
+	orderedFlagGroupNames = []string{"central", "central-db", "scanner", "scanner-v4"}
 )
 
 func readUserInput(prompt string) (string, error) {
@@ -316,8 +316,13 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			continue
 		}
 
-		// set default values for image-{main,scanner,scanner-db} flags
-		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage || fw.Flag.Name == flags.FlagNameCentralDBImage {
+		// set default values for image-{main,scanner,scanner-db,scanner-v4,scanner-v4-db} flags
+		if fw.Flag.Name == flags.FlagNameMainImage ||
+			fw.Flag.Name == flags.FlagNameScannerImage ||
+			fw.Flag.Name == flags.FlagNameScannerDBImage ||
+			fw.Flag.Name == flags.FlagNameScannerV4Image ||
+			fw.Flag.Name == flags.FlagNameScannerV4DBImage ||
+			fw.Flag.Name == flags.FlagNameCentralDBImage {
 			imgDefArg := argSlice.findArgByName(flags.FlagNameImageDefaults)
 			if imgDefArg == nil {
 				panic(fmt.Sprintf("unable to find flag '%s'", flags.FlagNameImageDefaults))
@@ -338,6 +343,14 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			case flags.FlagNameScannerDBImage:
 				if fw.Flag.DefValue == "" {
 					fw.Flag.DefValue = flavor.ScannerDBImage()
+				}
+			case flags.FlagNameScannerV4Image:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.ScannerV4Image()
+				}
+			case flags.FlagNameScannerV4DBImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.ScannerV4DBImage()
 				}
 			case flags.FlagNameCentralDBImage:
 				if fw.Flag.DefValue == "" {
