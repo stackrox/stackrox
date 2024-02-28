@@ -15,4 +15,5 @@ import (
 // The JSON representation for `Empty` is empty JSON object `{}`.
 type Empty = types.Empty
 
+// ProtoEmpty returns a pointer to an instance of the generic empty type.
 func ProtoEmpty() *Empty { return &Empty{} }
