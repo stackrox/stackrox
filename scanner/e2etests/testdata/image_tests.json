@@ -935,7 +935,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2408cc74d12b6cd092bb8b516ba7d5e290f485d3eb9672efc00f0583730179e8",
-                "FixedBy": "1.1.1v-r0",
+                "FixedBy": "1.1.1w-r1",
                 "Location": "lib/apk/db/installed"
             }
         ],
@@ -1285,7 +1285,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
-                "FixedBy": "1:3.0.7-16.el9_2",
+                "FixedBy": "1:3.0.7-25.el9_3",
                 "Location": "sqlite:var/lib/rpm"
             },
             {
@@ -1312,7 +1312,7 @@
                     }
                 ],
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
-                "FixedBy": "1:3.0.7-16.el9_2",
+                "FixedBy": "1:3.0.7-25.el9_3",
                 "Location": "sqlite:var/lib/rpm"
             },
             {
@@ -1392,7 +1392,7 @@
                     }
                 ],
                 "AddedBy": "sha256:16e1dc59de605089610e3be2c77f3cde5eed99b523a0d7a3e3a2f65fa7c60723",
-                "FixedBy": "0:6.0.22-1.el8_8",
+                "FixedBy": "0:6.0.27-1.el8_9",
                 "Location": "bdb:var/lib/rpm"
             },
             {
@@ -1419,7 +1419,7 @@
                     }
                 ],
                 "AddedBy": "sha256:16e1dc59de605089610e3be2c77f3cde5eed99b523a0d7a3e3a2f65fa7c60723",
-                "FixedBy": "0:6.0.22-1.el8_8",
+                "FixedBy": "0:6.0.27-1.el8_9",
                 "Location": "bdb:var/lib/rpm"
             }
         ],
