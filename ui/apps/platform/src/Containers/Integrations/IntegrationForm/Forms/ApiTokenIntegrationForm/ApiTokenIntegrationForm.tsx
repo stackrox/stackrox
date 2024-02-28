@@ -8,6 +8,8 @@ import {
     DescriptionListGroup,
     DescriptionListDescription,
     SelectOption,
+    DatePicker,
+    yyyyMMddFormat,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
@@ -29,6 +31,7 @@ import useAllowedRoles from './useFetchRoles';
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
+    expiration?: string;
 };
 
 export type ApiTokenIntegrationFormProps = {
@@ -175,6 +178,31 @@ function ApiTokenIntegrationForm({
                                 })}
                             </SelectSingle>
                         </FormLabelGroup>
+                        {isEditable && !isGenerated && (
+                            <FormLabelGroup
+                                label="Expiration date"
+                                fieldId="expiration"
+                                touched={touched}
+                                helperText="when left unset, the value defaults to 1 year from the generation date"
+                                errors={errors}
+                            >
+                                <DatePicker
+                                    id="expiration"
+                                    value={
+                                        values.expiration
+                                            ? yyyyMMddFormat(new Date(values.expiration))
+                                            : ''
+                                    }
+                                    onChange={(event, value, date) => {
+                                        if (date) {
+                                            setFieldValue('expiration', date.toISOString());
+                                        } else {
+                                            setFieldValue('expiration', undefined);
+                                        }
+                                    }}
+                                />
+                            </FormLabelGroup>
+                        )}
                     </Form>
                 )}
             </PageSection>
