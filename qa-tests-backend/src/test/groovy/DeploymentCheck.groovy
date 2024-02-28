@@ -1,21 +1,14 @@
-import javax.security.auth.Subject
+import static util.Helpers.withRetry
 
-import io.fabric8.kubernetes.api.model.ServiceAccount
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
-import io.kubernetes.client.proto.V1
-
-import io.stackrox.proto.api.v1.DetectionServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.ScopeOuterClass
-import io.stackrox.proto.storage.ServiceAccountOuterClass
 
-import common.YamlGenerator
 import objects.Deployment
-import objects.NetworkPolicy
-import objects.NetworkPolicyTypes
+import services.ClusterService
 import services.DetectionService
 import services.PolicyService
 
@@ -50,17 +43,26 @@ class DeploymentCheck extends BaseSpecification {
 //            (DEPLOYMENT_CHECK): new ClusterRoleBinding().setSubjects()
 //    ]
 
-    private final static Map<String, Deployment> DEPLOYMENTS = [
-            (DEPLOYMENT_CHECK):
-                new Deployment()
-                    .setImage("ghcr.io/linuxserver/nginx:1.24.0-r7-ls261")
-                    .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"]),
-    ]
+//    private final static Map<String, Deployment> DEPLOYMENTS = [
+//            (DEPLOYMENT_CHECK):
+//                new Deployment()
+//                    .setImage("ghcr.io/linuxserver/nginx:1.24.0-r7-ls261")
+//                    .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"]),
+//    ]
+
+    @Shared
+    private String clusterId
 
     @Shared
     private static final Map<String, String> CREATED_POLICIES = [:]
 
     def setupSpec(){
+        // Ensure a secured cluster exists
+        assert ClusterService.getClusters().size() > 0, "There must be at least one secured cluster"
+        clusterId = ClusterService.getClusters().get(0).getId()
+        assert clusterId
+
+        // Create required resources
         POLICIES.each {label, create ->
             CREATED_POLICIES[label] = create()
             assert CREATED_POLICIES[label], "${label} policy should have been created"
@@ -69,18 +71,18 @@ class DeploymentCheck extends BaseSpecification {
         log.info "Waiting for policies to propagate..."
         sleep 10000
 
-        orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
-            String label, Deployment d -> d.setName(label).addLabel("app", label)
-        })
+//        orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
+//            String label, Deployment d -> d.setName(label).addLabel("app", label)
+//        })
     }
 
     def cleanupSpec(){
         CREATED_POLICIES.each {
             unused, policyId -> PolicyService.deletePolicy(policyId)
         }
-        DEPLOYMENTS.each {
-            label, d -> orchestrator.deleteDeployment(d)
-        }
+//        DEPLOYMENTS.each {
+//            label, d -> orchestrator.deleteDeployment(d)
+//        }
     }
 
     /*
@@ -93,23 +95,28 @@ class DeploymentCheck extends BaseSpecification {
     @Tag("Integration")
     @Tag("DeploymentCheck")
     def "Test Deployment Check"(){
-        //DetectionService.getDetectDeploytimeFromYAML()
+
         given:
         "deployment already fabricated"
-        Deployment d = DEPLOYMENTS[DEPLOYMENT_CHECK]
-
-        expect:
-
+//        Deployment d = DEPLOYMENTS[DEPLOYMENT_CHECK]
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
         builder.setYaml(createDeploymentYaml())
+        builder.setNamespace("default")
+        builder.setCluster(clusterId)
         def req = builder.build()
+        DetectionServiceOuterClass.DeployDetectionResponse res
 
-        def res = DetectionService.getDetectDeploytimeFromYAML(req)
+        when:
+        withRetry(20, 5){
+            res = DetectionService.getDetectDeploytimeFromYAML(req)
+        }
+//        log.info "Got response: ${res}"
 
-        log.info "Got response: ${res}"
-
+        then:
+        assert res
+        assert res.getRemarks(0).getName() == "nginx-deployment"
+        assert res.getRemarks(0).getPermissionLevel() == Rbac.PermissionLevel.NONE.toString()
         log.info "Checked given. Sleeping"
-        sleep(10000)
         assert true
     }
 
@@ -147,14 +154,6 @@ class DeploymentCheck extends BaseSpecification {
         return PolicyService.createNewPolicy(policyDef)
     }
 
-    String createDeploymentYamla(){
-        Deployment d = new Deployment()
-                .setImage("ghcr.io/linuxserver/nginx:latest")
-                .setNamespace("default")
-        def y = YamlGenerator.toYaml(d)
-        log.info "Created Deployment yaml: ${y}"
-        return y
-    }
 
     static String createDeploymentYaml() {
         return """
