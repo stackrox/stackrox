@@ -246,6 +246,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "expiration": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

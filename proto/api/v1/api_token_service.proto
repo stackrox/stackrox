@@ -5,6 +5,7 @@ package v1;
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "storage/api_token.proto";
 
 option go_package = "v1";
@@ -14,6 +15,7 @@ message GenerateTokenRequest {
   string name = 1;
   string role = 2 [deprecated = true];
   repeated string roles = 3;
+  google.protobuf.Timestamp expiration = 4;
 }
 
 message GenerateTokenResponse {
