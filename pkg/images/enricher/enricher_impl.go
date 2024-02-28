@@ -793,13 +793,25 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, nil
 	}
 
-	log.Debugf("Found signatures for image %q: %+v", imgName, fetchedSignatures)
+	uniqueFetchedSignatures := uniqueImageSignatures(fetchedSignatures)
+
+	log.Debugf("Found signatures for image %q: %+v", imgName, uniqueFetchedSignatures)
 
 	img.Signature = &storage.ImageSignature{
-		Signatures: fetchedSignatures,
+		Signatures: uniqueFetchedSignatures,
 		Fetched:    protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 	return true, nil
+}
+
+func uniqueImageSignatures(sigs []*storage.Signature) []*storage.Signature {
+	uniqueSigs := make([]*storage.Signature, 0, len(sigs))
+	for _, sig := range sigs {
+		if !protoutils.SliceContains(sig, uniqueSigs) {
+			uniqueSigs = append(uniqueSigs, sig)
+		}
+	}
+	return uniqueSigs
 }
 
 func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
@@ -807,7 +819,6 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 		return errox.InvalidArgs.CausedByf("no registry is indicated for image %q",
 			image.GetName().GetFullName())
 	}
-	// TODO(dhaus): Verify the image names here as well? Probably we should fail open here instead of not at all? At least 1 image has to have a registry set I suppose.
 	return nil
 }
 
