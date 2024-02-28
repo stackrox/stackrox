@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	cached "k8s.io/client-go/discovery/cached"
@@ -251,6 +252,57 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	configs := scanConfigs.GetConfigurations()
 	scanconfigID := getscanConfigID(testName, configs)
 	defer deleteScanConfig(ctx, scanconfigID, scanConfigService)
+
+	duplicatedScanSettingBinding := &complianceoperatorv1.ScanSettingBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "duplicated-profile-ssb-test",
+			Namespace: "openshift-compliance",
+		},
+		Profiles: []complianceoperatorv1.NamedObjectReference{
+			{
+				APIGroup: "compliance.openshift.io/v1alpha1",
+				Kind:     "Profile",
+				Name:     "ocp4-cis",
+			},
+		},
+		SettingsRef: &complianceoperatorv1.NamedObjectReference{
+			APIGroup: "compliance.openshift.io/v1alpha1",
+			Kind:     "ScanSetting",
+			Name:     "default",
+		},
+	}
+	client := createDynamicClient(t)
+	err = client.Create(context.TODO(), duplicatedScanSettingBinding)
+	require.NoError(t, err, "failed to create ScanSettingBinding %s", duplicatedScanSettingBinding.Name)
+
+	// Create a scan configuration with the same profile
+	duplicateSSBTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+	duplicateSSBProfileReq := &v2.ComplianceScanConfiguration{
+		ScanName: duplicateSSBTestName,
+		Id:       "",
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: false,
+			Profiles:    []string{"ocp4-cis"},
+			Description: "test config for duplicate profile ssb",
+			ScanSchedule: &v2.Schedule{
+				IntervalType: 1,
+				Hour:         15,
+				Minute:       0,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{1, 2, 3, 4, 5, 6},
+					},
+				},
+			},
+		},
+	}
+
+	_, err = service.CreateComplianceScanConfiguration(ctx, duplicateSSBProfileReq)
+	assert.Contains(t, err.Error(), "already exists for profile")
+
+	err = client.Delete(context.TODO(), duplicatedScanSettingBinding)
+	require.NoError(t, err, "failed to delete ScanSettingBinding %s", duplicatedScanSettingBinding.Name)
 
 	serviceResult := v2.NewComplianceResultsServiceClient(conn)
 	query = &v2.RawQuery{Query: ""}
