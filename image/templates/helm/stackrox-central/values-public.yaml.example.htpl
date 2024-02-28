@@ -560,7 +560,7 @@
 #        value: reserved
 #      - effect: NoExecute
 #        key: infra
-#        value: reserve
+#        value: reserved
 #
 #    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
 #    affinity:
