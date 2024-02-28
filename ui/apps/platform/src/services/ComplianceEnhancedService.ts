@@ -236,14 +236,11 @@ export function complianceResultsOverview(
  * due to the absence of a dedicated single-cluster endpoint
  */
 export function getAllClustersCombinedStats(
+    sortOption: ApiSortOption,
     page?: number,
     pageSize?: number
 ): Promise<ComplianceClusterOverallStats[]> {
     const searchFilter = {};
-    const sortOption = {
-        field: 'Cluster',
-        reversed: false,
-    };
     const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
 
     return axios
@@ -252,6 +249,16 @@ export function getAllClustersCombinedStats(
         }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
         .then((response) => {
             return response?.data?.scanStats ?? [];
+        });
+}
+
+export function getAllClustersCombinedStatsCount(): Promise<number> {
+    return axios
+        .get<{
+            count: number;
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster/count`)
+        .then((response) => {
+            return response?.data?.count ?? 0;
         });
 }
 
