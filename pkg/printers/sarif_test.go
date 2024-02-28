@@ -1,6 +1,7 @@
 package printers
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"regexp"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -74,7 +76,7 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Since the report contains the version, replace it specifically here.
-	exp, err := regexp.Compile(`"version": "[34].*"`)
+	exp, err := regexp.Compile(fmt.Sprintf(`"version": "%s"`, version.GetMainVersion()))
 	require.NoError(t, err)
 	output := exp.ReplaceAllString(out.String(), `"version": ""`)
 	assert.Equal(t, string(expectedOutput), output)
