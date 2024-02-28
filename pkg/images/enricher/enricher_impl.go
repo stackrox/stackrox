@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
@@ -806,7 +805,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 }
 
 func uniqueImageSignatures(sigs []*storage.Signature) []*storage.Signature {
-	uniqueSigs := sliceutils.ShallowClone(sigs)
+	uniqueSigs := make([]*storage.Signature, 0, len(sigs))
 	for _, sig := range sigs {
 		if !protoutils.SliceContains(sig, uniqueSigs) {
 			uniqueSigs = append(uniqueSigs, sig)
