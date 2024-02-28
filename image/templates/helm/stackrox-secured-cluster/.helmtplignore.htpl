@@ -25,6 +25,8 @@ templates/*scanner*
 internal/scanner-config-shape.yaml
 config-templates/scanner/
 values-scanner.yaml.example
+values-public-scanner-v4.yaml.example
+values-private-scanner-v4.yaml.example
 internal/defaults/70-scanner.yaml
 [<- end >]
 [<- if or .KubectlOutput (not .FeatureFlags.ROX_SCANNER_V4_SUPPORT) >]
