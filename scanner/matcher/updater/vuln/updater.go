@@ -218,7 +218,8 @@ func (u *Updater) Start() error {
 		go u.runGCFullPeriodic()
 	}
 
-	timer := time.NewTimer(u.updateInterval + jitter())
+	// Start immediately, all matchers will compete to grab the updater lock.
+	timer := time.NewTimer(0)
 	defer timer.Stop()
 	for {
 		select {
