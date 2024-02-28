@@ -24,50 +24,46 @@ const integrationType = 'apitoken';
 describe('API Tokens', () => {
     withAuth();
 
-    it(
-        'should create a new API Token and then view and delete',
-        { defaultCommandTimeout: 20000 },
-        () => {
-            const apiTokenName = generateNameWithDate('API Token Test');
+    it('should create a new API Token and then view and delete', () => {
+        const apiTokenName = generateNameWithDate('API Token Test');
 
-            visitIntegrationsTable(integrationSource, integrationType);
-            clickCreateNewIntegrationInTable(integrationSource, integrationType, 'Generate token');
+        visitIntegrationsTable(integrationSource, integrationType);
+        clickCreateNewIntegrationInTable(integrationSource, integrationType, 'Generate token');
 
-            // Step 0, should start out with disabled Generate button
-            cy.get(selectors.buttons.generate).should('be.disabled');
+        // Step 0, should start out with disabled Generate button
+        cy.get(selectors.buttons.generate).should('be.disabled');
 
-            // Step 1, check empty fields
-            getInputByLabel('Token name').type(' ').blur();
+        // Step 1, check empty fields
+        getInputByLabel('Token name').type(' ').blur();
 
-            getHelperElementByLabel('Token name').contains('A token name is required');
-            cy.get(selectors.buttons.generate).should('be.disabled');
+        getHelperElementByLabel('Token name').contains('A token name is required');
+        cy.get(selectors.buttons.generate).should('be.disabled');
 
-            // Step 2, check valid from and generate
-            getInputByLabel('Token name').clear().type(apiTokenName);
-            getSelectButtonByLabel('Role').click();
-            getSelectOption('Admin').click();
+        // Step 2, check valid from and generate
+        getInputByLabel('Token name').clear().type(apiTokenName);
+        getSelectButtonByLabel('Role').click();
+        getSelectOption('Admin').click();
 
-            generateCreatedAuthProvidersIntegrationInForm(integrationType);
+        generateCreatedAuthProvidersIntegrationInForm(integrationType);
 
-            cy.get('[aria-label="Success Alert"]');
+        cy.get('[aria-label="Success Alert"]');
 
-            cy.get(selectors.buttons.back).click();
+        cy.get(selectors.buttons.back).click();
 
-            // View it.
+        // View it.
 
-            assertIntegrationsTable(integrationSource, integrationType);
+        assertIntegrationsTable(integrationSource, integrationType);
 
-            cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).click();
+        cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).click();
 
-            cy.get(`${selectors.breadcrumbItem}:contains("${apiTokenName}")`);
+        cy.get(`${selectors.breadcrumbItem}:contains("${apiTokenName}")`);
 
-            clickIntegrationSourceLinkInForm(integrationSource, integrationType);
+        clickIntegrationSourceLinkInForm(integrationSource, integrationType);
 
-            // Revoke it.
+        // Revoke it.
 
-            revokeAuthProvidersIntegrationInTable(integrationType, apiTokenName);
+        revokeAuthProvidersIntegrationInTable(integrationType, apiTokenName);
 
-            cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).should('not.exist');
-        }
-    );
+        cy.get(`${selectors.tableRowNameLink}:contains("${apiTokenName}")`).should('not.exist');
+    });
 });
