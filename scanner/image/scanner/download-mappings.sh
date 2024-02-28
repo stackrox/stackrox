@@ -22,3 +22,5 @@ for url in "${urls[@]}"; do
     echo "Downloading ${url} > ${output_dir}/$filename"
     curl --retry 3 -sS --fail -o "${output_dir}/$filename" "$url"
 done
+
+echo "Done"
