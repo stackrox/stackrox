@@ -38,16 +38,22 @@ type Updater struct {
 	known []claircore.Distribution
 	// mutex protects access to known.
 	mutex sync.RWMutex
+
+	// vulnInitializedFunc returns true if vulnerabilities are ready, so we can fetch
+	// distributions, if nil no checks are done.
+	vulnInitializedFunc func(ctx context.Context) bool
 }
 
 // New creates a new Updater.
-func New(ctx context.Context, store postgres.MatcherStore) (*Updater, error) {
+func New(ctx context.Context, store postgres.MatcherStore, vulnInitializedFunc func(ctx context.Context) bool) (*Updater, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	u := &Updater{
 		ctx:    ctx,
 		cancel: cancel,
 
 		store: store,
+
+		vulnInitializedFunc: vulnInitializedFunc,
 	}
 	return u, nil
 }
@@ -64,27 +70,37 @@ func (u *Updater) Known() []claircore.Distribution {
 // Start begins the update proces.
 func (u *Updater) Start() error {
 	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/distribution/Updater.Start")
-
-	zlog.Info(ctx).Msg("starting initial update")
-	if err := u.update(ctx); err != nil {
-		zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
-	}
-	zlog.Info(ctx).Msg("completed initial update")
-
-	t := time.NewTimer(updateInterval)
+	// Schedule the initial update to occur randomly anywhere from now up to the
+	// specified limit minutes, to reduce chances of simultaneous runs.
+	d := time.Duration(rand.Float64() * float64(1*time.Minute))
+	zlog.Info(ctx).Msgf("initial update in %s", d)
+	t := time.NewTimer(d)
 	defer t.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-t.C:
-			zlog.Info(ctx).Msg("starting update")
+			// Concurrent reads are safe because this goroutine is the only writer.
+			isInitial := u.known == nil
+			if isInitial {
+				if u.vulnInitializedFunc != nil && !u.vulnInitializedFunc(u.ctx) {
+					d := 15 * time.Minute
+					zlog.Info(ctx).Msgf("vulnerability updater is running, wait %s and try again...", d)
+					t.Reset(d)
+					continue
+				}
+				zlog.Info(ctx).Msg("starting initial update")
+			} else {
+				zlog.Info(ctx).Msg("starting update")
+			}
 			if err := u.update(ctx); err != nil {
 				zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
+			} else if isInitial {
+				zlog.Info(ctx).Msg("completed initial update")
+			} else {
+				zlog.Info(ctx).Msg("completed update")
 			}
-			zlog.Info(ctx).Msg("completed update")
-
 			t.Reset(updateInterval + jitter())
 		}
 	}

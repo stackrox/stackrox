@@ -159,31 +159,23 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
-	distroUpdater, err := distribution.New(ctx, store)
+	distroUpdater, err := distribution.New(ctx, store, vulnUpdater.Initialized)
 	if err != nil {
 		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
 	}
 
-	// Start the updaters asynchronously.
+	// Start the known-distributions updater.
 	go func() {
-		// Run the initial vuln update prior to starting the distribution updater.
-		zlog.Info(ctx).Msg("starting initial update")
-		if err := vulnUpdater.Update(ctx); err != nil {
-			zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
+		if err := distroUpdater.Start(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
 		}
-		zlog.Info(ctx).Msg("completed initial update")
+	}()
 
-		go func() {
-			if err := vulnUpdater.Start(); err != nil {
-				zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
-			}
-		}()
-
-		go func() {
-			if err := distroUpdater.Start(); err != nil {
-				zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
-			}
-		}()
+	// Start the vulnerability updater.
+	go func() {
+		if err := vulnUpdater.Start(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+		}
 	}()
 
 	success = true
