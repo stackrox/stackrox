@@ -11,6 +11,7 @@ import (
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	ssbDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,6 +44,7 @@ type managerImpl struct {
 	scanSettingDS compScanSetting.DataStore
 	clusterDS     clusterDatastore.DataStore
 	profileDS     profileDatastore.DataStore
+	ssbDatastore  ssbDatastore.DataStore
 
 	// Map used to correlate requests to a sensor with a response.  Each request will generate
 	// a unique entry in the map
@@ -51,7 +53,7 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, ssbDatastore ssbDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
@@ -59,6 +61,7 @@ func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataSto
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
 		profileDS:       profileDS,
+		ssbDatastore:    ssbDatastore,
 	}
 }
 
@@ -219,6 +222,20 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// Check if there are any Existing ScanSettingBindings for the clusters that already have the scan configuration
+	// If so, then we cannot create the scan configuration.
+	existingScanSettingBindings, err := m.ssbDatastore.GetScanSettingBindings(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusters...).ProtoQuery())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve scan setting bindings for scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
+	// validate that the scan setting bindings does not contains any profiles that are being referenced by the scan request
+	err = validateScanSettingBindingsProfiles(existingScanSettingBindings, profiles)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
@@ -249,6 +266,19 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	}
 
 	return scanRequest, nil
+}
+
+// validateScanSettingBindingsProfiles validates that the scan setting bindings does not contains any profiles that are being referenced by the scan request
+func validateScanSettingBindingsProfiles(scanSettingBindings []*storage.ComplianceOperatorScanSettingBindingV2, profiles []string) error {
+	for _, binding := range scanSettingBindings {
+		ssbProfiles := binding.ProfileNames
+		for _, profile := range profiles {
+			if sliceutils.Find(ssbProfiles, profile) != -1 {
+				return errors.Errorf("Scan setting binding %q already exists for profile %q", binding.GetId(), profile)
+			}
+		}
+	}
+	return nil
 }
 
 func (m *managerImpl) processClusterDelete(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) {
