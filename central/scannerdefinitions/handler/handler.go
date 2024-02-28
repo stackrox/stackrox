@@ -592,14 +592,12 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, func(), err
 	cleanup := func() {
 		_ = os.RemoveAll(tmpDir)
 	}
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "removing temporary file")
-	}
 
 	// Extract the file and copy contents to the temporary file, notice we
 	// intentionally don't Sync(), to benefit from filesystem caching.
 	_, err = io.Copy(tmpFile, fileReader)
 	if err != nil {
+		_ = os.RemoveAll(tmpDir)
 		return nil, nil, errors.Wrap(err, "writing to temporary file")
 	}
 
