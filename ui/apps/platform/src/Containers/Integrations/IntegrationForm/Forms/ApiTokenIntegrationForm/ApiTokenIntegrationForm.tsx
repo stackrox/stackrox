@@ -1,14 +1,14 @@
 import React, { ReactElement } from 'react';
 import {
-    TextInput,
-    PageSection,
-    Form,
-    DescriptionList,
-    DescriptionListTerm,
-    DescriptionListGroup,
-    DescriptionListDescription,
-    SelectOption,
     DatePicker,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Form,
+    PageSection,
+    SelectOption,
+    TextInput,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
 
@@ -46,6 +46,14 @@ export const validationSchema = yup.object().shape({
         .of(yup.string().trim())
         .min(1, 'Must have a role selected')
         .required('A role is required'),
+    expiration: yup
+        .string()
+        .test('Future date test', 'Expiration date should not be in the past', (value) => {
+            if (!value) {
+                return true;
+            }
+            return new Date(value) > new Date();
+        }),
 });
 
 export const defaultValues: ApiTokenIntegrationFormValues = {
@@ -188,6 +196,8 @@ function ApiTokenIntegrationForm({
                             >
                                 <DatePicker
                                     id="expiration"
+                                    inputProps={{ id: 'expiration' }}
+                                    onBlur={handleBlur}
                                     value={
                                         values.expiration
                                             ? yyyyMMddFormat(new Date(values.expiration))
