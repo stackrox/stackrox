@@ -240,6 +240,7 @@ func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {
 	s.Require().Equal(1, count)
 
 	s.Require().NoError(s.dataStore.DeleteScanByCluster(s.hasWriteCtx, testconsts.Cluster1))
+
 	count, err = s.storage.Count(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Equal(0, count)

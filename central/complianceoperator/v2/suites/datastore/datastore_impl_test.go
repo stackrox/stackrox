@@ -248,10 +248,13 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuites() {
 func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuiteByCluster() {
 	suite := s.getTestSuite(testconsts.Cluster1)
 	s.Require().NoError(s.dataStore.UpsertSuite(s.hasWriteCtx, suite))
+
 	count, err := s.storage.Count(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Equal(1, count)
+
 	s.Require().NoError(s.dataStore.DeleteSuitesByCluster(s.hasWriteCtx, testconsts.Cluster1))
+
 	count, err = s.storage.Count(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Equal(0, count)
