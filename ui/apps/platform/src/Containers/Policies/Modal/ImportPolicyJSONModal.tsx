@@ -38,7 +38,7 @@ function ImportPolicyJSONModal({
 
     function startImportPolicies() {
         // Note: this only resolves errors on one policy for MVP,
-        //       for import files with more than one policy, we only show the errors, so that the user can fix them manually
+        // see decision in comment on Jira story, https://issues.redhat.com/browse/ROX-4409
         const [policiesToImport, metadata] = getResolvedPolicies(
             policies,
             duplicateErrors,
@@ -49,9 +49,9 @@ function ImportPolicyJSONModal({
                 if (response.allSucceeded) {
                     setModalType('success');
 
-                    const importedPolicies = response.responses.map((res) => res.policy);
-
-                    setPolicies(importedPolicies);
+                    // TODO: multiple policies import will be handled in
+                    // https://issues.redhat.com/browse/ROX-8613
+                    setPolicies([response.responses[0].policy]);
                     setTimeout(() => {
                         handleCancelModal();
                         fetchPoliciesWithQuery();
