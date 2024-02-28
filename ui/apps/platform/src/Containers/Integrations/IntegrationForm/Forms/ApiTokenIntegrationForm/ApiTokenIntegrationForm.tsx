@@ -1,30 +1,30 @@
-import React, { ReactElement } from 'react';
+import React, {ReactElement} from 'react';
 import {
-    TextInput,
-    PageSection,
-    Form,
-    DescriptionList,
-    DescriptionListTerm,
-    DescriptionListGroup,
-    DescriptionListDescription,
-    SelectOption,
     DatePicker,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Form,
+    PageSection,
+    SelectOption,
+    TextInput,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
 
-import { ApiToken } from 'types/apiToken.proto';
+import {ApiToken} from 'types/apiToken.proto';
 
 import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
-import { getDateTime } from 'utils/dateUtils';
+import {getDateTime} from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
-import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
+import ApiTokenFormMessageAlert, {ApiTokenFormResponseMessage} from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
 import useAllowedRoles from './useFetchRoles';
 
@@ -46,6 +46,14 @@ export const validationSchema = yup.object().shape({
         .of(yup.string().trim())
         .min(1, 'Must have a role selected')
         .required('A role is required'),
+    expiration: yup
+        .string()
+        .test('Future date test', 'Expiration date should not be in the past', (value) => {
+            if (!value) {
+                return true;
+            }
+            return new Date(value) > new Date();
+        }),
 });
 
 export const defaultValues: ApiTokenIntegrationFormValues = {
