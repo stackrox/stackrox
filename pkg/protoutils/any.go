@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	golangProto "github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/secrets"
 )
 
 // MarshalAny correctly marshals a proto message into an Any
@@ -17,4 +18,25 @@ func MarshalAny(msg proto.Message) (*types.Any, error) {
 	}
 	a.TypeUrl = golangProto.MessageName(msg)
 	return a, nil
+}
+
+// RequestToAny converts an input protobuf message to the generic protobuf Any type,
+// with the secrets scrubbed.
+func RequestToAny(req interface{}) *types.Any {
+	if req == nil {
+		return nil
+	}
+	msg, ok := req.(proto.Message)
+	if !ok {
+		return nil
+	}
+
+	// Must clone before potentially modifying it
+	msg = proto.Clone(msg)
+	secrets.ScrubSecretsFromStructWithReplacement(msg, "")
+	a, err := MarshalAny(msg)
+	if err != nil {
+		return nil
+	}
+	return a
 }
