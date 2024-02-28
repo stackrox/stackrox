@@ -16,7 +16,8 @@ import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
 
 const codeBlock = [
-    'helm install stackrox-secured-cluster-services rhacs/secured-cluster-services -n stackrox \\',
+    'helm install -n stackrox --create-namespace \\',
+    'stackrox-secured-cluster-services rhacs/secured-cluster-services \\',
     '-f <path/to/Helm-values-cluster-init-bundle.yaml> \\',
     '--set clusterName=<name_of_the_secured_cluster> \\',
     '--set centralEndpoint=<endpoint_of_central_service> \\',
