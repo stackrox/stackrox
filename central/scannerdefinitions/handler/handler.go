@@ -604,6 +604,7 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, func(), err
 	// Reset for caller's convenience.
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
+		_ = os.RemoveAll(tmpDir)
 		return nil, nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, cleanup, nil
