@@ -81,3 +81,26 @@ func TestSarifPrinter_Print_Success(t *testing.T) {
 	output := exp.ReplaceAllString(out.String(), `"version": ""`)
 	assert.Equal(t, string(expectedOutput), output)
 }
+
+func TestSarifPrinter_Print_EmptyViolations(t *testing.T) {
+	obj := &testObject{Violations: []violation{}}
+	expressions := map[string]string{
+		SarifRuleJSONPathExpressionKey:     "violations.#.id",
+		SarifHelpJSONPathExpressionKey:     "violations.#.reason",
+		SarifSeverityJSONPathExpressionKey: "violations.#.severity",
+	}
+
+	out := strings.Builder{}
+	expectedOutput, err := os.ReadFile(path.Join("testdata", "empty_sarif_report.json"))
+	require.NoError(t, err)
+
+	printer := NewSarifPrinter(expressions, "docker.io/nginx:1.19", SarifPolicyReport)
+	err = printer.Print(obj, &out)
+	require.NoError(t, err)
+
+	// Since the report contains the version, replace it specifically here.
+	exp, err := regexp.Compile(fmt.Sprintf(`"version": "%s"`, version.GetMainVersion()))
+	require.NoError(t, err)
+	output := exp.ReplaceAllString(out.String(), `"version": ""`)
+	assert.Equal(t, string(expectedOutput), output)
+}

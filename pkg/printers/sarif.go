@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -197,7 +198,9 @@ func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[stri
 
 	numberOfValues := len(data[SarifRuleJSONPathExpressionKey])
 	for key, values := range data {
-		if len(values) != numberOfValues {
+		// "-" is used as an empty replacement value in case values are missing in an array for GJSON. Hence, ignore
+		// all values which may not match the number of expected values iff the array contains the replacement value.
+		if len(values) != numberOfValues && !sliceutils.Equal(values, []string{"-"}) {
 			return nil, errox.InvalidArgs.Newf("the amount of values retrieved from JSON path expressions "+
 				"should be %d, but got %d for key %s", numberOfValues, len(values), key)
 		}
