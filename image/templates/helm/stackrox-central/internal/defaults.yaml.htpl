@@ -316,6 +316,7 @@ defaults:
       image:
         name: [< required "" .ScannerV4DBImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
+    exposeMonitoring: false
 [<- end >]
 
   system:
