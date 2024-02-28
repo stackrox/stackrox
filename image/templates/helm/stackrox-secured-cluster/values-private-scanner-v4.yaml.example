@@ -1,7 +1,5 @@
 # # Private configuration options for Scanner V4 configured as part of the
 # # secured-cluster-services Helm chart.
-# #
-# # NOTE: Scanner V4 cannot be installed on secured clusters using manifest bundles.
 #
 # scannerV4:
 #
@@ -21,10 +19,8 @@
 #
 #  # Configuration for the DB component:
 #  db:
-#     # The password to be used for authenticating database access. This is not user-relevant
-#     # and only serves to properly secure the database with a pre-shared secret. If this
-#     # setting is omitted, a password will be automatically generated upon initial deployment,
-#     # and the existing password will be used upon upgrades.
+#     # The password to be used for authenticating database access. If this setting is omitted, a password will
+#     # be automatically generated upon initial deployment and the existing password will be used upon upgrades.
 #     password:
 #       value: <scanner database password value>
 #
