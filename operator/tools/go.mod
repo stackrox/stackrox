@@ -3,7 +3,7 @@ module github.com/stackrox/stackrox/operator/tools
 go 1.19
 
 require (
-	github.com/mikefarah/yq/v4 v4.41.1
+	github.com/mikefarah/yq/v4 v4.42.1
 	github.com/operator-framework/operator-sdk v1.24.1
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230131195449-5db173878d6d
 	sigs.k8s.io/controller-tools v0.12.1
