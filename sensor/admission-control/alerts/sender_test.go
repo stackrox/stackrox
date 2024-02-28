@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -31,7 +31,7 @@ type alertSenderSuite struct {
 
 type responseRequestPair struct {
 	request  *sensor.AdmissionControlAlerts
-	response *types.Empty
+	response *protocompat.Empty
 	err      error
 }
 
@@ -52,7 +52,7 @@ func (s *alertSenderSuite) TestSendAlertsToSensor() {
 				},
 				{
 					request:  createAlertsRequest(alerts),
-					response: &types.Empty{},
+					response: protocompat.ProtoEmpty(),
 					err:      nil,
 				},
 			},
@@ -61,7 +61,7 @@ func (s *alertSenderSuite) TestSendAlertsToSensor() {
 			responseRequestPairs: []*responseRequestPair{
 				{
 					request:  createAlertsRequest(alerts),
-					response: &types.Empty{},
+					response: protocompat.ProtoEmpty(),
 					err:      nil,
 				},
 			},
@@ -140,7 +140,7 @@ func (c *fakeAdmissionControlManagementServiceClient) configureFakeClient(respon
 	c.wg.Add(len(c.responseRequestPairs))
 }
 
-func (c *fakeAdmissionControlManagementServiceClient) PolicyAlerts(_ context.Context, req *sensor.AdmissionControlAlerts, _ ...grpc.CallOption) (*types.Empty, error) {
+func (c *fakeAdmissionControlManagementServiceClient) PolicyAlerts(_ context.Context, req *sensor.AdmissionControlAlerts, _ ...grpc.CallOption) (*protocompat.Empty, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	defer func() {

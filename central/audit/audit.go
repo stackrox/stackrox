@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
@@ -57,25 +55,6 @@ func (a *audit) SendAuditMessage(ctx context.Context, req interface{}, grpcMetho
 		return
 	}
 	a.notifications.ProcessAuditMessage(ctx, am)
-}
-
-func requestToAny(req interface{}) *types.Any {
-	if req == nil {
-		return nil
-	}
-	msg, ok := req.(protocompat.Message)
-	if !ok {
-		return nil
-	}
-
-	// Must clone before potentially modifying it
-	msg = proto.Clone(msg)
-	secrets.ScrubSecretsFromStructWithReplacement(msg, "")
-	a, err := protoutils.MarshalAny(msg)
-	if err != nil {
-		return nil
-	}
-	return a
 }
 
 var requestInteractionMap = map[string]v1.Audit_Interaction{
@@ -130,7 +109,7 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	msg.Request = &v1.Audit_Message_Request{
 		Endpoint: endpoint,
 		Method:   method,
-		Payload:  requestToAny(req),
+		Payload:  protocompat.RequestToAny(req),
 		SourceHeaders: &v1.Audit_Message_Request_SourceHeaders{
 			XForwardedFor: ri.Source.XForwardedFor,
 			RemoteAddr:    ri.Source.RemoteAddr,
