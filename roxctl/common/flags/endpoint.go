@@ -52,7 +52,7 @@ const (
 // AddConnectionFlags adds connection-related flags to roxctl.
 func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443",
-		"endpoint for service to contact. Alternatively, set the endpoint via the ROX_ENDPOINT environment variable")
+		"Endpoint for service to contact. Alternatively, set the endpoint via the ROX_ENDPOINT environment variable")
 	endpointChanged = &c.PersistentFlags().Lookup("endpoint").Changed
 	c.PersistentFlags().StringVarP(&serverName, serverNameFlagName, "s", "", "TLS ServerName to use for SNI "+
 		"(if empty, derived from endpoint). Alternately, set the server name via the ROX_SERVER_NAME environment variable")

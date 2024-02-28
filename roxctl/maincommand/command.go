@@ -66,6 +66,8 @@ func Command() *cobra.Command {
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})
+	var help bool
+	c.PersistentFlags().BoolVarP(&help, "help", "h", false, "Help")
 
 	c.AddCommand(
 		central.Command(cliEnvironment),

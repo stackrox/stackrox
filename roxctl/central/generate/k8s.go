@@ -73,7 +73,7 @@ func orchestratorCommand(shortName, _ string) *cobra.Command {
 	c := &cobra.Command{
 		Use: shortName,
 		Annotations: map[string]string{
-			categoryAnnotation: "Enter orchestrator",
+			categoryAnnotation: "Orchestrator",
 		},
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return errox.InvalidArgs.New("storage type must be specified")
