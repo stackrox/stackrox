@@ -301,24 +301,24 @@ func verifyDefaultPolicyDuplicateImportFails(t *testing.T) {
 
 	policy := exportPolicy(t, service, knownPolicyID)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},
 	})
-	cancel()
 	require.NoError(t, err)
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
 	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateSystemPolicyID, duplicateSystemPolicyName})
 
 	// Check that it fails even on overwrite
-	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
-	overwriteImportResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
+	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel2()
+	overwriteImportResp, err := service.ImportPolicies(ctx2, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},
 		Metadata: &v1.ImportPoliciesMetadata{
 			Overwrite: true,
 		},
 	})
-	cancel()
 	require.NoError(t, err)
 	markPolicyAsCustom(policy)
 	validateImportPoliciesErrors(t, overwriteImportResp, policy, []string{duplicateSystemPolicyID, duplicateSystemPolicyName})
