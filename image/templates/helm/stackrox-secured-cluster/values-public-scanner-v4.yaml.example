@@ -164,17 +164,12 @@
 #         cpu: "2000m"
 #         memory: "4Gi"
 #
-#     # Configure persistence backend for the DB.
-#     #
-#     # For performance reasons it is HIGHLY RECOMMENDED to use a PVC as persistence backend
-#     # for Scanner V4 DB.
-#     #
-#     # If a default storage class exists on the cluster, then the persistence configuration
-#     # defaults to a PVC for a fresh installation. On a cluster without a default storage class the
-#     # storage class to be used can be configured explicitly (see below).
-#     #
-#     # On a cluster without a default storage class the persistence backend defaults to
-#     # an emptyDir (persistence.none=true).
+#     # Configures how Scanner V4 stores its persistent data.
+#     # You can use a persistent volume claim (the recommended default), a host path,
+#     # or an emptyDir volume if Scanner V4 is running on a secured cluster without default StorageClass.
+#     #
+#     # For performance reasons it is HIGHLY RECOMMENDED to use a PVC.
+#     # Following values show how to apply custom configuration to a PVC:
 #     persistence:
 #       persistentVolumeClaim:
 #         claimName: "scanner-v4-db"
