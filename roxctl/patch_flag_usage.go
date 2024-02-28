@@ -17,9 +17,6 @@ func processCommandFlags(command *cobra.Command) {
 	command.Flags().VisitAll(func(flag *pflag.Flag) {
 		processFlag(flag)
 	})
-	command.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-		processFlag(flag)
-	})
 }
 
 // AddMissingDefaultsToFlagUsage processes the tree of commands starting at the provided command
