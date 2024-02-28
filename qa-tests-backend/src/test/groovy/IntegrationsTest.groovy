@@ -508,7 +508,7 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        assert ExternalBackupService.testExternalBackup(backup)
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
 
         where:
         "configurations are:"
@@ -540,7 +540,7 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for GCS performs test backup (and rollback).
-        assert ExternalBackupService.testExternalBackup(backup)
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
 
         where:
         "configurations are:"
