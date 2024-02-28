@@ -27,7 +27,7 @@ type DataStore interface {
 	// DeleteProfileForCluster removes a profile from the database
 	DeleteProfileForCluster(ctx context.Context, uid string, clusterID string) error
 
-	// DeleteProfileOfCluster deletes profiles of a specific cluster
+	// DeleteProfilesByCluster deletes profiles of a specific cluster
 	DeleteProfilesByCluster(ctx context.Context, clusterID string) error
 
 	// GetProfilesByClusters gets the list of profiles for a given clusters

@@ -56,42 +56,42 @@ func New(integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.
 func (p *pruneImpl) RemoveComplianceResourcesByCluster(ctx context.Context, clusterID string) {
 	// Remove the compliance integrations
 	if err := p.integrationDS.RemoveComplianceIntegrationByCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete compliance integration for cluster %q: %v", clusterID, err)
+		log.Errorf("failed to delete compliance integrations for cluster %q: %v", clusterID, err)
 	}
 
 	// Remove any scan configurations for the cluster
 	if err := p.scanSettingDS.RemoveClusterFromScanConfig(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete scan config for cluster %s: %v", clusterID, err)
+		log.Errorf("failed to delete scan configs for cluster %s: %v", clusterID, err)
 	}
 
 	// Remove any scan result for the cluster
 	if err := p.scanResultDS.DeleteResultsByCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete scan result for cluster %s: %v", clusterID, err)
+		log.Errorf("failed to delete scan results for cluster %s: %v", clusterID, err)
 	}
 
 	// Remove any rule for the cluster
 	if err := p.compRuleDS.DeleteRulesByCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete cluster from rule for cluster id  %s: %v", clusterID, err)
+		log.Errorf("failed to delete rules for cluster %s: %v", clusterID, err)
 	}
 
 	// Remove any profile for the cluster
-	if err := p.profileDS.DeleteProfileOfCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete profile for cluster %s: %v", clusterID, err)
+	if err := p.profileDS.DeleteProfilesByCluster(ctx, clusterID); err != nil {
+		log.Errorf("failed to delete profiles for cluster %s: %v", clusterID, err)
 	}
 
 	// Remove any scan for the cluster
 	if err := p.scanDS.DeleteScanByCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete scan for cluster %s: %v", clusterID, err)
+		log.Errorf("failed to delete scans for cluster %s: %v", clusterID, err)
 	}
 
 	// Remove any scan setting for the cluster
 	if err := p.scanSettingsBindingsDS.DeleteScanSettingByCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete scan setting binding for cluster %s: %v", clusterID, err)
+		log.Errorf("failed to delete scan setting bindings for cluster %s: %v", clusterID, err)
 	}
 
 	// Remove any scan suite for the cluster
 	if err := p.suitesDS.DeleteSuitesByCluster(ctx, clusterID); err != nil {
-		log.Errorf("failed to delete scan suite for cluster %s: %v", clusterID, err)
+		log.Errorf("failed to delete scan suites for cluster %s: %v", clusterID, err)
 	}
 }
 
