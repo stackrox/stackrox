@@ -16,7 +16,6 @@ func checkUsageFirstCharacter(command *cobra.Command, t *testing.T) {
 			"Command %q, flag %q, usage doesn't start with capital letter: %q",
 			command.Name(), flag.Name, flag.Usage)
 	})
-	// processCommandFlags(command)
 	for _, subcommand := range command.Commands() {
 		checkUsageFirstCharacter(subcommand, t)
 	}
