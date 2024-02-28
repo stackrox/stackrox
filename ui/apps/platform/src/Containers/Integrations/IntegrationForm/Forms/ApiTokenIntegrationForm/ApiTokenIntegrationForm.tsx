@@ -1,4 +1,4 @@
-import React, {ReactElement} from 'react';
+import React, { ReactElement } from 'react';
 import {
     DatePicker,
     DescriptionList,
@@ -14,17 +14,17 @@ import {
 
 import * as yup from 'yup';
 
-import {ApiToken} from 'types/apiToken.proto';
+import { ApiToken } from 'types/apiToken.proto';
 
 import SelectSingle from 'Components/SelectSingle';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
-import {getDateTime} from 'utils/dateUtils';
+import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
-import ApiTokenFormMessageAlert, {ApiTokenFormResponseMessage} from './ApiTokenFormMessageAlert';
+import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
 import useAllowedRoles from './useFetchRoles';
 
@@ -196,6 +196,8 @@ function ApiTokenIntegrationForm({
                             >
                                 <DatePicker
                                     id="expiration"
+                                    inputProps={{ id: 'expiration' }}
+                                    onBlur={handleBlur}
                                     value={
                                         values.expiration
                                             ? yyyyMMddFormat(new Date(values.expiration))
