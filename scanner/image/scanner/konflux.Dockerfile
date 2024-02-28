@@ -23,16 +23,16 @@ RUN make -C scanner NODEPS=1 CGO_ENABLED=${CGO_ENABLED} image/scanner/bin/scanne
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 LABEL \
-    com.redhat.component="rhacs-scanner-container" \
+    com.redhat.component="rhacs-scanner-v4-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="This image supports image scanning for RHACS" \
+    description="This image supports v4 image scanning for RHACS" \
     io.k8s.description="This image supports image scanning for RHACS" \
-    io.k8s.display-name="scanner" \
+    io.k8s.display-name="scanner-v4" \
     io.openshift.tags="rhacs,scanner,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-scanner-rhel8" \
-    source-location="https://github.com/stackrox/scanner" \
-    summary="The image scanner for RHACS" \
+    name="rhacs-scanner-v4-rhel8" \
+    source-location="https://github.com/stackrox/stackrox" \
+    summary="The v4 image scanner for RHACS" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     # We must set version label to prevent inheriting value set in the base stage.
     # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
