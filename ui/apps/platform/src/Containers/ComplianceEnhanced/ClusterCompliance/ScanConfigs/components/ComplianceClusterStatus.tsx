@@ -36,7 +36,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             headerContent={<div>{errors.length === 1 ? 'Error' : 'Errors'}</div>}
             bodyContent={<div>{errors.join(', ')}</div>}
         >
-            <Button variant="link">
+            <Button variant="link" className="pf-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />
             </Button>
         </Popover>
