@@ -109,7 +109,7 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	msg.Request = &v1.Audit_Message_Request{
 		Endpoint: endpoint,
 		Method:   method,
-		Payload:  protocompat.RequestToAny(req),
+		Payload:  protoutils.RequestToAny(req),
 		SourceHeaders: &v1.Audit_Message_Request_SourceHeaders{
 			XForwardedFor: ri.Source.XForwardedFor,
 			RemoteAddr:    ri.Source.RemoteAddr,
