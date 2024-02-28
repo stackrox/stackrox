@@ -31,7 +31,7 @@ import useAllowedRoles from './useFetchRoles';
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
-    expiration: string;
+    expiration?: string;
 };
 
 export type ApiTokenIntegrationFormProps = {
@@ -51,7 +51,6 @@ export const validationSchema = yup.object().shape({
 export const defaultValues: ApiTokenIntegrationFormValues = {
     name: '',
     roles: [],
-    expiration: '',
 };
 
 function ApiTokenIntegrationForm({
