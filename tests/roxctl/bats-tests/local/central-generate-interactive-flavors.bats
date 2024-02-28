@@ -43,32 +43,31 @@ bitfield_to_failure() {
 }
 
 assert_flavor_prompt_development() {
-  assert_line --partial 'Enter default container images settings (development_build, stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
+  assert_line --partial 'Default container images settings (development_build, stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
 }
 
 assert_flavor_prompt_release() {
-  assert_line --partial 'Enter default container images settings (rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
+  assert_line --partial 'Default container images settings (rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
 }
 
 assert_prompts_development() {
   # partial line matching allows to avoid problems with leading an trailing whitespaces
-  # Enter - comes form interactive mode
   # main/scanner/scanner-db are constants from code
-  assert_line --regexp 'Enter main .* "quay.io/rhacs-eng/main:'
-  assert_line --regexp 'Enter scanner-db .* "quay.io/rhacs-eng/scanner-db:'
-  assert_line --regexp 'Enter scanner .* "quay.io/rhacs-eng/scanner:'
+  assert_line --regexp '^Main .* "quay.io/rhacs-eng/main:'
+  assert_line --regexp '^Scanner-db .* "quay.io/rhacs-eng/scanner-db:'
+  assert_line --regexp '^Scanner .* "quay.io/rhacs-eng/scanner:'
 }
 
 assert_prompts_stackrox() {
-  assert_line --regexp 'Enter main .* "stackrox.io/main:'
-  assert_line --regexp 'Enter scanner-db .* "stackrox.io/scanner-db:'
-  assert_line --regexp 'Enter scanner .* "stackrox.io/scanner:'
+  assert_line --regexp '^Main .* "stackrox.io/main:'
+  assert_line --regexp '^Scanner-db .* "stackrox.io/scanner-db:'
+  assert_line --regexp '^Scanner .* "stackrox.io/scanner:'
 }
 
 assert_prompts_rhacs() {
-  assert_line --regexp 'Enter main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:'
-  assert_line --regexp 'Enter scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:'
-  assert_line --regexp 'Enter scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:'
+  assert_line --regexp '^Main .* "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:'
+  assert_line --regexp '^Scanner-db .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:'
+  assert_line --regexp '^Scanner .* "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8:'
 }
 
 @test "roxctl-development central generate interactive flavor=dummy should ask for valid value" {
