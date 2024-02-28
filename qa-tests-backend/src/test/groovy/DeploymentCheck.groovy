@@ -1,5 +1,8 @@
 import static util.Helpers.withRetry
 
+import io.fabric8.openshift.api.model.ClusterRoleBinding
+import io.kubernetes.client.proto.V1Rbac
+
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
@@ -8,8 +11,15 @@ import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
+import objects.K8sRole
+import objects.K8sRoleBinding
+import objects.K8sServiceAccount
+import objects.K8sSubject
+import objects.NetworkPolicy
+import objects.NetworkPolicyTypes
 import services.ClusterService
 import services.DetectionService
+import services.NetworkPolicyService
 import services.PolicyService
 
 import spock.lang.Shared
@@ -34,22 +44,6 @@ class DeploymentCheck extends BaseSpecification {
 
     ]
 
-//    private final static Map<String, ServiceAccount> SERVICE_ACCOUNTS = [
-//            (DEPLOYMENT_CHECK): new ServiceAccount()
-//
-//    ]
-//
-//    private final static Map<String, ClusterRoleBinding> CLUSTER_ROLE_BINDING = [
-//            (DEPLOYMENT_CHECK): new ClusterRoleBinding().setSubjects()
-//    ]
-
-//    private final static Map<String, Deployment> DEPLOYMENTS = [
-//            (DEPLOYMENT_CHECK):
-//                new Deployment()
-//                    .setImage("ghcr.io/linuxserver/nginx:1.24.0-r7-ls261")
-//                    .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"]),
-//    ]
-
     @Shared
     private String clusterId
 
@@ -63,26 +57,16 @@ class DeploymentCheck extends BaseSpecification {
         assert clusterId
 
         // Create required resources
-        POLICIES.each {label, create ->
-            CREATED_POLICIES[label] = create()
-            assert CREATED_POLICIES[label], "${label} policy should have been created"
-        }
+        orchestrator.createNamespace(DEPLOYMENT_CHECK)
 
-        log.info "Waiting for policies to propagate..."
-        sleep 10000
-
-//        orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
-//            String label, Deployment d -> d.setName(label).addLabel("app", label)
-//        })
     }
 
     def cleanupSpec(){
         CREATED_POLICIES.each {
             unused, policyId -> PolicyService.deletePolicy(policyId)
         }
-//        DEPLOYMENTS.each {
-//            label, d -> orchestrator.deleteDeployment(d)
-//        }
+        orchestrator.deleteNamespace(DEPLOYMENT_CHECK)
+        orchestrator.waitForNamespaceDeletion(DEPLOYMENT_CHECK)
     }
 
     /*
@@ -94,30 +78,63 @@ class DeploymentCheck extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     @Tag("DeploymentCheck")
-    def "Test Deployment Check"(){
+    def "Test Deployment Check - Single Deployment"(){
 
         given:
-        "deployment already fabricated"
-//        Deployment d = DEPLOYMENTS[DEPLOYMENT_CHECK]
+        "builder is prepared"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
-        builder.setYaml(createDeploymentYaml())
-        builder.setNamespace("default")
+        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK))
+        builder.setNamespace(DEPLOYMENT_CHECK)
         builder.setCluster(clusterId)
         def req = builder.build()
         DetectionServiceOuterClass.DeployDetectionResponse res
+
+        and:
+        "network policy has been created"
+        NetworkPolicy pol = new NetworkPolicy(DEPLOYMENT_CHECK)
+                .setNamespace(DEPLOYMENT_CHECK)
+                .addPodSelector(["app":DEPLOYMENT_CHECK])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+        def netPolID = orchestrator.applyNetworkPolicy(pol)
+        assert NetworkPolicyService.waitForNetworkPolicy(netPolID)
+
+        and:
+        "cluster RBAC has been created"
+        def sa = new K8sServiceAccount(
+                name: "check-deployment-sa",
+                namespace: DEPLOYMENT_CHECK,
+        )
+        orchestrator.createServiceAccount(sa)
+
+        K8sRole clusterAdmin
+        def orchRoles = orchestrator.getClusterRoles()
+        for (K8sRole r : orchRoles) {
+            if (r.getName() == "cluster-admin"){
+                log.info("ClusterRole Name: ${r.getName()}")
+                clusterAdmin = r
+            }
+        }
+        assert clusterAdmin
+        def crb = new K8sRoleBinding(clusterAdmin, [new K8sSubject(sa)])
+        crb.setNamespace(DEPLOYMENT_CHECK)
+        crb.setName(DEPLOYMENT_CHECK)
+        orchestrator.createClusterRoleBinding(crb)
 
         when:
         withRetry(20, 5){
             res = DetectionService.getDetectDeploytimeFromYAML(req)
         }
-//        log.info "Got response: ${res}"
+        log.info "Got remarks:\n ${res.remarksList}"
 
         then:
         assert res
-        assert res.getRemarks(0).getName() == "nginx-deployment"
+        assert res.getRemarksList().size() > 0
+        assert res.getRemarks(0).getName() == DEPLOYMENT_CHECK
         assert res.getRemarks(0).getPermissionLevel() == Rbac.PermissionLevel.NONE.toString()
-        log.info "Checked given. Sleeping"
-        assert true
+        assert res.getRemarks(0).getAppliedNetworkPoliciesList().size() == 1
+        assert res.getRemarks(0).getAppliedNetworkPolicies(0) == DEPLOYMENT_CHECK
+
+        sleep(10000)
     }
 
     static String duplicatePolicyForTest(
@@ -155,31 +172,32 @@ class DeploymentCheck extends BaseSpecification {
     }
 
 
-    static String createDeploymentYaml() {
-        return """
+    static String createDeploymentYaml(String deploymentName) {
+        """
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
-  namespace: default
+  name: %s
+  namespace: %s
   labels:
-    app: nginx
+    app: %s
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: nginx
+      app: %s
   template:
     metadata:
       labels:
-        app: nginx
+        app: %s
     spec:
       containers:
       - name: nginx
+        serviceAccountName: check-deployment-sa
         image: nginx:latest
         ports:
         - containerPort: 80
-        """
+        """.formatted(deploymentName,deploymentName,deploymentName,deploymentName,deploymentName)
     }
 }
 
