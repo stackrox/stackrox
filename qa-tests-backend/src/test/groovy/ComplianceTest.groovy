@@ -1055,12 +1055,12 @@ class ComplianceTest extends BaseSpecification {
         def controls = [
                 new Control(
                         "PCI_DSS_3_2:6_2",
-                        ["Image quay.io/rhacs-eng/qa-multi-arch:nginx-1.12 has \\d{2}\\d+ fixed CVEs. " +
+                        ["Image $TEST_IMAGE has \\d{2}\\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
                         "HIPAA_164:306_e",
-                        ["Image quay.io/rhacs-eng/qa-multi-arch:nginx-1.12 has \\d{2}\\d+ fixed CVEs. " +
+                        ["Image $TEST_IMAGE has \\d{2}\\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
         ]
