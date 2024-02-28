@@ -272,7 +272,16 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	// Try download offline zip, only abort test when download fails
+	// No mapping json file
+	req = s.getRequestWithJSONFile(t, "name2repos")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	// No mapping json file
+	req = s.getRequestWithJSONFile(t, "repo2cpe")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
 	tempDir := t.TempDir()
 	filePath := tempDir + "/test.zip"
 
@@ -301,6 +310,18 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
+
+	w = mock.NewResponseWriter()
+	req = s.getRequestWithJSONFile(t, "repo2cpe")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+
+	w = mock.NewResponseWriter()
+	req = s.getRequestWithJSONFile(t, "name2repos")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
 func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) error {
