@@ -36,7 +36,7 @@ describe('Import policy', () => {
                     contents,
                     fileName,
                 },
-                {force: true} // because input element has display: none style
+                { force: true } // because input element has display: none style
             );
             cy.get(
                 `${selectors.importUploadModal.policyNames}:nth-child(1):contains("${importedPolicyName}")`
@@ -79,7 +79,7 @@ describe('Import policy', () => {
                 contents,
                 fileName: 'dummy.json',
             },
-            {force: true} // because input element has display: none style
+            { force: true } // because input element has display: none style
         );
 
         const body = {
@@ -102,7 +102,7 @@ describe('Import policy', () => {
             ],
             allSucceeded: false,
         };
-        cy.intercept('POST', api.policies.import, {body}).as('importPolicy');
+        cy.intercept('POST', api.policies.import, { body }).as('importPolicy');
         cy.get(selectors.importUploadModal.beginButton).click();
         cy.wait('@importPolicy');
 
@@ -142,7 +142,7 @@ describe('Import policy', () => {
                 contents,
                 fileName: 'dummy.json',
             },
-            {force: true} // because input element has display: none style
+            { force: true } // because input element has display: none style
         );
 
         const body = {
@@ -166,7 +166,7 @@ describe('Import policy', () => {
             ],
             allSucceeded: false,
         };
-        cy.intercept('POST', api.policies.import, {body}).as('importPolicy');
+        cy.intercept('POST', api.policies.import, { body }).as('importPolicy');
         cy.get(selectors.importUploadModal.beginButton).click();
         cy.wait('@importPolicy');
 
@@ -201,7 +201,7 @@ describe('Import policy', () => {
                 contents,
                 fileName: 'dummy.json',
             },
-            {force: true} // because input element has display: none style
+            { force: true } // because input element has display: none style
         );
 
         const body = {
@@ -230,7 +230,7 @@ describe('Import policy', () => {
             ],
             allSucceeded: false,
         };
-        cy.intercept('POST', api.policies.import, {body}).as('importPolicy');
+        cy.intercept('POST', api.policies.import, { body }).as('importPolicy');
         cy.get(selectors.importUploadModal.beginButton).click();
         cy.wait('@importPolicy');
 

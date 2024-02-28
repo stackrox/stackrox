@@ -415,7 +415,7 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 		if existingPolicy.GetIsDefault() {
 			importErrors = append(importErrors,
 				duplicateNameImportErr(fmt.Sprintf("system policy with name %q already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyName, policy.GetName()))
-		} else if !overwrite { // And if not system policy, then it's only an error if it's an overwrite operation
+		} else if !overwrite { // And if not system policy, then it's only an error if it is not an overwrite operation
 			importErrors = append(importErrors,
 				duplicateNameImportErr(fmt.Sprintf("policy with name %q already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateName, policy.GetName()))
 		}
