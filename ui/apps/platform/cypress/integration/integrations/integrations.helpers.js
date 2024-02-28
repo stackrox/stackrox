@@ -431,7 +431,8 @@ export function generateCreatedAuthProvidersIntegrationInForm(
             cy.get(selectors.buttons.generate).click();
         },
         routeMatcherMap,
-        staticResponseMap
+        staticResponseMap,
+        { timeout: 20000 }
     );
 
     // Unlike other integrations which go back to the corresponding integrations table,
