@@ -51,3 +51,17 @@ func MarshalTextString(msg proto.Message) string {
 func Unmarshal(dAtA []byte, msg proto.Message) error {
 	return proto.Unmarshal(dAtA, msg)
 }
+
+// Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
+type Unmarshaler[T any] interface {
+	proto.Unmarshaler
+	*T
+}
+
+// ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
+// and that have a Clone deep-copy method.
+type ClonedUnmarshaler[T any] interface {
+	Clone() *T
+	proto.Unmarshaler
+	*T
+}

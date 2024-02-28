@@ -1,9 +1,15 @@
 package protocompat
 
 import (
+	"reflect"
 	"time"
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
+)
+
+var (
+	// TimestampPtrType is a variable containing a nil pointer of Timestamp type
+	TimestampPtrType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
 )
 
 // TimestampNow returns a protobuf timestamp set to the current time.
@@ -57,4 +63,15 @@ func DurationFromProto(d *gogoTimestamp.Duration) (time.Duration, error) {
 // DurationProto converts a time.Duration to a proto Duration.
 func DurationProto(d time.Duration) *gogoTimestamp.Duration {
 	return gogoTimestamp.DurationProto(d)
+}
+
+var (
+	// zeroProtoTimestampFromTime represents the zero value of a proto
+	// timestamp when initialized from the zero time.
+	zeroProtoTimestampFromTime, _ = ConvertTimeToTimestampOrError(time.Time{})
+)
+
+// IsZeroTimestamp returns whether a Timestamp pointer is either nil, or pointing to the zero of the type.
+func IsZeroTimestamp(ts *gogoTimestamp.Timestamp) bool {
+	return ts == nil || ts == &gogoTimestamp.Timestamp{} || ts == zeroProtoTimestampFromTime
 }
