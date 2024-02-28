@@ -401,11 +401,11 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 			// New policy cannot have the same id as default policies (aka system policies) and it cannot be overwritten, so always return an error
 			if existingPolicy.GetIsDefault() {
 				importErrors = append(importErrors,
-					duplicateNameImportErr(policiesPkg.ErrImportDuplicateSystemPolicyID, existingPolicy.GetName(), "system policy with id %q already exists, unable to import policy", policy.GetId()))
+					duplicateNameImportErrf(policiesPkg.ErrImportDuplicateSystemPolicyID, existingPolicy.GetName(), "system policy with id %q already exists, unable to import policy", policy.GetId()))
 			} else if !overwrite {
 				// If existing policy is a custom one, then it's only an error if the user hasn't explicitly enabled overwrite
 				importErrors = append(importErrors,
-					duplicateNameImportErr(policiesPkg.ErrImportDuplicateID, existingPolicy.GetName(), "policy with id %q already exists, unable to import policy", policy.GetId()))
+					duplicateNameImportErrf(policiesPkg.ErrImportDuplicateID, existingPolicy.GetName(), "policy with id %q already exists, unable to import policy", policy.GetId()))
 			}
 		}
 	}
@@ -414,16 +414,16 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 		// Similarly, new policy cannot have the same name as default policies
 		if existingPolicy.GetIsDefault() {
 			importErrors = append(importErrors,
-				duplicateNameImportErr(policiesPkg.ErrImportDuplicateSystemPolicyName, policy.GetName(), "system policy with name %q already exists, unable to import policy", policy.GetId()))
+				duplicateNameImportErrf(policiesPkg.ErrImportDuplicateSystemPolicyName, policy.GetName(), "system policy with name %q already exists, unable to import policy", policy.GetId()))
 		} else if !overwrite { // And if not system policy, then it's only an error if it is not an overwrite operation
 			importErrors = append(importErrors,
-				duplicateNameImportErr(policiesPkg.ErrImportDuplicateName, policy.GetName(), "policy with name %q already exists, unable to import policy", policy.GetId()))
+				duplicateNameImportErrf(policiesPkg.ErrImportDuplicateName, policy.GetName(), "policy with name %q already exists, unable to import policy", policy.GetId()))
 		}
 	}
 	return importErrors, nil
 }
 
-func duplicateNameImportErr(errType string, duplicateName string, errMsgTemplate string, args ...interface{}) *v1.ImportPolicyError {
+func duplicateNameImportErrf(errType string, duplicateName string, errMsgTemplate string, args ...interface{}) *v1.ImportPolicyError {
 	return &v1.ImportPolicyError{
 		Message: fmt.Sprintf(errMsgTemplate, args...),
 		Type:    errType,
