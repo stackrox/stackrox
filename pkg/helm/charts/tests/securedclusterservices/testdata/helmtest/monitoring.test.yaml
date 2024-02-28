@@ -3,8 +3,6 @@ values:
     allowNone: true
   scannerV4:
     disable: false
-    indexer:
-      metricsPort: 9090
 tests:
 - name: monitoring should not be exposed by default
   expect: |

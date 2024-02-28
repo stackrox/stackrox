@@ -6,8 +6,6 @@ values:
       enabled: false
   scannerV4:
     disable: true
-    indexer:
-      metricsPort: 9090
 tests:
 - name: sensor should not allow any scanner traffic by default
   expect: |
