@@ -13,7 +13,7 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import { Caption, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -170,10 +170,6 @@ function ClusterSelection({
                     />
                 )}
                 <TableComposable>
-                    <Caption>
-                        <span className="pf-u-danger-color-100">* </span>
-                        At least one cluster is required
-                    </Caption>
                     <Thead noWrap>
                         <Tr>
                             <Th

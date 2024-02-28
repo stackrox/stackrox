@@ -13,7 +13,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 import {
-    Caption,
     ExpandableRowContent,
     TableComposable,
     Tbody,
@@ -204,10 +203,6 @@ function ProfileSelection({
                     />
                 )}
                 <TableComposable>
-                    <Caption>
-                        <span className="pf-u-danger-color-100">* </span>
-                        At least one profile is required
-                    </Caption>
                     <Thead noWrap>
                         <Tr>
                             <Th

@@ -26,25 +26,42 @@ import {
     complianceEnhancedCoverageClustersPath,
     complianceEnhancedScanConfigsPath,
 } from 'routePaths';
-import { getAllClustersCombinedStats } from 'services/ComplianceEnhancedService';
+import {
+    getAllClustersCombinedStats,
+    getAllClustersCombinedStatsCount,
+} from 'services/ComplianceEnhancedService';
+import { SortOption } from 'types/table';
 
+import useURLSort from 'hooks/useURLSort';
 import ComplianceClusterStatus from '../ScanConfigs/components/ComplianceClusterStatus';
 import CoverageTableViewToggleGroup from './Components/CoverageTableViewToggleGroup';
-
 import {
     calculateCompliancePercentage,
     getCompliancePfClassName,
     getStatusCounts,
 } from './compliance.coverage.utils';
 
+const sortFields = ['Cluster'];
+const defaultSortOption = {
+    field: 'Cluster',
+    direction: 'asc',
+} as SortOption;
+
 function ClustersCoverageTable() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+    });
 
     const listQuery = useCallback(
-        () => getAllClustersCombinedStats(page - 1, perPage),
-        [page, perPage]
+        () => getAllClustersCombinedStats(sortOption, page - 1, perPage),
+        [page, perPage, sortOption]
     );
     const { data: clusterScanStats, loading: isLoading, error } = useRestQuery(listQuery);
+
+    const countQuery = useCallback(() => getAllClustersCombinedStatsCount(), []);
+    const { data: clusterScanStatsCount } = useRestQuery(countQuery);
 
     const renderTableContent = () => {
         return clusterScanStats?.map(({ cluster, checkStats, clusterErrors }, index) => {
@@ -157,7 +174,7 @@ function ClustersCoverageTable() {
                             <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                                 <Pagination
                                     isCompact
-                                    itemCount={clusterScanStats ? clusterScanStats.length : 0}
+                                    itemCount={clusterScanStatsCount ?? 0}
                                     page={page}
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
@@ -170,7 +187,7 @@ function ClustersCoverageTable() {
                     <TableComposable>
                         <Thead noWrap>
                             <Tr>
-                                <Th>Cluster</Th>
+                                <Th sort={getSortParams('Cluster')}>Cluster</Th>
                                 <Th>Operator status</Th>
                                 <Th
                                     info={{
