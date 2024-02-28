@@ -1,9 +1,7 @@
 # # Public configuration options for Scanner V4 configured as part of the
 # # secured-cluster-services Helm chart.
 # #
-# # NOTE: Scanner V4 cannot be installed on secured clusters using manifest bundles.
-# #
-# # Image configuration for scanner v4.
+# # Image configuration for Scanner V4.
 # # For a complete example, see the `values-public.yaml.example` file.
 # image:
 #   # Configuration of the `scannerV4` image.
@@ -52,7 +50,7 @@
 #         value: reserved
 #       - effect: NoExecute
 #         key: infra
-#         value: reserve
+#         value: reserved
 #
 #     # If scheduling needs specific affinities, you can specify the corresponding affinities here.
 #     affinity:
