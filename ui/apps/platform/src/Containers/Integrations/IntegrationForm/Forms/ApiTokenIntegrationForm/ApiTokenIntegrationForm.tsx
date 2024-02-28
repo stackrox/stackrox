@@ -180,7 +180,6 @@ function ApiTokenIntegrationForm({
                         </FormLabelGroup>
                         {isEditable && !isGenerated && (
                             <FormLabelGroup
-                                isRequired
                                 label="Expiration date"
                                 fieldId="expiration"
                                 touched={touched}
@@ -197,6 +196,8 @@ function ApiTokenIntegrationForm({
                                     onChange={(event, value, date) => {
                                         if (date) {
                                             setFieldValue('expiration', date.toISOString());
+                                        } else {
+                                            setFieldValue('expiration', undefined);
                                         }
                                     }}
                                 />
