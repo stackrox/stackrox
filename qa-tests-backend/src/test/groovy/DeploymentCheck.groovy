@@ -5,13 +5,21 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
 import io.kubernetes.client.proto.V1
 
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
+import io.stackrox.proto.api.v1.DetectionServiceOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.ScopeOuterClass
 import io.stackrox.proto.storage.ServiceAccountOuterClass
 
+import common.YamlGenerator
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import services.DetectionService
+import services.PolicyService
 
+import spock.lang.Shared
 import spock.lang.Tag
 
 class DeploymentCheck extends BaseSpecification {
@@ -19,15 +27,20 @@ class DeploymentCheck extends BaseSpecification {
     // each tests policy and deployment.
     private final static String DEPLOYMENT_CHECK = "check-deployments"
 
-//    private final static Map<String, NetworkPolicy> POLICIES = [
-//            (DEPLOYMENT_CHECK):
-//            new NetworkPolicy("multi-port-egress")
-//                    .setNamespace("qa")
-//                    .addPodSelector("app":DEPLOYMENT_CHECK)
-//                    .addPolicyType(NetworkPolicyTypes.INGRESS)
-//
-//    ]
-//
+    // Policies used in this test
+    private final static String LATEST_TAG = "Latest tag"
+
+    private final static Map<String, Closure> POLICIES = [
+            (DEPLOYMENT_CHECK): {
+                duplicatePolicyForTest(
+                    LATEST_TAG,
+                    DEPLOYMENT_CHECK,
+                    [EnforcementAction.FAIL_BUILD_ENFORCEMENT],
+                    [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
+            )}
+
+    ]
+
 //    private final static Map<String, ServiceAccount> SERVICE_ACCOUNTS = [
 //            (DEPLOYMENT_CHECK): new ServiceAccount()
 //
@@ -42,26 +55,29 @@ class DeploymentCheck extends BaseSpecification {
                 new Deployment()
                     .setImage("ghcr.io/linuxserver/nginx:1.24.0-r7-ls261")
                     .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"]),
-
-//                new Deployment()
-//                        .setName(DEPLOYMENT_CHECK)
-//                        .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine")
-//                        .setNamespace("qa")
-//                        .addPort(80)
-//                        .setSkipReplicaWait(true)
-//                        .addLabel("app", DEPLOYMENT_CHECK)
-//                        .setServiceAccountName(""),
     ]
 
-
+    @Shared
+    private static final Map<String, String> CREATED_POLICIES = [:]
 
     def setupSpec(){
+        POLICIES.each {label, create ->
+            CREATED_POLICIES[label] = create()
+            assert CREATED_POLICIES[label], "${label} policy should have been created"
+        }
+
+        log.info "Waiting for policies to propagate..."
+        sleep 10000
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
             String label, Deployment d -> d.setName(label).addLabel("app", label)
         })
     }
 
     def cleanupSpec(){
+        CREATED_POLICIES.each {
+            unused, policyId -> PolicyService.deletePolicy(policyId)
+        }
         DEPLOYMENTS.each {
             label, d -> orchestrator.deleteDeployment(d)
         }
@@ -83,7 +99,91 @@ class DeploymentCheck extends BaseSpecification {
         Deployment d = DEPLOYMENTS[DEPLOYMENT_CHECK]
 
         expect:
-        log.info "Checked given"
+
+        def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
+        builder.setYaml(createDeploymentYaml())
+        def req = builder.build()
+
+        def res = DetectionService.getDetectDeploytimeFromYAML(req)
+
+        log.info "Got response: ${res}"
+
+        log.info "Checked given. Sleeping"
+        sleep(10000)
         assert true
     }
+
+    static String duplicatePolicyForTest(
+            String policyName,
+            String appLabel,
+            List<PolicyOuterClass.EnforcementAction> enforcementActions,
+            List<PolicyOuterClass.LifecycleStage> stages = []
+    ) {
+        PolicyOuterClass.Policy policyMeta = Services.getPolicyByName(policyName)
+
+        def builder = PolicyOuterClass.Policy.newBuilder(policyMeta)
+
+        builder.setId("")
+        builder.setName(appLabel)
+
+        builder.addScope(
+                ScopeOuterClass.Scope.newBuilder().
+                        setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("app").setValue(appLabel)))
+
+        builder.clearEnforcementActions()
+        if (enforcementActions != null && !enforcementActions.isEmpty()) {
+            builder.addAllEnforcementActions(enforcementActions)
+        } else {
+            builder.addAllEnforcementActions([])
+        }
+        if (stages != []) {
+            builder.clearLifecycleStages()
+            builder.addAllLifecycleStages(stages)
+        }
+
+        def policyDef = builder.build()
+
+        return PolicyService.createNewPolicy(policyDef)
+    }
+
+    String createDeploymentYamla(){
+        Deployment d = new Deployment()
+                .setImage("ghcr.io/linuxserver/nginx:latest")
+                .setNamespace("default")
+        def y = YamlGenerator.toYaml(d)
+        log.info "Created Deployment yaml: ${y}"
+        return y
+    }
+
+    static String createDeploymentYaml() {
+        return """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: default
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        """
+    }
 }
+
+
+
+
