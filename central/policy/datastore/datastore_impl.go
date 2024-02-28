@@ -401,11 +401,11 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 			// New policy cannot have the same id as default policies (aka system policies) and it cannot be overwritten, so always return an error
 			if existingPolicy.GetIsDefault() {
 				importErrors = append(importErrors,
-					duplicateNameImportErr(fmt.Sprintf("system policy with id '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyID, existingPolicy.GetName()))
+					duplicateNameImportErr(fmt.Sprintf("system policy with id %q already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyID, existingPolicy.GetName()))
 			} else if !overwrite {
 				// If existing policy is a custom one, then it's only an error if the user hasn't explicitly enabled overwrite
 				importErrors = append(importErrors,
-					duplicateNameImportErr(fmt.Sprintf("policy with id '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateID, existingPolicy.GetName()))
+					duplicateNameImportErr(fmt.Sprintf("policy with id %q already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateID, existingPolicy.GetName()))
 			}
 		}
 	}
@@ -414,10 +414,10 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 		// Similarly, new policy cannot have the same name as default policies
 		if existingPolicy.GetIsDefault() {
 			importErrors = append(importErrors,
-				duplicateNameImportErr(fmt.Sprintf("system policy with name '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyName, policy.GetName()))
+				duplicateNameImportErr(fmt.Sprintf("system policy with name %q already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateSystemPolicyName, policy.GetName()))
 		} else if !overwrite { // And if not system policy, then it's only an error if it's an overwrite operation
 			importErrors = append(importErrors,
-				duplicateNameImportErr(fmt.Sprintf("policy with name '%q' already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateName, policy.GetName()))
+				duplicateNameImportErr(fmt.Sprintf("policy with name %q already exists, unable to import policy", policy.GetId()), policiesPkg.ErrImportDuplicateName, policy.GetName()))
 		}
 	}
 	return importErrors, nil
