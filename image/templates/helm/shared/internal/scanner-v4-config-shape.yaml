@@ -1,14 +1,14 @@
 scannerV4:
   disable: null # bool
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
   indexer:
     disable: null # bool
     metricsPort: null # int
     logLevel: null # string
-    image:
-      registry: null # string
-      name: null # string
-      tag: null # string
-      fullRef: null # string
     replicas: null # int
     autoscaling:
       disable: null # bool
@@ -25,11 +25,6 @@ scannerV4:
   matcher:
     metricsPort: null # int
     logLevel: null # string
-    image:
-      registry: null # string
-      name: null # string
-      tag: null # string
-      fullRef: null # string
     replicas: null # int
     autoscaling:
       disable: null # bool

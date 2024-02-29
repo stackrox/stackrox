@@ -52,8 +52,12 @@
   {{- end -}}
 
   {{/* Configure images, certificates and passwords as required. */}}
+  {{ if or (get $components "indexer") (get $components "matcher") }}
+    {{ include "srox.configureImage" (list $ $scannerV4Cfg.image) }}
+  {{ end }}
+
   {{ if get $components "indexer" }}
-    {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
+    {{ $_ := set $scannerV4Cfg.indexer "image" $scannerV4Cfg.image }}
     {{- if eq $.Chart.Name "stackrox-central-services" -}}
       {{/* Only generate certificate when installing central-services.
            For secured-cluster-services we don't configure certificates here,
@@ -77,8 +81,7 @@
   {{ end }}
 
   {{ if get $components "matcher" }}
-    {{/* This is only valid when rendering the central-services chart. */}}
-    {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
+    {{ $_ := set $scannerV4Cfg.matcher "image" $scannerV4Cfg.image }}
     {{- if kindIs "invalid" $._rox.scannerV4.matcher.serviceTLS.generate }}
       {{/* We need special handling here, because 'generate' will default to 'false' on upgrades. */}}
       {{/* And in case scanner V4 was not deployed earlier, we need to make sure that these resources are correctly initialized. */}}
