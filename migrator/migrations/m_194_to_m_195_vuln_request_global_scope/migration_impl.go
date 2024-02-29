@@ -9,8 +9,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-//nolint:revive
-func migrate(database *types.Databases) error {
+func migrate(_ *types.Databases) error {
 	// This migration has been reverted due to the feature being disabled by default.
 	// We can't easily revert due to the way migrations stack on top of each other.
 	// The original changes can be found in commit 7e917d4139d04679efa4bbf14e389f697fb67467
