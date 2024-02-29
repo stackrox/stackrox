@@ -15,8 +15,8 @@ var (
 // Singleton returns the singleton providing access to the discovered clusters store.
 func Singleton() DataStore {
 	once.Do(func() {
-		searcher := search.New(pgStore.NewIndexer(globaldb.GetPostgres()))
 		store := pgStore.New(globaldb.GetPostgres())
+		searcher := search.New(store)
 		ds = newDataStore(searcher, store)
 	})
 	return ds

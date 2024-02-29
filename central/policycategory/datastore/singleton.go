@@ -23,9 +23,8 @@ var (
 
 func initialize() {
 	store := policyCategoryPostgres.New(globaldb.GetPostgres())
-	indexer := policyCategoryPostgres.NewIndexer(globaldb.GetPostgres())
 	addDefaults(store)
-	searcher := search.New(store, indexer)
+	searcher := search.New(store)
 	ad = New(store, searcher, policyCategoryEdgeDS.Singleton())
 
 }

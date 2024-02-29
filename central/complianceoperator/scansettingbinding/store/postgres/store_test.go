@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
 
-	complianceOperatorScanSettingBindingCount, err := store.Count(ctx)
+	complianceOperatorScanSettingBindingCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceOperatorScanSettingBindingCount)
-	complianceOperatorScanSettingBindingCount, err = store.Count(withNoAccessCtx)
+	complianceOperatorScanSettingBindingCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceOperatorScanSettingBindingCount)
 
@@ -100,13 +101,13 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorScanSettingBindings))
 
-	complianceOperatorScanSettingBindingCount, err = store.Count(ctx)
+	complianceOperatorScanSettingBindingCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorScanSettingBindingCount)
 
 	s.NoError(store.DeleteMany(ctx, complianceOperatorScanSettingBindingIDs))
 
-	complianceOperatorScanSettingBindingCount, err = store.Count(ctx)
+	complianceOperatorScanSettingBindingCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, complianceOperatorScanSettingBindingCount)
 }

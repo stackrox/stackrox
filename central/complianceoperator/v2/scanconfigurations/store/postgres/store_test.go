@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -71,10 +72,10 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
 
-	complianceOperatorScanConfigurationV2Count, err := store.Count(ctx)
+	complianceOperatorScanConfigurationV2Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceOperatorScanConfigurationV2Count)
-	complianceOperatorScanConfigurationV2Count, err = store.Count(withNoAccessCtx)
+	complianceOperatorScanConfigurationV2Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceOperatorScanConfigurationV2Count)
 
@@ -107,13 +108,13 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorScanConfigurationV2s))
 
-	complianceOperatorScanConfigurationV2Count, err = store.Count(ctx)
+	complianceOperatorScanConfigurationV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorScanConfigurationV2Count)
 
 	s.NoError(store.DeleteMany(ctx, complianceOperatorScanConfigurationV2IDs))
 
-	complianceOperatorScanConfigurationV2Count, err = store.Count(ctx)
+	complianceOperatorScanConfigurationV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, complianceOperatorScanConfigurationV2Count)
 }

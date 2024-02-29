@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
-	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +26,6 @@ type DeploymentDataStoreTestSuite struct {
 	suite.Suite
 
 	storage   *storeMocks.MockStore
-	indexer   *indexerMocks.MockIndexer
 	searcher  *searcherMocks.MockSearcher
 	riskStore *riskMocks.MockDataStore
 	filter    filter.Filter
@@ -43,7 +41,6 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
-	suite.indexer = indexerMocks.NewMockIndexer(mockCtrl)
 	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})

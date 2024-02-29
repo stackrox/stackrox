@@ -21,8 +21,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 
 	scheduleStorage scheduleStore.Store
 
@@ -31,12 +30,10 @@ type datastoreImpl struct {
 
 func newPostgres(pool postgres.DB) *datastoreImpl {
 	storage := postgresStore.New(pool)
-	indexer := postgresStore.NewIndexer(pool)
 	scheduleStorage := scheduleStore.New(pool)
 
 	return &datastoreImpl{
 		storage:         storage,
-		searcher:        indexer,
 		scheduleStorage: scheduleStorage,
 	}
 }
@@ -130,7 +127,7 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	return b.searcher.Search(ctx, q)
+	return b.storage.Search(ctx, q)
 }
 
 func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error) {

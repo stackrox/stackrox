@@ -96,12 +96,9 @@ func (ds *datastoreImpl) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*st
 
 // CountNodes delegates to the underlying store.
 func (ds *datastoreImpl) CountNodes(ctx context.Context) (int, error) {
-	if ok, err := nodesSAC.ReadAllowed(ctx); err != nil {
+	if _, err := nodesSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
-	} else if ok {
-		return ds.storage.Count(ctx)
 	}
-
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 

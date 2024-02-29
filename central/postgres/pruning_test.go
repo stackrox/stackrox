@@ -127,7 +127,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	err = clusterHealthStore.UpsertMany(s.ctx, healthStatuses)
 	s.Nil(err)
 
-	count, err := clusterHealthStore.Count(s.ctx)
+	count, err := clusterHealthStore.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(count, 3)
 	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
@@ -136,7 +136,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 
 	PruneClusterHealthStatuses(s.ctx, s.testDB.DB)
 
-	count, err = clusterHealthStore.Count(s.ctx)
+	count, err = clusterHealthStore.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(count, 1)
 	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)

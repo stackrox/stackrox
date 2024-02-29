@@ -18,7 +18,6 @@ import (
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
-	policyIndex "github.com/stackrox/rox/central/policy/index"
 	policySearcher "github.com/stackrox/rox/central/policy/search"
 	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
@@ -216,14 +215,12 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	// Create Policy Searcher
-	var policyIndexer policyIndex.Indexer
 	var ds policyDatastore.DataStore
 
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	policyStore := policyPostgres.New(s.pool)
-	policyIndexer = policyPostgres.NewIndexer(s.pool)
 	s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
-	policySearcher := policySearcher.New(policyStore, policyIndexer)
+	policySearcher := policySearcher.New(policyStore)
 	ds = policyDatastore.New(policyStore, policySearcher, nil, nil, categoriesDS)
 
 	builder := NewBuilder().

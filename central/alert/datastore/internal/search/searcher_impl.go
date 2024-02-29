@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,11 +15,10 @@ import (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage           store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
 
-// SearchAlerts retrieves SearchResults from the indexer and storage
+// SearchAlerts retrieves SearchResults from the storage
 func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	alerts, results, err := ds.searchListAlerts(ctx, q)
 	if err != nil {
@@ -33,7 +31,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 	return protoResults, nil
 }
 
-// SearchListAlerts retrieves list alerts from the indexer and storage
+// SearchListAlerts retrieves list alerts from the storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
 	q = applyDefaultState(q)
 	alerts, err := ds.storage.GetByQuery(ctx, q)
@@ -48,7 +46,7 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 
 }
 
-// SearchRawAlerts retrieves Alerts from the indexer and storage
+// SearchRawAlerts retrieves Alerts from the storage
 func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
 	alerts, err := ds.searchAlerts(ctx, q)
 	return alerts, err

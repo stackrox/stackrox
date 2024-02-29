@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/processindicator"
-	indexMocks "github.com/stackrox/rox/central/processindicator/index/mocks"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	prunerMocks "github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
@@ -70,7 +69,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.postgres = pgtest.ForT(suite.T())
 	suite.storage = postgresStore.New(suite.postgres.DB)
 	suite.plopStorage = plopStore.New(suite.postgres.DB)
-	suite.searcher = processSearch.New(suite.storage, postgresStore.NewIndexer(suite.postgres.DB))
+	suite.searcher = processSearch.New(suite.storage)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 
@@ -106,15 +105,14 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	suite.Require().NoError(err)
 }
 
-func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
+func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
 	var err error
 	suite.datastore, err = New(mockStorage, nil, mockSearcher, nil)
 	suite.Require().NoError(err)
 
-	return mockStorage, mockIndexer, mockSearcher
+	return mockStorage, mockSearcher
 }
 
 func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
@@ -392,7 +390,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
-	mockStore, _, _ := suite.setupDataStoreWithMocks()
+	mockStore, _ := suite.setupDataStoreWithMocks()
 	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
 
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, uuid.Nil.String())
@@ -402,7 +400,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
-	mockStore, _, _ := suite.setupDataStoreWithMocks()
+	mockStore, _ := suite.setupDataStoreWithMocks()
 	testIndicator := &storage.ProcessIndicator{}
 
 	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(testIndicator, true, nil)
@@ -419,7 +417,7 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
-	storeMock, _, _ := suite.setupDataStoreWithMocks()
+	storeMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
@@ -430,7 +428,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
-	storeMock, _, _ := suite.setupDataStoreWithMocks()
+	storeMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
 
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
@@ -441,7 +439,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
-	storeMock, _, _ := suite.setupDataStoreWithMocks()
+	storeMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: fixtureconsts.ProcessIndicatorID1})
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -456,7 +454,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
-	storeMock, _, _ := suite.setupDataStoreWithMocks()
+	storeMock, _ := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewDummy().String())

@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/index"
 	pgStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,7 +11,6 @@ import (
 
 type searcherImpl struct {
 	storage  pgStore.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
@@ -35,7 +33,7 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (count int, err 
 	return ds.searcher.Count(ctx, q)
 }
 
-// SearchRawEdges retrieves edges from the indexer and storage
+// SearchRawEdges retrieves edges from the storage
 func (ds *searcherImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentCVEEdge, error) {
 	return ds.searchComponentCVEEdges(ctx, q)
 }

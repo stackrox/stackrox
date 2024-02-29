@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *DiscoveredClustersStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(discoveredCluster, foundDiscoveredCluster)
 
-	discoveredClusterCount, err := store.Count(ctx)
+	discoveredClusterCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, discoveredClusterCount)
-	discoveredClusterCount, err = store.Count(withNoAccessCtx)
+	discoveredClusterCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(discoveredClusterCount)
 
@@ -100,13 +101,13 @@ func (s *DiscoveredClustersStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, discoveredClusters))
 
-	discoveredClusterCount, err = store.Count(ctx)
+	discoveredClusterCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, discoveredClusterCount)
 
 	s.NoError(store.DeleteMany(ctx, discoveredClusterIDs))
 
-	discoveredClusterCount, err = store.Count(ctx)
+	discoveredClusterCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, discoveredClusterCount)
 }

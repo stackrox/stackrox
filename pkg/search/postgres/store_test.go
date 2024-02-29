@@ -196,21 +196,21 @@ func TestCount(t *testing.T) {
 	store := newStore(testDB)
 	require.NotNil(t, store)
 
-	firstCount, err1 := store.Count(ctx)
+	firstCount, err1 := store.Count(ctx, nil)
 	assert.Equal(t, 0, firstCount)
 	assert.NoError(t, err1)
 
 	testObject1 := newTestSingleKeyStruct("TestCount", "Test Count", int64(256))
 	assert.NoError(t, store.Upsert(ctx, testObject1))
 
-	secondCount, err2 := store.Count(ctx)
+	secondCount, err2 := store.Count(ctx, nil)
 	assert.Equal(t, 1, secondCount)
 	assert.NoError(t, err2)
 
 	supplementaryObjects := sampleTestSingleKeyStructArray("Count")
 	assert.NoError(t, store.UpsertMany(ctx, supplementaryObjects))
 
-	thirdCount, err3 := store.Count(ctx)
+	thirdCount, err3 := store.Count(ctx, nil)
 	assert.Equal(t, 1+len(supplementaryObjects), thirdCount)
 	assert.NoError(t, err3)
 }

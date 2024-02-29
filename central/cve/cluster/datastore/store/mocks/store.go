@@ -14,7 +14,9 @@ import (
 	reflect "reflect"
 
 	converter "github.com/stackrox/rox/central/cve/converter/v2"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,18 +44,18 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockStore) Count(ctx context.Context) (int, error) {
+func (m *MockStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockStoreMockRecorder) Count(ctx any) *gomock.Call {
+func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx, q)
 }
 
 // DeleteClusterCVEsForCluster mocks base method.
@@ -134,6 +136,21 @@ func (mr *MockStoreMockRecorder) ReconcileClusterCVEParts(ctx, cveType any, cveP
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, cveType}, cvePartsArr...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileClusterCVEParts", reflect.TypeOf((*MockStore)(nil).ReconcileClusterCVEParts), varargs...)
+}
+
+// Search mocks base method.
+func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockStoreMockRecorder) Search(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockStore)(nil).Search), ctx, q)
 }
 
 // UpsertMany mocks base method.

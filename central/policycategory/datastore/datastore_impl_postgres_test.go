@@ -54,13 +54,11 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupTest() {
 	policyCategoryEdgePostgres.Destroy(s.ctx, s.db)
 
 	policyCategoryEdgeStorage := policyCategoryEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyCategoryEdgeIndexer := policyCategoryEdgePostgres.NewIndexer(s.db)
-	policyCategorySearcher := policyCategoryEdgeSearch.New(policyCategoryEdgeStorage, policyCategoryEdgeIndexer)
+	policyCategorySearcher := policyCategoryEdgeSearch.New(policyCategoryEdgeStorage)
 	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage, policyCategorySearcher)
 
 	policyCategoryStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	policyCategoryIndexer := pgStore.NewIndexer(s.db)
-	s.datastore = New(policyCategoryStore, policyCategorySearch.New(policyCategoryStore, policyCategoryIndexer), s.edgeDatastore)
+	s.datastore = New(policyCategoryStore, policyCategorySearch.New(policyCategoryStore), s.edgeDatastore)
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) TearDownSuite() {

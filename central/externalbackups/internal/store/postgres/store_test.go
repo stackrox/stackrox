@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(externalBackup, foundExternalBackup)
 
-	externalBackupCount, err := store.Count(ctx)
+	externalBackupCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, externalBackupCount)
-	externalBackupCount, err = store.Count(withNoAccessCtx)
+	externalBackupCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(externalBackupCount)
 
@@ -103,13 +104,13 @@ func (s *ExternalBackupsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(externalBackups, allExternalBackup)
 
-	externalBackupCount, err = store.Count(ctx)
+	externalBackupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, externalBackupCount)
 
 	s.NoError(store.DeleteMany(ctx, externalBackupIDs))
 
-	externalBackupCount, err = store.Count(ctx)
+	externalBackupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, externalBackupCount)
 }

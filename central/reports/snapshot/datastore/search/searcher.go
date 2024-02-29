@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/reports/snapshot/datastore/index"
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,14 +29,14 @@ type Searcher interface {
 	SearchReportSnapshots(context.Context, *v1.Query) ([]*storage.ReportSnapshot, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(storage pgStore.Store, indexer index.Indexer) Searcher {
+// New returns a new instance of Searcher for the given storage.
+func New(storage pgStore.Store) Searcher {
 	if !features.VulnReportingEnhancements.Enabled() {
 		return nil
 	}
 	return &searcherImpl{
 		storage:  storage,
-		searcher: formatSearcher(indexer),
+		searcher: formatSearcher(storage),
 	}
 }
 

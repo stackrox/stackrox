@@ -316,12 +316,9 @@ func (ds *datastoreImpl) SearchRawClusters(ctx context.Context, q *v1.Query) ([]
 }
 
 func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
-	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
+	if _, err := clusterSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
-	} else if ok {
-		return ds.clusterStorage.Count(ctx)
 	}
-
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 

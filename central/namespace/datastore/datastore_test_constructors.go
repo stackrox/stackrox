@@ -17,18 +17,16 @@ func NewTestDataStore(t testing.TB, testDB *pgtest.TestPostgres, deploymentDataS
 	pgStore.Destroy(ctx, testDB.DB)
 
 	storage := pgStore.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	indexer := pgStore.NewIndexer(testDB.DB)
-	return New(storage, indexer, deploymentDataStore, namespaceRanker)
+	return New(storage, deploymentDataStore, namespaceRanker)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
 	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
 	namespaceRanker := ranking.NamespaceRanker()
-	return New(dbStore, indexer, deploymentStore, namespaceRanker), nil
+	return New(dbStore, deploymentStore, namespaceRanker), nil
 }

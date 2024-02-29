@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(imageCVE, foundImageCVE)
 
-	imageCVECount, err := store.Count(ctx)
+	imageCVECount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, imageCVECount)
-	imageCVECount, err = store.Count(withNoAccessCtx)
+	imageCVECount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(imageCVECount)
 
@@ -100,13 +101,13 @@ func (s *ImageCvesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, imageCVEs))
 
-	imageCVECount, err = store.Count(ctx)
+	imageCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageCVECount)
 
 	s.NoError(store.DeleteMany(ctx, imageCVEIDs))
 
-	imageCVECount, err = store.Count(ctx)
+	imageCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, imageCVECount)
 }

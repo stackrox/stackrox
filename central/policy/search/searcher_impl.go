@@ -4,7 +4,6 @@ import (
 	"context"
 
 	errorsPkg "github.com/pkg/errors"
-	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,17 +28,16 @@ var (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
-// SearchRawPolicies retrieves Policies from the indexer and storage
+// SearchRawPolicies retrieves Policies from the storage.
 func (ds *searcherImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
 	policies, _, err := ds.searchPolicies(ctx, q)
 	return policies, err
 }
 
-// SearchPolicies retrieves SearchResults from the indexer and storage
+// SearchPolicies retrieves SearchResults from the storage.
 func (ds *searcherImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	policies, results, err := ds.searchPolicies(ctx, q)
 	if err != nil {
@@ -102,7 +100,7 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 	}
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+// Format the search functionality to handle field transformation used for internal purposes.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PoliciesSchema.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)

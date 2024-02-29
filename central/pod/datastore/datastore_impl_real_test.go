@@ -12,7 +12,6 @@ import (
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
-	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	plopPostgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -60,14 +59,12 @@ func (s *PodDatastoreSuite) SetupTest() {
 	s.postgres = pgtest.ForT(s.T())
 
 	podStorage := podStore.New(s.postgres.DB)
-	podIndexer := processIndicatorStorage.NewIndexer(s.postgres.DB)
-	podSearcher := podSearch.New(podStorage, podIndexer)
+	podSearcher := podSearch.New(podStorage)
 
-	var plopStorage plopStore.Store = plopPostgresStore.NewFullStore(s.postgres.DB)
+	var plopStorage = plopPostgresStore.NewFullStore(s.postgres.DB)
 
 	indicatorStorage := processIndicatorStorage.New(s.postgres.DB)
-	indicatorIndexer := processIndicatorStorage.NewIndexer(s.postgres.DB)
-	indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
+	indicatorSearcher := processIndicatorSearch.New(indicatorStorage)
 
 	s.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, plopStorage, indicatorSearcher, nil)

@@ -245,7 +245,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 
 	images := imageDatastore.NewWithPostgres(
 		imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
-		imagePostgres.NewIndexer(s.pool),
 		mockRiskDatastore,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
@@ -282,11 +281,9 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
-	nodeIndexer := nodePostgres.NewIndexer(s.pool)
-
 	nodes := testNodeDatastore.NewWithPostgres(
 		nodeStore,
-		nodeSearch.NewV2(nodeStore, nodeIndexer),
+		nodeSearch.NewV2(nodeStore),
 		mockRiskDatastore,
 		ranking.NewRanker(),
 		ranking.NewRanker())
@@ -399,7 +396,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		connMgr,
 		notifierMock,
 		ranking.NewRanker(),
-		clusterPostgres.NewIndexer(s.pool),
 		networkBaselineMgr,
 		compliancePruner)
 	require.NoError(s.T(), err)

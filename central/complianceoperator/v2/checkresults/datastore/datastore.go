@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
-	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -53,7 +52,6 @@ func New(store store.Store, db postgres.DB, searcher search.Searcher) DataStore 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := store.New(pool)
-	indexer := checkResultsStorage.NewIndexer(pool)
-	searcher := checkresultsSearch.New(store, indexer)
+	searcher := checkresultsSearch.New(store)
 	return New(store, pool, searcher)
 }

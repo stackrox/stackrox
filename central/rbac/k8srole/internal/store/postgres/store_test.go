@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -67,10 +68,10 @@ func (s *K8sRolesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(k8SRole, foundK8SRole)
 
-	k8SRoleCount, err := store.Count(ctx)
+	k8SRoleCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, k8SRoleCount)
-	k8SRoleCount, err = store.Count(withNoAccessCtx)
+	k8SRoleCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(k8SRoleCount)
 
@@ -103,13 +104,13 @@ func (s *K8sRolesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, k8SRoles))
 
-	k8SRoleCount, err = store.Count(ctx)
+	k8SRoleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, k8SRoleCount)
 
 	s.NoError(store.DeleteMany(ctx, k8SRoleIDs))
 
-	k8SRoleCount, err = store.Count(ctx)
+	k8SRoleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, k8SRoleCount)
 }
@@ -259,7 +260,7 @@ func (s *K8sRolesStoreSuite) TestSACCount() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			expectedCount := len(testCase.expectedObjects)
-			count, err := s.store.Count(testCase.context)
+			count, err := s.store.Count(testCase.context, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -351,7 +352,7 @@ func (s *K8sRolesStoreSuite) TestSACDelete() {
 			assert.NoError(t, s.store.Delete(testCase.context, objA.GetId()))
 			assert.NoError(t, s.store.Delete(testCase.context, objB.GetId()))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 
@@ -379,7 +380,7 @@ func (s *K8sRolesStoreSuite) TestSACDeleteMany() {
 				objB.GetId(),
 			}))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 

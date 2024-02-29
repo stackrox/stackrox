@@ -40,8 +40,7 @@ func New(reportConfigStore store.Store, searcher search.Searcher) DataStore {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	searcher := search.New(store, indexer)
+	searcher := search.New(store)
 
 	return New(store, searcher)
 }

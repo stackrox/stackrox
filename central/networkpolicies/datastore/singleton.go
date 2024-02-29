@@ -18,7 +18,7 @@ var (
 func initialize() {
 	undoDeploymentStorage := undoPGStore.New(globaldb.GetPostgres())
 	networkPolicyStorage := postgres.New(globaldb.GetPostgres())
-	networkPolicySearcher := search.New(postgres.NewIndexer(globaldb.GetPostgres()))
+	networkPolicySearcher := search.New(networkPolicyStorage)
 
 	as = New(networkPolicyStorage, networkPolicySearcher, undostore.Singleton(), undoDeploymentStorage)
 }

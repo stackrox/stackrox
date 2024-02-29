@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +12,6 @@ import (
 // searcherImpl provides a search implementation for k8s role bindings.
 type searcherImpl struct {
 	storage store.Store
-	index   index.Indexer
 }
 
 // SearchRoleBindings returns the search results from indexed k8s role bindings for the query.
@@ -27,12 +25,12 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 
 // Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.index.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.index.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 // SearchRawRoleBindings returns the rolebindings that match the query.

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(authMachineToMachineConfig, foundAuthMachineToMachineConfig)
 
-	authMachineToMachineConfigCount, err := store.Count(ctx)
+	authMachineToMachineConfigCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, authMachineToMachineConfigCount)
-	authMachineToMachineConfigCount, err = store.Count(withNoAccessCtx)
+	authMachineToMachineConfigCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(authMachineToMachineConfigCount)
 
@@ -103,13 +104,13 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(authMachineToMachineConfigs, allAuthMachineToMachineConfig)
 
-	authMachineToMachineConfigCount, err = store.Count(ctx)
+	authMachineToMachineConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, authMachineToMachineConfigCount)
 
 	s.NoError(store.DeleteMany(ctx, authMachineToMachineConfigIDs))
 
-	authMachineToMachineConfigCount, err = store.Count(ctx)
+	authMachineToMachineConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, authMachineToMachineConfigCount)
 }

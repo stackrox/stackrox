@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *DeclarativeConfigHealthsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(declarativeConfigHealth, foundDeclarativeConfigHealth)
 
-	declarativeConfigHealthCount, err := store.Count(ctx)
+	declarativeConfigHealthCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, declarativeConfigHealthCount)
-	declarativeConfigHealthCount, err = store.Count(withNoAccessCtx)
+	declarativeConfigHealthCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(declarativeConfigHealthCount)
 
@@ -100,13 +101,13 @@ func (s *DeclarativeConfigHealthsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, declarativeConfigHealths))
 
-	declarativeConfigHealthCount, err = store.Count(ctx)
+	declarativeConfigHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, declarativeConfigHealthCount)
 
 	s.NoError(store.DeleteMany(ctx, declarativeConfigHealthIDs))
 
-	declarativeConfigHealthCount, err = store.Count(ctx)
+	declarativeConfigHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, declarativeConfigHealthCount)
 }

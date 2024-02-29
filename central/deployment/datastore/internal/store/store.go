@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Store provides storage functionality.
@@ -19,7 +20,8 @@ type Store interface {
 	Walk(ctx context.Context, fn func(deployment *storage.Deployment) error) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, deployment *storage.Deployment) error
 	Delete(ctx context.Context, id string) error
 

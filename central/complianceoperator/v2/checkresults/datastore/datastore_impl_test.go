@@ -255,9 +255,8 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = checkResultsStorage.New(s.db)
-	indexer := checkResultsStorage.NewIndexer(s.db)
 	configStorage := checkResultsStorage.New(s.db)
-	s.searcher = checkresultsSearch.New(configStorage, indexer)
+	s.searcher = checkresultsSearch.New(configStorage)
 	s.dataStore = New(s.storage, s.db, s.searcher)
 }
 
@@ -278,7 +277,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
@@ -304,7 +303,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 

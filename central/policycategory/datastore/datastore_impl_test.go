@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	indexMocks "github.com/stackrox/rox/central/policycategory/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/policycategory/store/mocks"
 	policyCategoryEdgeDSMocks "github.com/stackrox/rox/central/policycategoryedge/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,7 +24,6 @@ type PolicyCategoryDatastoreTestSuite struct {
 
 	mockCtrl      *gomock.Controller
 	store         *storeMocks.MockStore
-	indexer       *indexMocks.MockIndexer
 	edgeDataStore *policyCategoryEdgeDSMocks.MockDataStore
 	datastore     DataStore
 
@@ -36,7 +34,6 @@ func (s *PolicyCategoryDatastoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
-	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.edgeDataStore = policyCategoryEdgeDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.datastore = newWithoutDefaults(s.store, nil, s.edgeDataStore)

@@ -31,7 +31,6 @@ import (
 func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
 	clusterdbstore := clusterPostgresStore.New(pool)
 	clusterhealthdbstore := clusterHealthPostgresStore.New(pool)
-	indexer := clusterPostgresStore.NewIndexer(pool)
 	alertStore, err := alertDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -94,5 +93,5 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		clusterRanker, indexer, networkBaselineManager, compliancePruner)
+		clusterRanker, networkBaselineManager, compliancePruner)
 }

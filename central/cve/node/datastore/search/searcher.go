@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/node/datastore/index"
 	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,12 +22,11 @@ type Searcher interface {
 	SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(storage pgStore.Store, indexer index.Indexer) Searcher {
+// New returns a new instance of Searcher for the given the storage.
+func New(storage pgStore.Store) Searcher {
 	return &searcherImpl{
 		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcherV2(indexer),
+		searcher: formatSearcherV2(storage),
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(complianceOperatorProfile, foundComplianceOperatorProfile)
 
-	complianceOperatorProfileCount, err := store.Count(ctx)
+	complianceOperatorProfileCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceOperatorProfileCount)
-	complianceOperatorProfileCount, err = store.Count(withNoAccessCtx)
+	complianceOperatorProfileCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceOperatorProfileCount)
 
@@ -100,13 +101,13 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorProfiles))
 
-	complianceOperatorProfileCount, err = store.Count(ctx)
+	complianceOperatorProfileCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorProfileCount)
 
 	s.NoError(store.DeleteMany(ctx, complianceOperatorProfileIDs))
 
-	complianceOperatorProfileCount, err = store.Count(ctx)
+	complianceOperatorProfileCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, complianceOperatorProfileCount)
 }

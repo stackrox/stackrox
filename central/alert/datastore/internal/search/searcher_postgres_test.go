@@ -1,14 +1,15 @@
 //go:build sql_integration
 
-package postgres
+package search
 
 import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -19,38 +20,30 @@ var (
 	ctx = sac.WithAllAccess(context.Background())
 )
 
-type AlertsIndexSuite struct {
+type AlertsSearchSuite struct {
 	suite.Suite
 
-	pool    postgres.DB
-	store   Store
-	indexer *indexerImpl
+	testPostgres *pgtest.TestPostgres
+	store        store.Store
+	searcher     Searcher
 }
 
 func TestAlertsIndex(t *testing.T) {
-	suite.Run(t, new(AlertsIndexSuite))
+	suite.Run(t, new(AlertsSearchSuite))
 }
 
-func (s *AlertsIndexSuite) SetupTest() {
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	s.pool, err = postgres.New(context.Background(), config)
-	s.Require().NoError(err)
+func (s *AlertsSearchSuite) SetupTest() {
+	s.testPostgres = pgtest.ForT(s.T())
 
-	Destroy(ctx, s.pool)
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = CreateTableAndNewStore(ctx, s.pool, gormDB)
-	s.indexer = NewIndexer(s.pool)
+	s.store = postgres.New(s.testPostgres.DB)
+	s.searcher = New(s.store)
 }
 
-func (s *AlertsIndexSuite) TearDownTest() {
-	s.pool.Close()
+func (s *AlertsSearchSuite) TearDownTest() {
+	s.testPostgres.Teardown(s.T())
 }
 
-func (s *AlertsIndexSuite) TestIndex() {
-
+func (s *AlertsSearchSuite) TestSearch() {
 	alert := fixtures.GetAlert()
 	foundAlert, exists, err := s.store.Get(ctx, alert.GetId())
 	s.NoError(err)
@@ -64,7 +57,7 @@ func (s *AlertsIndexSuite) TestIndex() {
 	s.Equal(alert, foundAlert)
 
 	// Common alert searches
-	results, err := s.indexer.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
+	results, err := s.searcher.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 
@@ -73,7 +66,7 @@ func (s *AlertsIndexSuite) TestIndex() {
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
 		ProtoQuery()
-	results, err = s.indexer.Search(ctx, q)
+	results, err = s.searcher.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(serviceIdentity, foundServiceIdentity)
 
-	serviceIdentityCount, err := store.Count(ctx)
+	serviceIdentityCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, serviceIdentityCount)
-	serviceIdentityCount, err = store.Count(withNoAccessCtx)
+	serviceIdentityCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(serviceIdentityCount)
 
@@ -103,13 +104,13 @@ func (s *ServiceIdentitiesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(serviceIdentitys, allServiceIdentity)
 
-	serviceIdentityCount, err = store.Count(ctx)
+	serviceIdentityCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, serviceIdentityCount)
 
 	s.NoError(store.DeleteMany(ctx, serviceIdentityIDs))
 
-	serviceIdentityCount, err = store.Count(ctx)
+	serviceIdentityCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, serviceIdentityCount)
 }

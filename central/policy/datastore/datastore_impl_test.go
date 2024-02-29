@@ -8,7 +8,6 @@ import (
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	indexMocks "github.com/stackrox/rox/central/policy/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/policy/store/mocks"
 	categoriesMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
@@ -31,7 +30,6 @@ type PolicyDatastoreTestSuite struct {
 
 	mockCtrl            *gomock.Controller
 	store               *storeMocks.MockStore
-	indexer             *indexMocks.MockIndexer
 	datastore           DataStore
 	clusterDatastore    *clusterMocks.MockDataStore
 	notifierDatastore   *notifierMocks.MockDataStore
@@ -46,7 +44,6 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 	pgtest.SkipIfPostgresEnabled(s.T())
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
-	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.categoriesDatastore = categoriesMocks.NewMockDataStore(s.mockCtrl)

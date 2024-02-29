@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(complianceConfig, foundComplianceConfig)
 
-	complianceConfigCount, err := store.Count(ctx)
+	complianceConfigCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceConfigCount)
-	complianceConfigCount, err = store.Count(withNoAccessCtx)
+	complianceConfigCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceConfigCount)
 
@@ -100,13 +101,13 @@ func (s *ComplianceConfigsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceConfigs))
 
-	complianceConfigCount, err = store.Count(ctx)
+	complianceConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceConfigCount)
 
 	s.NoError(store.DeleteMany(ctx, complianceConfigIDs))
 
-	complianceConfigCount, err = store.Count(ctx)
+	complianceConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, complianceConfigCount)
 }

@@ -5,12 +5,15 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // Store provides storage functionality for alerts.
 //
 //go:generate mockgen-wrapper
 type Store interface {
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Walk(ctx context.Context, fn func(*storage.Alert) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.Alert) error) error
 	GetIDs(ctx context.Context) ([]string, error)
