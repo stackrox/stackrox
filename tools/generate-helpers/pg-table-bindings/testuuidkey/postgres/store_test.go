@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testSingleUUIDKeyStruct, foundTestSingleUUIDKeyStruct)
 
-	testSingleUUIDKeyStructCount, err := store.Count(ctx)
+	testSingleUUIDKeyStructCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, testSingleUUIDKeyStructCount)
-	testSingleUUIDKeyStructCount, err = store.Count(withNoAccessCtx)
+	testSingleUUIDKeyStructCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(testSingleUUIDKeyStructCount)
 
@@ -103,13 +104,13 @@ func (s *TestSingleUUIDKeyStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(testSingleUUIDKeyStructs, allTestSingleUUIDKeyStruct)
 
-	testSingleUUIDKeyStructCount, err = store.Count(ctx)
+	testSingleUUIDKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testSingleUUIDKeyStructCount)
 
 	s.NoError(store.DeleteMany(ctx, testSingleUUIDKeyStructIDs))
 
-	testSingleUUIDKeyStructCount, err = store.Count(ctx)
+	testSingleUUIDKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, testSingleUUIDKeyStructCount)
 }

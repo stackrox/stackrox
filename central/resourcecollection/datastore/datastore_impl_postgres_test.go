@@ -40,8 +40,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = pgStore.New(s.testDB)
-	index := pgStore.NewIndexer(s.testDB)
-	ds, qs, err := New(s.store, search.New(s.store, index))
+	ds, qs, err := New(s.store, search.New(s.store))
 	s.NoError(err)
 	s.datastore = ds
 	s.qr = qs

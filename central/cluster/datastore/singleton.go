@@ -37,7 +37,6 @@ func initialize() {
 
 	clusterStorage := clusterPostgres.New(globaldb.GetPostgres())
 	clusterHealthStorage := clusterHealthPostgres.New(globaldb.GetPostgres())
-	indexer := clusterPostgres.NewIndexer(globaldb.GetPostgres())
 	clusterCVEDataStore := clusterCVEDS.Singleton()
 
 	ad, err = New(clusterStorage,
@@ -58,7 +57,6 @@ func initialize() {
 		connection.ManagerSingleton(),
 		notifierProcessor.Singleton(),
 		ranking.ClusterRanker(),
-		indexer,
 		networkBaselineManager.Singleton(),
 		compliancePruning.Singleton())
 

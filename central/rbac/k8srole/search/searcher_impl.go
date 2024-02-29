@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +12,6 @@ import (
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage store.Store
-	indexer index.Indexer
 }
 
 // SearchRoles returns the search results from indexed k8s roles for the query.
@@ -59,11 +57,11 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.indexer.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.indexer.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func convertMany(roles []*storage.K8SRole, results []search.Result) []*v1.SearchResult {

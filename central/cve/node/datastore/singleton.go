@@ -19,7 +19,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
 	var err error
-	ds, err = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())), keyfence.NodeKeyFenceSingleton())
+	ds, err = New(storage, search.New(storage), keyfence.NodeKeyFenceSingleton())
 	utils.CrashOnError(err)
 }
 

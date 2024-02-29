@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(permissionSet, foundPermissionSet)
 
-	permissionSetCount, err := store.Count(ctx)
+	permissionSetCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, permissionSetCount)
-	permissionSetCount, err = store.Count(withNoAccessCtx)
+	permissionSetCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(permissionSetCount)
 
@@ -100,13 +101,13 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, permissionSets))
 
-	permissionSetCount, err = store.Count(ctx)
+	permissionSetCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, permissionSetCount)
 
 	s.NoError(store.DeleteMany(ctx, permissionSetIDs))
 
-	permissionSetCount, err = store.Count(ctx)
+	permissionSetCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, permissionSetCount)
 }

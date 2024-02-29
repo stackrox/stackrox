@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(activeComponent, foundActiveComponent)
 
-	activeComponentCount, err := store.Count(ctx)
+	activeComponentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, activeComponentCount)
-	activeComponentCount, err = store.Count(withNoAccessCtx)
+	activeComponentCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(activeComponentCount)
 
@@ -100,13 +101,13 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, activeComponents))
 
-	activeComponentCount, err = store.Count(ctx)
+	activeComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, activeComponentCount)
 
 	s.NoError(store.DeleteMany(ctx, activeComponentIDs))
 
-	activeComponentCount, err = store.Count(ctx)
+	activeComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, activeComponentCount)
 }

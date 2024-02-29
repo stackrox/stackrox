@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(clusterCVE, foundClusterCVE)
 
-	clusterCVECount, err := store.Count(ctx)
+	clusterCVECount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, clusterCVECount)
-	clusterCVECount, err = store.Count(withNoAccessCtx)
+	clusterCVECount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(clusterCVECount)
 
@@ -100,13 +101,13 @@ func (s *ClusterCvesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, clusterCVEs))
 
-	clusterCVECount, err = store.Count(ctx)
+	clusterCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, clusterCVECount)
 
 	s.NoError(store.DeleteMany(ctx, clusterCVEIDs))
 
-	clusterCVECount, err = store.Count(ctx)
+	clusterCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, clusterCVECount)
 }

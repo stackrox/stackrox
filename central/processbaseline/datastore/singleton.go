@@ -18,7 +18,7 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
-	searcher, err := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	searcher, err := search.New(storage)
 	if err != nil {
 		panic("unable to load search index for process baseline")
 	}

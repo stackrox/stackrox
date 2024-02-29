@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(cloudSource, foundCloudSource)
 
-	cloudSourceCount, err := store.Count(ctx)
+	cloudSourceCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, cloudSourceCount)
-	cloudSourceCount, err = store.Count(withNoAccessCtx)
+	cloudSourceCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(cloudSourceCount)
 
@@ -103,13 +104,13 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(cloudSources, allCloudSource)
 
-	cloudSourceCount, err = store.Count(ctx)
+	cloudSourceCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, cloudSourceCount)
 
 	s.NoError(store.DeleteMany(ctx, cloudSourceIDs))
 
-	cloudSourceCount, err = store.Count(ctx)
+	cloudSourceCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, cloudSourceCount)
 }

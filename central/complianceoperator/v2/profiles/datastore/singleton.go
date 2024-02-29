@@ -16,9 +16,8 @@ var (
 
 func initialize() {
 	db := globaldb.GetPostgres()
-	indexer := pgStore.NewIndexer(db)
 	storage := pgStore.New(db)
-	profileSearch := search.New(storage, indexer)
+	profileSearch := search.New(storage)
 
 	dataStore = New(
 		storage,

@@ -5,7 +5,6 @@ import (
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
-	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
@@ -94,7 +93,6 @@ func New(
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
 	clusterRanker *ranking.Ranker,
-	indexer index.Indexer,
 	networkBaselineMgr networkBaselineManager.Manager,
 	compliancePruner compliancePruning.Pruner,
 ) (DataStore, error) {
@@ -123,7 +121,7 @@ func New(
 		compliancePruner:          compliancePruner,
 	}
 
-	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
+	ds.searcher = search.NewV2(clusterStorage, clusterRanker)
 	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}

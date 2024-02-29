@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/componentcveedge/index"
 	"github.com/stackrox/rox/central/componentcveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,12 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
-// NewV2 returns a new instance of Searcher for the given storage and indexer.
-func NewV2(storage store.Store, indexer index.Indexer) Searcher {
+// NewV2 returns a new instance of Searcher for the given the storage.
+func NewV2(storage store.Store) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcherV2(indexer),
+		searcher: formatSearcherV2(storage),
 	}
 }
 
@@ -29,7 +27,6 @@ func formatSearcherV2(searcher search.Searcher) search.Searcher {
 
 type searcherImplV2 struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
@@ -47,12 +44,12 @@ func (ds *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search
 	return ds.searcher.Search(ctx, q)
 }
 
-// Count returns the number of search results from the query
+// Count returns the number of search results from the query.
 func (ds *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, err error) {
 	return ds.searcher.Count(ctx, q)
 }
 
-// SearchRawEdges retrieves edges from the indexer and storage
+// SearchRawEdges retrieves edges from the storage.
 func (ds *searcherImplV2) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ComponentCVEEdge, error) {
 	return ds.searchComponentCVEEdges(ctx, q)
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
-	"github.com/stackrox/rox/central/deployment/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -22,12 +21,11 @@ var (
 	}
 )
 
-// NewV2 returns a new instance of Searcher for the given storage and indexer.
-func NewV2(storage store.Store, indexer index.Indexer) Searcher {
+// NewV2 returns a new instance of Searcher for the given storage.
+func NewV2(storage store.Store) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcherV2(indexer),
+		searcher: formatSearcherV2(storage),
 	}
 }
 
@@ -40,11 +38,10 @@ func formatSearcherV2(searcher search.Searcher) search.Searcher {
 // searcherImplV2 provides an intermediary search implementation layer for Deployments.
 type searcherImplV2 struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
-// SearchRawDeployments retrieves deployments from the indexer and storage
+// SearchRawDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
 	deployments, err := ds.searchDeployments(ctx, q)
 	if err != nil {
@@ -53,7 +50,7 @@ func (ds *searcherImplV2) SearchRawDeployments(ctx context.Context, q *v1.Query)
 	return deployments, err
 }
 
-// SearchListDeployments retrieves deployments from the indexer and storage
+// SearchListDeployments retrieves deployments from the storage
 func (ds *searcherImplV2) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	deployments, _, err := ds.searchListDeployments(ctx, q)
 	if err != nil {
@@ -77,7 +74,7 @@ func (ds *searcherImplV2) searchListDeployments(ctx context.Context, q *v1.Query
 	return deployments, results, nil
 }
 
-// SearchDeployments retrieves SearchResults from the indexer and storage
+// SearchDeployments retrieves SearchResults from the storage
 func (ds *searcherImplV2) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	deployments, results, err := ds.searchListDeployments(ctx, q)
 	if err != nil {

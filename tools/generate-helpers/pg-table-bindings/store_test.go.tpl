@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -89,12 +90,12 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	{{$name}}Count, err := store.Count(ctx)
+	{{$name}}Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, {{$name}}Count)
 
 	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-	{{$name}}Count, err = store.Count(withNoAccessCtx)
+	{{$name}}Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero({{$name}}Count)
 	{{- end }}
@@ -144,13 +145,13 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.ElementsMatch({{$name}}s, all{{.TrimmedType|upperCamelCase}})
 {{- end }}
 
-	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
 
 	s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
 
-	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, {{.TrimmedType|lowerCamelCase}}Count)
 	{{- end }}
@@ -313,7 +314,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACCount() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			expectedCount := len(testCase.expectedObjects)
-			count, err := s.store.Count(testCase.context)
+			count, err := s.store.Count(testCase.context, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -405,7 +406,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 			assert.NoError(t, s.store.Delete(testCase.context, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objA"}}, {{end}}))
 			assert.NoError(t, s.store.Delete(testCase.context, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objB"}}, {{end}}))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2 - len(testCase.expectedObjects), count)
 
@@ -433,7 +434,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 				{{ (index .Schema.PrimaryKeys 0).Getter "objB"}},
 			}))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2 - len(testCase.expectedObjects), count)
 

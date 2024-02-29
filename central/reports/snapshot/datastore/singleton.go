@@ -15,8 +15,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	ds = New(storage, search.New(storage, indexer))
+	ds = New(storage, search.New(storage))
 }
 
 // Singleton returns a singleton instance of ReportSnapshot datastore

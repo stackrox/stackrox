@@ -18,7 +18,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.NodeKeyFenceSingleton())
-	searcher := search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	searcher := search.NewV2(storage)
 	ad = NewWithPostgres(storage, searcher, riskDS.Singleton(), ranking.NodeRanker(), ranking.NodeComponentRanker())
 }
 

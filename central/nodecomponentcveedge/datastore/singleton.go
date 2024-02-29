@@ -16,7 +16,7 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
-	ds = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
+	ds = New(storage, search.New(storage))
 }
 
 // Singleton returns a singleton instance of cve datastore

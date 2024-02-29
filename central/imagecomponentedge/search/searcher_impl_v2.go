@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,12 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
-// NewV2 returns a new instance of Searcher for the given storage and indexer.
-func NewV2(storage store.Store, indexer index.Indexer) Searcher {
+// NewV2 returns a new instance of Searcher for the given store.
+func NewV2(storage store.Store) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcherV2(indexer),
+		searcher: formatSearcherV2(storage),
 	}
 }
 
@@ -29,7 +27,6 @@ func formatSearcherV2(searcher search.Searcher) search.Searcher {
 
 type searcherImplV2 struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
@@ -52,7 +49,7 @@ func (ds *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, er
 	return ds.searcher.Count(ctx, q)
 }
 
-// SearchRawEdges retrieves edges from the indexer and storage
+// SearchRawEdges retrieves edges from the storage.
 func (ds *searcherImplV2) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ImageComponentEdge, error) {
 	return ds.searchImageComponentEdges(ctx, q)
 }

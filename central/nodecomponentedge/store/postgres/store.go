@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
 )
@@ -33,8 +34,9 @@ type storeType = storage.NodeComponentEdge
 
 // Store is the interface to interact with the storage for storage.NodeComponentEdge
 type Store interface {
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)

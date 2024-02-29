@@ -13,7 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,18 +43,18 @@ func (m *MockSignatureIntegrationStore) EXPECT() *MockSignatureIntegrationStoreM
 }
 
 // Count mocks base method.
-func (m *MockSignatureIntegrationStore) Count(ctx context.Context) (int, error) {
+func (m *MockSignatureIntegrationStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockSignatureIntegrationStoreMockRecorder) Count(ctx any) *gomock.Call {
+func (mr *MockSignatureIntegrationStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Count), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Count), ctx, q)
 }
 
 // Delete mocks base method.
@@ -69,6 +71,21 @@ func (mr *MockSignatureIntegrationStoreMockRecorder) Delete(ctx, id any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Delete), ctx, id)
 }
 
+// Exists mocks base method.
+func (m *MockSignatureIntegrationStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockSignatureIntegrationStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Exists), ctx, id)
+}
+
 // Get mocks base method.
 func (m *MockSignatureIntegrationStore) Get(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error) {
 	m.ctrl.T.Helper()
@@ -83,6 +100,21 @@ func (m *MockSignatureIntegrationStore) Get(ctx context.Context, id string) (*st
 func (mr *MockSignatureIntegrationStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Get), ctx, id)
+}
+
+// Search mocks base method.
+func (m *MockSignatureIntegrationStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockSignatureIntegrationStoreMockRecorder) Search(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSignatureIntegrationStore)(nil).Search), ctx, q)
 }
 
 // Upsert mocks base method.

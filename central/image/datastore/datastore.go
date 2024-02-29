@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -42,8 +41,8 @@ type DataStore interface {
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	ds := newDatastoreImpl(storage, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
+func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+	ds := newDatastoreImpl(storage, search.NewV2(storage), risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
 	return ds
 }

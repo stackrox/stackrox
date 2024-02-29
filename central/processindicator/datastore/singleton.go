@@ -30,7 +30,7 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 	plopStorage := plopStore.New(globaldb.GetPostgres())
-	searcher := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	searcher := search.New(storage)
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 

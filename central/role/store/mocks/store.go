@@ -13,7 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,18 +43,18 @@ func (m *MockPermissionSetStore) EXPECT() *MockPermissionSetStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockPermissionSetStore) Count(ctx context.Context) (int, error) {
+func (m *MockPermissionSetStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockPermissionSetStoreMockRecorder) Count(ctx any) *gomock.Call {
+func (mr *MockPermissionSetStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockPermissionSetStore)(nil).Count), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockPermissionSetStore)(nil).Count), ctx, q)
 }
 
 // Delete mocks base method.
@@ -83,6 +85,21 @@ func (m *MockPermissionSetStore) Get(ctx context.Context, id string) (*storage.P
 func (mr *MockPermissionSetStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPermissionSetStore)(nil).Get), ctx, id)
+}
+
+// Search mocks base method.
+func (m *MockPermissionSetStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockPermissionSetStoreMockRecorder) Search(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockPermissionSetStore)(nil).Search), ctx, q)
 }
 
 // Upsert mocks base method.
@@ -151,18 +168,18 @@ func (m *MockSimpleAccessScopeStore) EXPECT() *MockSimpleAccessScopeStoreMockRec
 }
 
 // Count mocks base method.
-func (m *MockSimpleAccessScopeStore) Count(ctx context.Context) (int, error) {
+func (m *MockSimpleAccessScopeStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Count(ctx any) *gomock.Call {
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Count), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Count), ctx, q)
 }
 
 // Delete mocks base method.
@@ -208,6 +225,21 @@ func (m *MockSimpleAccessScopeStore) Get(ctx context.Context, id string) (*stora
 func (mr *MockSimpleAccessScopeStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Get), ctx, id)
+}
+
+// Search mocks base method.
+func (m *MockSimpleAccessScopeStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Search(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Search), ctx, q)
 }
 
 // Upsert mocks base method.
@@ -276,18 +308,18 @@ func (m *MockRoleStore) EXPECT() *MockRoleStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockRoleStore) Count(ctx context.Context) (int, error) {
+func (m *MockRoleStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockRoleStoreMockRecorder) Count(ctx any) *gomock.Call {
+func (mr *MockRoleStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockRoleStore)(nil).Count), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockRoleStore)(nil).Count), ctx, q)
 }
 
 // Delete mocks base method.
@@ -318,6 +350,21 @@ func (m *MockRoleStore) Get(ctx context.Context, id string) (*storage.Role, bool
 func (mr *MockRoleStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRoleStore)(nil).Get), ctx, id)
+}
+
+// Search mocks base method.
+func (m *MockRoleStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockRoleStoreMockRecorder) Search(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockRoleStore)(nil).Search), ctx, q)
 }
 
 // Upsert mocks base method.

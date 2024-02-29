@@ -101,7 +101,7 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 
 func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error) {
 	if stringutils.AllEmpty(clusterID, namespace) {
-		return ds.storage.Count(ctx)
+		return ds.storage.Count(ctx, search.EmptyQuery())
 	}
 	return ds.searcher.Count(ctx, getQuery(clusterID, namespace))
 }

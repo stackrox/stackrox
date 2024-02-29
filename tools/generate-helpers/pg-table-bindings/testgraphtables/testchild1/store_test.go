@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *TestChild1StoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testChild1, foundTestChild1)
 
-	testChild1Count, err := store.Count(ctx)
+	testChild1Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, testChild1Count)
-	testChild1Count, err = store.Count(withNoAccessCtx)
+	testChild1Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(testChild1Count)
 
@@ -100,13 +101,13 @@ func (s *TestChild1StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, testChild1s))
 
-	testChild1Count, err = store.Count(ctx)
+	testChild1Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testChild1Count)
 
 	s.NoError(store.DeleteMany(ctx, testChild1IDs))
 
-	testChild1Count, err = store.Count(ctx)
+	testChild1Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, testChild1Count)
 }

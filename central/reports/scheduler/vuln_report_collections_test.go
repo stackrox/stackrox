@@ -71,8 +71,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
-	index := collectionPostgres.NewIndexer(s.testDB.DB)
-	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore, index))
+	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
 	s.NoError(err)
 
 	s.reportScheduler = newSchedulerImpl(nil, nil, nil, nil,

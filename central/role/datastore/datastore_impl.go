@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -176,7 +177,7 @@ func (ds *dataStoreImpl) CountRoles(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return ds.roleStorage.Count(ctx)
+	return ds.roleStorage.Count(ctx, search.EmptyQuery())
 }
 
 func (ds *dataStoreImpl) getAllRolesNoScopeCheck(ctx context.Context) ([]*storage.Role, error) {
@@ -333,7 +334,7 @@ func (ds *dataStoreImpl) CountPermissionSets(ctx context.Context) (int, error) {
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err
 	}
-	return ds.permissionSetStorage.Count(ctx)
+	return ds.permissionSetStorage.Count(ctx, search.EmptyQuery())
 }
 
 func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
@@ -508,7 +509,7 @@ func (ds *dataStoreImpl) CountAccessScopes(ctx context.Context) (int, error) {
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return 0, err
 	}
-	return ds.accessScopeStorage.Count(ctx)
+	return ds.accessScopeStorage.Count(ctx, search.EmptyQuery())
 }
 
 func (ds *dataStoreImpl) AccessScopeExists(ctx context.Context, id string) (bool, error) {

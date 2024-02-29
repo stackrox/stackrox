@@ -103,9 +103,7 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	store := postgresStore.New(suite.pool)
-	indexer := postgresStore.NewIndexer(suite.pool)
-
-	searcher, err := baselineSearch.New(store, indexer)
+	searcher, err := baselineSearch.New(store)
 	suite.NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())

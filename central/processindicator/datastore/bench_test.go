@@ -26,8 +26,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
 	plopStore := plopStore.New(db)
-	indexer := postgresStore.NewIndexer(db)
-	searcher := search.New(store, indexer)
+	searcher := search.New(store)
 
 	datastore, err := New(store, plopStore, searcher, nil)
 	require.NoError(b, err)

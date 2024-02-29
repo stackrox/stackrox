@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,9 +20,8 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, indexer index.Indexer) Searcher {
+func New(storage store.Store) Searcher {
 	return &searcherImpl{
 		storage: storage,
-		indexer: indexer,
 	}
 }

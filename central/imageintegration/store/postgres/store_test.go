@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(imageIntegration, foundImageIntegration)
 
-	imageIntegrationCount, err := store.Count(ctx)
+	imageIntegrationCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, imageIntegrationCount)
-	imageIntegrationCount, err = store.Count(withNoAccessCtx)
+	imageIntegrationCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(imageIntegrationCount)
 
@@ -103,13 +104,13 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(imageIntegrations, allImageIntegration)
 
-	imageIntegrationCount, err = store.Count(ctx)
+	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageIntegrationCount)
 
 	s.NoError(store.DeleteMany(ctx, imageIntegrationIDs))
 
-	imageIntegrationCount, err = store.Count(ctx)
+	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, imageIntegrationCount)
 }

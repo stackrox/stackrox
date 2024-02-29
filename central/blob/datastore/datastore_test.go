@@ -13,7 +13,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
-	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -42,7 +41,7 @@ func (s *blobTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	s.datastore = NewDatastore(s.store, search.New(s.store, postgres.NewIndexer(s.testDB.DB)))
+	s.datastore = NewDatastore(s.store, search.New(s.store))
 }
 
 func (s *blobTestSuite) SetupTest() {

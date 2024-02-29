@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *TestStructsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testStruct, foundTestStruct)
 
-	testStructCount, err := store.Count(ctx)
+	testStructCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, testStructCount)
-	testStructCount, err = store.Count(withNoAccessCtx)
+	testStructCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(testStructCount)
 
@@ -100,13 +101,13 @@ func (s *TestStructsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, testStructs))
 
-	testStructCount, err = store.Count(ctx)
+	testStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testStructCount)
 
 	s.NoError(store.DeleteMany(ctx, testStructIDs))
 
-	testStructCount, err = store.Count(ctx)
+	testStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, testStructCount)
 }

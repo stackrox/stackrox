@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -179,7 +180,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuite() {
 			}
 		}
 
-		count, err := s.storage.Count(s.hasReadCtx)
+		count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 		s.Require().NoError(err)
 		s.Require().Equal(tc.expectedRecordIndex.Cardinality(), count)
 
@@ -228,12 +229,12 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuites() {
 		err := s.dataStore.UpsertSuites(tc.testContext, suites)
 		if tc.hasError {
 			s.Require().Error(err)
-			count, err := s.storage.Count(s.hasReadCtx)
+			count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 			s.Require().NoError(err)
 			s.Require().Zero(count)
 		} else {
 			s.Require().NoError(err)
-			count, err := s.storage.Count(s.hasReadCtx)
+			count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 			s.Require().NoError(err)
 			s.Require().Equal(len(allSuiteIDs), count)
 			ids, err := s.storage.GetIDs(s.hasReadCtx)
@@ -299,7 +300,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuite() {
 			s.Require().NoError(s.dataStore.DeleteSuite(tc.testContext, suite.GetId()))
 		}
 
-		count, err := s.storage.Count(s.hasReadCtx)
+		count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 		s.Require().NoError(err)
 		// If we could not delete the suite then they will remain.
 		s.Require().Equal(len(tc.suites)-tc.expectedRecordIndex.Cardinality(), count)
@@ -325,7 +326,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuitesByCluster() {
 	s.Require().NoError(s.dataStore.UpsertSuite(s.hasWriteCtx, testSuite2))
 	s.Require().NoError(s.dataStore.UpsertSuite(s.hasWriteCtx, testSuite3))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(3, count)
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	mockIndex "github.com/stackrox/rox/central/blob/datastore/index/mocks"
 	mockStore "github.com/stackrox/rox/central/blob/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,7 +25,6 @@ type BlobSearchTestSuite struct {
 	suite.Suite
 
 	controller *gomock.Controller
-	indexer    *mockIndex.MockIndexer
 	store      *mockStore.MockStore
 
 	searcher    Searcher
@@ -40,9 +38,8 @@ func (suite *BlobSearchTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Administration),
 		))
 	suite.controller = gomock.NewController(suite.T())
-	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
 	suite.store = mockStore.NewMockStore(suite.controller)
-	searcher := New(suite.store, suite.indexer)
+	searcher := New(suite.store)
 	suite.searcher = searcher
 }
 
@@ -71,7 +68,7 @@ func getMockBlobResults(num int) ([]search.Result, []*storage.Blob, []string) {
 func (suite *BlobSearchTestSuite) TestErrors() {
 	q := search.EmptyQuery()
 	someError := errors.New("this is a test error")
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Times(3).Return(nil, someError)
+	suite.store.EXPECT().Search(gomock.Any(), q).Times(3).Return(nil, someError)
 	ids, err := suite.searcher.SearchIDs(suite.allowAllCtx, q)
 	suite.Equal(someError, err)
 	suite.Nil(ids)
@@ -93,14 +90,14 @@ func (suite *BlobSearchTestSuite) TestErrors() {
 func (suite *BlobSearchTestSuite) TestSearchForAll() {
 	q := search.EmptyQuery()
 	var emptyList []search.Result
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(emptyList, nil)
+	suite.store.EXPECT().Search(gomock.Any(), q).Return(emptyList, nil)
 	// It's an implementation detail whether this method is called, so allow but don't require it.
 	blobIDs, err := suite.searcher.SearchIDs(suite.allowAllCtx, q)
 	suite.NoError(err)
 	suite.Empty(blobIDs)
 
 	indexResults, blobs, ids := getMockBlobResults(3)
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
+	suite.store.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
 	blobIDs, err = suite.searcher.SearchIDs(suite.allowAllCtx, q)
 	suite.NoError(err)
 	suite.Equal(ids, blobIDs)

@@ -16,7 +16,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	as = New(storage, pgStore.NewIndexer(globaldb.GetPostgres()), deploymentDataStore.Singleton(), ranking.NamespaceRanker())
+	as = New(storage, deploymentDataStore.Singleton(), ranking.NamespaceRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

@@ -58,7 +58,8 @@ func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 // Store is the interface to interact with the storage for the generic type T.
 type Store[T any, PT unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Walk(ctx context.Context, fn func(obj PT) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
 	GetAll(ctx context.Context) ([]PT, error)
@@ -171,10 +172,16 @@ func (s *genericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 }
 
 // Count returns the number of objects in the store.
-func (s *genericStore[T, PT]) Count(ctx context.Context) (int, error) {
+func (s *genericStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
-	return RunCountRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
+	return RunCountRequestForSchema(ctx, s.schema, q, s.db)
+}
+
+func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Search)
+
+	return RunSearchRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {

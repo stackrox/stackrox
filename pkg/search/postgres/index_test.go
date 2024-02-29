@@ -28,11 +28,8 @@ var (
 type IndexSuite struct {
 	suite.Suite
 
-	pool    postgres.DB
-	store   pgStore.Store
-	indexer interface {
-		Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	}
+	pool  postgres.DB
+	store pgStore.Store
 }
 
 func TestIndex(t *testing.T) {
@@ -51,7 +48,6 @@ func (s *IndexSuite) SetupTest() {
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.store = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-	s.indexer = pgStore.NewIndexer(s.pool)
 }
 
 func (s *IndexSuite) TearDownTest() {
@@ -83,7 +79,7 @@ type testCase struct {
 func (s *IndexSuite) runTestCases(cases []testCase) {
 	for _, c := range cases {
 		s.Run(c.desc, func() {
-			results, err := s.indexer.Search(ctx, c.q)
+			results, err := s.store.Search(ctx, c.q)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -695,7 +691,7 @@ type highlightTestCase struct {
 func (s *IndexSuite) runHighlightTestCases(cases []highlightTestCase) {
 	for _, c := range cases {
 		s.Run(c.desc, func() {
-			results, err := s.indexer.Search(ctx, c.q)
+			results, err := s.store.Search(ctx, c.q)
 			if c.expectErr {
 				s.Error(err)
 				return
@@ -1339,7 +1335,7 @@ func (s *IndexSuite) TestPagination() {
 	} {
 		s.Run(testCase.desc, func() {
 			q := search.NewQueryBuilder().AddBools(search.TestBool, true).WithPagination(testCase.pagination).ProtoQuery()
-			results, err := s.indexer.Search(ctx, q)
+			results, err := s.store.Search(ctx, q)
 			s.Require().NoError(err)
 
 			actualMatches := make([]int, 0, len(results))
