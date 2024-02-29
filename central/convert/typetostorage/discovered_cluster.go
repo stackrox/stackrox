@@ -1,7 +1,6 @@
 package typetostorage
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 )
@@ -21,7 +20,7 @@ func DiscoveredCluster(cluster *discoveredclusters.DiscoveredCluster) *storage.D
 		},
 		Status:        cluster.GetStatus(),
 		SourceId:      cluster.GetCloudSourceID(),
-		LastUpdatedAt: types.TimestampNow(),
+		LastUpdatedAt: protocompat.TimestampNow(),
 	}
 	return storageConfig
 }
