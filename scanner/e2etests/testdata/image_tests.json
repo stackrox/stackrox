@@ -1510,7 +1510,7 @@
                         "FixedBy": "0:3.0.2-0ubuntu1.7"
                     }
                 ],
-                "AddedBy": "sha256:301a8b74f71f85f3a31e9c7e7fedd5b001ead5bcf895bc2911c1d260e06bd987",
+                "AddedBy": "sha256:8862c07555c9317d3dd31b6d8a755244a5e215737e45f67fa4c4ec7e03ca3b37",
                 "Location": "var/lib/dpkg/status",
                 "FixedBy": "0:3.0.2-0ubuntu1.10"
             }
@@ -1815,7 +1815,7 @@
                                 }
                             }
                         },
-                        "FixedBy": "1.8.4-r1"
+                        "FixedBy": "1.8.7-r0"
                     }
                 ],
                 "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
@@ -1847,7 +1847,7 @@
                 ],
                 "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
                 "Location": "lib/apk/db/installed",
-                "FixedBy": "1.51.0-r1"
+                "FixedBy": "1.51.0-r2"
             }
         ],
         "unexpected_features": null,
