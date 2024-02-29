@@ -156,6 +156,11 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
 	// Update the last updated time
+	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
+}
+
+// upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
+func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	scanConfig.LastUpdatedTime = protocompat.TimestampNow()
 	return ds.storage.Upsert(ctx, scanConfig)
 }
