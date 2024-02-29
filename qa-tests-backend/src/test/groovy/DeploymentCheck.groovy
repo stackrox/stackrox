@@ -1,16 +1,8 @@
 import static util.Helpers.withRetry
 
-import io.fabric8.openshift.api.model.ClusterRoleBinding
-import io.kubernetes.client.proto.V1Rbac
-
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
-import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.Rbac
-import io.stackrox.proto.storage.ScopeOuterClass
 
-import objects.Deployment
 import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
@@ -20,35 +12,15 @@ import objects.NetworkPolicyTypes
 import services.ClusterService
 import services.DetectionService
 import services.NetworkPolicyService
-import services.PolicyService
 
 import spock.lang.Shared
 import spock.lang.Tag
 
 class DeploymentCheck extends BaseSpecification {
-    // Test labels - each test has its own unique label space. This is also used to name
-    // each tests policy and deployment.
     private final static String DEPLOYMENT_CHECK = "check-deployments"
-
-    // Policies used in this test
-    private final static String LATEST_TAG = "Latest tag"
-
-    private final static Map<String, Closure> POLICIES = [
-            (DEPLOYMENT_CHECK): {
-                duplicatePolicyForTest(
-                    LATEST_TAG,
-                    DEPLOYMENT_CHECK,
-                    [EnforcementAction.FAIL_BUILD_ENFORCEMENT],
-                    [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
-            )}
-
-    ]
 
     @Shared
     private String clusterId
-
-    @Shared
-    private static final Map<String, String> CREATED_POLICIES = [:]
 
     def setupSpec(){
         // Ensure a secured cluster exists
@@ -62,18 +34,9 @@ class DeploymentCheck extends BaseSpecification {
     }
 
     def cleanupSpec(){
-        CREATED_POLICIES.each {
-            unused, policyId -> PolicyService.deletePolicy(policyId)
-        }
         orchestrator.deleteNamespace(DEPLOYMENT_CHECK)
         orchestrator.waitForNamespaceDeletion(DEPLOYMENT_CHECK)
     }
-
-    /*
-    1. Create policies, deployments, network policies and RBACs in the test setup
-    2. Call a central API (deployment check)
-    3. Assert that the violation slice has (or doesn't) certain violations
-    * */
 
     @Tag("BAT")
     @Tag("Integration")
@@ -110,11 +73,12 @@ class DeploymentCheck extends BaseSpecification {
         def orchRoles = orchestrator.getClusterRoles()
         for (K8sRole r : orchRoles) {
             if (r.getName() == "cluster-admin"){
-                log.info("ClusterRole Name: ${r.getName()}")
                 clusterAdmin = r
+                break
             }
         }
         assert clusterAdmin
+
         def crb = new K8sRoleBinding(clusterAdmin, [new K8sSubject(sa)])
         crb.setNamespace(DEPLOYMENT_CHECK)
         crb.setName(DEPLOYMENT_CHECK)
@@ -130,47 +94,10 @@ class DeploymentCheck extends BaseSpecification {
         assert res
         assert res.getRemarksList().size() > 0
         assert res.getRemarks(0).getName() == DEPLOYMENT_CHECK
-        assert res.getRemarks(0).getPermissionLevel() == Rbac.PermissionLevel.NONE.toString()
+        assert res.getRemarks(0).getPermissionLevel() == Rbac.PermissionLevel.CLUSTER_ADMIN.toString()
         assert res.getRemarks(0).getAppliedNetworkPoliciesList().size() == 1
         assert res.getRemarks(0).getAppliedNetworkPolicies(0) == DEPLOYMENT_CHECK
-
-        sleep(10000)
     }
-
-    static String duplicatePolicyForTest(
-            String policyName,
-            String appLabel,
-            List<PolicyOuterClass.EnforcementAction> enforcementActions,
-            List<PolicyOuterClass.LifecycleStage> stages = []
-    ) {
-        PolicyOuterClass.Policy policyMeta = Services.getPolicyByName(policyName)
-
-        def builder = PolicyOuterClass.Policy.newBuilder(policyMeta)
-
-        builder.setId("")
-        builder.setName(appLabel)
-
-        builder.addScope(
-                ScopeOuterClass.Scope.newBuilder().
-                        setLabel(ScopeOuterClass.Scope.Label.newBuilder()
-                                .setKey("app").setValue(appLabel)))
-
-        builder.clearEnforcementActions()
-        if (enforcementActions != null && !enforcementActions.isEmpty()) {
-            builder.addAllEnforcementActions(enforcementActions)
-        } else {
-            builder.addAllEnforcementActions([])
-        }
-        if (stages != []) {
-            builder.clearLifecycleStages()
-            builder.addAllLifecycleStages(stages)
-        }
-
-        def policyDef = builder.build()
-
-        return PolicyService.createNewPolicy(policyDef)
-    }
-
 
     static String createDeploymentYaml(String deploymentName) {
         """
@@ -191,9 +118,9 @@ spec:
       labels:
         app: %s
     spec:
+      serviceAccountName: check-deployment-sa
       containers:
       - name: nginx
-        serviceAccountName: check-deployment-sa
         image: nginx:latest
         ports:
         - containerPort: 80
