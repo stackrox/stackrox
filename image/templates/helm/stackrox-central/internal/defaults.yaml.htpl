@@ -166,6 +166,9 @@ defaults:
 [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
     disable: true
+    image:
+      name: [< required "" .ScannerV4ImageRemote >]
+      tag: [< required "" .ScannerV4ImageTag >]
     indexer:
       disable: false
       logLevel: INFO
@@ -214,9 +217,6 @@ defaults:
         limits:
           memory: "3Gi"
           cpu: "2000m"
-      image:
-        name: [< required "" .ScannerV4ImageRemote >]
-        tag: [< required "" .ScannerV4ImageTag >]
     matcher:
       logLevel: INFO
       metricsPort: 9090
@@ -264,9 +264,6 @@ defaults:
         limits:
           memory: "5Gi"
           cpu: "2000m"
-      image:
-        name: [< required "" .ScannerV4ImageRemote >]
-        tag: [< required "" .ScannerV4ImageTag >]
     db:
       postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
       hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"

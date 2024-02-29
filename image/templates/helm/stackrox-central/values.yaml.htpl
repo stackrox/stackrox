@@ -341,6 +341,12 @@ central:
 #  # If it is set to true, no other setting in this section will have any effect.
 #  disable: true
 #
+#  image:
+#    registry: null
+#    name: [< required "" .ScannerV4ImageRemote >]
+#    tag: [< required "" .ScannerV4ImageTag >]
+#    fullRef: null
+#
 #  indexer:
 #    # The log level for the indexer deployment. This typically does not need to be changed.
 #    logLevel: INFO
@@ -387,12 +393,6 @@ central:
 #            matchExpressions:
 #            - key: node-role.kubernetes.io/control-plane
 #              operator: DoesNotExist
-#
-#    image:
-#      registry: null
-#      name: [< required "" .ScannerV4ImageRemote >]
-#      tag: [< required "" .ScannerV4ImageTag >]
-#      fullRef: null
 #
 #    # Default number of indexer replicas created upon startup. The actual number might be higher
 #    # or lower if autoscaling is enabled (see below).
@@ -468,12 +468,6 @@ central:
 #            matchExpressions:
 #            - key: node-role.kubernetes.io/control-plane
 #              operator: DoesNotExist
-#
-#    image:
-#      registry: null
-#      name: [< required "" .ScannerV4ImageRemote >]
-#      tag: [< required "" .ScannerV4ImageTag >]
-#      fullRef: null
 #
 #    # Default number of matcher replicas created upon startup. The actual number might be higher
 #    # or lower if autoscaling is enabled (see below).
