@@ -103,6 +103,9 @@ class DeploymentCheck extends BaseSpecification {
         assert res.getRemarks(0).getAppliedNetworkPolicies(0) == DEPLOYMENT_CHECK
     }
 
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("DeploymentCheck")
     def "Test Deployment Check - Multiple Deployments"() {
         given:
         "builder is prepared"
