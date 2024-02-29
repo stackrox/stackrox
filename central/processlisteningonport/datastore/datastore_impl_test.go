@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -2286,13 +2287,13 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPs() {
 
 			err = suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
 			suite.NoError(err)
-			plopCount, err := suite.store.Count(suite.hasReadCtx)
+			plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops), plopCount)
 
 			suite.datastore.PruneOrphanedPLOPs(suite.hasWriteCtx, orphanWindow)
 
-			plopCount, err = suite.store.Count(suite.hasReadCtx)
+			plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 
@@ -2461,13 +2462,13 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 
 			err = suite.store.UpsertMany(suite.hasWriteCtx, c.initialPlops)
 			suite.NoError(err)
-			plopCount, err := suite.store.Count(suite.hasReadCtx)
+			plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops), plopCount)
 
 			suite.datastore.PruneOrphanedPLOPsByProcessIndicators(suite.hasAllCtx, orphanWindow)
 
-			plopCount, err = suite.store.Count(suite.hasReadCtx)
+			plopCount, err = suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 			suite.NoError(err)
 			suite.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 
