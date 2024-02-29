@@ -236,7 +236,11 @@ export type ImportPolicyResponse = {
 export type ImportPolicyError =
     | {
           message: string;
-          type: 'duplicate_id' | 'duplicate_name';
+          type:
+              | 'duplicate_id'
+              | 'duplicate_system_policy_id'
+              | 'duplicate_system_policy_name'
+              | 'duplicate_name';
           duplicateName: string;
       }
     | {
