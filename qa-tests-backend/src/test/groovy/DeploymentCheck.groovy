@@ -1,9 +1,6 @@
 import static util.Helpers.withRetry
 
-import io.fabric8.openshift.api.model.ClusterRoleBinding
-
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
-import io.stackrox.proto.api.v1.DetectionServiceOuterClass.DeployDetectionRemark
 import io.stackrox.proto.storage.Rbac
 
 import objects.K8sRole
@@ -81,7 +78,7 @@ class DeploymentCheck extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     @Tag("DeploymentCheck")
-    def "Test Deployment Check - Multiple Deployments"() {
+    def "Test Deployment Check - Single Deployment"() {
         given:
         "builder is prepared"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
@@ -125,8 +122,8 @@ class DeploymentCheck extends BaseSpecification {
         then:
         assert res
         assert res.getRemarksList().size() == 2
-        assert !res.getRemarksList().findAll {it.getName() == DEPLOYMENT_CHECK}.isEmpty()
-        assert !res.getRemarksList().findAll {it.getName() == "de2"}.isEmpty()
+        assert !res.getRemarksList().findAll { it.getName() == DEPLOYMENT_CHECK }.isEmpty()
+        assert !res.getRemarksList().findAll { it.getName() == "de2" }.isEmpty()
     }
 
     static String createDeploymentYaml(String deploymentName) {
@@ -206,6 +203,7 @@ spec:
         image: ubuntu:latest
         ports:
         - containerPort: 80
-        """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName)
+        """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName,
+                deploymentName, deploymentName, deploymentName)
     }
 }
