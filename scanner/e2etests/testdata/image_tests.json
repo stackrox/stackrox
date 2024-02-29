@@ -1435,20 +1435,20 @@
         "namespace": "rhel:8",
         "expected_features": [
             {
-                "Name": "spring-security-web",
+                "Name": "spring-security-core",
                 "Version": "5.5.5",
                 "Arch": "",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2022-22978",
-                        "Description": "In Spring Security versions 5.5.6 and 5.6.3 and older unsupported versions, RegexRequestMatcher can easily be misconfigured to be bypassed on some servlet containers.\n\nApplications using RegexRequestMatcher with '.' in the regular expression are possibly vulnerable to an authorization bypass.",
+                        "Description": "Authorization bypass in Spring Security",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22978",
-                        "Severity": "Important",
+                        "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 8.2,
-                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N"
+                                    "Score": 0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
                         },
@@ -1943,15 +1943,40 @@
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2020-7699",
-                        "Severity": "Critical"
+                        "Severity": "Critical",
+                        "Description": "Prototype Pollution in express-fileupload",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-7699",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 0.0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.1.9"
                     },
                     {
                         "Name": "CVE-2022-27261",
-                        "Severity": "High"
+                        "Severity": "Important",
+                        "Description": "Express-FileUpload Arbitrary File Overwrite",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-27261",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": ""
                     }
-                ]
+                ],
+                "FixedBy": "1.1.9"
             }
-        ]
+        ],
+        "only_check_specified_vulns": true
     },
     {
         "image": "docker.io/library/oraclelinux:8",

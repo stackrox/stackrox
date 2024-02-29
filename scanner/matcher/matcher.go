@@ -11,6 +11,8 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/matchers/registry"
+	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -110,6 +112,13 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	ccClient := &http.Client{
 		Transport: httputil.DenyTransport,
 	}
+
+	if env.ScannerV4NodeJSSupport.BooleanSetting() {
+		m := nodejs.Matcher{}
+		mf := driver.MatcherStatic(&m)
+		registry.Register(m.Name(), mf)
+	}
+
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:        store,
 		Locker:       locker,
