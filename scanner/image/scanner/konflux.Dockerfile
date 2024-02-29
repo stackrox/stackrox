@@ -48,8 +48,8 @@ COPY --from=builder \
 
 # The mapping files are not optional.
 # The helm chart hard codes in the indexer config the path to the mapping
-# files, which is preferred over downloading.  If the file does not exist, the
-# indexer raises an error (i.e. it does not fall back to download).
+# files.  If the file does not exist, the indexer raises an error during bootstrap.
+# (Note that the file is downloaded from Central after initial seeding.)
 
 COPY ./repository-to-cpe.json ./container-name-repos-map.json /run/mappings/
 
