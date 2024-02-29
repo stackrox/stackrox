@@ -323,6 +323,140 @@ func (u *updater) vulns() []*claircore.Vulnerability {
 				URI:  "https://repo1.maven.apache.org/maven2",
 			},
 		},
+
+		{
+			// Vuln: CVE-2022-29885
+			// Reason: osv.dev does not attribute this to Maven. See https://osv.dev/vulnerability/CVE-2022-29885.
+			// Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
+			Updater:            u.Name(),
+			Name:               "CVE-2022-29885",
+			Description:        "The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.",
+			Issued:             mustParseTime(time.RFC3339, "2022-05-12T08:15:07Z"),
+			Links:              "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+			Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+			NormalizedSeverity: claircore.High,
+			Package: &claircore.Package{
+				Name:           "org.apache.tomcat-embed-core:tomcat-embed-core",
+				Kind:           claircore.BINARY,
+				RepositoryHint: "Maven",
+			},
+			FixedInVersion: "introduced=8.5.38&lastAffected=8.5.78",
+			Repo: &claircore.Repository{
+				Name: "maven",
+				URI:  "https://repo1.maven.apache.org/maven2",
+			},
+		},
+		{
+			// Vuln: CVE-2022-29885
+			// Reason: Same as previous entry but with different vulnerable range.
+			// Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
+			Updater:            u.Name(),
+			Name:               "CVE-2022-29885",
+			Description:        "The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.",
+			Issued:             mustParseTime(time.RFC3339, "2022-05-12T08:15:07Z"),
+			Links:              "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+			Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+			NormalizedSeverity: claircore.High,
+			Package: &claircore.Package{
+				Name:           "org.apache.tomcat-embed-core:tomcat-embed-core",
+				Kind:           claircore.BINARY,
+				RepositoryHint: "Maven",
+			},
+			FixedInVersion: "introduced=9.0.13&lastAffected=9.0.62",
+			Repo: &claircore.Repository{
+				Name: "maven",
+				URI:  "https://repo1.maven.apache.org/maven2",
+			},
+		},
+		{
+			// Vuln: CVE-2022-29885
+			// Reason: Same as previous entry but with different vulnerable range.
+			// Source: https://nvd.nist.gov/vuln/detail/CVE-2022-29885 and https://osv.dev/vulnerability/CVE-2022-29885
+			Updater:            u.Name(),
+			Name:               "CVE-2022-29885",
+			Description:        "The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.",
+			Issued:             mustParseTime(time.RFC3339, "2022-05-12T08:15:07Z"),
+			Links:              "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+			Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+			NormalizedSeverity: claircore.High,
+			Package: &claircore.Package{
+				Name:           "org.apache.tomcat-embed-core:tomcat-embed-core",
+				Kind:           claircore.BINARY,
+				RepositoryHint: "Maven",
+			},
+			FixedInVersion: "introduced=10.0.0&lastAffected=10.0.20",
+			Repo: &claircore.Repository{
+				Name: "maven",
+				URI:  "https://repo1.maven.apache.org/maven2",
+			},
+		},
+
+		{
+			// Vuln: CVE-2023-28708
+			// Reason: osv.dev does not attribute this to Maven. See https://osv.dev/vulnerability/CVE-2023-28708.
+			// Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
+			Updater:            u.Name(),
+			Name:               "CVE-2023-28708",
+			Description:        "When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.",
+			Issued:             mustParseTime(time.RFC3339, "2023-03-22T11:15:10Z"),
+			Links:              "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+			Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N",
+			NormalizedSeverity: claircore.Medium,
+			Package: &claircore.Package{
+				Name:           "org.apache.tomcat-embed-core:tomcat-embed-core",
+				Kind:           claircore.BINARY,
+				RepositoryHint: "Maven",
+			},
+			FixedInVersion: "introduced=8.5.0&fixed=8.5.86",
+			Repo: &claircore.Repository{
+				Name: "maven",
+				URI:  "https://repo1.maven.apache.org/maven2",
+			},
+		},
+		{
+			// Vuln: CVE-2023-28708
+			// Reason: Same as previous entry but with different vulnerable range.
+			// Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
+			Updater:            u.Name(),
+			Name:               "CVE-2023-28708",
+			Description:        "When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.",
+			Issued:             mustParseTime(time.RFC3339, "2023-03-22T11:15:10Z"),
+			Links:              "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+			Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N",
+			NormalizedSeverity: claircore.Medium,
+			Package: &claircore.Package{
+				Name:           "org.apache.tomcat-embed-core:tomcat-embed-core",
+				Kind:           claircore.BINARY,
+				RepositoryHint: "Maven",
+			},
+			FixedInVersion: "introduced=9.0.0&fixed=9.0.72",
+			Repo: &claircore.Repository{
+				Name: "maven",
+				URI:  "https://repo1.maven.apache.org/maven2",
+			},
+		},
+		{
+			// Vuln: CVE-2023-28708
+			// Reason: Same as previous entry but with different vulnerable range.
+			// Source: https://nvd.nist.gov/vuln/detail/CVE-2023-28708 and https://osv.dev/vulnerability/CVE-2023-28708
+			Updater:            u.Name(),
+			Name:               "CVE-2023-28708",
+			Description:        "When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.",
+			Issued:             mustParseTime(time.RFC3339, "2023-03-22T11:15:10Z"),
+			Links:              "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+			Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N",
+			NormalizedSeverity: claircore.Medium,
+			Package: &claircore.Package{
+				Name:           "org.apache.tomcat-embed-core:tomcat-embed-core",
+				Kind:           claircore.BINARY,
+				RepositoryHint: "Maven",
+			},
+			FixedInVersion: "introduced=10.1.0&fixed=10.1.6",
+			Repo: &claircore.Repository{
+				Name: "maven",
+				URI:  "https://repo1.maven.apache.org/maven2",
+			},
+		},
 	}
 }
 
