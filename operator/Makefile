@@ -232,8 +232,8 @@ vet: ## Run go vet against code.
 ENVTEST_K8S_VERSION = 1.27
 
 .PHONY: test
-test: manifests generate fmt vet envtest  ## Run go unit tests
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test $(shell go list ./... | grep -v '^github.com/stackrox/rox/operator/tests') -coverprofile cover.out
+test: manifests generate fmt vet  ## Run go unit tests
+	go test $(shell go list ./... | grep -v '^github.com/stackrox/rox/operator/tests') -coverprofile cover.out
 
 test-integration: manifests generate fmt vet envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./tests/... -coverprofile cover-integration.out
