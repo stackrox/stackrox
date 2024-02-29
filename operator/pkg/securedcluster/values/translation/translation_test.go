@@ -38,7 +38,7 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	s.T().Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
 	s.T().Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
 	s.T().Setenv(images.ScannerV4DB.EnvVar(), "stackrox/scanner-v4-db:1.0.0")
-	s.T().Setenv(images.ScannerV4Indexer.EnvVar(), "stackrox/scanner-v4:1.0.0")
+	s.T().Setenv(images.ScannerV4.EnvVar(), "stackrox/scanner-v4:1.0.0")
 
 	obj := platform.SecuredCluster{
 		ObjectMeta: metav1.ObjectMeta{
