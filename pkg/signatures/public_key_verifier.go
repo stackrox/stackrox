@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 const (
@@ -222,7 +223,7 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
 		"signature %q", image.GetNames(), signatureImageReference)
 	var verifiedImageReferences []string
-	imageNames := imgUtils.UniqueImageNames([]*storage.ImageName{image.GetName()}, image.GetNames())
+	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
 	for _, name := range imageNames {
 		reference, err := dockerReferenceFromImageName(name)
 		if err != nil {
