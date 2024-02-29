@@ -13,6 +13,7 @@ scanner:
     maxReplicas: null # int
   affinity: null # dict
   resources: null # string | dict
+  imagePullPolicy: null # string
   image:
     registry: null # string
     name: null # string

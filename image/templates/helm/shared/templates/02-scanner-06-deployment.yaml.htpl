@@ -47,6 +47,7 @@ spec:
       - name: scanner
         {{ if eq ._rox.scanner.mode "slim" -}}
         image: {{ ._rox.scanner.slimImage.fullRef | quote }}
+        imagePullPolicy: {{ ._rox.scanner.imagePullPolicy }}
         {{ else }}
         image: {{ ._rox.scanner.image.fullRef | quote }}
         {{ end -}}
@@ -233,6 +234,7 @@ spec:
         - name: init-db
           {{ if eq ._rox.scanner.mode "slim" -}}
           image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
+          imagePullPolicy: {{ ._rox.scanner.imagePullPolicy }}
           {{ else -}}
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}
           {{ end -}}
@@ -256,6 +258,7 @@ spec:
       - name: db
         {{ if eq ._rox.scanner.mode "slim" -}}
         image: {{ ._rox.scanner.slimDBImage.fullRef | quote }}
+        imagePullPolicy: {{ ._rox.scanner.imagePullPolicy }}
         {{ else -}}
         image: {{ ._rox.scanner.dbImage.fullRef | quote }}
         {{ end -}}

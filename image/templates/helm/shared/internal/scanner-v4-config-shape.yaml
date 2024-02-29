@@ -5,6 +5,7 @@ scannerV4:
     name: null # string
     tag: null # string
     fullRef: null # string
+  imagePullPolicy: null # string
   indexer:
     disable: null # bool
     metricsPort: null # int
@@ -44,6 +45,7 @@ scannerV4:
       name: null # string
       tag: null # string
       fullRef: null # string
+    imagePullPolicy: null # string
     source:
       minConns: null # int
       maxConns: null # int
