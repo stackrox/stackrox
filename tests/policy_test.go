@@ -22,6 +22,8 @@ const (
 	notAnID                    = "Joseph Rules"
 	duplicateName              = "duplicate_name"
 	duplicateID                = "duplicate_id"
+	duplicateSystemPolicyName  = "duplicate_system_policy_name"
+	duplicateSystemPolicyID    = "duplicate_system_policy_id"
 	removedClustersOrNotifiers = "removed_clusters_or_notifiers"
 )
 
@@ -275,7 +277,11 @@ func verifyImportSucceeds(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	policy := exportPolicy(t, service, knownPolicyID)
+	// Create an existing policy, so that we don't change default policies
+	existingPolicy := createUniquePolicy(t, service)
+	addedPolicies = append(addedPolicies, existingPolicy.GetId())
+
+	policy := exportPolicy(t, service, existingPolicy.GetId())
 	policy.Name = "A new name"
 	policy.Id = "integrationtestpolicy"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -295,14 +301,27 @@ func verifyDefaultPolicyDuplicateImportFails(t *testing.T) {
 
 	policy := exportPolicy(t, service, knownPolicyID)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},
 	})
-	cancel()
 	require.NoError(t, err)
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateID, duplicateName})
+	validateImportPoliciesErrors(t, importResp, policy, []string{duplicateSystemPolicyID, duplicateSystemPolicyName})
+
+	// Check that it fails even on overwrite
+	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel2()
+	overwriteImportResp, err := service.ImportPolicies(ctx2, &v1.ImportPoliciesRequest{
+		Policies: []*storage.Policy{policy},
+		Metadata: &v1.ImportPoliciesMetadata{
+			Overwrite: true,
+		},
+	})
+	require.NoError(t, err)
+	markPolicyAsCustom(policy)
+	validateImportPoliciesErrors(t, overwriteImportResp, policy, []string{duplicateSystemPolicyID, duplicateSystemPolicyName})
 }
 
 func verifyImportInvalidFails(t *testing.T) {
@@ -327,7 +346,11 @@ func verifyImportDuplicateNameFails(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	policy := exportPolicy(t, service, knownPolicyID)
+	// Create an existing policy, so that we don't change default policies
+	existingPolicy := createUniquePolicy(t, service)
+	addedPolicies = append(addedPolicies, existingPolicy.GetId())
+
+	policy := exportPolicy(t, service, existingPolicy.GetId())
 
 	policy.Id = "duplicateNamePolicy"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -345,7 +368,11 @@ func verifyImportDuplicateIDFails(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	policy := exportPolicy(t, service, knownPolicyID)
+	// Create an existing policy, so that we don't change default policies
+	existingPolicy := createUniquePolicy(t, service)
+	addedPolicies = append(addedPolicies, existingPolicy.GetId())
+
+	policy := exportPolicy(t, service, existingPolicy.GetId())
 
 	policy.Name = "New name"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -363,7 +390,11 @@ func verifyImportDuplicateNameAndIDFails(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	policy := exportPolicy(t, service, knownPolicyID)
+	// Create an existing policy, so that we don't change default policies
+	existingPolicy := createUniquePolicy(t, service)
+	addedPolicies = append(addedPolicies, existingPolicy.GetId())
+
+	policy := exportPolicy(t, service, existingPolicy.GetId())
 
 	policy.Description = "A different description so the policies are not equal"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -423,7 +454,11 @@ func verifyImportMixedSuccess(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	validPolicy := exportPolicy(t, service, knownPolicyID)
+	// Create an existing policy, so that we don't change default policies
+	existingPolicy := createUniquePolicy(t, service)
+	addedPolicies = append(addedPolicies, existingPolicy.GetId())
+
+	validPolicy := exportPolicy(t, service, existingPolicy.GetId())
 
 	// Policy 1 should be valid
 	policy1 := validPolicy.Clone()
