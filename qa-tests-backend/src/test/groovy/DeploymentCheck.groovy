@@ -3,6 +3,7 @@ import static util.Helpers.withRetry
 import io.fabric8.openshift.api.model.ClusterRoleBinding
 
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
+import io.stackrox.proto.api.v1.DetectionServiceOuterClass.DeployDetectionRemark
 import io.stackrox.proto.storage.Rbac
 
 import objects.K8sRole
@@ -80,8 +81,7 @@ class DeploymentCheck extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     @Tag("DeploymentCheck")
-    def "Test Deployment Check - Single Deployment"() {
-
+    def "Test Deployment Check - Multiple Deployments"() {
         given:
         "builder is prepared"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
@@ -99,11 +99,34 @@ class DeploymentCheck extends BaseSpecification {
 
         then:
         assert res
-        assert res.getRemarksList().size() > 0
+        assert res.getRemarksList().size() == 1
         assert res.getRemarks(0).getName() == DEPLOYMENT_CHECK
         assert res.getRemarks(0).getPermissionLevel() == Rbac.PermissionLevel.CLUSTER_ADMIN.toString()
         assert res.getRemarks(0).getAppliedNetworkPoliciesList().size() == 1
         assert res.getRemarks(0).getAppliedNetworkPolicies(0) == DEPLOYMENT_CHECK
+    }
+
+    def "Test Deployment Check - Multiple Deployments"() {
+        given:
+        "builder is prepared"
+        def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
+        builder.setYaml(createMultiDeploymentYaml(DEPLOYMENT_CHECK))
+        builder.setNamespace(DEPLOYMENT_CHECK)
+        builder.setCluster(clusterId)
+        def req = builder.build()
+        DetectionServiceOuterClass.DeployDetectionResponse res
+
+        when:
+        withRetry(20, 5) {
+            res = DetectionService.getDetectDeploytimeFromYAML(req)
+        }
+        log.info "Got remarks:\n ${res.remarksList}"
+
+        then:
+        assert res
+        assert res.getRemarksList().size() == 2
+        assert !res.getRemarksList().findAll {it.getName() == DEPLOYMENT_CHECK}.isEmpty()
+        assert !res.getRemarksList().findAll {it.getName() == "de2"}.isEmpty()
     }
 
     static String createDeploymentYaml(String deploymentName) {
@@ -132,6 +155,58 @@ spec:
         ports:
         - containerPort: 80
         """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName)
+    }
+
+    static String createMultiDeploymentYaml(String deploymentName) {
+        """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: %s
+  namespace: %s
+  labels:
+    app: %s
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: %s
+  template:
+    metadata:
+      labels:
+        app: %s
+    spec:
+      serviceAccountName: check-deployment-sa
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: de2
+  namespace: %s
+  labels:
+    app: %s
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: %s
+  template:
+    metadata:
+      labels:
+        app: %s
+    spec:
+      serviceAccountName: check-deployment-sa
+      containers:
+      - name: ubuntu
+        image: ubuntu:latest
+        ports:
+        - containerPort: 80
+        """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName)
     }
 }
 
