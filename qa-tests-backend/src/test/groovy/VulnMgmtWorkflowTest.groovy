@@ -11,7 +11,7 @@ import spock.lang.Unroll
 @Tag("PZ")
 class VulnMgmtWorkflowTest extends BaseSpecification {
 
-    static final private NGINX_1_12_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
+    static final private NGINX_1_12_IMAGE = TEST_IMAGE
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("vulnerable-deploy")
