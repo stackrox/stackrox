@@ -10,9 +10,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+func TestNetworkFlowSuite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, &networkFlowTestSuite{})
+}
+
+type networkFlowTestSuite struct {
+	suite.Suite
+}
 
 func hasEdges(graph *v1.NetworkGraph) bool {
 	for _, node := range graph.GetNodes() {
@@ -23,17 +31,25 @@ func hasEdges(graph *v1.NetworkGraph) bool {
 	return false
 }
 
-func TestStackroxNetworkFlows(t *testing.T) {
-	t.Parallel()
-
-	conn := centralgrpc.GRPCConnectionToCentral(t)
+func (s *networkFlowTestSuite) TestStackroxNetworkFlows() {
+	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 
 	clustersService := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	clusters, err := clustersService.GetClusters(ctx, &v1.GetClustersRequest{})
+
+	var clusters *v1.ClustersList
+	var err error
+
+	s.Eventually(func() bool {
+		clusters, err = clustersService.GetClusters(ctx, &v1.GetClustersRequest{})
+		return err == nil && len(clusters.GetClusters()) > 0
+	}, 2*time.Minute, 5*time.Second)
+
 	cancel()
 
-	require.NoError(t, err)
+	s.Require().NoError(err)
+	s.Require().NotEqual(0, len(clusters.GetClusters()))
+
 	var mainCluster *storage.Cluster
 	for _, cluster := range clusters.GetClusters() {
 		if cluster.GetName() == "remote" {
@@ -41,7 +57,7 @@ func TestStackroxNetworkFlows(t *testing.T) {
 			break
 		}
 	}
-	require.NotNil(t, mainCluster, "cluster with name remote not found")
+	s.Require().NotNil(mainCluster, "cluster with name remote not found")
 
 	clusterID := mainCluster.GetId()
 
@@ -53,7 +69,8 @@ func TestStackroxNetworkFlows(t *testing.T) {
 	for {
 		select {
 		case <-timeout.C:
-			t.Fatal("Failed to get the correct edges in 5 minutes")
+			s.T().Fatal("Failed to get the correct edges in 5 minutes")
+
 		case <-ticker.C:
 			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 			graph, err = service.GetNetworkGraph(ctx, &v1.NetworkGraphRequest{
@@ -71,7 +88,7 @@ func TestStackroxNetworkFlows(t *testing.T) {
 		}
 	}
 
-	require.NoError(t, err)
+	s.Require().NoError(err)
 
 	type deploymentConn struct {
 		srcName, targetName string
@@ -107,8 +124,8 @@ func TestStackroxNetworkFlows(t *testing.T) {
 		{srcName: "sensor", targetName: "central"},
 	}
 
-	assert.Subset(t, conns, expectedConns, "expected connections not found")
-	assert.NotContains(t, internetIngressDeployments.AsSlice(), "collector", "collector should not have internet ingress")
+	s.Subset(conns, expectedConns, "expected connections not found")
+	s.NotContains(internetIngressDeployments.AsSlice(), "collector", "collector should not have internet ingress")
 	// Readiness/health probes might show up as internet ingress, so disable this for now.
 	// TODO(ROX-2034): Re-enable.
 	// assert.NotContains(t, internetIngressDeployments.AsSlice(), "sensor", "sensor should not have internet ingress")
