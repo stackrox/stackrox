@@ -405,7 +405,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 # Fix the createdAt annotation
-	YQ=$(YQ) $(YQ) -i '.metadata.annotations.createdAt = ""' bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+	$(YQ) -i '.metadata.annotations.createdAt = ""' bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
 	sed -i'.bak' -e '/# Copy files to locations specified by labels./d' bundle.Dockerfile
