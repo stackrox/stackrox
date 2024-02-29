@@ -36,6 +36,20 @@ issues:
     - linters:
         - revive
       text: "should have a package comment"
+    - path: "migrator/migrations/"
+      linters:
+        - revive
+        - unused
+      text: >-
+        (
+        *exported: exported function Destroy should have comment or be unexported|
+        *exported: exported type Store should have comment or be unexported
+        *indent-error-flow: if block ends with a return statement, so drop this else and outdent its block|exported: exported const .* should have comment .*|
+        *package-comments: package comment should be of the form .*|
+        *unused-parameter: parameter '(ctx|op|keys|typ|request)' seems to be unused, consider removing or renaming it as _|
+        *var-naming: .*|
+        *const `baseTable` is unused|
+        *)
     - linters:
         - revive
       text: "should not use dot imports"
