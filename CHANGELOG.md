@@ -25,6 +25,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-20100: `Machine access configurations` have been added to provide short-lived access tokens for Central.
 - A new image scanner based on [ClairCore](https://github.com/quay/claircore), Scanner V4, is now available.
   - It is disabled by default, but it is recommended for more accurate image scan results.
+- ROX-22505: It is now possible to set up authentication provider claim mappings via UI.
+- API token expiration date can be configured. If expiration date is not specified, API token will expire in 1 year.
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
