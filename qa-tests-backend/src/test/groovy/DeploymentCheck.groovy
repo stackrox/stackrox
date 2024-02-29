@@ -209,7 +209,3 @@ spec:
         """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName)
     }
 }
-
-
-
-
