@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import io.fabric8.openshift.api.model.ClusterRoleBinding
+
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
 import io.stackrox.proto.storage.Rbac
 
@@ -21,8 +23,16 @@ class DeploymentCheck extends BaseSpecification {
 
     @Shared
     private String clusterId
+    @Shared
+    private NetworkPolicy netPol
+    @Shared
+    private K8sRole clusterAdmin
+    @Shared
+    private K8sServiceAccount serviceAccount
+    @Shared
+    private K8sRoleBinding roleBinding
 
-    def setupSpec(){
+    def setupSpec() {
         // Ensure a secured cluster exists
         assert ClusterService.getClusters().size() > 0, "There must be at least one secured cluster"
         clusterId = ClusterService.getClusters().get(0).getId()
@@ -31,9 +41,38 @@ class DeploymentCheck extends BaseSpecification {
         // Create required resources
         orchestrator.createNamespace(DEPLOYMENT_CHECK)
 
+        netPol = new NetworkPolicy(DEPLOYMENT_CHECK)
+                .setNamespace(DEPLOYMENT_CHECK)
+                .addPodSelector(["app": DEPLOYMENT_CHECK])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+        def netPolID = orchestrator.applyNetworkPolicy(netPol)
+        assert NetworkPolicyService.waitForNetworkPolicy(netPolID)
+
+        serviceAccount = new K8sServiceAccount(
+                name: "check-deployment-sa",
+                namespace: DEPLOYMENT_CHECK,
+        )
+        orchestrator.createServiceAccount(serviceAccount)
+
+        def orchRoles = orchestrator.getClusterRoles()
+        for (K8sRole r : orchRoles) {
+            if (r.getName() == "cluster-admin") {
+                clusterAdmin = r
+                break
+            }
+        }
+        assert clusterAdmin
+
+        roleBinding = new K8sRoleBinding(clusterAdmin, [new K8sSubject(serviceAccount)])
+        roleBinding.setNamespace(DEPLOYMENT_CHECK)
+        roleBinding.setName(DEPLOYMENT_CHECK)
+        orchestrator.createClusterRoleBinding(roleBinding)
     }
 
-    def cleanupSpec(){
+    def cleanupSpec() {
+        orchestrator.deleteClusterRoleBinding(roleBinding)
+        orchestrator.deleteServiceAccount(serviceAccount)
+        orchestrator.deleteNetworkPolicy(netPol)
         orchestrator.deleteNamespace(DEPLOYMENT_CHECK)
         orchestrator.waitForNamespaceDeletion(DEPLOYMENT_CHECK)
     }
@@ -41,7 +80,7 @@ class DeploymentCheck extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     @Tag("DeploymentCheck")
-    def "Test Deployment Check - Single Deployment"(){
+    def "Test Deployment Check - Single Deployment"() {
 
         given:
         "builder is prepared"
@@ -52,40 +91,8 @@ class DeploymentCheck extends BaseSpecification {
         def req = builder.build()
         DetectionServiceOuterClass.DeployDetectionResponse res
 
-        and:
-        "network policy has been created"
-        NetworkPolicy pol = new NetworkPolicy(DEPLOYMENT_CHECK)
-                .setNamespace(DEPLOYMENT_CHECK)
-                .addPodSelector(["app":DEPLOYMENT_CHECK])
-                .addPolicyType(NetworkPolicyTypes.INGRESS)
-        def netPolID = orchestrator.applyNetworkPolicy(pol)
-        assert NetworkPolicyService.waitForNetworkPolicy(netPolID)
-
-        and:
-        "cluster RBAC has been created"
-        def sa = new K8sServiceAccount(
-                name: "check-deployment-sa",
-                namespace: DEPLOYMENT_CHECK,
-        )
-        orchestrator.createServiceAccount(sa)
-
-        K8sRole clusterAdmin
-        def orchRoles = orchestrator.getClusterRoles()
-        for (K8sRole r : orchRoles) {
-            if (r.getName() == "cluster-admin"){
-                clusterAdmin = r
-                break
-            }
-        }
-        assert clusterAdmin
-
-        def crb = new K8sRoleBinding(clusterAdmin, [new K8sSubject(sa)])
-        crb.setNamespace(DEPLOYMENT_CHECK)
-        crb.setName(DEPLOYMENT_CHECK)
-        orchestrator.createClusterRoleBinding(crb)
-
         when:
-        withRetry(20, 5){
+        withRetry(20, 5) {
             res = DetectionService.getDetectDeploytimeFromYAML(req)
         }
         log.info "Got remarks:\n ${res.remarksList}"
@@ -124,7 +131,7 @@ spec:
         image: nginx:latest
         ports:
         - containerPort: 80
-        """.formatted(deploymentName,deploymentName,deploymentName,deploymentName,deploymentName)
+        """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName)
     }
 }
 
