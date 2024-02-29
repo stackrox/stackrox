@@ -422,7 +422,8 @@ push_matching_collector_scanner_images() {
         if is_OPENSHIFT_CI; then
             oc_image_mirror "$1" "$2"
         else
-            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+            retry 5 true \
+                "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
         fi
     }
 
