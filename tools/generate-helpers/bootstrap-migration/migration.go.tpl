@@ -22,3 +22,4 @@ var (
 func init() {
 	migrations.MustRegisterMigration(migration)
 }
+
