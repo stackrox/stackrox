@@ -372,11 +372,8 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          _login() {
-            docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
-          }
-          scripts/lib.sh retry 5 true _login
-        shell: bash
+          source ./scripts/ci/lib.sh
+          registry_ro_login "quay.io/rhacs-eng"
 
       - name: Push images
         # Skip for external contributions.
@@ -540,11 +537,8 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          _login() {
-            docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
-          }
-          scripts/lib.sh retry 5 true _login
-        shell: bash
+          source ./scripts/ci/lib.sh
+          registry_rw_login "quay.io/rhacs-eng"
 
       - name: Build Operator Bundle image
         run: |
