@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	gogoProto "github.com/gogo/protobuf/types"
 	sdkClient "github.com/openshift-online/ocm-sdk-go"
 	accountsmgmtv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 	pkgErrors "github.com/pkg/errors"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -99,7 +99,7 @@ func (c *ocmClient) mapToDiscoveredClusters(subs []*accountsmgmtv1.Subscription)
 	clusterIDs := set.NewStringSet()
 	var createClusterErrs error
 	for _, sub := range subs {
-		createdTime, err := gogoProto.TimestampProto(sub.CreatedAt())
+		createdTime, err := protocompat.ConvertTimeToTimestampOrError(sub.CreatedAt())
 		if err != nil {
 			createClusterErrs = errors.Join(createClusterErrs, errox.InvariantViolation.New("converting timestamp").CausedBy(err))
 			continue

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/hashicorp/go-retryablehttp"
 	pgkErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -305,7 +305,7 @@ func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclu
 		CloudSourceID: c.cloudSourceID,
 	}
 
-	firstDiscoveredAt, err := gogoProto.TimestampProto(asset.FirstDiscoveredAt)
+	firstDiscoveredAt, err := protocompat.ConvertTimeToTimestampOrError(asset.FirstDiscoveredAt)
 	if err != nil {
 		return nil, errox.InvariantViolation.New("converting timestamps").CausedBy(err)
 	}
