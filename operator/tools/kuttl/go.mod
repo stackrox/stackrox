@@ -1,4 +1,4 @@
-module github.com/stackrox/stackrox/operator/tools/kuttl
+module github.com/stackrox/rox/operator/tools/kuttl
 
 go 1.19
 
