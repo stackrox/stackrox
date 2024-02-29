@@ -1,6 +1,27 @@
+FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
+
+# Switch to root because ubi8/nodejs image runs as non-root by default which does not let e.g. install yarn.
+USER 0:0
+
+WORKDIR /go/src/github.com/stackrox/rox/app
+
+COPY . .
+
+# Install yarn
+RUN make -C ui/.yarn-dist install
+
+# This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
+# ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
+# TODO(ROX-22338): switch branding to RHACS_BRANDING when intermediate Konflux repos aren't public.
+ENV ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
+
+# UI build is not hermetic because Cachi2 does not support pulling packages according to V1 of yarn.lock.
+# TODO(ROX-20723): enable yarn package prefetch and make UI builds hermetic.
+RUN make -C ui build
+
+
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
-
 
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-installer
@@ -28,6 +49,8 @@ RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
 FROM scratch
 
 COPY --from=rpm-installer /mnt/final /
+
+COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
