@@ -211,7 +211,7 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 	image.Metadata = existingImage.GetMetadata()
 	image.Notes = existingImage.GetNotes()
 	hasChangedNames := !protoutils.SlicesEqual(existingImage.GetNames(), image.GetNames())
-	image.Names = utils.UniqueImageNames(existingImage.GetNames(), image.GetNames())
+	image.Names = protoutils.SliceUnique(append(existingImage.GetNames(), image.GetNames()...))
 
 	e.useExistingSignature(image, existingImage, option)
 	e.useExistingSignatureVerificationData(image, existingImage, option, hasChangedNames)
@@ -495,7 +495,7 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 	if option == UseImageNamesRefetchCachedValues {
 		img.SignatureVerificationData = nil
 		img.Signature = nil
-		img.Names = utils.UniqueImageNames(existingImage.GetNames(), img.GetNames())
+		img.Names = protoutils.SliceUnique(append(existingImage.GetNames(), img.GetNames()...))
 		return img, false
 	}
 
@@ -793,7 +793,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, nil
 	}
 
-	uniqueFetchedSignatures := uniqueImageSignatures(fetchedSignatures)
+	uniqueFetchedSignatures := protoutils.SliceUnique(fetchedSignatures)
 
 	log.Debugf("Found signatures for image %q: %+v", imgName, uniqueFetchedSignatures)
 
@@ -802,16 +802,6 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		Fetched:    protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 	return true, nil
-}
-
-func uniqueImageSignatures(sigs []*storage.Signature) []*storage.Signature {
-	uniqueSigs := make([]*storage.Signature, 0, len(sigs))
-	for _, sig := range sigs {
-		if !protoutils.SliceContains(sig, uniqueSigs) {
-			uniqueSigs = append(uniqueSigs, sig)
-		}
-	}
-	return uniqueSigs
 }
 
 func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
