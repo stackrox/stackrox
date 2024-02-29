@@ -92,7 +92,7 @@ export const selectors = {
         cancelButton: '.pf-c-modal-box__footer button:contains("Cancel")',
         // Form for duplicate policy name
         duplicateAlertTitle:
-            '.pf-c-modal-box__body .pf-c-alert__title:contains("Policies already exist")',
+            '.pf-c-modal-box__body .pf-c-alert__title:contains("Policy already exists")',
         duplicateIdSubstring: '.pf-c-alert__description li:contains("has the same ID")',
         duplicateNameSubstring: '.pf-c-alert__description li:contains("has the same name")',
         keepBothRadioLabel: 'label[for="keep-both-radio"]:contains("Keep both policies")',
@@ -100,6 +100,8 @@ export const selectors = {
         renameInput: 'input#policy-rename',
         overwriteRadioLabel:
             'label[for="policy-overwrite-radio-1"]:contains("Overwrite existing policy")',
+        errorAlertTitle:
+            '.pf-c-modal-box__body .pf-m-danger .pf-c-alert__title:contains("Policy errors causing import failure")',
     },
     importSuccessModal: {
         titleText: '.pf-c-modal-box__title-text:contains("Import policy JSON")',
