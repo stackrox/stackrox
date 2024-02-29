@@ -365,12 +365,16 @@ registry_rw_login() {
 
     case "$registry" in
         quay.io/rhacs-eng)
-            retry 5 true \
-              docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            _login() {
+                docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            }
+            retry 5 true _login
             ;;
         quay.io/stackrox-io)
-            retry 5 true \
-              docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            _login() {
+                docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            }
+            retry 5 true _login
             ;;
         *)
             die "Unsupported registry login: $registry"
@@ -386,8 +390,10 @@ registry_ro_login() {
 
     case "$registry" in
         quay.io/rhacs-eng)
-            retry 5 true \
-              docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            _login() {
+                docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            }
+            retry 5 true _login
             ;;
         *)
             die "Unsupported registry login: $registry"
