@@ -1435,20 +1435,20 @@
         "namespace": "rhel:8",
         "expected_features": [
             {
-                "Name": "spring-security-web",
+                "Name": "spring-security-core",
                 "Version": "5.5.5",
                 "Arch": "",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2022-22978",
-                        "Description": "In Spring Security versions 5.5.6 and 5.6.3 and older unsupported versions, RegexRequestMatcher can easily be misconfigured to be bypassed on some servlet containers.\n\nApplications using RegexRequestMatcher with '.' in the regular expression are possibly vulnerable to an authorization bypass.",
+                        "Description": "Authorization bypass in Spring Security",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22978",
-                        "Severity": "Important",
+                        "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 8.2,
-                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N"
+                                    "Score": 0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
                         },
@@ -1510,7 +1510,7 @@
                         "FixedBy": "0:3.0.2-0ubuntu1.7"
                     }
                 ],
-                "AddedBy": "sha256:301a8b74f71f85f3a31e9c7e7fedd5b001ead5bcf895bc2911c1d260e06bd987",
+                "AddedBy": "sha256:8862c07555c9317d3dd31b6d8a755244a5e215737e45f67fa4c4ec7e03ca3b37",
                 "Location": "var/lib/dpkg/status",
                 "FixedBy": "0:3.0.2-0ubuntu1.10"
             }
@@ -1815,7 +1815,7 @@
                                 }
                             }
                         },
-                        "FixedBy": "1.8.4-r1"
+                        "FixedBy": "1.8.7-r0"
                     }
                 ],
                 "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
@@ -1847,7 +1847,7 @@
                 ],
                 "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
                 "Location": "lib/apk/db/installed",
-                "FixedBy": "1.51.0-r1"
+                "FixedBy": "1.51.0-r2"
             }
         ],
         "unexpected_features": null,
@@ -1943,15 +1943,40 @@
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2020-7699",
-                        "Severity": "Critical"
+                        "Severity": "Critical",
+                        "Description": "Prototype Pollution in express-fileupload",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-7699",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 0.0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.1.9"
                     },
                     {
                         "Name": "CVE-2022-27261",
-                        "Severity": "High"
+                        "Severity": "Important",
+                        "Description": "Express-FileUpload Arbitrary File Overwrite",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-27261",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 0,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": ""
                     }
-                ]
+                ],
+                "FixedBy": "1.1.9"
             }
-        ]
+        ],
+        "only_check_specified_vulns": true
     },
     {
         "image": "docker.io/library/oraclelinux:8",
