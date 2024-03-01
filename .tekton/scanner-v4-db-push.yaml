@@ -22,7 +22,7 @@ spec:
   - name: dockerfile
     value: scanner/image/db/konflux.Dockerfile
   - name: git-url
-    value: '{{source_url}}'
+    value: '{{repo_url}}'
   - name: image-expires-after
     value: '13w'
   - name: output-image
@@ -53,7 +53,7 @@ spec:
         resources:
           requests:
             storage: 1Gi
-      status: {}
+      status: { }
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
@@ -163,11 +163,11 @@ spec:
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
 
-    tasks:
-
     workspaces:
     - name: workspace
     - name: git-auth
+
+    tasks:
 
     - name: init
       params:
