@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,7 +29,8 @@ import (
 
 var (
 	portForwardOnce     sync.Once
-	forwardEndpoint     string
+	serviceEndpoint     string
+	localhostEndpoint   string
 	portForwardingError error
 
 	errPortForwarding = errox.ServerError.New("port-forwarding error")
@@ -108,10 +110,21 @@ func getCentralAPIPort(pod *corev1.Pod) int32 {
 	return defaultAPIPort
 }
 
-func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-chan struct{}, readyChannel chan struct{}) (*portforward.PortForwarder, error) {
+func getCentralCA(ctx context.Context, coreClient coreclient.CoreV1Interface, namespace string) ([]byte, error) {
+	centralTLS, err := coreClient.Secrets(namespace).Get(ctx, "central-tls", metav1.GetOptions{})
+	if err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+	if ca, ok := centralTLS.Data["ca.pem"]; ok {
+		return ca, nil
+	}
+	return nil, nil
+}
+
+func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-chan struct{}, readyChannel chan struct{}) (uint16, *portforward.PortForwarder, error) {
 	restClient, err := rest.RESTClientFor(restConfig)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to construct k8s REST client")
+		return 0, nil, errors.WithMessage(err, "failed to construct k8s REST client")
 	}
 	req := restClient.Post().Resource(corev1.ResourcePods.String()).
 		Namespace(pod.GetNamespace()).Name(pod.GetName()).
@@ -119,11 +132,12 @@ func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-ch
 
 	transport, upgrader, err := spdy.RoundTripperFor(restConfig)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to configure k8s REST client transport")
+		return 0, nil, errors.WithMessage(err, "failed to configure k8s REST client transport")
 	}
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
-	port := getCentralAPIPort(pod)
-	return portforward.New(dialer, []string{fmt.Sprintf("0:%d", port)}, stopChannel, readyChannel, nil, nil) //nolint:wrapcheck
+	centralPodPort := getCentralAPIPort(pod)
+	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("0:%d", centralPodPort)}, stopChannel, readyChannel, nil, nil)
+	return uint16(centralPodPort), forwarder, err
 }
 
 func getConfigs() (*rest.Config, coreclient.CoreV1Interface, string, error) {
@@ -146,19 +160,19 @@ func getConfigs() (*rest.Config, coreclient.CoreV1Interface, string, error) {
 	return restConfig, k8sClient.CoreV1(), namespace, nil
 }
 
-func runPortForward(ctx context.Context) (uint16, error) {
+func runPortForward(ctx context.Context) (string, uint16, error) {
 	restConfig, core, namespace, err := getConfigs()
 	if err != nil {
-		return 0, err
+		return "", 0, err
 	}
 
 	pod, err := getCentralPod(ctx, core, namespace)
 	if err != nil {
-		return 0, errors.WithMessage(err, "cannot get central pod")
+		return "", 0, errors.WithMessage(err, "cannot get central pod")
 	}
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.PodReady && c.Status != corev1.ConditionTrue {
-			return 0, errors.New("pod is not ready")
+			return "", 0, errors.New("pod is not ready")
 		}
 	}
 
@@ -175,9 +189,9 @@ func runPortForward(ctx context.Context) (uint16, error) {
 		<-signals
 		close(stopChannel)
 	}()
-	forwarder, err := getPortForwarder(restConfig, pod, stopChannel, readyChannel)
+	centralPort, forwarder, err := getPortForwarder(restConfig, pod, stopChannel, readyChannel)
 	if err != nil {
-		return 0, err
+		return "", 0, err
 	}
 	// Run port forwarder and capture the error.
 	errChan := make(chan error)
@@ -191,27 +205,59 @@ func runPortForward(ctx context.Context) (uint16, error) {
 	case <-readyChannel:
 	case err := <-errChan:
 		if err != nil {
-			return 0, err
+			return "", 0, err
 		}
 	}
 	ports, err := forwarder.GetPorts()
 	if err != nil {
-		return 0, errors.WithMessage(err, "failed to acquire forwarding ports")
+		return "", 0, errors.WithMessage(err, "failed to acquire forwarding ports")
 	}
-	return ports[0].Local, nil
+	// centralPort is the central pod port, not service port, as forwaring goes
+	// directly to the pod, and service name is used to pass TLS validation.
+	centralEndpoint := fmt.Sprintf("central.%s:%d", namespace, centralPort)
+	return centralEndpoint, ports[0].Local, nil
 }
 
-// GetForwardingEndpoint starts port-forwarding to svc/central and returns
-// the endpoint with local port forwarding to the service port.
-func GetForwardingEndpoint() (string, error) {
+// GetForwardingEndpoint starts port-forwarding to a svc/central pod,
+// and returns the service endpoint, to which the requests should be sent,
+// and the local endpoint forwarded to the pod, which the dialer should dial to.
+func GetForwardingEndpoint() (string, string, error) {
 	portForwardOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), reasonableTimeout)
 		defer cancel()
-		if port, err := runPortForward(ctx); err != nil {
+		if svc, port, err := runPortForward(ctx); err != nil {
 			portForwardingError = errPortForwarding.CausedBy(err)
 		} else {
-			forwardEndpoint = fmt.Sprintf("localhost:%d", port)
+			serviceEndpoint = svc // central.stackrox:8443
+			localhostEndpoint = fmt.Sprintf("127.0.0.1:%d", port)
 		}
 	})
-	return forwardEndpoint, portForwardingError
+	return serviceEndpoint, localhostEndpoint, portForwardingError
+}
+
+// getForwardingDialContext returns a dialer, that resolves central service
+// endpoint to the localhost forwarded endpoint: this way the TLS certificate
+// validation work.
+func getForwardingDialContext() ([]byte, func(ctx context.Context, addr string) (net.Conn, error), error) {
+	_, core, namespace, err := getConfigs()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ca, err := getCentralCA(context.Background(), core, namespace)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dialContext := func(ctx context.Context, addr string) (net.Conn, error) {
+		svcEndpoint, localEndpoint, err := GetForwardingEndpoint()
+		if err != nil {
+			return nil, err
+		}
+		if addr == svcEndpoint {
+			addr = localEndpoint
+		}
+		return (&net.Dialer{}).DialContext(ctx, "tcp", addr) //nolint:wrapcheck
+	}
+	return ca, dialContext, nil
 }
