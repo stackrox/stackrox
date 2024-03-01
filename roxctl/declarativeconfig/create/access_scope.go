@@ -61,12 +61,12 @@ func accessScopeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&accessScopeCmd.accessScope.Name, "name", "", "name of the access scope")
+	cmd.Flags().StringVar(&accessScopeCmd.accessScope.Name, "name", "", "Name of the access scope")
 	cmd.Flags().StringVar(&accessScopeCmd.accessScope.Description, "description", "",
-		"description of the access scope")
+		"Description of the access scope")
 
 	cmd.Flags().Var(&includedObjectsFlag{includedObjects: &accessScopeCmd.accessScope.Rules.IncludedObjects}, "included",
-		`list of clusters and their namespaces that should be included within the access scope.
+		`List of clusters and their namespaces that should be included within the access scope.
 In case all namespaces of a specific cluster should be included, specify --included cluster-name.
 In case only a subset of namespace should be included, specify --included cluster-name=namespaceA,namespaceB`)
 

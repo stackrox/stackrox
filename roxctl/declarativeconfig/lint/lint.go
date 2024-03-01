@@ -35,11 +35,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&lintCmd.file, "file", "f", "", "file containing the declarative configuration in YAML format")
+	cmd.Flags().StringVarP(&lintCmd.file, "file", "f", "", "File containing the declarative configuration in YAML format")
 
-	cmd.Flags().String(k8sobject.ConfigMapFlag, "", fmt.Sprintf(k8sObjectFlagTemplate, "config map"))
-	cmd.Flags().String(k8sobject.SecretFlag, "", fmt.Sprintf(k8sObjectFlagTemplate, "secret"))
-	cmd.Flags().String(k8sobject.NamespaceFlag, "", `namespace of the config map from which to read the declarative configuration from.
+	cmd.Flags().String(k8sobject.ConfigMapFlag, "", fmt.Sprintf(k8sObjectFlagTemplate, "ConfigMap"))
+	cmd.Flags().String(k8sobject.SecretFlag, "", fmt.Sprintf(k8sObjectFlagTemplate, "Secret"))
+	cmd.Flags().String(k8sobject.NamespaceFlag, "", `Namespace of the ConfigMap from which to read the declarative configuration from.
 In case this is not set, the namespace set within the current kube config context will be used`)
 
 	cmd.MarkFlagsMutuallyExclusive("file", k8sobject.ConfigMapFlag)

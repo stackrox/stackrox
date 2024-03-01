@@ -88,13 +88,13 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 		if isOptional(f) {
 			optText = ", optional"
 		}
-		prompt = fmt.Sprintf("Enter %s (default: %q%s): ", usage, f.DefValue, optText)
+		prompt = fmt.Sprintf("%s (default: %q%s): ", usage, f.DefValue, optText)
 	} else {
 		optText := ""
 		if isOptional(f) {
 			optText = " (optional)"
 		}
-		prompt = fmt.Sprintf("Enter %s%s: ", usage, optText)
+		prompt = fmt.Sprintf("%s%s: ", usage, optText)
 	}
 
 	var err error

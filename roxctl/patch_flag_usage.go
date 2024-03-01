@@ -8,7 +8,7 @@ import (
 )
 
 func processFlag(flag *pflag.Flag) {
-	if flag.Value.Type() == "bool" && flag.DefValue == "false" {
+	if flag.Value.Type() == "bool" && flag.DefValue == "false" && flag.Name != "help" {
 		flag.Usage = fmt.Sprintf("%s (default %s)", flag.Usage, flag.DefValue)
 	}
 }
