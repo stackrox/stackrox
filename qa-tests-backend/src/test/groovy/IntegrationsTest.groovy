@@ -546,10 +546,8 @@ class IntegrationsTest extends BaseSpecification {
         "configurations are:"
 
         integrationName                | bucket                     | useWorkloadId
-        // Bucket is in stackrox-ci.
         "GCS with service account key" | Env.mustGetGCSBucketName() | false
-        // Bucket is in acs-san-stackroxci.
-        "GCS with workload identity"   | "stackrox-qa-wif-gcs-test" | true
+        "GCS with workload identity"   | Env.mustGetGCSBucketName() | true
     }
 
     @Unroll
