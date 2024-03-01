@@ -1,14 +1,15 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "klape/konflux-scannerv4-db"
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (source_branch.contains("konflux") || source_branch.contains("rhtap"))
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
@@ -16,21 +17,51 @@ metadata:
     pipelines.appstudio.openshift.io/type: build
   name: scanner-v4-db-on-pull-request
   namespace: rh-acs-tenant
+
 spec:
+
   params:
   - name: dockerfile
     value: scanner/image/db/konflux.Dockerfile
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
-    value: 5d
+    value: '13w'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/scanner-v4-db:on-pr-{{revision}}
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: "true"
+  # No language dependencies are required for central-db image.
+  - name: prefetch-input
+    value: ''
+  - name: build-source-image
+    value: 'true'
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      status: {}
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
   pipelineSpec:
+
     finally:
     - name: show-sbom
       params:
@@ -66,6 +97,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     params:
     - description: Source Repository URL
       name: git-url
@@ -115,6 +147,7 @@ spec:
       description: Build a source image.
       name: build-source-image
       type: string
+
     results:
     - description: ""
       name: IMAGE_URL
@@ -131,7 +164,13 @@ spec:
     - description: ""
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+
     tasks:
+
+    workspaces:
+    - name: workspace
+    - name: git-auth
+
     - name: init
       params:
       - name: image-url
@@ -149,12 +188,18 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      # A shallow repo clone is sufficient for scanner-v4-db build.
+      - name: depth
+        value: "1"
+      - name: fetchTags
+        value: "false"
       runAfter:
       - init
       taskRef:
@@ -176,6 +221,7 @@ spec:
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -191,14 +237,10 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(params.hermetic)
-        operator: in
-        values:
-        - "true"
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -234,6 +276,7 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -263,6 +306,32 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
+
+    - name: inspect-image
+      params:
+      - name: IMAGE_URL
+        value: $(tasks.build-container.results.IMAGE_URL)
+      - name: IMAGE_DIGEST
+        value: $(tasks.build-container.results.IMAGE_DIGEST)
+      runAfter:
+      - build-container
+      taskRef:
+        params:
+        - name: name
+          value: inspect-image
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.1@sha256:9aa6f81ec6deba67db77d60be661a00f7fad6a2d633db7ddba8878ca2d16af0e
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(params.skip-checks)
+        operator: in
+        values: [ "false" ]
+      workspaces:
+      - name: source
+        workspace: workspace
+
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
@@ -283,6 +352,7 @@ spec:
         operator: in
         values:
         - "false"
+
     - name: clair-scan
       params:
       - name: image-digest
@@ -305,6 +375,7 @@ spec:
         operator: in
         values:
         - "false"
+
     - name: sast-snyk-check
       runAfter:
       - clone-repository
@@ -325,6 +396,7 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: clamav-scan
       params:
       - name: image-digest
@@ -347,6 +419,7 @@ spec:
         operator: in
         values:
         - "false"
+
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
@@ -369,24 +442,6 @@ spec:
         operator: in
         values:
         - "false"
-    workspaces:
-    - name: workspace
-    - name: git-auth
-      optional: true
-  taskRunTemplate: {}
-  workspaces:
-  - name: workspace
-    volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-      status: {}
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-status: {}
+
+status: { }
+taskRunTemplate: { }
