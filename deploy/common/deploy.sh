@@ -129,8 +129,9 @@ function get_cluster_zip {
       echo "Unknown collection method '$COLLECTION_METHOD', using default collection-method."
     fi
 
+    COLLECTOR_IMAGE="quay.io/stackrox-io/collector:3.18.x-17-gbadabd2b60"
     echo "Creating a new cluster"
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON, \"collector_image\": \"$COLLECTOR_IMAGE\"}"
 
     TMP=$(mktemp)
     STATUS=$(curl_central -X POST \
