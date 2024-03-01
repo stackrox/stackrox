@@ -48,6 +48,9 @@ var (
 
 	extraAllowedCallerPackages = map[string]map[string][]string{
 		"github.com/gogo/protobuf/proto": {
+			"Clone": {
+				"github.com/stackrox/rox/pkg/protoutils",
+			},
 			"Unmarshal": {
 				"github.com/stackrox/rox/pkg/postgres/pgutils",
 				"github.com/stackrox/rox/pkg/search/postgres",
