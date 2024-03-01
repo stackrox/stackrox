@@ -99,6 +99,8 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		if c.serverName != "" && net.ParseIP(c.serverName) == nil {
 			grpcDialOpts = append(grpcDialOpts, grpc.WithAuthority(c.serverName))
 		}
+	} else if c.opts.TLS.DialContext != nil {
+		grpcDialOpts = append(grpcDialOpts, grpc.WithContextDialer(c.opts.TLS.DialContext))
 	}
 
 	if !c.useDirectGRPC {

@@ -1,8 +1,10 @@
 package common
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net"
 	"os"
 
 	"github.com/pkg/errors"
@@ -57,7 +59,7 @@ func ConnectNames() (string, string, bool, error) {
 		return "", "", false, errors.Wrap(err, "could not get endpoint")
 	}
 	if flags.UseKubeContext() {
-		endpoint, err = GetForwardingEndpoint()
+		endpoint, _, err = GetForwardingEndpoint()
 		if err != nil {
 			return "", "", false, errors.Wrap(err,
 				"could not get endpoint forwarding to the central service in the current k8s context")
@@ -87,6 +89,8 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 		return nil, errors.Wrap(err, "parsing central endpoint")
 	}
 
+	var dialContext func(ctx context.Context, addr string) (net.Conn, error)
+
 	skipVerify := false
 	var roots *x509.CertPool
 	var customVerifier tlscheck.TLSCertVerifier
@@ -107,6 +111,16 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 			customVerifier = &insecureVerifierWithWarning{
 				logger: logger,
 			}
+			if flags.UseKubeContext() {
+				var ca []byte
+				if ca, dialContext, err = getForwardingDialContext(); err != nil {
+					return nil, err
+				}
+				if ca != nil {
+					roots = x509.NewCertPool()
+					roots.AppendCertsFromPEM(ca)
+				}
+			}
 		} else if *flags.SkipTLSValidation() {
 			skipVerify = true
 		}
@@ -117,6 +131,7 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 		InsecureSkipVerify: skipVerify,
 		CustomCertVerifier: customVerifier,
 		RootCAs:            roots,
+		DialContext:        dialContext,
 	}, nil
 }
 

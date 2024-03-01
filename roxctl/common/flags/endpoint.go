@@ -140,7 +140,8 @@ func ServerName() string {
 
 // UseDirectGRPC returns whether to use gRPC directly, i.e., without a proxy.
 func UseDirectGRPC() bool {
-	return booleanFlagOrSettingValue(directGRPC, *directGRPCSet, env.DirectGRPCEnv)
+	return booleanFlagOrSettingValue(directGRPC, *directGRPCSet, env.DirectGRPCEnv) ||
+		UseKubeContext()
 }
 
 // ForceHTTP1 indicates that the HTTP/1 should be used for all outgoing connections.
