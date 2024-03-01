@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
+const roxctlCommandHeader = "roxctl-command"
+
 var (
 	trackedPaths []string
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
@@ -21,6 +23,11 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Code"] = rp.Code
 	props["Method"] = rp.Method
 	props["User-Agent"] = rp.UserAgent
+	if rp.HTTPReq != nil {
+		if cmd := rp.HTTPReq.Header.Get(roxctlCommandHeader); cmd != "" {
+			props["roxctl Command"] = cmd
+		}
+	}
 	return true
 }
 

@@ -34,21 +34,8 @@ func main() {
 	once := sync.Once{}
 	common.PatchPersistentPreRunHooks(c, func(cmd *cobra.Command, args []string) {
 		once.Do(func() {
-			var commands []string
-			for c := cmd; c != nil; c = c.Parent() {
-				commands = append([]string{c.Name()}, commands...)
-				c.Flags().Visit(func(f *pflag.Flag) {
-					if f.Changed {
-						commands = append(commands, "--"+f.Name)
-						if f.Value.Type() == "stringSlice" || f.Value.Type() == "string" {
-							commands = append(commands, "...")
-						} else {
-							commands = append(commands, f.Value.String())
-						}
-					}
-				})
-			}
-			common.RoxctlCommand = strings.Join(commands[1:], " ")
+			command := reconstructCommand(cmd)
+			common.RoxctlCommand = strings.Join(command, " ")
 		})
 	})
 
@@ -57,4 +44,23 @@ func main() {
 	if err := c.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+func reconstructCommand(cmd *cobra.Command) []string {
+	var command []string
+	for c := cmd; c != nil; c = c.Parent() {
+		// Commands are visited in the reverse order:
+		command = append([]string{c.Name()}, command...)
+		c.Flags().Visit(func(f *pflag.Flag) {
+			if f.Changed {
+				command = append(command, "--"+f.Name)
+				if f.Value.Type() == "stringSlice" || f.Value.Type() == "string" {
+					command = append(command, "...")
+				} else {
+					command = append(command, f.Value.String())
+				}
+			}
+		})
+	}
+	return command[1:] // exclude binary name.
 }

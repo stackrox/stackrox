@@ -1,47 +1,62 @@
 package main
 
 import (
+	"bytes"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func Test_CommandUsage(t *testing.T) {
-	t.Setenv(env.DeclarativeConfiguration.EnvVar(), "true")
+func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs(args)
 
-	c := maincommand.Command()
-	AddMissingDefaultsToFlagUsage(c)
-	const plainTextUsage = "Use a plaintext (unencrypted) connection; only works in conjunction with --insecure. Alternatively can be enabled by setting the ROX_PLAINTEXT environment variable to true (default false)"
+	err = root.Execute()
+	return buf.String(), err
+}
 
-	assert.Equal(t, plainTextUsage, c.Flag("plaintext").Usage)
+func mockRun(_ *cobra.Command, _ []string)        {}
+func mockRunE(_ *cobra.Command, _ []string) error { return nil }
 
-	var cmd *cobra.Command
-	for _, cmd = range c.Commands() {
-		if cmd.Name() == "central" {
-			break
-		}
+func TestCommandReconstruction(t *testing.T) {
+	root := maincommand.Command()
+	AddMissingDefaultsToFlagUsage(root)
+
+	type testCase struct {
+		args    []string
+		command string
 	}
-	require.NotNil(t, cmd)
-	assert.Equal(t, plainTextUsage, cmd.Flag("plaintext").Usage)
+	for _, c := range []testCase{
+		{
+			[]string{"central", "--insecure", "whoami", "-e", "test"},
+			"central whoami --endpoint ... --insecure true",
+		},
+		{
+			[]string{"declarative-config", "create", "auth-provider", "iap", "--audience", "test"},
+			"declarative-config create auth-provider iap --audience ...",
+		},
+	} {
+		var command []string
+		once := sync.Once{}
+		common.PatchPersistentPreRunHooks(root, func(cmd *cobra.Command, args []string) {
+			once.Do(func() {
+				command = reconstructCommand(cmd)
+			})
+			// Do not actually run the command:
+			cmd.Run = mockRun
+			cmd.RunE = mockRunE
+		})
 
-leg:
-	for _, cmd = range c.Commands() {
-		if cmd.Name() == "declarative-config" {
-			/*c = cmd
-			for _, cmd = range c.Commands() {
-				if cmd.Name() == "create" {
-					break leg
-				}
-			}*/
-			break leg
-		}
+		output, err := executeCommand(root, c.args...)
+		assert.NoError(t, err)
+		assert.Equal(t, "", output)
+		assert.Equal(t, c.command, strings.Join(command, " "))
 	}
-	require.NotNil(t, cmd)
-	_ = cmd.UsageString()
-	assert.True(t, cmd.InheritedFlags().Lookup("endpoint").Hidden)
-	//assert.True(t, cmd.Flag("plaintext").Hidden)
 }
