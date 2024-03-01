@@ -35,9 +35,6 @@ class AdmissionControllerTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-admission-controller-test"
 
     static final private String NGINX                = "qanginx"
-    static final private String NGINX_IMAGE          = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"
-    static final private String NGINX_IMAGE_WITH_SHA = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"+
-                                    "@sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
     static final private String NGINX_CVE            = "CVE-2017-16932"
 
     static final private String BUSYBOX_NO_BYPASS        = "busybox-no-bypass"
@@ -53,7 +50,7 @@ class AdmissionControllerTest extends BaseSpecification {
     static final private Deployment NGINX_DEPLOYMENT = new Deployment()
             .setName(NGINX)
             .setNamespace(TEST_NAMESPACE)
-            .setImage(NGINX_IMAGE)
+            .setImage(TEST_IMAGE)
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
@@ -99,7 +96,7 @@ class AdmissionControllerTest extends BaseSpecification {
         sleep(10000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
         // Pre run scan to avoid timeouts with inline scans in the tests below
-        ImageService.scanImage(NGINX_IMAGE)
+        ImageService.scanImage(TEST_IMAGE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
     }
@@ -301,8 +298,8 @@ class AdmissionControllerTest extends BaseSpecification {
         "Data inputs are: "
 
         image | _
-        NGINX_IMAGE_WITH_SHA | _
-        NGINX_IMAGE | _
+        TEST_IMAGE | _
+        TEST_IMAGE.split("@").first() | _
     }
 
     @Unroll
