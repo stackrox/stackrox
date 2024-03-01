@@ -20,7 +20,7 @@ type resolverImpl struct {
 	innerQueue  chan *component.ResourceEvent
 
 	storeProvider store.Provider
-	stopSig       concurrency.Signal
+	stopper       concurrency.Stopper
 }
 
 // Start the resolverImpl component
@@ -31,7 +31,12 @@ func (r *resolverImpl) Start() error {
 
 // Stop the resolverImpl component
 func (r *resolverImpl) Stop(_ error) {
-	r.stopSig.Signal()
+	if !r.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = r.stopper.Client().Stopped().Wait()
+		}()
+	}
+	r.stopper.Client().Stop()
 }
 
 // Send a ResourceEvent message to the inner queue
@@ -42,6 +47,7 @@ func (r *resolverImpl) Send(event *component.ResourceEvent) {
 
 // runResolver reads messages from the inner queue and process the message
 func (r *resolverImpl) runResolver() {
+	defer r.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case msg, more := <-r.innerQueue:
@@ -50,7 +56,7 @@ func (r *resolverImpl) runResolver() {
 			}
 			r.processMessage(msg)
 			metrics.DecResolverChannelSize()
-		case <-r.stopSig.Done():
+		case <-r.stopper.Flow().StopRequested():
 			return
 		}
 	}
