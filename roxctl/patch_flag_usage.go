@@ -14,6 +14,8 @@ func processFlag(flag *pflag.Flag) {
 }
 
 func processCommandFlags(command *cobra.Command) {
+	// LocalFlags() calls mergePersistentFlags() so PersistentFlags are merged.
+	_ = command.LocalFlags()
 	command.Flags().VisitAll(func(flag *pflag.Flag) {
 		processFlag(flag)
 	})
