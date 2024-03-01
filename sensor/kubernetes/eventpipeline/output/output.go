@@ -15,7 +15,7 @@ func New(detector detector.Detector, queueSize int) component.OutputQueue {
 		detector:     detector,
 		innerQueue:   ch,
 		forwardQueue: forwardQueue,
-		stopSig:      concurrency.NewSignal(),
+		stopper:      concurrency.NewStopper(),
 	}
 	return outputQueue
 }
