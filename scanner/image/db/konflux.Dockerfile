@@ -22,9 +22,7 @@ COPY --chown=postgres:postgres \
      scanner/image/db/scripts/docker-entrypoint.sh \
      /usr/local/bin/
 
-# This is going to be a separate tekton job
-# RUN curl --retry 3 --show-error --fail --output /db-init.dump.zst \
-    # https://storage.googleapis.com/scanner-v4-test/database-init-bundles/db-init-dev.dump.zst
+COPY db-init-dev.dump.zst /db-init.dump.zst
 
 RUN dnf upgrade -y --nobest && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
