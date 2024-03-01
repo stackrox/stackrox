@@ -22,7 +22,7 @@ COPY --chown=postgres:postgres \
      scanner/image/db/scripts/docker-entrypoint.sh \
      /usr/local/bin/
 
-COPY db-init-dev.dump.zst /db-init.dump.zst
+COPY db-init.dump.zst /db-init.dump.zst
 
 RUN dnf upgrade -y --nobest && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
