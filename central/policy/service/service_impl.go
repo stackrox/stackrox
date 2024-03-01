@@ -44,6 +44,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -86,6 +87,7 @@ const (
 	uncategorizedCategory = `Uncategorized`
 	dryRunParallelism     = 8
 	identityUIDKey        = "identityUID"
+	maxPoliciesReturned   = 1000
 )
 
 var (
@@ -189,6 +191,15 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 		if err != nil {
 			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 		}
+
+		pagination := request.GetPagination()
+		if request.GetPagination() == nil {
+			pagination = &v1.Pagination{
+				Limit: maxPoliciesReturned,
+			}
+		}
+		paginated.FillPagination(parsedQuery, pagination, maxPoliciesReturned)
+
 		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
 		if err != nil {
 			return nil, err
