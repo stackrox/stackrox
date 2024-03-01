@@ -322,11 +322,8 @@ deploy_sensor() {
         # et al.
         kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
     fi
-    # Bump Sensor's memory to avoid OOMing.
-    # See:
-    # https://issues.redhat.com/browse/ROX-22587
-    # This should be removed once we implement mechanisms to retrieve information before OOMing.
-    kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'memory=2Gi' --limits 'memory=4Gi'
+    # Bump Sensor's memory to match operator installs.
+    kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'memory=4Gi' --limits 'memory=8Gi'
 }
 
 # shellcheck disable=SC2120

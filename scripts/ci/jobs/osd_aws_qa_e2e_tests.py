@@ -10,7 +10,6 @@ from clusters import AutomationFlavorsCluster
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
-os.environ["SENSOR_HELM_DEPLOY"] = "true"
 
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
