@@ -277,10 +277,12 @@ spec:
       - prefetch-dependencies
       taskRef:
         params:
+        # buildah with more memory is needed for UI builds to succeed. Otherwise, there's an error like this in logs:
+        # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
         - name: name
-          value: buildah
+          value: buildah-6gb
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:e1e6c6308b8c7d5aa2faa02129af7fcc9e8dc4bbfe741c1acab5c9edca28fb77
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-6gb:0.1@sha256:22f12f318163afe03c1feacef61fe858adf9be5fbc8dae345eda175deedef1aa
         - name: kind
           value: task
         resolver: bundles
