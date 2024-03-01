@@ -376,3 +376,49 @@ func (s *authProviderDataStoreTestSuite) TestAddImperativeDeclaratively() {
 	err := s.dataStore.AddAuthProvider(s.hasWriteDeclarativeCtx, ap)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
+
+func (s *authProviderDataStoreTestSuite) TestValidateAuthProvider() {
+	cases := map[string]struct {
+		ap  *storage.AuthProvider
+		err error
+	}{
+		"empty auth provider should return error": {
+			ap:  &storage.AuthProvider{},
+			err: errox.InvalidArgs,
+		},
+		"empty ID should return an error": {
+			ap: &storage.AuthProvider{
+				Name:     "test",
+				LoginUrl: "test",
+			},
+			err: errox.InvalidArgs,
+		},
+		"empty name should return an error": {
+			ap: &storage.AuthProvider{
+				Id:       "test-id",
+				LoginUrl: "test",
+			},
+			err: errox.InvalidArgs,
+		},
+		"empty login URL should return an error": {
+			ap: &storage.AuthProvider{
+				Id:   "test-id",
+				Name: "test",
+			},
+			err: errox.InvalidArgs,
+		},
+		"all required fields set should not return an error": {
+			ap: &storage.AuthProvider{
+				Id:       "test-id",
+				Name:     "test",
+				LoginUrl: "test",
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.ErrorIs(validateAuthProvider(tc.ap), tc.err)
+		})
+	}
+}
