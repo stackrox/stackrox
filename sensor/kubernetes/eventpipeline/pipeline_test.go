@@ -58,7 +58,7 @@ func (s *eventPipelineSuite) SetupTest() {
 
 	s.pipeline = &eventPipeline{
 		eventsC:     make(chan *message.ExpiringMessage),
-		stopSig:     concurrency.NewSignal(),
+		stopper:     concurrency.NewStopper(),
 		output:      s.outputQueue,
 		resolver:    s.resolver,
 		detector:    s.detector,
