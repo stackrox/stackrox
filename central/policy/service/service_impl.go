@@ -180,32 +180,25 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 // ListPolicies retrieves all policies in ListPolicy form according to the request.
 func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error) {
 	resp := new(v1.ListPoliciesResponse)
-	if request.GetQuery() == "" {
-		policies, err := s.policies.GetAllPolicies(ctx)
-		if err != nil {
-			return nil, err
-		}
-		resp.Policies = convertPoliciesToListPolicies(policies)
-	} else {
-		parsedQuery, err := search.ParseQuery(request.GetQuery())
-		if err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
 
-		pagination := request.GetPagination()
-		if request.GetPagination() == nil {
-			pagination = &v1.Pagination{
-				Limit: maxPoliciesReturned,
-			}
-		}
-		paginated.FillPagination(parsedQuery, pagination, maxPoliciesReturned)
-
-		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
-		if err != nil {
-			return nil, err
-		}
-		resp.Policies = convertPoliciesToListPolicies(policies)
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	// Fill in pagination.
+	pagination := request.GetPagination()
+	if request.GetPagination() == nil {
+		pagination = &v1.Pagination{
+			Limit: maxPoliciesReturned,
+		}
+	}
+	paginated.FillPagination(parsedQuery, pagination, maxPoliciesReturned)
+
+	policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	resp.Policies = convertPoliciesToListPolicies(policies)
 
 	return resp, nil
 }
