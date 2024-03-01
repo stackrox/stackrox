@@ -727,6 +727,8 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    //ROX-21491 skipping test case for p/z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify generated network policies"() {
         // TODO(RS-178): EKS cannot NetworkPolicy
         Assume.assumeFalse(ClusterService.isEKS())
