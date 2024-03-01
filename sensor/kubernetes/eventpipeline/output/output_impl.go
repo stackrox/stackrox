@@ -15,7 +15,7 @@ type outputQueueImpl struct {
 	innerQueue   chan *component.ResourceEvent
 	forwardQueue chan *message.ExpiringMessage
 	detector     detector.Detector
-	stopSig      concurrency.Signal
+	stopper      concurrency.Stopper
 }
 
 // Send a ResourceEvent message to the inner queue
@@ -37,7 +37,12 @@ func (q *outputQueueImpl) Start() error {
 
 // Stop the outputQueueImpl component
 func (q *outputQueueImpl) Stop(_ error) {
-	q.stopSig.Signal()
+	if !q.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = q.stopper.Client().Stopped().Wait()
+		}()
+	}
+	q.stopper.Client().Stop()
 }
 
 func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
@@ -51,9 +56,10 @@ func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
 // runOutputQueue reads messages from the inner queue, forwards them to the forwardQueue channel
 // and sends the deployments (if needed) to Detector
 func (q *outputQueueImpl) runOutputQueue() {
+	defer q.stopper.Flow().ReportStopped()
 	for {
 		select {
-		case <-q.stopSig.Done():
+		case <-q.stopper.Flow().StopRequested():
 			return
 		case msg, more := <-q.innerQueue:
 			if !more {
