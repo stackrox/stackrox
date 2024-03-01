@@ -250,7 +250,8 @@ spec:
           - name: fetch-db-init-bundle
             image: registry.access.redhat.com/ubi8-minimal:latest
             script: |
-              curl --silent --retry 3 --show-error --fail --output source/db-init.dump.zst \
+              ls
+              curl --silent --retry 3 --show-error --fail --output "source/db-init.dump.zst" \
                 "https://storage.googleapis.com/scanner-v4-test/database-init-bundles/db-init-dev.dump.zst"
               echo "Download complete!"
       workspaces:
