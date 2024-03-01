@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -9,7 +9,10 @@ import (
 
 func processFlag(flag *pflag.Flag) {
 	if flag.Value.Type() == "bool" && flag.DefValue == "false" && flag.Name != "help" {
-		flag.Usage = fmt.Sprintf("%s (default %s)", flag.Usage, flag.DefValue)
+		const defaultFalseSuffix = " (default false)"
+		if !strings.HasSuffix(flag.Usage, defaultFalseSuffix) {
+			flag.Usage += defaultFalseSuffix
+		}
 	}
 }
 
