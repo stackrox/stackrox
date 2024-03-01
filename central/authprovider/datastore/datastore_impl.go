@@ -163,7 +163,7 @@ func (b *datastoreImpl) verifyExistsAndMutable(ctx context.Context, id string, f
 func validateAuthProvider(ap *storage.AuthProvider) error {
 	var validationErrs error
 	if ap.GetId() == "" {
-		return errox.InvalidArgs.CausedBy("auth provider ID is empty")
+		validationErrs = errors.Join(validationErrs, errox.InvalidArgs.CausedBy("auth provider ID is empty"))
 	}
 	if ap.GetName() == "" {
 		validationErrs = errors.Join(validationErrs, errox.InvalidArgs.CausedBy("auth provider name is empty"))
