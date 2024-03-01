@@ -2,7 +2,11 @@ package main
 
 import (
 	"os"
+	"strings"
+	"sync"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/maincommand"
@@ -27,7 +31,26 @@ func main() {
 	// we simply add the usage information "(default false)" to our affected boolean flags.
 	AddMissingDefaultsToFlagUsage(c)
 
-	common.PatchPersistentPreRunHooks(c)
+	once := sync.Once{}
+	common.PatchPersistentPreRunHooks(c, func(cmd *cobra.Command, args []string) {
+		once.Do(func() {
+			var commands []string
+			for c := cmd; c != nil; c = c.Parent() {
+				commands = append([]string{c.Name()}, commands...)
+				c.Flags().Visit(func(f *pflag.Flag) {
+					if f.Changed {
+						commands = append(commands, "--"+f.Name)
+						if f.Value.Type() == "stringSlice" || f.Value.Type() == "string" {
+							commands = append(commands, "...")
+						} else {
+							commands = append(commands, f.Value.String())
+						}
+					}
+				})
+			}
+			common.RoxctlCommand = strings.Join(commands[1:], " ")
+		})
+	})
 
 	clientconn.SetUserAgent(clientconn.Roxctl)
 
