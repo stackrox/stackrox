@@ -372,8 +372,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          source ./scripts/ci/lib.sh
-          registry_ro_login "quay.io/rhacs-eng"
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
       - name: Push images
         # Skip for external contributions.
@@ -537,8 +536,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          source ./scripts/ci/lib.sh
-          registry_rw_login "quay.io/rhacs-eng"
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
 
       - name: Build Operator Bundle image
         run: |
