@@ -13,6 +13,11 @@ func TestHeaders(t *testing.T) {
 	h.Add("key", "value 1")
 	h.Add("key", "value 2")
 	assert.Equal(t, []string{"value 1", "value 2"}, Headers(h).Get("key"))
+
+	h = make(http.Header)
+	Headers(h).Set("key", "value1", "value2")
+	assert.Equal(t, "value1", h.Get("key"))
+	assert.Equal(t, []string{"value1", "value2"}, Headers(h).Get("key"))
 }
 
 func TestKeyCase(t *testing.T) {

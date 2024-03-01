@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -21,6 +23,12 @@ import (
 
 var (
 	http1NextProtos = []string{"http/1.1", "http/1.0"}
+
+	// RoxctlCommand is the reconstructed roxctl command line.
+	RoxctlCommand string
+
+	// RoxctlCommandIndex is the index of the current API call for the command.
+	RoxctlCommandIndex atomic.Uint32
 )
 
 // RoxctlHTTPClient abstracts all HTTP-related functionalities required within roxctl
@@ -103,8 +111,15 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 	return resp, nil
 }
 
+func setCustomHeaders(h requestinfo.HeadersMultiMap) {
+	h.Set(clientconn.RoxctlCommandHeader, RoxctlCommand)
+	h.Set(clientconn.RoxctlCommandIndexHeader, fmt.Sprint(RoxctlCommandIndex.Add(1)))
+}
+
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
+	setCustomHeaders(requestinfo.AsHeadersMultiMap(req.Header))
+
 	resp, err := client.http.Do(req)
 	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
 	// See https://github.com/hashicorp/go-retryablehttp/issues/142.
