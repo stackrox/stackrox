@@ -83,7 +83,6 @@ function addRequestInterceptor(axios, refreshTokenOpPromise) {
  * @param {!Object} axios - Axios instance to use and attach interceptors to
  * @param {!Object} accessTokenManager - Instance of `AccessTokenManager` class
  * @param {Object} [options] - Configuration options
- * @param {ExtractAccessTokenFunc} [options.extractAccessToken] - Extractor of access token from request config
  * @param {AuthErrorHandler} [options.handleAuthError] - Handler for auth access error user must resolve
  * @param {boolean} [options.doNotStallRequests] - Skips logic of stalling requests while token is being refreshed
  * @returns {DetachInterceptorsFunc} Function to call to detach interceptors
@@ -114,13 +113,12 @@ export default function addTokenRefreshInterceptors(axios, accessTokenManager, o
                 return refreshTokenOpPromise.then(() => retry(axios, config));
             }
 
-            // if token was refreshed / updated during the request, retry immediately with new token
-            if (options.extractAccessToken) {
-                const requestToken = options.extractAccessToken(config);
-                const currentToken = accessTokenManager.getToken();
-                if (currentToken && currentToken !== requestToken) {
-                    return retry(axios, config);
-                }
+            // If we are currently in the midst of receiving an auth response, then wait
+            // until we received all related information and cookies and retry afterward.
+            // This is an edge case and may only happen during login.
+            const dispatchResponsePromise = accessTokenManager.getDispatchResponsePromise();
+            if (dispatchResponsePromise != null) {
+                return dispatchResponsePromise.then(() => retry(axios, config));
             }
 
             // our access token is no good, try to refresh unless this request failed just after token refresh

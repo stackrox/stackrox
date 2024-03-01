@@ -42,8 +42,6 @@ export class AuthHttpError extends Error {
     }
 
     isAccessDenied = (): boolean => this.code === 403;
-
-    isInvalidAuth = (): boolean => this.code === 401;
 }
 
 export type AuthProviderType = 'auth0' | 'oidc' | 'saml' | 'userpki' | 'iap' | 'openshift';
@@ -206,8 +204,8 @@ async function refreshAccessToken() {
 // @ts-ignore 2322
 const accessTokenManager = new AccessTokenManager({ refreshToken: refreshAccessToken });
 
-export const getAccessToken = () => accessTokenManager.getToken();
-export const storeAccessToken = (token) => accessTokenManager.setToken(token);
+export const dispatchResponseStarted = () => accessTokenManager.onDispatchResponseStarted();
+export const dispatchResponseFinished = () => accessTokenManager.onDispatchResponseFinished();
 
 export type UserAttribute = {
     key: string;
@@ -251,7 +249,6 @@ export function getAuthStatus(): Promise<UserAuthStatus> {
         /* eslint-enable @typescript-eslint/no-unused-vars */
         // while it's a side effect, it's the best place to do it
         // @ts-ignore 2345
-        accessTokenManager.updateTokenInfo({ expiry: expires });
         return userAuthData;
     });
 }
@@ -290,7 +287,6 @@ export async function logout() {
     } catch (e) {
         // regardless of the result proceed with token deletion
     }
-    accessTokenManager.clearToken();
 }
 
 export const storeRequestedLocation = (location: string): string =>
@@ -311,81 +307,11 @@ export function loginWithBasicAuth(
     authProvider: AuthProvider
 ): Promise<void> {
     const basicAuthPseudoToken = queryString.stringify({ username, password });
-    return exchangeAuthToken(basicAuthPseudoToken, authProvider.type, authProvider.id).then(
-        ({ token }) => {
-            storeAccessToken(token);
-            // window.location.href might be better, however
-            // @ts-ignore 2322
-            window.location = getAndClearRequestedLocation() || '/';
-        }
-    );
-}
-
-const BEARER_TOKEN_PREFIX = `Bearer `;
-
-function setAuthHeader(config, token: string) {
-    // disable because unused Authorization might be specified for rest spread idiom.
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    const {
-        headers: { Authorization, ...notAuthHeaders },
-    } = config;
-    /* eslint-enable @typescript-eslint/no-unused-vars */
-    // make sure new config doesn't have unnecessary auth header
-    const newConfig = {
-        ...config,
-        headers: {
-            ...notAuthHeaders,
-        },
-    };
-    if (token) {
-        newConfig.headers.Authorization = `${BEARER_TOKEN_PREFIX}${token}`;
-    }
-
-    return newConfig as unknown;
-}
-
-function extractAccessTokenFromRequestConfig({ headers }) {
-    if (
-        !headers ||
-        typeof headers.Authorization !== 'string' ||
-        !headers.Authorization.startsWith(BEARER_TOKEN_PREFIX)
-    ) {
-        return null;
-    }
-    return headers.Authorization.substring(BEARER_TOKEN_PREFIX.length) as string;
-}
-
-const parseAccessToken = (token) => {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-        atob(base64)
-            .split('')
-            .map((c) => {
-                return `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`;
-            })
-            .join('')
-    );
-    return JSON.parse(jsonPayload) as unknown;
-};
-
-export const getUserName = (): string => {
-    const tokenInfo = parseAccessToken(getAccessToken());
-    // in cypress tests we don't have an external_user field, but we do have a name field
-    // @ts-ignore 2339
-    const { name, external_user: externalUser } = tokenInfo;
-    if (name) {
-        return name as string;
-    }
-    return (externalUser.full_name as string) || 'Admin';
-};
-
-function addAuthHeaderRequestInterceptor() {
-    axios.interceptors.request.use(
-        // @ts-ignore 2345
-        (config) => setAuthHeader(config, getAccessToken()),
-        (error) => Promise.reject(error)
-    );
+    return exchangeAuthToken(basicAuthPseudoToken, authProvider.type, authProvider.id).then(() => {
+        // window.location.href might be better, however
+        // @ts-ignore 2322
+        window.location = getAndClearRequestedLocation() || '/';
+    });
 }
 
 let interceptorsAdded = false;
@@ -400,21 +326,13 @@ export function addAuthInterceptors(authHttpErrorHandler): void {
         return;
     }
 
-    addAuthHeaderRequestInterceptor();
     addTokenRefreshInterceptors(axios, accessTokenManager, {
-        // @ts-ignore 2322
-        extractAccessToken: extractAccessTokenFromRequestConfig,
         handleAuthError: (error) => {
             const authError = new AuthHttpError(
                 'Authentication Error',
                 error.response.status,
                 error
             );
-
-            if (authError.isInvalidAuth()) {
-                // clear token since it's not valid
-                accessTokenManager.clearToken();
-            }
             authHttpErrorHandler(authError);
         },
     });

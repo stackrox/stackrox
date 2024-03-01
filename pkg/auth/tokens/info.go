@@ -18,7 +18,7 @@ type TokenInfo struct {
 
 // Expiry returns the expiry time of the token.
 func (i *TokenInfo) Expiry() time.Time {
-	if i.Claims.Expiry == nil {
+	if i.Claims == nil || i.Claims.Expiry == nil {
 		return timeutil.Max
 	}
 	return i.Claims.Expiry.Time()

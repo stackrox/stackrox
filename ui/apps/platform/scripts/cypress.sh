@@ -18,6 +18,8 @@ if [[ -n "$ROX_PASSWORD" ]]; then
   done
 fi
 export CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh)
+export CYPRESS_ROX_USERNAME="${ROX_USERNAME:admin}"
+export CYPRESS_ROX_PASSWORD="${ROX_PASSWORD}"
 
 # eventually it should be in cypress.config.js: https://github.com/cypress-io/cypress/issues/5218
 artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/artifacts"

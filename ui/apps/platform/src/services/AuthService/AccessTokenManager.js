@@ -1,10 +1,7 @@
-import store from 'store';
+import EventEmitter from 'events';
 /* eslint-disable import/no-duplicates */
 import differenceInMilliSeconds from 'date-fns/difference_in_milliseconds';
 import subSeconds from 'date-fns/sub_seconds';
-/* eslint-enable import/no-duplicates */
-import EventEmitter from 'events';
-
 import RefreshTokenTimeout from './RefreshTokenTimeout';
 
 /**
@@ -24,7 +21,6 @@ import RefreshTokenTimeout from './RefreshTokenTimeout';
 /**
  * This function is called to refresh the token.
  * @callback RefreshTokenFunc
- * @param {!TokenInfo} info - Current token info
  * @returns {Promise<TokenWithInfo>} Promise resolves to a new token and its info (expiration etc.)
  */
 
@@ -39,8 +35,6 @@ import RefreshTokenTimeout from './RefreshTokenTimeout';
  * @callback RefreshTokenListener
  * @param {!RefreshTokenOpPromise} opPromise - Operation Promise
  */
-
-const accessTokenKey = 'access_token';
 
 /**
  * Performs all the operations for storing, accessing and refreshing access token.
@@ -61,6 +55,10 @@ export default class AccessTokenManager {
         this.refreshTokenOpPromise = null;
         this.refreshTokenSymbol = Symbol('Refresh Token');
         this.eventEmitter = new EventEmitter();
+
+        this.dispatchResponsePromise = null;
+        this.dispatchSymbol = Symbol('Dispatch auth response');
+        this.dispatchEventEmitter = new EventEmitter();
     }
 
     /**
@@ -79,66 +77,21 @@ export default class AccessTokenManager {
         } // nothing to do, operation not started
 
         this.refreshTokenOpPromise = this.options
-            .refreshToken(this.tokenInfo)
-            .then(({ token, info }) => {
-                this.setToken(token, info);
+            .refreshToken()
+            .then(() => {
                 this.refreshTokenOpPromise = null;
             })
             .catch(() => {
                 this.refreshTokenOpPromise = null;
             });
         this.eventEmitter.emit(this.refreshTokenSymbol, this.refreshTokenOpPromise);
+        // Do a refresh every hour. For now this is statically defined, since we do not have access to the
+        // underlying token and its expiration time.
+        const expiryDate = subSeconds(new Date(), 3600);
+        const delay = differenceInMilliSeconds(expiryDate, Date.now());
+        this.refreshTimeout.set(this.refreshToken, delay);
 
         return this.refreshTokenOpPromise;
-    };
-
-    /**
-     * Updates token info and sets timer to refresh token based on the expiry field.
-     * @method
-     * @param {TokenInfo} info - Token info
-     */
-    updateTokenInfo = (info) => {
-        this.refreshTimeout.clear();
-        this.tokenInfo = info;
-        if (info && info.expiry) {
-            const expiryDate = new Date(info.expiry);
-            const refreshDate = subSeconds(expiryDate, 30); // 30 seconds before
-            const delay = differenceInMilliSeconds(refreshDate, Date.now());
-            if (delay > 0) {
-                // for a negative delay (in case the token has less than 30 sec left)
-                // let the token expire and access defined handler to kick in;
-                // don't try to refresh here in case auth provider issues 30 sec tokens
-                this.refreshTimeout.set(this.refreshToken, delay);
-            }
-        }
-    };
-
-    /**
-     * Stores token that can be later retrieved. Updates token info if provided.
-     * @method
-     * @param {!string} token - Token
-     * @param {TokenInfo} [info] - Token info
-     */
-    setToken = (token, info = null) => {
-        store.set(accessTokenKey, token);
-        this.updateTokenInfo(info);
-    };
-
-    /**
-     * Returns stored token if any.
-     * @method
-     * @returns {?string} Token
-     */
-    getToken = () => store.get(accessTokenKey) || null;
-
-    /**
-     * Deletes any stored token.
-     * @method
-     * @returns {void}
-     */
-    clearToken = () => {
-        store.remove(accessTokenKey);
-        this.updateTokenInfo(null);
     };
 
     /**
@@ -165,4 +118,17 @@ export default class AccessTokenManager {
      * @returns {?RefreshTokenOpPromise} Promise or `null`
      */
     getRefreshTokenOpPromise = () => this.refreshTokenOpPromise;
+
+    onDispatchResponseStarted = () => {
+        this.dispatchResponsePromise = new Promise((resolve) => {
+            this.dispatchEventEmitter.on(this.dispatchSymbol, resolve);
+        });
+    };
+
+    getDispatchResponsePromise = () => this.dispatchResponsePromise;
+
+    onDispatchResponseFinished = () => {
+        this.dispatchEventEmitter.emit(this.dispatchSymbol);
+        this.dispatchResponsePromise = null;
+    };
 }

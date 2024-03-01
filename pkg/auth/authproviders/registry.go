@@ -3,6 +3,8 @@ package authproviders
 import (
 	"context"
 	"net/http"
+
+	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
 // Registry stores information about registered authentication providers, as well as about the factories to create them.
@@ -33,7 +35,7 @@ type Registry interface {
 	RegisterBackendFactory(ctx context.Context, typ string, factoryCreator BackendFactoryCreator) error
 
 	GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error)
-	IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, *http.Cookie, error)
+	IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (*tokens.TokenInfo, *http.Cookie, error)
 	// GetBackendFactories returns all backend factories present.
 	GetBackendFactories() map[string]BackendFactory
 }

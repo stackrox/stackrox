@@ -56,15 +56,14 @@ describe('addTokenRefreshInterceptors', () => {
             });
     });
 
-    it('should retry failed request if token has changed since it was issued', () => {
+    it('should retry failed request if dispatch response is finished', () => {
         const axios = newAxiosInstance();
         axios.request = (config) => Promise.resolve(config);
         const m = new AccessTokenManager();
+        m.getDispatchResponsePromise = jest.fn().mockResolvedValue();
         m.refreshToken = jest.fn().mockResolvedValue();
-        m.getToken = jest.fn().mockReturnValueOnce('token2');
-        const extractAccessToken = jest.fn().mockReturnValueOnce('token1');
 
-        const handler = addInterceptorAndGetHandler(axios, m, { extractAccessToken });
+        const handler = addInterceptorAndGetHandler(axios, m);
 
         const error = {
             response: { status: 401 },
@@ -74,7 +73,6 @@ describe('addTokenRefreshInterceptors', () => {
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
                 expect(m.refreshToken).not.toHaveBeenCalled();
-                expect(extractAccessToken).toHaveBeenCalledTimes(1);
             });
     });
 

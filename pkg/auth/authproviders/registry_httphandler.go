@@ -227,6 +227,9 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
+	// Set the access token cookie for now.
+	httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), AccessTokenCookie(token))
+
 	return &TokenRefreshResponse{
 		Token:  token.Token,
 		Expiry: token.Expiry(),
@@ -372,6 +375,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	if refreshCookie != nil {
 		http.SetCookie(w, refreshCookie)
 	}
+	http.SetCookie(w, AccessTokenCookie(tokenInfo))
 
 	w.WriteHeader(http.StatusSeeOther)
 }
@@ -391,6 +395,9 @@ func (r *registryImpl) logoutEndpoint(req *http.Request) (interface{}, error) {
 		MaxAge:   -1,
 	}
 	httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), clearCookie)
+
+	// Whatever happens, make sure the access token cookie gets cleared.
+	httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), clearAccessTokenCookie())
 
 	cookieData, err := cookieDataFromRequest(req)
 	if cookieData == nil && err == nil {

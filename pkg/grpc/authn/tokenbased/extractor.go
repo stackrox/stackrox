@@ -34,7 +34,7 @@ func getExtractorError(msg string, err error) *authn.ExtractorError {
 }
 
 func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
-	rawToken := authn.ExtractToken(ri.Metadata, "Bearer")
+	rawToken := getToken(ri)
 	if rawToken == "" {
 		return nil, nil
 	}
@@ -175,4 +175,22 @@ func createRoleBasedIdentity(roles []permissions.ResolvedRole, token *tokens.Tok
 		id.friendlyName += fmt.Sprintf(" (%s)", token.ExternalUser.Email)
 	}
 	return id
+}
+
+func getToken(ri requestinfo.RequestInfo) string {
+	// Attempt to fetch the access token from the underlying HTTP request.
+	if ri.HTTPRequest != nil && ri.HTTPRequest.Cookies != nil {
+		for _, cookie := range ri.HTTPRequest.Cookies {
+			// The cookies we receive from the HTTP interceptor only contain the value and no specific
+			// settings like HTTP only, hence we can only check by name for the time being.
+			// The same exists for other cookies we currently use (i.e. the refresh token one), so the
+			// same logic has been applied here.
+			if cookie.Name == authproviders.AccessTokenCookieName {
+				return cookie.Value
+			}
+		}
+	}
+	// In case we couldn't fetch the cookie from the underlying HTTP request (e.g. when we are dealing with pure gRPC)
+	// or an API call using the Bearer token, attempt to fetch it from the HTTP headers.
+	return authn.ExtractToken(ri.Metadata, "Bearer")
 }

@@ -24,6 +24,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -41,8 +42,8 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.ANONYMOUS_ACCESS),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), null],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), throwError(new Error('no auth'))],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -55,7 +56,6 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
@@ -69,7 +69,6 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.getAuthStatus), throwError(new Error('401'))],
                 [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
@@ -84,8 +83,8 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.logout), dynamic(logout)],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
@@ -106,6 +105,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
@@ -119,7 +119,7 @@ describe('Auth Sagas', () => {
     });
 
     it('should handle OIDC redirect and restore previous location', () => {
-        const storeAccessTokenMock = jest.fn();
+        const dispatchMock = jest.fn();
         const token = 'my-token';
         const serverState = 'provider-prefix:client-state';
         const exchangedToken = 'my-rox-token';
@@ -132,11 +132,13 @@ describe('Auth Sagas', () => {
                     call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
                     { token: exchangedToken },
                 ],
-                [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(AuthService.dispatchResponseStarted), dynamic(dispatchMock)],
+                [call(AuthService.dispatchResponseFinished), dynamic(dispatchMock)],
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -148,7 +150,7 @@ describe('Auth Sagas', () => {
             )
             .silentRun()
             .then(() => {
-                expect(storeAccessTokenMock.mock.calls.length).toBe(1);
+                expect(dispatchMock.mock.calls.length).toBe(2);
             });
     });
 
@@ -157,7 +159,6 @@ describe('Auth Sagas', () => {
         window.location = { assign: jest.fn() };
         const token = 'my-token';
         const requestedLocation = '/my-location';
-        const storeAccessTokenMock = jest.fn();
         const callbackURL = 'http://localhost:8080/';
         const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${callbackURL}`;
 
@@ -169,9 +170,9 @@ describe('Auth Sagas', () => {
                     call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
                     { token, clientState: callbackURL },
                 ],
-                [call(AuthService.storeAccessToken, token), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -192,7 +193,7 @@ describe('Auth Sagas', () => {
     });
 
     it('should handle SAML response with test mode', () => {
-        const storeLocationMock = jest.fn();
+        const dispatchMock = jest.fn();
         const user =
             'eyJ1c2VySWQiOiJ0ZXN0QHN0YWNrcm94LmNvbSIsImV4cGlyZXMiOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiIsImF1dGhQcm92aWRlciI6eyJpZCI6ImRlZjQzMDdjLTczMmEtNDUzZS05NzAyLTE2ZDU3NjA5MGE1NCIsIm5hbWUiOiJWYW5TYW1sT2t0YTEiLCJ0eXBlIjoic2FtbCIsInVpRW5kcG9pbnQiOiJsb2NhbGhvc3Q6ODAwMCIsImVuYWJsZWQiOnRydWUsImxvZ2luVXJsIjoiL3Nzby9sb2dpbi9kZWY0MzA3Yy03MzJhLTQ1M2UtOTcwMi0xNmQ1NzYwOTBhNTQifSwidXNlckluZm8iOnsidXNlcm5hbWUiOiJ0ZXN0QHN0YWNrcm94LmNvbSIsInBlcm1pc3Npb25zIjp7Im5hbWUiOiJBZG1pbiIsImdsb2JhbEFjY2VzcyI6IlJFQURfV1JJVEVfQUNDRVNTIn0sInJvbGVzIjpbeyJuYW1lIjoiQWRtaW4iLCJnbG9iYWxBY2Nlc3MiOiJSRUFEX1dSSVRFX0FDQ0VTUyJ9XX0sInVzZXJBdHRyaWJ1dGVzIjpbeyJrZXkiOiJlbWFpbCIsInZhbHVlcyI6WyJqd0BzdGFja3JveC5jb20iXX0seyJrZXkiOiJ1c2VyaWQiLCJ2YWx1ZXMiOlsidGVzdEBzdGFja3JveC5jb20iXX1dfQ';
         const requestedLocation = '/test-login-results';
@@ -209,13 +210,13 @@ describe('Auth Sagas', () => {
                 //     dynamic(setAuthProviderTestResultsMock),
                 // ],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
-                [
-                    call(AuthService.storeRequestedLocation, requestedLocation),
-                    dynamic(storeLocationMock),
-                ],
+                [call(AuthService.storeRequestedLocation, requestedLocation)],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+                [call(AuthService.dispatchResponseStarted), dynamic(dispatchMock)],
+                [call(AuthService.dispatchResponseFinished), dynamic(dispatchMock)],
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -229,7 +230,7 @@ describe('Auth Sagas', () => {
             .then(() => {
                 // TODO: mock auth action call, too
                 // expect(setAuthProviderTestResultsMock.mock.calls.length).toBe(1);
-                expect(storeLocationMock.mock.calls.length).toBe(1);
+                expect(dispatchMock.mock.calls.length).toBe(2);
             });
     });
 
@@ -238,7 +239,7 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
@@ -252,8 +253,8 @@ describe('Auth Sagas', () => {
         expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],

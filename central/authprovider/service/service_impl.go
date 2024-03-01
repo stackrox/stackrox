@@ -346,11 +346,16 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	if err != nil {
 		return nil, err
 	}
-	response.Token = token
+	response.Token = token.Token
 	if refreshCookie != nil {
 		if err := grpc.SetHeader(ctx, metadata.Pairs("Set-Cookie", refreshCookie.String())); err != nil {
 			log.Errorf("Failed to set cookie in gRPC response: %v", err)
 		}
 	}
+	accessTokenCookie := authproviders.AccessTokenCookie(token)
+	if err := grpc.SetHeader(ctx, metadata.Pairs("Set-Cookie", accessTokenCookie.String())); err != nil {
+		return nil, errox.NoCredentials.CausedBy(err)
+	}
+
 	return response, nil
 }

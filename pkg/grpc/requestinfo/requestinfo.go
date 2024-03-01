@@ -55,6 +55,7 @@ type HTTPRequest struct {
 	Method  string
 	URL     *url.URL
 	Headers http.Header
+	Cookies []*http.Cookie
 }
 
 // Source provides information about the request's source (i.e. source IP).
@@ -160,6 +161,7 @@ func slimHTTPRequest(req *http.Request) *HTTPRequest {
 		Method:  req.Method,
 		URL:     req.URL,
 		Headers: req.Header,
+		Cookies: req.Cookies(),
 	}
 }
 

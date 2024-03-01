@@ -278,12 +278,12 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	return authResp, clientState, nil
 }
 
-func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, *http.Cookie, error) {
+func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (*tokens.TokenInfo, *http.Cookie, error) {
 	token, refreshCookie, err := r.issueTokenForResponse(ctx, provider, authResponse)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
-	return token.Token, refreshCookie, nil
+	return token, refreshCookie, nil
 }
 
 func (r *registryImpl) GetBackendFactories() map[string]BackendFactory {

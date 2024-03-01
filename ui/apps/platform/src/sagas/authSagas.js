@@ -43,30 +43,20 @@ function* getUserPermissions() {
 
 function* evaluateUserAccess() {
     const authStatus = yield select(selectors.getAuthStatus);
-    const token = yield call(AuthService.getAccessToken);
-    const tokenExists = !!token;
 
-    // No token but validated providers present? Log out the user since they
-    // can't have access.
-    if (!tokenExists && authStatus !== AUTH_STATUS.LOGGED_OUT) {
-        // it can happen if user had ANONYMOUS access before, but now auth provider was added to the system
-        yield put(actions.logout());
+    // Previously, we eagerly tried a logout / login based on whether the token exists within our state.
+    // However, since we now do not know this due to the cookie being a HTTP-only one, we will not explicitly
+    // call logout for unauthorized auth status.
+    if (authStatus === AUTH_STATUS.LOGGED_OUT) {
         return;
     }
 
-    // We have a token and some auth providers exist? Need to login if possible,
-    // this will cause one of our providers to be authenticated, or, failing
-    // that, remove the token since it is worthless.
-    if (tokenExists && authStatus !== AUTH_STATUS.LOGGED_IN) {
-        // typical situation if token was stored before and then auth providers were loaded
-        try {
-            const result = yield call(AuthService.getAuthStatus);
-            // call didn't fail, meaning that the token is fine (should we check the returned result?)
-            yield put(actions.login(result));
-        } catch (e) {
-            // call failed, assuming that the token is invalid
-            yield put(actions.logout());
-        }
+    try {
+        const result = yield call(AuthService.getAuthStatus);
+        // call didn't fail, meaning that the token is fine (should we check the returned result?)
+        yield put(actions.login(result));
+    } catch (e) {
+        yield put(actions.logout());
     }
 }
 
@@ -223,6 +213,7 @@ function* handleAuthorizeRoxctlLoginResponse(result) {
             'Invalid callback URL given for roxctl authorization. Only localhost is allowed as callback'
         );
     }
+
     // Redirect to the callback URL (i.e. the server opened by roxctl central login) with the token as query parameter
     // or any error that may have occurred.
     window.location.assign(`${parsedCallbackURL.toString()}?${queryString.stringify(query)}`);
@@ -234,6 +225,7 @@ function* dispatchAuthResponse(type, location) {
         oidc: handleOidcResponse,
         generic: handleGenericResponse,
     };
+    yield call(AuthService.dispatchResponseStarted);
 
     let result = {};
     const handler = responseHandlers[type];
@@ -250,14 +242,14 @@ function* dispatchAuthResponse(type, location) {
     } else if (result?.authorizeRoxctl === true || result?.authorizeRoxctl === 'true') {
         yield call(handleAuthorizeRoxctlLoginResponse, result);
     } else if (result?.token) {
-        yield call(AuthService.storeAccessToken, result.token);
-
         // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
         // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.
         yield delay(10);
     } else {
         yield call(handleErrAuthResponse, result, `no auth token received via method ${type}`);
     }
+
+    yield call(AuthService.dispatchResponseFinished);
 
     yield fork(getUserPermissions);
 

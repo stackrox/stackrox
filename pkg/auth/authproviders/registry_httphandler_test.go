@@ -289,6 +289,15 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUser
 		"should redirect to the registry redirect URL")
 	s.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
 		"callback activated for user with valid roles should issue a token")
+	r := http.Response{Header: responseHeaders}
+	s.NotEmpty(r.Cookies())
+	s.Len(r.Cookies(), 1)
+	accessTokenCookie := r.Cookies()[0]
+	s.Equal(AccessTokenCookieName, accessTokenCookie.Name)
+	s.Equal(testDummyTokenData, accessTokenCookie.Value)
+	s.True(accessTokenCookie.HttpOnly)
+	s.True(accessTokenCookie.Secure)
+	s.Equal(http.SameSiteStrictMode, accessTokenCookie.SameSite)
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationVerifyRequiredAttributes() {
@@ -317,6 +326,15 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationVerifyRequiredAttr
 		"should redirect to the registry redirect URL")
 	s.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
 		"callback activated for user with valid roles should issue a token")
+	r := http.Response{Header: responseHeaders}
+	s.NotEmpty(r.Cookies())
+	s.Len(r.Cookies(), 1)
+	accessTokenCookie := r.Cookies()[0]
+	s.Equal(AccessTokenCookieName, accessTokenCookie.Name)
+	s.Equal(testDummyTokenData, accessTokenCookie.Value)
+	s.True(accessTokenCookie.HttpOnly)
+	s.True(accessTokenCookie.Secure)
+	s.Equal(http.SameSiteStrictMode, accessTokenCookie.SameSite)
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAttributes() {
