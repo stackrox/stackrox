@@ -284,6 +284,10 @@ function launch_central {
       fi
     fi
 
+    if [[ "$ORCH" == "openshift" ]] && [[ -n "${OPENSHIFT_VERSION}" ]]; then
+      add_args "--openshift-version=${OPENSHIFT_VERSION}"
+    fi
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then

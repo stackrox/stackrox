@@ -9,6 +9,7 @@ from clusters import AutomationFlavorsCluster
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+os.environ["OPENSHIFT_VERSION"] = "4"
 os.environ["SENSOR_HELM_DEPLOY"] = "true"
 
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
