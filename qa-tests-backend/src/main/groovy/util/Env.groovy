@@ -252,19 +252,23 @@ class Env {
     }
 
     static String mustGetGCSBucketName() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-gcs-test
+        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
     }
 
     static String mustGetGCSBucketRegion() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_REGION") // us-east-1
+        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_REGION_V2")
     }
 
     static String mustGetGCPAccessKeyID() {
-        return mustGet("GCP_ACCESS_KEY_ID")
+        return mustGet("GCP_ACCESS_KEY_ID_V2")
     }
 
     static String mustGetGCPAccessKey() {
-        return mustGet("GCP_SECRET_ACCESS_KEY")
+        return mustGet("GCP_SECRET_ACCESS_KEY_V2")
+    }
+
+    static String mustGetGCSServiceAccount() {
+        return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
     }
 
     static String mustGetPagerdutyToken() {
