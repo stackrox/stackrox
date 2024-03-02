@@ -508,7 +508,7 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        assert ExternalBackupService.testExternalBackup(backup)
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
 
         where:
         "configurations are:"
@@ -525,6 +525,29 @@ class IntegrationsTest extends BaseSpecification {
         "GCS"                 | Env.mustGetGCSBucketName()   | Env.mustGetGCSBucketRegion()   |
                 "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
                 Env.mustGetGCPAccessKey()
+    }
+
+    @Unroll
+    @Tag("Integration")
+    def "Verify GCS Integration: #integrationName"() {
+        setup:
+        Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
+
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getGCSIntegrationConfig(integrationName, useWorkloadId)
+
+        then:
+        "verify test integration"
+        // Test integration for GCS performs test backup (and rollback).
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        where:
+        "configurations are:"
+
+        integrationName                | bucket                     | useWorkloadId
+        "GCS with service account key" | Env.mustGetGCSBucketName() | false
+        "GCS with workload identity"   | Env.mustGetGCSBucketName() | true
     }
 
     @Unroll
