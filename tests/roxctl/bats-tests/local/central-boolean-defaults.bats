@@ -13,7 +13,8 @@ setup_file() {
 }
 
 setup() {
-  export out_dir="$(mktemp -d -u)"
+  out_dir="$(mktemp -d -u)"
+  export out_dir
 }
 
 teardown() {
