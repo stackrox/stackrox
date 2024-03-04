@@ -235,13 +235,13 @@ func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {
 	testScan1 := getTestScan("scan1", "profile-1", testconsts.Cluster1)
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan1))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(1, count)
 
 	s.Require().NoError(s.dataStore.DeleteScanByCluster(s.hasWriteCtx, testconsts.Cluster1))
 
-	count, err = s.storage.Count(s.hasReadCtx)
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(0, count)
 }

@@ -138,12 +138,12 @@ func (s *complianceRuleDataStoreTestSuite) TestDeleteRuleByCluster() {
 	rule := getTestRule(testconsts.Cluster1)
 	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, rule))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(1, count)
 	s.Require().NoError(s.dataStore.DeleteRulesByCluster(s.hasWriteCtx, testconsts.Cluster1))
 
-	count, err = s.storage.Count(s.hasReadCtx)
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(0, count)
 }

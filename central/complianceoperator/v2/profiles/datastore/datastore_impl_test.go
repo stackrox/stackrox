@@ -117,14 +117,14 @@ func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileOfCluster() {
 	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec1))
 	s.Require().NoError(s.dataStore.UpsertProfile(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
 	err = s.dataStore.DeleteProfilesByCluster(s.hasWriteCtx, rec1.GetClusterId())
 	s.Require().NoError(err)
 
-	count, err = s.storage.Count(s.hasReadCtx)
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(1, count)
 }
