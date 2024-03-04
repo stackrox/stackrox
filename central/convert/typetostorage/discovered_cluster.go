@@ -3,6 +3,7 @@ package typetostorage
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // DiscoveredCluster converts the given discoveredclusters.DiscoveredCluster
