@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/bufbuild/buf v1.29.0
+	github.com/favadi/protoc-go-inject-tag v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 )
 
