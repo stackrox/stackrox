@@ -2,9 +2,10 @@ import React from 'react';
 import { Button } from '@patternfly/react-core';
 
 import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
-import ExceptionRequestModal from 'Containers/Vulnerabilities/WorkloadCves/components/ExceptionRequestModal/ExceptionRequestModal';
-import useExceptionRequestModal from 'Containers/Vulnerabilities/WorkloadCves/hooks/useExceptionRequestModal';
-import CompletedExceptionRequestModal from 'Containers/Vulnerabilities/WorkloadCves/components/ExceptionRequestModal/CompletedExceptionRequestModal';
+
+import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
+import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
+import ExceptionRequestModal from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import useRequestCVEsDetails from '../hooks/useRequestCVEsDetails';
 
 type RequestUpdateButtonModalProps = {

@@ -4,10 +4,7 @@ import { createStore } from 'redux';
 import ComponentTestProviders from 'test-utils/ComponentProviders';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
-import {
-    NAMESPACE_SEARCH_OPTION,
-    CLUSTER_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
+import { NAMESPACE_SEARCH_OPTION, CLUSTER_SEARCH_OPTION } from '../../searchOptions';
 
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 

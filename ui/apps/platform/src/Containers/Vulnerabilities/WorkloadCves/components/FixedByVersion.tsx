@@ -2,11 +2,11 @@ import React from 'react';
 import { Flex } from '@patternfly/react-core';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 
-export type FixedByVersionTdProps = {
+export type FixedByVersionProps = {
     fixedByVersion: string;
 };
 
-function FixedByVersionTd({ fixedByVersion }: FixedByVersionTdProps) {
+function FixedByVersion({ fixedByVersion }: FixedByVersionProps) {
     return fixedByVersion !== '' ? (
         <>{fixedByVersion}</>
     ) : (
@@ -20,4 +20,4 @@ function FixedByVersionTd({ fixedByVersion }: FixedByVersionTdProps) {
     );
 }
 
-export default FixedByVersionTd;
+export default FixedByVersion;

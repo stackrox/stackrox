@@ -18,23 +18,23 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
-import { VulnerabilitySeverityLabel } from '../types';
-import { getEntityPagePath } from '../searchUtils';
+import { VulnerabilitySeverityLabel } from '../../types';
+import { getEntityPagePath } from '../../utils/searchUtils';
 import TooltipTh from '../components/TooltipTh';
-import SeverityCountLabels from '../components/SeverityCountLabels';
+import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import DateDistanceTd from '../components/DatePhraseTd';
-import CvssTd from '../components/CvssTd';
+import DateDistance from '../../components/DateDistance';
+import CvssFormatted from '../../components/CvssFormatted';
 import {
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
     aggregateByCVSS,
     aggregateByCreatedTime,
     aggregateByImageSha,
-} from '../sortUtils';
+} from '../../utils/sortUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
+import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
@@ -255,7 +255,7 @@ function CVEsTable({
                                     />
                                 </Td>
                                 <Td dataLabel="Top CVSS">
-                                    <CvssTd
+                                    <CvssFormatted
                                         cvss={topCVSS}
                                         scoreVersion={
                                             scoreVersions.length > 0
@@ -268,7 +268,7 @@ function CVEsTable({
                                     {affectedImageCount}/{unfilteredImageCount} affected images
                                 </Td>
                                 <Td dataLabel="First discovered">
-                                    <DateDistanceTd date={firstDiscoveredInSystem} />
+                                    <DateDistance date={firstDiscoveredInSystem} />
                                 </Td>
                                 {showExceptionDetailsLink && (
                                     <ExceptionDetailsCell

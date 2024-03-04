@@ -7,7 +7,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { searchValueAsArray } from 'utils/searchUtils';
 import SearchOptionsDropdown from './SearchOptionsDropdown';
-import { applyRegexSearchModifiers } from '../WorkloadCves/searchUtils';
+import { applyRegexSearchModifiers } from '../utils/searchUtils';
 import { SearchOption, SearchOptionValue, regexSearchOptions } from '../searchOptions';
 
 import './FilterAutocomplete.css';

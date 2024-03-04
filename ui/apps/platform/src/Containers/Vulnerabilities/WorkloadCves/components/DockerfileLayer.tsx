@@ -2,11 +2,11 @@ import React from 'react';
 import { CodeBlock, Flex, CodeBlockCode } from '@patternfly/react-core';
 import { TableDataRow } from '../Tables/table.utils';
 
-export type DockerfileLayerTdProps = {
+export type DockerfileLayerProps = {
     layer: TableDataRow['layer'];
 };
 
-function DockerfileLayerTd({ layer }: DockerfileLayerTdProps) {
+function DockerfileLayer({ layer }: DockerfileLayerProps) {
     return layer ? (
         <CodeBlock>
             <Flex>
@@ -25,4 +25,4 @@ function DockerfileLayerTd({ layer }: DockerfileLayerTdProps) {
     );
 }
 
-export default DockerfileLayerTd;
+export default DockerfileLayer;

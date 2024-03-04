@@ -16,6 +16,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
@@ -30,7 +31,6 @@ import {
     RequestScope,
 } from './components/ExceptionRequestTableCells';
 import FilterAutocompleteSelect from '../components/FilterAutocomplete';
-import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import {
     SearchOption,
     REQUEST_NAME_SEARCH_OPTION,

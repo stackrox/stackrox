@@ -28,12 +28,13 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
+} from '../../searchOptions';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
@@ -50,16 +51,16 @@ import {
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
-} from '../searchUtils';
+} from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
-} from '../components/ExceptionRequestModal/ExceptionRequestModal';
-import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
-import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
+} from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
+import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}

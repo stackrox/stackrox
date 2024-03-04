@@ -5,7 +5,6 @@ import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import {
     VulnerabilitySeverity,
     VulnerabilityState,
-    isVulnerabilityState,
     vulnerabilitySeverities,
 } from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
@@ -19,7 +18,7 @@ import {
     VulnerabilitySeverityLabel,
     isFixableStatus,
     isVulnerabilitySeverityLabel,
-} from './types';
+} from '../types';
 import {
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
@@ -32,26 +31,6 @@ import {
 } from '../searchOptions';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
-
-export type WorkloadCvesSearch = {
-    vulnerabilityState: VulnerabilityState;
-    entityTab?: EntityTab;
-    s?: SearchFilter;
-};
-
-export function parseWorkloadCvesOverviewSearchString(search: string): WorkloadCvesSearch {
-    const { vulnerabilityState } = qs.parse(search, { ignoreQueryPrefix: true });
-
-    return {
-        vulnerabilityState: isVulnerabilityState(vulnerabilityState)
-            ? vulnerabilityState
-            : 'OBSERVED',
-    };
-}
-
-export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch): string {
-    return `${vulnerabilitiesWorkloadCvesPath}${getQueryString(workloadCvesSearch)}`;
-}
 
 export function getEntityPagePath(
     workloadCveEntity: EntityTab,

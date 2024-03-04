@@ -12,7 +12,7 @@ import {
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import { gql } from '@apollo/client';
 
-import { FixableStatus } from '../types';
+import { FixableStatus } from '../../types';
 
 export type ResourceCountByCveSeverityAndStatus = {
     critical: { total: number; fixable: number };

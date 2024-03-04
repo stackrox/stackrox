@@ -21,6 +21,7 @@ import { useParams } from 'react-router-dom';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -30,6 +31,8 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
+import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
+
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -38,15 +41,16 @@ import {
     CLUSTER_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
-import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
+} from '../../searchOptions';
+import { EntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
-    getOverviewCvesPath,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
-} from '../searchUtils';
+} from '../../utils/searchUtils';
+
+import { getOverviewCvesPath } from '../utils/searchUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
@@ -58,7 +62,6 @@ import AffectedImagesTable, {
 } from '../Tables/AffectedImagesTable';
 import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
 import { DynamicTableLabel } from '../components/DynamicIcon';
-import TableErrorComponent from '../components/TableErrorComponent';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
@@ -68,7 +71,6 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import { EntityTab, VulnerabilitySeverityLabel } from '../types';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 

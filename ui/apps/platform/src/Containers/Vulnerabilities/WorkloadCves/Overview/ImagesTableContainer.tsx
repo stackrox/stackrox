@@ -7,12 +7,13 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+
 import ImagesTable, { ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
-import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
-import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
+import { defaultImageSortFields, imagesDefaultSort } from '../../utils/sortUtils';
+import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 export { imageListQuery } from '../Tables/ImagesTable';
