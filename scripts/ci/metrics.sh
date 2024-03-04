@@ -182,10 +182,10 @@ LIMIT
         # shellcheck disable=SC2016
         body='{"blocks":[
             {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
-            .[] | {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": ("`"+.["%"]+" "+.["Suite"]+"`")},
+            (.[] | {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": ("`"+.["%"]+"` "+.["Suite"])},
                 {"type": "plain_text", "text": .["Case"]}
-            ]}]}'
+            ]})]}'
     else
         body='{"blocks":[
             {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
