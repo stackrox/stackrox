@@ -74,7 +74,7 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m protocompat.Message) err
 		return errox.InvalidArgs.CausedBy(err)
 	}
 	if _, err := u.notifierDS.UpsertNotifier(ctx, notifierProto); err != nil {
-		return errox.InvalidArgs.CausedBy(err)
+		return errors.Wrap(err, "storing notifier")
 	}
 	notifier, err := notifiers.CreateNotifier(notifierProto)
 	if err != nil {

@@ -279,5 +279,6 @@ func validateNotifier(notifier *storage.Notifier) error {
 	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
+	// We skip validating the notifier config for each type and push the responsibility to the clients.
 	return errorList.ToError()
 }
