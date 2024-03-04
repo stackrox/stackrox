@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import {
     Bullseye,
     Button,
@@ -41,7 +41,7 @@ import {
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 } from '../searchOptions';
-import { getTableUIState } from './hooks/getTableUIState';
+import { getTableUIState } from '../../../utils/getTableUIState';
 
 const searchOptions: SearchOption[] = [
     REQUEST_NAME_SEARCH_OPTION,
@@ -85,19 +85,11 @@ function PendingApprovals() {
             ),
         [searchFilter, sortOption, page, perPage]
     );
-    const { data, loading: isLoading, error, refetch } = useRestQuery(vulnerabilityExceptionsFn);
-    const [isPolling, setIsPolling] = React.useState(false);
-
-    useEffect(() => {
-        setTimeout(() => {
-            setIsPolling(true);
-            refetch();
-        }, 5000);
-    }, [refetch]);
+    // TODO: Consider changing the name of "loading" to "isLoading" - https://issues.redhat.com/browse/ROX-22865
+    const { data, loading: isLoading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
     const tableUIState = getTableUIState({
         isLoading,
-        isPolling,
         data,
         error,
         searchFilter,

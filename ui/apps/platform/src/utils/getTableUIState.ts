@@ -1,28 +1,28 @@
 import { SearchFilter } from 'types/search';
 
-type IdleState = {
+export type IdleState = {
     type: 'IDLE';
 };
 
-type LoadingState = {
+export type LoadingState = {
     type: 'LOADING';
 };
 
-type PollingState<DataType> = {
+export type PollingState<DataType> = {
     type: 'POLLING';
     data: DataType[];
 };
 
-type CompleteState<DataType> = {
+export type CompleteState<DataType> = {
     type: 'COMPLETE';
     data: DataType[];
 };
 
-type EmptyState = {
+export type EmptyState = {
     type: 'EMPTY' | 'FILTERED_EMPTY';
 };
 
-type ErrorState = {
+export type ErrorState = {
     type: 'ERROR';
     error: Error;
 };
@@ -35,9 +35,9 @@ export type TableUIState<DataType> =
     | EmptyState
     | ErrorState;
 
-type GetTableUIStateProps<DataType> = {
+export type GetTableUIStateProps<DataType> = {
     isLoading: boolean;
-    isPolling: boolean;
+    isPolling?: boolean;
     data: undefined | DataType[];
     error: Error | undefined;
     searchFilter: SearchFilter;
@@ -45,7 +45,7 @@ type GetTableUIStateProps<DataType> = {
 
 export function getTableUIState<DataType>({
     isLoading,
-    isPolling,
+    isPolling = false,
     data,
     error,
     searchFilter,

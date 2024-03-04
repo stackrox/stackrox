@@ -42,7 +42,7 @@ import {
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 } from '../searchOptions';
-import { getTableUIState } from './hooks/getTableUIState';
+import { getTableUIState } from '../../../utils/getTableUIState';
 
 const searchOptions: SearchOption[] = [
     REQUEST_NAME_SEARCH_OPTION,
@@ -87,11 +87,11 @@ function ApprovedDeferrals() {
             ),
         [searchFilter, sortOption, page, perPage]
     );
+    // TODO: Consider changing the name of "loading" to "isLoading" - https://issues.redhat.com/browse/ROX-22865
     const { data, loading: isLoading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
     const tableUIState = getTableUIState({
         isLoading,
-        isPolling: false,
         data,
         error,
         searchFilter,
