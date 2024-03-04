@@ -3,7 +3,7 @@ import { Select, SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import {
     RuleSelectorOption,
     ScopedResourceSelector,
@@ -50,7 +50,7 @@ function RuleSelector({
     validationErrors,
     isDisabled = false,
 }: RuleSelectorProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
+    const { isOn: isOpen, onToggle, toggleOff: closeSelect } = useToggle();
     const pluralEntity = pluralize(entityType);
 
     function onRuleOptionSelect(_, value) {

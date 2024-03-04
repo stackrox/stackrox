@@ -15,7 +15,7 @@ import {
 import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import { Policy } from 'types/policy.proto';
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyGroupCard from './PolicyGroupCard';
@@ -32,7 +32,7 @@ type PolicySectionProps = {
 
 function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = React.useState(false);
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
 

@@ -17,7 +17,7 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import useModifyBaselineStatuses from '../api/useModifyBaselineStatuses';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import {
@@ -67,10 +67,10 @@ function DeploymentFlows({
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
-    const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
-        useSelectToggle(true);
-    const { isOpen: isBaselineFlowsExpanded, onToggle: toggleBaselineFlowsExpandable } =
-        useSelectToggle(true);
+    const { isOn: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
+        useToggle(true);
+    const { isOn: isBaselineFlowsExpanded, onToggle: toggleBaselineFlowsExpandable } =
+        useToggle(true);
 
     const {
         isModifying,

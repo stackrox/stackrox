@@ -3,7 +3,7 @@ import { Card, CardBody, Flex, FlexItem, Select, SelectOption } from '@patternfl
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 
 type DelegatedScanningSettingsProps = {
     clusters?: DelegatedRegistryCluster[];
@@ -17,10 +17,10 @@ function DelegatedScanningSettings({
     setSelectedClusterId,
 }: DelegatedScanningSettingsProps) {
     const {
-        isOpen: isClusterOpen,
-        toggleSelect: toggleIsClusterOpen,
-        closeSelect: closeClusterSelect,
-    } = useSelectToggle();
+        isOn: isClusterOpen,
+        toggle: toggleIsClusterOpen,
+        toggleOff: closeClusterSelect,
+    } = useToggle();
 
     const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => (
         <SelectOption key={cluster.id} value={cluster.id}>

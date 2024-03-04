@@ -15,7 +15,7 @@ import {
     Select,
 } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceScopeObject } from 'services/RolesService';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
@@ -58,7 +58,7 @@ function NamespaceSelector({
     searchFilter,
     setSearchFilter,
 }: NamespaceSelectorProps) {
-    const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
+    const { isOn: isNamespaceOpen, toggle: toggleIsNamespaceOpen } = useToggle();
     const [input, setInput] = React.useState('');
 
     const handleTextInputChange = (value: string) => {

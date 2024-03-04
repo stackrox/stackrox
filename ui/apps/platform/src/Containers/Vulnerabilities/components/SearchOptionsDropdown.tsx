@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { SearchOption } from '../searchOptions';
 
 export type SearchOptionsDropdownProps = {
@@ -15,7 +15,7 @@ function SearchOptionsDropdown({
     searchOption,
     children,
 }: SearchOptionsDropdownProps) {
-    const { isOpen, onToggle } = useSelectToggle();
+    const { isOn: isOpen, onToggle } = useToggle();
 
     function onSearchOptionSelect(e, selection) {
         setSearchOption(selection);

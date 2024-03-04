@@ -20,7 +20,7 @@ import {
     listCollections,
 } from 'services/CollectionsService';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -58,7 +58,7 @@ function CollectionSelection({
 
     const { analyticsTrack } = useAnalytics();
 
-    const { isOpen, onToggle } = useSelectToggle();
+    const { isOn: isOpen, onToggle } = useToggle();
     const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
     const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
 

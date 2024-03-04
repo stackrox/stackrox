@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import { deleteDownloadableReport } from 'services/ReportsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -20,7 +20,7 @@ export type UseDeleteDownloadModalResult = {
 function useDeleteDownloadModal({
     onCompleted,
 }: UseDeleteDownloadModalProps): UseDeleteDownloadModalResult {
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
     const [reportIdToDeleteDownload, setReportIdToDeleteDownload] = useState<string>('');
     const [isDeletingDownload, setIsDeletingDownload] = useState(false);
     const [deleteDownloadError, setDeleteDownloadError] = useState<string | null>(null);

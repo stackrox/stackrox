@@ -3,7 +3,7 @@ import { debounce, Select, SelectOption, Skeleton, ToolbarGroup } from '@pattern
 import { useQuery } from '@apollo/client';
 
 import { SearchFilter } from 'types/search';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { searchValueAsArray } from 'utils/searchUtils';
 import SearchOptionsDropdown from './SearchOptionsDropdown';
@@ -56,7 +56,7 @@ function FilterAutocompleteSelect({
     });
     const [typeahead, setTypeahead] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const { isOpen, onToggle } = useSelectToggle();
+    const { isOn: isOpen, onToggle } = useToggle();
 
     // Autocomplete requests for "Cluster" never return results if there is a 'CVE', 'Severity', or 'Fixable' search filter
     // included in the query. In this case we don't include the additional filters at all which leaves the cluster results

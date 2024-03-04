@@ -7,7 +7,7 @@ import {
     SelectVariant,
 } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
 import { Cluster } from './types';
 
@@ -50,7 +50,7 @@ function ClusterSelect({
     onChange,
     onSelectAll,
 }: ClusterSelectProps) {
-    const { isOpen, onToggle } = useSelectToggle();
+    const { isOn: isOpen, onToggle } = useToggle();
     const currentSelection = flattenFilterValue(clusterSearch, selectAll);
     const options = createOptions(clusters);
 

@@ -15,7 +15,7 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { useMediaQuery } from 'react-responsive';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { collectionsBasePath } from 'routePaths';
 import { Collection } from 'services/CollectionsService';
 import useCollection from './hooks/useCollection';
@@ -75,11 +75,11 @@ function CollectionsFormModal({
 }: CollectionsFormModalProps) {
     const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-global--breakpoint--xl
     const {
-        isOpen: isDrawerOpen,
-        toggleSelect: toggleDrawer,
-        closeSelect: closeDrawer,
-        openSelect: openDrawer,
-    } = useSelectToggle(isXLargeScreen);
+        isOn: isDrawerOpen,
+        toggle: toggleDrawer,
+        toggleOff: closeDrawer,
+        toggleOn: openDrawer,
+    } = useToggle(isXLargeScreen);
 
     const { data, loading, error } = useCollection(
         modalAction.type === 'view' ? modalAction.collectionId : undefined

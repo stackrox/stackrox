@@ -15,7 +15,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 
 import { CollectionRequest, dryRunCollection } from 'services/CollectionsService';
@@ -86,7 +86,7 @@ function CollectionResults({
     configError,
     setConfigError,
 }: CollectionResultsProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
+    const { isOn: isOpen, onToggle, toggleOff: closeSelect } = useToggle();
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
     // This state controls the value of the text in the SearchInput component separately from the value sent via query
     const [filterInput, setFilterInput] = useState('');

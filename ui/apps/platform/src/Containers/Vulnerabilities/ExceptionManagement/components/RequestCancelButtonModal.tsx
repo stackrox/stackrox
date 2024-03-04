@@ -6,7 +6,7 @@ import {
     cancelVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import useRestMutation from 'hooks/useRestMutation';
 
 type RequestCancelButtonModalProps = {
@@ -17,7 +17,7 @@ type RequestCancelButtonModalProps = {
 function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonModalProps) {
     const cancelRequestMutation = useRestMutation(cancelVulnerabilityException);
 
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     function cancelRequest() {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
 import { ClusterScopeObject } from 'services/RolesService';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { ClusterIcon } from '../common/NetworkGraphIcons';
 
 export type ClusterSelectorProps = {
@@ -19,10 +19,10 @@ function ClusterSelector({
     setSearchFilter,
 }: ClusterSelectorProps) {
     const {
-        isOpen: isClusterOpen,
-        toggleSelect: toggleIsClusterOpen,
-        closeSelect: closeClusterSelect,
-    } = useSelectToggle();
+        isOn: isClusterOpen,
+        toggle: toggleIsClusterOpen,
+        toggleOff: closeClusterSelect,
+    } = useToggle();
 
     const onClusterSelect = (_, value) => {
         closeClusterSelect();

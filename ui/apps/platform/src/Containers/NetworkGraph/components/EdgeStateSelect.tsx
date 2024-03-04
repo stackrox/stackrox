@@ -1,7 +1,7 @@
 import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 
 export type EdgeState = 'active' | 'inactive';
 
@@ -12,7 +12,7 @@ type EdgeStateSelectProps = {
 };
 
 function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelectProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
+    const { isOn: isOpen, onToggle, toggleOff: closeSelect } = useToggle();
 
     function onSelect(_event, selection) {
         closeSelect();
