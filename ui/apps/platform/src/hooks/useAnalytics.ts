@@ -78,36 +78,36 @@ type AnalyticsEvent =
     | {
           event: typeof CLUSTER_LEVEL_SIMULATOR_OPENED;
           properties: {
-              cluster: string;
-              namespaces: string;
-              deployments: string;
+              cluster: number;
+              namespaces: number;
+              deployments: number;
           };
       }
     /** Tracks each time network policies are genarated on Network Graph */
     | {
           event: typeof GENERATE_NETWORK_POLICIES;
           properties: {
-              cluster: string;
-              namespaces: string;
-              deployments: string;
+              cluster: number;
+              namespaces: number;
+              deployments: number;
           };
       }
     /** Tracks each time network policies are downloaded on Network Graph */
     | {
           event: typeof DOWNLOAD_NETWORK_POLICIES;
           properties: {
-              cluster: string;
-              namespaces: string;
-              deployments: string;
+              cluster: number;
+              namespaces: number;
+              deployments: number;
           };
       }
     /** Tracks each time CIDR Block form opened on Network Graph */
     | {
           event: typeof CIDR_BLOCK_FORM_OPENED;
           properties: {
-              cluster: string;
-              namespaces: string;
-              deployments: string;
+              cluster: number;
+              namespaces: number;
+              deployments: number;
           };
       }
     /** Tracks each time the user opens the "Watched Images" modal */

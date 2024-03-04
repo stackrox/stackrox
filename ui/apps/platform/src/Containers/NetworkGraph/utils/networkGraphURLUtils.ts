@@ -24,9 +24,9 @@ export function getURLLinkToDeployment({
 }
 
 export function getPropertiesForAnalytics(searchFilter: SearchFilter) {
-    const cluster = searchFilter?.Cluster?.toString() || 'unknown cluster';
-    const namespaces = searchFilter?.Namespace?.toString() || '';
-    const deployments = searchFilter?.Deployment?.toString() || '';
+    const cluster = searchFilter?.Cluster?.toString() ? 1 : 0;
+    const namespaces = searchFilter?.Namespace?.length || 0;
+    const deployments = searchFilter?.Deployment?.length || 0;
 
     return {
         cluster,

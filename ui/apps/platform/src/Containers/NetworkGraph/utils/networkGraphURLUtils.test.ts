@@ -24,9 +24,9 @@ describe('networkGraphURLUtils', () => {
             const properties = getPropertiesForAnalytics(searchFilter);
 
             expect(properties).toEqual({
-                cluster: 'staging-secured-cluster',
-                namespaces: '',
-                deployments: '',
+                cluster: 1,
+                namespaces: 0,
+                deployments: 0,
             });
         });
 
@@ -40,25 +40,25 @@ describe('networkGraphURLUtils', () => {
             const properties = getPropertiesForAnalytics(searchFilter);
 
             expect(properties).toEqual({
-                cluster: 'staging-secured-cluster',
-                namespaces: 'default,stackrox',
-                deployments: '',
+                cluster: 1,
+                namespaces: 2,
+                deployments: 0,
             });
         });
 
         it('should return properties with cluster, namespaces, and deployments', () => {
             const searchFilter = {
                 Cluster: 'staging-secured-cluster',
-                Namespace: ['default', 'stackrox'],
+                Namespace: ['default', 'stackrox', 'payments'],
                 Deployment: ['admission-control', 'sensor', 'collector'],
             };
 
             const properties = getPropertiesForAnalytics(searchFilter);
 
             expect(properties).toEqual({
-                cluster: 'staging-secured-cluster',
-                namespaces: 'default,stackrox',
-                deployments: 'admission-control,sensor,collector',
+                cluster: 1,
+                namespaces: 3,
+                deployments: 3,
             });
         });
 
@@ -72,9 +72,9 @@ describe('networkGraphURLUtils', () => {
             const properties = getPropertiesForAnalytics(searchFilter);
 
             expect(properties).toEqual({
-                cluster: 'unknown cluster',
-                namespaces: '',
-                deployments: '',
+                cluster: 0,
+                namespaces: 0,
+                deployments: 0,
             });
         });
     });
