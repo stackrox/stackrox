@@ -18,11 +18,11 @@ LABEL name="central-db" \
       summary="Stackrox Central Database for the StackRox Kubernetes Security Platform" \
       description="This image provides Database services to Stackrox Central in the StackRox Kubernetes Security Platform."
 
-ENV PG_MAJOR=13
+ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
-COPY signatures/RPM-GPG-KEY-PGDG-13 /
+COPY signatures/RPM-GPG-KEY-PGDG-15 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
@@ -32,7 +32,7 @@ RUN microdnf upgrade -y --nobest && \
     microdnf -y --setopt=install_weak_deps=0 --nodocs install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
-    rpm --import RPM-GPG-KEY-PGDG-13 && \
+    rpm --import RPM-GPG-KEY-PGDG-15 && \
     microdnf -y --setopt=install_weak_deps=0 --nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
