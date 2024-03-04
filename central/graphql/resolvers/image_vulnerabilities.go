@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -395,7 +396,7 @@ func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Tim
 		return nil, errors.New("multiple images matched for last scanned image vulnerability query")
 	}
 
-	return timestamp(images[0].GetScan().GetScanTime())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
 }
 
 func (resolver *imageCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
@@ -571,7 +572,7 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return timestamp(embeddedVuln.GetFirstImageOccurrence())
+		return protocompat.ConvertTimestampToGraphqlTimeOrError(embeddedVuln.GetFirstImageOccurrence())
 	}
 
 	var imageID string
@@ -595,7 +596,7 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 	if err != nil || len(edges) == 0 {
 		return nil, err
 	}
-	return timestamp(edges[0].GetFirstImageOccurrence())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(edges[0].GetFirstImageOccurrence())
 }
 
 func (resolver *imageCVEResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -664,7 +665,7 @@ func (resolver *imageCVEResolver) ID(_ context.Context) graphql.ID {
 }
 
 func (resolver *imageCVEResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
-	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
 func (resolver *imageCVEResolver) CVE(_ context.Context) string {
@@ -672,7 +673,7 @@ func (resolver *imageCVEResolver) CVE(_ context.Context) string {
 }
 
 func (resolver *imageCVEResolver) LastModified(_ context.Context) (*graphql.Time, error) {
-	return timestamp(resolver.data.GetCveBaseInfo().GetLastModified())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
 func (resolver *imageCVEResolver) Link(_ context.Context) string {
@@ -680,7 +681,7 @@ func (resolver *imageCVEResolver) Link(_ context.Context) string {
 }
 
 func (resolver *imageCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
-	return timestamp(resolver.data.GetCveBaseInfo().GetPublishedOn())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
 func (resolver *imageCVEResolver) ScoreVersion(_ context.Context) string {
@@ -692,11 +693,11 @@ func (resolver *imageCVEResolver) Summary(_ context.Context) string {
 }
 
 func (resolver *imageCVEResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
-	return timestamp(resolver.data.GetSnoozeStart())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeStart())
 }
 
 func (resolver *imageCVEResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
-	return timestamp(resolver.data.GetSnoozeExpiry())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeExpiry())
 }
 
 func (resolver *imageCVEResolver) Suppressed(_ context.Context) bool {

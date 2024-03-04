@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -359,7 +360,7 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 		return nil, errors.New("multiple nodes matched for last scanned node vulnerability query")
 	}
 
-	return timestamp(nodes[0].GetScan().GetScanTime())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(nodes[0].GetScan().GetScanTime())
 }
 
 // UnusedVarSink represents a query sink
@@ -417,7 +418,7 @@ func (resolver *nodeCVEResolver) ID(_ context.Context) graphql.ID {
 // CreatedAt is the time a node CVE first seen in the system
 func (resolver *nodeCVEResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "CreatedAt")
-	return timestamp(resolver.data.GetCveBaseInfo().GetCreatedAt())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetCreatedAt())
 }
 
 // CVE name of the node CVE
@@ -429,7 +430,7 @@ func (resolver *nodeCVEResolver) CVE(_ context.Context) string {
 // LastModified is the time this node CVE was last modified in the system
 func (resolver *nodeCVEResolver) LastModified(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "LastModified")
-	return timestamp(resolver.data.GetCveBaseInfo().GetLastModified())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetLastModified())
 }
 
 // Link to the node CVE
@@ -441,7 +442,7 @@ func (resolver *nodeCVEResolver) Link(_ context.Context) string {
 // PublishedOn is date and time when this node CVE was first published in the cve feeds
 func (resolver *nodeCVEResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "PublishedOn")
-	return timestamp(resolver.data.GetCveBaseInfo().GetPublishedOn())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetCveBaseInfo().GetPublishedOn())
 }
 
 // ScoreVersion of the node CVE
@@ -459,13 +460,13 @@ func (resolver *nodeCVEResolver) Summary(_ context.Context) string {
 // SuppressActivation returns the snooze start timestamp of the node CVE
 func (resolver *nodeCVEResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "SuppressActivation")
-	return timestamp(resolver.data.GetSnoozeStart())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeStart())
 }
 
 // SuppressExpiry returns the snooze expiration timestamp of the node CVE
 func (resolver *nodeCVEResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "SuppressExpiry")
-	return timestamp(resolver.data.GetSnoozeExpiry())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeExpiry())
 }
 
 // Suppressed returns true if the node CVE is snoozed

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -426,7 +427,7 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 		return nil, errors.New("multiple images matched for last scanned image component query")
 	}
 
-	return timestamp(images[0].GetScan().GetScanTime())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
 }
 
 // Location returns the location of the component.
