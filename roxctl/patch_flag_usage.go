@@ -1,25 +1,21 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func processFlag(flag *pflag.Flag) {
 	if flag.Value.Type() == "bool" && flag.DefValue == "false" && flag.Name != "help" {
-		const defaultFalseSuffix = " (default false)"
-		if !strings.HasSuffix(flag.Usage, defaultFalseSuffix) {
-			flag.Usage += defaultFalseSuffix
-		}
+		flag.Usage += " (default false)"
 	}
 }
 
 func processCommandFlags(command *cobra.Command) {
-	// LocalFlags() calls mergePersistentFlags() so PersistentFlags are merged.
-	_ = command.LocalFlags()
-	command.Flags().VisitAll(func(flag *pflag.Flag) {
+	// LocalFlags() calls mergePersistentFlags() so PersistentFlags are merged
+	// to Flags(), but returns only local flags, so PersistentFlags are not
+	// revisited on every command.
+	command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
 		processFlag(flag)
 	})
 }
