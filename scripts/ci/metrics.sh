@@ -183,7 +183,7 @@ LIMIT
         body='{"blocks":[
             {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
             {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": ("`Fail rate %` *Suite*")},
+                {"type": "mrkdwn", "text": ("`Rate %` *Suite*")},
                 {"type": "mrkdwn", "text": "*Case*"}
             ]},
             (.[] | {"type": "section", "fields": [
