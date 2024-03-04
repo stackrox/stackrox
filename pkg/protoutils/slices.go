@@ -1,7 +1,8 @@
 package protoutils
 
 import (
-	"github.com/stackrox/rox/pkt/protocompat"
+	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // SliceContains returns whether the given slice of proto objects contains the given proto object.
