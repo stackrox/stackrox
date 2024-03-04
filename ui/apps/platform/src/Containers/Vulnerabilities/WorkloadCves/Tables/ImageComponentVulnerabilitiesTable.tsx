@@ -10,9 +10,9 @@ import {
     imageMetadataContextFragment,
     sortTableData,
 } from './table.utils';
-import FixedByVersionTd from '../components/FixedByVersionTd';
-import DockerfileLayerTd from '../components/DockerfileLayerTd';
-import ComponentLocationTd from '../components/ComponentLocationTd';
+import FixedByVersion from '../components/FixedByVersion';
+import DockerfileLayer from '../components/DockerfileLayer';
+import ComponentLocation from '../components/ComponentLocation';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
@@ -92,16 +92,16 @@ function ImageComponentVulnerabilitiesTable({
                             <Td>{name}</Td>
                             <Td>{version}</Td>
                             <Td modifier="nowrap">
-                                <FixedByVersionTd fixedByVersion={fixedByVersion} />
+                                <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
                             <Td>{source}</Td>
                             <Td>
-                                <ComponentLocationTd location={location} source={source} />
+                                <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
                         <Tr>
                             <Td colSpan={5} className="pf-u-pt-0">
-                                <DockerfileLayerTd layer={layer} />
+                                <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>
                     </Tbody>

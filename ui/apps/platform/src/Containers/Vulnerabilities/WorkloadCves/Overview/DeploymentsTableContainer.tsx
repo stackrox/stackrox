@@ -7,13 +7,14 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import TableErrorComponent from 'Components/TableErrorComponent';
+
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
-import TableErrorComponent from '../components/TableErrorComponent';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
-import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
-import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
+import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../../utils/sortUtils';
+import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../../types';
 
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;

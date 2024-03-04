@@ -14,15 +14,17 @@ import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
-import { getEntityPagePath } from 'Containers/Vulnerabilities/WorkloadCves/searchUtils';
-import { VulnerabilitySeverityLabel } from 'Containers/Vulnerabilities/WorkloadCves/types';
-import {
-    CVEListQueryResult,
-    cveListQuery,
-} from 'Containers/Vulnerabilities/WorkloadCves/Tables/CVEsTable';
 import { SetResult } from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
+import {
+    VulnerabilityExceptionScope,
+    VulnerabilityState,
+} from 'services/VulnerabilityExceptionService';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import TableErrorComponent from 'Components/TableErrorComponent';
+
 import {
     CVEsDefaultSort,
     aggregateByCVSS,
@@ -31,20 +33,15 @@ import {
     defaultCVESortFields,
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
-} from 'Containers/Vulnerabilities/WorkloadCves/sortUtils';
-import {
-    VulnerabilityExceptionScope,
-    VulnerabilityState,
-} from 'services/VulnerabilityExceptionService';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getImageScopeSearchValue } from 'Containers/Vulnerabilities/ExceptionManagement/utils';
+} from '../../utils/sortUtils';
+import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
+import { VulnerabilitySeverityLabel } from '../../types';
+import { getEntityPagePath } from '../../utils/searchUtils';
+import SeverityCountLabels from '../../components/SeverityCountLabels';
+import CvssFormatted from '../../components/CvssFormatted';
+import DateDistance from '../../components/DateDistance';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
-// @TODO: Move these files up to a common directory and move the types used in these files as well
-import TableErrorComponent from 'Containers/Vulnerabilities/WorkloadCves/components/TableErrorComponent';
-import SeverityCountLabels from '../../WorkloadCves/components/SeverityCountLabels';
-import CvssTd from '../../WorkloadCves/components/CvssTd';
-import DateDistanceTd from '../../WorkloadCves/components/DatePhraseTd';
+import { getImageScopeSearchValue } from '../utils';
 
 type RequestCVEsTableProps = {
     cves: string[];
@@ -207,7 +204,7 @@ function RequestCVEsTable({
                                                 />
                                             </Td>
                                             <Td dataLabel="CVSS">
-                                                <CvssTd
+                                                <CvssFormatted
                                                     cvss={topCVSS}
                                                     scoreVersion={
                                                         scoreVersions.length > 0
@@ -221,7 +218,7 @@ function RequestCVEsTable({
                                                 affectedImageCount
                                             )}`}</Td>
                                             <Td dataLabel="First discovered">
-                                                <DateDistanceTd date={firstDiscoveredInSystem} />
+                                                <DateDistance date={firstDiscoveredInSystem} />
                                             </Td>
                                         </Tr>
                                         <Tr isExpanded={isExpanded}>

@@ -1,11 +1,11 @@
 import React from 'react';
 
-export type CvssTdProps = {
+export type CvssFormattedProps = {
     cvss: number;
     scoreVersion?: string;
 };
 
-function CvssTd({ cvss, scoreVersion }: CvssTdProps) {
+function CvssFormatted({ cvss, scoreVersion }: CvssFormattedProps) {
     return (
         <>
             {cvss.toFixed(1)} {scoreVersion ? `(${scoreVersion})` : null}
@@ -13,4 +13,4 @@ function CvssTd({ cvss, scoreVersion }: CvssTdProps) {
     );
 }
 
-export default CvssTd;
+export default CvssFormatted;

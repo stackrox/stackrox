@@ -36,8 +36,9 @@ import {
 import PageTitle from 'Components/PageTitle';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import TableErrorComponent from 'Components/TableErrorComponent';
+
 import RequestCVEsTable from './components/RequestCVEsTable';
-import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
 import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
 import RequestDenialButtonModal from './components/RequestDenialButtonModal';

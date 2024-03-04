@@ -3,29 +3,30 @@ import { useQuery } from '@apollo/client';
 import { Bullseye, Divider, DropdownItem, Spinner, ToolbarItem } from '@patternfly/react-core';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import TableErrorComponent from 'Components/TableErrorComponent';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
-import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
+import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
-} from '../searchUtils';
-import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
+} from '../../utils/searchUtils';
+import { defaultCVESortFields, CVEsDefaultSort } from '../../utils/sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
-} from '../components/ExceptionRequestModal/ExceptionRequestModal';
-import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
-import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
+} from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
+import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;

@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
 
-import { getEntityPagePath } from '../searchUtils';
+import { getEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
-export type ImageNameTdProps = {
+export type ImageNameLinkProps = {
     name: {
         remote: string;
         registry: string;
@@ -16,7 +16,7 @@ export type ImageNameTdProps = {
     children?: React.ReactNode;
 };
 
-function ImageNameTd({ name, id, children }: ImageNameTdProps) {
+function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
 
@@ -68,4 +68,4 @@ function ImageNameTd({ name, id, children }: ImageNameTdProps) {
     );
 }
 
-export default ImageNameTd;
+export default ImageNameLink;

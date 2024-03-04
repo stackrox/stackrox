@@ -24,18 +24,18 @@ import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-
 import NotFoundMessage from 'Components/NotFoundMessage';
+import TableErrorComponent from 'Components/TableErrorComponent';
+
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
+} from '../../searchOptions';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
-import TableErrorComponent from '../components/TableErrorComponent';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
@@ -47,7 +47,7 @@ import {
     getHiddenStatuses,
     getVulnStateScopedQueryString,
     getStatusesForExceptionCount,
-} from '../searchUtils';
+} from '../../utils/searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
