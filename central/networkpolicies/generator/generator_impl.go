@@ -9,7 +9,6 @@ import (
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
-	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -17,13 +16,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
-	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -107,7 +103,7 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 	}
 }
 
-func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *time.Time, includePorts bool) (map[networkgraph.Entity]*node, error) {
+func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *time.Time, includePorts bool) ([]*node, error) {
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -138,41 +134,51 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	relevantDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
-	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
+	// relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
 
+	var graph []*node
+	for _, deployment := range relevantDeployments {
+		// check if the baseline was cut
+		node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts)
+		if err != nil {
+			continue
+		}
+		graph = append(graph, node)
+	}
+	return graph, nil
 	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
 	// Note that this will never retrieve listen endpoint "flows".
 	// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
-	flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
-		dstEnt := flowProps.GetDstEntity()
-		return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
-	}, since)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
-	}
-
-	networkTree := tree.NewMultiNetworkTree(
-		g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
-		g.networkTreeMgr.GetDefaultNetworkTree(ctx),
-	)
-
-	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
-	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
-	utils.Should(err)
-	flows = aggr.Aggregate(flows)
-	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments),
-		func(id string) *storage.NetworkEntityInfo {
-			if networkTree == nil {
-				return nil
-			}
-			return networkTree.Get(id)
-		},
-	)
-
-	// Aggregate all external flows by node names to control the number of external nodes.
-	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
-	return g.buildGraph(ctx, clusterID, relevantDeployments, flows, missingInfoFlows, includePorts)
+	//flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
+	//	dstEnt := flowProps.GetDstEntity()
+	//	return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
+	//}, since)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
+	//}
+	//
+	//networkTree := tree.NewMultiNetworkTree(
+	//	g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
+	//	g.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	//)
+	//
+	//// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
+	//aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	//utils.Should(err)
+	//flows = aggr.Aggregate(flows)
+	//flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments),
+	//	func(id string) *storage.NetworkEntityInfo {
+	//		if networkTree == nil {
+	//			return nil
+	//		}
+	//		return networkTree.Get(id)
+	//	},
+	//)
+	//
+	//// Aggregate all external flows by node names to control the number of external nodes.
+	//flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	//missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+	//return g.buildGraph(ctx, clusterID, relevantDeployments, flows, missingInfoFlows, includePorts)
 }
 
 func (g *generator) populateNode(elevatedCtx context.Context, id string, entityType storage.NetworkEntityInfo_Type) *node {
@@ -240,7 +246,7 @@ func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[
 	return policy
 }
 
-func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (g *generator) generatePolicies(graph []*node, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	ingressPolicies, egressPolicies := groupNetworkPolicies(existingPolicies)
 
 	var generatedPolicies []*storage.NetworkPolicy
