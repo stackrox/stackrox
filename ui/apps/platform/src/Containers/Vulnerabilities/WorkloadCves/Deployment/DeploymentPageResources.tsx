@@ -14,8 +14,9 @@ import { Pagination as PaginationParam } from 'services/types';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import TableErrorComponent from '../components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+
+import { defaultImageSortFields, imagesDefaultSort } from '../../utils/sortUtils';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
 
 export type DeploymentPageResourcesProps = {

@@ -4,9 +4,9 @@ import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-tab
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import DateDistanceTd from '../components/DatePhraseTd';
+import DateDistance from '../../components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
-import { getEntityPagePath } from '../searchUtils';
+import { getEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export type DeploymentResources = {
@@ -68,7 +68,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                             <Td>{clusterName}</Td>
                             <Td>{namespace}</Td>
                             <Td>
-                                <DateDistanceTd date={created} />
+                                <DateDistance date={created} />
                             </Td>
                         </Tr>
                     </Tbody>

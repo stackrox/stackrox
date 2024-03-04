@@ -1,5 +1,6 @@
-import { VulnerabilitySeverity } from 'types/cve.proto';
 import * as yup from 'yup';
+
+import { VulnerabilitySeverity } from 'types/cve.proto';
 
 const vulnerabilitySeverityLabels = ['Critical', 'Important', 'Moderate', 'Low'] as const;
 export type VulnerabilitySeverityLabel = (typeof vulnerabilitySeverityLabels)[number];

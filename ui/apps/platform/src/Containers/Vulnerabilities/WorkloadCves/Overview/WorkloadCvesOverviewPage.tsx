@@ -35,8 +35,8 @@ import {
     VulnMgmtLocalStorage,
     entityTabValues,
     isVulnMgmtLocalStorage,
-} from '../types';
-import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../searchUtils';
+} from '../../types';
+import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';

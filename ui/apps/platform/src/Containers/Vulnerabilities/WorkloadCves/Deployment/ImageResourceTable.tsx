@@ -3,9 +3,9 @@ import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-tab
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import DateDistanceTd from '../components/DatePhraseTd';
+import DateDistance from '../../components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
-import ImageNameTd from '../components/ImageNameTd';
+import ImageNameLink from '../components/ImageNameLink';
 
 export type ImageResources = {
     imageCount: number;
@@ -65,12 +65,12 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                         }}
                     >
                         <Tr>
-                            <Td>{name ? <ImageNameTd id={id} name={name} /> : 'NAME UNKNOWN'}</Td>
+                            <Td>{name ? <ImageNameLink id={id} name={name} /> : 'NAME UNKNOWN'}</Td>
                             {/* Given that this is in the context of a deployment, when would `deploymentCount` ever be less than zero? */}
                             <Td>{deploymentCount > 0 ? 'Active' : 'Inactive'}</Td>
                             <Td>{operatingSystem}</Td>
                             <Td>
-                                <DateDistanceTd date={scanTime} />
+                                <DateDistance date={scanTime} />
                             </Td>
                         </Tr>
                     </Tbody>

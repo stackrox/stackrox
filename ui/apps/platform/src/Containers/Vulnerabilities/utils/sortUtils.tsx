@@ -1,7 +1,7 @@
 import sortBy from 'lodash/sortBy';
 import { ensureExhaustive } from 'utils/type.utils';
 import { SortAggregate } from 'types/table';
-import { EntityTab } from './types';
+import { EntityTab } from '../types';
 
 export const defaultImageSortFields = [
     'Image',

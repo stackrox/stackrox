@@ -4,12 +4,12 @@ import { InfoCircleIcon } from '@patternfly/react-icons';
 
 import { SourceType } from '../Tables/table.utils';
 
-export type ComponentLocationTdProps = {
+export type ComponentLocationProps = {
     location: string;
     source: SourceType;
 };
 
-function ComponentLocationTd({ location, source }: ComponentLocationTdProps) {
+function ComponentLocation({ location, source }: ComponentLocationProps) {
     return (
         <Flex spaceItems={{ default: 'spaceItemsXs' }} alignItems={{ default: 'alignItemsCenter' }}>
             <Truncate content={location || 'N/A'} position="middle" />
@@ -22,4 +22,4 @@ function ComponentLocationTd({ location, source }: ComponentLocationTdProps) {
     );
 }
 
-export default ComponentLocationTd;
+export default ComponentLocation;

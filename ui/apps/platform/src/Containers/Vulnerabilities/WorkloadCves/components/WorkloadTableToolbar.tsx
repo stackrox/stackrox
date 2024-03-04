@@ -1,20 +1,21 @@
 import React from 'react';
 import noop from 'lodash/noop';
 import { Toolbar, ToolbarGroup, ToolbarContent, Flex } from '@patternfly/react-core';
-
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { Globe } from 'react-feather';
+
 import SearchFilterChips, { SearchFilterChipsProps } from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { SearchOption, SearchOptionValue } from 'Containers/Vulnerabilities/searchOptions';
 import useAnalytics, {
     WORKLOAD_CVE_FILTER_APPLIED,
     isSearchCategoryWithFilter,
     isSearchCategoryWithoutFilter,
 } from 'hooks/useAnalytics';
 import { searchValueAsArray } from 'utils/searchUtils';
-import { DefaultFilters } from '../types';
+
+import { SearchOption, SearchOptionValue } from '../../searchOptions';
+import { DefaultFilters } from '../../types';
 import FilterAutocomplete, {
     FilterAutocompleteSelectProps,
 } from '../../components/FilterAutocomplete';

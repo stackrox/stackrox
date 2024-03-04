@@ -5,7 +5,7 @@ import { gql } from '@apollo/client';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
-import ImageNameTd from '../components/ImageNameTd';
+import ImageNameLink from '../components/ImageNameLink';
 import {
     imageMetadataContextFragment,
     ImageMetadataContext,
@@ -13,10 +13,10 @@ import {
     sortTableData,
     flattenDeploymentComponentVulns,
 } from './table.utils';
-import FixedByVersionTd from '../components/FixedByVersionTd';
-import DockerfileLayerTd from '../components/DockerfileLayerTd';
-import ComponentLocationTd from '../components/ComponentLocationTd';
-import CvssTd from '../components/CvssTd';
+import FixedByVersion from '../components/FixedByVersion';
+import DockerfileLayer from '../components/DockerfileLayer';
+import ComponentLocation from '../components/ComponentLocation';
+import CvssFormatted from '../../components/CvssFormatted';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export { imageMetadataContextFragment };
@@ -117,7 +117,7 @@ function DeploymentComponentVulnerabilitiesTable({
                                         cve={cve}
                                         vulnerabilityState={vulnerabilityState}
                                     >
-                                        <ImageNameTd name={image.name} id={image.id} />
+                                        <ImageNameLink name={image.name} id={image.id} />
                                     </PendingExceptionLabelLayout>
                                 ) : (
                                     'Image name not available'
@@ -127,21 +127,21 @@ function DeploymentComponentVulnerabilitiesTable({
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
                             <Td modifier="nowrap">
-                                <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
+                                <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td>{name}</Td>
                             <Td>{version}</Td>
                             <Td modifier="nowrap">
-                                <FixedByVersionTd fixedByVersion={fixedByVersion} />
+                                <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
                             <Td>{source}</Td>
                             <Td>
-                                <ComponentLocationTd location={location} source={source} />
+                                <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
                         <Tr>
                             <Td colSpan={8} className="pf-u-pt-0">
-                                <DockerfileLayerTd layer={layer} />
+                                <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>
                     </Tbody>

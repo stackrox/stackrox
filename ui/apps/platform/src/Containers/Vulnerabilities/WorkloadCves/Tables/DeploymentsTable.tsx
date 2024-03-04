@@ -6,13 +6,13 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import { Truncate } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
-import { getEntityPagePath } from '../searchUtils';
-import SeverityCountLabels from '../components/SeverityCountLabels';
+import { getEntityPagePath } from '../../utils/searchUtils';
+import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistanceTd from '../components/DatePhraseTd';
+import DateDistance from '../../components/DateDistance';
 import TooltipTh from '../components/TooltipTh';
-import { VulnerabilitySeverityLabel } from '../types';
+import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export const deploymentListQuery = gql`
@@ -138,7 +138,7 @@ function DeploymentsTable({
                                     </>
                                 </Td>
                                 <Td>
-                                    <DateDistanceTd date={created} />
+                                    <DateDistance date={created} />
                                 </Td>
                             </Tr>
                         </Tbody>

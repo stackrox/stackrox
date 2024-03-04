@@ -3,12 +3,12 @@ import { Tooltip } from '@patternfly/react-core';
 
 import { getDateTime, getDistanceStrict, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
-export type DateDistanceTdProps = {
+export type DateDistanceProps = {
     date: string | number | Date | null | undefined;
     asPhrase?: boolean;
 };
 
-function DateDistanceTd({ date, asPhrase = true }: DateDistanceTdProps) {
+function DateDistance({ date, asPhrase = true }: DateDistanceProps) {
     if (!date) {
         return null;
     }
@@ -23,4 +23,4 @@ function DateDistanceTd({ date, asPhrase = true }: DateDistanceTdProps) {
     );
 }
 
-export default DateDistanceTd;
+export default DateDistance;

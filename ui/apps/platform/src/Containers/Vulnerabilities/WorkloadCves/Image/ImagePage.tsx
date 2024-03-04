@@ -30,8 +30,8 @@ import useURLPagination from 'hooks/useURLPagination';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
-import { detailsTabValues } from '../types';
-import { getOverviewCvesPath } from '../searchUtils';
+import { detailsTabValues } from '../../types';
+import { getOverviewCvesPath } from '../utils/searchUtils';
 import ImageDetailBadges, {
     ImageDetails,
     imageDetailsFragment,

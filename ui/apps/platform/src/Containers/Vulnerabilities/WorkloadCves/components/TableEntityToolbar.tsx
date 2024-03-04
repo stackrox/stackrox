@@ -3,6 +3,7 @@ import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patt
 
 import { SortOption } from 'types/table';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+
 import {
     CLUSTER_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
@@ -12,11 +13,11 @@ import {
     IMAGE_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
     SearchOption,
-} from 'Containers/Vulnerabilities/searchOptions';
+} from '../../searchOptions';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import { DynamicTableLabel } from './DynamicIcon';
 import EntityTypeToggleGroup, { EntityCounts } from './EntityTypeToggleGroup';
-import { DefaultFilters, EntityTab } from '../types';
+import { DefaultFilters, EntityTab } from '../../types';
 
 type TableEntityToolbarProps = {
     defaultFilters: DefaultFilters;

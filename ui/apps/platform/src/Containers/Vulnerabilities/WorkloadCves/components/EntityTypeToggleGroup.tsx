@@ -5,8 +5,8 @@ import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { NonEmptyArray } from 'utils/type.utils';
 import { SortOption } from 'types/table';
-import { entityTabValues, EntityTab } from '../types';
-import { getDefaultSortOption } from '../sortUtils';
+import { entityTabValues, EntityTab } from '../../types';
+import { getDefaultSortOption } from '../../utils/sortUtils';
 
 export type EntityCounts = {
     imageCount: number;

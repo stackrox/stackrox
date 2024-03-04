@@ -21,6 +21,7 @@ import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionSer
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import {
     RequestExpires,
     RequestIDLink,
@@ -31,7 +32,6 @@ import {
     RequestScope,
 } from './components/ExceptionRequestTableCells';
 import FilterAutocompleteSelect from '../components/FilterAutocomplete';
-import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import {
     SearchOption,
     REQUEST_NAME_SEARCH_OPTION,
