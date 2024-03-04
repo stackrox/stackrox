@@ -7,6 +7,7 @@ import {
     visitExceptionManagement,
 } from './ExceptionManagement.helpers';
 import { approveRequest } from './approveRequestFlow.test';
+import { selectors } from './ExceptionManagement.selectors';
 
 const comment = 'Defer me';
 const expiry = 'When all CVEs are fixable';
@@ -88,7 +89,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
         visitExceptionManagement();
-        cy.get('button[role="tab"]:contains("Approved deferrals")').click();
+        cy.get(selectors.approvedDeferralsTab).click();
         cy.get(
             'table tbody div.pf-c-empty-state__content h2:contains("No approved deferral requests")'
         ).should('exist');
@@ -108,7 +109,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
         visitExceptionManagement();
-        cy.get('button[role="tab"]:contains("Approved false positives")').click();
+        cy.get(selectors.approvedFalsePositivesTab).click();
         cy.get(
             'table tbody div.pf-c-empty-state__content h2:contains("No approved false positive requests")'
         ).should('exist');
