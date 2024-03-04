@@ -29,7 +29,7 @@ class CloudSourcesTest extends BaseSpecification {
         "verify we have discovered clusters"
         // The initial sync may take a bit since we are connecting to the "Red Hat1" OCM organization which hosts
         // a lot of clusters.
-        withRetry(10, 30) {
+        withRetry(30, 10) {
             def count = DiscoveredClustersService.countDiscoveredClusters()
             assert count > 0
         }
