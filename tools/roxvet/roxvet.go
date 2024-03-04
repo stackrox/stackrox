@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/gogoprotofunctions"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/importpackagenames"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/migrationreferencedschema"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
@@ -31,6 +32,7 @@ func main() {
 		uncheckedifassign.Analyzer,
 		protoclone.Analyzer,
 		protoptrs.Analyzer,
+		gogoprotofunctions.Analyzer,
 		unusedroxctlargs.Analyzer,
 		filepathwalk.Analyzer,
 		validateimports.Analyzer,
