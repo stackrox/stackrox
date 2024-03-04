@@ -111,7 +111,7 @@ class DeploymentCheck extends BaseSpecification {
         "builder is prepared"
         def secondDeployment = "de2"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
-        def multiDeployments = createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK) +
+        def multiDeployments = createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK) + "\n---\n" +
                 createDeploymentYaml(secondDeployment, DEPLOYMENT_CHECK)
         builder.setYaml(multiDeployments)
         builder.setNamespace(DEPLOYMENT_CHECK)
