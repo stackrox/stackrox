@@ -13,10 +13,10 @@ var (
 	TimestampPtrType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
 
 	// TimestampType is the type representing a proto timestamp.
-	var TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
+	TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
 
 	// TimestampPointerType is the type representing a proto timestamp.
-	var TimestampPointerType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
+	TimestampPointerType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
 )
 
 // TimestampNow returns a protobuf timestamp set to the current time.

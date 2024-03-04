@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -349,12 +350,12 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 							{
 								Type:               "Processing",
 								Status:             "False",
-								LastTransitionTime: &types.Timestamp{Seconds: lastUpdatedTime.GetSeconds() - 10},
+								LastTransitionTime: protocompat.GetProtoTimestampFromSeconds(lastUpdatedTime.Unix() - 10),
 							},
 							{
 								Type:               "Ready",
 								Status:             "True",
-								LastTransitionTime: lastUpdatedTime,
+								LastTransitionTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 							},
 						},
 					},
@@ -464,12 +465,12 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 								{
 									Type:               "Ready",
 									Status:             "True",
-									LastTransitionTime: lastUpdatedTime,
+									LastTransitionTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 								},
 								{
 									Type:               "Processing",
 									Status:             "False",
-									LastTransitionTime: &types.Timestamp{Seconds: lastUpdatedTime.GetSeconds() - 10},
+									LastTransitionTime: protocompat.GetProtoTimestampFromSeconds(lastUpdatedTime.Unix() - 10),
 								},
 							},
 						},
@@ -552,7 +553,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 				SuiteStatus: &apiV2.ClusterScanStatus_SuiteStatus{
 					Phase:              "DONE",
 					Result:             "NON-COMPLIANT",
-					LastTransitionTime: lastUpdatedTime,
+					LastTransitionTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 				},
 			},
 		},
