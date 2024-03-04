@@ -9288,13 +9288,7 @@
                 "id": 12,
                 "name": "executables",
                 "type": "Executable",
-                "is_repeated": true,
-                "options": [
-                  {
-                    "name": "(gogoproto.jsontag)",
-                    "value": "-"
-                  }
-                ]
+                "is_repeated": true
               }
             ],
             "messages": [

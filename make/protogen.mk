@@ -41,7 +41,7 @@ endif
 $(call go-tool, PROTOC_GEN_GO_BIN, github.com/gogo/protobuf/protoc-gen-gofast)
 $(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger, tools/proto)
 $(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway, tools/proto)
-
+$(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
 
 ##############
 ## Protobuf ##
@@ -175,6 +175,13 @@ printprotos:
 $(GENERATED_DOC_PATH):
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(GENERATED_DOC_PATH)
+
+inject-proto-tags: $(PROTOC_GO_INJECT_TAG_BIN)
+	@echo "+ $@"
+	@# protoc-go-inject-tag uses Golang Glob and Glob does not support globstar ("**").
+	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*.pb.go"
+	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*.pb.go"
+	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*/*.pb.go"
 
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
