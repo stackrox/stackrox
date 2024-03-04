@@ -70,6 +70,7 @@ validate_upgrade() {
 
     # temp, grab a backup so I can use it as a new start
     info "Grabbing a backup to use it later"
+    mkdir -p qa-tests-backend/build/test-results
     "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" -p "$ROX_PASSWORD" central backup --output qa-tests-backend/build/test-results/
 
     info "Validating the upgrade with upgrade tests: $stage_description"
