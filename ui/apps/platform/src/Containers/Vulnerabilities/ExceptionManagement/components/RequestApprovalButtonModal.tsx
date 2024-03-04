@@ -12,7 +12,7 @@ import * as yup from 'yup';
 import { useFormik } from 'formik';
 import isEqual from 'lodash/isEqual';
 
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import {
     VulnerabilityException,
     approveVulnerabilityException,
@@ -37,7 +37,7 @@ const validationSchema = yup.object().shape({
 function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalButtonModalProps) {
     const approveRequestMutation = useRestMutation(approveVulnerabilityException);
 
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const formik = useFormik({

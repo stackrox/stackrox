@@ -21,7 +21,7 @@ import {
     isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
 import { getDate, getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import { getQueryString } from 'utils/queryStringUtils';
 
 export type RequestContext = 'CURRENT' | 'PENDING_UPDATE';
@@ -196,7 +196,7 @@ export type RequestCommentsProps = {
 };
 
 export function RequestComments({ comments }: RequestCommentsProps) {
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
 
     return (
         <>

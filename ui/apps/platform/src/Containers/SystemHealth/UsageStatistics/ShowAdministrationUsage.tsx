@@ -1,10 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Button, ButtonVariant, Modal, ModalBoxBody, ModalVariant } from '@patternfly/react-core';
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import AdministrationUsageForm from './AdministrationUsageForm';
 
 function ShowAdministrationUsage(): ReactElement {
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
 
     return (
         <>

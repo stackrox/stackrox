@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 import { deleteReportConfiguration } from 'services/ReportsService';
 import { Empty } from 'services/types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -44,7 +44,7 @@ export function isErrorDeleteResult(deleteResult: DeleteResult): deleteResult is
 }
 
 function useDeleteModal({ onCompleted }: UseDeleteModalProps): UseDeleteModalResult {
-    const { isModalOpen: isDeleteModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isDeleteModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
     const [reportIdsToDelete, setReportIdsToDelete] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteResults, setDeleteResults] = useState<DeleteResult[] | null>(null);

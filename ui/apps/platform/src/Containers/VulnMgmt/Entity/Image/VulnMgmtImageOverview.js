@@ -16,7 +16,7 @@ import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
 import useTabs from 'hooks/patternfly/useTabs';
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 
 import AffectedComponentsModal from '../../RiskAcceptance/AffectedComponents/AffectedComponentsModal';
 import DeferredCVEs from '../../RiskAcceptance/DeferredCVEs';
@@ -51,7 +51,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     });
     const [selectedCveName, setSelectedCveName] = useState('');
     const [selectedComponents, setSelectedComponents] = useState([]);
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };

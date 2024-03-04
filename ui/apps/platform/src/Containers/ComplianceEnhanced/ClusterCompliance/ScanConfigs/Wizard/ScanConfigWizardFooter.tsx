@@ -6,7 +6,7 @@ import {
     WizardFooter,
     WizardStep,
 } from '@patternfly/react-core';
-import useModal from 'hooks/useModal';
+import useToggle from 'hooks/useToggle';
 
 export type ScanConfigWizardFooterProps = {
     wizardSteps: WizardStep[];
@@ -23,7 +23,7 @@ function ScanConfigWizardFooter({
     isSaving,
     proceedToNextStepIfValid,
 }: ScanConfigWizardFooterProps) {
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const { isOn: isModalOpen, toggleOn: openModal, toggleOff: closeModal } = useToggle();
     const firstStepId = wizardSteps[0].id;
     const lastStepId = wizardSteps[wizardSteps.length - 1].id;
 
