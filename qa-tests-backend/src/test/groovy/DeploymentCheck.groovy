@@ -82,7 +82,7 @@ class DeploymentCheck extends BaseSpecification {
         given:
         "builder is prepared"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
-        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK))
+        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK))
         builder.setNamespace(DEPLOYMENT_CHECK)
         builder.setCluster(clusterId)
         def req = builder.build()
@@ -109,8 +109,11 @@ class DeploymentCheck extends BaseSpecification {
     def "Test Deployment Check - Multiple Deployments"() {
         given:
         "builder is prepared"
+        def secondDeployment = "de2"
         def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
-        builder.setYaml(createMultiDeploymentYaml(DEPLOYMENT_CHECK))
+        def multiDeployments = createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK) +
+                createDeploymentYaml(secondDeployment, DEPLOYMENT_CHECK)
+        builder.setYaml(multiDeployments)
         builder.setNamespace(DEPLOYMENT_CHECK)
         builder.setCluster(clusterId)
         def req = builder.build()
@@ -126,10 +129,10 @@ class DeploymentCheck extends BaseSpecification {
         assert res
         assert res.getRemarksList().size() == 2
         assert !res.getRemarksList().findAll { it.getName() == DEPLOYMENT_CHECK }.isEmpty()
-        assert !res.getRemarksList().findAll { it.getName() == "de2" }.isEmpty()
+        assert !res.getRemarksList().findAll { it.getName() == secondDeployment }.isEmpty()
     }
 
-    static String createDeploymentYaml(String deploymentName) {
+    static String createDeploymentYaml(String deploymentName, String namespace) {
         """
 apiVersion: apps/v1
 kind: Deployment
@@ -154,59 +157,6 @@ spec:
         image: nginx:latest
         ports:
         - containerPort: 80
-        """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName)
-    }
-
-    static String createMultiDeploymentYaml(String deploymentName) {
-        """
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: %s
-  namespace: %s
-  labels:
-    app: %s
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: %s
-  template:
-    metadata:
-      labels:
-        app: %s
-    spec:
-      serviceAccountName: check-deployment-sa
-      containers:
-      - name: nginx
-        image: nginx:latest
-        ports:
-        - containerPort: 80
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: de2
-  namespace: %s
-  labels:
-    app: %s
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: %s
-  template:
-    metadata:
-      labels:
-        app: %s
-    spec:
-      serviceAccountName: check-deployment-sa
-      containers:
-      - name: ubuntu
-        image: ubuntu:latest
-        ports:
-        - containerPort: 80
-        """.formatted(deploymentName, deploymentName, deploymentName, deploymentName, deploymentName, deploymentName,
-                deploymentName, deploymentName, deploymentName)
+        """.formatted(deploymentName, namespace, deploymentName, deploymentName, deploymentName)
     }
 }
