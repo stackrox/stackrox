@@ -68,6 +68,10 @@ validate_upgrade() {
     rm -f FAIL
     remove_qa_test_results
 
+    # temp, grab a backup so I can use it as a new start
+    info "Grabbing a backup to use it later"
+    "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" central backup --output qa-tests-backend/build/test-results/
+
     info "Validating the upgrade with upgrade tests: $stage_description"
 
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
