@@ -18,7 +18,7 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import useAnalytics, { DOWNLOAD_INIT_BUNDLE } from 'hooks/useAnalytics';
 import { generateClusterInitBundle } from 'services/ClustersService'; // ClusterInitBundle
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -95,7 +95,7 @@ function InitBundleForm(): ReactElement {
         validateOnMount: true, // disable Next when Name is empty
         validationSchema,
     });
-    const { isOpen, onToggle } = useSelectToggle();
+    const { isOn: isOpen, onToggle } = useToggle();
 
     function goBack() {
         history.goBack(); // to InputBundlesTable or NoClustersPage

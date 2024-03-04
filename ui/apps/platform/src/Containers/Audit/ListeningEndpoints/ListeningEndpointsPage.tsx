@@ -30,7 +30,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
 import useRestQuery from 'hooks/useRestQuery';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { fetchDeploymentsCount } from 'services/DeploymentsService';
 import { SearchFilter } from 'types/search';
@@ -101,8 +101,8 @@ function ListeningEndpointsPage() {
         perPage
     );
 
-    const entityToggle = useSelectToggle();
-    const autocompleteToggle = useSelectToggle();
+    const entityToggle = useToggle();
+    const autocompleteToggle = useToggle();
 
     const [areAllRowsExpanded, setAllRowsExpanded] = useState(false);
 
@@ -159,7 +159,7 @@ function ListeningEndpointsPage() {
                                     onToggle={entityToggle.onToggle}
                                     onSelect={onEntitySelect}
                                     selections={entity}
-                                    isOpen={entityToggle.isOpen}
+                                    isOpen={entityToggle.isOn}
                                     className="pf-u-flex-basis-0"
                                 >
                                     <SelectOption key="Deployment" value="Deployment">
@@ -179,7 +179,7 @@ function ListeningEndpointsPage() {
                                         onSelectAutocompleteValue(value);
                                     }}
                                     onToggle={autocompleteToggle.onToggle}
-                                    isOpen={autocompleteToggle.isOpen}
+                                    isOpen={autocompleteToggle.isOn}
                                     placeholderText={`Filter results by ${entity}`}
                                     variant="typeaheadmulti"
                                     isCreatable

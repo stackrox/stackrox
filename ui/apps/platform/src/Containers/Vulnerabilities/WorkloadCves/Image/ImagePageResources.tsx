@@ -13,7 +13,7 @@ import { Pagination as PaginationParam } from 'services/types';
 
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { deploymentsDefaultSort, defaultDeploymentSortFields } from '../sortUtils';
 import TableErrorComponent from '../components/TableErrorComponent';
 import DeploymentResourceTable, {
@@ -44,7 +44,7 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
         onSort: () => setPage(1),
     });
 
-    const deploymentTableToggle = useSelectToggle(true);
+    const deploymentTableToggle = useToggle(true);
 
     const { data, previousData, loading, error } = useQuery<
         { image: DeploymentResources | null },
@@ -89,7 +89,7 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
                     <ExpandableSection
                         toggleText={`Deployments (${deploymentCount})`}
                         onToggle={deploymentTableToggle.onToggle}
-                        isExpanded={deploymentTableToggle.isOpen}
+                        isExpanded={deploymentTableToggle.isOn}
                         style={
                             {
                                 '--pf-c-expandable-section__content--MarginTop':

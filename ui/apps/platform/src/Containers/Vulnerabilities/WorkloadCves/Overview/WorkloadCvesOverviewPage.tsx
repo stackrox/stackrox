@@ -20,7 +20,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
@@ -156,10 +156,10 @@ function WorkloadCvesOverviewPage() {
     }, []);
 
     const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
-    const watchedImagesModalToggle = useSelectToggle();
+    const watchedImagesModalToggle = useToggle();
 
     const [unwatchImageName, setUnwatchImageName] = useState('');
-    const unwatchImageModalToggle = useSelectToggle();
+    const unwatchImageModalToggle = useToggle();
 
     function onWatchedImagesChange() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
@@ -197,7 +197,7 @@ function WorkloadCvesOverviewPage() {
                             variant="secondary"
                             onClick={() => {
                                 setDefaultWatchedImageName('');
-                                watchedImagesModalToggle.openSelect();
+                                watchedImagesModalToggle.toggleOn();
                                 analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
                             }}
                         >
@@ -236,12 +236,12 @@ function WorkloadCvesOverviewPage() {
                                     vulnerabilityState={currentVulnerabilityState}
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
-                                        watchedImagesModalToggle.openSelect();
+                                        watchedImagesModalToggle.toggleOn();
                                         analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
                                     }}
                                     onUnwatchImage={(imageName) => {
                                         setUnwatchImageName(imageName);
-                                        unwatchImageModalToggle.openSelect();
+                                        unwatchImageModalToggle.toggleOn();
                                     }}
                                     onEntityTabChange={onEntityTabChange}
                                 />
@@ -261,19 +261,19 @@ function WorkloadCvesOverviewPage() {
             </PageSection>
             <WatchedImagesModal
                 defaultWatchedImageName={defaultWatchedImageName}
-                isOpen={watchedImagesModalToggle.isOpen}
+                isOpen={watchedImagesModalToggle.isOn}
                 onClose={() => {
                     setDefaultWatchedImageName('');
-                    watchedImagesModalToggle.closeSelect();
+                    watchedImagesModalToggle.toggleOff();
                 }}
                 onWatchedImagesChange={onWatchedImagesChange}
             />
             <UnwatchImageModal
                 unwatchImageName={unwatchImageName}
-                isOpen={unwatchImageModalToggle.isOpen}
+                isOpen={unwatchImageModalToggle.isOn}
                 onClose={() => {
                     setUnwatchImageName('');
-                    unwatchImageModalToggle.closeSelect();
+                    unwatchImageModalToggle.toggleOff();
                 }}
                 onWatchedImagesChange={onWatchedImagesChange}
             />

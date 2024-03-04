@@ -12,7 +12,7 @@ import { gql, useQuery } from '@apollo/client';
 import { Pagination as PaginationParam } from 'services/types';
 
 import useURLSort from 'hooks/useURLSort';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
 import TableErrorComponent from '../components/TableErrorComponent';
@@ -41,7 +41,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
         onSort: () => setPage(1),
     });
 
-    const imageTableToggle = useSelectToggle(true);
+    const imageTableToggle = useToggle(true);
 
     const { data, previousData, loading, error } = useQuery<
         { deployment: ImageResources | null },
@@ -86,7 +86,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                     <ExpandableSection
                         toggleText={`Images (${imageCount})`}
                         onToggle={imageTableToggle.onToggle}
-                        isExpanded={imageTableToggle.isOpen}
+                        isExpanded={imageTableToggle.isOn}
                         style={
                             {
                                 '--pf-c-expandable-section__content--MarginTop':

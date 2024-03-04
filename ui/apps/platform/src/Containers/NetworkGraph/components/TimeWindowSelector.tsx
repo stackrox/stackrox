@@ -2,7 +2,7 @@ import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
 import { timeWindows } from 'constants/timeWindows';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 
 type TimeWindowSelectorProps = {
     setActiveTimeWindow: (timeWindow) => void;
@@ -15,7 +15,7 @@ function TimeWindowSelector({
     activeTimeWindow,
     isDisabled,
 }: TimeWindowSelectorProps) {
-    const { closeSelect, isOpen, onToggle } = useSelectToggle();
+    const { toggleOff: closeSelect, isOn: isOpen, onToggle } = useToggle();
 
     function selectTimeWindow(_event, selection) {
         closeSelect();

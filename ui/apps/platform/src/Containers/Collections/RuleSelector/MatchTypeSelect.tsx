@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Select } from '@patternfly/react-core';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { ByLabelMatchType, ByNameMatchType, MatchType } from '../types';
 
 export type MatchTypeSelectProps<T extends MatchType> = {
@@ -16,7 +16,7 @@ function MatchTypeSelect<T extends MatchType>({
     children,
     isDisabled = false,
 }: MatchTypeSelectProps<T>) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
+    const { isOn: isOpen, onToggle, toggleOff: closeSelect } = useToggle();
 
     function onSelect(_, value) {
         onChange(value);

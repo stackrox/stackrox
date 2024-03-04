@@ -18,7 +18,7 @@ import { Collection, listCollections } from 'services/CollectionsService';
 import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import { useFormik } from 'formik';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
 import { ReportScope } from 'hooks/useFetchReport';
 
@@ -37,7 +37,7 @@ function CollectionSelection({
     setFieldValue,
     allowCreate,
 }: CollectionSelectionProps): ReactElement {
-    const { isOpen, onToggle } = useSelectToggle();
+    const { isOn: isOpen, onToggle } = useToggle();
     const { configError, setConfigError, onSubmit } = useCollectionFormSubmission({
         type: 'create',
     });

@@ -27,7 +27,7 @@ import { deleteCollection } from 'services/CollectionsService';
 import { CaretDownIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import PageTitle from 'Components/PageTitle';
@@ -80,18 +80,14 @@ function CollectionsFormPage({
     const { configError, setConfigError, onSubmit } = useCollectionFormSubmission(pageAction);
     const configErrorAlertElem = useRef<HTMLDivElement | null>(null);
 
-    const {
-        isOpen: menuIsOpen,
-        toggleSelect: toggleMenu,
-        closeSelect: closeMenu,
-    } = useSelectToggle();
+    const { isOn: menuIsOpen, toggle: toggleMenu, toggleOff: closeMenu } = useToggle();
 
     const {
-        isOpen: isDrawerOpen,
-        toggleSelect: toggleDrawer,
-        closeSelect: closeDrawer,
-        openSelect: openDrawer,
-    } = useSelectToggle(isXLargeScreen);
+        isOn: isDrawerOpen,
+        toggle: toggleDrawer,
+        toggleOff: closeDrawer,
+        toggleOn: openDrawer,
+    } = useToggle(isXLargeScreen);
 
     function onEditCollection(id: string) {
         history.push({

@@ -16,7 +16,7 @@ import {
     Select,
 } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { removeNullValues } from 'utils/removeNullValues';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
@@ -34,7 +34,7 @@ function DeploymentSelector({
     searchFilter,
     setSearchFilter,
 }: DeploymentSelectorProps) {
-    const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
+    const { isOn: isDeploymentOpen, toggle: toggleIsDeploymentOpen } = useToggle();
     const [input, setInput] = React.useState('');
 
     const handleTextInputChange = (value: string) => {

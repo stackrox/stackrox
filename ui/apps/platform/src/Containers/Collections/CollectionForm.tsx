@@ -20,7 +20,7 @@ import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useToggle from 'hooks/useToggle';
 import { Collection } from 'services/CollectionsService';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
 import { ensureExhaustive } from 'utils/type.utils';
@@ -218,9 +218,8 @@ function CollectionForm({
 }: CollectionFormProps): ReactElement {
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
-    const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
-    const { isOpen: isAttachmentSectionOpen, onToggle: attachmentSectionOnToggle } =
-        useSelectToggle(true);
+    const { isOn: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useToggle(true);
+    const { isOn: isAttachmentSectionOpen, onToggle: attachmentSectionOnToggle } = useToggle(true);
 
     const {
         values,
