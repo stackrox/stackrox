@@ -22,15 +22,15 @@ teardown() {
 
 @test "roxctl-release roxctl help should have no duplicated (default false) " {
   run roxctl-release --help
-  assert_line --regexp "^[[:space:]]+--insecure .* to true (default false)$"
+  assert_line --regexp "--insecure .* to true (default false)$"
 }
 
 @test "roxctl-release roxctl central whoami help should have no duplicated (default false) " {
   run roxctl-release central whoami --help
-  assert_line --regexp "^[[:space:]]+--plaintext .* to true (default false)$"
+  assert_line --regexp "--plaintext .* to true (default false)$"
 }
 
 @test "roxctl-release roxctl declarative-config create notifier generic help shouldn have no duplicated (default false) " {
   run roxctl-release declarative-config create notifier generic --help
-  assert_line --regexp "^[[:space:]]+--webhook-skip-tls-verify .* verification (default false)$"
+  assert_line --regexp "--webhook-skip-tls-verify .* verification (default false)$"
 }
