@@ -200,6 +200,6 @@ LIMIT
     else
         webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
     fi
-    jq -n "$body" < "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
     rm -f "${data_file}"
 }
