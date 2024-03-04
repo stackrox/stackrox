@@ -167,6 +167,7 @@ class PostClusterTest(StoreArtifacts):
             "openshift-authentication",
             "openshift-etcd",
             "openshift-controller-manager",
+            "openshift-compliance",
         ]
         self.collect_central_artifacts = collect_central_artifacts
 
