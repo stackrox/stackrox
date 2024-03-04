@@ -18,6 +18,8 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
+import { LiveRegion } from 'Components/PatternFly/LiveRegion';
+import LiveTd from 'Components/PatternFly/LiveRegion/components/LiveTd';
 import { VulnerabilitySeverityLabel } from '../types';
 import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
@@ -121,6 +123,7 @@ export type CVEsTableProps = {
         numAffectedImages: number;
     }) => IAction[];
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    isUpdating: boolean;
 };
 
 function CVEsTable({
@@ -133,6 +136,7 @@ function CVEsTable({
     selectedCves,
     createTableActions,
     vulnerabilityState,
+    isUpdating,
 }: CVEsTableProps) {
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
@@ -144,164 +148,176 @@ function CVEsTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable borders={false} variant="compact">
-            <Thead noWrap>
-                <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
-                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
-                    <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <TooltipTh tooltip="Severity of this CVE across images">
-                        Images by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
-                    <TooltipTh
-                        sort={getSortParams('CVSS', aggregateByCVSS)}
-                        tooltip="Highest CVSS score of this CVE across images"
-                    >
-                        Top CVSS
-                    </TooltipTh>
-                    <TooltipTh
-                        sort={getSortParams('Image sha', aggregateByImageSha)}
-                        tooltip="Ratio of total images affected by this CVE"
-                    >
-                        Affected images
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
-                    <TooltipTh
-                        sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
-                        tooltip="Time since this CVE first affected an entity"
-                    >
-                        First discovered
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
-                    {showExceptionDetailsLink && (
-                        <TooltipTh tooltip="View information about this exception request">
-                            Request details
+        <LiveRegion isUpdating={isUpdating}>
+            <TableComposable borders={false} variant="compact">
+                <Thead noWrap>
+                    <Tr>
+                        <Th>{/* Header for expanded column */}</Th>
+                        {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
+                        <Th sort={getSortParams('CVE')} width={15}>
+                            CVE
+                        </Th>
+                        <TooltipTh tooltip="Severity of this CVE across images">
+                            Images by severity
+                            {isFiltered && <DynamicColumnIcon />}
                         </TooltipTh>
-                    )}
-                    {createTableActions && <Th aria-label="CVE actions" />}
-                </Tr>
-            </Thead>
-            {cves.length === 0 && <EmptyTableResults colSpan={colSpan} />}
-            {cves.map(
-                (
-                    {
-                        cve,
-                        affectedImageCountBySeverity,
-                        topCVSS,
-                        affectedImageCount,
-                        firstDiscoveredInSystem,
-                        distroTuples,
-                        pendingExceptionCount,
-                    },
-                    rowIndex
-                ) => {
-                    const isExpanded = expandedRowSet.has(cve);
-                    const criticalCount = affectedImageCountBySeverity.critical.total;
-                    const importantCount = affectedImageCountBySeverity.important.total;
-                    const moderateCount = affectedImageCountBySeverity.moderate.total;
-                    const lowCount = affectedImageCountBySeverity.low.total;
-
-                    const prioritizedDistros = sortCveDistroList(distroTuples);
-                    const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
-                    const summary =
-                        prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
-
-                    return (
-                        <Tbody
-                            key={cve}
-                            style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
-                            }}
-                            isExpanded={isExpanded}
+                        <TooltipTh
+                            sort={getSortParams('CVSS', aggregateByCVSS)}
+                            tooltip="Highest CVSS score of this CVE across images"
                         >
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(cve),
-                                    }}
-                                />
-                                {canSelectRows && (
-                                    <CVESelectionTd
-                                        selectedCves={selectedCves}
-                                        rowIndex={rowIndex}
-                                        cve={cve}
-                                        summary={summary}
-                                        numAffectedImages={affectedImageCount}
+                            Top CVSS
+                        </TooltipTh>
+                        <TooltipTh
+                            sort={getSortParams('Image sha', aggregateByImageSha)}
+                            tooltip="Ratio of total images affected by this CVE"
+                        >
+                            Affected images
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                        <TooltipTh
+                            sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
+                            tooltip="Time since this CVE first affected an entity"
+                        >
+                            First discovered
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                        {showExceptionDetailsLink && (
+                            <TooltipTh tooltip="View information about this exception request">
+                                Request details
+                            </TooltipTh>
+                        )}
+                        {createTableActions && <Th aria-label="CVE actions" />}
+                    </Tr>
+                </Thead>
+                {cves.length === 0 && <EmptyTableResults colSpan={colSpan} />}
+                {cves.map(
+                    (
+                        {
+                            cve,
+                            affectedImageCountBySeverity,
+                            topCVSS,
+                            affectedImageCount,
+                            firstDiscoveredInSystem,
+                            distroTuples,
+                            pendingExceptionCount,
+                        },
+                        rowIndex
+                    ) => {
+                        const isExpanded = expandedRowSet.has(cve);
+                        const criticalCount = affectedImageCountBySeverity.critical.total;
+                        const importantCount = affectedImageCountBySeverity.important.total;
+                        const moderateCount = affectedImageCountBySeverity.moderate.total;
+                        const lowCount = affectedImageCountBySeverity.low.total;
+
+                        const prioritizedDistros = sortCveDistroList(distroTuples);
+                        const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
+                        const summary =
+                            prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
+
+                        return (
+                            <Tbody
+                                key={cve}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                }}
+                                isExpanded={isExpanded}
+                            >
+                                <Tr>
+                                    <LiveTd
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(cve),
+                                        }}
                                     />
-                                )}
-                                <Td dataLabel="CVE" modifier="nowrap">
-                                    <PendingExceptionLabelLayout
-                                        hasPendingException={pendingExceptionCount > 0}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    >
-                                        <Link
-                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
-                                        >
-                                            {cve}
-                                        </Link>
-                                    </PendingExceptionLabelLayout>
-                                </Td>
-                                <Td dataLabel="Images by severity">
-                                    <SeverityCountLabels
-                                        criticalCount={criticalCount}
-                                        importantCount={importantCount}
-                                        moderateCount={moderateCount}
-                                        lowCount={lowCount}
-                                        filteredSeverities={filteredSeverities}
-                                    />
-                                </Td>
-                                <Td dataLabel="Top CVSS">
-                                    <CvssTd
-                                        cvss={topCVSS}
-                                        scoreVersion={
-                                            scoreVersions.length > 0
-                                                ? scoreVersions.join('/')
-                                                : undefined
-                                        }
-                                    />
-                                </Td>
-                                <Td dataLabel="Affected images">
-                                    {affectedImageCount}/{unfilteredImageCount} affected images
-                                </Td>
-                                <Td dataLabel="First discovered">
-                                    <DateDistanceTd date={firstDiscoveredInSystem} />
-                                </Td>
-                                {showExceptionDetailsLink && (
-                                    <ExceptionDetailsCell
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    />
-                                )}
-                                {createTableActions && (
-                                    <Td className="pf-u-px-0">
-                                        <ActionsColumn
-                                            menuAppendTo={() => document.body}
-                                            items={createTableActions({
-                                                cve,
-                                                summary,
-                                                numAffectedImages: affectedImageCount,
-                                            })}
+                                    {canSelectRows && (
+                                        <CVESelectionTd
+                                            selectedCves={selectedCves}
+                                            rowIndex={rowIndex}
+                                            cve={cve}
+                                            summary={summary}
+                                            numAffectedImages={affectedImageCount}
                                         />
-                                    </Td>
-                                )}
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td />
-                                <Td colSpan={colSpan - 1}>
-                                    <ExpandableRowContent>
-                                        {summary ? <Text>{summary}</Text> : <PartialCVEDataAlert />}
-                                    </ExpandableRowContent>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
-                }
-            )}
-        </TableComposable>
+                                    )}
+                                    <LiveTd dataLabel="CVE" modifier="nowrap">
+                                        <PendingExceptionLabelLayout
+                                            hasPendingException={pendingExceptionCount > 0}
+                                            cve={cve}
+                                            vulnerabilityState={vulnerabilityState}
+                                        >
+                                            <Link
+                                                to={getEntityPagePath(
+                                                    'CVE',
+                                                    cve,
+                                                    vulnerabilityState
+                                                )}
+                                            >
+                                                {cve}
+                                            </Link>
+                                        </PendingExceptionLabelLayout>
+                                    </LiveTd>
+                                    <LiveTd dataLabel="Images by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </LiveTd>
+                                    <LiveTd dataLabel="Top CVSS">
+                                        <CvssTd
+                                            cvss={topCVSS}
+                                            scoreVersion={
+                                                scoreVersions.length > 0
+                                                    ? scoreVersions.join('/')
+                                                    : undefined
+                                            }
+                                        />
+                                    </LiveTd>
+                                    <LiveTd dataLabel="Affected images">
+                                        {affectedImageCount}/{unfilteredImageCount} affected images
+                                    </LiveTd>
+                                    <LiveTd dataLabel="First discovered">
+                                        <DateDistanceTd date={firstDiscoveredInSystem} />
+                                    </LiveTd>
+                                    {showExceptionDetailsLink && (
+                                        <ExceptionDetailsCell
+                                            cve={cve}
+                                            vulnerabilityState={vulnerabilityState}
+                                        />
+                                    )}
+                                    {createTableActions && (
+                                        <LiveTd className="pf-u-px-0">
+                                            <ActionsColumn
+                                                menuAppendTo={() => document.body}
+                                                items={createTableActions({
+                                                    cve,
+                                                    summary,
+                                                    numAffectedImages: affectedImageCount,
+                                                })}
+                                            />
+                                        </LiveTd>
+                                    )}
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <LiveTd colSpan={colSpan - 1}>
+                                        <ExpandableRowContent>
+                                            {summary ? (
+                                                <Text>{summary}</Text>
+                                            ) : (
+                                                <PartialCVEDataAlert />
+                                            )}
+                                        </ExpandableRowContent>
+                                    </LiveTd>
+                                </Tr>
+                            </Tbody>
+                        );
+                    }
+                )}
+            </TableComposable>
+        </LiveRegion>
     );
 }
 

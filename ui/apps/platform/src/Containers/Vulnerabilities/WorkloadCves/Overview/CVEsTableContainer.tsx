@@ -156,24 +156,18 @@ function CVEsTableContainer({
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {!error && tableData && (
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <CVEsTable
-                        cves={tableData.imageCVEs}
-                        unfilteredImageCount={imageCountData?.imageCount || 0}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                        selectedCves={selectedCves}
-                        canSelectRows={canSelectRows}
-                        vulnerabilityState={vulnerabilityState}
-                        createTableActions={createTableActions}
-                    />
-                </div>
+                <CVEsTable
+                    cves={tableData.imageCVEs}
+                    unfilteredImageCount={imageCountData?.imageCount || 0}
+                    getSortParams={getSortParams}
+                    isFiltered={isFiltered}
+                    filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                    selectedCves={selectedCves}
+                    canSelectRows={canSelectRows}
+                    vulnerabilityState={vulnerabilityState}
+                    createTableActions={createTableActions}
+                    isUpdating={loading}
+                />
             )}
         </>
     );

@@ -82,22 +82,16 @@ function ImagesTableContainer({
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {!error && tableData && (
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <ImagesTable
-                        images={tableData.images}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                        hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
-                        onWatchImage={onWatchImage}
-                        onUnwatchImage={onUnwatchImage}
-                    />
-                </div>
+                <ImagesTable
+                    images={tableData.images}
+                    getSortParams={getSortParams}
+                    isFiltered={isFiltered}
+                    filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
+                    hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
+                    onWatchImage={onWatchImage}
+                    onUnwatchImage={onUnwatchImage}
+                    isUpdating={loading}
+                />
             )}
         </>
     );
