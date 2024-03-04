@@ -145,8 +145,8 @@ slack_top_n_failures() {
     sql='
 SELECT
     FORMAT("%6.2f", 100 * COUNTIF(Status="failed") / COUNT(*)) AS `%`,
-    IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
-    IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
+    IF(LENGTH(Classname) > 33, CONCAT(RPAD(Classname, 30), "..."), Classname) AS `Suite`,
+    IF(LENGTH(Name) > 123, CONCAT(RPAD(Name, 120), "..."), Name) AS `Case`
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
@@ -168,49 +168,38 @@ LIMIT
     '"${n}"'
 '
 
-    local data
+    local data_file
+    data_file="$(mktemp)"
     echo "Running query with job match name $job_name_match"
-    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)" || {
-        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n${data}"
+    bq --quiet --format=json query --use_legacy_sql=false "$sql" > "${data_file}" 2>/dev/null || {
+        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
 
-    if [[ -z "${data}" ]]; then
-        data="No failures!"
+    local body
+    if [[ -s "${data_file}" ]]; then
+        jq < "${data_file}"
+        # shellcheck disable=SC2016
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            .[] | {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": ("`"+.["%"]+" "+.["Suite"]+"`")},
+                {"type": "plain_text", "text": .["Case"]}
+            ]}]}'
+    else
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "section", "text": {"type": "plain_text", "text": "No failures! :success-kid:", "emoji": true}}]}'
+        echo "No failures found!"
     fi
-    # strip the leading ascii vertical line and padding to save space
-    data="$(echo "${data}" | cut -c 3-)"
-    echo "$data"
 
+    echo "Posting data to slack"
     local webhook_url
     if [[ "${is_test}" == "true" ]]; then
         webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
     else
         webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
     fi
-
-    local body
-    # shellcheck disable=SC2016
-    body='
-{
-    "blocks": [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "'"${subject}"'"
-            }
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "```\n\($data)\n```"
-            }
-        }
-    ]
-}'
-
-    echo "Posting data to slack"
-    jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    jq -n "$body" < "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    rm -f "${data_file}"
 }
