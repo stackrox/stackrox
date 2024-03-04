@@ -11,7 +11,7 @@ import {
 import { gql, useQuery } from '@apollo/client';
 import { Pagination as PaginationParam } from 'services/types';
 
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';

@@ -25,7 +25,7 @@ import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import {
     SearchOption,

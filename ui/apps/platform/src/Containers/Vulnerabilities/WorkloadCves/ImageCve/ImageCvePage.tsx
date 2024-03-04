@@ -21,7 +21,7 @@ import { useParams } from 'react-router-dom';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';

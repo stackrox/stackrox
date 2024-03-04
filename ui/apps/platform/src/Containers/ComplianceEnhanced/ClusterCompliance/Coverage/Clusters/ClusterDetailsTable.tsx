@@ -20,7 +20,7 @@ import omit from 'lodash/omit';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import IconText from 'Components/PatternFly/IconText/IconText';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';

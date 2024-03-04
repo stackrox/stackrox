@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client';
 import { Bullseye, Divider, DropdownItem, Spinner, ToolbarItem } from '@patternfly/react-core';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';

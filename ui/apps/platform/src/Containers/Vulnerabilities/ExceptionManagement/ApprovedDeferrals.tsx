@@ -21,7 +21,7 @@ import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionSer
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import {
     RequestExpires,
     RequestIDLink,

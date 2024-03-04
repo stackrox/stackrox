@@ -16,7 +16,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';

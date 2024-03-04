@@ -36,7 +36,7 @@ import {
 import PageTitle from 'Components/PageTitle';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import RequestCVEsTable from './components/RequestCVEsTable';
 import RequestOverview from './components/RequestOverview';

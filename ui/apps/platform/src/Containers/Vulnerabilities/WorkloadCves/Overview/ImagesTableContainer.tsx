@@ -7,7 +7,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
-import TableErrorComponent from 'Components/TableErrorComponent';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import ImagesTable, { ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
