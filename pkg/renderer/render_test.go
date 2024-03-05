@@ -85,9 +85,11 @@ func TestRenderScannerOnly(t *testing.T) {
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:      flavor.MainImage(),
-				ScannerImage:   flavor.ScannerImage(),
-				ScannerDBImage: flavor.ScannerDBImage(),
+				MainImage:        flavor.MainImage(),
+				ScannerImage:     flavor.ScannerImage(),
+				ScannerDBImage:   flavor.ScannerDBImage(),
+				ScannerV4Image:   flavor.ScannerV4Image(),
+				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
@@ -125,9 +127,11 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:      flavor.MainImage(),
-				ScannerImage:   flavor.ScannerImage(),
-				ScannerDBImage: flavor.ScannerDBImage(),
+				MainImage:        flavor.MainImage(),
+				ScannerImage:     flavor.ScannerImage(),
+				ScannerDBImage:   flavor.ScannerDBImage(),
+				ScannerV4Image:   flavor.ScannerV4Image(),
+				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 			DeclarativeConfigMounts: DeclarativeConfigMounts{
@@ -201,9 +205,11 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			},
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
-					MainImage:      flavor.MainImage(),
-					ScannerImage:   flavor.ScannerImage(),
-					ScannerDBImage: flavor.ScannerDBImage(),
+					MainImage:        flavor.MainImage(),
+					ScannerImage:     flavor.ScannerImage(),
+					ScannerDBImage:   flavor.ScannerDBImage(),
+					ScannerV4Image:   flavor.ScannerV4Image(),
+					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
 				DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 			},
@@ -230,9 +236,11 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			},
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
-					MainImage:      flavor.MainImage(),
-					ScannerImage:   flavor.ScannerImage(),
-					ScannerDBImage: flavor.ScannerDBImage(),
+					MainImage:        flavor.MainImage(),
+					ScannerImage:     flavor.ScannerImage(),
+					ScannerDBImage:   flavor.ScannerDBImage(),
+					ScannerV4Image:   flavor.ScannerV4Image(),
+					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
 				DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 			},
@@ -259,9 +267,11 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 			},
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
-					MainImage:      flavor.MainImage(),
-					ScannerImage:   flavor.ScannerImage(),
-					ScannerDBImage: flavor.ScannerDBImage(),
+					MainImage:        flavor.MainImage(),
+					ScannerImage:     flavor.ScannerImage(),
+					ScannerDBImage:   flavor.ScannerDBImage(),
+					ScannerV4Image:   flavor.ScannerV4Image(),
+					ScannerV4DBImage: flavor.ScannerV4DBImage(),
 				},
 				DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 				DeclarativeConfigMounts: DeclarativeConfigMounts{
@@ -326,9 +336,11 @@ func TestDeclarativeConfigDuplicateValues(t *testing.T) {
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:      flavor.MainImage(),
-				ScannerImage:   flavor.ScannerImage(),
-				ScannerDBImage: flavor.ScannerDBImage(),
+				MainImage:        flavor.MainImage(),
+				ScannerImage:     flavor.ScannerImage(),
+				ScannerDBImage:   flavor.ScannerDBImage(),
+				ScannerV4Image:   flavor.ScannerV4Image(),
+				ScannerV4DBImage: flavor.ScannerV4DBImage(),
 			},
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 			DeclarativeConfigMounts: DeclarativeConfigMounts{
