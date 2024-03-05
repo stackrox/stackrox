@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -63,7 +64,27 @@ func BenchmarkProcessDeploymentReferences(b *testing.B) {
 				b.StopTimer()
 				doneSignal := concurrency.NewSignal()
 				setupMocks(b, &doneSignal)
-				events := createEvents(bc.numEvents, bc.numDeployments)
+				events := createEvents(false, bc.numEvents, bc.numDeployments)
+				setupResolver(b)
+				b.StartTimer()
+				for _, event := range events {
+					res.Send(event)
+				}
+				doneSignal.Wait()
+				b.StopTimer()
+			}
+		})
+	}
+}
+
+func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
+	for _, bc := range cases {
+		b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event", bc.numEvents, bc.numDeployments), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				doneSignal := concurrency.NewSignal()
+				setupMocks(b, &doneSignal)
+				events := createEvents(true, bc.numEvents, bc.numDeployments)
 				setupResolver(b)
 				b.StartTimer()
 				for _, event := range events {
@@ -135,9 +156,14 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal) {
 	})
 }
 
-func createEvents(numEvents, numDeploymentRefs int) []*component.ResourceEvent {
+func createEvents(randomIDs bool, numEvents, numDeploymentRefs int) []*component.ResourceEvent {
 	ret := make([]*component.ResourceEvent, numEvents+1)
-	ids := createIds(numDeploymentRefs)
+	var ids []string
+	if randomIDs {
+		ids = createRandomIds(numDeploymentRefs)
+	} else {
+		ids = createIds(numDeploymentRefs)
+	}
 	for i := 0; i < numEvents; i++ {
 		var event component.ResourceEvent
 		event.AddDeploymentReference(resolver.ResolveDeploymentIds(ids...))
@@ -154,6 +180,24 @@ func createIds(n int) []string {
 	ret := make([]string, n)
 	for i := 0; i < n; i++ {
 		ret[i] = fmt.Sprintf("deployment-%d", i)
+	}
+	return ret
+}
+
+const charset = "abcdef0123456789"
+
+func randStringWithLength(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func createRandomIds(n int) []string {
+	ret := make([]string, n)
+	for i := 0; i < n; i++ {
+		ret[i] = randStringWithLength(10)
 	}
 	return ret
 }
