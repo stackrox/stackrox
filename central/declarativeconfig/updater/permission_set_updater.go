@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -33,7 +33,7 @@ func newPermissionSetUpdater(datastore roleDataStore.DataStore, healthDS declara
 	}
 }
 
-func (u *permissionSetUpdater) Upsert(ctx context.Context, m proto.Message) error {
+func (u *permissionSetUpdater) Upsert(ctx context.Context, m protocompat.Message) error {
 	permissionSet, ok := m.(*storage.PermissionSet)
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to permission set updater: %T", permissionSet)

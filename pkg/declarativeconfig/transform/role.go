@@ -3,11 +3,11 @@ package transform
 import (
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -23,7 +23,7 @@ func newRoleTransform() *roleTransform {
 	return &roleTransform{}
 }
 
-func (r *roleTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (r *roleTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	roleConfig, ok := configuration.(*declarativeconfig.Role)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for role: %T", configuration)
@@ -48,7 +48,7 @@ func (r *roleTransform) Transform(configuration declarativeconfig.Configuration)
 			declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String()),
 		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
-	return map[reflect.Type][]proto.Message{
+	return map[reflect.Type][]protocompat.Message{
 		roleType: {roleProto},
 	}, nil
 }

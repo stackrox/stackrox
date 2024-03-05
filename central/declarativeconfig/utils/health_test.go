@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestResourceTypeFromProtoMessage(t *testing.T) {
 	cases := []struct {
-		msg          proto.Message
+		msg          protocompat.Message
 		resourceType storage.DeclarativeConfigHealth_ResourceType
 	}{
 		{

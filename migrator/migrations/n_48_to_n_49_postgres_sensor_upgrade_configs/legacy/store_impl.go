@@ -6,9 +6,9 @@ package legacy
 import (
 	"context"
 
-	proto "github.com/gogo/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
 	singletonstore "github.com/stackrox/rox/pkg/bolthelper/singletonstore"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bbolt "go.etcd.io/bbolt"
 )
 
@@ -18,7 +18,7 @@ var (
 
 // New creates a new BoltDB store
 func New(db *bbolt.DB) *store {
-	return &store{underlying: singletonstore.New(db, bucketName, func() proto.Message {
+	return &store{underlying: singletonstore.New(db, bucketName, func() protocompat.Message {
 		return new(storage.SensorUpgradeConfig)
 	}, "SensorUpgradeConfig")}
 }

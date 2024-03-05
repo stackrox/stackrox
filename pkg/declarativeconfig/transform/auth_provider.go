@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -31,7 +31,7 @@ func newAuthProviderTransformer() *authProviderTransform {
 	return &authProviderTransform{}
 }
 
-func (a *authProviderTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (a *authProviderTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	authProviderConfig, ok := configuration.(*declarativeconfig.AuthProvider)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for auth provider: %T", configuration)
@@ -64,7 +64,7 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 		},
 		ClaimMappings: getClaimMappings(authProviderConfig.ClaimMappings),
 	}
-	return map[reflect.Type][]proto.Message{
+	return map[reflect.Type][]protocompat.Message{
 		authProviderType: {authProviderProto},
 		groupType:        getGroups(authProviderProto.Id, authProviderConfig),
 	}, nil
@@ -144,9 +144,9 @@ func getClaimMappings(claimMappingsConfig []declarativeconfig.ClaimMapping) map[
 	return claimMappings
 }
 
-func getGroups(authProviderID string, authProviderConfig *declarativeconfig.AuthProvider) []proto.Message {
+func getGroups(authProviderID string, authProviderConfig *declarativeconfig.AuthProvider) []protocompat.Message {
 	hasMinimumRoleName := authProviderConfig.MinimumRoleName != ""
-	groups := make([]proto.Message, 0, len(authProviderConfig.Groups)+utils.IfThenElse(hasMinimumRoleName, 1, 0))
+	groups := make([]protocompat.Message, 0, len(authProviderConfig.Groups)+utils.IfThenElse(hasMinimumRoleName, 1, 0))
 
 	if hasMinimumRoleName {
 		groups = append(groups, &storage.Group{

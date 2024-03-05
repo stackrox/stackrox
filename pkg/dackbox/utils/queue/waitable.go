@@ -1,24 +1,24 @@
 package queue
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // AcceptsKeyValue is an interface that accepts a key and it's proto value for processing.
 type AcceptsKeyValue interface {
-	Push(key []byte, value proto.Message)
+	Push(key []byte, value protocompat.Message)
 }
 
 // WaitableQueue is a thread safe queue with an extra provided function that allows you to wait for a value to pop.
 //
 //go:generate mockgen-wrapper
 type WaitableQueue interface {
-	Push(key []byte, value proto.Message)
+	Push(key []byte, value protocompat.Message)
 	PushSignal(signal *concurrency.Signal)
 
-	Pop() ([]byte, proto.Message, *concurrency.Signal)
+	Pop() ([]byte, protocompat.Message, *concurrency.Signal)
 
 	Length() int
 
@@ -46,7 +46,7 @@ func (q *waitableQueueImpl) NotEmpty() concurrency.Waitable {
 	return q.notEmptySig.WaitC()
 }
 
-func (q *waitableQueueImpl) Push(key []byte, value proto.Message) {
+func (q *waitableQueueImpl) Push(key []byte, value protocompat.Message) {
 	q.push(&queuedItem{
 		key:   key,
 		value: value,
@@ -75,7 +75,7 @@ func (q *waitableQueueImpl) push(qi *queuedItem) {
 	q.base.push(qi)
 }
 
-func (q *waitableQueueImpl) Pop() ([]byte, proto.Message, *concurrency.Signal) {
+func (q *waitableQueueImpl) Pop() ([]byte, protocompat.Message, *concurrency.Signal) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -106,6 +106,6 @@ func (q *waitableQueueImpl) Length() int {
 // Helper class that holds a value with a signal.
 type queuedItem struct {
 	key    []byte
-	value  proto.Message
+	value  protocompat.Message
 	signal *concurrency.Signal
 }

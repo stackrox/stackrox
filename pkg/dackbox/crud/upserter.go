@@ -1,13 +1,13 @@
 package crud
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // Upserter provides the ability to upsert as part of a dackbox transaction.
 type Upserter interface {
-	UpsertIn(parentKey []byte, msg proto.Message, dackTxn *dackbox.Transaction) error
+	UpsertIn(parentKey []byte, msg protocompat.Message, dackTxn *dackbox.Transaction) error
 }
 
 // NewUpserter creates a new instance of an Upserter.

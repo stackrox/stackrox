@@ -12,8 +12,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	proto "github.com/gogo/protobuf/proto"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	protocompat "github.com/stackrox/rox/pkg/protocompat"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,7 +41,7 @@ func (m *MockAcceptsKeyValue) EXPECT() *MockAcceptsKeyValueMockRecorder {
 }
 
 // Push mocks base method.
-func (m *MockAcceptsKeyValue) Push(key []byte, value proto.Message) {
+func (m *MockAcceptsKeyValue) Push(key []byte, value protocompat.Message) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Push", key, value)
 }
@@ -104,11 +104,11 @@ func (mr *MockWaitableQueueMockRecorder) NotEmpty() *gomock.Call {
 }
 
 // Pop mocks base method.
-func (m *MockWaitableQueue) Pop() ([]byte, proto.Message, *concurrency.Signal) {
+func (m *MockWaitableQueue) Pop() ([]byte, protocompat.Message, *concurrency.Signal) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Pop")
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(proto.Message)
+	ret1, _ := ret[1].(protocompat.Message)
 	ret2, _ := ret[2].(*concurrency.Signal)
 	return ret0, ret1, ret2
 }
@@ -120,7 +120,7 @@ func (mr *MockWaitableQueueMockRecorder) Pop() *gomock.Call {
 }
 
 // Push mocks base method.
-func (m *MockWaitableQueue) Push(key []byte, value proto.Message) {
+func (m *MockWaitableQueue) Push(key []byte, value protocompat.Message) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Push", key, value)
 }

@@ -56,7 +56,7 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	// Just pipe out the violated alerts as JSON.
 
 	// This object is really just a filler because its a wrapper around the alerts
-	// this is required because jsonpb can only marshal proto.Message
+	// this is required because jsonpb can only marshal protocompat.Message
 	bdr := &v1.BuildDetectionResponse{
 		Alerts: alerts,
 	}

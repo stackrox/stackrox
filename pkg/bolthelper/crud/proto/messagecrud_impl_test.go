@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
@@ -34,11 +34,11 @@ func (s *MessageCrudTestSuite) SetupSuite() {
 	s.db = db
 
 	// Function that provides the key for a given instance.
-	keyFunc := func(msg proto.Message) []byte {
+	keyFunc := func(msg protocompat.Message) []byte {
 		return []byte(msg.(*storage.Alert).GetId())
 	}
 	// Function that provide a new empty instance when wanted.
-	allocFunc := func() proto.Message {
+	allocFunc := func() protocompat.Message {
 		return &storage.Alert{}
 	}
 	s.crud, err = NewMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc)

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -106,7 +106,7 @@ func (li *lazyImpl) consumeFromQueue() {
 	}
 }
 
-func (li *lazyImpl) handleKeyValue(key []byte, value proto.Message) {
+func (li *lazyImpl) handleKeyValue(key []byte, value protocompat.Message) {
 	indexedKey, indexedValue := li.wrapper.Wrap(key, value)
 	if indexedKey == "" {
 		log.Errorf("no wrapper registered for key: %q", key)

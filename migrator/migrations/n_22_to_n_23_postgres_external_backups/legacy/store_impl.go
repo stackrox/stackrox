@@ -6,18 +6,18 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
-func alloc() proto.Message {
+func alloc() protocompat.Message {
 	return new(storage.ExternalBackup)
 }
 
-func key(msg proto.Message) []byte {
+func key(msg protocompat.Message) []byte {
 	return []byte(msg.(*storage.ExternalBackup).GetId())
 }
 
