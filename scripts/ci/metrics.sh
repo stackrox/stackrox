@@ -209,3 +209,23 @@ LIMIT
     echo "Posting data to slack"
     jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
+
+save_test_metrics() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: save_test_metrics <CSV file>"
+    fi
+
+    local csv="$1"
+    local to="gs://stackrox-ci-artifacts/test-metrics/"
+
+    info "Saving Big Query test records from ${csv} to ${to}"
+
+    gsutil cp "${csv}" "${to}"
+}
+
+batch_load_test_metrics() {
+            # bq load \
+            # --skip_leading_rows=1 \
+            # --allow_quoted_newlines \
+            # ci_metrics.stackrox_tests "${csv_output}"
+}
