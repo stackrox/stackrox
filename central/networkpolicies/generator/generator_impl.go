@@ -139,16 +139,18 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	var graph []*node
 	for _, deployment := range relevantDeployments {
 		// check if the baseline was cut
-		node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts)
+		deploymentNode, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts)
+		deploymentNode.selected = true
 		if err != nil {
+			log.Error(err)
 			continue
 		}
-		graph = append(graph, node)
+		graph = append(graph, deploymentNode)
 	}
 	return graph, nil
-	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
-	// Note that this will never retrieve listen endpoint "flows".
-	// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
+	//// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
+	//// Note that this will never retrieve listen endpoint "flows".
+	//// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
 	//flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
 	//	dstEnt := flowProps.GetDstEntity()
 	//	return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
@@ -258,8 +260,10 @@ func (g *generator) generatePolicies(graph []*node, namespacesByName map[string]
 			continue
 		}
 
+		log.Debugf("generate policy for node %v", node)
 		policy := generatePolicy(node, namespacesByName, ingressPolicies, egressPolicies)
 		if policy != nil {
+			log.Debugf("generated policy for node %v", node)
 			generatedPolicies = append(generatedPolicies, policy)
 		}
 	}
