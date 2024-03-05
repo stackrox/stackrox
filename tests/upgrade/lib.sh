@@ -126,6 +126,12 @@ restore_backup_test() {
     restore_56_1_backup
 }
 
+restore_4_1_backup() {
+    info "Restoring a 4.1 backup into a newer central"
+
+    restore_4_1_postgres_backup
+}
+
 force_rollback() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 

@@ -1068,6 +1068,17 @@ restore_56_1_backup() {
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
 
+restore_4_1_postgres_backup() {
+    info "Restoring a 4.1 postgres backup"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+        central db restore --timeout 5m postgres_db_4_1.sql.zip
+}
+
 update_public_config() {
     info "Updating public config to ensure that it is overridden by restore"
 
