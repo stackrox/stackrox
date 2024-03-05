@@ -689,10 +689,10 @@ class IntegrationsTest extends BaseSpecification {
         new ClairScannerIntegration()    | [:]                | "default config"
         new QuayImageIntegration()       | [:]                | "default config"
         new GoogleArtifactRegistry()     | [:]                | "default config"
-        new GoogleArtifactRegistry()     | [project: "acs-san-stackroxci", wifEnabled: true]
+        new GoogleArtifactRegistry()     | [wifEnabled: true]
                                                               | "requires workload identity"
         new GCRImageIntegration()        | [:]                | "default config"
-        new GCRImageIntegration()        | [project: "acs-san-stackroxci", includeScanner: false, wifEnabled: true]
+        new GCRImageIntegration()        | [includeScanner: false, wifEnabled: true]
                                                               | "requires workload identity"
         new AzureRegistryIntegration()   | [:]                | "default config"
         new ECRRegistryIntegration()     | [:]                | "default config"
