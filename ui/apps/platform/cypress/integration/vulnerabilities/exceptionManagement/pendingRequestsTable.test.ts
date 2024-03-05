@@ -9,7 +9,7 @@ import {
     visitWorkloadCveOverview,
     typeAndSelectCustomSearchFilterValue,
 } from '../workloadCves/WorkloadCves.helpers';
-import { visitExceptionManagement } from './ExceptionManagement.helpers';
+import { visitPendingRequestsTab } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
@@ -60,7 +60,7 @@ describe('Exception Management Pending Requests Page', () => {
                 expiry: 'When all CVEs are fixable',
             });
 
-            visitExceptionManagement();
+            visitPendingRequestsTab();
 
             // the deferred request should be pending
             cy.get(
@@ -82,7 +82,7 @@ describe('Exception Management Pending Requests Page', () => {
                 scope: 'All images',
             });
 
-            visitExceptionManagement();
+            visitPendingRequestsTab();
 
             // the false positive request should be pending
             cy.get('table td[data-label="Requested action"]:contains("False positive")').should(
@@ -106,7 +106,7 @@ describe('Exception Management Pending Requests Page', () => {
                 });
             })
             .then(() => {
-                visitExceptionManagement();
+                visitPendingRequestsTab();
 
                 const requestNameLink = 'table td[data-label="Request name"]';
 
@@ -120,7 +120,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Request Name" column', () => {
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         cy.get(selectors.tableSortColumn('Request name')).should(
             'have.attr',
@@ -150,7 +150,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Requester" column', () => {
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         cy.get(selectors.tableSortColumn('Requester')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Requester')).click();
@@ -176,7 +176,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Requested" column', () => {
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         cy.get(selectors.tableSortColumn('Requested')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Requested')).click();
@@ -202,7 +202,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Expires" column', () => {
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         cy.get(selectors.tableSortColumn('Expires')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Expires')).click();
@@ -220,7 +220,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Scope" column', () => {
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         cy.get(selectors.tableSortColumn('Scope')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Scope')).click();
@@ -254,7 +254,7 @@ describe('Exception Management Pending Requests Page', () => {
                 expiry: 'When all CVEs are fixable',
             });
 
-            visitExceptionManagement();
+            visitPendingRequestsTab();
 
             cy.get('table td[data-label="Request name"] a').then((element) => {
                 const requestName = element.text().trim();
@@ -281,7 +281,7 @@ describe('Exception Management Pending Requests Page', () => {
                 expiry: 'When all CVEs are fixable',
             });
 
-            visitExceptionManagement();
+            visitPendingRequestsTab();
 
             typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
             cy.get('table td[data-label="Request name"] a').should('exist');

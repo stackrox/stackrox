@@ -6,7 +6,7 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
-    visitExceptionManagement,
+    visitApprovedDeferralsTab,
 } from './ExceptionManagement.helpers';
 import { approveRequest } from './approveRequestFlow.test';
 import { selectors } from './ExceptionManagement.selectors';
@@ -16,23 +16,7 @@ const comment = 'Defer me';
 const expiry = 'When all CVEs are fixable';
 const scope = 'All images';
 
-function deferAndApprove() {
-    deferAndVisitRequestDetails({
-        comment,
-        expiry,
-        scope,
-    });
-    approveRequest();
-}
-
-function visitApprovedDeferralsTab() {
-    visitExceptionManagement();
-    cy.get(selectors.approvedDeferralsTab).click();
-    // Wait for the loading spinner to disappear
-    cy.get('.pf-c-spinner').should('not.exist');
-}
-
-describe('Exception Management Pending Requests Page', () => {
+describe('Exception Management - Approved Deferrals Table', () => {
     withAuth();
 
     before(function () {
@@ -63,7 +47,12 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to view approved deferrals', () => {
-        deferAndApprove();
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
+        });
+        approveRequest();
         visitApprovedDeferralsTab();
 
         // the deferred request should be approved
@@ -73,7 +62,12 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {
-        deferAndApprove();
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
+        });
+        approveRequest();
         visitApprovedDeferralsTab();
 
         const requestNameSelector = 'table td[data-label="Request name"]';
@@ -205,7 +199,12 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to filter by "Request name"', () => {
-        deferAndApprove();
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
+        });
+        approveRequest();
         visitApprovedDeferralsTab();
 
         cy.get('table td[data-label="Request name"] a').then((element) => {
@@ -216,7 +215,12 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to filter by "Request name"', () => {
-        deferAndApprove();
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
+        });
+        approveRequest();
         visitApprovedDeferralsTab();
 
         typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');

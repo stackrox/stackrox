@@ -10,7 +10,7 @@ import {
     deferAndVisitRequestDetails,
     deniedRequestsPath,
     pendingRequestsPath,
-    visitExceptionManagement,
+    visitPendingRequestsTab,
 } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
 
@@ -97,7 +97,7 @@ describe('Exception Management', () => {
 
         cy.intercept({ method: 'POST', url: graphql('autocomplete') }).as('autocomplete');
 
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         // Add a filter
         cy.get(`input[aria-label="${filterLabel}"]`).type(filterText);

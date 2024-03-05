@@ -14,11 +14,24 @@ export const approvedDeferralsPath = `${basePath}/approved-deferrals`;
 export const approvedFalsePositivesPath = `${basePath}/approved-false-positives`;
 export const deniedRequestsPath = `${basePath}/denied-requests`;
 
-export function visitExceptionManagement() {
+export function visitPendingRequestsTab() {
     visit(pendingRequestsPath);
 
     cy.get('h1:contains("Exception management")');
     cy.location('pathname').should('eq', pendingRequestsPath);
+
+    // Wait for the loading spinner to disappear
+    cy.get('.pf-c-spinner').should('not.exist');
+}
+
+export function visitApprovedDeferralsTab() {
+    visit(approvedDeferralsPath);
+
+    cy.get('h1:contains("Exception management")');
+    cy.location('pathname').should('eq', approvedDeferralsPath);
+
+    // Wait for the loading spinner to disappear
+    cy.get('.pf-c-spinner').should('not.exist');
 }
 
 export function deferAndVisitRequestDetails({
