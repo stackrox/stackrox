@@ -32,7 +32,7 @@ RUN microdnf upgrade -y --nobest && \
     microdnf -y --setopt=install_weak_deps=0 --nodocs install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
-    rpm --import RPM-GPG-KEY-PGDG-15 && \
+    rpm --import PGDG-RPM-GPG-KEY-RHEL && \
     microdnf -y --setopt=install_weak_deps=0 --nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
