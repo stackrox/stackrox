@@ -103,7 +103,7 @@ deploy_earlier_central() {
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
-         --set central.db.enabled=false \
+         --set central.db.enabled=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
          --set central.image.tag="${EARLIER_TAG}" \
