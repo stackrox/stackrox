@@ -188,10 +188,18 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 		msg, err := grpcServer.Recv()
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok {
-				if errStatus.Code() == codes.ResourceExhausted {
-					log.Debugf("Central received a payload from sensor that was too large: %v", errStatus.Details())
-				}
 				metrics.RegisterGRPCError(errStatus.Code().String())
+				if errStatus.Code() == codes.ResourceExhausted {
+					// In this cases, since Central-Sensor communication is already established, not being able to receive
+					// a message should cause the connection to close. This could be due to any Sensor message being above
+					// the max allowed threshold. Unfortunatelly, there isn't a way to know at this portion of the code
+					// _which_ message caused this error. Sensor has payload size buckets metrics that can be used to
+					// understand which messages are being sent. One way to mitigate this issue, is to bump the
+					// env ROX_GRPC_MAX_MESSAGE_SIZE (see pkg/env)
+					log.Warnf("Central received a payload from sensor that was too large. Message will be dropped: %v", err)
+					log.Debugf("gRPC resource exhausted details: %v", errStatus.Details())
+					continue
+				}
 			}
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
