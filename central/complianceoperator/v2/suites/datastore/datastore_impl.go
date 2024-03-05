@@ -64,3 +64,13 @@ func getScopeKeys(suites []*storage.ComplianceOperatorSuiteV2) [][]sac.ScopeKey 
 	}
 	return clusterScopeKeys
 }
+
+// DeleteSuiteByCluster removes a suite from the database
+func (d *datastoreImpl) DeleteSuitesByCluster(ctx context.Context, clusterID string) error {
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
+}

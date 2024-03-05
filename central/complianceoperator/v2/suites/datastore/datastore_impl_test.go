@@ -64,9 +64,7 @@ func (s *complianceSuiteDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = suiteStorage.New(s.db)
-	var err error
-	s.dataStore, err = GetTestPostgresDataStore(s.T(), s.db)
-	s.Require().NoError(err)
+	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
 }
 
 func (s *complianceSuiteDataStoreTestSuite) TearDownTest() {
@@ -245,6 +243,21 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuites() {
 		// Clean up
 		s.Require().NoError(s.storage.DeleteMany(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], allSuiteIDs))
 	}
+}
+
+func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuiteByCluster() {
+	suite := s.getTestSuite(testconsts.Cluster1)
+	s.Require().NoError(s.dataStore.UpsertSuite(s.hasWriteCtx, suite))
+
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
+
+	s.Require().NoError(s.dataStore.DeleteSuitesByCluster(s.hasWriteCtx, testconsts.Cluster1))
+
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(0, count)
 }
 
 func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuite() {
