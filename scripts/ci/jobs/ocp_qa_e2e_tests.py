@@ -16,7 +16,7 @@ os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 if ('aws' in os.environ.get('CLUSTER_PROFILE_NAME', '') or
-    'aws' in os.environ.get('CLUSTER_TYPE', '')):
+        'aws' in os.environ.get('CLUSTER_TYPE', '')):
     os.environ["SETUP_WORKLOAD_IDENTITIES"] = "false"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
