@@ -346,7 +346,7 @@ func TestBackend(t *testing.T) {
 				"code": literalValue{mockAuthorizationCode},
 			},
 			exchangedTokenClaims:        &suppliedClaims,
-			wantProcessIDPResponseError: "1 error occurred:\n\t* failed to authenticate with ID token: verifying ID token: invalid token\n\n",
+			wantProcessIDPResponseError: "1 error occurred:\n\t* failed to authenticate with ID token: verifying ID token: nonce verification failed for ID token\n\n",
 		},
 		"mode query": {
 			config: map[string]string{
@@ -472,7 +472,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"id_token": suppliedClaims,
 			},
-			wantProcessIDPResponseError: "2 errors occurred:\n\t* no access_token field found in response\n\t* failed to authenticate with ID token: verifying ID token: invalid token\n\n",
+			wantProcessIDPResponseError: "invalid arguments: failed to authenticate with ID token: verifying ID token: nonce verification failed for ID token",
 		},
 		"mode fragment with both token and id_token": {
 			config: map[string]string{
@@ -849,6 +849,30 @@ func TestBackend(t *testing.T) {
 				"error_description": literalValue{"Blah blah blah."},
 			},
 			wantProcessIDPResponseError: "Identity provider returned a \"code2\" error. Additional information from the provider follows. Blah blah blah.",
+		},
+		"nonce verification failed for ID token": {
+			config: map[string]string{
+				ClientIDConfigKey:     "testclientid",
+				ClientSecretConfigKey: "testsecret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				claimsFromUserInfoEndpoint: suppliedClaims,
+				userInfoAssertAccessToken:  mockAccessToken,
+			},
+			wantBackend: &wantBackend{
+				responseMode:  "fragment",
+				responseTypes: []string{"token", "id_token"},
+			},
+			issueNonce: false,
+			idpResponseTemplate: map[string]responseValueProvider{
+				"id_token":     alternativeSuppliedClaims,
+				"access_token": literalValue{mockAccessToken},
+			},
+			wantProcessIDPResponseError: "invalid arguments: failed to authenticate with ID token: verifying ID token: nonce verification failed for ID token",
 		},
 	}
 	for name, tt := range tests {
