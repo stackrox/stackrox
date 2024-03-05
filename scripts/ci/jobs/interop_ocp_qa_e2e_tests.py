@@ -7,6 +7,8 @@ import os
 from base_qa_e2e_test import make_qa_e2e_test_runner
 from clusters import AutomationFlavorsCluster
 
+print({key:str(val)[0:8] for key, val in os.environ.items()})
+
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
