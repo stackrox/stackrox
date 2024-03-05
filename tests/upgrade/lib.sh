@@ -68,11 +68,6 @@ validate_upgrade() {
     rm -f FAIL
     remove_qa_test_results
 
-    # temp, grab a backup so I can use it as a new start
-    info "Grabbing a backup to use it later"
-    mkdir -p qa-tests-backend/build/test-results
-    "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" -p "$ROX_PASSWORD" central backup --output qa-tests-backend/build/test-results/
-
     info "Validating the upgrade with upgrade tests: $stage_description"
 
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
@@ -152,6 +147,7 @@ deploy_earlier_postgres_central() {
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
+# TODO(ROX-22872): remove
 restore_backup_test() {
     info "Restoring a 56.1 backup into a newer central"
 
@@ -486,7 +482,7 @@ preamble() {
         (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
-    if [[ -n "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
+    if [[ -z "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
     info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
         if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
             if is_CI; then
