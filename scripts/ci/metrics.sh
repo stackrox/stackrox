@@ -223,9 +223,9 @@ save_test_metrics() {
     gsutil cp "${csv}" "${to}"
 }
 
-batch_load_test_metrics() {
-            # bq load \
-            # --skip_leading_rows=1 \
-            # --allow_quoted_newlines \
-            # ci_metrics.stackrox_tests "${csv_output}"
-}
+# batch_load_test_metrics() {
+#             # bq load \
+#             # --skip_leading_rows=1 \
+#             # --allow_quoted_newlines \
+#             # ci_metrics.stackrox_tests "${csv_output}"
+# }
