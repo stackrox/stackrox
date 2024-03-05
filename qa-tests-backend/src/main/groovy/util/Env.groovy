@@ -255,10 +255,6 @@ class Env {
         return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
     }
 
-    static String mustGetGCSBucketRegion() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_REGION_V2")
-    }
-
     static String mustGetGCPAccessKeyID() {
         return mustGet("GCP_ACCESS_KEY_ID_V2")
     }
