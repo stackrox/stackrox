@@ -6,7 +6,6 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	acDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/activecomponent"
 	deploymentDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/deployment"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -48,7 +48,7 @@ func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ActiveC
 	}
 	defer dackTxn.Discard()
 
-	msgs := make([]proto.Message, 0, len(ids))
+	msgs := make([]protocompat.Message, 0, len(ids))
 	var missing []int
 	for idx, id := range ids {
 		msg, err := s.reader.ReadIn(acDackBox.BucketHandler.GetKey(id), dackTxn)

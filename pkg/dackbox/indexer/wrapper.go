@@ -1,15 +1,15 @@
 package indexer
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // Wrapper is an object that wraps keys and values into their indexed id:value pair.
 //
 //go:generate mockgen-wrapper
 type Wrapper interface {
-	Wrap(key []byte, msg proto.Message) (string, interface{})
+	Wrap(key []byte, msg protocompat.Message) (string, interface{})
 }
 
 func findLongestMatch(wrappers map[string]Wrapper, key []byte) Wrapper {

@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -178,7 +178,7 @@ func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 	return nil
 }
 
-func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {
+func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
 	msgStr, err := new(jsonpb.Marshaler).MarshalToString(message)
 	if err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader
 	return bytes.NewBufferString(strJSON), nil
 }
 
-func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey string) error {
+func (g *generic) postMessage(ctx context.Context, message protocompat.Message, msgKey string) error {
 	password, err := g.getPassword()
 	if err != nil {
 		return err
@@ -225,7 +225,7 @@ func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey
 	return notifiers.CreateError(g.GetName(), resp, codes.WebhookGeneric)
 }
 
-func (g *generic) postMessageWithRetry(ctx context.Context, message proto.Message, msgKey string) error {
+func (g *generic) postMessageWithRetry(ctx context.Context, message protocompat.Message, msgKey string) error {
 	return retry.WithRetry(
 		func() error {
 			return g.postMessage(ctx, message, msgKey)

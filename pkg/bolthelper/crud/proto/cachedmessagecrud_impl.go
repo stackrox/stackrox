@@ -4,6 +4,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/storecache"
 )
 
@@ -17,7 +18,7 @@ type cachedMessageCrudImpl struct {
 	cache       storecache.Cache
 }
 
-func (c *cachedMessageCrudImpl) stringKey(msg proto.Message) string {
+func (c *cachedMessageCrudImpl) stringKey(msg protocompat.Message) string {
 	return string(c.KeyFunc(msg))
 }
 
@@ -29,10 +30,10 @@ func (c *cachedMessageCrudImpl) addReadVersion(delta uint64) {
 	atomic.AddUint64(&c.readVersion, delta)
 }
 
-func (c *cachedMessageCrudImpl) Read(id string) (proto.Message, error) {
+func (c *cachedMessageCrudImpl) Read(id string) (protocompat.Message, error) {
 	if cached := c.cache.Get(id); cached != nil {
 		c.metricFunc("hit", c.metricType)
-		return proto.Clone(cached.(proto.Message)), nil
+		return proto.Clone(cached.(protocompat.Message)), nil
 	}
 	c.metricFunc("miss", c.metricType)
 	readVersion := c.getReadVersion()
@@ -43,13 +44,13 @@ func (c *cachedMessageCrudImpl) Read(id string) (proto.Message, error) {
 	return msg, err
 }
 
-func (c *cachedMessageCrudImpl) ReadBatch(ids []string) ([]proto.Message, []int, error) {
-	var cachedMsgs []proto.Message
+func (c *cachedMessageCrudImpl) ReadBatch(ids []string) ([]protocompat.Message, []int, error) {
+	var cachedMsgs []protocompat.Message
 	var uncachedIds []string
 	for _, id := range ids {
 		if cached := c.cache.Get(id); cached != nil {
 			c.metricFunc("hit", c.metricType)
-			cachedMsgs = append(cachedMsgs, proto.Clone(cached.(proto.Message)))
+			cachedMsgs = append(cachedMsgs, proto.Clone(cached.(protocompat.Message)))
 		} else {
 			c.metricFunc("miss", c.metricType)
 			uncachedIds = append(uncachedIds, id)
@@ -63,7 +64,7 @@ func (c *cachedMessageCrudImpl) ReadBatch(ids []string) ([]proto.Message, []int,
 	for _, msg := range storedMsgs {
 		c.cache.Add(c.stringKey(msg), msg, readVersion)
 	}
-	orderedResults := make([]proto.Message, 0, len(cachedMsgs)+len(storedMsgs))
+	orderedResults := make([]protocompat.Message, 0, len(cachedMsgs)+len(storedMsgs))
 	missingIndices := make([]int, 0, len(ids)-len(cachedMsgs)-len(storedMsgs))
 	cachedIndex := 0
 	storedIndex := 0
@@ -81,7 +82,7 @@ func (c *cachedMessageCrudImpl) ReadBatch(ids []string) ([]proto.Message, []int,
 	return orderedResults, missingIndices, nil
 }
 
-func (c *cachedMessageCrudImpl) Update(msg proto.Message) (uint64, uint64, error) {
+func (c *cachedMessageCrudImpl) Update(msg protocompat.Message) (uint64, uint64, error) {
 	writeVersion, attempts, err := c.messageCrud.Update(msg)
 	defer c.addReadVersion(attempts)
 	if err != nil {
@@ -91,7 +92,7 @@ func (c *cachedMessageCrudImpl) Update(msg proto.Message) (uint64, uint64, error
 	return writeVersion, attempts, nil
 }
 
-func (c *cachedMessageCrudImpl) UpdateBatch(msgs []proto.Message) (uint64, uint64, error) {
+func (c *cachedMessageCrudImpl) UpdateBatch(msgs []protocompat.Message) (uint64, uint64, error) {
 	writeVersion, attempts, err := c.messageCrud.UpdateBatch(msgs)
 	defer c.addReadVersion(attempts)
 	if err != nil {
@@ -103,7 +104,7 @@ func (c *cachedMessageCrudImpl) UpdateBatch(msgs []proto.Message) (uint64, uint6
 	return writeVersion, attempts, nil
 }
 
-func (c *cachedMessageCrudImpl) Upsert(msg proto.Message) (uint64, uint64, error) {
+func (c *cachedMessageCrudImpl) Upsert(msg protocompat.Message) (uint64, uint64, error) {
 	writeVersion, attempts, err := c.messageCrud.Upsert(msg)
 	defer c.addReadVersion(attempts)
 	if err != nil {
@@ -113,7 +114,7 @@ func (c *cachedMessageCrudImpl) Upsert(msg proto.Message) (uint64, uint64, error
 	return writeVersion, attempts, nil
 }
 
-func (c *cachedMessageCrudImpl) UpsertBatch(msgs []proto.Message) (uint64, uint64, error) {
+func (c *cachedMessageCrudImpl) UpsertBatch(msgs []protocompat.Message) (uint64, uint64, error) {
 	writeVersion, attempts, err := c.messageCrud.UpsertBatch(msgs)
 	defer c.addReadVersion(attempts)
 	if err != nil {
@@ -151,18 +152,18 @@ func (c *cachedMessageCrudImpl) Count() (int, error) {
 	return c.messageCrud.Count()
 }
 
-func (c *cachedMessageCrudImpl) Create(msg proto.Message) error {
+func (c *cachedMessageCrudImpl) Create(msg protocompat.Message) error {
 	return c.messageCrud.Create(msg)
 }
 
-func (c *cachedMessageCrudImpl) CreateBatch(msgs []proto.Message) error {
+func (c *cachedMessageCrudImpl) CreateBatch(msgs []protocompat.Message) error {
 	return c.messageCrud.CreateBatch(msgs)
 }
 
-func (c *cachedMessageCrudImpl) ReadAll() ([]proto.Message, error) {
+func (c *cachedMessageCrudImpl) ReadAll() ([]protocompat.Message, error) {
 	return c.messageCrud.ReadAll()
 }
 
-func (c *cachedMessageCrudImpl) KeyFunc(message proto.Message) []byte {
+func (c *cachedMessageCrudImpl) KeyFunc(message protocompat.Message) []byte {
 	return c.messageCrud.KeyFunc(message)
 }

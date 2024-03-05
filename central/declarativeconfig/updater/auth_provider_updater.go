@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -52,7 +52,7 @@ func newAuthProviderUpdater(authProvidersDS authproviders.Store, registry authpr
 	}
 }
 
-func (u *authProviderUpdater) Upsert(ctx context.Context, m proto.Message) error {
+func (u *authProviderUpdater) Upsert(ctx context.Context, m protocompat.Message) error {
 	authProvider, ok := m.(*storage.AuthProvider)
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to auth provider updater: %T", authProvider)

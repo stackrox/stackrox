@@ -3,10 +3,10 @@ package generic
 import (
 	"bytes"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -29,9 +29,9 @@ func NewUniqueKeyCRUD(db *rocksdb.RocksDB, prefix []byte, keyFunc KeyFunc, alloc
 	}
 }
 
-func (c *uniqueKeyCRUD) checkForConflicts(newID []byte, newMsg proto.Message) error {
+func (c *uniqueKeyCRUD) checkForConflicts(newID []byte, newMsg protocompat.Message) error {
 	newUniqueKey := c.uniqueKeyFunc(newMsg)
-	err := c.Crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
+	err := c.Crud.WalkAllWithID(func(id []byte, msg protocompat.Message) error {
 		if bytes.Equal(newID, id) {
 			return nil
 		}
@@ -43,7 +43,7 @@ func (c *uniqueKeyCRUD) checkForConflicts(newID []byte, newMsg proto.Message) er
 	return err
 }
 
-func (c *uniqueKeyCRUD) Upsert(msg proto.Message) error {
+func (c *uniqueKeyCRUD) Upsert(msg protocompat.Message) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -54,7 +54,7 @@ func (c *uniqueKeyCRUD) Upsert(msg proto.Message) error {
 	return c.Crud.Upsert(msg)
 }
 
-func (c *uniqueKeyCRUD) UpsertMany(msgs []proto.Message) error {
+func (c *uniqueKeyCRUD) UpsertMany(msgs []protocompat.Message) error {
 	// Check for conflicts amongst the messages being inserted
 	conflictMap := make(map[string]string)
 	for _, msg := range msgs {
@@ -79,7 +79,7 @@ func (c *uniqueKeyCRUD) UpsertMany(msgs []proto.Message) error {
 	return c.Crud.UpsertMany(msgs)
 }
 
-func (c *uniqueKeyCRUD) UpsertWithID(id string, msg proto.Message) error {
+func (c *uniqueKeyCRUD) UpsertWithID(id string, msg protocompat.Message) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -90,7 +90,7 @@ func (c *uniqueKeyCRUD) UpsertWithID(id string, msg proto.Message) error {
 	return c.Crud.UpsertWithID(id, msg)
 }
 
-func (c *uniqueKeyCRUD) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+func (c *uniqueKeyCRUD) UpsertManyWithIDs(ids []string, msgs []protocompat.Message) error {
 	if len(ids) != len(msgs) {
 		return errors.Errorf("len(ids) %d does not match len(msgs) %d", len(ids), len(msgs))
 	}

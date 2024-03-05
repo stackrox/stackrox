@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// AssertProtoMessageEqual asserts the equality of two proto.Messages by marshalling them to JSON
+// AssertProtoMessageEqual asserts the equality of two protocompat.Messages by marshalling them to JSON
 // and comparing the JSON output.
-func AssertProtoMessageEqual(t *testing.T, a, b proto.Message) {
+func AssertProtoMessageEqual(t *testing.T, a, b protocompat.Message) {
 	m := jsonpb.Marshaler{}
 
 	jsonA := &bytes.Buffer{}

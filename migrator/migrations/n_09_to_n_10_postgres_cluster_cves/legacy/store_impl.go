@@ -6,12 +6,12 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	vulnDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cve"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const batchSize = 100
@@ -89,7 +89,7 @@ func (b *storeImpl) getMany(_ context.Context, ids []string) ([]*storage.CVE, []
 	}
 	defer dackTxn.Discard()
 
-	msgs := make([]proto.Message, 0, len(ids))
+	msgs := make([]protocompat.Message, 0, len(ids))
 	missing := make([]int, 0, len(ids)/2)
 	for idx, id := range ids {
 		msg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
