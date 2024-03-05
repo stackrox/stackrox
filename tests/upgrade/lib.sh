@@ -89,7 +89,7 @@ function roxcurl() {
   curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
-# TODO(ROX-22125): remove
+# TODO(ROX-22872): remove
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 

@@ -1057,6 +1057,7 @@ _record_build_info() {
     update_job_record "build" "${build_info}"
 }
 
+# TODO(ROX-22872): remove
 restore_56_1_backup() {
     info "Restoring a 56.1 backup"
 
