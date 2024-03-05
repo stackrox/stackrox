@@ -34,9 +34,18 @@ RUN microdnf upgrade -y --nobest && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import PGDG-RPM-GPG-KEY-RHEL && \
     microdnf -y --setopt=install_weak_deps=0 --nodocs install \
-        ca-certificates libicu systemd-sysv \
-        glibc-locale-source glibc-langpack-en \
-        perl-libs libxslt python3 uuid && \
+        ca-certificates \
+        libicu \
+        systemd-sysv \
+        glibc-locale-source \
+        glibc-langpack-en \
+        perl-libs \
+        libxslt  \
+        libicu \
+        lz4 \
+        zstd \
+        python3  \
+        uuid && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
