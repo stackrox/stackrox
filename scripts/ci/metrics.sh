@@ -233,13 +233,13 @@ save_test_metrics() {
 }
 
 batch_load_test_metrics() {
-    while _batch_load_test_metrics; do
+    while _load_one_batch; do
         echo "batch loaded"
     done
     echo "done"
 }
 
-_batch_load_test_metrics() {
+_load_one_batch() {
     info "Gathering a batch of test metrics to load"
     local files=()
     for metrics_file in $(gsutil ls "${_BATCH_STORAGE_UPLOAD}"); do
@@ -251,7 +251,7 @@ _batch_load_test_metrics() {
         return 1
     fi
 
-    info "Found ${#files[@]} metrics for this batch load"
+    info "Found ${#files[@]} metric(s) for this batch load"
 
     # Move the batch to a new location for processing to guard against reprocess
     local process_location
