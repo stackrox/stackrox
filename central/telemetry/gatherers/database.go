@@ -3,7 +3,6 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -21,16 +20,18 @@ func newDatabaseGatherer(postgres *postgresGatherer) *databaseGatherer {
 
 // Gather returns a list of stats about all the databases this Central is using
 func (d *databaseGatherer) Gather(ctx context.Context) *data.StorageInfo {
-	errList := errorhelpers.NewErrorList("")
 	capacity, used, err := fsutils.DiskStatsIn(migrations.DBMountPath())
-	errList.AddError(err)
+	var errStrings []string
+	if err != nil {
+		errStrings = []string{err.Error()}
+	}
 
 	storageInfo := &data.StorageInfo{
 		DiskCapacityBytes: int64(capacity),
 		DiskUsedBytes:     int64(used),
 		StorageType:       "unknown", // TODO: Figure out how to determine storage type (pvc etc.)
 		Databases:         []*data.DatabaseStats{},
-		Errors:            errList.ErrorStrings(),
+		Errors:            errStrings,
 	}
 
 	storageInfo.Databases = append(storageInfo.Databases, d.postgres.Gather(ctx))

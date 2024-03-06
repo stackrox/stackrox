@@ -1,10 +1,11 @@
 package detection
 
 import (
+	"errors"
 	"fmt"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/maputil"
 )
 
@@ -15,13 +16,14 @@ type setImpl struct {
 func (p *setImpl) ForEach(f func(policy CompiledPolicy) error) error {
 	m := p.policyIDToCompiled.GetMap()
 
-	errList := errorhelpers.NewErrorList("policy evaluation")
+	var evaluationErrs error
 	for _, compiled := range m {
 		if err := f(compiled); err != nil {
-			errList.AddError(err)
+			evaluationErrs = errors.Join(evaluationErrs, err)
 		}
+
 	}
-	return errList.ToError()
+	return pkgErrors.Wrap(evaluationErrs, "policy evaluation")
 }
 
 func (p *setImpl) ForOne(pID string, f func(CompiledPolicy) error) error {

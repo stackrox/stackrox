@@ -2,10 +2,10 @@ package rbac
 
 import (
 	"context"
+	stdErrors "errors"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -20,20 +20,17 @@ func newBindingFetcher(k8sAPI kubernetes.Interface) *bindingFetcher {
 }
 
 func (r *bindingFetcher) generateManyDependentEvents(bindings []namespacedBindingID, updateRoleID string, isClusterRole bool) ([]*central.SensorEvent, error) {
-	errList := errorhelpers.NewErrorList("generating dependent binding events")
+	var generateErrs error
 	var result []*central.SensorEvent
 	for _, b := range bindings {
 		if newEvent, err := r.generateDependentEvent(b, updateRoleID, isClusterRole); err != nil {
-			errList.AddError(err)
+			generateErrs = stdErrors.Join(generateErrs, err)
 		} else {
 			result = append(result, newEvent)
 		}
 	}
 
-	if !errList.Empty() {
-		return nil, errList.ToError()
-	}
-	return result, nil
+	return result, errors.Wrap(generateErrs, "generating dependent binding events")
 }
 
 // generateDependentEvent generates a fake update event for a RoleBinding or a ClusterRoleBinding from a Role or ClusterRole

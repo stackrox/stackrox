@@ -1,10 +1,12 @@
 package integration
 
 import (
+	"errors"
 	"fmt"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
@@ -57,22 +59,22 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 
 	var isRegistry bool
 	var isScanner bool
-	errorList := errorhelpers.NewErrorList("updating integration")
+	var updateErrs error
 	for _, category := range integration.GetCategories() {
 		switch category {
 		case storage.ImageIntegrationCategory_REGISTRY:
 			isRegistry = true
 			if err := e.registrySet.UpdateImageIntegration(integration); err != nil {
-				errorList.AddError(err)
+				updateErrs = errors.Join(updateErrs, err)
 			}
 		case storage.ImageIntegrationCategory_SCANNER:
 			isScanner = true
 			if err := e.scannerSet.UpdateImageIntegration(integration); err != nil {
-				errorList.AddError(err)
+				updateErrs = errors.Join(updateErrs, err)
 			}
 		case storage.ImageIntegrationCategory_NODE_SCANNER: // This is because node scanners are implemented into image integrations
 		default:
-			errorList.AddError(fmt.Errorf("source category %q has not been implemented", category))
+			updateErrs = errors.Join(updateErrs, fmt.Errorf("source category %q has not been implemented", category))
 		}
 	}
 
@@ -96,7 +98,7 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 		log.Errorf("Error registering health for integration %s: %s", integration.GetId(), integration.GetName())
 	}
 
-	return errorList.ToError()
+	return pkgErrors.Wrap(updateErrs, "updating integration")
 }
 
 // RemoveImageIntegration removes the integration with a matching id if one exists.
@@ -115,15 +117,16 @@ func (e *setImpl) RemoveImageIntegration(id string) (err error) {
 }
 
 func validateCommonFields(source *storage.ImageIntegration) error {
-	errorList := errorhelpers.NewErrorList("Validation")
+	var validateErrs error
 	if source.GetName() == "" {
-		errorList.AddString("Source name must be defined")
+		validateErrs = errors.Join(validateErrs, errox.InvalidArgs.New("Source name must be defined"))
 	}
 	if source.GetType() == "" {
-		errorList.AddString("Source type must be defined")
+		validateErrs = errors.Join(validateErrs, errox.InvalidArgs.New("Source type must be defined"))
 	}
 	if len(source.GetCategories()) == 0 {
-		errorList.AddString("At least one category must be defined")
+		validateErrs = errors.Join(validateErrs,
+			errox.InvalidArgs.New("At least one category must be defined"))
 	}
-	return errorList.ToError()
+	return pkgErrors.Wrap(validateErrs, "validating image integration")
 }

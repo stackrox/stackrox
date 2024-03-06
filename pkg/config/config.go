@@ -1,12 +1,12 @@
 package config
 
 import (
+	stdErrors "errors"
 	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -46,14 +46,16 @@ func (c *Compaction) applyDefaults() {
 
 // validate must be called after apply defaults
 func (c *Compaction) validate() error {
-	errorList := errorhelpers.NewErrorList("validating compaction")
+	var validateErrs error
 	if *c.BucketFillFraction <= 0 || *c.BucketFillFraction > 1.0 {
-		errorList.AddString("fill fraction must be greater than 0 and less than or equal to 1")
+		validateErrs = stdErrors.Join(validateErrs,
+			errors.New("fill fraction must be greater than 0 and less than or equal to 1"))
 	}
 	if c.FreeFractionThreshold != nil && (*c.FreeFractionThreshold <= 0 || *c.FreeFractionThreshold > 1.0) {
-		errorList.AddString("compaction threshold fraction must be greater than 0 and less than or equal to 1")
+		validateErrs = stdErrors.Join(validateErrs,
+			errors.New("compaction threshold fraction must be greater than 0 and less than or equal to 1"))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validateErrs, "validating compaction")
 }
 
 // Maintenance defines the maintenance functions to use when Central starts
@@ -69,11 +71,10 @@ func (m *Maintenance) applyDefaults() {
 }
 
 func (m *Maintenance) validate() error {
-	errorList := errorhelpers.NewErrorList("validating maintenance")
 	if err := m.Compaction.validate(); err != nil {
-		errorList.AddError(err)
+		return errors.Wrap(err, "validating maintenance")
 	}
-	return errorList.ToError()
+	return nil
 }
 
 // CentralDB defines the config options to access central-db
@@ -131,14 +132,14 @@ func (c *Config) applyDefaults() {
 }
 
 func (c *Config) validate() error {
-	errorList := errorhelpers.NewErrorList("validating config")
+	var validateErrs error
 	if err := c.Maintenance.validate(); err != nil {
-		errorList.AddError(err)
+		validateErrs = stdErrors.Join(validateErrs, err)
 	}
 	if err := c.CentralDB.validate(); err != nil {
-		errorList.AddError(err)
+		validateErrs = stdErrors.Join(validateErrs, err)
 	}
-	return errorList.ToError()
+	return errors.Wrap(validateErrs, "validating config")
 }
 
 // readConfig reads a configuration file

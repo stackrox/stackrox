@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	stdErrors "errors"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -11,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -249,12 +249,12 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 }
 
 func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context, cluster string, entities ...*storage.NetworkEntity) ([]string, error) {
-	var errs errorhelpers.ErrorList
+	var creationErrs error
 
 	skipList := set.NewStringSet()
 	for _, e := range entities {
 		if err := validateExternalNetworkEntity(e); err != nil {
-			errs.AddError(err)
+			creationErrs = stdErrors.Join(creationErrs, err)
 			skipList.Add(e.GetInfo().GetId())
 		}
 	}
@@ -271,7 +271,7 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 			var err error
 			ok, err = ds.writeAllowed(ctx, e.GetInfo().GetId())
 			if err != nil {
-				errs.AddError(err)
+				creationErrs = stdErrors.Join(creationErrs, err)
 				skipList.Add(e.GetInfo().GetId())
 				continue
 			}
@@ -279,7 +279,7 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 		}
 
 		if !ok {
-			errs.AddError(errors.Errorf("permission denied to create entity %s (CIDR=%s)",
+			creationErrs = stdErrors.Join(creationErrs, errors.Errorf("permission denied to create entity %s (CIDR=%s)",
 				e.GetInfo().GetExternalSource().GetName(), e.GetInfo().GetExternalSource().GetCidr()))
 			skipList.Add(e.GetInfo().GetId())
 		}
@@ -293,13 +293,13 @@ func (ds *dataStoreImpl) CreateExtNetworkEntitiesForCluster(ctx context.Context,
 
 		inserted = append(inserted, entity.GetInfo().GetId())
 		if err := ds.create(ctx, entity); err != nil {
-			errs.AddError(err)
+			creationErrs = stdErrors.Join(creationErrs, err)
 		}
 	}
 
 	go ds.doPushExternalNetworkEntitiesToSensor(cluster)
 
-	return inserted, errs.ToError()
+	return inserted, creationErrs
 }
 
 func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEntity) error {

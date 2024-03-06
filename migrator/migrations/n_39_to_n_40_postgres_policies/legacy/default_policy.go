@@ -2,12 +2,14 @@ package legacy
 
 import (
 	"embed"
+	"errors"
+	"fmt"
 	"path/filepath"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	defaultPolicies "github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -38,19 +40,19 @@ func getRawDefaultPolicies() ([]*storage.Policy, error) {
 
 	var policies []*storage.Policy
 
-	errList := errorhelpers.NewErrorList("raw default policies")
+	var validationErrs error
 	for _, f := range files {
 		p, err := defaultPolicies.ReadPolicyFile(filepath.Join(policiesDir, f.Name()))
 		if err != nil {
-			errList.AddError(err)
+			validationErrs = errors.Join(validationErrs, err)
 			continue
 		}
 		if p.GetId() == "" {
-			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
+			validationErrs = errors.Join(validationErrs, fmt.Errorf("policy %q does not have an ID defined", p.GetName()))
 			continue
 		}
 		policies = append(policies, p)
 	}
 
-	return policies, errList.ToError()
+	return policies, pkgErrors.Wrap(validationErrs, "validating default policies")
 }

@@ -2,10 +2,12 @@ package categories
 
 import (
 	"embed"
+	stdErrors "errors"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
@@ -30,22 +32,23 @@ func DefaultPolicyCategories() ([]*storage.PolicyCategory, error) {
 
 	var categories []*storage.PolicyCategory
 
-	errList := errorhelpers.NewErrorList("Default policy category validation")
+	var validationErrs error
 	for _, f := range files {
 		c, err := readCategoryFile(filepath.Join(categoriesDir, f.Name()))
 		if err != nil {
-			errList.AddError(err)
+			validationErrs = stdErrors.Join(validationErrs, err)
 			continue
 		}
 		if c.GetId() == "" {
-			errList.AddStringf("category %s does not have an ID defined", c.GetName())
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.Newf("category %s does not have an ID defined", c.GetName()))
 			continue
 		}
 
 		categories = append(categories, c)
 	}
 
-	return categories, errList.ToError()
+	return categories, errors.Wrap(validationErrs, "default policy category validation")
 }
 
 func readCategoryFile(path string) (*storage.PolicyCategory, error) {

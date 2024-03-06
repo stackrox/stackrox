@@ -1,13 +1,14 @@
 package complianceoperator
 
 import (
+	stdErrors "errors"
+
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/pointers"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -131,40 +132,40 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	if req == nil {
 		return errors.New("apply scan configuration request is empty")
 	}
-	var errList errorhelpers.ErrorList
+	var validationErrs error
 	if req.GetScanSettings().GetScanName() == "" {
-		errList.AddStrings("no name provided for the scan")
+		validationErrs = stdErrors.Join(validationErrs, errors.New("no name provided for the scan"))
 	}
 	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
+		validationErrs = stdErrors.Join(validationErrs, errors.New("compliance profiles not specified"))
 	}
 	if req.GetCron() != "" {
 		cron := gronx.New()
 		if !cron.IsValid(req.GetCron()) {
-			errList.AddStrings("schedule is not valid")
+			validationErrs = stdErrors.Join(validationErrs, errors.New("schedule is not valid"))
 		}
 	}
-	return errList.ToError()
+	return validationErrs
 }
 
 func validateUpdateScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) error {
 	if req == nil {
 		return errors.New("update scan configuration request is empty")
 	}
-	var errList errorhelpers.ErrorList
+	var validationErrs error
 	if req.GetScanSettings().GetScanName() == "" {
-		errList.AddStrings("no name provided for the scan")
+		validationErrs = stdErrors.Join(validationErrs, errors.New("no name provided for the scan"))
 	}
 	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
+		validationErrs = stdErrors.Join(validationErrs, errors.New("compliance profiles not specified"))
 	}
 	if req.GetCron() != "" {
 		cron := gronx.New()
 		if !cron.IsValid(req.GetCron()) {
-			errList.AddStrings("schedule is not valid")
+			validationErrs = stdErrors.Join(validationErrs, errors.New("schedule is not valid"))
 		}
 	}
-	return errList.ToError()
+	return validationErrs
 }
 
 func validateApplySuspendScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) error {

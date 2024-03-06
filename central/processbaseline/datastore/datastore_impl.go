@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	stdErrors "errors"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -159,7 +159,7 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByDeployment(ctx context.Context,
 	}
 
 	if len(errList) > 0 {
-		return errorhelpers.NewErrorListWithErrors("errors cleaning up process baselines", errList).ToError()
+		return errors.Wrap(stdErrors.Join(errList...), "cleaning up process baselines")
 	}
 
 	return nil

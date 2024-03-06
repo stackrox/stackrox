@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/set"
@@ -83,23 +83,23 @@ func (s *policyValidator) validateImport(policy *storage.Policy) error {
 func (s *policyValidator) internalValidate(policy *storage.Policy, additionalValidators []validationFunc, options ...booleanpolicy.ValidateOption) error {
 	s.removeEnforcementsForMissingLifecycles(policy)
 
-	errorList := errorhelpers.NewErrorList("policy invalid")
-	errorList.AddError(s.validateVersion(policy))
-	errorList.AddError(s.validateName(policy))
-	errorList.AddError(s.validateDescription(policy))
-	errorList.AddError(s.validateCompilableForLifecycle(policy, options...))
-	errorList.AddError(s.validateSeverity(policy))
-	errorList.AddError(s.validateCategories(policy))
-	errorList.AddError(s.validateScopes(policy))
-	errorList.AddError(s.validateExclusions(policy))
-	errorList.AddError(s.validateCapabilities(policy))
-	errorList.AddError(s.validateEventSource(policy))
-	errorList.AddError(s.validateEnforcement(policy))
+	var validateErrs error
+	validateErrs = stdErrors.Join(validateErrs, s.validateVersion(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateName(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateDescription(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateCompilableForLifecycle(policy, options...))
+	validateErrs = stdErrors.Join(validateErrs, s.validateSeverity(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateCategories(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateScopes(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateExclusions(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateCapabilities(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateEventSource(policy))
+	validateErrs = stdErrors.Join(validateErrs, s.validateEnforcement(policy))
 
 	for _, validator := range additionalValidators {
-		errorList.AddError(validator(policy))
+		validateErrs = stdErrors.Join(validateErrs, validator(policy))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validateErrs, "validating policy")
 }
 
 func (s *policyValidator) validateVersion(policy *storage.Policy) error {
@@ -129,17 +129,17 @@ func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy,
 		return errors.New("a policy must apply to at least one lifecycle stage")
 	}
 
-	errorList := errorhelpers.NewErrorList("error validating lifecycle stage")
+	var validateErrs error
 	if policies.AppliesAtBuildTime(policy) {
-		errorList.AddError(s.compilesForBuildTime(policy, options...))
+		validateErrs = stdErrors.Join(validateErrs, s.compilesForBuildTime(policy, options...))
 	}
 	if policies.AppliesAtDeployTime(policy) {
-		errorList.AddError(s.compilesForDeployTime(policy, options...))
+		validateErrs = stdErrors.Join(validateErrs, s.compilesForDeployTime(policy, options...))
 	}
 	if policies.AppliesAtRunTime(policy) {
-		errorList.AddError(s.compilesForRunTime(policy, options...))
+		validateErrs = stdErrors.Join(validateErrs, s.compilesForRunTime(policy, options...))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validateErrs, "validating lifecycle stage")
 }
 
 func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage.Policy) {

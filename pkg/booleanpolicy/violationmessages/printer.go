@@ -1,13 +1,14 @@
 package violationmessages
 
 import (
+	stdErrors "errors"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -168,7 +169,7 @@ func Render(
 	networkFlow *augmentedobjs.NetworkFlowDetails,
 	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
 ) ([]*storage.Alert_Violation, bool, bool, bool, bool, error) {
-	errorList := errorhelpers.NewErrorList("violation printer")
+	var printErrs error
 	messages := set.NewStringSet()
 	for _, fieldMap := range result.Matches {
 		printers := lookupViolationPrinters(section, fieldMap)
@@ -178,7 +179,7 @@ func Render(
 		for _, printerFunc := range printers {
 			messagesForResult, err := printerFunc(fieldMap)
 			if err != nil {
-				errorList.AddError(err)
+				printErrs = stdErrors.Join(printErrs, err)
 				continue
 			}
 			messages.AddAll(messagesForResult...)
@@ -190,7 +191,7 @@ func Render(
 	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
 	isNetworkPolicyViolation := networkPolicy != nil && checkForNetworkPolicyViolation(result)
 	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation {
-		errorList.AddError(errors.New("missing messages"))
+		printErrs = stdErrors.Join(printErrs, errors.New("missing messages"))
 	}
 
 	alertType := storage.Alert_Violation_GENERIC
@@ -208,5 +209,6 @@ func Render(
 			Type:    alertType,
 		})
 	}
-	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation,
+		isNetworkPolicyViolation, errors.Wrap(printErrs, "violation printer")
 }

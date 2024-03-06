@@ -144,7 +144,7 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanInvalid() {
 	msg := getTestScheduledScanRequestMsg("error", "error")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
-		errSubstr: "compliance profiles not specified, schedule is not valid",
+		errSubstr: "compliance profiles not specified\nschedule is not valid",
 	}
 
 	actual := s.sendMessage(1, msg)
@@ -386,7 +386,7 @@ func (s *HandlerTestSuite) TestProcessUpdateScheduledScanInvalid() {
 	msg := getTestUpdateScanRequestMsg("error", "error")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
-		errSubstr: "compliance profiles not specified, schedule is not valid",
+		errSubstr: "compliance profiles not specified\nschedule is not valid",
 	}
 
 	actual := s.sendMessage(1, msg)

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
@@ -34,14 +34,16 @@ func CreatorWithoutRepoList() (string, types.Creator) {
 }
 
 func validate(ibm *storage.IBMRegistryConfig) error {
-	errorList := errorhelpers.NewErrorList("IBM Validation")
+	var validationErrs error
 	if ibm.GetEndpoint() == "" {
-		errorList.AddString("Endpoint must be specified for IBM registry (e.g. us.icr.io)")
+		validationErrs = errors.Join(validationErrs,
+			errors.New("endpoint must be specified for IBM registry (e.g. us.icr.io)"))
 	}
 	if ibm.GetApiKey() == "" {
-		errorList.AddString("IAM API Key must be specified for IBM registry")
+		validationErrs = errors.Join(validationErrs,
+			errors.New("IAM API Key must be specified for IBM registry"))
 	}
-	return errorList.ToError()
+	return pkgErrors.Wrap(validationErrs, "validating config")
 }
 
 func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*docker.Registry, error) {

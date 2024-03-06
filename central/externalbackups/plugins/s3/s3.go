@@ -2,6 +2,7 @@ package s3
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +21,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -39,24 +40,27 @@ type s3 struct {
 }
 
 func validate(conf *storage.S3Config) error {
-	errorList := errorhelpers.NewErrorList("S3 Validation")
+	var validationErrs error
 	if conf.GetBucket() == "" {
-		errorList.AddString("Bucket must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("bucket must be specified"))
 	}
 	if !conf.GetUseIam() {
 		if conf.GetAccessKeyId() == "" {
-			errorList.AddString("Access Key ID must be specified")
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.New("access key ID must be specified"))
 		}
 		if conf.GetSecretAccessKey() == "" {
-			errorList.AddString("Secret Access Key must be specified")
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.New("secret access key must be specified"))
 		}
 	} else if conf.GetAccessKeyId() != "" || conf.GetSecretAccessKey() != "" {
-		errorList.AddStrings("IAM and access/secret key use are mutually exclusive. Only specify one")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("IAM and access/secret key use are mutually exclusive. Only specify one"))
 	}
 	if conf.GetRegion() == "" {
-		errorList.AddString("Region must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("region must be specified"))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "validating S3 config")
 }
 
 func newS3(integration *storage.ExternalBackup) (*s3, error) {

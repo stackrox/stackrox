@@ -2,6 +2,7 @@ package csv
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -156,50 +156,50 @@ func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQu
 
 	cveRows := make([]*NodeCVERow, 0, len(vulnResolvers))
 	for _, d := range vulnResolvers {
-		var errorList errorhelpers.ErrorList
+		var errs error
 		dataRow := &NodeCVERow{}
 		dataRow.CVE = d.CVE(ctx)
 		// query to IsFixable should not have Fixable field
 		rawQueryWithoutFixable := resolvers.FilterFieldFromRawQuery(rawQuery, search.Fixable)
 		isFixable, err := d.IsFixable(ctx, rawQueryWithoutFixable)
 		if err != nil {
-			errorList.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 		dataRow.Fixable = strconv.FormatBool(isFixable)
 		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
 		envImpact, err := d.EnvImpact(ctx)
 		if err != nil {
-			errorList.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 		dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
 		dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
 		// Entity counts should be scoped to CVE only
 		nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
 		if err != nil {
-			errorList.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 		dataRow.NodeCount = fmt.Sprint(nodeCount)
 		// Entity counts should be scoped to CVE only
 		componentCount, err := d.NodeComponentCount(ctx, resolvers.RawQuery{})
 		if err != nil {
-			errorList.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 		dataRow.ComponentCount = fmt.Sprint(componentCount)
 		scannedTime, err := d.LastScanned(ctx)
 		if err != nil {
-			errorList.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 		dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
 		publishedTime, err := d.PublishedOn(ctx)
 		if err != nil {
-			errorList.AddError(err)
+			errs = stdErrors.Join(errs, err)
 		}
 		dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
 		dataRow.Summary = d.Summary(ctx)
 
 		cveRows = append(cveRows, dataRow)
-		if err := errorList.ToError(); err != nil {
-			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, err)
+		if errs != nil {
+			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, errs)
 		}
 	}
 	return cveRows, nil

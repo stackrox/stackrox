@@ -2,11 +2,12 @@ package gatherers
 
 import (
 	"context"
+	stdErrors "errors"
+	"strings"
 
 	"github.com/pkg/errors"
 	depDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	nsDatastore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -26,13 +27,12 @@ func newNamespaceGatherer(namespaceDatastore nsDatastore.DataStore, deploymentDa
 
 // Gather returns a list of stats about all namespaces in a cluster
 func (n *namespaceGatherer) Gather(ctx context.Context, clusterID string) ([]*data.NamespaceInfo, []string) {
-	errList := errorhelpers.NewErrorList("")
 	namespaces, err := n.namespaceDatastore.SearchNamespaces(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 	if err != nil {
-		errList.AddError(errors.Wrapf(err, "unable to load namespaces for cluster %s", clusterID))
-		return nil, errList.ErrorStrings()
+		return nil, []string{errors.Wrapf(err, "unable to load namespaces for cluster %s", clusterID).Error()}
 	}
 	namespaceList := make([]*data.NamespaceInfo, 0, len(namespaces))
+	var searchErrs error
 	for _, namespace := range namespaces {
 		name := namespace.GetName()
 		if !telemetry.WellKnownNamespaces.Contains(name) {
@@ -40,7 +40,7 @@ func (n *namespaceGatherer) Gather(ctx context.Context, clusterID string) ([]*da
 		}
 		deployments, err := n.deploymentDatastore.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.NamespaceID, namespace.GetId()).ProtoQuery())
 		if err != nil {
-			errList.AddError(errors.Wrapf(err, "unable to load deployments for namespace %s", namespace.GetName()))
+			searchErrs = stdErrors.Join(searchErrs, errors.Wrapf(err, "unable to load deployments for namespace %s", namespace.GetName()))
 			continue
 		}
 		namespaceList = append(namespaceList, &data.NamespaceInfo{
@@ -50,5 +50,9 @@ func (n *namespaceGatherer) Gather(ctx context.Context, clusterID string) ([]*da
 			// TODO: Fill out churn metrics once they are implemented
 		})
 	}
-	return namespaceList, errList.ErrorStrings()
+	var errList []string
+	if searchErrs != nil {
+		errList = strings.Split(searchErrs.Error(), "\n")
+	}
+	return namespaceList, errList
 }

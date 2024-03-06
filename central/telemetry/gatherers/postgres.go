@@ -2,10 +2,11 @@ package gatherers
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -26,7 +27,7 @@ func newPostgresGatherer(db postgres.DB, adminConfig *postgres.Config) *postgres
 
 // Gather returns telemetry information about the Postgres database used by this central
 func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
-	errorList := errorhelpers.NewErrorList("postgres telemetry gather")
+	var gathererErrs error
 	dbStats := globaldb.CollectPostgresStats(ctx, d.db)
 	dbStats.Type = "postgres"
 
@@ -35,16 +36,20 @@ func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 	// Check Postgres remaining capacity
 	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
 		totalSize, err := pgadmin.GetTotalPostgresSize(d.adminConfig)
-		errorList.AddError(err)
+		if err != nil {
+			gathererErrs = errors.Join(gathererErrs, err)
+		}
 		dbStats.UsedBytes = totalSize
 
 		availableDBBytes, err := pgadmin.GetRemainingCapacity(d.adminConfig)
-		errorList.AddError(err)
+		if err != nil {
+			gathererErrs = errors.Join(gathererErrs, err)
+		}
 		dbStats.AvailableBytes = availableDBBytes
 	}
 
-	if !errorList.Empty() {
-		dbStats.Errors = errorList.ErrorStrings()
+	if gathererErrs != nil {
+		dbStats.Errors = strings.Split(gathererErrs.Error(), "\n")
 	}
 
 	return dbStats

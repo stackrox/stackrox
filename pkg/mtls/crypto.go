@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	stdErrors "errors"
 	"math/big"
 	"os"
 	"time"
@@ -17,7 +18,6 @@ import (
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/x509utils"
@@ -251,14 +251,14 @@ func createSigningProfile(lifetime time.Duration, gracePeriod time.Duration) *co
 }
 
 func validateSubject(subj Subject) error {
-	errorList := errorhelpers.NewErrorList("")
+	var validateErrs error
 	if subj.ServiceType == storage.ServiceType_UNKNOWN_SERVICE {
-		errorList.AddString("Subject service type must be known")
+		validateErrs = stdErrors.Join(validateErrs, errors.New("Subject service type must be known"))
 	}
 	if subj.Identifier == "" {
-		errorList.AddString("Subject Identifier must be non-empty")
+		validateErrs = stdErrors.Join(validateErrs, errors.New("Subject Identifier must be non-empty"))
 	}
-	return errorList.ToError()
+	return validateErrs
 }
 
 func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCertOption) (*IssuedCert, error) {

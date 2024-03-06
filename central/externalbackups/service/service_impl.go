@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	stdErrors "errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -11,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -97,22 +97,22 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 }
 
 func validateBackup(backup *storage.ExternalBackup) error {
-	errorList := errorhelpers.NewErrorList("external backup validation")
+	var validationErrs error
 
 	err := endpoints.ValidateEndpoints(backup.Config)
 	if err != nil {
-		errorList.AddWrap(err, "invalid endpoint")
+		validationErrs = stdErrors.Join(validationErrs, errors.Wrap(err, "invalid endpoint"))
 	}
 	if backup.GetName() == "" {
-		errorList.AddString("name field must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("name must be specified"))
 	}
 	if backup.GetBackupsToKeep() < 1 {
-		errorList.AddString("backups to keep must be >=1")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("backups to keep must be >=1"))
 	}
 	if _, err := schedule.ConvertToCronTab(backup.GetSchedule()); err != nil {
-		errorList.AddError(err)
+		validationErrs = stdErrors.Join(validationErrs, err)
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "external backup validation")
 }
 
 func (s *serviceImpl) testBackup(ctx context.Context, backup *storage.ExternalBackup) error {

@@ -1,10 +1,11 @@
 package gatherer
 
 import (
+	stdErrors "errors"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -37,11 +38,11 @@ func updateInStorage(entityDS datastore.EntityDataStore, lastSeenIDs set.StringS
 }
 
 func removeOutdatedNetworks(entityDS datastore.EntityDataStore, ids ...string) error {
-	var errs errorhelpers.ErrorList
+	var removeErrs error
 	for _, id := range ids {
 		if err := entityDS.DeleteExternalNetworkEntity(networkGraphWriteCtx, id); err != nil {
-			errs.AddError(err)
+			removeErrs = stdErrors.Join(removeErrs, err)
 		}
 	}
-	return errs.ToError()
+	return removeErrs
 }

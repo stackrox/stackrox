@@ -5,9 +5,10 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"net/http"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -44,17 +45,16 @@ func (s *certSet) Fetch(ctx context.Context) error {
 		return err
 	}
 
-	errs := errorhelpers.NewErrorList("decoding certificates")
-
+	var decodeErrs error
 	for keyID, certPEM := range certs {
 		certBlock, _ := pem.Decode([]byte(certPEM))
 		cert, err := x509.ParseCertificate(certBlock.Bytes)
 		if err != nil {
-			errs.AddError(err)
+			decodeErrs = errors.Join(decodeErrs, err)
 			continue
 		}
 		s.keys[keyID] = cert.PublicKey
 	}
 
-	return errs.ToError()
+	return pkgErrors.Wrap(decodeErrs, "decoding certificates")
 }

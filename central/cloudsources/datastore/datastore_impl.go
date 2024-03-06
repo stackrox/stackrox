@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	stdErrors "errors"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/search"
@@ -10,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -90,23 +90,25 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 		return errors.New("empty cloud source")
 	}
 
-	errorList := errorhelpers.NewErrorList("Validation")
+	var validationErrors error
 	if cloudSource.GetId() == "" {
-		errorList.AddString("cloud source id must be defined")
+		validationErrors = stdErrors.Join(validationErrors, errox.InvalidArgs.New("cloud source ID must be defined"))
 	}
 	if cloudSource.GetName() == "" {
-		errorList.AddString("cloud source name must be defined")
+		validationErrors = stdErrors.Join(validationErrors,
+			errox.InvalidArgs.New("cloud source name must be defined"))
 	}
 	if cloudSource.GetCredentials().GetSecret() == "" {
-		errorList.AddString("cloud source credentials must be defined")
+		validationErrors = stdErrors.Join(validationErrors,
+			errox.InvalidArgs.New("cloud source credentials must be defined"))
 	}
 	if err := validateType(cloudSource); err != nil {
-		errorList.AddError(err)
+		validationErrors = stdErrors.Join(validationErrors, err)
 	}
 	if err := endpoints.ValidateEndpoints(cloudSource.GetConfig()); err != nil {
-		errorList.AddWrap(err, "invalid endpoint")
+		validationErrors = stdErrors.Join(validationErrors, errox.InvalidArgs.CausedBy(err))
 	}
-	return errorList.ToError()
+	return validationErrors
 }
 
 func validateType(cloudSource *storage.CloudSource) error {

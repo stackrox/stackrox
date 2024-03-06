@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	stdErrors "errors"
 	"fmt"
 	"io"
 	"time"
@@ -31,7 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -388,13 +388,13 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	remarks := make(map[string]*apiV1.DeployDetectionRemark)
 
 	var deployments []*storage.Deployment
-	errorList := errorhelpers.NewErrorList("error parsing YAML files")
+	var parseErrs error
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
 		d, err := convertK8sResource(r)
 		if err != nil {
-			errorList.AddError(err)
+			parseErrs = stdErrors.Join(parseErrs, err)
 			continue
 		}
 		if d == nil {
@@ -402,13 +402,12 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		}
 		deployments = append(deployments, d)
 	}
-	errs := errorList.ToError()
 
-	if len(deployments) == 0 && errs != nil {
-		return nil, errox.InvalidArgs.New("every deployment YAML failed to parse - aborting").CausedBy(errs)
+	if len(deployments) == 0 && parseErrs != nil {
+		return nil, errox.InvalidArgs.New("every deployment YAML failed to parse - aborting").CausedBy(parseErrs)
 	}
-	if len(deployments) > 0 && errs != nil {
-		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
+	if len(deployments) > 0 && parseErrs != nil {
+		log.Warnf("Deployment YAMLs failed to parse: %v", parseErrs)
 	}
 
 	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor

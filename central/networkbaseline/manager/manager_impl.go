@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	stdErrors "errors"
 	"testing"
 	"time"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
@@ -427,14 +427,16 @@ func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 		}
 	}
 	if len(missingDeploymentIDs) > 0 || len(invalidPeerTypes) > 0 {
-		errorList := errorhelpers.NewErrorList("peer validation")
+		var validationErrs error
 		if len(missingDeploymentIDs) > 0 {
-			errorList.AddStringf("no baselines found for deployment IDs %v", missingDeploymentIDs)
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.NotFound.Newf("no baselines found for deployment IDs %v", missingDeploymentIDs))
 		}
 		if len(invalidPeerTypes) > 0 {
-			errorList.AddStringf("invalid types for peers: %v", invalidPeerTypes)
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.Newf("invalid type for peers %v", invalidPeerTypes))
 		}
-		return errors.Wrap(errox.InvalidArgs, errorList.String())
+		return errox.InvalidArgs.CausedBy(validationErrs)
 	}
 	return nil
 }

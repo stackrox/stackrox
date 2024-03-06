@@ -2,12 +2,13 @@ package gcp
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"cloud.google.com/go/compute/metadata"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -40,19 +41,23 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	c := metadata.NewClient(metadataHTTPClient)
 
 	var verified bool
-	errs := errorhelpers.NewErrorList("retrieving GCE metadata")
+	var retrievalErrs error
 	md, err := getMetadataFromIdentityToken(ctx)
-	errs.AddError(err)
+	if err != nil {
+		retrievalErrs = errors.Join(retrievalErrs, err)
+	}
 	if md != nil {
 		verified = true
 	} else {
 		md, err = getMetadataFromAPI(c)
 		verified = false
-		errs.AddError(err)
+		if err != nil {
+			retrievalErrs = errors.Join(retrievalErrs, err)
+		}
 	}
 
 	if md == nil {
-		return nil, errs.ToError()
+		return nil, pkgErrors.Wrap(retrievalErrs, "retrieving GCE metadata")
 	}
 
 	var region string

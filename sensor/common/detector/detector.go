@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	stdErrors "errors"
 	"sort"
 
 	"github.com/gogo/protobuf/types"
@@ -17,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -313,15 +313,15 @@ func (d *detectorImpl) processBaselineSync(sync *central.BaselineSync) error {
 }
 
 func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineSync) error {
-	errs := errorhelpers.NewErrorList("processing network baseline sync")
+	var processingErrs error
 	for _, baseline := range sync.GetNetworkBaselines() {
 		err := d.networkbaselineEval.AddBaseline(baseline)
 		// Remember the error and continue looping
 		if err != nil {
-			errs.AddError(err)
+			processingErrs = stdErrors.Join(processingErrs, err)
 		}
 	}
-	return errs.ToError()
+	return errors.Wrap(processingErrs, "processing network baseline sync")
 }
 
 // ProcessUpdatedImage updates the imageCache with a new value

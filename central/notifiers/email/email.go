@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	stdErrors "errors"
 	"fmt"
 	"mime/multipart"
 	"net"
@@ -26,7 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
@@ -133,26 +134,28 @@ func Validate(emailConf *storage.Email, validateSecret bool) error {
 	if emailConf == nil {
 		return errors.New("Email configuration is required")
 	}
-	errorList := errorhelpers.NewErrorList("Email validation")
+	var validationErrs error
 	if emailConf.GetServer() == "" {
-		errorList.AddString("SMTP Server must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("SMTP server must be specified"))
 	}
 	if emailConf.GetSender() == "" {
-		errorList.AddString("Sender must be specified")
+
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("sender must be specified"))
 	}
 	// username and password are optional for unauthenticated smtp
 	if !emailConf.AllowUnauthenticatedSmtp {
 		if emailConf.GetUsername() == "" {
-			errorList.AddString("Username must be specified")
+			validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("username must be specified"))
 		}
 		if validateSecret && emailConf.GetPassword() == "" {
-			errorList.AddString("Password must be specified")
+			validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("password must be specified"))
 		}
 	}
 	if !emailConf.GetDisableTLS() && emailConf.GetStartTLSAuthMethod() != storage.Email_DISABLED {
-		errorList.AddString("TLS must be disabled to use a StartTLS Auth Method")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("TLS must be disabled to use a StartTLS Auth Method"))
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "email configuration validation")
 }
 
 func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,

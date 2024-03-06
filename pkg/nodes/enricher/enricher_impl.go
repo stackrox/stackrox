@@ -2,14 +2,13 @@ package enricher
 
 import (
 	"context"
-	"fmt"
+	stdErrors "errors"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -76,7 +75,7 @@ func (e *enricherImpl) EnrichNode(node *storage.Node) error {
 }
 
 func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory) error {
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
+	var enrichErrs error
 
 	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeScannerWithDataSource {
 		scanners := make([]types.NodeScannerWithDataSource, 0, len(e.scanners))
@@ -87,20 +86,20 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 	})
 
 	if len(scanners) == 0 {
-		errorList.AddError(errors.New("no node scanners are integrated"))
-		return errorList.ToError()
+		return errors.Wrapf(errors.New("no node scanners are integrated"),
+			"error scanning node %s:%s", node.GetClusterName(), node.GetName())
 	}
 
 	for _, scanner := range scanners {
 		if err := e.enrichNodeWithScanner(node, nodeInventory, scanner.GetNodeScanner()); err != nil {
-			errorList.AddError(err)
+			enrichErrs = stdErrors.Join(enrichErrs, err)
 			continue
 		}
 
 		return nil
 	}
 
-	return errorList.ToError()
+	return errors.Wrapf(enrichErrs, "error scanning node %s:%s", node.GetClusterName(), node.GetName())
 }
 
 func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *storage.NodeInventory, scanner types.NodeScanner) error {

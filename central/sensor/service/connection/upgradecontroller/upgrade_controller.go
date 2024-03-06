@@ -2,13 +2,14 @@ package upgradecontroller
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -43,13 +44,13 @@ func New(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concu
 }
 
 func validateTimeouts(t timeoutProvider) error {
-	errList := errorhelpers.NewErrorList("timeout validation")
+	var validationErrs error
 	for _, duration := range []time.Duration{t.StuckInSameStateTimeout(), t.UpgraderStartGracePeriod(), t.AbsoluteNoProgressTimeout(), t.StateReconcilePollInterval()} {
 		if duration <= 0 {
-			errList.AddStringf("invalid duration: %v", duration)
+			validationErrs = errors.Join(validationErrs, errox.InvalidArgs.Newf("invalid duration %v", duration))
 		}
 	}
-	return errList.ToError()
+	return validationErrs
 }
 
 func newWithTimeoutProvider(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag, timeouts timeoutProvider) (UpgradeController, error) {

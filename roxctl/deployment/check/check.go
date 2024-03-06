@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	stdErrors "errors"
 	"os"
 	"strings"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -182,14 +182,14 @@ func (d *deploymentCheckCommand) Validate() error {
 	if d.cluster == "" && d.namespace != defaultNamespace {
 		d.env.Logger().WarnfLn("Cluster is empty. Namespace will only have an effect if '--cluster' is defined.")
 	}
-	var fileErrs errorhelpers.ErrorList
+	var fileErrs error
 	for _, file := range d.files {
 		if _, err := os.Open(file); err != nil {
-			fileErrs.AddError(err)
+			fileErrs = stdErrors.Join(fileErrs, err)
 		}
 	}
-	if !fileErrs.Empty() {
-		return common.ErrInvalidCommandOption.CausedBy(fileErrs.ErrorStrings())
+	if fileErrs != nil {
+		return common.ErrInvalidCommandOption.CausedBy(fileErrs)
 	}
 
 	return nil

@@ -1,10 +1,10 @@
 package docker
 
 import (
-	"fmt"
+	"errors"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // manifestFuncs explicitly lists the container image manifest handlers.
@@ -52,14 +52,14 @@ func (r *RegistryWithoutManifestCall) Metadata(image *storage.Image) (*storage.I
 		ref = image.GetName().GetTag()
 	}
 
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("Error accessing %q", image.GetName().GetFullName()))
+	var metadataErrs error
 	for _, f := range manifestFuncs {
 		metadata, err := f(r.Registry, remote, ref)
 		if err != nil {
-			errorList.AddError(err)
+			metadataErrs = errors.Join(metadataErrs, err)
 			continue
 		}
 		return metadata, nil
 	}
-	return nil, errorList.ToError()
+	return nil, pkgErrors.Wrapf(metadataErrs, "accessing metadata for %q", image.GetName().GetFullName())
 }

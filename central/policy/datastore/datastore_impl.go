@@ -13,7 +13,6 @@ import (
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
@@ -41,7 +40,7 @@ type PolicyStoreErrorList struct {
 }
 
 func (p *PolicyStoreErrorList) Error() string {
-	return errorhelpers.NewErrorListWithErrors("policy store encountered errors", p.Errors).String()
+	return errorsPkg.Wrap(errors.Join(p.Errors...), "policy store encountered errors").Error()
 }
 
 // IDConflictError can be returned by AddPolicies when a policy exists with the same ID as a new policy

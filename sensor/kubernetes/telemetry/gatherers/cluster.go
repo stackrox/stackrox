@@ -2,11 +2,12 @@ package gatherers
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -37,19 +38,19 @@ func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore store.De
 
 // Gather returns stats about the cluster this Sensor is monitoring
 func (c *ClusterGatherer) Gather(ctx context.Context) *data.ClusterInfo {
-	errorList := errorhelpers.NewErrorList("")
+	var gatherErrs error
 
 	orchestrator, err := c.getOrchestrator(ctx)
-	errorList.AddError(err)
+	gatherErrs = errors.Join(gatherErrs, err)
 
 	providerMetadata := providers.GetMetadata(ctx)
 	cloudProvider := telemetry.GetProviderString(providerMetadata)
 
 	nodes, err := c.nodeGatherer.Gather(ctx)
-	errorList.AddError(err)
+	gatherErrs = errors.Join(gatherErrs, err)
 
 	namespaces, nsErrors := c.namespaceGatherer.Gather(ctx)
-	errorList.AddErrors(nsErrors...)
+	gatherErrs = errors.Join(gatherErrs, errors.Join(nsErrors...))
 
 	return &data.ClusterInfo{
 		Sensor: &data.SensorInfo{
@@ -60,7 +61,7 @@ func (c *ClusterGatherer) Gather(ctx context.Context) *data.ClusterInfo {
 		Nodes:         nodes,
 		Namespaces:    namespaces,
 		CloudProvider: cloudProvider,
-		Errors:        errorList.ErrorStrings(),
+		Errors:        strings.Split(gatherErrs.Error(), "\n"),
 	}
 }
 

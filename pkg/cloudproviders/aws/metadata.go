@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -16,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -55,20 +55,22 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		return nil, nil
 	}
 
-	errs := errorhelpers.NewErrorList("retrieving AWS EC2 metadata")
+	var retrievalErrs error
 	verified := true
 	doc, err := signedIdentityDoc(ctx, mdClient)
 	if err != nil {
 		log.Warnf("Could not verify AWS public certificate: %v", err)
-		errs.AddError(err)
+		retrievalErrs = stdErrors.Join(retrievalErrs, err)
 		verified = false
 
 		doc, err = plaintextIdentityDoc(ctx, mdClient)
-		errs.AddError(err)
+		if err != nil {
+			retrievalErrs = stdErrors.Join(retrievalErrs, err)
+		}
 	}
 
 	if doc == nil {
-		return nil, errs.ToError()
+		return nil, errors.Wrap(retrievalErrs, "retrieving AWS EC2 metadata")
 	}
 
 	clusterMetadata := getClusterMetadata(ctx, mdClient, doc)

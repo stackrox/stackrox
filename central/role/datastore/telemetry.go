@@ -2,10 +2,11 @@ package datastore
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -24,12 +25,12 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	totals := make(map[string]any)
 	rs := Singleton()
 
-	gatherErrs := errorhelpers.NewErrorList("cannot gather from role store")
-	gatherErrs.AddError(totalPermissionSets(ctx, totals, rs))
-	gatherErrs.AddError(totalRoles(ctx, totals, rs))
-	gatherErrs.AddError(totalAccessScopes(ctx, totals, rs))
+	var gatherErrs error
+	gatherErrs = stdErrors.Join(gatherErrs, totalPermissionSets(ctx, totals, rs))
+	gatherErrs = stdErrors.Join(gatherErrs, totalRoles(ctx, totals, rs))
+	gatherErrs = stdErrors.Join(gatherErrs, totalAccessScopes(ctx, totals, rs))
 
-	return totals, gatherErrs.ToError()
+	return totals, errors.Wrap(gatherErrs, "gather data from role store")
 }
 
 func totalPermissionSets(ctx context.Context, props map[string]any, rs DataStore) error {

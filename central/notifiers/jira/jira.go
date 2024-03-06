@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
@@ -344,18 +345,19 @@ func (j *jira) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluster
 
 // Validate Jira notifier
 func Validate(jira *storage.Jira, validateSecret bool) error {
-	errorList := errorhelpers.NewErrorList("Jira validation")
+	var validationErrs error
 	if jira.GetIssueType() == "" {
-		errorList.AddString("Issue Type must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("issue type must be specified"))
 	}
 	if jira.GetUrl() == "" {
-		errorList.AddString("URL must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("URL must be specified"))
 	}
 	if jira.GetUsername() == "" {
-		errorList.AddString("Username must be specified")
+		validationErrs = stdErrors.Join(validationErrs, errox.InvalidArgs.New("username must be specified"))
 	}
 	if validateSecret && jira.GetPassword() == "" {
-		errorList.AddString("Password or API Token must be specified")
+		validationErrs = stdErrors.Join(validationErrs,
+			errox.InvalidArgs.New("password or API token must be specified"))
 	}
 
 	if len(jira.GetPriorityMappings()) != 0 {
@@ -367,10 +369,11 @@ func Validate(jira *storage.Jira, validateSecret bool) error {
 			delete(unfoundSeverities, mapping.GetSeverity())
 		}
 		for sev := range unfoundSeverities {
-			errorList.AddStringf("mapping for severity %s required", sev.String())
+			validationErrs = stdErrors.Join(validationErrs,
+				errox.InvalidArgs.Newf("mapping for severity %s required", sev.String()))
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "JIRA validation")
 }
 
 func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDataStore.AttackReadOnlyDataStore,

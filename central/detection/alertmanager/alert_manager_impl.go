@@ -2,6 +2,7 @@ package alertmanager
 
 import (
 	"context"
+	stdErrors "errors"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -13,7 +14,6 @@ import (
 	pkgAlert "github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -94,11 +94,11 @@ func (d *alertManagerImpl) notifyUpdatedRuntimeAlerts(ctx context.Context, updat
 
 // updateBatch updates all alerts in the datastore.
 func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
-	errList := errorhelpers.NewErrorList("Error updating alerts: ")
+	var updateErrs error
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.UpsertAlert(ctx, existingAlert))
+		updateErrs = stdErrors.Join(updateErrs, d.alerts.UpsertAlert(ctx, existingAlert))
 	}
-	return errList.ToError()
+	return errors.Wrap(updateErrs, "updating alerts")
 }
 
 // markAlertsResolved marks all input alerts resolved in the input datastore.

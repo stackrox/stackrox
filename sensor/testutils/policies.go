@@ -1,12 +1,12 @@
 package testutils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/stackrox/rox/generated/storage"
 	localSensor "github.com/stackrox/rox/generated/tools/local-sensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
@@ -17,16 +17,16 @@ func GetPoliciesFromFile(fileName string) (policies []*storage.Policy, retError 
 		retError = fmt.Errorf("error opening %s: %w\n", fileName, err)
 		return
 	}
-	errorList := errorhelpers.NewErrorList("read policies from file")
+	var readErrs error
 	defer func() {
 		if err = file.Close(); err != nil {
-			errorList.AddError(err)
+			readErrs = errors.Join(readErrs, err)
 		}
-		retError = errorList.ToError()
+		retError = readErrs
 	}()
 	var policiesMsg localSensor.LocalSensorPolicies
 	if err := jsonutil.JSONReaderToProto(file, &policiesMsg); err != nil {
-		errorList.AddStringf("error unmarshaling %s: %s\n", fileName, err)
+		readErrs = errors.Join(readErrs, fmt.Errorf("unmarshaling %s: %w", fileName, err))
 		return
 	}
 	policies = append(policies, policiesMsg.Policies...)

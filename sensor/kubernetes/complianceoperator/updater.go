@@ -2,6 +2,7 @@ package complianceoperator
 
 import (
 	"context"
+	stdErrors "errors"
 	"strings"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
@@ -267,13 +267,14 @@ func checkRequiredComplianceCRDsExist(resourceList *metav1.APIResourceList) erro
 		detectedKinds.Add(resource.Kind)
 	}
 
-	errorList := errorhelpers.NewErrorList("checking for CRDs required for compliance")
+	var validationErrs error
 	for _, requiredResource := range complianceoperator.GetRequiredResources() {
 		if !detectedKinds.Contains(requiredResource.Kind) {
-			errorList.AddError(errors.Errorf("required GroupVersionKind %q not found", requiredResource.GroupVersionKind().String()))
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Errorf("required GroupVersionKind %q not found", requiredResource.GroupVersionKind().String()))
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(validationErrs, "checking for CRDs required for compliance")
 }
 
 func getComplianceOperatorDeployment(ctx context.Context, client kubernetes.Interface, namespace string) (*appsv1.Deployment, error) {

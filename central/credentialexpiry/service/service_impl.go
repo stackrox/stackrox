@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	stdErrors "errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -153,16 +153,18 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		}(endpoint)
 	}
 
-	errorList := errorhelpers.NewErrorList("failed to determine scanner cert expiry")
+	var endpointErrs error
+	var numEndpointErrs int
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case err := <-errC:
-			errorList.AddError(err)
+			endpointErrs = stdErrors.Join(endpointErrs, err)
+			numEndpointErrs++
 			// All the endpoints have failed.
-			if len(errorList.ErrorStrings()) == len(clairifyEndpoints) {
-				return nil, errorList.ToError()
+			if numEndpointErrs == len(clairifyEndpoints) {
+				return nil, endpointErrs
 			}
 		case expiry := <-expiryC:
 			return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
@@ -215,20 +217,20 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	go getExpiry(mtls.ScannerV4IndexerSubject, indexerEndpoint)
 	go getExpiry(mtls.ScannerV4MatcherSubject, matcherEndpoint)
 
-	errorList := errorhelpers.NewErrorList("failed to determine Scanner V4 cert expiry")
+	var scannerErrs error
 	expiries := make([]*types.Timestamp, 0, numEndpoints)
 	for i := 0; i < numEndpoints; i++ {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case err := <-errC:
-			errorList.AddError(err)
+			scannerErrs = stdErrors.Join(scannerErrs, err)
 		case expiry := <-expiryC:
 			expiries = append(expiries, expiry)
 		}
 	}
 	if len(expiries) == 0 {
-		return nil, errorList.ToError()
+		return nil, errors.Wrap(scannerErrs, "failed to determine Scanner V4 cert expiry")
 	}
 
 	sort.Slice(expiries, func(i, j int) bool {

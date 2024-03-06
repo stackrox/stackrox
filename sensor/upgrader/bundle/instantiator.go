@@ -3,11 +3,11 @@ package bundle
 import (
 	"bufio"
 	"bytes"
+	stdErrors "errors"
 	"io"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -126,12 +126,14 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 }
 
 func validateMetadata(objs []*unstructured.Unstructured) error {
-	errs := errorhelpers.NewErrorList("object metadata validation failed")
+	var validationErrs error
 	for i := range objs {
 		obj := objs[i]
 		if labelVal := obj.GetLabels()[common.UpgradeResourceLabelKey]; labelVal != common.UpgradeResourceLabelValue {
-			errs.AddStringf("upgrade label %s of object %s has invalid value %q, expected: %q", common.UpgradeResourceLabelKey, k8sobjects.RefOf(obj), labelVal, common.UpgradeResourceLabelValue)
+			validationErrs = stdErrors.Join(validationErrs,
+				errors.Errorf("upgrade label %s of object %s has invalid value %q, expected: %q",
+					common.UpgradeResourceLabelKey, k8sobjects.RefOf(obj), labelVal, common.UpgradeResourceLabelValue))
 		}
 	}
-	return errs.ToError()
+	return errors.Wrap(validationErrs, "object metadata validation failed")
 }

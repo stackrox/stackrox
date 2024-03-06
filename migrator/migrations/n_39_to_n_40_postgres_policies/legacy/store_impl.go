@@ -6,12 +6,12 @@ package legacy
 import (
 	"context"
 	"encoding/json"
+	stdErrors "errors"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/set"
@@ -103,10 +103,10 @@ func (s *storeImpl) wasDefaultPolicyRemoved(id string) (bool, error) {
 }
 
 func (s *storeImpl) getDisabledRemovedDefaultPolicies(policySet set.StringSet) ([]*storage.Policy, error) {
-	errList := errorhelpers.NewErrorList("removed default policies")
+	var removeErrs error
 	rawPolicies, err := getRawDefaultPolicies()
 	if err != nil {
-		errList.AddError(err)
+		removeErrs = stdErrors.Join(removeErrs, err)
 	}
 
 	var policies []*storage.Policy
@@ -120,7 +120,8 @@ func (s *storeImpl) getDisabledRemovedDefaultPolicies(policySet set.StringSet) (
 		wasRemoved, err := s.wasDefaultPolicyRemoved(p.GetId())
 		if err != nil {
 			// Add error and skip adding default policy
-			errList.AddWrapf(err, "Could not determine if the default policy %s was previously removed, skip it", p.GetId())
+			removeErrs = stdErrors.Join(removeErrs, errors.Wrapf(err,
+				"Could not determine if the default policy %s was previously removed, skip it", p.GetId()))
 			continue
 		}
 		if !wasRemoved {
@@ -128,7 +129,7 @@ func (s *storeImpl) getDisabledRemovedDefaultPolicies(policySet set.StringSet) (
 		}
 
 		if err := policyversion.EnsureConvertedTo(p, currentVersion); err != nil {
-			errList.AddWrapf(err, "converting policy %s", p.GetName())
+			removeErrs = stdErrors.Join(removeErrs, errors.Wrapf(err, "converting policy %s", p.GetName()))
 			continue
 		}
 		log.WriteToStderrf("Disabling removed default policy %q", p.GetId())
@@ -140,5 +141,5 @@ func (s *storeImpl) getDisabledRemovedDefaultPolicies(policySet set.StringSet) (
 		policies = append(policies, p)
 	}
 
-	return policies, errList.ToError()
+	return policies, errors.Wrap(removeErrs, "removing default policies")
 }
