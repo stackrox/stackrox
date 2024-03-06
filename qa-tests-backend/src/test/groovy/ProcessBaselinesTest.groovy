@@ -3,12 +3,8 @@ import static Services.waitForViolation
 import static util.Helpers.evaluateWithRetry
 import static util.Helpers.trueWithin
 
-import java.util.concurrent.TimeUnit
-
 import com.google.protobuf.util.Timestamps
 import org.apache.commons.lang3.StringUtils
-import org.junit.Rule
-import org.junit.rules.Timeout
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass

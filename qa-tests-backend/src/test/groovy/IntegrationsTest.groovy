@@ -1,7 +1,5 @@
 import static util.Helpers.withRetry
 
-import java.util.concurrent.TimeUnit
-
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.storage.ClusterOuterClass
@@ -37,8 +35,6 @@ import util.SplunkUtil
 import util.SyslogServer
 
 import org.junit.Assume
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll

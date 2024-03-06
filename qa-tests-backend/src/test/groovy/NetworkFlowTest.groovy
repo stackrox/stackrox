@@ -1,8 +1,6 @@
 import static io.restassured.RestAssured.given
 import static util.Helpers.withRetry
 
-import java.util.concurrent.TimeUnit
-
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
@@ -34,15 +32,12 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
-import org.junit.Rule
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
-
-import spock.lang.Timeout
 
 // TODO(ROX-13739): Re-enable these tests in compatibility-test step
 @Stepwise

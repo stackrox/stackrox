@@ -28,8 +28,6 @@ import services.DeclarativeConfigHealthService
 import services.NotifierService
 import services.RoleService
 
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.Tag
 
 @Tag("Parallel")

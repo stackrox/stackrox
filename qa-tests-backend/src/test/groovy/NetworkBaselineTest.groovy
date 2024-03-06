@@ -1,7 +1,5 @@
 import static util.Helpers.evaluateWithRetry
 
-import java.util.concurrent.TimeUnit
-
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
@@ -12,9 +10,7 @@ import services.NetworkBaselineService
 import util.NetworkGraphUtil
 import util.Timer
 
-import org.junit.Rule
 import spock.lang.Tag
-import spock.lang.Timeout
 
 @Tag("PZ")
 class NetworkBaselineTest extends BaseSpecification {

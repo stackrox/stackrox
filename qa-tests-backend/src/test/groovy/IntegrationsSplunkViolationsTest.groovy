@@ -21,8 +21,6 @@ import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
