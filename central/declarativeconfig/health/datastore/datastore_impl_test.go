@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/declarativeconfig/health/datastore/store"
-	postgresHealthStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
@@ -36,12 +34,9 @@ type declarativeConfigHealthDatastoreSuite struct {
 }
 
 func (s *declarativeConfigHealthDatastoreSuite) SetupTest() {
-	var declarativeConfigHealthStore store.Store
-
 	s.postgresTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.postgresTest)
-	declarativeConfigHealthStore = postgresHealthStore.New(s.postgresTest.DB)
-	s.datastore = New(declarativeConfigHealthStore)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.postgresTest.DB)
 
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
