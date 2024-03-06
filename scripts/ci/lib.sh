@@ -476,7 +476,9 @@ poll_for_system_test_images() {
     # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index" "main")
+            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index"
+                         "main" "central-db" "collector" "collector-slim"
+                         "scanner" "scanner-db" "scanner-v4" "scanner-v4-db")
             ;;
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
