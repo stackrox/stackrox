@@ -139,8 +139,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	var graph []*node
 	for _, deployment := range relevantDeployments {
 		// check if the baseline was cut
-		deploymentNode, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts)
-		deploymentNode.selected = true
+		deploymentNode, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts, true)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -319,7 +318,7 @@ func (g *generator) GenerateFromBaselineForDeployment(
 		return nil, nil, errors.New("deployment not found")
 	}
 
-	node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, req.GetIncludePorts())
+	node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, req.GetIncludePorts(), false)
 	if err != nil {
 		return nil, nil, err
 	} else if node == nil {

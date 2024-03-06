@@ -287,6 +287,7 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 	ctx context.Context,
 	deployment *storage.Deployment,
 	includePorts bool,
+	setSelected bool,
 ) (*node, error) {
 	if isProtectedDeployment(deployment) {
 		return nil, errors.New("cannot generate policy for a protected deployment")
@@ -302,6 +303,7 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 
 	deploymentNode := createNode(networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deployment.GetId()})
 	deploymentNode.deployment = deployment
+	deploymentNode.selected = setSelected
 
 	// Temporarily elevate permissions to obtain all deployments in cluster.
 	elevatedCtx := sac.WithAllAccess(ctx)
