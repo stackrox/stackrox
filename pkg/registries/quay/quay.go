@@ -150,7 +150,7 @@ func (q *Quay) Test() error {
 	if err != nil {
 		log.Errorf("Quay error response: %s", err)
 		if resp == nil {
-			return errors.Errorf("Received error from Quay. Check Central logs for the full error.")
+			return errors.New("Received error from Quay. Check Central logs for the full error.")
 		}
 		return errors.Errorf("Received http status code %d from Quay. Check Central logs for the full error.", resp.StatusCode)
 	}
