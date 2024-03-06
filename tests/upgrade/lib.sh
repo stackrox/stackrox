@@ -131,6 +131,7 @@ deploy_earlier_postgres_central() {
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
          --set central.db.enabled=true \
+         --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
          --set central.image.tag="${EARLIER_TAG}" \
