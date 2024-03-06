@@ -91,7 +91,7 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	ri := requestinfo.FromContext(ctx)
 
 	msg := &v1.Audit_Message{
-		Time: types.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 	}
 
 	identity := authn.IdentityFromContextOrNil(ctx)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -111,7 +112,7 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 			e.ObjectRef.Resource,
 			e.ObjectRef.Name,
 			err)
-		protoTime = types.TimestampNow()
+		protoTime = protocompat.TimestampNow()
 	}
 
 	reason := e.Annotations[reasonAnnotationKey]

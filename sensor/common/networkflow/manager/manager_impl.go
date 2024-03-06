@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/process/normalize"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
@@ -426,7 +426,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	protoToSend := &central.NetworkFlowUpdate{
 		Updated:          updatedConns,
 		UpdatedEndpoints: updatedEndpoints,
-		Time:             types.TimestampNow(),
+		Time:             protocompat.TimestampNow(),
 	}
 
 	var detectionContext context.Context
@@ -464,7 +464,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 
 	processesToSend := &central.ProcessListeningOnPortsUpdate{
 		ProcessesListeningOnPorts: updatedProcesses,
-		Time:                      types.TimestampNow(),
+		Time:                      protocompat.TimestampNow(),
 	}
 
 	if m.sendToCentral(&central.MsgFromSensor{

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	grpctestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,7 +69,7 @@ func TestEnsureTLSAndReturnAddr(t *testing.T) {
 }
 
 func TestGetScannerV4CertExpiry(t *testing.T) {
-	expiryCur := types.TimestampNow()
+	expiryCur := protocompat.TimestampNow()
 	expiryOld, err := types.TimestampProto(time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC))
 	require.NoError(t, err)
 

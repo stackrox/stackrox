@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -154,7 +154,7 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 	deploymentID := "2c507da1-b882-48cc-8143-b74e14c5cd4f"
 	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID}))
 
-	now := types.TimestampNow()
+	now := protocompat.TimestampNow()
 	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * orphanWindow))
 
 	cases := []struct {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/protocompat"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,7 +47,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 		},
 		{
 			"success when client returns valid last vuln update",
-			&v4.Metadata{LastVulnerabilityUpdate: types.TimestampNow()}, noErr, !errExpected,
+			&v4.Metadata{LastVulnerabilityUpdate: protocompat.TimestampNow()}, noErr, !errExpected,
 		},
 	}
 

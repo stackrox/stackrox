@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // GetMockResult returns a mock ComplianceRunResults object
@@ -23,7 +23,7 @@ func GetMockResult() (*storage.ComplianceRunResults, *storage.ComplianceDomain) 
 			Success:         true,
 			RunId:           "Test run ID",
 			ClusterId:       clusterID,
-			FinishTimestamp: types.TimestampNow(),
+			FinishTimestamp: protocompat.TimestampNow(),
 			DomainId:        domainID,
 		},
 		ClusterResults: &storage.ComplianceRunResults_EntityResults{

@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -15,8 +15,8 @@ var (
 	// ScanUID -- scan UID used in test objects
 	ScanUID = uuid.NewV4().String()
 
-	startTime = types.TimestampNow()
-	endTime   = types.TimestampNow()
+	startTime = protocompat.TimestampNow()
+	endTime   = protocompat.TimestampNow()
 )
 
 // GetScanV2SensorMsg -- returns a V2 message from sensor

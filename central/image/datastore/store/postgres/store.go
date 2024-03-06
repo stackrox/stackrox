@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -697,7 +698,7 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
-	iTime := protoTypes.TimestampNow()
+	iTime := protocompat.TimestampNow()
 
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
@@ -1409,7 +1410,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		err = copyFromImageCVEEdges(ctx, tx, protoTypes.TimestampNow(), true, imageCVEEdges...)
+		err = copyFromImageCVEEdges(ctx, tx, protocompat.TimestampNow(), true, imageCVEEdges...)
 		if err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
