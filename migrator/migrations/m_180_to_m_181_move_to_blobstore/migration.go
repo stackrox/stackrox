@@ -10,7 +10,6 @@ import (
 	"path"
 	"path/filepath"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"

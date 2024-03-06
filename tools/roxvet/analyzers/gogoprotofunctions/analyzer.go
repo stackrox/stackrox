@@ -33,7 +33,7 @@ var (
 			"Unmarshal": "Unmarshal",
 		},
 		"github.com/gogo/protobuf/types": {
-			"TimestampNow": "TimestampNow",
+			"TimestampNow":   "TimestampNow",
 			"TimestampProto": "ConvertTimeToTimestampOrError",
 		},
 	}

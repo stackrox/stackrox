@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
