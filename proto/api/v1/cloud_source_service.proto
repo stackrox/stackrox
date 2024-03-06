@@ -4,7 +4,6 @@ package v1;
 
 import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
-import "gogoproto/gogo.proto";
 import weak "google/api/annotations.proto";
 
 option go_package = "v1";

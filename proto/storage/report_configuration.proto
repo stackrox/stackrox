@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/cve.proto";
 import "storage/role.proto";

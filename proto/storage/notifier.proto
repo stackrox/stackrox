@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "storage/common.proto";
 import "storage/policy.proto";
 import "storage/traits.proto";

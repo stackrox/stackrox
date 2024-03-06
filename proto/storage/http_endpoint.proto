@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import weak "gogoproto/gogo.proto";
 import "storage/common.proto";
 
 option go_package = "storage";

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option cc_enable_arenas = true;
