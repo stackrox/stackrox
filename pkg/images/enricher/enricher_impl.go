@@ -208,7 +208,12 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	image.Metadata = existingImage.GetMetadata()
+	// It is possible for us to have a nil metadata stored in case the initial enrichment failed and the image
+	// was referenced by digest. If at a later point a re-scan of the image does contain metadata, we should
+	// retain it (update will happen _after_ fetching metadata).
+	if existingImage.GetMetadata() != nil {
+		image.Metadata = existingImage.GetMetadata()
+	}
 	image.Notes = existingImage.GetNotes()
 	hasChangedNames := !protoutils.SlicesEqual(existingImage.GetNames(), image.GetNames())
 	image.Names = protoutils.SliceUnique(append(existingImage.GetNames(), image.GetNames()...))
