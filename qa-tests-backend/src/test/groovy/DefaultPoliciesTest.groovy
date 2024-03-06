@@ -120,14 +120,6 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 300
 
-    // Override the global JUnit test timeout to cover a test instance waiting
-    // WAIT_FOR_VIOLATION_TIMEOUT over three test tries and the appprox. 6
-    // minutes it can take to gather debug when the first test run fails plus
-    // some padding.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(3*WAIT_FOR_VIOLATION_TIMEOUT + 300 + 120, TimeUnit.SECONDS)
-
     @Shared
     private String gcrId
     @Shared

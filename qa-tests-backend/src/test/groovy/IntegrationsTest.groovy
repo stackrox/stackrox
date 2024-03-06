@@ -58,10 +58,6 @@ class IntegrationsTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
-
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }

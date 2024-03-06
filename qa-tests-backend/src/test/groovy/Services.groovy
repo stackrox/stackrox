@@ -420,6 +420,9 @@ class Services extends BaseService {
         return disappearedFromStackRox
     }
 
+    // When changing the timeout here, remember there might be other enclosing
+    // timeout that should be in sync. For example,`globalTimeout` which aborts
+    // tests but should be generally avoided.
     static waitForDeployment(objects.Deployment deployment, int retries = 60, int interval = 5) {
         if (deployment.deploymentUid == null) {
             LOG.info "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"

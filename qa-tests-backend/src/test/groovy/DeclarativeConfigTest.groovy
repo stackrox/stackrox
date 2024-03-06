@@ -227,11 +227,6 @@ splunk:
                     .putAllSourceTypes(["audit": "stackrox-audit-message", "alert": "stackrox-alert"])
             ).build()
 
-    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
-
     private ScheduledFuture<?> annotateTaskHandle
 
     def setup() {

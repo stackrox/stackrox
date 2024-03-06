@@ -103,11 +103,6 @@ class NetworkFlowTest extends BaseSpecification {
         ]
     }
 
-    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    org.junit.rules.Timeout globalTimeout = new org.junit.rules.Timeout(1600, TimeUnit.SECONDS)
-
     // Source deployments
     @Shared
     private List<Deployment> sourceDeployments
