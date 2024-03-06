@@ -150,9 +150,9 @@ func (q *Quay) Test() error {
 	if err != nil {
 		log.Errorf("Quay error response: %s", err)
 		if resp == nil {
-			return errors.New("Received error from Quay. Check Central logs for the full error.")
+			return errors.New("received error from Quay; check Central logs for the full error")
 		}
-		return errors.Errorf("Received http status code %d from Quay. Check Central logs for the full error.", resp.StatusCode)
+		return errors.Errorf("received http status code %d from Quay; check Central logs for the full error", resp.StatusCode)
 	}
 
 	defer utils.IgnoreError(resp.Body.Close)
@@ -162,7 +162,7 @@ func (q *Quay) Test() error {
 			return errors.Errorf("error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}
 		log.Errorf("Quay error response: %d %s", resp.StatusCode, string(body))
-		return errors.Errorf("Received http status code %d from Quay. Check Central logs for the full error.", resp.StatusCode)
+		return errors.Errorf("received http status code %d from Quay; check Central logs for the full error", resp.StatusCode)
 	}
 	return nil
 }
