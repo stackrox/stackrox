@@ -1,0 +1,22 @@
+name: Batch load test metrics
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: 23 * * * *
+jobs:
+  batch-load-test-metrics:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Report
+      env:
+        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      shell: bash
+      run: |
+        source scripts/ci/lib.sh
+
+        setup_gcp
+        batch_load_test_metrics
