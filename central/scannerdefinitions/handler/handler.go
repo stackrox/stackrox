@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/snapshot"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -274,8 +274,8 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File,
 	// POST requests only update the offline feed.
 	b := &storage.Blob{
 		Name:         blobName,
-		LastUpdated:  timestamp.TimestampNow(),
-		ModifiedTime: timestamp.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
 		Length:       zipF.FileInfo().Size(),
 	}
 

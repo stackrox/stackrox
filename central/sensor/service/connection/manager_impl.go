@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -180,7 +180,7 @@ func (m *manager) updateActiveClusterHealth(cluster *storage.Cluster) {
 	clusterHealthStatus := &storage.ClusterHealthStatus{
 		SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 		CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
-		LastContact:           types.TimestampNow(),
+		LastContact:           protocompat.TimestampNow(),
 	}
 	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/adhocore/gronx"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -129,7 +129,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	}
 
 	scanRequest.Id = uuid.NewV4().String()
-	scanRequest.CreatedTime = types.TimestampNow()
+	scanRequest.CreatedTime = protocompat.TimestampNow()
 
 	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true)
 }

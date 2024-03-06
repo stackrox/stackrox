@@ -1,10 +1,10 @@
 package upgradecontroller
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -22,7 +22,7 @@ func baseNewUpgradeProcess(typ storage.ClusterUpgradeStatus_UpgradeProcessStatus
 	return &storage.ClusterUpgradeStatus_UpgradeProcessStatus{
 		Active:      true,
 		Id:          uuid.NewV4().String(),
-		InitiatedAt: types.TimestampNow(),
+		InitiatedAt: protocompat.TimestampNow(),
 		Progress:    &storage.UpgradeProgress{},
 		Type:        typ,
 	}

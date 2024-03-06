@@ -3,9 +3,9 @@ package baseline
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestBaseline(t *testing.T) {
 			DeploymentId:  process.GetDeploymentId(),
 			ContainerName: process.GetContainerName(),
 		},
-		UserLockedTimestamp: types.TimestampNow(),
+		UserLockedTimestamp: protocompat.TimestampNow(),
 	}
 
 	inBaseline := &storage.ProcessBaseline{
@@ -41,7 +41,7 @@ func TestBaseline(t *testing.T) {
 				},
 			},
 		},
-		UserLockedTimestamp: types.TimestampNow(),
+		UserLockedTimestamp: protocompat.TimestampNow(),
 	}
 
 	evaluator := NewBaselineEvaluator()

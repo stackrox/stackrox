@@ -10,7 +10,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	gogoTypes "github.com/gogo/protobuf/types"
-	protoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
@@ -124,7 +124,7 @@ func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria
 	}
 
 	ts := time.Now().AddDate(0, 0, -5)
-	protoTs, err := protoTimestamp.TimestampProto(ts)
+	protoTs, err := gogoTypes.TimestampProto(ts)
 	require.NoError(suite.T(), err)
 
 	suite.addDepAndImages(heartbleedDep, &storage.Image{
@@ -272,7 +272,7 @@ func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, pa
 			Name:         name,
 			Args:         args,
 			ExecFilePath: path,
-			Time:         gogoTypes.TimestampNow(),
+			Time:         protocompat.TimestampNow(),
 			LineageInfo:  lineageInfo,
 			Uid:          uid,
 		},

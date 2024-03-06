@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
@@ -192,7 +193,7 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: protocompat.TimestampNow(),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -207,7 +208,7 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: protocompat.TimestampNow(),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -222,7 +223,7 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: protocompat.TimestampNow(),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -237,7 +238,7 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: protocompat.TimestampNow(),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{

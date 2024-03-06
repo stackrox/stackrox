@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -256,7 +257,7 @@ func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
 		Name:         offlineScannerDefinitionBlobName,
 		Length:       int64(len(content)),
 		ModifiedTime: modifiedTime,
-		LastUpdated:  types.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
 	}
 	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))
 }

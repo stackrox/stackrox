@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -407,7 +408,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 			}
 		}
 
-		now := types.TimestampNow()
+		now := protocompat.TimestampNow()
 		for _, baselineKey := range baselineKeysToPrune {
 			baseline, exists, err := g.processbaseline.GetProcessBaseline(pruningCtx, baselineKey)
 			if err != nil {

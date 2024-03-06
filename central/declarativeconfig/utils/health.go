@@ -5,7 +5,6 @@ import (
 	"path"
 	"reflect"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -55,7 +54,7 @@ func HealthStatusForProtoMessage(message protocompat.Message, handler string, er
 		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
 			storage.DeclarativeConfigHealth_HEALTHY),
 		ErrorMessage:  errMsg,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protocompat.TimestampNow(),
 	}
 }
 
@@ -75,7 +74,7 @@ func HealthStatusForHandler(handlerID string, err error) *storage.DeclarativeCon
 		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
 			storage.DeclarativeConfigHealth_HEALTHY),
 		ErrorMessage:  errMsg,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protocompat.TimestampNow(),
 	}
 }
 
