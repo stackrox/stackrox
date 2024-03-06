@@ -24,6 +24,8 @@ import { HelpIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
 
 import useRestQuery from 'hooks/useRestQuery';
+import useAnalytics, { GENERATE_NETWORK_POLICIES } from 'hooks/useAnalytics';
+import useURLSearch from 'hooks/useURLSearch';
 import useTabs from 'hooks/patternfly/useTabs';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
@@ -46,6 +48,7 @@ import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
 import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';
+import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 export function clearSimulationQuery(search: string): string {
@@ -74,6 +77,9 @@ function NetworkPolicySimulatorSidePanel({
     scopeHierarchy,
     scopeDeploymentCount,
 }: NetworkPolicySimulatorSidePanelProps) {
+    const { analyticsTrack } = useAnalytics();
+    const { searchFilter } = useURLSearch();
+
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
@@ -140,6 +146,12 @@ function NetworkPolicySimulatorSidePanel({
     }
 
     function generateNetworkPolicies() {
+        const properties = getPropertiesForAnalytics(searchFilter);
+
+        analyticsTrack({
+            event: GENERATE_NETWORK_POLICIES,
+            properties,
+        });
         setNetworkPolicyModification({
             state: 'GENERATED',
             options: {
