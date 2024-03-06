@@ -234,9 +234,9 @@ save_test_metrics() {
 
 batch_load_test_metrics() {
     while _load_one_batch; do
-        echo "batch loaded"
+        info "one batch loaded"
     done
-    echo "done"
+    info "done loading"
 }
 
 _load_one_batch() {
