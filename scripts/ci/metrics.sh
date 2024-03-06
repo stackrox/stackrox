@@ -217,6 +217,7 @@ LIMIT
 _TESTS_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_tests"
 _BATCH_STORAGE_UPLOAD="gs://stackrox-ci-artifacts/test-metrics/upload"
 _BATCH_STORAGE_PROCESSING="gs://stackrox-ci-artifacts/test-metrics/processing"
+_BATCH_STORAGE_DONE="gs://stackrox-ci-artifacts/test-metrics/done"
 _BATCH_SIZE=20
 
 save_test_metrics() {
@@ -229,7 +230,7 @@ save_test_metrics() {
 
     info "Saving Big Query test records from ${csv} to ${to}"
 
-    gsutil cp "${csv}" "${to}"
+    gsutil cp "${csv}" "${to}/"
 }
 
 batch_load_test_metrics() {
@@ -257,7 +258,7 @@ _load_one_batch() {
     local process_location
     process_location="${_BATCH_STORAGE_PROCESSING}/$(date +%Y-%m-%d-%H-%M-%S.%N)"
     info "Moving the batch to ${process_location}"
-    gsutil -m mv ${files[*]} "${process_location}"
+    gsutil -m mv ${files[*]} "${process_location}/"
     gsutil ls -l "${process_location}"
 
     info "Loading into BQ"
@@ -265,6 +266,8 @@ _load_one_batch() {
         --skip_leading_rows=1 \
         --allow_quoted_newlines \
         "${_TESTS_TABLE_NAME}" "${process_location}/*"
+
+    gsutil -m mv "${process_location}" "${_BATCH_STORAGE_DONE}/"
 
     return 0
 }
