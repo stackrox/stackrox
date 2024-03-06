@@ -89,7 +89,12 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('not.exist');
         visitExceptionManagement();
         cy.get('button[role="tab"]:contains("Approved deferrals")').click();
-        cy.get('table tbody tr').should('not.exist');
+        cy.get(
+            'table tbody div.pf-c-empty-state__content h2:contains("No approved deferral requests")'
+        ).should('exist');
+        cy.get(
+            'table tbody div.pf-c-empty-state__content div.pf-c-empty-state__body p:contains("There are currently no approved deferral requests. Feel free to review pending requests or return to your dashboard.")'
+        ).should('exist');
     });
 
     it('should not see a cancelled request in the approved false positives table', () => {
@@ -104,6 +109,11 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('not.exist');
         visitExceptionManagement();
         cy.get('button[role="tab"]:contains("Approved false positives")').click();
-        cy.get('table tbody tr').should('not.exist');
+        cy.get(
+            'table tbody div.pf-c-empty-state__content h2:contains("No approved false positive requests")'
+        ).should('exist');
+        cy.get(
+            'table tbody div.pf-c-empty-state__content div.pf-c-empty-state__body p:contains("There are currently no approved false positive requests. Feel free to review pending requests or return to your dashboard.")'
+        ).should('exist');
     });
 });
