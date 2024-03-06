@@ -7,6 +7,8 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+EARLIER_TAG="4.1.3"
+EARLIER_SHA="8a4677e3d45ebc4f065ec052d1d66d6ead2084bb"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -74,8 +76,6 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_TAG="4.1.3"
-    EARLIER_SHA="8a4677e3d45ebc4f065ec052d1d66d6ead2084bb"
     # To test we remain backwards compatible rollback to 4.1.x
     FORCE_ROLLBACK_VERSION="4.1.3"
 
@@ -282,7 +282,7 @@ deploy_scaled_workload() {
         -f /tmp/cluster-init-bundle.yaml \
         --set system.enablePodSecurityPolicies=false \
         --set clusterName=scale-remote \
-        --set image.main.tag="${INITIAL_POSTGRES_TAG}" \
+        --set image.main.tag="${EARLIER_TAG}" \
         --set image.collector.tag="$(make collector-tag)" \
         --set centralEndpoint="$API_ENDPOINT"
 
