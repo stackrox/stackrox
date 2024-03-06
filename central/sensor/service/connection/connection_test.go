@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -18,10 +19,13 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestHandler(t *testing.T) {
@@ -37,11 +41,23 @@ func (s *testSuite) SetupTest() {
 	s.Require().NoError(err)
 }
 
+type fakeRecv struct {
+	msg *central.MsgFromSensor
+	err error
+}
+
 type mockServer struct {
 	grpc.ServerStream
 	sentList []*central.MsgToSensor
 
+	recvList     []*fakeRecv
+	messagesRead int
+
 	errOnDeduperState error
+}
+
+func (c *mockServer) Context() context.Context {
+	return context.Background()
 }
 
 func (c *mockServer) Send(msg *central.MsgToSensor) error {
@@ -53,7 +69,12 @@ func (c *mockServer) Send(msg *central.MsgToSensor) error {
 }
 
 func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
-	return nil, nil
+	if c.messagesRead >= len(c.recvList) {
+		return nil, errors.Wrap(io.EOF, "connection closed")
+	}
+	fake := c.recvList[c.messagesRead]
+	c.messagesRead++
+	return fake.msg, fake.err
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
@@ -227,6 +248,93 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 		})
 	}
 
+}
+
+func DummyMsgFromSensor() *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     "abc",
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_AlertResults{
+					AlertResults: &central.AlertResults{
+						DeploymentId: "dep1",
+						Alerts:       []*storage.Alert{},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (s *testSuite) TestRunRecvHandleErrorsFromGRPCStream() {
+	ctx := context.Background()
+	clusterID := "this-cluster"
+	cluster := &storage.Cluster{
+		Id:            clusterID,
+		DynamicConfig: &storage.DynamicClusterConfig{},
+	}
+
+	ctrl := gomock.NewController(s.T())
+	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+
+	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
+
+	msg := DummyMsgFromSensor()
+	typ := reflectutils.Type(msg.Msg)
+	dummyQueue := newDedupingQueue(stripTypePrefix(typ))
+
+	dummyCaps := set.Set[centralsensor.SensorCapability]{}
+
+	testCases := map[string]struct {
+		receivedMessages []*fakeRecv
+		expectedErr      error
+	}{
+		"Normal shutdown after non-error messages": {
+			receivedMessages: []*fakeRecv{
+				{DummyMsgFromSensor(), nil},
+				{DummyMsgFromSensor(), nil},
+			},
+			expectedErr: io.EOF,
+		},
+		"Non-exhausted error should stop the connection with received error": {
+			receivedMessages: []*fakeRecv{
+				{DummyMsgFromSensor(), nil},
+				{nil, status.Errorf(codes.Internal, "Internal error")},
+			},
+			expectedErr: status.Errorf(codes.Internal, "Internal error"),
+		},
+		"Exhausted error should not stop the connection": {
+			receivedMessages: []*fakeRecv{
+				{DummyMsgFromSensor(), nil},
+				{nil, status.Errorf(codes.ResourceExhausted, "Payload too large")},
+				{DummyMsgFromSensor(), nil},
+			},
+			expectedErr: io.EOF,
+		},
+	}
+
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			sensorMockConn := &sensorConnection{
+				clusterID:  clusterID,
+				clusterMgr: mgrMock,
+				stopSig:    concurrency.NewErrorSignal(),
+				queues:     map[string]*dedupingQueue{typ: dummyQueue},
+			}
+			server := &mockServer{
+				sentList: make([]*central.MsgToSensor, 0),
+				recvList: tc.receivedMessages,
+			}
+
+			err := sensorMockConn.Run(ctx, server, dummyCaps)
+			if tc.expectedErr == nil {
+				s.Assert().Nil(err)
+			} else {
+				s.Assert().ErrorIs(err, tc.expectedErr)
+			}
+		})
+	}
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersions() {
