@@ -3,7 +3,6 @@ package rockshelper
 import (
 	"path/filepath"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/option"
