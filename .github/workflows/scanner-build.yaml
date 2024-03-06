@@ -30,7 +30,8 @@ jobs:
         source './scripts/ci/lib.sh'
 
         # If goarch is updated, be sure to update architectures in push-manifests below.
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] }, "push_manifests": { "name":["default"] } }'
+        # TODO(ROX-22927): re-add s390x here
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le"] }, "push_manifests": { "name":["default"] } }'
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
@@ -146,7 +147,8 @@ jobs:
         source ./scripts/ci/lib.sh
 
         # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
-        architectures="amd64,arm64,ppc64le,s390x"
+        # TODO(ROX-22927): re-add s390x here
+        architectures="amd64,arm64,ppc64le"
 
         push_scanner_image_manifest_lists "$architectures"
 
