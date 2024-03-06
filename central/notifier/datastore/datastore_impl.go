@@ -7,8 +7,6 @@ import (
 	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
-	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,10 +28,6 @@ type datastoreImpl struct {
 func (b *datastoreImpl) UpsertNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
 	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return "", err
-	}
-
-	if err := validateNotifier(notifier); err != nil {
-		return "", errox.InvalidArgs.CausedBy(err)
 	}
 
 	b.lock.Lock()
@@ -73,9 +67,6 @@ func (b *datastoreImpl) UpsertManyNotifiers(ctx context.Context, notifiers []*st
 		}
 		if err = verifyNotifierOrigin(ctx, notifier); err != nil {
 			return errors.Wrap(err, "origin didn't match for new notifier")
-		}
-		if err := validateNotifier(notifier); err != nil {
-			return errox.InvalidArgs.CausedBy(err)
 		}
 	}
 	return b.storage.UpsertMany(ctx, notifiers)
@@ -180,9 +171,6 @@ func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notif
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
 	}
-	if err := validateNotifier(notifier); err != nil {
-		return "", errox.InvalidArgs.CausedBy(err)
-	}
 
 	notifier.Id = uuid.NewV4().String()
 
@@ -224,9 +212,6 @@ func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.No
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	if err := validateNotifier(notifier); err != nil {
-		return errox.InvalidArgs.CausedBy(err)
-	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
@@ -260,25 +245,4 @@ func (b *datastoreImpl) RemoveNotifier(ctx context.Context, id string) error {
 		return errors.Wrap(err, "origin didn't match for existing notifier")
 	}
 	return b.storage.Delete(ctx, id)
-}
-
-func validateNotifier(notifier *storage.Notifier) error {
-	if notifier == nil {
-		return errors.New("empty notifier")
-	}
-	errorList := errorhelpers.NewErrorList("Validation")
-	if notifier.GetName() == "" {
-		errorList.AddString("notifier name must be defined")
-	}
-	if notifier.GetType() == "" {
-		errorList.AddString("notifier type must be defined")
-	}
-	if notifier.GetUiEndpoint() == "" {
-		errorList.AddString("notifier UI endpoint must be defined")
-	}
-	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
-		errorList.AddWrap(err, "invalid endpoint")
-	}
-	// We skip validating the notifier config for each type and push the responsibility to the clients.
-	return errorList.ToError()
 }
