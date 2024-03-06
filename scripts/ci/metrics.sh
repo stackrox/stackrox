@@ -13,7 +13,7 @@ export OUTCOME_PASSED="passed"
 export OUTCOME_FAILED="failed"
 export OUTCOME_CANCELED="canceled"
 
-_TABLE_NAME="acs-san-stackroxci.ci_metrics.stackrox_jobs"
+_JOBS_TABLE_NAME="acs-san-stackroxci.ci_metrics.stackrox_jobs"
 
 create_job_record() {
     _create_job_record "$@" || {
@@ -68,7 +68,7 @@ bq_create_job_record() {
     setup_gcp
 
     read -r -d '' sql <<- _EO_RECORD_ || true
-INSERT INTO ${_TABLE_NAME}
+INSERT INTO ${_JOBS_TABLE_NAME}
     (id, name, repo, branch, pr_number, commit_sha, started_at)
 VALUES
     ('$1', '$2', '$3', '$4', ${5:-null}, '$6', CURRENT_TIMESTAMP())
@@ -126,7 +126,7 @@ bq_update_job_record() {
     done
 
     read -r -d '' sql <<- _EO_UPDATE_ || true
-UPDATE ${_TABLE_NAME}
+UPDATE ${_JOBS_TABLE_NAME}
 SET $update_set
 WHERE id='${METRICS_JOB_ID}'
 _EO_UPDATE_
@@ -210,22 +210,61 @@ LIMIT
     jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 
+# Saving test metrics directly after tests complete results in GCP quota issues.
+# So instead they are saved to GCS and dealt with in batches as per the remedy
+# in https://cloud.google.com/bigquery/docs/troubleshoot-quotas#ts-table-import-quota-resolution
+
+_TESTS_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_tests"
+_BATCH_STORAGE_UPLOAD="gs://stackrox-ci-artifacts/test-metrics/upload"
+_BATCH_STORAGE_PROCESSING="gs://stackrox-ci-artifacts/test-metrics/processing"
+_BATCH_SIZE=20
+
 save_test_metrics() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: save_test_metrics <CSV file>"
     fi
 
     local csv="$1"
-    local to="gs://stackrox-ci-artifacts/test-metrics/"
+    local to="${_BATCH_STORAGE_UPLOAD}"
 
     info "Saving Big Query test records from ${csv} to ${to}"
 
     gsutil cp "${csv}" "${to}"
 }
 
-# batch_load_test_metrics() {
-#             # bq load \
-#             # --skip_leading_rows=1 \
-#             # --allow_quoted_newlines \
-#             # ci_metrics.stackrox_tests "${csv_output}"
-# }
+batch_load_test_metrics() {
+    while _batch_load_test_metrics; do
+        echo "batch loaded"
+    done
+    echo "done"
+}
+
+_batch_load_test_metrics() {
+    info "Gathering a batch of test metrics to load"
+    local files=()
+    for metrics_file in $(gsutil ls "${_BATCH_STORAGE_UPLOAD}"); do
+        files+=("${metrics_file}")
+        [[ "${#files[@]}" -eq "${_BATCH_SIZE}" ]] && break
+    done
+    if [[ "${#files[@]}" -eq 0 ]]; then
+        info "No metrics found to load"
+        return 1
+    fi
+
+    info "Found ${#files[@]} metrics for this batch load"
+
+    # Move the batch to a new location for processing to guard against reprocess
+    local process_location
+    process_location="${_BATCH_STORAGE_PROCESSING}/$(date +%Y-%m-%d-%H-%M-%S.%N)"
+    info "Moving the batch to ${process_location}"
+    gsutil -m mv ${files[*]} "${process_location}"
+    gsutil ls -l "${process_location}"
+
+    info "Loading into BQ"
+    bq load \
+        --skip_leading_rows=1 \
+        --allow_quoted_newlines \
+        "${_TESTS_TABLE_NAME}" "${process_location}/*"
+
+    return 0
+}
