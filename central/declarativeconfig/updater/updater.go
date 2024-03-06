@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ResourceUpdater handles updates of proto resources within declarative config reconciliation routine.
@@ -22,7 +22,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type ResourceUpdater interface {
-	Upsert(ctx context.Context, m proto.Message) error
+	Upsert(ctx context.Context, m protocompat.Message) error
 	// DeleteResources will delete all proto resources created within declarative config reconciliation, besides
 	// the given resource IDs. It will return an error, if errors occurred, and a list of IDs which failed deletion.
 	DeleteResources(ctx context.Context, resourceIDsToSkip ...string) ([]string, error)

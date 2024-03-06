@@ -3,7 +3,6 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	acDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/activecomponent"
 	clusterDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/cluster"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // StoreImpl provides an implementation of the Store interface using dackbox.
@@ -85,7 +85,7 @@ func (b *StoreImpl) GetManyListDeployments(_ context.Context, ids ...string) ([]
 	}
 	defer txn.Discard()
 
-	var msgs []proto.Message
+	var msgs []protocompat.Message
 	var missing []int
 	for _, id := range ids {
 		msg, err := deploymentDackBox.ListReader.ReadIn(deploymentDackBox.ListBucketHandler.GetKey(id), txn)
@@ -129,7 +129,7 @@ func (b *StoreImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deploym
 	}
 	defer txn.Discard()
 
-	var msgs []proto.Message
+	var msgs []protocompat.Message
 	var missing []int
 	for _, id := range ids {
 		msg, err := deploymentDackBox.Reader.ReadIn(deploymentDackBox.BucketHandler.GetKey(id), txn)

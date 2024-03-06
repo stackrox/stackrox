@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestErrorOnNilMarshal(t *testing.T) {
 	assert.Equal(t, proto.ErrNil, err)
 
 	var img *storage.Image
-	var msg proto.Message = img
+	var msg protocompat.Message = img
 	_, err = proto.Marshal(msg)
 	assert.Equal(t, proto.ErrNil, err)
 

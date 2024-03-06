@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +23,7 @@ func TestStorageToResource(t *testing.T) {
 }
 
 func TestClusterGetter(t *testing.T) {
-	for typ, getter := range map[proto.Message]string{
+	for typ, getter := range map[protocompat.Message]string{
 		&storage.Deployment{}:      "obj.GetClusterId()",
 		&storage.Cluster{}:         "obj.GetId()",
 		&storage.Risk{}:            "obj.GetSubject().GetClusterId()",
@@ -41,7 +41,7 @@ func TestClusterGetter(t *testing.T) {
 }
 
 func TestNamespaceGetter(t *testing.T) {
-	for typ, getter := range map[proto.Message]string{
+	for typ, getter := range map[protocompat.Message]string{
 		&storage.NamespaceMetadata{}: "obj.GetName()",
 		&storage.Deployment{}:        "obj.GetNamespace()",
 		&storage.ProcessBaseline{}:   "obj.GetKey().GetNamespace()",

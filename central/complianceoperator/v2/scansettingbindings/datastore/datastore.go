@@ -2,10 +2,12 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore is the entry point for storing/retrieving compliance scan setting binding objects
@@ -26,6 +28,9 @@ type DataStore interface {
 
 	// GetScanSettingBindings retrieves scan setting bindings matching the query
 	GetScanSettingBindings(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanSettingBindingV2, error)
+
+	// DeleteScanSettingByCluster deletes  scan setting with cluster id
+	DeleteScanSettingByCluster(ctx context.Context, clusterID string) error
 }
 
 // New returns an instance of DataStore.
@@ -33,4 +38,10 @@ func New(scanSettingBindingStorage pgStore.Store) DataStore {
 	return &datastoreImpl{
 		store: scanSettingBindingStorage,
 	}
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
+	store := pgStore.New(pool)
+	return New(store)
 }

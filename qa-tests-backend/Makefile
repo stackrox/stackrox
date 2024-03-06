@@ -113,3 +113,8 @@ pz-test: compile
 pz-test-debug: compile
 	@echo "+ $@"
 	$(GRADLE) testPZDebug $(GRADLE_TEST_ARGS)
+
+.PHONY: deployment-check-test
+deployment-check-test: compile
+	@echo "+ $@"
+	$(GRADLE) testDeploymentCheck $(GRADLE_TEST_ARGS)

@@ -3,6 +3,7 @@ package crud
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
@@ -22,8 +23,8 @@ func (rc *readerImpl) CountIn(prefix []byte, dackTxn *dackbox.Transaction) (int,
 }
 
 // ReadAllIn returns all objects with the given prefix in the given transaction.
-func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]proto.Message, error) {
-	var ret []proto.Message
+func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]protocompat.Message, error) {
+	var ret []protocompat.Message
 	err := dackTxn.BucketForEach(prefix, false, func(k, v []byte) error {
 		// Read in the base data to the result.
 		msg := rc.allocFunc()
@@ -50,7 +51,7 @@ func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([
 }
 
 // ReadIn returns the object saved under the given key in the given transaction.
-func (rc *readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (proto.Message, error) {
+func (rc *readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (protocompat.Message, error) {
 	// Read the top level object from the DB.
 	value, exists, err := dackTxn.Get(key)
 	if err != nil {

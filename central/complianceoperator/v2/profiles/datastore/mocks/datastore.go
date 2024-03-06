@@ -70,6 +70,20 @@ func (mr *MockDataStoreMockRecorder) DeleteProfileForCluster(ctx, uid, clusterID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfileForCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteProfileForCluster), ctx, uid, clusterID)
 }
 
+// DeleteProfilesByCluster mocks base method.
+func (m *MockDataStore) DeleteProfilesByCluster(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteProfilesByCluster", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteProfilesByCluster indicates an expected call of DeleteProfilesByCluster.
+func (mr *MockDataStoreMockRecorder) DeleteProfilesByCluster(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfilesByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteProfilesByCluster), ctx, clusterID)
+}
+
 // GetProfile mocks base method.
 func (m *MockDataStore) GetProfile(ctx context.Context, profileID string) (*storage.ComplianceOperatorProfileV2, bool, error) {
 	m.ctrl.T.Helper()

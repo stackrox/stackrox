@@ -1,10 +1,10 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var emptyByte = []byte{0}
@@ -13,7 +13,7 @@ var emptyByte = []byte{0}
 type RemoteDiscard func(openedAt uint64, txn transactions.DBTransaction)
 
 // RemoteCommit is a function that can be used to commit a change to DackBox.
-type RemoteCommit func(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyKeys map[string]proto.Message) error
+type RemoteCommit func(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyKeys map[string]protocompat.Message) error
 
 // Transaction is a linked graph and database transaction.
 type Transaction struct {
@@ -25,7 +25,7 @@ type Transaction struct {
 	modification graph.Modification
 
 	dirtyPrefix []byte
-	dirtyMap    map[string]proto.Message
+	dirtyMap    map[string]protocompat.Message
 
 	closed  bool
 	discard RemoteDiscard
@@ -38,7 +38,7 @@ func (dbt *Transaction) Graph() *graph.RemoteGraph {
 }
 
 // MarkDirty adds the input key to the dirty set, and adds he key and value to the queue for indexing.
-func (dbt *Transaction) MarkDirty(key []byte, msg proto.Message) {
+func (dbt *Transaction) MarkDirty(key []byte, msg protocompat.Message) {
 	dbt.Set(dbhelper.GetBucketKey(dbt.dirtyPrefix, key), emptyByte)
 	dbt.dirtyMap[string(key)] = msg
 }

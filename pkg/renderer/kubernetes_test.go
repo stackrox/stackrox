@@ -19,8 +19,9 @@ func getBaseConfig() Config {
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:    "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
-				ScannerImage: "stackrox.io/scanner:0.4.2",
+				MainImage:      "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
+				ScannerImage:   "stackrox.io/scanner:0.4.2",
+				ScannerV4Image: "stackrox.io/scanner-v4:0.5.0",
 			},
 		},
 	}
@@ -118,6 +119,13 @@ func (suite *renderSuite) TestRenderMultiple() {
 func (suite *renderSuite) TestRenderWithBadImage() {
 	conf := getBaseConfig()
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
+	_, err := Render(conf, suite.testFlavor)
+	suite.Error(err)
+}
+
+func (suite *renderSuite) TestRenderWithBadV4Image() {
+	conf := getBaseConfig()
+	conf.K8sConfig.ScannerV4Image = "invalid-image#!@$"
 	_, err := Render(conf, suite.testFlavor)
 	suite.Error(err)
 }

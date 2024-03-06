@@ -12,8 +12,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	proto "github.com/gogo/protobuf/proto"
 	declarativeconfig "github.com/stackrox/rox/pkg/declarativeconfig"
+	protocompat "github.com/stackrox/rox/pkg/protocompat"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,10 +41,10 @@ func (m *MockTransformer) EXPECT() *MockTransformerMockRecorder {
 }
 
 // Transform mocks base method.
-func (m *MockTransformer) Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (m *MockTransformer) Transform(config declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Transform", config)
-	ret0, _ := ret[0].(map[reflect.Type][]proto.Message)
+	ret0, _ := ret[0].(map[reflect.Type][]protocompat.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

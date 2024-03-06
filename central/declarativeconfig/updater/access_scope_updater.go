@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -33,7 +33,7 @@ func newAccessScopeUpdater(datastore roleDataStore.DataStore, healthDS declarati
 	}
 }
 
-func (u *accessScopeUpdater) Upsert(ctx context.Context, m proto.Message) error {
+func (u *accessScopeUpdater) Upsert(ctx context.Context, m protocompat.Message) error {
 	accessScope, ok := m.(*storage.SimpleAccessScope)
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to access scope updater: %T", accessScope)

@@ -3,18 +3,18 @@ package transform
 import (
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var _ Transformer = (*universalTransformer)(nil)
 
-// Transformer transforms a declarativeconfig.Configuration to proto.Message(s).
+// Transformer transforms a declarativeconfig.Configuration to protocompat.Message(s).
 //
 //go:generate mockgen-wrapper
 type Transformer interface {
-	Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error)
+	Transform(config declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error)
 }
 
 // New creates a Transformer that can handle transforming all currently supported declarativeconfig.Configuration.
@@ -32,7 +32,7 @@ type universalTransformer struct {
 	configurationTransformers map[string]Transformer
 }
 
-func (t *universalTransformer) Transform(config declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (t *universalTransformer) Transform(config declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	ct, exists := t.configurationTransformers[config.ConfigurationType()]
 	if !exists {
 		return nil, errox.InvariantViolation.Newf("no transformation logic for declarative config type %s found",

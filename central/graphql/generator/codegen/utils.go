@@ -5,11 +5,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
-	messageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+	messageType = reflect.TypeOf((*protocompat.Message)(nil)).Elem()
 )
 
 func isProto(p reflect.Type) bool {

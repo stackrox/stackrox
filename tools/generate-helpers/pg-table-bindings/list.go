@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -16,7 +16,7 @@ var typeRegistry = make(map[string]string)
 
 func init() {
 	// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
-	for s, r := range map[proto.Message]permissions.ResourceHandle{
+	for s, r := range map[protocompat.Message]permissions.ResourceHandle{
 		&storage.ActiveComponent{}:                              resources.Deployment,
 		&storage.AdministrationEvent{}:                          resources.Administration,
 		&storage.AuthMachineToMachineConfig{}:                   resources.Access,

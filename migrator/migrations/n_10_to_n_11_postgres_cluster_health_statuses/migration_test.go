@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_10_to_n_11_postgres_cluster_health_statuses/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_10_to_n_11_postgres_cluster_health_statuses/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/sac"
@@ -88,7 +88,7 @@ func (s *postgresMigrationSuite) TestClusterHealthStatusMigration() {
 	}
 }
 
-func keyFunc(msg proto.Message) []byte {
+func keyFunc(msg protocompat.Message) []byte {
 	return []byte(msg.(*storage.ClusterHealthStatus).GetId())
 }
 

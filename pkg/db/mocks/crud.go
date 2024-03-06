@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	proto "github.com/gogo/protobuf/proto"
+	protocompat "github.com/stackrox/rox/pkg/protocompat"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -98,10 +98,10 @@ func (mr *MockCrudMockRecorder) Exists(id any) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockCrud) Get(id string) (proto.Message, bool, error) {
+func (m *MockCrud) Get(id string) (protocompat.Message, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", id)
-	ret0, _ := ret[0].(proto.Message)
+	ret0, _ := ret[0].(protocompat.Message)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -129,10 +129,10 @@ func (mr *MockCrudMockRecorder) GetKeys() *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockCrud) GetMany(ids []string) ([]proto.Message, []int, error) {
+func (m *MockCrud) GetMany(ids []string) ([]protocompat.Message, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ids)
-	ret0, _ := ret[0].([]proto.Message)
+	ret0, _ := ret[0].([]protocompat.Message)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -145,7 +145,7 @@ func (mr *MockCrudMockRecorder) GetMany(ids any) *gomock.Call {
 }
 
 // Upsert mocks base method.
-func (m *MockCrud) Upsert(kv proto.Message) error {
+func (m *MockCrud) Upsert(kv protocompat.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", kv)
 	ret0, _ := ret[0].(error)
@@ -159,7 +159,7 @@ func (mr *MockCrudMockRecorder) Upsert(kv any) *gomock.Call {
 }
 
 // UpsertMany mocks base method.
-func (m *MockCrud) UpsertMany(msgs []proto.Message) error {
+func (m *MockCrud) UpsertMany(msgs []protocompat.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", msgs)
 	ret0, _ := ret[0].(error)
@@ -173,7 +173,7 @@ func (mr *MockCrudMockRecorder) UpsertMany(msgs any) *gomock.Call {
 }
 
 // UpsertManyWithIDs mocks base method.
-func (m *MockCrud) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+func (m *MockCrud) UpsertManyWithIDs(ids []string, msgs []protocompat.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertManyWithIDs", ids, msgs)
 	ret0, _ := ret[0].(error)
@@ -187,7 +187,7 @@ func (mr *MockCrudMockRecorder) UpsertManyWithIDs(ids, msgs any) *gomock.Call {
 }
 
 // UpsertWithID mocks base method.
-func (m *MockCrud) UpsertWithID(id string, msg proto.Message) error {
+func (m *MockCrud) UpsertWithID(id string, msg protocompat.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertWithID", id, msg)
 	ret0, _ := ret[0].(error)
@@ -201,7 +201,7 @@ func (mr *MockCrudMockRecorder) UpsertWithID(id, msg any) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockCrud) Walk(arg0 func(proto.Message) error) error {
+func (m *MockCrud) Walk(arg0 func(protocompat.Message) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", arg0)
 	ret0, _ := ret[0].(error)
@@ -215,7 +215,7 @@ func (mr *MockCrudMockRecorder) Walk(arg0 any) *gomock.Call {
 }
 
 // WalkAllWithID mocks base method.
-func (m *MockCrud) WalkAllWithID(arg0 func([]byte, proto.Message) error) error {
+func (m *MockCrud) WalkAllWithID(arg0 func([]byte, protocompat.Message) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WalkAllWithID", arg0)
 	ret0, _ := ret[0].(error)

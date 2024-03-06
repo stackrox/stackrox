@@ -3,11 +3,11 @@ package transform
 import (
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -22,7 +22,7 @@ func newNotifierTransform() *notifierTransform {
 	return &notifierTransform{}
 }
 
-func (r *notifierTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (r *notifierTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	notifierConfig, ok := configuration.(*declarativeconfig.Notifier)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for notifier: %T", configuration)
@@ -52,7 +52,7 @@ func (r *notifierTransform) Transform(configuration declarativeconfig.Configurat
 		return nil, errox.InvalidArgs.Newf("unsupported notifier type %s", notifierTypeStr)
 	}
 
-	return map[reflect.Type][]proto.Message{
+	return map[reflect.Type][]protocompat.Message{
 		notifierType: {notifierProto},
 	}, nil
 }

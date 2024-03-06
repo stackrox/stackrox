@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	declarativeConfigHealthMock "github.com/stackrox/rox/central/declarativeconfig/health/datastore/mocks"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	transformMocks "github.com/stackrox/rox/pkg/declarativeconfig/transform/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -241,25 +241,25 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	m.reconcileTransformedMessages(map[string]protoMessagesByType{
 		"test-handler-1": {
-			types.PermissionSetType: []proto.Message{
+			types.PermissionSetType: []protocompat.Message{
 				permissionSet1,
 				permissionSet2,
 			},
-			types.AccessScopeType: []proto.Message{
+			types.AccessScopeType: []protocompat.Message{
 				accessScope,
 			},
 		},
 		"test-handler-2": {
-			types.RoleType: []proto.Message{
+			types.RoleType: []protocompat.Message{
 				role,
 			},
-			types.AuthProviderType: []proto.Message{
+			types.AuthProviderType: []protocompat.Message{
 				authProvider,
 			},
-			types.GroupType: []proto.Message{
+			types.GroupType: []protocompat.Message{
 				group,
 			},
-			types.NotifierType: []proto.Message{
+			types.NotifierType: []protocompat.Message{
 				notifier,
 			},
 		},
@@ -308,7 +308,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	for i := 0; i < consecutiveReconciliationErrorThreshold; i++ {
 		m.reconcileTransformedMessages(map[string]protoMessagesByType{
 			"test-handler-1": {
-				types.PermissionSetType: []proto.Message{
+				types.PermissionSetType: []protocompat.Message{
 					permissionSet1,
 				},
 			},
@@ -349,7 +349,7 @@ func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing
 
 	messages := map[string]protoMessagesByType{
 		"test-handler-1": {
-			types.PermissionSetType: []proto.Message{
+			types.PermissionSetType: []protocompat.Message{
 				permissionSet1,
 			},
 		},
@@ -398,7 +398,7 @@ func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
 
 	messages := map[string]protoMessagesByType{
 		"test-handler-1": {
-			types.PermissionSetType: []proto.Message{
+			types.PermissionSetType: []protocompat.Message{
 				permissionSet1,
 			},
 		},
@@ -463,7 +463,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 
 	messages := map[string]protoMessagesByType{
 		"test-handler-1": {
-			types.PermissionSetType: []proto.Message{
+			types.PermissionSetType: []protocompat.Message{
 				permissionSet1,
 			},
 		},
@@ -512,7 +512,7 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		Description:   "test-description",
 		AccessScope:   "access-scope",
 		PermissionSet: "permission-set",
-	}).Return(map[reflect.Type][]proto.Message{
+	}).Return(map[reflect.Type][]protocompat.Message{
 		types.RoleType: {
 			&storage.Role{
 				Name:            "test-name",

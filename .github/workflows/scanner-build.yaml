@@ -50,6 +50,7 @@ jobs:
     needs: define-scanner-job-matrix
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       # Supports two go binary builds:
       # default    - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
@@ -108,10 +109,10 @@ jobs:
     - build-and-push-scanner
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       # Supports two image builds:
       # default
       # prerelease
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61

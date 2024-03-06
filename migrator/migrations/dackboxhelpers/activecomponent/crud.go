@@ -4,10 +4,10 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -35,11 +35,11 @@ var (
 )
 
 // KeyFunc returns the key with prefix.
-func KeyFunc(msg proto.Message) []byte {
+func KeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(*storage.ActiveComponent).GetId())
 	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
-func alloc() proto.Message {
+func alloc() protocompat.Message {
 	return &storage.ActiveComponent{}
 }

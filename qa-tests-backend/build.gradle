@@ -76,7 +76,7 @@ dependencies {
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.4.0'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.0'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.3'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -251,7 +251,6 @@ task runSampleScript(dependsOn: 'classes', type: JavaExec) {
         classpath = sourceSets.main.runtimeClasspath
     }
 }
-
 task testPZ(type: Test) {
     useJUnitPlatform {
         includeTags "PZ"
@@ -260,6 +259,11 @@ task testPZ(type: Test) {
 task testPZDebug(type: Test) {
     useJUnitPlatform {
         includeTags "PZDebug"
+    }
+}
+task testDeploymentCheck(type: Test) {
+    useJUnitPlatform {
+        includeTags "DeploymentCheck"
     }
 }
 test {
