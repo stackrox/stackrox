@@ -24,7 +24,7 @@ message DeclarativeConfigHealth {
     NOTIFIER = 6;
   }
 
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
   string name = 2;
   Status status = 4;
   string error_message = 5;

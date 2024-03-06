@@ -18,9 +18,9 @@ message ReportSnapshot {
     VULNERABILITY = 0;
   }
 
-  string report_id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-  string report_configuration_id = 2 [(gogoproto.moretags) = 'search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"'];
-  string name = 3 [(gogoproto.moretags) = 'search:"Report Name"'];
+  string report_id = 1; // @gotags: sql:"pk,type(uuid)"
+  string report_configuration_id = 2; // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"
+  string name = 3; // @gotags: search:"Report Name"
   string description = 4;
   ReportType type = 5;
   oneof filter {
@@ -66,10 +66,10 @@ message ReportStatus {
     SCHEDULED = 1;
   }
 
-  RunState run_state = 1 [(gogoproto.moretags) = 'search:"Report State"'];
-  google.protobuf.Timestamp queued_at = 2 [(gogoproto.moretags) = 'search:"Report Init Time"'];
-  google.protobuf.Timestamp completed_at = 3 [(gogoproto.moretags) = 'search:"Report Completion Time"'];
+  RunState run_state = 1; // @gotags: search:"Report State"
+  google.protobuf.Timestamp queued_at = 2; // @gotags: search:"Report Init Time"
+  google.protobuf.Timestamp completed_at = 3; // @gotags: search:"Report Completion Time"
   string error_msg = 4;
-  RunMethod report_request_type = 5 [(gogoproto.moretags) = 'search:"Report Request Type"'];
-  NotificationMethod report_notification_method = 6 [(gogoproto.moretags) = 'search:"Report Notification Method"'];
+  RunMethod report_request_type = 5; // @gotags: search:"Report Request Type"
+  NotificationMethod report_notification_method = 6; // @gotags: search:"Report Notification Method"
 }

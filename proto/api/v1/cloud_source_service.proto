@@ -23,7 +23,7 @@ message CloudSource {
   Type type = 3;
 
   message Credentials {
-    string secret = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+    string secret = 1; // @gotags: scrub:"always"
   }
   Credentials credentials = 4;
 

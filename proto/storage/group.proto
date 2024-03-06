@@ -15,7 +15,7 @@ message Group {
   GroupProperties props = 1;
 
   // This is the name of the role that will apply to users in this group.
-  string role_name = 3 [(gogoproto.moretags) = 'search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"'];
+  string role_name = 3; // @gotags: search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"
 }
 
 // GroupProperties defines the properties of a group. Groups apply to users when
@@ -27,10 +27,10 @@ message Group {
 // Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 message GroupProperties {
   // Unique identifier for group properties and respectively the group.
-  string id = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+  string id = 4; // @gotags: sql:"pk"
   Traits traits = 5;
 
-  string auth_provider_id = 1 [(gogoproto.moretags) = 'search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
-  string key = 2 [(gogoproto.moretags) = 'search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
-  string value = 3 [(gogoproto.moretags) = 'search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
+  string auth_provider_id = 1; // @gotags: search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+  string key = 2; // @gotags: search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+  string value = 3; // @gotags: search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"
 }
