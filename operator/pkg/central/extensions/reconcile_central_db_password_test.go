@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
@@ -99,31 +98,40 @@ func TestReconcileDBPassword(t *testing.T) {
 			Existing: []*v1.Secret{canonicalPWSecretWithPW1},
 		},
 		"If no central-db-password secret exists and no custom secret reference was specified, a password should be automatically generated": {
-			Spec: specWithAutogenPassword,
+			Spec:                         specWithAutogenPassword,
+			ExpectedSecretsAfterDeletion: []string{canonicalCentralDBPasswordSecretName},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					_, err := passwordFromSecretData(data)
+				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
+					assert.False(t, metav1.IsControlledBy(secret, central))
+					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					_, err := passwordFromSecretData(secret.Data)
 					assert.NoError(t, err)
 				},
 			},
 		},
 		"If a managed central-db-password secret with a password exists, this password should remain unchanged": {
-			Spec:            specWithAutogenPassword,
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithPW1},
+			Spec:                         specWithAutogenPassword,
+			ExistingManaged:              []*v1.Secret{canonicalPWSecretWithPW1},
+			ExpectedSecretsAfterDeletion: []string{canonicalCentralDBPasswordSecretName},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
+				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
+					assert.False(t, metav1.IsControlledBy(secret, central))
+					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw1, pw)
 				},
 			},
 		},
 		"If a managed central-db-password secret with no password exists, a password should be automatically generated": {
-			Spec:            specWithAutogenPassword,
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithNoPassword},
+			Spec:                         specWithAutogenPassword,
+			ExistingManaged:              []*v1.Secret{canonicalPWSecretWithNoPassword},
+			ExpectedSecretsAfterDeletion: []string{canonicalCentralDBPasswordSecretName},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					_, err := passwordFromSecretData(data)
+				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
+					assert.False(t, metav1.IsControlledBy(secret, central))
+					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					_, err := passwordFromSecretData(secret.Data)
 					assert.NoError(t, err)
 				},
 			},
@@ -138,35 +146,44 @@ func TestReconcileDBPassword(t *testing.T) {
 			Existing: []*v1.Secret{canonicalPWSecretWithPW1},
 		},
 		"If no central-db-password exists, and a user specified password secret was given, the central-db-password secret should be created with this password": {
-			Spec:     specWithUserSpecifiedPassword,
-			Existing: []*v1.Secret{customPWSecretWithPW1},
+			Spec:                         specWithUserSpecifiedPassword,
+			Existing:                     []*v1.Secret{customPWSecretWithPW1},
+			ExpectedSecretsAfterDeletion: []string{canonicalCentralDBPasswordSecretName},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
+				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
+					assert.False(t, metav1.IsControlledBy(secret, central))
+					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw1, pw)
 				},
 			},
 		},
 		"If a managed central-db-password exists, and a user specified password secret with the same password was given, the central-db-password secret should be left intact": {
-			Spec:            specWithUserSpecifiedPassword,
-			Existing:        []*v1.Secret{customPWSecretWithPW1},
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithPW1},
+			Spec:                         specWithUserSpecifiedPassword,
+			Existing:                     []*v1.Secret{customPWSecretWithPW1},
+			ExistingManaged:              []*v1.Secret{canonicalPWSecretWithPW1},
+			ExpectedSecretsAfterDeletion: []string{canonicalCentralDBPasswordSecretName},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
+				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
+					assert.False(t, metav1.IsControlledBy(secret, central))
+					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw1, pw)
 				},
 			},
 		},
 		"If a managed central-db-password exists, and a user specified password secret with a different password was given, the central-db-password secret should be updated with this password": {
-			Spec:            specWithUserSpecifiedPassword,
-			Existing:        []*v1.Secret{customPWSecretWithPW2},
-			ExistingManaged: []*v1.Secret{canonicalPWSecretWithPW1},
+			Spec:                         specWithUserSpecifiedPassword,
+			Existing:                     []*v1.Secret{customPWSecretWithPW2},
+			ExistingManaged:              []*v1.Secret{canonicalPWSecretWithPW1},
+			ExpectedSecretsAfterDeletion: []string{canonicalCentralDBPasswordSecretName},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				canonicalCentralDBPasswordSecretName: func(t *testing.T, data types.SecretDataMap) {
-					pw, err := passwordFromSecretData(data)
+				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
+					assert.False(t, metav1.IsControlledBy(secret, central))
+					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw2, pw)
 				},

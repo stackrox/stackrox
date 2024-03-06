@@ -29,7 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
+func verifyCentralCert(t *testing.T, central *platform.Central, secret *v1.Secret) {
+	assert.True(t, metav1.IsControlledBy(secret, central))
+	assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+	data := secret.Data
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
 	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE))
@@ -47,11 +50,13 @@ func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVeri
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
-	return func(t *testing.T, data types.SecretDataMap) {
-		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
+	return func(t *testing.T, central *platform.Central, secret *v1.Secret) {
+		assert.True(t, metav1.IsControlledBy(secret, central))
+		assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+		validatingCA, err := mtls.LoadCAForValidation(secret.Data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType))
+		assert.NoError(t, certgen.VerifyServiceCertAndKey(secret.Data, fileNamePrefix, validatingCA, serviceType))
 	}
 }
 

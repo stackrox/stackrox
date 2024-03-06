@@ -3,16 +3,18 @@ package extensions
 import (
 	"testing"
 
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/common/extensions"
-	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func verifyScannerV4DBPassword(t *testing.T, data types.SecretDataMap) {
-	assert.NotEmpty(t, data[extensions.ScannerV4DBPasswordKey])
+func verifyScannerV4DBPassword(t *testing.T, central *platform.Central, secret *v1.Secret) {
+	assert.True(t, metav1.IsControlledBy(secret, central))
+	assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+	assert.NotEmpty(t, secret.Data[extensions.ScannerV4DBPasswordKey])
 }
 
 func TestReconcileScannerV4DBPassword(t *testing.T) {
