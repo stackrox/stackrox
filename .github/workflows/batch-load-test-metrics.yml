@@ -3,6 +3,10 @@ on:
   workflow_dispatch:
   schedule:
   - cron: 23 * * * *
+
+# Ensure that only a single batch loader is running
+concurrency: Batch load test metrics
+
 jobs:
   batch-load-test-metrics:
     runs-on: ubuntu-latest
