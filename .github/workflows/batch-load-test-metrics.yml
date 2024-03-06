@@ -3,11 +3,6 @@ on:
   workflow_dispatch:
   schedule:
   - cron: 23 * * * *
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
 
 # Ensure that only a single batch loader is running
 concurrency: Batch load test metrics
