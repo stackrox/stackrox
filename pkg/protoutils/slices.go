@@ -1,7 +1,6 @@
 package protoutils
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
