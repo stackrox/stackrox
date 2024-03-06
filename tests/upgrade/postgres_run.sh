@@ -31,7 +31,7 @@ test_upgrade() {
 
     # Need to push the flag to ci so that is where it needs to be for the part
     # of the test.  We start this test with RocksDB
-    ci_export ROX_POSTGRES_DATASTORE "false"
+    ci_export ROX_POSTGRES_DATASTORE "true"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: test_upgrade <log-output-dir>"
