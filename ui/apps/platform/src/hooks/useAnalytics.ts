@@ -5,13 +5,25 @@ import { Telemetry } from 'types/config.proto';
 import { selectors } from 'reducers';
 import { UnionFrom, tupleTypeGuard } from 'utils/type.utils';
 
-// event name constants
+// Event Name Constants
+// clusters
 export const CLUSTER_CREATED = 'Cluster Created';
+
+// invite users
 export const INVITE_USERS_MODAL_OPENED = 'Invite Users Modal Opened';
 export const INVITE_USERS_SUBMITTED = 'Invite Users Submitted';
+
+// network graph
+export const CLUSTER_LEVEL_SIMULATOR_OPENED = 'Network Graph: Cluster Level Simulator Opened';
+export const GENERATE_NETWORK_POLICIES = 'Network Graph: Generate Network Policies';
+export const DOWNLOAD_NETWORK_POLICIES = 'Network Graph: Download Network Policies';
+export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
+
+// watch images
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
 export const WATCH_IMAGE_SUBMITTED = 'Watch Image Submitted';
 
+// workflow cves
 export const WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED = 'Workload CVE Entity Context View';
 export const WORKLOAD_CVE_FILTER_APPLIED = 'Workload CVE Filter Applied';
 export const WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED = 'Workload CVE Default Filters Changed';
@@ -21,6 +33,7 @@ export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Dow
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
 
+// cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
 export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
 export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
@@ -61,6 +74,42 @@ type AnalyticsEvent =
     | typeof CLUSTER_CREATED
     | typeof INVITE_USERS_MODAL_OPENED
     | typeof INVITE_USERS_SUBMITTED
+    /** Tracks each time a cluster level simulator is opened on Network Graph */
+    | {
+          event: typeof CLUSTER_LEVEL_SIMULATOR_OPENED;
+          properties: {
+              cluster: number;
+              namespaces: number;
+              deployments: number;
+          };
+      }
+    /** Tracks each time network policies are genarated on Network Graph */
+    | {
+          event: typeof GENERATE_NETWORK_POLICIES;
+          properties: {
+              cluster: number;
+              namespaces: number;
+              deployments: number;
+          };
+      }
+    /** Tracks each time network policies are downloaded on Network Graph */
+    | {
+          event: typeof DOWNLOAD_NETWORK_POLICIES;
+          properties: {
+              cluster: number;
+              namespaces: number;
+              deployments: number;
+          };
+      }
+    /** Tracks each time CIDR Block form opened on Network Graph */
+    | {
+          event: typeof CIDR_BLOCK_FORM_OPENED;
+          properties: {
+              cluster: number;
+              namespaces: number;
+              deployments: number;
+          };
+      }
     /** Tracks each time the user opens the "Watched Images" modal */
     | typeof WATCH_IMAGE_MODAL_OPENED
     /** Tracks each time the user submits a request to watch an image */
