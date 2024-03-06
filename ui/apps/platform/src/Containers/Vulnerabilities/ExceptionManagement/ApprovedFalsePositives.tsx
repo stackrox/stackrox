@@ -1,27 +1,30 @@
 import React, { useCallback } from 'react';
 import {
     Bullseye,
+    Button,
     PageSection,
     Pagination,
     Spinner,
+    Text,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 
 import useURLPagination from 'hooks/useURLPagination';
-
 import useURLSearch from 'hooks/useURLSearch';
 
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
-import NotFoundMessage from 'Components/NotFoundMessage';
+
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import PageTitle from 'Components/PageTitle';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import {
     RequestIDLink,
     RequestedAction,
@@ -38,6 +41,7 @@ import {
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 } from '../searchOptions';
+import { getTableUIState } from '../../../utils/getTableUIState';
 
 const searchOptions: SearchOption[] = [
     REQUEST_NAME_SEARCH_OPTION,
@@ -76,37 +80,27 @@ function ApprovedFalsePositives() {
             ),
         [searchFilter, sortOption, page, perPage]
     );
-    const { data, loading, error } = useRestQuery(vulnerabilityExceptionsFn);
+    // TODO: Consider changing the name of "loading" to "isLoading" - https://issues.redhat.com/browse/ROX-22865
+    const { data, loading: isLoading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
+    const tableUIState = getTableUIState({
+        isLoading,
+        data,
+        error,
+        searchFilter,
+    });
     function onFilterChange() {
         setPage(1);
     }
 
-    if (loading && !data) {
-        return (
-            <Bullseye>
-                <Spinner isSVG />
-            </Bullseye>
-        );
-    }
-
-    if (error) {
+    if (tableUIState.type === 'ERROR') {
         return (
             <PageSection variant="light">
                 <TableErrorComponent
-                    error={error}
+                    error={tableUIState.error}
                     message="An error occurred. Try refreshing again"
                 />
             </PageSection>
-        );
-    }
-
-    if (!data) {
-        return (
-            <NotFoundMessage
-                title="404: We couldn't find that page"
-                message="Approved false positive requests could not be found."
-            />
         );
     }
 
@@ -162,31 +156,88 @@ function ApprovedFalsePositives() {
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {data.map((exception) => {
-                        const { id, name, requester, createdAt, scope } = exception;
-                        return (
-                            <Tr key={id}>
-                                <Td>
-                                    <RequestIDLink id={id} name={name} context="CURRENT" />
-                                </Td>
-                                <Td>
-                                    <Requester requester={requester} />
-                                </Td>
-                                <Td>
-                                    <RequestedAction exception={exception} context="CURRENT" />
-                                </Td>
-                                <Td>
-                                    <RequestCreatedAt createdAt={createdAt} />
-                                </Td>
-                                <Td>
-                                    <RequestScope scope={scope} />
-                                </Td>
-                                <Td>
-                                    <RequestedItems exception={exception} context="CURRENT" />
-                                </Td>
-                            </Tr>
-                        );
-                    })}
+                    {tableUIState.type === 'LOADING' && (
+                        <Tr>
+                            <Td colSpan={7}>
+                                <Bullseye>
+                                    <Spinner isSVG />
+                                </Bullseye>
+                            </Td>
+                        </Tr>
+                    )}
+                    {tableUIState.type === 'EMPTY' && (
+                        <Tr>
+                            <Td colSpan={7}>
+                                <Bullseye>
+                                    <EmptyStateTemplate
+                                        title="No approved false positive requests"
+                                        headingLevel="h2"
+                                        icon={FileAltIcon}
+                                    >
+                                        <Text>
+                                            There are currently no approved false positive requests.
+                                            Feel free to review pending requests or return to your
+                                            dashboard.
+                                        </Text>
+                                    </EmptyStateTemplate>
+                                </Bullseye>
+                            </Td>
+                        </Tr>
+                    )}
+                    {tableUIState.type === 'FILTERED_EMPTY' && (
+                        <Tr>
+                            <Td colSpan={7}>
+                                <Bullseye>
+                                    <EmptyStateTemplate
+                                        title="No results found"
+                                        headingLevel="h2"
+                                        icon={SearchIcon}
+                                    >
+                                        <Text>
+                                            We couldn’t find any items matching your search
+                                            criteria. Try adjusting your filters or search terms for
+                                            better results
+                                        </Text>
+                                        <Button
+                                            variant="link"
+                                            onClick={() => {
+                                                setPage(1);
+                                                setSearchFilter({});
+                                            }}
+                                        >
+                                            Clear search filters
+                                        </Button>
+                                    </EmptyStateTemplate>
+                                </Bullseye>
+                            </Td>
+                        </Tr>
+                    )}
+                    {(tableUIState.type === 'COMPLETE' || tableUIState.type === 'POLLING') &&
+                        tableUIState.data.map((exception) => {
+                            const { id, name, requester, createdAt, scope } = exception;
+                            return (
+                                <Tr key={id}>
+                                    <Td>
+                                        <RequestIDLink id={id} name={name} context="CURRENT" />
+                                    </Td>
+                                    <Td>
+                                        <Requester requester={requester} />
+                                    </Td>
+                                    <Td>
+                                        <RequestedAction exception={exception} context="CURRENT" />
+                                    </Td>
+                                    <Td>
+                                        <RequestCreatedAt createdAt={createdAt} />
+                                    </Td>
+                                    <Td>
+                                        <RequestScope scope={scope} />
+                                    </Td>
+                                    <Td>
+                                        <RequestedItems exception={exception} context="CURRENT" />
+                                    </Td>
+                                </Tr>
+                            );
+                        })}
                 </Tbody>
             </TableComposable>
         </PageSection>
