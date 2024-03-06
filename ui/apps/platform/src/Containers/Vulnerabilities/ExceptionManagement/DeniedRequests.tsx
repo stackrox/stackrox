@@ -77,7 +77,6 @@ function DeniedRequests() {
                 {
                     ...searchFilter,
                     'Request Status': ['DENIED'],
-                    'Expired Request': 'false',
                 },
                 sortOption,
                 page - 1,
@@ -224,25 +223,25 @@ function DeniedRequests() {
                             const { id, name, requester, createdAt, scope } = exception;
                             return (
                                 <Tr key={id}>
-                                    <Td>
+                                    <Td dataLabel="Request name">
                                         <RequestIDLink id={id} name={name} context="CURRENT" />
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Requester">
                                         <Requester requester={requester} />
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Requested action">
                                         <RequestedAction exception={exception} context="CURRENT" />
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Requested">
                                         <RequestCreatedAt createdAt={createdAt} />
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Expires">
                                         <RequestExpires exception={exception} context="CURRENT" />
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Scope">
                                         <RequestScope scope={scope} />
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Requested items">
                                         <RequestedItems exception={exception} context="CURRENT" />
                                     </Td>
                                 </Tr>
