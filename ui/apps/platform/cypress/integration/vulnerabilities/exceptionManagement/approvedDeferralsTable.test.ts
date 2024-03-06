@@ -57,7 +57,7 @@ describe('Exception Management - Approved Deferrals Table', () => {
 
         // the deferred request should be approved
         cy.get(
-            'table td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
+            'table tr:first-child td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
         ).should('exist');
     });
 
@@ -70,7 +70,7 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        const requestNameSelector = 'table td[data-label="Request name"]';
+        const requestNameSelector = 'table tr:first-child td[data-label="Request name"]';
 
         cy.get(requestNameSelector)
             .invoke('text')
@@ -110,6 +110,7 @@ describe('Exception Management - Approved Deferrals Table', () => {
         );
     });
 
+    // TODO: We can create one test for all sorting. Consider making a reusable function for all the other table tests
     it('should be able to sort on the "Requester" column', () => {
         visitApprovedDeferralsTab();
 
@@ -207,14 +208,17 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        cy.get('table td[data-label="Request name"] a').then((element) => {
+        cy.get('table tr:first-child td[data-label="Request name"] a').then((element) => {
             const requestName = element.text().trim();
             typeAndSelectCustomSearchFilterValue('Request name', requestName);
-            cy.get('table td[data-label="Request name"] a').should('exist');
+            cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
+            cy.get(vulnSelectors.clearFiltersButton).click();
+            typeAndSelectCustomSearchFilterValue('Request name', 'BLAH');
+            cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
         });
     });
 
-    it('should be able to filter by "Request name"', () => {
+    it('should be able to filter by "Requester"', () => {
         deferAndVisitRequestDetails({
             comment,
             expiry,
@@ -224,9 +228,9 @@ describe('Exception Management - Approved Deferrals Table', () => {
         visitApprovedDeferralsTab();
 
         typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
-        cy.get('table td[data-label="Request name"] a').should('exist');
+        cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
         typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
-        cy.get('table td[data-label="Request name"] a').should('not.exist');
+        cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
     });
 });
