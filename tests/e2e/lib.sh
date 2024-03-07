@@ -625,6 +625,8 @@ check_for_stackrox_restarts() {
 }
 
 check_for_errors_in_stackrox_logs() {
+    info "Checking stackrox pod logs for errors"
+
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
     fi
@@ -648,6 +650,7 @@ check_for_errors_in_stackrox_logs() {
     LOGCHECK_SCRIPT="${LOGCHECK_SCRIPT:-scripts/ci/logcheck/check.sh}"
     for app in "${!podnames_by_app[@]}"; do
         logs="$(_get_logs_for_app "${app}")"
+        info "Checking app: ${app}, logs: ${logs}"
         # shellcheck disable=SC2086
         if [[ -n "${logs}" ]] && ! check_out="$(${LOGCHECK_SCRIPT} ${logs})"; then
             summary="$(summarize_check_output "${check_out}")"
