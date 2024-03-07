@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type options struct {
@@ -160,7 +161,7 @@ func CSVHandler() http.HandlerFunc {
 		for _, d := range validResults {
 			controls := make(map[string]*v1.ComplianceControl)
 			standardName := d.GetRunMetadata().GetStandardId()
-			timestamp := csv.FromTimestamp(d.GetRunMetadata().GetFinishTimestamp())
+			timestamp := protocompat.ConvertTimestampToCSVString(d.GetRunMetadata().GetFinishTimestamp())
 			standard, ok, _ := standards.Standard(standardName)
 			if ok {
 				standardName = standard.GetMetadata().GetName()

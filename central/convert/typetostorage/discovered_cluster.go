@@ -12,16 +12,21 @@ func DiscoveredCluster(cluster *discoveredclusters.DiscoveredCluster) *storage.D
 	storageConfig := &storage.DiscoveredCluster{
 		Id: discoveredclusters.GenerateDiscoveredClusterID(cluster),
 		Metadata: &storage.DiscoveredCluster_Metadata{
-			Id:                cluster.GetID(),
-			Name:              cluster.GetName(),
-			Type:              cluster.GetType(),
-			ProviderType:      cluster.GetProviderType(),
-			Region:            cluster.GetRegion(),
-			FirstDiscoveredAt: cluster.GetFirstDiscoveredAt(),
+			Id:           cluster.GetID(),
+			Name:         cluster.GetName(),
+			Type:         cluster.GetType(),
+			ProviderType: cluster.GetProviderType(),
+			Region:       cluster.GetRegion(),
 		},
 		Status:        cluster.GetStatus(),
 		SourceId:      cluster.GetCloudSourceID(),
 		LastUpdatedAt: protocompat.TimestampNow(),
+	}
+	if cluster.GetFirstDiscoveredAt() != nil {
+		firstDiscoveredAt, err := protocompat.ConvertTimeToTimestampOrError(*cluster.GetFirstDiscoveredAt())
+		if err == nil {
+			storageConfig.Metadata.FirstDiscoveredAt = firstDiscoveredAt
+		}
 	}
 	return storageConfig
 }

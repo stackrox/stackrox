@@ -2,6 +2,7 @@ package clair
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
@@ -155,3 +156,4 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 		})
 	}
 }
+

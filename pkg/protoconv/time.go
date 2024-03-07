@@ -90,3 +90,15 @@ func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
 	}
 	return nil
 }
+
+// ProtoTime takes a proto time type and converts it to a human readable string down to seconds.
+// It always prints a UTC time.
+func ProtoTime(ts *gogoTimestamp.Timestamp) string {
+	t, err := gogoTimestamp.TimestampFromProto(ts)
+	if err != nil {
+		log.Error(err)
+		return "<malformed time>"
+	}
+	const layout = "2006-01-02 15:04:05"
+	return t.UTC().Format(layout)
+}

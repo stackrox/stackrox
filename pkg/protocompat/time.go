@@ -16,9 +16,40 @@ var (
 	TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
 )
 
+// Timestamp represents a point in time independent of any time zone or local calendar, encoded
+// as a count of seconds and fractions of seconds at nanosecond resolution. The count is relative
+// to an epoch at UTC midnight on January 1, 1970, in the proleptic Gregorian calendar which
+// extends the Gregorian calendar backwards to year one.
+//
+// All minutes are 60 seconds long. Leap seconds are "smeared" so that no leap second table
+// is needed for interpretation, using a
+// [24-hour linear smear](https://developers.google.com/time/smear ).
+//
+// The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By restricting to that
+// range, we ensure that we can convert to and from
+// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt ) date strings.
+type Timestamp = gogoTimestamp.Timestamp
+
 // TimestampNow returns a protobuf timestamp set to the current time.
 func TimestampNow() *gogoTimestamp.Timestamp {
 	return gogoTimestamp.TimestampNow()
+}
+
+// ConvertTimestampToCSVString converts a proto timestamp to a string for display in a CSV report.
+func ConvertTimestampToCSVString(timestamp *gogoTimestamp.Timestamp) string {
+	if timestamp == nil {
+		return "N/A"
+	}
+	ts, err := gogoTimestamp.TimestampFromProto(timestamp)
+	if err != nil {
+		return "ERR"
+	}
+	return ts.Format(time.RFC1123)
+}
+
+// ConvertTimestampToTimeOrError converts a proto timestamp to a golang Time, or returns an error if there is one.
+func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
+	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
@@ -53,12 +84,6 @@ func ConvertTimestampToGraphqlTimeOrError(gogo *gogoTimestamp.Timestamp) (*graph
 	}
 	t, err := gogoTimestamp.TimestampFromProto(gogo)
 	return &graphql.Time{Time: t}, err
-}
-
-// ConvertTimestampToTimeOrError converts a proto timestamp
-// to a golang Time, or returns an error if there is one.
-func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
-	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
 // ConvertTimeToTimestampOrError converts golang time to proto timestamp.
@@ -108,6 +133,20 @@ func ParseRFC3339NanoTimestamp(timestamp string) (*gogoTimestamp.Timestamp, erro
 		return nil, err
 	}
 	return protoTime, nil
+}
+
+// NilOrNow allows for a proto timestamp to be stored a timestamp type in Postgres
+func NilOrNow(t *gogoTimestamp.Timestamp) *time.Time {
+	now := time.Now()
+	if t == nil {
+		return &now
+	}
+	ts, err := ConvertTimestampToTimeOrError(t)
+	if err != nil {
+		return &now
+	}
+	ts = ts.Round(time.Microsecond)
+	return &ts
 }
 
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if

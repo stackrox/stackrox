@@ -4,12 +4,13 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -54,16 +55,20 @@ func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.
 }
 
 // GetNetworkFlow returns a network flow constructed from supplied data.
-func GetNetworkFlow(src, dst *storage.NetworkEntityInfo, port int, protocol storage.L4Protocol, ts *types.Timestamp) *storage.NetworkFlow {
-	return &storage.NetworkFlow{
+func GetNetworkFlow(src, dst *storage.NetworkEntityInfo, port int, protocol storage.L4Protocol, ts *time.Time) *storage.NetworkFlow {
+	flow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
 			SrcEntity:  src,
 			DstEntity:  dst,
 			DstPort:    uint32(port),
 			L4Protocol: protocol,
 		},
-		LastSeenTimestamp: ts,
+		LastSeenTimestamp: nil,
 	}
+	if ts != nil {
+		flow.LastSeenTimestamp = protoconv.ConvertTimeToTimestamp(*ts)
+	}
+	return flow
 }
 
 // GenRandomExtSrcNetworkEntityInfo generates numNetworks number of storage.NetworkEntityInfo objects with random CIDRs.
