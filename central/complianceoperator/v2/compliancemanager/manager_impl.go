@@ -227,11 +227,11 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	existingScanSettingBindings, err := m.ssbDatastore.GetScanSettingBindings(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters...).ProtoQuery())
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve scan setting bindings for scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	// validate that the scan setting bindings does not contains any profiles that are being referenced by the scan request
-	err = validateScanSettingBindingsProfiles(existingScanSettingBindings, profiles)
+	err = validateScanSettingBindingsProfiles(existingScanSettingBindings, profiles, scanRequest, createScanRequest)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
@@ -269,12 +269,16 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 }
 
 // validateScanSettingBindingsProfiles validates that the scan setting bindings does not contains any profiles that are being referenced by the scan request
-func validateScanSettingBindingsProfiles(scanSettingBindings []*storage.ComplianceOperatorScanSettingBindingV2, profiles []string) error {
+func validateScanSettingBindingsProfiles(scanSettingBindings []*storage.ComplianceOperatorScanSettingBindingV2, profiles []string, scanRequest *storage.ComplianceOperatorScanConfigurationV2, createScanRequest bool) error {
 	for _, binding := range scanSettingBindings {
 		ssbProfiles := binding.ProfileNames
+		if binding.GetName() == scanRequest.GetScanConfigName() && !createScanRequest {
+			// Skip the scan setting binding that we are updating
+			continue
+		}
 		for _, profile := range profiles {
-			if sliceutils.Find(ssbProfiles, profile) != -1 {
-				return errors.Errorf("Scan setting binding %q already exists for profile %q", binding.GetId(), profile)
+			if slices.Index(ssbProfiles, profile) != -1 {
+				return errors.Errorf("profile %q is already used in scan setting binding %q", profile, binding.GetName())
 			}
 		}
 	}
