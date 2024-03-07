@@ -7,9 +7,9 @@ import (
 	"context"
 	"encoding/binary"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	bolt "go.etcd.io/bbolt"
 )
@@ -41,11 +41,9 @@ func (b *storeImpl) GetAll(_ context.Context) ([]*storage.LogImbue, error) {
 			copy(log, v)
 
 			logs = append(logs, &storage.LogImbue{
-				Id: uuid.NewV4().String(),
-				Timestamp: &types.Timestamp{
-					Seconds: int64(seconds),
-				},
-				Log: log,
+				Id:        uuid.NewV4().String(),
+				Timestamp: protocompat.GetProtoTimestampFromSeconds(int64(seconds)),
+				Log:       log,
 			})
 		}
 		return nil

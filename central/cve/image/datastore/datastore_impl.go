@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -230,7 +231,7 @@ func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types
 	if err != nil || d == 0 {
 		return nil, err
 	}
-	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
+	return protocompat.GetProtoTimestampFromSeconds(start.GetSeconds() + int64(d.Seconds())), nil
 }
 
 func (ds *datastoreImpl) updateCache(vulns ...*storage.ImageCVE) {

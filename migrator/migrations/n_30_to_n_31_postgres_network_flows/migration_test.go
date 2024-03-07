@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	legacy "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/postgres"
@@ -70,7 +69,7 @@ func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, 
 }
 
 func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*storage.NetworkFlow) {
-	fetched, _, err := flowStore.GetAllFlows(s.ctx, &types.Timestamp{})
+	fetched, _, err := flowStore.GetAllFlows(s.ctx, protocompat.GetProtoTimestampZero())
 	s.NoError(err)
 	s.Len(fetched, len(flows))
 	sort.SliceStable(fetched, func(i, j int) bool {

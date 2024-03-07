@@ -70,9 +70,7 @@ func (s *NetworkflowStoreSuite) TearDownSuite() {
 }
 
 func getTimestamp(seconds int64) *types.Timestamp {
-	return &types.Timestamp{
-		Seconds: seconds,
-	}
+	return protocompat.GetProtoTimestampFromSeconds(seconds)
 }
 
 func (s *NetworkflowStoreSuite) TestStore() {

@@ -884,10 +884,10 @@ func addDurationToTimestamp(ts *types.Timestamp, duration *types.Duration) *type
 	if nanos >= nanosInSecond {
 		seconds += int64(nanos / nanosInSecond)
 	}
-	return &types.Timestamp{
-		Seconds: seconds,
-		Nanos:   int32(0),
-	}
+	return protocompat.GetProtoTimestampFromSecondsAndNanos(
+		seconds,
+		int32(0))
+
 }
 
 func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,

@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -115,7 +115,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 				LabelSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{},
 				},
-				Created:                      &timestamp.Timestamp{Seconds: 1000},
+				Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,

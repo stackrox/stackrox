@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/common"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
@@ -52,7 +53,7 @@ func (s *clusterStoreImpl) Walk(ctx context.Context, fn func(clusterID string, t
 		}
 		currentCluster = string(clusterID)
 		currentFlowStore = s.GetFlowStore(currentCluster)
-		flows, ts, err := currentFlowStore.GetAllFlows(ctx, &types.Timestamp{})
+		flows, ts, err := currentFlowStore.GetAllFlows(ctx, protocompat.GetProtoTimestampZero())
 		if err != nil {
 			return err
 		}

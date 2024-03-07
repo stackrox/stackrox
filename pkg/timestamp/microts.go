@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -76,10 +77,7 @@ func (ts MicroTS) Protobuf() *timestamp.Timestamp {
 
 // GogoProtobuf converts this microtimestamp to a (Gogo) protobuf representation.
 func (ts MicroTS) GogoProtobuf() *types.Timestamp {
-	return &types.Timestamp{
-		Seconds: ts.UnixSeconds(),
-		Nanos:   ts.UnixNanosFraction(),
-	}
+	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
 }
 
 // ElapsedSince returns the time elapsed since the given timestamp, as a `time.Duration`.

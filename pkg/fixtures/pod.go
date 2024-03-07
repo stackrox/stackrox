@@ -1,9 +1,9 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // GetPod returns a mock Pod
@@ -13,9 +13,7 @@ func GetPod() *storage.Pod {
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
-		Started: &types.Timestamp{
-			Seconds: 0,
-		},
+		Started:      protocompat.GetProtoTimestampFromSeconds(0),
 		LiveInstances: []*storage.ContainerInstance{
 			{
 				InstanceId: &storage.ContainerInstanceID{
@@ -23,9 +21,7 @@ func GetPod() *storage.Pod {
 				},
 				ContainerName: "containername",
 				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-				Started: &types.Timestamp{
-					Seconds: 2,
-				},
+				Started:       protocompat.GetProtoTimestampFromSeconds(2),
 			},
 			{
 				InstanceId: &storage.ContainerInstanceID{
@@ -33,9 +29,7 @@ func GetPod() *storage.Pod {
 				},
 				ContainerName: "othercontainername",
 				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-				Started: &types.Timestamp{
-					Seconds: 3,
-				},
+				Started:       protocompat.GetProtoTimestampFromSeconds(3),
 			},
 		},
 		TerminatedInstances: []*storage.Pod_ContainerInstanceList{
@@ -47,12 +41,8 @@ func GetPod() *storage.Pod {
 						},
 						ContainerName: "containername",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 0,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-						},
+						Started:       protocompat.GetProtoTimestampFromSeconds(0),
+						Finished:      protocompat.GetProtoTimestampFromSeconds(1),
 					},
 				},
 			},
@@ -64,12 +54,8 @@ func GetPod() *storage.Pod {
 						},
 						ContainerName: "othercontainername",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 1,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 2,
-						},
+						Started:       protocompat.GetProtoTimestampFromSeconds(1),
+						Finished:      protocompat.GetProtoTimestampFromSeconds(2),
 					},
 				},
 			},
@@ -79,14 +65,10 @@ func GetPod() *storage.Pod {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "containeridinitfirst",
 						},
-						ContainerName: "containerinitname",
-						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 0,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-						},
+						ContainerName:     "containerinitname",
+						ImageDigest:       "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+						Started:           protocompat.GetProtoTimestampFromSeconds(0),
+						Finished:          protocompat.GetProtoTimestampFromSeconds(1),
 						ExitCode:          137,
 						TerminationReason: "Error",
 					},
@@ -96,14 +78,14 @@ func GetPod() *storage.Pod {
 						},
 						ContainerName: "containerinitname",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   200,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   800,
-						},
+						Started: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							200),
+
+						Finished: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							800),
+
 						ExitCode:          0,
 						TerminationReason: "Completed",
 					},
@@ -121,9 +103,7 @@ func GetPod1() *storage.Pod {
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
-		Started: &types.Timestamp{
-			Seconds: 0,
-		},
+		Started:      protocompat.GetProtoTimestampFromSeconds(0),
 		LiveInstances: []*storage.ContainerInstance{
 			{
 				InstanceId: &storage.ContainerInstanceID{
@@ -131,9 +111,7 @@ func GetPod1() *storage.Pod {
 				},
 				ContainerName: "containername",
 				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-				Started: &types.Timestamp{
-					Seconds: 2,
-				},
+				Started:       protocompat.GetProtoTimestampFromSeconds(2),
 			},
 			{
 				InstanceId: &storage.ContainerInstanceID{
@@ -141,9 +119,7 @@ func GetPod1() *storage.Pod {
 				},
 				ContainerName: "othercontainername",
 				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-				Started: &types.Timestamp{
-					Seconds: 3,
-				},
+				Started:       protocompat.GetProtoTimestampFromSeconds(3),
 			},
 		},
 		TerminatedInstances: []*storage.Pod_ContainerInstanceList{
@@ -155,12 +131,8 @@ func GetPod1() *storage.Pod {
 						},
 						ContainerName: "containername",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 0,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-						},
+						Started:       protocompat.GetProtoTimestampFromSeconds(0),
+						Finished:      protocompat.GetProtoTimestampFromSeconds(1),
 					},
 				},
 			},
@@ -172,12 +144,8 @@ func GetPod1() *storage.Pod {
 						},
 						ContainerName: "othercontainername",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 1,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 2,
-						},
+						Started:       protocompat.GetProtoTimestampFromSeconds(1),
+						Finished:      protocompat.GetProtoTimestampFromSeconds(2),
 					},
 				},
 			},
@@ -187,14 +155,10 @@ func GetPod1() *storage.Pod {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "containeridinitfirst",
 						},
-						ContainerName: "containerinitname",
-						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 0,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-						},
+						ContainerName:     "containerinitname",
+						ImageDigest:       "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+						Started:           protocompat.GetProtoTimestampFromSeconds(0),
+						Finished:          protocompat.GetProtoTimestampFromSeconds(1),
 						ExitCode:          137,
 						TerminationReason: "Error",
 					},
@@ -204,14 +168,14 @@ func GetPod1() *storage.Pod {
 						},
 						ContainerName: "containerinitname",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   200,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   800,
-						},
+						Started: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							200),
+
+						Finished: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							800),
+
 						ExitCode:          0,
 						TerminationReason: "Completed",
 					},
