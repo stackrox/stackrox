@@ -15,8 +15,10 @@ import services.ImageService
 import services.PolicyService
 import util.ApplicationHealth
 import util.ChaosMonkey
+import util.Env
 import util.Timer
 
+import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
@@ -138,6 +140,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Config: #desc"() {
+        Assume.assumeFalse(Env.getTestTarget() == "BAT" && testName == "nginx w/ inline scan")
+
         when:
         prepareChaosMonkey()
 
@@ -309,6 +313,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
+        Assume.assumeFalse(Env.getTestTarget() == "BAT" && desc == "nginx w/ inline scan")
+
         when:
         prepareChaosMonkey()
 
