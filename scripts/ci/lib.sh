@@ -1219,11 +1219,7 @@ post_process_test_results() {
             -slack-output "${slack_attachments_file}" \
             "${extra_args[@]}"
 
-        info "Creating Big Query test records from ${csv_output}"
-        bq load \
-            --skip_leading_rows=1 \
-            --allow_quoted_newlines \
-            ci_metrics.stackrox_tests "${csv_output}"
+        save_test_metrics "${csv_output}"
     } || true
     set -u
 }
