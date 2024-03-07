@@ -208,7 +208,9 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	image.Metadata = existingImage.GetMetadata()
+	if existingImage.GetMetadata() != nil {
+		image.Metadata = existingImage.GetMetadata()
+	}
 	image.Notes = existingImage.GetNotes()
 	hasChangedNames := !protoutils.SlicesEqual(existingImage.GetNames(), image.GetNames())
 	image.Names = protoutils.SliceUnique(append(existingImage.GetNames(), image.GetNames()...))

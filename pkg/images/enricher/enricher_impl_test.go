@@ -1369,3 +1369,33 @@ func TestUpdateImageFromDatabase_NameChanges(t *testing.T) {
 	// fetch option indicates to use caches.
 	assert.Empty(t, img.GetSignatureVerificationData().GetResults())
 }
+
+func TestUpdateImageFromDatabase_Metadata(t *testing.T) {
+	const imageSHA = "some-SHA-for-testing"
+	cimg, err := utils.GenerateImageFromString("docker.io/test")
+	require.NoError(t, err)
+	img := imgTypes.ToImage(cimg)
+	img.Id = imageSHA
+	metadata := &storage.ImageMetadata{
+		V1: nil,
+		V2: &storage.V2Metadata{
+			Digest: imageSHA,
+		},
+		Version: 2,
+	}
+	img.Metadata = metadata
+
+	existingImg := imgTypes.ToImage(cimg)
+	existingImg.Id = imageSHA
+
+	e := &enricherImpl{
+		imageGetter: func(_ context.Context, id string) (*storage.Image, bool, error) {
+			assert.Equal(t, imageSHA, id)
+			return existingImg, true, nil
+		},
+	}
+
+	e.updateImageFromDatabase(context.Background(), img, UseCachesIfPossible)
+	assert.Equal(t, imageSHA, img.GetId())
+	assert.Equal(t, metadata, img.GetMetadata())
+}
