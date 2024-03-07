@@ -264,9 +264,9 @@ class GoogleArtifactRegistry implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: "google-artifact-registry",
-                project: "stackrox-ci",
+                project: "acs-san-stackroxci",
                 endpoint: "us-west1-docker.pkg.dev",
-                serviceAccount: Env.mustGet("GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT"),
+                serviceAccount: Env.mustGet("GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2"),
                 wifEnabled: false,
                 skipTestIntegration: false,
         ]
