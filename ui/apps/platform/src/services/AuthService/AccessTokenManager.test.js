@@ -5,15 +5,6 @@ describe('AccessTokenManager', () => {
         jest.useFakeTimers();
     });
 
-    it('should invoke refresh token routine after 1 hour', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
-        // eslint-disable-next-line no-unused-vars
-        const m = new AccessTokenManager({ refreshToken });
-        m.refreshToken();
-        jest.advanceTimersByTime(3600030);
-        expect(refreshToken).toHaveBeenCalled();
-    });
-
     it('should notify attached listener about token being refreshed', () => {
         const refreshToken = jest.fn().mockRejectedValue();
         let opPromiseToTest = null;

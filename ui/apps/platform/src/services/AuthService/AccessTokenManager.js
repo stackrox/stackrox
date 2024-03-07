@@ -1,8 +1,4 @@
 import EventEmitter from 'events';
-/* eslint-disable import/no-duplicates */
-import differenceInMilliSeconds from 'date-fns/difference_in_milliseconds';
-import subSeconds from 'date-fns/sub_seconds';
-import RefreshTokenTimeout from './RefreshTokenTimeout';
 
 /**
  * Token and its expiry date
@@ -50,8 +46,6 @@ export default class AccessTokenManager {
      */
     constructor(options = {}) {
         this.options = options;
-
-        this.refreshTimeout = new RefreshTokenTimeout();
         this.refreshTokenOpPromise = null;
         this.refreshTokenSymbol = Symbol('Refresh Token');
         this.eventEmitter = new EventEmitter();
@@ -70,7 +64,6 @@ export default class AccessTokenManager {
         if (this.refreshTokenOpPromise) {
             return this.refreshTokenOpPromise;
         } // already refreshing
-        this.refreshTimeout.clear();
 
         if (!this.options.refreshToken) {
             return Promise.resolve();
@@ -85,12 +78,6 @@ export default class AccessTokenManager {
                 this.refreshTokenOpPromise = null;
             });
         this.eventEmitter.emit(this.refreshTokenSymbol, this.refreshTokenOpPromise);
-        // Do a refresh every hour. For now this is statically defined, since we do not have access to the
-        // underlying token and its expiration time.
-        const expiryDate = subSeconds(new Date(), 3600);
-        const delay = differenceInMilliSeconds(expiryDate, Date.now());
-        this.refreshTimeout.set(this.refreshToken, delay);
-
         return this.refreshTokenOpPromise;
     };
 

@@ -38,11 +38,3 @@ func clearAccessTokenCookie() *http.Cookie {
 		MaxAge:   -1,
 	}
 }
-
-// IsAccessTokenCookie returns whether the given cookie is the AccessTokenCookie.
-func IsAccessTokenCookie(cookie *http.Cookie) bool {
-	return cookie.Name == AccessTokenCookieName &&
-		cookie.Secure &&
-		cookie.SameSite == http.SameSiteStrictMode &&
-		cookie.HttpOnly
-}
