@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -84,7 +83,7 @@ func buildNode(node *v1.Node) *storage.Node {
 		Taints:                  convertTaints(node.Spec.Taints),
 		Labels:                  node.GetLabels(),
 		Annotations:             node.GetAnnotations(),
-		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
+		JoinedAt:                protocompat.GetProtoTimestampFromSecondsAndNanos(creation.Seconds, creation.Nanos),
 		InternalIpAddresses:     internal,
 		ExternalIpAddresses:     external,
 		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion),

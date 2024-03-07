@@ -39,7 +39,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 		},
 		{
 			"error when client returns zero last vuln update",
-			&v4.Metadata{LastVulnerabilityUpdate: &types.Timestamp{}}, noErr, errExpected,
+			&v4.Metadata{LastVulnerabilityUpdate: protocompat.GetProtoTimestampZero()}, noErr, errExpected,
 		},
 		{
 			"error when client returns zero last vuln update (from time)",

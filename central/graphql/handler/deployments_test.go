@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -74,7 +74,7 @@ func TestGetDeploymentProcessGroup(t *testing.T) {
 			Signal: &storage.ProcessSignal{
 				Id:           "signalId",
 				Name:         "process",
-				Time:         &types.Timestamp{Seconds: 100},
+				Time:         protocompat.GetProtoTimestampFromSeconds(100),
 				ContainerId:  "containerId",
 				ExecFilePath: "/bin/process",
 				Pid:          1,

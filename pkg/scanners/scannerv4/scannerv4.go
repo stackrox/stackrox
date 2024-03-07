@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
@@ -156,7 +157,7 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	}
 
 	lastTms := metadata.GetLastVulnerabilityUpdate()
-	if lastTms == nil || lastTms.Equal(protoTypes.Timestamp{}) || lastTms.Equal(zeroProtoTimestampFromTime) {
+	if lastTms == nil || lastTms.Equal(protocompat.GetProtoTimestampZero()) || lastTms.Equal(zeroProtoTimestampFromTime) {
 		return nil, errors.New("no timestamp available")
 	}
 

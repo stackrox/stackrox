@@ -5,6 +5,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -37,7 +38,7 @@ func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Ti
 			DeferralReq: &storage.DeferralRequest{
 				Expiry: &storage.RequestExpiry{
 					Expiry: &storage.RequestExpiry_ExpiresOn{
-						ExpiresOn: &types.Timestamp{Seconds: createdAt.GetSeconds() + int64(d.Seconds())},
+						ExpiresOn: protocompat.GetProtoTimestampFromSeconds(createdAt.GetSeconds() + int64(d.Seconds())),
 					},
 				},
 			},
