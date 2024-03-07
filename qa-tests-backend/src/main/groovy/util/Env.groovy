@@ -306,4 +306,8 @@ class Env {
     static String mustGetOcmOfflineToken() {
         return get("OCM_OFFLINE_TOKEN")
     }
+
+    static String getTestTarget() {
+        return get("TEST_TARGET", "")
+    }
 }

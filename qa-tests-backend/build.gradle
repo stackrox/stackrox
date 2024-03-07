@@ -149,12 +149,14 @@ tasks.withType(Test) {
 }
 
 task testBegin(type: Test) {
+    environment "TEST_TARGET", "Begin"
     useJUnitPlatform {
         includeTags "Begin"
     }
 }
 
 task testParallel(type: Test) {
+  environment "TEST_TARGET", "Parallel"
   systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
   useJUnitPlatform {
       includeTags "Parallel"
@@ -168,6 +170,7 @@ task testRest(type: Test) {
 }
 
 task testParallelBAT(type: Test) {
+  environment "TEST_TARGET", "BAT"
   systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
   useJUnitPlatform {
       includeTags "Parallel & BAT"
@@ -175,6 +178,7 @@ task testParallelBAT(type: Test) {
 }
 
 task testBAT(type: Test) {
+    environment "TEST_TARGET", "BAT"
     useJUnitPlatform {
         includeTags "BAT"
         excludeTags "Parallel"
