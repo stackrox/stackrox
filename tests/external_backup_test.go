@@ -20,9 +20,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-const (
-	testGCSBucket = "stackrox-ci-gcs-db-upload-test"
-)
+var testGCSBucket = os.Getenv("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
 
 func countNumBackups(t *testing.T, client *googleStorage.Client, prefix string) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -46,7 +44,7 @@ func verifyNumBackups(t *testing.T, numBackups int, numExpected int) {
 }
 
 func TestGCSExternalBackup(t *testing.T) {
-	serviceAccount := os.Getenv("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT")
+	serviceAccount := os.Getenv("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
 	require.NotEmpty(t, serviceAccount)
 
 	prefix := os.Getenv("BUILD_ID")
@@ -70,7 +68,7 @@ func TestGCSExternalBackup(t *testing.T) {
 		Config: &storage.ExternalBackup_Gcs{
 			Gcs: &storage.GCSConfig{
 				Bucket:         testGCSBucket,
-				ServiceAccount: os.Getenv("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT"),
+				ServiceAccount: serviceAccount,
 				ObjectPrefix:   prefix,
 			},
 		},
