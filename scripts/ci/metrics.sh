@@ -258,7 +258,7 @@ _load_one_batch() {
     local process_location
     process_location="${_BATCH_STORAGE_PROCESSING}/$(date +%Y-%m-%d-%H-%M-%S.%N)"
     info "Moving the batch to ${process_location}"
-    gsutil -m mv ${files[*]} "${process_location}/"
+    gsutil -m mv "${files[@]}" "${process_location}/"
     gsutil ls -l "${process_location}"
 
     info "Loading into BQ"
