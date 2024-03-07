@@ -364,7 +364,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-e8"},
+			Profiles:    []string{"rhcos4-high"},
 			Description: "test config",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -415,7 +415,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-e8"},
+			Profiles:    []string{"ocp4-moderate"},
 			Description: "test config",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
