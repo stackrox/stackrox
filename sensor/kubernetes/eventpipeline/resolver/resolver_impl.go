@@ -114,7 +114,7 @@ func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *depl
 			log.Debugf("Deployment with id %s is already in the pipeline, skipping processing", ref.id)
 			return false
 		}
-		msg.AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: ref.action})
+		msg.AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: ref.action})
 		return true
 	}
 
@@ -149,7 +149,7 @@ func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *depl
 	// new and detection isn't forced.
 	if ref.forceDetection || newObject {
 		msg.AddSensorEvent(toEvent(ref.action, d, msg.DeploymentTiming)).
-			AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: ref.action})
+			AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: ref.action})
 		return true
 	}
 	return false
@@ -158,9 +158,9 @@ func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *depl
 // runPullAndResolve pull the next deployment reference to be resolved out of the queue
 func (r *resolverImpl) runPullAndResolve() {
 	for {
-		item := r.deploymentRefQueue.PullBlocking(&r.stopSig)
+		item := r.deploymentRefQueue.PullBlocking(r.stopper.LowLevel().GetStopRequestSignal())
 		select {
-		case <-r.stopSig.Done():
+		case <-r.stopper.Flow().StopRequested():
 			return
 		default:
 			break
