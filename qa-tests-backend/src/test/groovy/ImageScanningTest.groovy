@@ -208,6 +208,8 @@ class ImageScanningTest extends BaseSpecification {
     // GCR doesn't have MA images to verify the GCR-image-integrations on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Image Registry+Scanner Integrations: #testName"() {
+        Assume.assumeFalse(Env.getTestTarget() == "BAT" && (testName == "gcr-duplicate" || testName == "gcr-and-other"))
+
         given:
         "Get deployment details used to test integration"
         assert IMAGE_PULL_SECRETS.containsKey(integration)
@@ -557,6 +559,7 @@ class ImageScanningTest extends BaseSpecification {
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
+        Assume.assumeFalse(Env.getTestTarget() == "BAT" && (testName == "acr-config-only" || testName == "gcr-auto"))
 
         if (coreImageIntegrationId != null && integration == "quay") {
             // For this test we don't want it
