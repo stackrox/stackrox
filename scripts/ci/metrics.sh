@@ -267,6 +267,7 @@ _load_one_batch() {
         --allow_quoted_newlines \
         "${_TESTS_TABLE_NAME}" "${process_location}/*"
 
+    info "Moving the processed batch to ${_BATCH_STORAGE_DONE}"
     gsutil -m mv "${process_location}" "${_BATCH_STORAGE_DONE}/"
 
     return 0
