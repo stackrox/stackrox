@@ -2,18 +2,21 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
-    fillAndSubmitExceptionForm,
-    selectSingleCveForException,
-    verifyExceptionConfirmationDetails,
-    verifySelectedCvesInModal,
-    visitWorkloadCveOverview,
     typeAndSelectCustomSearchFilterValue,
 } from '../workloadCves/WorkloadCves.helpers';
-import { visitPendingRequestsTab } from './ExceptionManagement.helpers';
+import {
+    deferAndVisitRequestDetails,
+    visitApprovedDeferralsTab,
+} from './ExceptionManagement.helpers';
+import { approveRequest } from './approveRequestFlow.test';
 import { selectors } from './ExceptionManagement.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
-describe('Exception Management Pending Requests Page', () => {
+const comment = 'Defer me';
+const expiry = 'When all CVEs are fixable';
+const scope = 'All images';
+
+describe('Exception Management - Approved Deferrals Table', () => {
     withAuth();
 
     before(function () {
@@ -43,84 +46,42 @@ describe('Exception Management Pending Requests Page', () => {
         }
     });
 
-    it('should be able to view deferred pending requests', () => {
-        visitWorkloadCveOverview();
-
-        // defer a single cve
-        selectSingleCveForException('DEFERRAL').then((cveName) => {
-            verifySelectedCvesInModal([cveName]);
-            fillAndSubmitExceptionForm({
-                comment: 'Test comment',
-                expiryLabel: 'When all CVEs are fixable',
-            });
-            verifyExceptionConfirmationDetails({
-                expectedAction: 'Deferral',
-                cves: [cveName],
-                scope: 'All images',
-                expiry: 'When all CVEs are fixable',
-            });
-
-            visitPendingRequestsTab();
-
-            // the deferred request should be pending
-            cy.get(
-                'table td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
-            ).should('exist');
+    it('should be able to view approved deferrals', () => {
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
         });
-    });
+        approveRequest();
+        visitApprovedDeferralsTab();
 
-    it('should be able to view false positive pending requests', () => {
-        visitWorkloadCveOverview();
-
-        // mark a single cve as false positive
-        selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
-            verifySelectedCvesInModal([cveName]);
-            fillAndSubmitExceptionForm({ comment: 'Test comment' });
-            verifyExceptionConfirmationDetails({
-                expectedAction: 'False positive',
-                cves: [cveName],
-                scope: 'All images',
-            });
-
-            visitPendingRequestsTab();
-
-            // the false positive request should be pending
-            cy.get('table td[data-label="Requested action"]:contains("False positive")').should(
-                'exist'
-            );
-        });
+        // the deferred request should be approved
+        cy.get(
+            'table tr:first-child td[data-label="Requested action"]:contains("Deferred (when all fixed)")'
+        ).should('exist');
     });
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {
-        visitWorkloadCveOverview();
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
+        });
+        approveRequest();
+        visitApprovedDeferralsTab();
 
-        selectSingleCveForException('FALSE_POSITIVE')
-            // mark a single cve as false positive
-            .then((cveName) => {
-                verifySelectedCvesInModal([cveName]);
-                fillAndSubmitExceptionForm({ comment: 'Test comment' });
-                verifyExceptionConfirmationDetails({
-                    expectedAction: 'False positive',
-                    cves: [cveName],
-                    scope: 'All images',
-                });
-            })
-            .then(() => {
-                visitPendingRequestsTab();
+        const requestNameSelector = 'table tr:first-child td[data-label="Request name"]';
 
-                const requestNameLink = 'table td[data-label="Request name"]';
-
-                cy.get(requestNameLink)
-                    .invoke('text')
-                    .then((requestName) => {
-                        cy.get(requestNameLink).click();
-                        cy.get(`h1:contains("${requestName}")`).should('exist');
-                    });
+        cy.get(requestNameSelector)
+            .invoke('text')
+            .then((requestName) => {
+                cy.get(requestNameSelector).click();
+                cy.get(`h1:contains("${requestName}")`).should('exist');
             });
     });
 
     it('should be able to sort on the "Request Name" column', () => {
-        visitPendingRequestsTab();
+        visitApprovedDeferralsTab();
 
         cy.get(selectors.tableSortColumn('Request name')).should(
             'have.attr',
@@ -149,8 +110,9 @@ describe('Exception Management Pending Requests Page', () => {
         );
     });
 
+    // TODO: We can create one test for all sorting. Consider making a reusable function for all the other table tests
     it('should be able to sort on the "Requester" column', () => {
-        visitPendingRequestsTab();
+        visitApprovedDeferralsTab();
 
         cy.get(selectors.tableSortColumn('Requester')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Requester')).click();
@@ -176,7 +138,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Requested" column', () => {
-        visitPendingRequestsTab();
+        visitApprovedDeferralsTab();
 
         cy.get(selectors.tableSortColumn('Requested')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Requested')).click();
@@ -202,7 +164,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Expires" column', () => {
-        visitPendingRequestsTab();
+        visitApprovedDeferralsTab();
 
         cy.get(selectors.tableSortColumn('Expires')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Expires')).click();
@@ -220,7 +182,7 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to sort on the "Scope" column', () => {
-        visitPendingRequestsTab();
+        visitApprovedDeferralsTab();
 
         cy.get(selectors.tableSortColumn('Scope')).should('have.attr', 'aria-sort', 'none');
         cy.get(selectors.tableColumnSortButton('Scope')).click();
@@ -238,56 +200,37 @@ describe('Exception Management Pending Requests Page', () => {
     });
 
     it('should be able to filter by "Request name"', () => {
-        visitWorkloadCveOverview();
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
+        });
+        approveRequest();
+        visitApprovedDeferralsTab();
 
-        // defer a single cve
-        selectSingleCveForException('DEFERRAL').then((cveName) => {
-            verifySelectedCvesInModal([cveName]);
-            fillAndSubmitExceptionForm({
-                comment: 'Test comment',
-                expiryLabel: 'When all CVEs are fixable',
-            });
-            verifyExceptionConfirmationDetails({
-                expectedAction: 'Deferral',
-                cves: [cveName],
-                scope: 'All images',
-                expiry: 'When all CVEs are fixable',
-            });
-
-            visitPendingRequestsTab();
-
-            cy.get('table td[data-label="Request name"] a').then((element) => {
-                const requestName = element.text().trim();
-                typeAndSelectCustomSearchFilterValue('Request name', requestName);
-                cy.get('table td[data-label="Request name"] a').should('exist');
-            });
+        cy.get('table tr:first-child td[data-label="Request name"] a').then((element) => {
+            const requestName = element.text().trim();
+            typeAndSelectCustomSearchFilterValue('Request name', requestName);
+            cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
+            cy.get(vulnSelectors.clearFiltersButton).click();
+            typeAndSelectCustomSearchFilterValue('Request name', 'BLAH');
+            cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
         });
     });
 
     it('should be able to filter by "Requester"', () => {
-        visitWorkloadCveOverview();
-
-        // defer a single cve
-        selectSingleCveForException('DEFERRAL').then((cveName) => {
-            verifySelectedCvesInModal([cveName]);
-            fillAndSubmitExceptionForm({
-                comment: 'Test comment',
-                expiryLabel: 'When all CVEs are fixable',
-            });
-            verifyExceptionConfirmationDetails({
-                expectedAction: 'Deferral',
-                cves: [cveName],
-                scope: 'All images',
-                expiry: 'When all CVEs are fixable',
-            });
-
-            visitPendingRequestsTab();
-
-            typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
-            cy.get('table td[data-label="Request name"] a').should('exist');
-            cy.get(vulnSelectors.clearFiltersButton).click();
-            typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
-            cy.get('table td[data-label="Request name"] a').should('not.exist');
+        deferAndVisitRequestDetails({
+            comment,
+            expiry,
+            scope,
         });
+        approveRequest();
+        visitApprovedDeferralsTab();
+
+        typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
+        cy.get('table tr:first-child td[data-label="Request name"] a').should('exist');
+        cy.get(vulnSelectors.clearFiltersButton).click();
+        typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
+        cy.get('table tr:first-child td[data-label="Request name"] a').should('not.exist');
     });
 });

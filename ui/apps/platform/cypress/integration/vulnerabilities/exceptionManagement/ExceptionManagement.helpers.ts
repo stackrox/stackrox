@@ -14,11 +14,25 @@ export const approvedDeferralsPath = `${basePath}/approved-deferrals`;
 export const approvedFalsePositivesPath = `${basePath}/approved-false-positives`;
 export const deniedRequestsPath = `${basePath}/denied-requests`;
 
-export function visitExceptionManagement() {
-    visit(pendingRequestsPath);
+export function visitExceptionManagementTab(path: string) {
+    visit(path);
 
     cy.get('h1:contains("Exception management")');
-    cy.location('pathname').should('eq', pendingRequestsPath);
+    cy.location('pathname').should('eq', path);
+
+    // Check that the loading spinner is present
+    cy.get('svg[aria-label="Loading table data"]').should('exist');
+
+    // Wait for the loading spinner to disappear
+    cy.get('svg[aria-label="Loading table data"]', { timeout: 10000 }).should('not.exist');
+}
+
+export function visitPendingRequestsTab() {
+    visitExceptionManagementTab(pendingRequestsPath);
+}
+
+export function visitApprovedDeferralsTab() {
+    visitExceptionManagementTab(approvedDeferralsPath);
 }
 
 export function deferAndVisitRequestDetails({
