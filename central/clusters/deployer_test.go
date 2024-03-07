@@ -327,7 +327,6 @@ func testImageFlavorChartRepoSettings(s *deployerTestSuite, flavor defaults.Imag
 func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 	flavorCases := map[string]defaults.ImageFlavor{
 		"development": defaults.DevelopmentBuildImageFlavor(),
-		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
 		"rhacs":       defaults.RHACSReleaseImageFlavor(),
 		"opensource":  defaults.OpenSourceImageFlavor(),
 	}

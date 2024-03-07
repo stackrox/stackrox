@@ -49,18 +49,18 @@ teardown() {
 @test "roxctl-release central generate k8s should work when main is from custom registry and --image-defaults are used" {
   run_image_defaults_registry_test roxctl-release k8s \
     'example.com' \
-    'stackrox.io' \
+    'quay.io/stackrox-io' \
     '--main-image' 'example.com/main:1.2.3'  \
     '--central-db-image' 'example.com/central-db:1.2.3'\
-    '--image-defaults' 'stackrox.io'
+    '--image-defaults' 'opensource'
 }
 
 @test "roxctl-release roxctl central generate k8s should not support --rhacs flag" {
   run_no_rhacs_flag_test roxctl-release k8s
 }
 
-@test "roxctl-release roxctl central generate k8s --image-defaults=stackrox.io should use stackrox.io registry" {
-  run_image_defaults_registry_test roxctl-release k8s 'stackrox.io' 'stackrox.io' '--image-defaults' 'stackrox.io'
+@test "roxctl-release roxctl central generate k8s --image-defaults=opensource should use quay.io/stackrox-io registry" {
+  run_image_defaults_registry_test roxctl-release k8s 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
 }
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=rhacs should use registry.redhat.io registry" {
@@ -69,10 +69,6 @@ teardown() {
 
 @test "roxctl-release roxctl central generate k8s --image-defaults=development_build should use quay.io/rhacs-eng registry" {
   run_image_defaults_registry_test roxctl-release k8s 'quay.io/rhacs-eng' 'quay.io/rhacs-eng' '--image-defaults' 'development_build'
-}
-
-@test "roxctl-release roxctl central generate k8s --image-defaults=opensource should use quay.io/stackrox-io registry" {
-  run_image_defaults_registry_test roxctl-release k8s 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
 }
 
 # RELEASE / OPENSHIFT
@@ -104,18 +100,18 @@ teardown() {
 @test "roxctl-release central generate openshift should work when main is from custom registry and --image-defaults are used" {
   run_image_defaults_registry_test roxctl-release openshift \
     'example.com' \
-    'stackrox.io' \
+    'quay.io/stackrox-io' \
     '--main-image' 'example.com/main:1.2.3' \
     '--central-db-image' 'example.com/central-db:1.2.3' \
-    '--image-defaults' 'stackrox.io'
+    '--image-defaults' 'opensource'
 }
 
 @test "roxctl-release roxctl central generate openshift should not support --rhacs flag" {
   run_no_rhacs_flag_test roxctl-release openshift
 }
 
-@test "roxctl-release roxctl central generate openshift --image-defaults=stackrox.io should use stackrox.io registry" {
-  run_image_defaults_registry_test roxctl-release openshift 'stackrox.io' 'stackrox.io' '--image-defaults' 'stackrox.io'
+@test "roxctl-release roxctl central generate openshift --image-defaults=opensource should use quay.io/stackrox-io registry" {
+  run_image_defaults_registry_test roxctl-release openshift 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
 }
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=rhacs should use registry.redhat.io registry" {
@@ -124,10 +120,6 @@ teardown() {
 
 @test "roxctl-release roxctl central generate openshift --image-defaults=development_build should use quay.io/rhacs-eng registry" {
   run_image_defaults_registry_test roxctl-release openshift 'quay.io/rhacs-eng' 'quay.io/rhacs-eng' '--image-defaults' 'development_build'
-}
-
-@test "roxctl-release roxctl central generate openshift --image-defaults=opensource should use quay.io/stackrox-io registry" {
-  run_image_defaults_registry_test roxctl-release openshift 'quay.io/stackrox-io' 'quay.io/stackrox-io' '--image-defaults' 'opensource'
 }
 
 @test "roxctl-release central generate k8s --debug should fail" {
