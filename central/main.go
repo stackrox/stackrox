@@ -281,7 +281,7 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	log.Errorf("Failed to find categories associated with policy %s: %q. Error: 123",
+	log.Errorf("Failed to find <>&' associated with policy %s: %q. Error: 123",
 		"7b71fba0-2afb-4e4e-abf3-0f461cd76acc",
 		"Privileged Containers with Important and Critical Fixable CVEs")
 	ensureDB(ctx)
