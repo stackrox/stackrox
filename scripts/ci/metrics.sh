@@ -134,78 +134,76 @@ _EO_UPDATE_
     bq query --use_legacy_sql=false "$sql"
 }
 
-slack_top_10_failures() {
-    local job_name_match="${1:-qa}"
-    local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
-    local is_test="${3:-false}"
+slack_top_n_failures() {
+    local n="${1:-10}"
+    local job_name_match="${2:-qa}"
+    local subject="${3:-Top 10 QA E2E Test failures for the last 7 days}"
+    local is_test="${4:-false}"
 
     local sql
     # shellcheck disable=SC2016
     sql='
 SELECT
-    COUNT(*) AS `#`,
-    IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
-    IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
+    FORMAT("%6.2f", 100 * COUNTIF(Status="failed") / COUNT(*)) AS `%`,
+    IF(LENGTH(Classname) > 28, CONCAT(RPAD(Classname, 25), "..."), Classname) AS `Suite`,
+    IF(LENGTH(Name) > 123, CONCAT(RPAD(Name, 120), "..."), Name) AS `Case`
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
     CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
-    AND Status = "failed"
     AND NOT IsPullRequest
     AND CONTAINS_SUBSTR(JobName, "master")
+    AND NOT STARTS_WITH(JobName, "rehearse-")
     AND NOT CONTAINS_SUBSTR(JobName, "ibmcloudz")
     AND NOT CONTAINS_SUBSTR(JobName, "powervs")
     AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
 GROUP BY
     Classname,
     Name
+HAVING
+    COUNTIF(Status="failed") > 0
 ORDER BY
-    COUNT(*) DESC
+    COUNTIF(Status="failed") DESC
 LIMIT
-    10
+    '"${n}"'
 '
 
-    local data
+    local data_file
+    data_file="$(mktemp)"
     echo "Running query with job match name $job_name_match"
-    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)" || {
-        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n${data}"
+    bq --quiet --format=json query --use_legacy_sql=false "$sql" > "${data_file}" 2>/dev/null || {
+        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
 
-    if [[ -z "${data}" ]]; then
-        data="No failures!"
+    local body
+    if [[ -s "${data_file}" ]]; then
+        jq < "${data_file}"
+        # shellcheck disable=SC2016
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": ("`Rate %` *Suite*")},
+                {"type": "mrkdwn", "text": "*Case*"}
+            ]},
+            (.[] | {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": ("`"+.["%"]+"` "+.["Suite"])},
+                {"type": "plain_text", "text": .["Case"]}
+            ]})]}'
+    else
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "section", "text": {"type": "plain_text", "text": "No failures! :success-kid:", "emoji": true}}]}'
+        echo "No failures found!"
     fi
-    echo "$data"
 
+    echo "Posting data to slack"
     local webhook_url
     if [[ "${is_test}" == "true" ]]; then
         webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
     else
         webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
     fi
-
-    local body
-    # shellcheck disable=SC2016
-    body='
-{
-    "blocks": [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "'"${subject}"'"
-            }
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "```\n\($data)\n```"
-            }
-        }
-    ]
-}'
-
-    echo "Posting data to slack"
-    jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    rm -f "${data_file}"
 }
