@@ -60,15 +60,6 @@ function setup() {
     assert_output --partial '_addr_'
 }
 
-@test "escapes XML" {
-    check_out="$(cat "${BATS_TEST_DIRNAME}/fixtures/xml-unsafe.txt")"
-    run summarize_check_output "${check_out}"
-    assert_success
-    assert_output --partial 'before _something double quoted_ after'
-    assert_output --partial 'before _something single quoted_ after'
-    assert_output --partial 'before &lt;hey&gt; &amp;who after'
-}
-
 @test "shortens long logs" {
     check_out="$(cat "${BATS_TEST_DIRNAME}/fixtures/long-logs-check-output.txt")"
     run summarize_check_output "${check_out}"

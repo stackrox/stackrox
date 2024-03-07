@@ -760,11 +760,7 @@ summarize_check_output() {
         # Replace pointers
         sed -r -e 's/0x[0-9a-f]+\??/_addr_/g' | \
         # Replace IPs + Ports
-        sed -r -e 's/[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\:?[[:digit:]]*/__ip[:port]__"/g' | \
-        # Replace unsafe XML chars
-        sed -r -e 's/["'\'']/_/g' | \
-        # Escape XML chars
-        sed -r -e 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' \
+        sed -r -e 's/[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\:?[[:digit:]]*/__ip[:port]__"/g' \
         || true
     )"
 
