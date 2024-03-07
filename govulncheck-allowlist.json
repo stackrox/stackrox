@@ -10,26 +10,26 @@
     "GO-2023-2382": {
       "reason": "Requires version bump",
       "until": "2024-03-22T00:00:00Z"
+    },
+    "GO-2024-2598": {
+      "reason": "Allow release-4.4 to use an earlier version of Golang",
+      "until": "2024-06-07T00:00:00Z"
+    },
+    "GO-2024-2599": {
+      "reason": "Allow release-4.4 to use an earlier version of Golang",
+      "until": "2024-06-07T00:00:00Z"
+    },
+    "GO-2024-2600": {
+      "reason": "Allow release-4.4 to use an earlier version of Golang",
+      "until": "2024-06-07T00:00:00Z"
+    },
+    "GO-2024-2609": {
+      "reason": "Allow release-4.4 to use an earlier version of Golang",
+      "until": "2024-06-07T00:00:00Z"
+    },
+    "GO-2024-2610": {
+      "reason": "Allow release-4.4 to use an earlier version of Golang",
+      "until": "2024-06-07T00:00:00Z"
     }
-  },
-  "GO-2024-2598": {
-    "reason": "Allow release-4.4 to use an earlier version of Golang",
-    "until": "2024-06-07T00:00:00Z"
-  },
-  "GO-2024-2599": {
-    "reason": "Allow release-4.4 to use an earlier version of Golang",
-    "until": "2024-06-07T00:00:00Z"
-  },
-  "GO-2024-2600": {
-    "reason": "Allow release-4.4 to use an earlier version of Golang",
-    "until": "2024-06-07T00:00:00Z"
-  },
-  "GO-2024-2609": {
-    "reason": "Allow release-4.4 to use an earlier version of Golang",
-    "until": "2024-06-07T00:00:00Z"
-  },
-  "GO-2024-2610": {
-    "reason": "Allow release-4.4 to use an earlier version of Golang",
-    "until": "2024-06-07T00:00:00Z"
   }
 }
