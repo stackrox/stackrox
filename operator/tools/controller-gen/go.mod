@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/controller-gen
 
 go 1.19
 
-require sigs.k8s.io/controller-tools v0.12.1
+require sigs.k8s.io/controller-tools v0.14.0
 
 require (
 	github.com/fatih/color v1.16.0 // indirect
