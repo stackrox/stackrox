@@ -131,7 +131,7 @@ message ImageCVE {
 }
 
 message NodeCVE {
-  string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
 
@@ -145,7 +145,7 @@ message NodeCVE {
 }
 
 message ClusterCVE {
-  string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  string id = 1; // This field is composite of cve and type. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
 
   float cvss = 3; // @gotags: search:"CVSS,store"
