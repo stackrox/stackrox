@@ -62,7 +62,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 
@@ -90,7 +90,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 	suite.NoError(updateNetworkManagementExecutionPolicy(suite.db))
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	policy.PolicySections[0].PolicyGroups[0].Values[0].Value = newPolicyCriteria
 	policy.Exclusions = append(policy.Exclusions, newExclusions...)
@@ -120,7 +120,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 	suite.NoError(updateNetworkManagementExecutionPolicy(suite.db))
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 
@@ -156,7 +156,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 	suite.NoError(updateNetworkManagementExecutionPolicy(suite.db))
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 
@@ -197,7 +197,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 	suite.NoError(updateNetworkManagementExecutionPolicy(suite.db))
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 
@@ -233,7 +233,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 	suite.NoError(updateNetworkManagementExecutionPolicy(suite.db))
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }

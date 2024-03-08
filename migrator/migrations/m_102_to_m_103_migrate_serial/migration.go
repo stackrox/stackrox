@@ -3,11 +3,11 @@ package m102tom103
 import (
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -35,7 +35,7 @@ func migrateSerials(db *bolt.DB) error {
 
 		return bucket.ForEach(func(k, v []byte) error {
 			si := &storage.ServiceIdentity{}
-			if err := proto.Unmarshal(v, si); err != nil {
+			if err := protocompat.Unmarshal(v, si); err != nil {
 				return err
 			}
 			if serial, ok := si.Srl.(*storage.ServiceIdentity_Serial); ok && si.GetSerialStr() == "" {

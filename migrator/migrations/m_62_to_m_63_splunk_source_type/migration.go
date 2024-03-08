@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -38,7 +39,7 @@ func migrateSplunkSourceType(db *bolt.DB) error {
 		}
 		return bucket.ForEach(func(k, v []byte) error {
 			var notifier storage.Notifier
-			if err := proto.Unmarshal(v, &notifier); err != nil {
+			if err := protocompat.Unmarshal(v, &notifier); err != nil {
 				return err
 			}
 			if notifier.GetType() != "splunk" {

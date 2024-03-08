@@ -71,7 +71,7 @@ func checkModifiedCriteriaIsNotUpdated(suite *excludeOpenShiftNamespacesFromPoli
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }
@@ -89,7 +89,7 @@ func (suite *excludeOpenShiftNamespacesFromPoliciesTestSuite) TestUnrelatedPolic
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }
@@ -120,7 +120,7 @@ func (suite *excludeOpenShiftNamespacesFromPoliciesTestSuite) TestUnmodifiedPoli
 		var newPolicy storage.Policy
 		suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 			v := b.Get([]byte(policy.GetId()))
-			return proto.Unmarshal(v, &newPolicy)
+			return protocompat.Unmarshal(v, &newPolicy)
 		}))
 		policy.Exclusions = append(policy.Exclusions, policiesToMigrate[policy.GetId()].newExclusions...)
 		suite.EqualValues(policy, &newPolicy)
@@ -169,7 +169,7 @@ func (suite *excludeOpenShiftNamespacesFromPoliciesTestSuite) TestMixOfMissingAn
 		var newPolicy storage.Policy
 		suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 			v := b.Get([]byte(policy.GetId()))
-			return proto.Unmarshal(v, &newPolicy)
+			return protocompat.Unmarshal(v, &newPolicy)
 		}))
 		if policy.GetId() != updatedPolicyID {
 			// The modified policy shouldn't have any of the new exclusions
@@ -202,7 +202,7 @@ func (suite *excludeOpenShiftNamespacesFromPoliciesTestSuite) TestPolicyWithExtr
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	rocksdb "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/tecbot/gorocksdb"
 )
@@ -46,7 +47,7 @@ func migrateCVEs(db *gorocksdb.DB) error {
 		cveID := rocksdbmigration.GetIDFromPrefixedKey(cveBucket, key)
 
 		var cve storage.CVE
-		if err := proto.Unmarshal(it.Value().Data(), &cve); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &cve); err != nil {
 			return errors.Wrapf(err, "unmarshaling %s", cveID)
 		}
 

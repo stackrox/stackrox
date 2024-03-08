@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -92,7 +93,7 @@ func (suite *rolesRocksDBMigrationTestSuite) TestRolesMigrationToRocksDB() {
 	defer it.Close()
 	for it.Seek(rolesBucket); it.ValidForPrefix(rolesBucket); it.Next() {
 		var role storage.Role
-		if err := proto.Unmarshal(it.Value().Data(), &role); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &role); err != nil {
 			suite.NoError(err)
 		}
 		rolesAfterMigration[role.GetName()] = &role

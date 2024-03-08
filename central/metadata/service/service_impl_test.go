@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -71,7 +70,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = proto.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
 	s.Require().NoError(err)
 
 	// Verify that additional CAs were received
@@ -101,7 +100,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = proto.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
 	s.Require().NoError(err)
 
 	// Read root CA from response

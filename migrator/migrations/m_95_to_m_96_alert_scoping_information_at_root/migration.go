@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -43,7 +44,7 @@ func copyAlertScopingInformationToRoot(db *types.Databases) error {
 		key := it.Key().Copy()
 
 		var alert storage.Alert
-		err := proto.Unmarshal(it.Value().Data(), &alert)
+		err := protocompat.Unmarshal(it.Value().Data(), &alert)
 		if err != nil {
 			return err
 		}

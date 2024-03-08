@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -104,7 +104,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var config storage.DynamicClusterConfig
-	if err := proto.Unmarshal(configData, &config); err != nil {
+	if err := protocompat.Unmarshal(configData, &config); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -102,7 +103,7 @@ func TestRolesGlobalAccessMigration(t *testing.T) {
 		}
 		return bucket.ForEach(func(k, v []byte) error {
 			role := &storage.Role{}
-			if err := proto.Unmarshal(v, role); err != nil {
+			if err := protocompat.Unmarshal(v, role); err != nil {
 				return err
 			}
 			if string(k) != role.GetName() {

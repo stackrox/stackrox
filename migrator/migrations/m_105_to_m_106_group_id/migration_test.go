@@ -3,9 +3,9 @@ package m105tom106
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -117,7 +117,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 		bucket := tx.Bucket(bucketName)
 		err := bucket.ForEach(func(k, v []byte) error {
 			var group storage.Group
-			suite.NoError(proto.Unmarshal(v, &group))
+			suite.NoError(protocompat.Unmarshal(v, &group))
 			expectedGroup, exists := expectedGroups[group.GetRoleName()]
 			suite.True(exists)
 			suite.Equal(expectedGroup.GetRoleName(), group.GetRoleName())

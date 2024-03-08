@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -56,7 +57,7 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 				return nil
 			}
 			var group storage.Group
-			if err := proto.Unmarshal(v, &group); err != nil {
+			if err := protocompat.Unmarshal(v, &group); err != nil {
 				return err
 			}
 			return fn(&group)

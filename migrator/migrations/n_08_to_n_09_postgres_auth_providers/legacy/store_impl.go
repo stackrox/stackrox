@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
@@ -52,7 +53,7 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.AuthProvider, error) {
 
 		return provB.ForEach(func(k, v []byte) error {
 			var authProvider storage.AuthProvider
-			if err := proto.Unmarshal(v, &authProvider); err != nil {
+			if err := protocompat.Unmarshal(v, &authProvider); err != nil {
 				return err
 			}
 

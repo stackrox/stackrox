@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -33,7 +34,7 @@ func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ServiceIdentity, error
 		b := tx.Bucket([]byte(serviceIdentityBucket))
 		return b.ForEach(func(k, v []byte) error {
 			var serviceIdentity storage.ServiceIdentity
-			if err := proto.Unmarshal(v, &serviceIdentity); err != nil {
+			if err := protocompat.Unmarshal(v, &serviceIdentity); err != nil {
 				return err
 			}
 			serviceIdentities = append(serviceIdentities, &serviceIdentity)

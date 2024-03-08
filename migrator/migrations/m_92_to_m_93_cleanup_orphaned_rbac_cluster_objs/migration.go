@@ -1,13 +1,13 @@
 package m92tom93
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/tecbot/gorocksdb"
 )
@@ -44,7 +44,7 @@ func cleanupOrphanedRBACObjectsFromDeletedClusters(db *types.Databases) error {
 
 	deletedSACount, err := removedOrphanedObjects(db, serviceAccountBucket, func(key, data []byte) (bool, error) {
 		var sa storage.ServiceAccount
-		if err := proto.Unmarshal(data, &sa); err != nil {
+		if err := protocompat.Unmarshal(data, &sa); err != nil {
 			return false, errors.Wrapf(err, "unmarshaling service account %s", key)
 		}
 		return !clusters.Contains(sa.GetClusterId()), nil
@@ -56,7 +56,7 @@ func cleanupOrphanedRBACObjectsFromDeletedClusters(db *types.Databases) error {
 
 	deletedK8SRoleCount, err := removedOrphanedObjects(db, k8sRoleBucket, func(key, data []byte) (bool, error) {
 		var role storage.K8SRole
-		if err := proto.Unmarshal(data, &role); err != nil {
+		if err := protocompat.Unmarshal(data, &role); err != nil {
 			return false, errors.Wrapf(err, "unmarshaling K8S roles %s", key)
 		}
 		return !clusters.Contains(role.GetClusterId()), nil
@@ -68,7 +68,7 @@ func cleanupOrphanedRBACObjectsFromDeletedClusters(db *types.Databases) error {
 
 	deletedRoleBindingsCount, err := removedOrphanedObjects(db, roleBindingsBucket, func(key, data []byte) (bool, error) {
 		var role storage.K8SRoleBinding
-		if err := proto.Unmarshal(data, &role); err != nil {
+		if err := protocompat.Unmarshal(data, &role); err != nil {
 			return false, errors.Wrapf(err, "unmarshaling K8S role bindings %s", key)
 		}
 		return !clusters.Contains(role.GetClusterId()), nil

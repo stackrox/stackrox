@@ -3,10 +3,10 @@ package m77tom78
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/common/test"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
@@ -39,7 +39,7 @@ func TestMigration(t *testing.T) {
 		require.NotNil(t, bucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			policy := &storage.Policy{}
-			if err := proto.Unmarshal(v, policy); err != nil {
+			if err := protocompat.Unmarshal(v, policy); err != nil {
 				return errors.Wrapf(err, "unmarshaling policy %s", k)
 			}
 			assert.Nil(t, policy.GetMitreAttackVectors())
@@ -59,7 +59,7 @@ func TestMigration(t *testing.T) {
 			require.NotNil(t, val)
 
 			var storedPolicy storage.Policy
-			if err := proto.Unmarshal(val, &storedPolicy); err != nil {
+			if err := protocompat.Unmarshal(val, &storedPolicy); err != nil {
 				return errors.Wrapf(err, "unmarshaling policy %s", policy.ID)
 			}
 			assert.ElementsMatch(t, policy.MitreAttackVectors, storedPolicy.GetMitreAttackVectors())

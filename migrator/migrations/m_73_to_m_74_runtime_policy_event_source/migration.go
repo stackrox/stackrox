@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -42,7 +43,7 @@ func migrateDefaultRuntimeEventSource(db *bolt.DB) error {
 		var policyKeys [][]byte
 		err := bucket.ForEach(func(key, obj []byte) error {
 			policy := &storage.Policy{}
-			if err := proto.Unmarshal(obj, policy); err != nil {
+			if err := protocompat.Unmarshal(obj, policy); err != nil {
 				// Unclear how to recover from unmarshal error, abort the transaction.
 				return errors.Wrapf(err, "failed to unmarshal policy data for key %q", key)
 			}
@@ -63,7 +64,7 @@ func migrateDefaultRuntimeEventSource(db *bolt.DB) error {
 				return errors.Errorf("expected policy with key %q not found", key)
 			}
 			policy := &storage.Policy{}
-			if err := proto.Unmarshal(obj, policy); err != nil {
+			if err := protocompat.Unmarshal(obj, policy); err != nil {
 				// Unclear how to recover from unmarshal error, abort the transaction.
 				return errors.Wrapf(err, "failed to unmarshal policy data for key %q", key)
 			}

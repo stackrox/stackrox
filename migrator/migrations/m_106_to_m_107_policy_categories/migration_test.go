@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -209,7 +210,7 @@ func (suite *categoriesRocksDBMigrationTestSuite) TestPolicyWithNonDefaultCatego
 	defer it.Close()
 	for it.Seek(categoriesBucket); it.ValidForPrefix(categoriesBucket); it.Next() {
 		var c storage.PolicyCategory
-		if err := proto.Unmarshal(it.Value().Data(), &c); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &c); err != nil {
 			suite.NoError(err)
 		}
 		categoriesAfterMigration = append(categoriesAfterMigration, c.Name)
@@ -244,7 +245,7 @@ func (suite *categoriesRocksDBMigrationTestSuite) TestPolicyWithDefaultCategorie
 	defer it.Close()
 	for it.Seek(categoriesBucket); it.ValidForPrefix(categoriesBucket); it.Next() {
 		var c storage.PolicyCategory
-		if err := proto.Unmarshal(it.Value().Data(), &c); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &c); err != nil {
 			suite.NoError(err)
 		}
 		categoriesAfterMigration = append(categoriesAfterMigration, c.Name)
@@ -278,7 +279,7 @@ func (suite *categoriesRocksDBMigrationTestSuite) TestPolicyWithBothCategoryType
 	defer it.Close()
 	for it.Seek(categoriesBucket); it.ValidForPrefix(categoriesBucket); it.Next() {
 		var c storage.PolicyCategory
-		if err := proto.Unmarshal(it.Value().Data(), &c); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &c); err != nil {
 			suite.NoError(err)
 		}
 		categoriesAfterMigration = append(categoriesAfterMigration, c.Name)

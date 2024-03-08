@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -31,7 +32,7 @@ func removeComplianceRunScheduleFromPermissionSets(db *gorocksdb.DB) error {
 	wb := gorocksdb.NewWriteBatch()
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		ps := &storage.PermissionSet{}
-		if err := proto.Unmarshal(it.Value().Data(), ps); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), ps); err != nil {
 			return errors.Wrap(err, "unable to unmarshal permission set")
 		}
 		if _, ok := ps.ResourceToAccess[permissionName]; !ok {

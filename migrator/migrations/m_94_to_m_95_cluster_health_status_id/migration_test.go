@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -72,7 +73,7 @@ func (s *clusterHealthStatusIDTestSuite) validateIDAdded(_ []byte) {
 
 	for it.Seek(clusterHealthStatusBucket); it.ValidForPrefix(clusterHealthStatusBucket); it.Next() {
 		healthStatus := &storage.ClusterHealthStatus{}
-		s.NoError(proto.Unmarshal(it.Value().Data(), healthStatus))
+		s.NoError(protocompat.Unmarshal(it.Value().Data(), healthStatus))
 		s.NotEmpty(healthStatus.GetId(), "expected health status id to be populated, but it is not")
 	}
 }

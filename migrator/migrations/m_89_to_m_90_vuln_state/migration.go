@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/dackboxhelpers"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -56,7 +57,7 @@ func updateImageCVEEdgesWithVulnState(databases *types.Databases) error {
 		}
 
 		imageCVEEdge := &storage.ImageCVEEdge{}
-		if err := proto.Unmarshal(it.Value().Data(), imageCVEEdge); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), imageCVEEdge); err != nil {
 			return errors.Wrapf(err, "unmarshaling image-cve edge %s", edgeID)
 		}
 		imageCVEEdge.State = storage.VulnerabilityState_DEFERRED
@@ -91,7 +92,7 @@ func getSuppressedCVEs(db *gorocksdb.DB) (map[string]struct{}, error) {
 	for it.Seek(cvePrefix); it.ValidForPrefix(cvePrefix); it.Next() {
 		id := rocksdbmigration.GetIDFromPrefixedKey(cvePrefix, it.Key().Copy())
 		cve := &storage.CVE{}
-		if err := proto.Unmarshal(it.Value().Data(), cve); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), cve); err != nil {
 			return nil, errors.Wrapf(err, "Failed to unmarshal cve data for key %v", it.Key().Data())
 		}
 

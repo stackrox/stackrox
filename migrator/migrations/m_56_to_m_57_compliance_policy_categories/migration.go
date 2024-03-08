@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -106,7 +107,7 @@ func migrateNewPolicyCategories(db *bolt.DB) error {
 			}
 
 			policy := &storage.Policy{}
-			if err := proto.Unmarshal(policyBytes, policy); err != nil {
+			if err := protocompat.Unmarshal(policyBytes, policy); err != nil {
 				// Unclear how to recover from unmarshal error, abort the transaction.
 				return errors.Wrapf(err, "failed to unmarshal policy data for key %q", migrateID)
 			}

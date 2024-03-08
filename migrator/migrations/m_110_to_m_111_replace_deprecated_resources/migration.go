@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -93,7 +94,7 @@ func migrateReplacedResourcesInPermissionSets(db *gorocksdb.DB) error {
 	defer wb.Destroy()
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		permissions := &storage.PermissionSet{}
-		if err := proto.Unmarshal(it.Value().Data(), permissions); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), permissions); err != nil {
 			return errors.Wrap(err, "unable to unmarshal permission set")
 		}
 		// Copy the permission set, removing the deprecated resource permissions, and keeping the

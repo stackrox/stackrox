@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -160,7 +161,7 @@ func (suite *clusterRocksDBMigrationTestSuite) extractRoles(boltDB *bolt.DB, rol
 				return nil
 			}
 			role := &storage.Role{}
-			if err := proto.Unmarshal(v, role); err != nil {
+			if err := protocompat.Unmarshal(v, role); err != nil {
 				return err
 			}
 			if string(k) != role.GetName() {
@@ -189,7 +190,7 @@ func (suite *clusterRocksDBMigrationTestSuite) extractPermissionSets(db *gorocks
 			continue
 		}
 		var ps storage.PermissionSet
-		if err := proto.Unmarshal(it.Value().Data(), &ps); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &ps); err != nil {
 			suite.NoError(err)
 		}
 		permissionSets[string(id)] = &ps

@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -32,7 +33,7 @@ func (s *undoStore) Get(_ context.Context, clusterID string) (*storage.NetworkPo
 			return nil
 		}
 		exists = true
-		return proto.Unmarshal(val, &record)
+		return protocompat.Unmarshal(val, &record)
 	})
 	if err != nil {
 		return nil, false, err
@@ -65,7 +66,7 @@ func (s *undoStore) Walk(_ context.Context, fn func(np *storage.NetworkPolicyApp
 		bucket := tx.Bucket(undoBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.NetworkPolicyApplicationUndoRecord
-			if err := proto.Unmarshal(v, &np); err != nil {
+			if err := protocompat.Unmarshal(v, &np); err != nil {
 				return err
 			}
 			return fn(&np)
