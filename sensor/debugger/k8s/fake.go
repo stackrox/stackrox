@@ -151,28 +151,19 @@ func (f *FakeEventsManager) Init() {
 
 // CreateEvents creates the k8s events from a given jsonl file
 // It returns a concurrency.Signal that will be triggered if we reach the minimum number of resources needed to start sensor
-// and an error channel
-func (f *FakeEventsManager) CreateEvents(ctx context.Context) (*concurrency.Signal, <-chan error) {
-	min, errCh := f.handleEventsCreation(ctx)
-	errorCh := make(chan error)
-	go func() {
-		defer close(errorCh)
-		for err := range errCh {
-			errorCh <- err
-		}
-	}()
-	return min, errorCh
+// and an error signal
+func (f *FakeEventsManager) CreateEvents(ctx context.Context) (*concurrency.Signal, *concurrency.ErrorSignal) {
+	return f.handleEventsCreation(ctx)
 }
 
 // handleEventsCreation handles the creation of the events
-// It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error channel
-func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurrency.Signal, <-chan error) {
+// It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error signal
+func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurrency.Signal, *concurrency.ErrorSignal) {
 	minimumResources := concurrency.NewSignal()
-	errorCh := make(chan error)
+	doneSignal := concurrency.NewErrorSignal()
 	events, errCh := f.eventsCreation()
 	go func() {
 		count := 0
-		defer close(errorCh)
 		for {
 			select {
 			case e, more := <-events:
@@ -188,20 +179,22 @@ func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurre
 						}
 					}
 				} else {
+					doneSignal.Signal()
 					return
 				}
 			case err, more := <-errCh:
 				if more {
-					errorCh <- err
+					doneSignal.SignalWithError(err)
 					return
 				}
 			case <-ctx.Done():
+				doneSignal.Signal()
 				return
 			}
 
 		}
 	}()
-	return &minimumResources, errorCh
+	return &minimumResources, &doneSignal
 }
 
 // eventsCreation creates the k8s events.
