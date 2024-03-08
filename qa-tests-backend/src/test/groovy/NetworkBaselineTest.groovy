@@ -1,7 +1,5 @@
 import static util.Helpers.evaluateWithRetry
 
-import java.util.concurrent.TimeUnit
-
 import com.google.protobuf.Timestamp
 
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
@@ -12,9 +10,7 @@ import services.NetworkBaselineService
 import util.NetworkGraphUtil
 import util.Timer
 
-import org.junit.Rule
 import spock.lang.Tag
-import spock.lang.Timeout
 
 @Tag("PZ")
 class NetworkBaselineTest extends BaseSpecification {
@@ -171,11 +167,6 @@ class NetworkBaselineTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
     }
-
-    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    org.junit.rules.Timeout globalTimeout = new org.junit.rules.Timeout(1600, TimeUnit.SECONDS)
 
     @Tag("NetworkBaseline")
     def "Verify network baseline functionality"() {
