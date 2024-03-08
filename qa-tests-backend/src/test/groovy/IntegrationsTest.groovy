@@ -775,7 +775,7 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
-        new GCRImageIntegration() | { [serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),]
+        new GCRImageIntegration() | { [serviceAccount: Env.mustGetGCRNoAccessServiceAccount(),]
         }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
         new GCRImageIntegration() | { [project: "not-a-project",]
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
