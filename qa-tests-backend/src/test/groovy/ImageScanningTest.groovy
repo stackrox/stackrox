@@ -746,6 +746,12 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
         log.info "Target: ${Env.getTestTarget()}, Name: ${testName}"
+        if (Env.getTestTarget() == "bat-test" && testName =~ /quay registry+scanner with token/) {
+            log.info "both"
+        }
+        log.info "wassup: ${Env.getTestTarget() == "bat-test"}"
+        log.info "wassup: ${testName =~ /quay registry+scanner with token/}"
+        log.info "wassup: ${Env.getTestTarget() == "bat-test" && testName =~ /quay registry+scanner with token/}"
         Assume.assumeFalse(Env.getTestTarget() == "bat-test" && testName =~ /quay registry+scanner with token/)
 
         if (coreImageIntegrationId != null) {
