@@ -222,7 +222,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 label="Build"
                                 isChecked={hasBuild}
                                 id="policy-lifecycle-stage-build"
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     onChangeLifecycleStage('BUILD', isChecked);
                                 }}
                                 isDisabled={hasActiveViolations}
@@ -231,7 +231,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 label="Deploy"
                                 isChecked={hasDeploy}
                                 id="policy-lifecycle-stage-deploy"
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     onChangeLifecycleStage('DEPLOY', isChecked);
                                 }}
                                 isDisabled={hasActiveViolations}
@@ -240,7 +240,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 label="Runtime"
                                 isChecked={hasRuntime}
                                 id="policy-lifecycle-stage-runtime"
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     onChangeLifecycleStage('RUNTIME', isChecked);
                                 }}
                                 isDisabled={hasActiveViolations}
@@ -339,7 +339,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                                     values.enforcementActions
                                                 )}
                                                 isDisabled={!hasBuild}
-                                                onChange={(isChecked) => {
+                                                onChange={(_event, isChecked) => {
                                                     onChangeEnforcementActions('BUILD', isChecked);
                                                 }}
                                                 label="Enforce on Build"
@@ -365,7 +365,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                                     values.enforcementActions
                                                 )}
                                                 isDisabled={!hasDeploy}
-                                                onChange={(isChecked) => {
+                                                onChange={(_event, isChecked) => {
                                                     onChangeEnforcementActions('DEPLOY', isChecked);
                                                 }}
                                                 label="Enforce on Deploy"
@@ -392,7 +392,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                                     values.enforcementActions
                                                 )}
                                                 isDisabled={!hasRuntime}
-                                                onChange={(isChecked) => {
+                                                onChange={(_event, isChecked) => {
                                                     onChangeEnforcementActions(
                                                         'RUNTIME',
                                                         isChecked

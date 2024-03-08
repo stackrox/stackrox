@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Button, Modal, ModalVariant } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
@@ -57,7 +57,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
 
     return (
         <>
-            <TableComposable variant="compact">
+            <Table variant="compact">
                 <Thead>
                     <Tr>
                         <Th width={15}>Name</Th>
@@ -123,7 +123,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                         );
                     })}
                 </Tbody>
-            </TableComposable>
+            </Table>
             <Modal
                 variant={ModalVariant.small}
                 title="Permanently delete auth provider?"

@@ -1,7 +1,7 @@
 import React, { CSSProperties, ReactElement, useState } from 'react';
 import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
 
 import {
     EffectiveAccessScopeCluster,
@@ -125,7 +125,7 @@ function EffectiveAccessScopeTable({
                         className="acs-m-manual-inclusion"
                         isChecked={includedClusters.includes(clusterName)}
                         isDisabled={isDisabled}
-                        onChange={(isChecked) =>
+                        onChange={(_event, isChecked) =>
                             handleIncludedClustersChange(clusterName, isChecked)
                         }
                     />
@@ -209,7 +209,7 @@ function EffectiveAccessScopeTable({
                                     includedNamespace.namespaceName === namespaceName
                             )}
                             isDisabled={isDisabled}
-                            onChange={(isChecked) =>
+                            onChange={(_event, isChecked) =>
                                 handleIncludedNamespacesChange(
                                     clusterName,
                                     namespaceName,
@@ -264,7 +264,7 @@ function EffectiveAccessScopeTable({
                         <TextInput
                             id="Cluster_filter"
                             value={clusterNameFilter}
-                            onChange={setClusterNameFilter}
+                            onChange={(_event, val) => setClusterNameFilter(val)}
                             className="pf-m-small"
                         />
                     </FlexItem>
@@ -285,7 +285,7 @@ function EffectiveAccessScopeTable({
                         <TextInput
                             id="Namespace_filter"
                             value={namespaceNameFilter}
-                            onChange={setNamespaceNameFilter}
+                            onChange={(_event, val) => setNamespaceNameFilter(val)}
                             className="pf-m-small"
                         />
                     </FlexItem>
@@ -295,7 +295,7 @@ function EffectiveAccessScopeTable({
                 </Flex>
             </Flex>
             <div style={{ maxHeight: '50vh', overflow: 'auto' }}>
-                <TableComposable variant="compact" isStickyHeader isTreeTable>
+                <Table variant="compact" isStickyHeader isTreeTable>
                     <Thead>
                         <Tr>
                             <Th width={40}>Cluster name</Th>
@@ -310,7 +310,7 @@ function EffectiveAccessScopeTable({
                         </Tr>
                     </Thead>
                     <Tbody>{rows}</Tbody>
-                </TableComposable>
+                </Table>
             </div>
         </>
     );

@@ -2,10 +2,8 @@ import React, { ReactElement, CSSProperties } from 'react';
 import {
     Badge,
     Card,
-    CardActions,
     CardFooter,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     Flex,
     GalleryItem,
@@ -38,14 +36,12 @@ function IntegrationTile({
     return (
         <GalleryItem>
             <Link to={linkTo} data-testid="integration-tile">
-                <Card isSelectableRaised isCompact isFlat style={styleCard}>
-                    <CardHeader className="pf-u-mb-lg">
-                        <CardHeaderMain>
+                <Card isSelectable isCompact isFlat style={styleCard}>
+                    <CardHeader actions={{ actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>, hasNoOffset: false, className: undefined}}  className="pf-u-mb-lg">
+                        actions={<>
                             <img src={image} alt="" style={{ height: '100px' }} />
-                        </CardHeaderMain>
-                        <CardActions>
-                            {numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}
-                        </CardActions>
+                        </>}
+                        
                     </CardHeader>
                     <CardTitle className="pf-u-color-100" style={{ whiteSpace: 'nowrap' }}>
                         <Flex spaceItems={{ default: 'spaceItemsSm' }}>

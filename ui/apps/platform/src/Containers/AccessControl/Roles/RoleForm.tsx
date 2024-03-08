@@ -125,14 +125,14 @@ function RoleForm({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
                                         isDisabled={!hasWriteAccessForPage || action === 'edit'}
-                                        isSmall
+                                        size="sm"
                                     >
                                         Edit role
                                     </Button>
@@ -158,7 +158,7 @@ function RoleForm({
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing || action === 'edit'}
                     isRequired
                     className="pf-m-limit-width"
@@ -169,7 +169,7 @@ function RoleForm({
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>
@@ -205,13 +205,13 @@ function RoleForm({
                                     onClick={onClickSubmit}
                                     isDisabled={!dirty || !isValid || isSubmitting}
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

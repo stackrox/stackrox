@@ -17,9 +17,8 @@ import {
     StackItem,
     Text,
     TextContent,
-    TextVariants,
-    Title,
-} from '@patternfly/react-core';
+    TextVariants, EmptyStateHeader,
+    } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
@@ -58,7 +57,7 @@ function DetailSection({ title, children }) {
     return (
         <ExpandableSection
             isExpanded={isExpanded}
-            onToggle={onToggle}
+            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             toggleContent={
                 <TextContent>
                     <Text component={TextVariants.h1} className="pf-u-font-size-lg">
@@ -392,9 +391,7 @@ function DeploymentDetails({
                             </Stack>
                         ) : (
                             <EmptyState variant={EmptyStateVariant.xs}>
-                                <Title headingLevel="h4" size="md">
-                                    No ports available
-                                </Title>
+                                <EmptyStateHeader titleText="No ports available" headingLevel="h4" />
                             </EmptyState>
                         )}
                     </DetailSection>
@@ -414,9 +411,7 @@ function DeploymentDetails({
                             </Stack>
                         ) : (
                             <EmptyState variant={EmptyStateVariant.xs}>
-                                <Title headingLevel="h4" size="md">
-                                    No containers available
-                                </Title>
+                                <EmptyStateHeader titleText="No containers available" headingLevel="h4" />
                             </EmptyState>
                         )}
                     </DetailSection>

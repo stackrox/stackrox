@@ -4,7 +4,6 @@ import {
     Card,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     Flex,
     FlexItem,
@@ -43,7 +42,7 @@ const IntegrationHealthWidget = ({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                <CardHeaderMain>
+                actions={<>
                     <Flex alignItems={{ default: 'alignItemsCenter' }}>
                         <FlexItem>{icon}</FlexItem>
                         <FlexItem>
@@ -60,7 +59,7 @@ const IntegrationHealthWidget = ({
                             </FlexItem>
                         )}
                     </Flex>
-                </CardHeaderMain>
+                </>}
             </CardHeader>
             {(errorMessageFetching || integrations.length !== 0) && (
                 <CardBody>

@@ -1,19 +1,21 @@
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-    Bullseye,
-    Button,
-    ButtonVariant,
-    Divider,
-    DropdownItem,
-    PageSection,
-    PageSectionVariants,
-    Pagination,
-    Spinner,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
+	Bullseye,
+	Button,
+	ButtonVariant,
+	Divider,
+	PageSection,
+	PageSectionVariants,
+	Pagination,
+	Spinner,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem
 } from '@patternfly/react-core';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -132,7 +134,7 @@ function FalsePositiveCVEsTable({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={itemCount}
                             page={page}
@@ -156,7 +158,7 @@ function FalsePositiveCVEsTable({
                 </Toolbar>
             )}
             <Divider component="div" />
-            <TableComposable aria-label="Observed CVEs Table" variant="compact" borders>
+            <Table aria-label="Observed CVEs Table" variant="compact" borders>
                 <Thead>
                     <Tr>
                         <Th
@@ -180,7 +182,7 @@ function FalsePositiveCVEsTable({
                         <Tr>
                             <Td colSpan={9}>
                                 <Bullseye>
-                                    <Spinner isSVG size="sm" />
+                                    <Spinner  size="sm" />
                                 </Bullseye>
                             </Td>
                         </Tr>
@@ -259,7 +261,7 @@ function FalsePositiveCVEsTable({
                         })
                     )}
                 </Tbody>
-            </TableComposable>
+            </Table>
             <UndoVulnRequestModal
                 type="FALSE_POSITIVE"
                 isOpen={vulnsToBeAssessed?.action === 'UNDO'}

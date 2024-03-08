@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { SearchFilter } from 'types/search';
 
@@ -20,7 +23,7 @@ function CheckStatusDropdown({ searchFilter, onSelect }: CheckStatusDropdownProp
             variant="checkbox"
             aria-label="Check status filter menu items"
             toggleAriaLabel="Check status filter menu toggle"
-            onToggle={onCheckStatusToggle}
+            onToggle={(_event, isOpen: boolean) => onCheckStatusToggle(isOpen)}
             onSelect={(event, selection) => {
                 const { checked } = event.target as HTMLInputElement;
                 onSelect('Compliance Check Status', checked, selection.toString());

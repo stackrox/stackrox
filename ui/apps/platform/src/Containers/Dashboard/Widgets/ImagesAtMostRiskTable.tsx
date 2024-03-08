@@ -1,7 +1,7 @@
 import React from 'react';
 import { HashLink as Link } from 'react-router-hash-link';
 import { Tooltip, Truncate } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
 import { noViolationsColor } from 'constants/severityColors';
@@ -65,7 +65,7 @@ function linkToImage(id: string) {
 
 function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: ImagesAtMostRiskProps) {
     return (
-        <TableComposable variant="compact" borders={false}>
+        <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th width={35} className="pf-u-pl-0">
@@ -135,7 +135,7 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

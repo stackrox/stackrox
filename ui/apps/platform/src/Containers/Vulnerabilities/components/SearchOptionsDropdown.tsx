@@ -1,5 +1,8 @@
 import React, { ReactElement } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { SearchOption } from '../searchOptions';

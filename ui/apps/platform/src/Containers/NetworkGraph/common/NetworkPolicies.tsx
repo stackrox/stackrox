@@ -1,19 +1,21 @@
 import React, { useEffect, useMemo } from 'react';
 import {
-    Alert,
-    AlertGroup,
-    AlertVariant,
-    Bullseye,
-    Button,
-    Divider,
-    EmptyState,
-    EmptyStateVariant,
-    SelectOption,
-    Spinner,
-    Stack,
-    StackItem,
-    Title,
+	Alert,
+	AlertGroup,
+	AlertVariant,
+	Bullseye,
+	Button,
+	Divider,
+	EmptyState,
+	EmptyStateVariant,
+	Spinner,
+	Stack,
+	StackItem, EmptyStateHeader,
+	
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import download from 'utils/download';
@@ -86,7 +88,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner  size="lg" />
             </Bullseye>
         );
     }
@@ -126,9 +128,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {policyErrorBanner}
                 <Bullseye>
                     <EmptyState variant={EmptyStateVariant.xs}>
-                        <Title headingLevel="h4" size="md">
-                            No network policies
-                        </Title>
+                        <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
                     </EmptyState>
                 </Bullseye>
             </>

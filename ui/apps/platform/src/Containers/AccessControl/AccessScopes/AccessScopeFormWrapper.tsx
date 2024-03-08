@@ -133,14 +133,14 @@ function AccessScopeFormWrapper({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
                                         isDisabled={!hasWriteAccessForPage || action === 'edit'}
-                                        isSmall
+                                        size="sm"
                                     >
                                         Edit access scope
                                     </Button>
@@ -177,13 +177,13 @@ function AccessScopeFormWrapper({
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

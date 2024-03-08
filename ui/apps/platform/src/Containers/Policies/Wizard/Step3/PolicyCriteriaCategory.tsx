@@ -24,7 +24,7 @@ function PolicyCriteriaCategory({
     return (
         <ExpandableSection
             isExpanded={isExpanded}
-            onToggle={onToggle}
+            onToggle={(_event, expanded: boolean) => onToggle(expanded)}
             toggleText={category}
             data-testid="policy-criteria-key-group"
         >

@@ -279,7 +279,7 @@ const TopologyComponent = ({
                         aria-label="Network graph legend"
                         bodyContent={<LegendContent />}
                         hasAutoWidth
-                        reference={() => document.getElementById('legend') as HTMLButtonElement}
+                        triggerRef={() => document.getElementById('legend') as HTMLButtonElement}
                     />
                 </>
             ) : (

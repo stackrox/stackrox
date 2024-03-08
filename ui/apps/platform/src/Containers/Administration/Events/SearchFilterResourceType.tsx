@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Divider, Select, SelectOption } from '@patternfly/react-core';
+import {
+	Divider
+} from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { resourceTypes } from 'services/AdministrationEventsService';
 
@@ -40,7 +46,7 @@ function SearchFilterResourceType({
             variant="single"
             aria-label="Resource type filter menu items"
             toggleAriaLabel="Resource type filter menu toggle"
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             onSelect={onSelect}
             selections={resourceType ?? optionAll}
             isDisabled={isDisabled}

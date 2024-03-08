@@ -1,16 +1,18 @@
 import React, { ReactElement } from 'react';
 import {
-    DatePicker,
-    Divider,
-    Flex,
-    FlexItem,
-    Form,
-    PageSection,
-    SelectOption,
-    TextArea,
-    TextInput,
-    Title,
+	DatePicker,
+	Divider,
+	Flex,
+	FlexItem,
+	Form,
+	PageSection,
+	TextArea,
+	TextInput,
+	Title
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 
 import {

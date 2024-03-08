@@ -1,5 +1,5 @@
 import React, { ChangeEventHandler, ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { PermissionSet } from 'services/RolesService';
 
@@ -19,7 +19,7 @@ function PermissionSetsTable({
     isDisabled,
 }: PermissionSetsTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" isStickyHeader>
+        <Table variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th key="radio" />
@@ -48,7 +48,7 @@ function PermissionSetsTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

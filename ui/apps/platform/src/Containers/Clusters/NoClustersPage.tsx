@@ -11,8 +11,7 @@ import {
     FlexItem,
     PageSection,
     Spinner,
-    Title,
-    Text,
+    Text, EmptyStateHeader, EmptyStateFooter,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
@@ -98,7 +97,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
             <PageSection variant="light">
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 ) : errorMessage ? (
                     <Alert
@@ -111,8 +110,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                     </Alert>
                 ) : (
                     <EmptyState variant="xl">
-                        <EmptyStateIcon icon={CloudSecurityIcon} />
-                        <Title headingLevel="h2">Secure clusters with a reusable init bundle</Title>
+                        <EmptyStateHeader titleText="Secure clusters with a reusable init bundle" icon={<EmptyStateIcon icon={CloudSecurityIcon} />} headingLevel="h2" />
                         <EmptyStateBody>
                             <Flex
                                 direction={{ default: 'column' }}
@@ -140,11 +138,11 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     </FlexItem>
                                 )}
                             </Flex>
-                        </EmptyStateBody>
+                        </EmptyStateBody><EmptyStateFooter>
                         {initBundlesCount === 0 ? (
                             <Button
                                 variant="primary"
-                                isLarge
+                                size="lg"
                                 component={LinkShim}
                                 href={`${clustersInitBundlesPath}?action=create`}
                                 onClick={() =>
@@ -159,7 +157,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                         ) : (
                             <Button
                                 variant="primary"
-                                isLarge
+                                size="lg"
                                 onClick={() => {
                                     setIsModalOpen(true);
                                     analyticsTrack({
@@ -197,7 +195,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             isModalOpen={isModalOpen}
                             setIsModalOpen={setIsModalOpen}
                         />
-                    </EmptyState>
+                    </EmptyStateFooter></EmptyState>
                 )}
             </PageSection>
         </>

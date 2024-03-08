@@ -289,7 +289,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         ) : (
             <Button
                 variant={isForm ? 'secondary' : 'primary'}
-                isSmall
+                size="sm"
                 className="pf-u-mr-md"
                 onClick={onNext}
                 disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}

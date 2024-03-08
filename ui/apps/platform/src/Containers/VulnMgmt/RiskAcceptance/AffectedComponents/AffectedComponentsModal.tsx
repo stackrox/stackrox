@@ -7,11 +7,11 @@ import {
     InputGroup,
     Modal,
     ModalVariant,
-    TextInput,
+    TextInput, InputGroupItem,
 } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -69,18 +69,18 @@ function AffectedComponentsModal({
             onClose={onCloseHandler}
         >
             <InputGroup className="pf-u-mt-md">
-                <TextInput
+                <InputGroupItem isFill ><TextInput
                     name="componentsFilter"
                     id="componentsFilter"
                     type="text"
                     aria-label="Filter components"
                     placeholder="Filter components"
                     value={inputValue}
-                    onChange={onInputValueChange}
-                />
+                    onChange={(_event, value) => onInputValueChange(value)}
+                /></InputGroupItem>
             </InputGroup>
             <Card isFlat className="pf-u-mt-lg">
-                <TableComposable aria-label="Affected Components Table" variant="compact" borders>
+                <Table aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>
                             <Td />
@@ -142,7 +142,7 @@ function AffectedComponentsModal({
                             </Tbody>
                         );
                     })}
-                </TableComposable>
+                </Table>
             </Card>
         </Modal>
     );

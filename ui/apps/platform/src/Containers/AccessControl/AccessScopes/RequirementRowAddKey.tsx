@@ -61,7 +61,7 @@ function RequirementRowAddKey({
                             aria-label="Type a key"
                             value={keyInput}
                             validated={validatedKey}
-                            onChange={onKeyChange}
+                            onChange={(_event, keyChange: string) => onKeyChange(keyChange)}
                             onKeyDown={onKeyDown}
                             ref={refKeyInput}
                             className="pf-m-small"

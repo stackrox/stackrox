@@ -1,5 +1,14 @@
 import React from 'react';
-import { Card, CardBody, Flex, FlexItem, Select, SelectOption } from '@patternfly/react-core';
+import {
+	Card,
+	CardBody,
+	Flex,
+	FlexItem
+} from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';

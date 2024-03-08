@@ -1,18 +1,20 @@
 import React from 'react';
 import { useFormikContext } from 'formik';
 import {
-    Flex,
-    FlexItem,
-    Title,
-    Button,
-    Divider,
-    Grid,
-    GridItem,
-    Select,
-    SelectVariant,
-    SelectOption,
-    FormGroup,
+	Flex,
+	FlexItem,
+	Title,
+	Button,
+	Divider,
+	Grid,
+	GridItem,
+	FormGroup
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectVariant,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { ClientPolicy } from 'types/policy.proto';
 import { ListImage } from 'types/image.proto';

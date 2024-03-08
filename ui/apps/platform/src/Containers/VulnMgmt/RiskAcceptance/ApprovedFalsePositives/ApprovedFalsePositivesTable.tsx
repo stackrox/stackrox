@@ -1,15 +1,17 @@
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-    Bullseye,
-    Divider,
-    DropdownItem,
-    Pagination,
-    Spinner,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
+	Bullseye,
+	Divider,
+	Pagination,
+	Spinner,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem
 } from '@patternfly/react-core';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
@@ -122,7 +124,7 @@ function ApprovedFalsePositivesTable({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={itemCount}
                             page={page}
@@ -148,10 +150,10 @@ function ApprovedFalsePositivesTable({
             <Divider component="div" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner isSVG size="xl" />
+                    <Spinner  size="xl" />
                 </Bullseye>
             ) : (
-                <TableComposable
+                <Table
                     aria-label="Approved False Positives Table"
                     variant="compact"
                     borders
@@ -241,7 +243,7 @@ function ApprovedFalsePositivesTable({
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             <UndoVulnRequestModal
                 type="FALSE_POSITIVE"

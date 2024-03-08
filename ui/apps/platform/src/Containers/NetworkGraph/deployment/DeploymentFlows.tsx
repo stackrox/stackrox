@@ -137,7 +137,7 @@ function DeploymentFlows({
     if (isLoadingNetworkFlows || isModifying) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner  size="lg" />
             </Bullseye>
         );
     }
@@ -177,7 +177,7 @@ function DeploymentFlows({
                             <ToolbarItem>
                                 <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                             </ToolbarItem>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <FlowsBulkActions
                                     type="active"
                                     selectedRows={selectedRows}

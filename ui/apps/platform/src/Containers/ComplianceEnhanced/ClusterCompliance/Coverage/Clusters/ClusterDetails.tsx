@@ -119,7 +119,7 @@ function ClusterDetails() {
                     <PageSection>
                         {isLoadingScanStats ? (
                             <Bullseye>
-                                <Spinner isSVG />
+                                <Spinner  />
                             </Bullseye>
                         ) : (
                             scanStats &&

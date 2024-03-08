@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
@@ -73,7 +73,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                   .sort((a: SearchResult, b: SearchResult) => a.name.localeCompare(b.name));
 
     return (
-        <TableComposable aria-label="Search results" variant="compact" isStickyHeader>
+        <Table aria-label="Search results" variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th>{firstColumnHeading}</Th>
@@ -134,7 +134,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

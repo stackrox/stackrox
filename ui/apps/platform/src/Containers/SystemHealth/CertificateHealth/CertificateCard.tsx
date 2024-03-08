@@ -122,7 +122,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                                 icon={<DownloadIcon />}
                                 isDisabled={isDownloading}
                                 isLoading={isDownloading}
-                                isSmall
+                                size="sm"
                                 onClick={onDownload}
                             >
                                 Download YAML

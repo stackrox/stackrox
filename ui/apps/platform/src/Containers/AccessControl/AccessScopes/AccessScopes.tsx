@@ -187,7 +187,7 @@ function AccessScopes(): ReactElement {
             <PageSection variant={isList ? 'default' : 'light'}>
                 {counterFetching !== 0 ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 ) : isList ? (
                     <AccessScopesList

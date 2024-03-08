@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useEffect, useState, ReactElement, FormEvent } from 'react';
 import {
-    Form,
-    FormGroup,
-    Select,
-    SelectOption,
-    SelectVariant,
-    TextInput,
+	Form,
+	FormGroup,
+	TextInput
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption,
+	SelectVariant
+} from '@patternfly/react-core/deprecated';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
@@ -120,7 +122,7 @@ function DiagnosticBundleForm({
                     id="filterByStartingTime"
                     placeholder={startingTimeFormat}
                     value={values.filterByStartingTime}
-                    onChange={startingTimeChangeHandler}
+                    onChange={(event, value: string) => startingTimeChangeHandler(value, event)}
                     onBlur={handleBlur}
                 />
             </FormGroup>

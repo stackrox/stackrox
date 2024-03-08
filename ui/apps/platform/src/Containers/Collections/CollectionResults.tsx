@@ -1,19 +1,21 @@
 import React, { useCallback, useEffect, useState, ReactNode } from 'react';
 import {
-    Button,
-    Divider,
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateVariant,
-    Flex,
-    FlexItem,
-    Select,
-    SearchInput,
-    SelectOption,
-    Skeleton,
-    Text,
-    Title,
+	Button,
+	Divider,
+	EmptyState,
+	EmptyStateIcon,
+	EmptyStateVariant,
+	Flex,
+	FlexItem,
+	SearchInput,
+	Skeleton,
+	Text,
+	Title, EmptyStateHeader, EmptyStateFooter
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
@@ -150,24 +152,22 @@ function CollectionResults({
     if (configError) {
         content = (
             <EmptyState variant={EmptyStateVariant.xs}>
-                <EmptyStateIcon
+                <EmptyStateHeader icon={<EmptyStateIcon
                     style={{ color: 'var(--pf-global--danger-color--200)' }}
                     icon={ExclamationCircleIcon}
-                />
-                <Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
+                />} /><EmptyStateFooter><Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
                     <Title headingLevel="h2" size="md">
                         {configError.message}
                     </Title>
                     <p>{configError.details}</p>
                 </Flex>
-            </EmptyState>
+            </EmptyStateFooter></EmptyState>
         );
     } else if (!selectorRulesExist) {
         content = (
             <EmptyState variant={EmptyStateVariant.xs}>
-                <EmptyStateIcon icon={ListIcon} />
-                <p>Add selector rules or attach existing collections to view resource matches</p>
-            </EmptyState>
+                <EmptyStateHeader icon={<EmptyStateIcon icon={ListIcon} />} /><EmptyStateFooter><p>Add selector rules or attach existing collections to view resource matches</p>
+            </EmptyStateFooter></EmptyState>
         );
     } else {
         content = (

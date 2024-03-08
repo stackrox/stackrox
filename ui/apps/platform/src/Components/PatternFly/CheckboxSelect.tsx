@@ -1,10 +1,10 @@
 import React, { ReactElement, useState } from 'react';
 import {
-    Select,
-    SelectOptionObject,
-    SelectOptionProps,
-    SelectVariant,
-} from '@patternfly/react-core';
+	Select,
+	SelectOptionObject,
+	SelectOptionProps,
+	SelectVariant
+} from '@patternfly/react-core/deprecated';
 
 export type CheckboxSelectProps = {
     id?: string;
@@ -59,7 +59,7 @@ function CheckboxSelect({
             name={name}
             variant={SelectVariant.checkbox}
             toggleIcon={toggleIcon}
-            onToggle={onToggle}
+            onToggle={(_event, isExpanded: boolean) => onToggle(isExpanded)}
             onSelect={onSelect}
             onBlur={onBlur}
             selections={selections}

@@ -64,7 +64,7 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
                     </Flex>
                     {isLoading ? (
                         <Bullseye>
-                            <Spinner isSVG />
+                            <Spinner  />
                         </Bullseye>
                     ) : errorMessage ? (
                         <Alert

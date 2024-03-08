@@ -43,10 +43,10 @@ function RadioButtonWithStats({ scanStats, isSelected, onSelected }: RadioButton
                 onClick={() => onSelected(scanName)}
                 hasSelectableInput
                 onSelectableInputChange={() => onSelected(scanName)}
-                isSelectableRaised
+                isSelectable
                 isSelected={isSelected}
                 isCompact
-                selectableInputAriaLabel={`results for scan: ${scanName}`}
+                selectableInputAriaLabel={`results for scan: ${scanName}`} tabIndex={0}
             >
                 <CardTitle className="pf-u-p-sm pf-u-pb-0">
                     <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>

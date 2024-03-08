@@ -4,12 +4,11 @@ import {
     Card,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import { fetchDeclarativeConfigurationsHealth } from 'services/DeclarativeConfigHealthService';
@@ -66,7 +65,7 @@ function DeclarativeConfigurationHealthCard({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                <CardHeaderMain>
+                actions={<>
                     <Flex className="pf-u-flex-grow-1">
                         <FlexItem>{icon}</FlexItem>
                         <FlexItem>
@@ -80,14 +79,14 @@ function DeclarativeConfigurationHealthCard({
                             </FlexItem>
                         )}
                     </Flex>
-                </CardHeaderMain>
+                </>}
             </CardHeader>
             {(errorMessageFetching || unhealthyCount !== 0) && (
                 <CardBody>
                     {errorMessageFetching ? (
                         <Alert isInline variant="warning" title={errorMessageFetching} />
                     ) : (
-                        <TableComposable variant="compact">
+                        <Table variant="compact">
                             <Thead>
                                 <Tr>
                                     <Th width={40}>Name</Th>
@@ -116,7 +115,7 @@ function DeclarativeConfigurationHealthCard({
                                     </Tr>
                                 ))}
                             </Tbody>
-                        </TableComposable>
+                        </Table>
                     )}
                 </CardBody>
             )}
