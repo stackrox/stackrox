@@ -517,11 +517,16 @@ docker-push-index: ## Push docker image with the index.
 # - be able to push the image for your registry (i.e. if you do not inform a valid value via IMG=<myregistry/image:<tag>> than the export will fail)
 # To properly provided solutions that supports more than one platform you should use this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
-DOCKER_BUILDX_ARGS ?= --push
-ifndef CI # set default platforms for non-ci environment
+DOCKER_BUILDX_ARGS ?=
+
+ifneq (CI, true) # set default platforms for non-ci environment
 	PLATFORMS = linux/$(shell go env GOARCH)
-	DOCKER_BUILDX_ARGS = --load
+	DOCKER_BUILDX_ARGS += --load
 endif
+
+.PHONY: test-args
+test-args: ## Print the value of the SCORECARD_ARGS variable.
+	@echo $(DOCKER_BUILDX_ARGS)
 
 .PHONY: docker-buildx
 docker-buildx: build ## Build and push docker image for the manager for cross-platform support

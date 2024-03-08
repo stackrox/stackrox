@@ -545,7 +545,14 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
-      - name: Build and push Operator image
+      - name: Setup operator build
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          echo "DOCKER_BUILDX_ARGS=--push" >> "$GITHUB_ENV"
+
+      - name: Build Operator image
         run: |
           scripts/lib.sh retry 6 true make -C operator/ build docker-buildx
 
