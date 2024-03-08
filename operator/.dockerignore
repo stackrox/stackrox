@@ -11,3 +11,9 @@ Dockerfile
 */bin
 */testbin
 */cover.out
+!/bin/darwin/amd64
+!/bin/darwin/arm64
+!/bin/linux/amd64
+!/bin/linux/arm64
+!/bin/linux/ppc64le
+!/bin/linux/s390x

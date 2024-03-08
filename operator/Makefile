@@ -287,9 +287,28 @@ ensure-rox-main-image-exists:
 
 ##@ Build
 
+build-linux: build_linux-amd64 build_linux-arm64 build_linux-ppc64le build_linux-s390x
+build-darwin: build_darwin-amd64 build_darwin-arm64
+
+build_%:
+	$(eval    w := $(subst -, ,$*))
+	$(eval   os := $(firstword $(w)))
+	$(eval arch := $(lastword  $(w)))
+	mkdir -p bin/$(os)/$(arch)
+	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) ../scripts/go-build-file.sh ./main.go bin/$(os)/$(arch)/manager
+
+comma := ,
+empty :=
+space := $(empty) $(empty)
+
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
-	../scripts/go-build-file.sh ./main.go bin/manager
+	$(eval platforms := $(subst $(comma),$(space),$(PLATFORMS)))
+	$(eval platforms := $(subst /,-,$(platforms)))
+	echo "Building for platforms: $(platforms)"
+	for platform in $(platforms); do \
+		$(MAKE) build_$$platform; \
+	done
 
 .PHONY: smuggled-status-sh
 smuggled-status-sh:
@@ -497,12 +516,15 @@ docker-push-index: ## Push docker image with the index.
 # - be able to push the image for your registry (i.e. if you do not inform a valid value via IMG=<myregistry/image:<tag>> than the export will fail)
 # To properly provided solutions that supports more than one platform you should use this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+DOCKER_BUILDX_ARGS ?= --push
+ifndef CI # set default platforms for non-ci environment
+	PLATFORMS = linux/$(shell go env GOARCH)
+	DOCKER_BUILDX_ARGS = --load
+endif
+
 .PHONY: docker-buildx
-docker-buildx: smuggled-status-sh test build/Dockerfile.gen ## Build and push docker image for the manager for cross-platform support
-	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
-	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' build/Dockerfile.gen > build/Dockerfile.cross
+docker-buildx: build ## Build and push docker image for the manager for cross-platform support
 	- docker buildx create --name project-v3-builder
 	docker buildx use project-v3-builder
-	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.cross ..
+	- docker buildx build --platform=$(PLATFORMS) --build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) --tag ${IMG} --progress=plain $(DOCKER_BUILDX_ARGS) -f Dockerfile ..
 	- docker buildx rm project-v3-builder
-	rm build/Dockerfile.cross

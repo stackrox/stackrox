@@ -514,6 +514,9 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
@@ -542,19 +545,19 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
-      - name: Build Operator image
+      - name: Build and push Operator image
         run: |
-          scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          scripts/lib.sh retry 6 true make -C operator/ build docker-buildx
 
       - name: Check that Operator image is runnable
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
-      - name: Push images
+      - name: Push bundle images
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ docker-push docker-push-bundle | cat
+          make -C operator/ docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
