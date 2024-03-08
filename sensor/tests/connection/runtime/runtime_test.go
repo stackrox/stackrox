@@ -50,7 +50,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 	config.ProcessIndicatorTraceWriter = helper.NewProcessIndicatorTraceWriter(ctx, signalC)
 
 	if config.RealCerts {
-		config.CertFilePath = "../../../../tmp"
+		config.CertFilePath = "tmp/"
 	}
 	c, err := helper.NewContextWithConfig(t, config)
 	require.NoError(t, err)
