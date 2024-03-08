@@ -174,7 +174,7 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Alert struct {
-	Id             string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"
+	Id             string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // Internal use only // @gotags: search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"
 	Policy         *Policy        `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"`                                                                    // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
 	LifecycleStage LifecycleStage `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage" sql:"index=btree"` // @gotags: search:"Lifecycle Stage" sql:"index=btree"
 	ClusterId      string         `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"type(uuid)"`                                            // @gotags: search:"Cluster ID,store" sql:"type(uuid)"
