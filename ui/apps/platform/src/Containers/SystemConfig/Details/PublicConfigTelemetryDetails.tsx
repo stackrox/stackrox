@@ -3,10 +3,8 @@ import React, { ReactElement } from 'react';
 import { PublicConfig } from 'types/config.proto';
 import {
     Card,
-    CardActions,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     CardTitle,
     Divider,
     Label,
@@ -24,13 +22,11 @@ const PublicConfigTelemetryDetails = ({
 
     return (
         <Card isFlat data-testid="telemetry-config">
-            <CardHeader>
-                <CardHeaderMain>
+            <CardHeader actions={{ actions: <>{isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}</>, hasNoOffset: false, className: undefined}} >
+                actions={<>
                     <CardTitle component="h3">Online Telemetry Data Collection</CardTitle>
-                </CardHeaderMain>
-                <CardActions data-testid="telemetry-state">
-                    {isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}
-                </CardActions>
+                </>}
+                
             </CardHeader>
             <Divider component="div" />
             <CardBody>

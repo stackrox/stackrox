@@ -5,11 +5,9 @@ import ColorPicker from 'Components/ColorPicker';
 import { PublicConfig } from 'types/config.proto';
 import {
     Card,
-    CardActions,
     CardTitle,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     Label,
     DescriptionList,
     DescriptionListGroup,
@@ -41,13 +39,11 @@ const PublicConfigBannerDetails = ({
 
     return (
         <Card isFlat data-testid={`${type}-config`}>
-            <CardHeader>
-                <CardHeaderMain>
+            <CardHeader actions={{ actions: <>{enabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}</>, hasNoOffset: false, className: undefined}} >
+                actions={<>
                     <CardTitle component="h3">{title}</CardTitle>
-                </CardHeaderMain>
-                <CardActions data-testid={`${type}-state`}>
-                    {enabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}
-                </CardActions>
+                </>}
+                
             </CardHeader>
             <Divider component="div" />
             <CardBody>

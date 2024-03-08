@@ -8,7 +8,7 @@ function PartialCVEDataAlert() {
             component="p"
             variant="warning"
             title="Partial CVE data"
-            aria-label="Partial CVE data"
+            
         />
     );
 }

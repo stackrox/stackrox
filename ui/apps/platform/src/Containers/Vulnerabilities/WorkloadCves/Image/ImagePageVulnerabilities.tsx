@@ -1,20 +1,22 @@
 import React, { ReactNode } from 'react';
 import {
-    Bullseye,
-    Divider,
-    DropdownItem,
-    Flex,
-    Grid,
-    GridItem,
-    PageSection,
-    Pagination,
-    pluralize,
-    Spinner,
-    Split,
-    SplitItem,
-    Text,
-    Title,
+	Bullseye,
+	Divider,
+	Flex,
+	Grid,
+	GridItem,
+	PageSection,
+	Pagination,
+	pluralize,
+	Spinner,
+	Split,
+	SplitItem,
+	Text,
+	Title
 } from '@patternfly/react-core';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
@@ -188,7 +190,7 @@ function ImagePageVulnerabilities({
     } else if (loading && !vulnerabilityData) {
         mainContent = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         );
     } else if (vulnerabilityData) {

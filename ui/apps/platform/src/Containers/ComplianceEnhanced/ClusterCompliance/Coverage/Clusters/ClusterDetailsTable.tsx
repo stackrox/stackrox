@@ -15,7 +15,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import omit from 'lodash/omit';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -186,7 +186,7 @@ function ClusterDetailsTable({
         <Tr>
             <Td colSpan={2}>
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </Bullseye>
             </Td>
         </Tr>
@@ -260,7 +260,7 @@ function ClusterDetailsTable({
                     <ToolbarItem>
                         <CheckStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={scanResultsCount ?? 0}
                             page={page}
@@ -272,7 +272,7 @@ function ClusterDetailsTable({
                 </ToolbarContent>
             </Toolbar>
 
-            <TableComposable>
+            <Table>
                 <Thead noWrap>
                     <Tr>
                         <Th width={90} sort={getSortParams('Compliance Check Name')}>
@@ -282,7 +282,7 @@ function ClusterDetailsTable({
                     </Tr>
                 </Thead>
                 <Tbody>{renderTableBodyContent()}</Tbody>
-            </TableComposable>
+            </Table>
 
             {selectedCheckResult && (
                 <CheckStatusModal

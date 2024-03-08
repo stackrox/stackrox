@@ -178,7 +178,7 @@ function NetworkPolicySimulatorSidePanel({
     if (simulator.isLoading) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner  size="lg" />
             </Bullseye>
         );
     }
@@ -492,7 +492,7 @@ function NetworkPolicySimulatorSidePanel({
                                         <Checkbox
                                             label="Exclude ports & protocols"
                                             isChecked={isExcludingPortsAndProtocols}
-                                            onChange={setIsExcludingPortsAndProtocols}
+                                            onChange={(_event, val) => setIsExcludingPortsAndProtocols(val)}
                                             id="controlled-check-1"
                                             name="check1"
                                         />

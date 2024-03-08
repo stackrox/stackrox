@@ -5,17 +5,19 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
-    Bullseye,
-    Button,
-    Dropdown,
-    DropdownItem,
-    DropdownPosition,
-    DropdownToggle,
-    PageSection,
-    pluralize,
-    Spinner,
-    Title,
+	Bullseye,
+	Button,
+	PageSection,
+	pluralize,
+	Spinner,
+	Title
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownItem,
+	DropdownPosition,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -174,7 +176,7 @@ function AuthProviders(): ReactElement {
                                     position={DropdownPosition.right}
                                     toggle={
                                         <DropdownToggle
-                                            onToggle={onToggleCreateMenu}
+                                            onToggle={(_event, isOpen) => onToggleCreateMenu(isOpen)}
                                             toggleIndicator={CaretDownIcon}
                                             isPrimary
                                         >
@@ -201,7 +203,7 @@ function AuthProviders(): ReactElement {
             <PageSection variant={isList ? 'default' : 'light'}>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 ) : isList ? (
                     <PageSection variant="light">

@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    Button,
-    ButtonVariant,
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-    PageSection,
-    Pagination,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
-    Tooltip,
+	Button,
+	ButtonVariant,
+	PageSection,
+	Pagination,
+	Toolbar,
+	ToolbarContent,
+	ToolbarGroup,
+	ToolbarItem,
+	Tooltip
 } from '@patternfly/react-core';
 import {
-    TableComposable,
+	Dropdown,
+	DropdownItem,
+	DropdownSeparator,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
+import {
+    Table /* data-codemods */,
     Thead,
     Tbody,
     Tr,
@@ -212,7 +214,7 @@ function PoliciesTable({
                                             <DropdownToggle
                                                 isDisabled={!hasSelections}
                                                 isPrimary
-                                                onToggle={onToggleActions}
+                                                onToggle={(_event, toggleOpen) => onToggleActions(toggleOpen)}
                                                 toggleIndicator={CaretDownIcon}
                                             >
                                                 Bulk actions
@@ -293,7 +295,7 @@ function PoliciesTable({
                                 </Tooltip>
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 isCompact
                                 isDisabled
@@ -304,7 +306,7 @@ function PoliciesTable({
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-                <TableComposable
+                <Table
                     isStickyHeader
                     aria-label="Policies table"
                     data-testid="policies-table"
@@ -476,7 +478,7 @@ function PoliciesTable({
                             </Tbody>
                         );
                     })}
-                </TableComposable>
+                </Table>
             </PageSection>
             <ConfirmationModal
                 ariaLabel="Confirm delete"

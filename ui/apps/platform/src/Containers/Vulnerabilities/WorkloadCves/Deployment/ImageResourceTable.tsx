@@ -1,5 +1,5 @@
 import React from 'react';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -46,7 +46,7 @@ export type ImageResourceTableProps = {
 
 function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Image')}>Name</Th>
@@ -76,7 +76,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

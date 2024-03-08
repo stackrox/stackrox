@@ -1,15 +1,17 @@
 import React, { ReactElement, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-    Divider,
-    DropdownItem,
-    Pagination,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
-    Bullseye,
-    Spinner,
+	Divider,
+	Pagination,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem,
+	Bullseye,
+	Spinner
 } from '@patternfly/react-core';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
@@ -138,7 +140,7 @@ function ApprovedDeferralsTable({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={itemCount}
                             page={page}
@@ -164,10 +166,10 @@ function ApprovedDeferralsTable({
             <Divider component="div" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner isSVG size="xl" />
+                    <Spinner  size="xl" />
                 </Bullseye>
             ) : (
-                <TableComposable aria-label="Approved Deferrals Table" variant="compact" borders>
+                <Table aria-label="Approved Deferrals Table" variant="compact" borders>
                     <Thead>
                         <Tr>
                             <Th
@@ -262,7 +264,7 @@ function ApprovedDeferralsTable({
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             <UndoVulnRequestModal
                 type="DEFERRAL"

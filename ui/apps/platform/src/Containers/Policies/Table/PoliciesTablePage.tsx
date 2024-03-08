@@ -198,7 +198,7 @@ function PoliciesTablePage({
     let pageContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         </PageSection>
     );

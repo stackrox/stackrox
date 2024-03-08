@@ -2,25 +2,27 @@
 import React, { useState, ReactElement } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    ActionList,
-    ActionListItem,
-    Button,
-    ButtonVariant,
-    Divider,
-    Form,
-    Grid,
-    GridItem,
-    PageSection,
-    PageSectionVariants,
-    Select,
-    SelectOption,
-    SelectVariant,
-    Text,
-    TextArea,
-    TextInput,
-    TextVariants,
-    Title,
+	ActionList,
+	ActionListItem,
+	Button,
+	ButtonVariant,
+	Divider,
+	Form,
+	Grid,
+	GridItem,
+	PageSection,
+	PageSectionVariants,
+	Text,
+	TextArea,
+	TextInput,
+	TextVariants,
+	Title
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption,
+	SelectVariant
+} from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -232,7 +234,7 @@ function VulnMgmtReportForm({
                                             type="text"
                                             id="name"
                                             value={values.name}
-                                            onChange={onChange}
+                                            onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={!isEditable}
                                         />
@@ -290,7 +292,7 @@ function VulnMgmtReportForm({
                                             type="text"
                                             id="description"
                                             value={values.description}
-                                            onChange={onChange}
+                                            onChange={(event, value) => onChange(value, event)}
                                             onBlur={handleBlur}
                                             isDisabled={!isEditable}
                                         />

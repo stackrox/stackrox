@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
-    Select,
-    SelectVariant,
-    SelectGroup,
-    SelectOption,
-    Split,
-    SplitItem,
+	Split,
+	SplitItem
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectVariant,
+	SelectGroup,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
 import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';

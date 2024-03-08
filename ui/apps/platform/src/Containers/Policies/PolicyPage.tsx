@@ -115,7 +115,7 @@ function PolicyPage({
             <PageTitle title="Policy Management - Policy" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </Bullseye>
             ) : (
                 policyError || // TODO ROX-8487: Improve PolicyPage when request fails

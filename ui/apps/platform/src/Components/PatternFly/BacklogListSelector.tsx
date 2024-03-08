@@ -6,11 +6,11 @@ import {
     EmptyStateIcon,
     EmptyStateVariant,
     Flex,
-    FormGroup,
+    FormGroup, EmptyStateHeader, EmptyStateFooter,
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-import { BaseCellProps, TableComposable, Tbody, Td, Tr } from '@patternfly/react-table';
+import { BaseCellProps, Table /* data-codemods */, Tbody, Td, Tr } from '@patternfly/react-table';
 
 type BacklogTableProps<Item> = {
     type: 'selected' | 'deselected';
@@ -62,7 +62,7 @@ function BacklogTable<Item>({
             }
         >
             {itemsToDisplay.length > 0 ? (
-                <TableComposable aria-label={label}>
+                <Table aria-label={label}>
                     <Tbody>
                         {itemsToDisplay.map((item) => (
                             <Tr key={rowKey(item)}>
@@ -85,12 +85,11 @@ function BacklogTable<Item>({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             ) : (
                 <EmptyState variant={EmptyStateVariant.xs}>
-                    <EmptyStateIcon icon={CubesIcon} />
-                    <p>No items remaining</p>
-                </EmptyState>
+                    <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} /><EmptyStateFooter><p>No items remaining</p>
+                </EmptyStateFooter></EmptyState>
             )}
         </FormGroup>
     );

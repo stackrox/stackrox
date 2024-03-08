@@ -1,27 +1,29 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    Alert,
-    AlertProps,
-    AlertVariant,
-    Breadcrumb,
-    BreadcrumbItem,
-    Card,
-    CardBody,
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
-    Divider,
-    Dropdown,
-    DropdownItem,
-    DropdownToggle,
-    PageSection,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
+	Alert,
+	AlertProps,
+	AlertVariant,
+	Breadcrumb,
+	BreadcrumbItem,
+	Card,
+	CardBody,
+	DescriptionList,
+	DescriptionListDescription,
+	DescriptionListGroup,
+	DescriptionListTerm,
+	Divider,
+	PageSection,
+	Title,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownItem,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -155,14 +157,14 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
                             <Title headingLevel="h1">{name}</Title>
                         </ToolbarItem>
                         {dropdownItems.length > 0 && (
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <Dropdown
                                     onSelect={onSelectActions}
                                     position="right"
                                     toggle={
                                         <DropdownToggle
                                             isPrimary
-                                            onToggle={onToggleActions}
+                                            onToggle={(_event, isOpen) => onToggleActions(isOpen)}
                                             toggleIndicator={CaretDownIcon}
                                         >
                                             Actions

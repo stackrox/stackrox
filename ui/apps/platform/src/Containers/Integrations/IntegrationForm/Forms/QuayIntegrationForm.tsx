@@ -200,7 +200,7 @@ function QuayIntegrationForm({
                             id="config.name"
                             placeholder="(ex. Quay)"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -249,7 +249,7 @@ function QuayIntegrationForm({
                             id="config.quay.endpoint"
                             placeholder="(ex. quay.io)"
                             value={values.config.quay.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -301,7 +301,7 @@ function QuayIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -317,7 +317,7 @@ function QuayIntegrationForm({
                             type="text"
                             id="config.quay.oauthToken"
                             value={values.config.quay.oauthToken}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                             placeholder={
@@ -343,7 +343,7 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.username ??
                                             ''
                                         }
-                                        onChange={onChangeRobotUsername}
+                                        onChange={(event, value) => onChangeRobotUsername(value, event)}
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                     />
@@ -363,7 +363,7 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.password ??
                                             ''
                                         }
-                                        onChange={onChangeRobotPassword}
+                                        onChange={(event, value) => onChangeRobotPassword(value, event)}
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                         placeholder={
@@ -387,7 +387,7 @@ function QuayIntegrationForm({
                             id="config.quay.insecure"
                             aria-label="disable tls certificate validation"
                             isChecked={values.config.quay.insecure}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -402,7 +402,7 @@ function QuayIntegrationForm({
                             id="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import RolesForResourceAccess from './RolesForResourceAccess';
 
@@ -22,7 +22,7 @@ function UserPermissionsForRolesTable({
     resourceToAccessByRole,
 }: UserPermissionsForRolesTableProps): ReactElement {
     return (
-        <TableComposable aria-label="Permissions for roles" variant="compact" style={style}>
+        <Table aria-label="Permissions for roles" variant="compact" style={style}>
             <Thead>
                 <Tr>
                     <Th key="resourceName">Resource</Th>
@@ -45,7 +45,7 @@ function UserPermissionsForRolesTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

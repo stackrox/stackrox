@@ -1,21 +1,23 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    Bullseye,
-    Button,
-    Divider,
-    PageSection,
-    Pagination,
-    Select,
-    SelectOption,
-    Spinner,
-    Text,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
-    debounce,
+	Bullseye,
+	Button,
+	Divider,
+	PageSection,
+	Pagination,
+	Spinner,
+	Text,
+	Title,
+	Toolbar,
+	ToolbarContent,
+	ToolbarGroup,
+	ToolbarItem,
+	debounce
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
@@ -197,7 +199,7 @@ function ListeningEndpointsPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup>
-                            <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                                 <Pagination
                                     itemCount={countQuery.data ?? 0}
                                     page={page}

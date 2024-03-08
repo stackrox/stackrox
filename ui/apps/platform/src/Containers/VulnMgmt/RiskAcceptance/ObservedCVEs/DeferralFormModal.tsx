@@ -152,7 +152,7 @@ function DeferralFormModal({
                         label={EXPIRES_ON.UNTIL_FIXABLE}
                         value={EXPIRES_ON.UNTIL_FIXABLE}
                         isChecked={formik.values.expiresOn === EXPIRES_ON.UNTIL_FIXABLE}
-                        onChange={onExpiresOnChange}
+                        onChange={(event, _) => onExpiresOnChange(_, event)}
                     />
                     <Radio
                         id="expiresOnTwoWeeks"
@@ -160,7 +160,7 @@ function DeferralFormModal({
                         label={EXPIRES_ON.TWO_WEEKS}
                         value={EXPIRES_ON.TWO_WEEKS}
                         isChecked={formik.values.expiresOn === EXPIRES_ON.TWO_WEEKS}
-                        onChange={onExpiresOnChange}
+                        onChange={(event, _) => onExpiresOnChange(_, event)}
                     />
                     <Radio
                         id="expiresOnThirtyDays"
@@ -168,7 +168,7 @@ function DeferralFormModal({
                         label={EXPIRES_ON.THIRTY_DAYS}
                         value={EXPIRES_ON.THIRTY_DAYS}
                         isChecked={formik.values.expiresOn === EXPIRES_ON.THIRTY_DAYS}
-                        onChange={onExpiresOnChange}
+                        onChange={(event, _) => onExpiresOnChange(_, event)}
                     />
                     <Radio
                         id="expiresOnNinetyDays"
@@ -176,7 +176,7 @@ function DeferralFormModal({
                         label={EXPIRES_ON.NINETY_DAYS}
                         value={EXPIRES_ON.NINETY_DAYS}
                         isChecked={formik.values.expiresOn === EXPIRES_ON.NINETY_DAYS}
-                        onChange={onExpiresOnChange}
+                        onChange={(event, _) => onExpiresOnChange(_, event)}
                     />
                     <Radio
                         id="expiresOnIndefinitely"
@@ -184,7 +184,7 @@ function DeferralFormModal({
                         label={EXPIRES_ON.INDEFINITELY}
                         value={EXPIRES_ON.INDEFINITELY}
                         isChecked={formik.values.expiresOn === EXPIRES_ON.INDEFINITELY}
-                        onChange={onExpiresOnChange}
+                        onChange={(event, _) => onExpiresOnChange(_, event)}
                     />
                 </FormLabelGroup>
                 <FormLabelGroup
@@ -202,7 +202,7 @@ function DeferralFormModal({
                         isChecked={
                             formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ALL_TAGS_WITHIN_IMAGE
                         }
-                        onChange={onImageAppliesToOnChange}
+                        onChange={(event, _) => onImageAppliesToOnChange(_, event)}
                     />
                     <Radio
                         id="appliesToOnlyThisImage"
@@ -212,7 +212,7 @@ function DeferralFormModal({
                         isChecked={
                             formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG
                         }
-                        onChange={onImageAppliesToOnChange}
+                        onChange={(event, _) => onImageAppliesToOnChange(_, event)}
                     />
                 </FormLabelGroup>
                 <FormLabelGroup
@@ -227,7 +227,7 @@ function DeferralFormModal({
                         type="text"
                         id="comment"
                         value={formik.values.comment}
-                        onChange={onChange}
+                        onChange={(event, value) => onChange(value, event)}
                         onBlur={formik.handleBlur}
                     />
                 </FormLabelGroup>

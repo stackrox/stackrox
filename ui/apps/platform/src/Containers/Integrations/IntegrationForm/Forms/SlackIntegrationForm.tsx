@@ -91,7 +91,7 @@ function SlackIntegrationForm({
                             type="text"
                             id="name"
                             value={values.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -109,7 +109,7 @@ function SlackIntegrationForm({
                             type="text"
                             id="labelDefault"
                             value={values.labelDefault}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -125,7 +125,7 @@ function SlackIntegrationForm({
                             type="text"
                             id="labelKey"
                             value={values.labelKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

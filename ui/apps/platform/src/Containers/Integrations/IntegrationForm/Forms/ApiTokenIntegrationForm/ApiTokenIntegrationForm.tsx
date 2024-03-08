@@ -1,16 +1,18 @@
 import React, { ReactElement } from 'react';
 import {
-    DatePicker,
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
-    Form,
-    PageSection,
-    SelectOption,
-    TextInput,
-    yyyyMMddFormat,
+	DatePicker,
+	DescriptionList,
+	DescriptionListDescription,
+	DescriptionListGroup,
+	DescriptionListTerm,
+	Form,
+	PageSection,
+	TextInput,
+	yyyyMMddFormat
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import * as yup from 'yup';
 
@@ -158,7 +160,7 @@ function ApiTokenIntegrationForm({
                                 type="text"
                                 id="name"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || isGenerated}
                             />

@@ -1,6 +1,13 @@
 import React from 'react';
 import { useField } from 'formik';
-import { TextInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
+import {
+	TextInput,
+	FormGroup
+} from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { SubComponent } from './policyCriteriaDescriptors';
 
@@ -39,7 +46,7 @@ function PolicyCriteriaFieldSubInput({
                         type="text"
                         id={name}
                         isDisabled={readOnly}
-                        onChange={(v) => setValue(v)}
+                        onChange={(_event, v) => setValue(v)}
                         data-testid="policy-criteria-value-text-input"
                     />
                 </FormGroup>
@@ -51,7 +58,7 @@ function PolicyCriteriaFieldSubInput({
                     type="number"
                     id={name}
                     isDisabled={readOnly}
-                    onChange={(v) => setValue(v)}
+                    onChange={(_event, v) => setValue(v)}
                     placeholder="(ex. 5)"
                     className="pf-u-w-25"
                     data-testid="policy-criteria-value-number-input"

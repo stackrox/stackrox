@@ -14,7 +14,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { getEdgesByNodeId, getNodeById } from '../utils/networkGraphUtils';
 import {
     CIDRBlockNodeModel,
@@ -120,7 +120,7 @@ function ExternalGroupSideBar({
                         </Toolbar>
                     </StackItem>
                     <StackItem>
-                        <TableComposable aria-label="External to cluster table" variant="compact">
+                        <Table aria-label="External to cluster table" variant="compact">
                             <Thead>
                                 <Tr>
                                     <Th width={50}>{columnNames.entity}</Th>
@@ -168,7 +168,7 @@ function ExternalGroupSideBar({
                                     );
                                 })}
                             </Tbody>
-                        </TableComposable>
+                        </Table>
                     </StackItem>
                 </Stack>
             </StackItem>

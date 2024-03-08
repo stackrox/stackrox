@@ -1,26 +1,28 @@
 import React, { ReactElement, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    Alert,
-    AlertActionCloseButton,
-    AlertGroup,
-    Breadcrumb,
-    BreadcrumbItem,
-    Bullseye,
-    Button,
-    Divider,
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-    Flex,
-    FlexItem,
-    PageSection,
-    Spinner,
-    Title,
-    Tooltip,
-    Truncate,
+	Alert,
+	AlertActionCloseButton,
+	AlertGroup,
+	Breadcrumb,
+	BreadcrumbItem,
+	Bullseye,
+	Button,
+	Divider,
+	Flex,
+	FlexItem,
+	PageSection,
+	Spinner,
+	Title,
+	Tooltip,
+	Truncate
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownItem,
+	DropdownSeparator,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
 import { useMediaQuery } from 'react-responsive';
 
 import { deleteCollection } from 'services/CollectionsService';
@@ -192,7 +194,7 @@ function CollectionsFormPage({
     } else if (loading) {
         content = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         );
     } else if (data) {

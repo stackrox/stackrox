@@ -1,5 +1,13 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
+import {
+	Button,
+	Flex,
+	FlexItem,
+	TextInput
+} from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 import resolvePath from 'object-resolve-path';
@@ -148,7 +156,7 @@ function NotifierSelection({
                     isRequired
                     type="text"
                     value={joinedMailingLists}
-                    onChange={onMailingListsChange}
+                    onChange={(_event, value) => onMailingListsChange(value)}
                     placeholder="annie@example.com,jack@example.com"
                 />
             </FormLabelGroup>
@@ -157,7 +165,7 @@ function NotifierSelection({
                     className="pf-u-mt-sm"
                     variant="link"
                     isInline
-                    isSmall
+                    size="sm"
                     onClick={onSetToDefaultNotifierMailingLists}
                     isDisabled={isResetToDefaultDisabled}
                 >

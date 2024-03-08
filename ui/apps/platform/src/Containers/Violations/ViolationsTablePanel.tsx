@@ -1,19 +1,21 @@
 import React, { useState, ReactElement } from 'react';
 import {
-    Alert,
-    AlertActionCloseButton,
-    AlertGroup,
-    Divider,
-    Flex,
-    FlexItem,
-    Select,
-    SelectOption,
-    Title,
-    PageSection,
-    Pagination,
-    pluralize,
+	Alert,
+	AlertActionCloseButton,
+	AlertGroup,
+	Divider,
+	Flex,
+	FlexItem,
+	Title,
+	PageSection,
+	Pagination,
+	pluralize
 } from '@patternfly/react-core';
-import { ActionsColumn, TableComposable, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
+import { ActionsColumn, Table /* data-codemods */, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
@@ -199,7 +201,7 @@ function ViolationsTablePanel({
                 {hasActions && (
                     <FlexItem>
                         <Select
-                            onToggle={onToggleSelect}
+                            onToggle={(_event, toggleOpen) => onToggleSelect(toggleOpen)}
                             isOpen={isSelectOpen}
                             placeholderText="Row actions"
                             onSelect={closeSelect}
@@ -235,7 +237,7 @@ function ViolationsTablePanel({
             </Flex>
             <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
-                <TableComposable variant="compact" isStickyHeader>
+                <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
                             <Th
@@ -335,7 +337,7 @@ function ViolationsTablePanel({
                             );
                         })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
             <ExcludeConfirmation
                 isOpen={modalType === 'excludeScopes'}

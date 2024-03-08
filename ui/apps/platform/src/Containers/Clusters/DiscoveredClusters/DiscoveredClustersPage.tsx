@@ -108,7 +108,7 @@ function DiscoveredClustersPage(): ReactElement {
             <PageSection component="div">
                 {currentDatetime === null ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 ) : errorMessage ? (
                     <Alert

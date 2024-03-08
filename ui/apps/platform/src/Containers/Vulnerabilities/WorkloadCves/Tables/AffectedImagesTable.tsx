@@ -2,7 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import {
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Thead,
@@ -98,7 +98,7 @@ function AffectedImagesTable({
     const expandedRowSet = useSet<string>();
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -187,7 +187,7 @@ function AffectedImagesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

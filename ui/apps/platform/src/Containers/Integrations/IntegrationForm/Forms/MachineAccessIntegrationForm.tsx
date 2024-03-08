@@ -1,19 +1,21 @@
 import * as yup from 'yup';
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
-    Alert,
-    AlertVariant,
-    Button,
-    Flex,
-    FlexItem,
-    Form,
-    FormGroup,
-    FormSection,
-    PageSection,
-    Popover,
-    SelectOption,
-    TextInput,
+	Alert,
+	AlertVariant,
+	Button,
+	Flex,
+	FlexItem,
+	Form,
+	FormGroup,
+	FormSection,
+	PageSection,
+	Popover,
+	TextInput
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
@@ -159,7 +161,7 @@ function MachineAccessIntegrationForm({
                                 type="text"
                                 id="issuer"
                                 value={values.issuer}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.type === 'GITHUB_ACTIONS'}
                             />
@@ -177,7 +179,7 @@ function MachineAccessIntegrationForm({
                                 type="text"
                                 id="tokenExpirationDuration"
                                 value={values.tokenExpirationDuration}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -206,7 +208,7 @@ function MachineAccessIntegrationForm({
                                                                 value={
                                                                     values.mappings[`${index}`].key
                                                                 }
-                                                                onChange={onChange}
+                                                                onChange={(event, value) => onChange(value, event)}
                                                                 onBlur={handleBlur}
                                                                 isDisabled={!isEditable}
                                                             />
@@ -265,7 +267,7 @@ function MachineAccessIntegrationForm({
                                                                     values.mappings[`${index}`]
                                                                         .valueExpression
                                                                 }
-                                                                onChange={onChange}
+                                                                onChange={(event, value) => onChange(value, event)}
                                                                 onBlur={handleBlur}
                                                                 isDisabled={!isEditable}
                                                             />

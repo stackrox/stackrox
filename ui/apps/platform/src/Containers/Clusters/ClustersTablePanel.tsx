@@ -2,22 +2,24 @@ import React, { ReactElement, useState, useReducer } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
-    Alert,
-    Bullseye,
-    Button,
-    Divider,
-    Dropdown,
-    DropdownItem,
-    DropdownPosition,
-    DropdownToggle,
-    PageSection,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
-    Spinner,
+	Alert,
+	Bullseye,
+	Button,
+	Divider,
+	PageSection,
+	Title,
+	Toolbar,
+	ToolbarContent,
+	ToolbarGroup,
+	ToolbarItem,
+	Spinner
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownItem,
+	DropdownPosition,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
@@ -253,7 +255,7 @@ function ClustersTablePanel({
                             {errorMessage}
                         </Alert>
                     ) : (
-                        <Spinner isSVG />
+                        <Spinner  />
                     )}
                 </Bullseye>
             </PageSection>
@@ -387,7 +389,7 @@ function ClustersTablePanel({
                 <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             {hasReadAccessForAdministration && (
                                 <ToolbarItem>
                                     <Button
@@ -425,7 +427,7 @@ function ClustersTablePanel({
                                             <DropdownToggle
                                                 id="install-toggle"
                                                 toggleVariant="secondary"
-                                                onToggle={onToggleInstallMenu}
+                                                onToggle={(_event, newIsInstallMenuOpen) => onToggleInstallMenu(newIsInstallMenuOpen)}
                                             >
                                                 Secure a cluster
                                             </DropdownToggle>
@@ -456,7 +458,7 @@ function ClustersTablePanel({
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             {hasWriteAccessForAdministration && (
                                 <ToolbarItem>
                                     <AutoUpgradeToggle />

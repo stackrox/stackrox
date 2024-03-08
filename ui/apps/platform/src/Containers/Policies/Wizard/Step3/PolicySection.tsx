@@ -4,7 +4,6 @@ import {
     Card,
     CardHeader,
     CardTitle,
-    CardActions,
     CardBody,
     Button,
     Divider,
@@ -60,33 +59,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     return (
         <>
             <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
-                <CardHeader className="policy-section-card-header pf-u-p-0">
-                    <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
-                        <Flex
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            flexWrap={{ default: 'nowrap' }}
-                        >
-                            <FlexItem className="pf-u-pl-md">{sectionIndex + 1}</FlexItem>
-                            <Divider component="div" isVertical />
-                            <FlexItem>
-                                {isEditingName ? (
-                                    <TextInput
-                                        id={`policySections[${sectionIndex}].sectionName`}
-                                        name={`policySections[${sectionIndex}].sectionName`}
-                                        value={values.policySections[sectionIndex].sectionName}
-                                        onChange={onEditSectionName}
-                                    />
-                                ) : (
-                                    <div className="pf-u-py-sm" data-testid="policy-section-name">
-                                        {sectionName}
-                                    </div>
-                                )}
-                            </FlexItem>
-                        </Flex>
-                    </CardTitle>
-                    {!readOnly && (
-                        <CardActions hasNoOffset>
-                            <Button
+                <CardHeader {...(!readOnly && {actions: { actions: <><Button
                                 variant="plain"
                                 className="pf-u-px-sm"
                                 onClick={() => setIsEditingName(!isEditingName)}
@@ -97,7 +70,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <PencilAltIcon data-testid="edit-section-name-btn" />
                                 )}
                             </Button>
-                            <Divider component="div" isVertical />
+                            <Divider component="div" orientation={{ default: 'vertical' }} />
                             <Button
                                 variant="plain"
                                 className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
@@ -105,9 +78,31 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                 onClick={onDeleteSection}
                             >
                                 <TrashIcon />
-                            </Button>
-                        </CardActions>
-                    )}
+                            </Button></>, hasNoOffset: true, className: undefined}})}  className="policy-section-card-header pf-u-p-0">
+                    <CardTitle className="pf-u-display-flex pf-u-align-self-stretch">
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            flexWrap={{ default: 'nowrap' }}
+                        >
+                            <FlexItem className="pf-u-pl-md">{sectionIndex + 1}</FlexItem>
+                            <Divider component="div" orientation={{ default: 'vertical' }} />
+                            <FlexItem>
+                                {isEditingName ? (
+                                    <TextInput
+                                        id={`policySections[${sectionIndex}].sectionName`}
+                                        name={`policySections[${sectionIndex}].sectionName`}
+                                        value={values.policySections[sectionIndex].sectionName}
+                                        onChange={(e, _) => onEditSectionName(_, e)}
+                                    />
+                                ) : (
+                                    <div className="pf-u-py-sm" data-testid="policy-section-name">
+                                        {sectionName}
+                                    </div>
+                                )}
+                            </FlexItem>
+                        </Flex>
+                    </CardTitle>
+                    
                 </CardHeader>
                 <CardBody className="policy-section-card-body">
                     {policyGroups.map((group, groupIndex) => {

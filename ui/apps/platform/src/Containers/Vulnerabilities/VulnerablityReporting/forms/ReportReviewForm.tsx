@@ -14,7 +14,7 @@ import {
     TextVariants,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import exampleReportsCSVData from 'Containers/Vulnerabilities/VulnerablityReporting/exampleReportsCSVData';
 
@@ -67,7 +67,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                             </Text>
                         </TextContent>
                         <div className="overflow-x-auto">
-                            <TableComposable>
+                            <Table>
                                 <Thead noWrap>
                                     <Tr>
                                         <Th>Cluster</Th>
@@ -129,7 +129,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                                         }
                                     )}
                                 </Tbody>
-                            </TableComposable>
+                            </Table>
                         </div>
                     </CardBody>
                 </Card>

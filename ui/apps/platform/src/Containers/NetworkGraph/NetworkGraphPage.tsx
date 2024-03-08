@@ -313,7 +313,7 @@ function NetworkGraphPage() {
                         {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
                             <ToolbarGroup
                                 variant="button-group"
-                                alignment={{ default: 'alignRight' }}
+                                align={{ default: 'alignRight' }}
                                 spaceItems={{ default: 'spaceItemsMd' }}
                             >
                                 {hasWriteAccessForBlocks && (
@@ -380,7 +380,7 @@ function NetworkGraphPage() {
                                         />
                                     </ToolbarItem>
                                 </ToolbarGroup>
-                                <ToolbarGroup alignment={{ default: 'alignRight' }}>
+                                <ToolbarGroup align={{ default: 'alignRight' }}>
                                     <Divider
                                         component="div"
                                         orientation={{ default: 'vertical' }}
@@ -403,7 +403,7 @@ function NetworkGraphPage() {
             <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 ) : (
                     <NetworkGraphContainer

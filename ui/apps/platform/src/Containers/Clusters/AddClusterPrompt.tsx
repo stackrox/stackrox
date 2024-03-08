@@ -8,15 +8,14 @@ import {
     FlexItem,
     Text,
     TextContent,
-    TextVariants,
+    TextVariants, EmptyStateHeader, EmptyStateFooter,
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
 function AddClusterPrompt() {
     return (
         <EmptyState>
-            <EmptyStateIcon icon={CheckCircleIcon} color="var(--pf-global--success-color--100)" />
-            <p className="pf-u-font-weight-normal">
+            <EmptyStateHeader icon={<EmptyStateIcon icon={CheckCircleIcon} color="var(--pf-global--success-color--100)" />} /><EmptyStateFooter><p className="pf-u-font-weight-normal">
                 You have successfully deployed a Red Hat Advanced Cluster Security platform. Now you
                 can configure the clusters you want to secure.
             </p>
@@ -50,7 +49,7 @@ function AddClusterPrompt() {
                     </Button>
                 </FlexItem>
             </Flex>
-        </EmptyState>
+        </EmptyStateFooter></EmptyState>
     );
 }
 

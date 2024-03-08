@@ -1,23 +1,25 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    Alert,
-    AlertActionCloseButton,
-    AlertGroup,
-    Breadcrumb,
-    BreadcrumbItem,
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-    Label,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
-    Divider,
-    PageSection,
+	Alert,
+	AlertActionCloseButton,
+	AlertGroup,
+	Breadcrumb,
+	BreadcrumbItem,
+	Label,
+	Title,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem,
+	Divider,
+	PageSection
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownItem,
+	DropdownSeparator,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -168,7 +170,7 @@ function PolicyDetail({
                                 <Label color="green">Enabled</Label>
                             )}
                         </ToolbarItem>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem align={{ default: 'alignRight' }}>
                             <Dropdown
                                 onSelect={onSelectActions}
                                 position="right"
@@ -176,7 +178,7 @@ function PolicyDetail({
                                     <DropdownToggle
                                         isDisabled={isRequesting}
                                         isPrimary
-                                        onToggle={onToggleActions}
+                                        onToggle={(_event, isOpen) => onToggleActions(isOpen)}
                                         toggleIndicator={CaretDownIcon}
                                     >
                                         Actions

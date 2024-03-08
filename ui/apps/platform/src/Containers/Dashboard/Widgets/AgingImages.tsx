@@ -238,7 +238,7 @@ function AgingImages() {
                                                     label={
                                                         <TextInput
                                                             aria-label="Image age in days"
-                                                            onChange={async (val) => {
+                                                            onChange={async (_event, val) => {
                                                                 const value = parseInt(val, 10);
                                                                 if (!(value >= maxTimeRange)) {
                                                                     await dispatch({

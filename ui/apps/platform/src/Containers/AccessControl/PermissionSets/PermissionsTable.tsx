@@ -1,6 +1,11 @@
 import React, { ReactElement } from 'react';
-import { Badge, SelectOption } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import {
+	Badge
+} from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import SelectSingle from 'Components/SelectSingle';
 import { accessControl as accessTypeLabels } from 'messages/common';
@@ -31,7 +36,7 @@ function PermissionsTable({
     const resourceToAccessEntries = Object.entries(resourceToAccess);
 
     return (
-        <TableComposable variant="compact" isStickyHeader>
+        <Table variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th width={20}>
@@ -119,7 +124,7 @@ function PermissionsTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

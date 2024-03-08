@@ -123,7 +123,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         <BooleanPolicyLogicSection />
                     </Flex>
                 </Flex>
-                <Divider component="div" isVertical />
+                <Divider component="div" orientation={{ default: 'vertical' }} />
                 {!showPolicyCriteriaModal && (
                     <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
                         <PolicyCriteriaKeys keys={filteredDescriptors} />

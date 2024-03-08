@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Alert, Card, CardBody } from '@patternfly/react-core';
-import { TableComposable, Tbody, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Th, Tr } from '@patternfly/react-table';
 
 import { Cluster } from 'types/cluster.proto';
 
@@ -74,7 +74,7 @@ function ClusterStatusTable({
                   countsOverall.UNHEALTHY !== 0 ||
                   countsOverall.DEGRADED !== 0) ? (
                 <CardBody>
-                    <TableComposable variant="compact">
+                    <Table variant="compact">
                         <TheadClustersHealth />
                         <Tbody>
                             <Tr>
@@ -114,7 +114,7 @@ function ClusterStatusTable({
                                 <TdTotal count={clusters.length} />
                             </Tr>
                         </Tbody>
-                    </TableComposable>
+                    </Table>
                 </CardBody>
             ) : null}
         </Card>

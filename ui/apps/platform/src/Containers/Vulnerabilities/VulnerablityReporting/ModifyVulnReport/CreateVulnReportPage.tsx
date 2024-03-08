@@ -1,16 +1,18 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
-    Breadcrumb,
-    BreadcrumbItem,
-    Wizard,
-    WizardStep,
+	PageSection,
+	Title,
+	Divider,
+	Flex,
+	FlexItem,
+	Breadcrumb,
+	BreadcrumbItem
 } from '@patternfly/react-core';
+import {
+	Wizard,
+	WizardStep
+} from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';

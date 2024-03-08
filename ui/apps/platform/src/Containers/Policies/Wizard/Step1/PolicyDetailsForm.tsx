@@ -43,7 +43,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                     >
                         <PolicyMetadataFormSection />
                     </FlexItem>
-                    <Divider component="div" isVertical />
+                    <Divider component="div" orientation={{ default: 'vertical' }} />
                     <FlexItem className="attach-notifiers-section">
                         <AttachNotifiersFormSection />
                     </FlexItem>
