@@ -45,7 +45,7 @@ message Deployment {
   repeated Toleration tolerations = 22; // @gotags: search:"-"
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
 
-  int64 state_timestamp = 27; // @gotags: hash:"ignore" sensorhash:"ignore"
+  int64 state_timestamp = 27; // Internal use only // @gotags: hash:"ignore" sensorhash:"ignore"
   float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
 
   reserved 30; // was tags

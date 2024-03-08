@@ -56,7 +56,7 @@ message KubernetesEvent {
   // Extended arguments. May not be available for pod exec and port forward events.
   // These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
   User user = 15;
-  User impersonated_user = 16; // @gotags: policy:",ignore"
+  User impersonated_user = 16; // this field is optional if the request wasn't an impersonated request // @gotags: policy:",ignore"
   repeated string source_ips = 17; // @gotags: policy:"Source IP Address"
   string user_agent = 18; // @gotags: policy:"User Agent"
   ResponseStatus response_status = 19;

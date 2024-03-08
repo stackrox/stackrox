@@ -8,7 +8,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 message ImageComponent {
-  string id = 1; // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
   string name = 2; // @gotags: search:"Component,store"
   string version = 3; // @gotags: search:"Component Version,store"
   License license = 4;

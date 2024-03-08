@@ -103,7 +103,7 @@ message Alert {
     string message = 2;
   }
 
-  string id = 1; // @gotags: search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"
+  string id = 1; // Internal use only // @gotags: search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"
   Policy policy = 2; // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
   LifecycleStage lifecycle_stage = 3; // @gotags: search:"Lifecycle Stage" sql:"index=btree"
 
