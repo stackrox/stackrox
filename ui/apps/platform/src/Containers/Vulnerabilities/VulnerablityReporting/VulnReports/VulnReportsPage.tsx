@@ -2,32 +2,34 @@ import React, { useState } from 'react';
 import { Link, generatePath, useHistory } from 'react-router-dom';
 import isEmpty from 'lodash/isEmpty';
 import {
-    AlertActionCloseButton,
-    AlertGroup,
-    PageSection,
-    Title,
-    Flex,
-    FlexItem,
-    Button,
-    Card,
-    CardBody,
-    Bullseye,
-    Spinner,
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateBody,
-    EmptyStateVariant,
-    Text,
-    Alert,
-    AlertVariant,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
-    SearchInput,
-    Pagination,
-    DropdownItem,
+	AlertActionCloseButton,
+	AlertGroup,
+	PageSection,
+	Title,
+	Flex,
+	FlexItem,
+	Button,
+	Card,
+	CardBody,
+	Bullseye,
+	Spinner,
+	EmptyState,
+	EmptyStateIcon,
+	EmptyStateBody,
+	EmptyStateVariant,
+	Text,
+	Alert,
+	AlertVariant,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem,
+	SearchInput,
+	Pagination, EmptyStateHeader
 } from '@patternfly/react-core';
-import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
+import { ActionsColumn, Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -246,7 +248,7 @@ function VulnReportsPage() {
                                     </ToolbarItem>
                                     <ToolbarItem
                                         variant="pagination"
-                                        alignment={{ default: 'alignRight' }}
+                                        align={{ default: 'alignRight' }}
                                     >
                                         <Pagination
                                             itemCount={totalReports}
@@ -264,24 +266,21 @@ function VulnReportsPage() {
                             {isLoading && !reportConfigurations && (
                                 <div className="pf-u-p-md">
                                     <Bullseye>
-                                        <Spinner isSVG />
+                                        <Spinner  />
                                     </Bullseye>
                                 </div>
                             )}
                             {fetchError && (
-                                <EmptyState variant={EmptyStateVariant.small}>
-                                    <EmptyStateIcon
+                                <EmptyState variant={EmptyStateVariant.sm}>
+                                    <EmptyStateHeader titleText="Unable to get vulnerability reports" icon={<EmptyStateIcon
                                         icon={ExclamationCircleIcon}
                                         className="pf-u-danger-color-100"
-                                    />
-                                    <Title headingLevel="h2" size="lg">
-                                        Unable to get vulnerability reports
-                                    </Title>
+                                    />} headingLevel="h2" />
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
                             {reportConfigurations && (
-                                <TableComposable borders={false}>
+                                <Table borders={false}>
                                     <Thead noWrap>
                                         <Tr>
                                             <Th
@@ -568,7 +567,7 @@ function VulnReportsPage() {
                                             </Tbody>
                                         );
                                     })}
-                                </TableComposable>
+                                </Table>
                             )}
                         </CardBody>
                     </Card>

@@ -183,7 +183,7 @@ function AwsSecurityHubIntegrationForm({
                             type="text"
                             id="notifier.name"
                             value={values.notifier.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -199,7 +199,7 @@ function AwsSecurityHubIntegrationForm({
                             type="text"
                             id="notifier.awsSecurityHub.accountId"
                             value={values.notifier.awsSecurityHub.accountId}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -214,7 +214,7 @@ function AwsSecurityHubIntegrationForm({
                         <FormSelect
                             id="notifier.awsSecurityHub.region"
                             value={values.notifier.awsSecurityHub.region}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
@@ -231,7 +231,7 @@ function AwsSecurityHubIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -247,7 +247,7 @@ function AwsSecurityHubIntegrationForm({
                                 label="Use container IAM role"
                                 id="notifier.awsSecurityHub.credentials.stsEnabled"
                                 isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -267,7 +267,7 @@ function AwsSecurityHubIntegrationForm({
                                     type="password"
                                     id="notifier.awsSecurityHub.credentials.accessKeyId"
                                     value={values.notifier.awsSecurityHub.credentials.accessKeyId}
-                                    onChange={onChange}
+                                    onChange={(event, value) => onChange(value, event)}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable || !values.updatePassword}
                                     placeholder={
@@ -291,7 +291,7 @@ function AwsSecurityHubIntegrationForm({
                                     value={
                                         values.notifier.awsSecurityHub.credentials.secretAccessKey
                                     }
-                                    onChange={onChange}
+                                    onChange={(event, value) => onChange(value, event)}
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable || !values.updatePassword}
                                     placeholder={

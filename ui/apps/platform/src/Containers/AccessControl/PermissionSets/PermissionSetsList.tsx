@@ -9,7 +9,7 @@ import {
     pluralize,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { PermissionSet, Role } from 'services/RolesService';
 
@@ -73,7 +73,7 @@ function PermissionSetsList({
             <Title headingLevel="h2">{pluralize(permissionSets.length, 'result')} found</Title>
             {alertDelete}
             {permissionSets.length !== 0 && (
-                <TableComposable variant="compact" isStickyHeader>
+                <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
                             <Th width={15}>Name</Th>
@@ -106,7 +106,7 @@ function PermissionSetsList({
                                 </Td>
                                 <Td
                                     actions={{
-                                        disable:
+                                        isDisabled:
                                             !hasWriteAccessForPage ||
                                             idDeleting === id ||
                                             !isUserResource(traits) ||
@@ -125,7 +125,7 @@ function PermissionSetsList({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             <Modal
                 variant={ModalVariant.small}

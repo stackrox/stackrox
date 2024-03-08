@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
-    Pagination,
-    SearchInput,
-    SelectOption,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
+	Pagination,
+	SearchInput,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import SelectSingle from 'Components/SelectSingle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -119,7 +121,7 @@ function ScanResultsToolbar({
                     </SelectSingle>
                 </ToolbarItem>
                 {numberOfScanResults && (
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             isCompact
                             itemCount={numberOfScanResults}

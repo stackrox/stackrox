@@ -128,7 +128,7 @@ function SearchPage(): ReactElement {
     if (isLoadingSearchOptions || isLoadingSearchResponse) {
         content = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         );
     } else if (searchOptions.length !== 0 && stringifiedSearchFilter.length === 0) {

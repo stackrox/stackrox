@@ -1,19 +1,21 @@
 import React, { useMemo } from 'react';
 import {
-    Badge,
-    Button,
-    Divider,
-    Flex,
-    FlexItem,
-    Menu,
-    MenuContent,
-    MenuFooter,
-    MenuInput,
-    MenuItem,
-    MenuList,
-    SearchInput,
-    Select,
+	Badge,
+	Button,
+	Divider,
+	Flex,
+	FlexItem,
+	Menu,
+	MenuContent,
+	MenuFooter,
+	MenuSearch,
+	MenuItem,
+	MenuList,
+	SearchInput, MenuSearchInput
 } from '@patternfly/react-core';
+import {
+	Select
+} from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -79,7 +81,7 @@ function NamespaceSelector({
                 return (
                     <MenuItem
                         key={namespace.id}
-                        hasCheck
+                        hasCheckbox
                         itemId={namespace.name}
                         isSelected={selectedNamespaces.includes(namespace.name)}
                     >
@@ -125,7 +127,7 @@ function NamespaceSelector({
 
     const namespaceSelectMenu = (
         <Menu onSelect={onNamespaceSelect} selected={selectedNamespaces} isScrollable>
-            <MenuInput className="pf-u-p-md">
+            <MenuSearch><MenuSearchInput className="pf-u-p-md">
                 <SearchInput
                     value={input}
                     aria-label="Filter namespaces"
@@ -133,7 +135,7 @@ function NamespaceSelector({
                     placeholder="Filter namespaces..."
                     onChange={(_event, value) => handleTextInputChange(value)}
                 />
-            </MenuInput>
+            </MenuSearchInput></MenuSearch>
             <Divider className="pf-u-m-0" />
             <MenuContent>
                 <MenuList>

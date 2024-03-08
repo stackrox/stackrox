@@ -24,7 +24,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={(event, _value) => onChange(_value, event)}
                             isRequired
                         />
                     </FormGroup>
@@ -42,7 +42,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             <Radio
                                 name={field.name}
                                 value={field.value}
-                                onChange={onChange}
+                                onChange={(event, _value) => onChange(_value, event)}
                                 label="Low"
                                 id="policy-severity-radio-low"
                                 isChecked={field.checked}
@@ -54,7 +54,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             <Radio
                                 name={field.name}
                                 value={field.value}
-                                onChange={onChange}
+                                onChange={(event, _value) => onChange(_value, event)}
                                 label="Medium"
                                 id="policy-severity-radio-medium"
                                 isChecked={field.checked}
@@ -66,7 +66,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             <Radio
                                 name={field.name}
                                 value={field.value}
-                                onChange={onChange}
+                                onChange={(event, _value) => onChange(_value, event)}
                                 label="High"
                                 id="policy-severity-radio-high"
                                 isChecked={field.checked}
@@ -78,7 +78,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             <Radio
                                 name={field.name}
                                 value={field.value}
-                                onChange={onChange}
+                                onChange={(event, _value) => onChange(_value, event)}
                                 label="Critical"
                                 id="policy-severity-radio-critical"
                                 isChecked={field.checked}
@@ -99,7 +99,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={(event, _value) => onChange(_value, event)}
                         />
                     </FormGroup>
                 )}
@@ -115,7 +115,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={(event, _value) => onChange(_value, event)}
                         />
                     </FormGroup>
                 )}
@@ -131,7 +131,7 @@ function PolicyMetadataFormSection(): ReactElement {
                             id={field.name}
                             name={field.name}
                             value={field.value}
-                            onChange={onChange}
+                            onChange={(event, _value) => onChange(_value, event)}
                         />
                     </FormGroup>
                 )}

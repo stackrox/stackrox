@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -10,24 +10,26 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import {
-    Alert,
-    AlertGroup,
-    AlertVariant,
-    Bullseye,
-    Button,
-    Card,
-    Divider,
-    Flex,
-    FlexItem,
-    Pagination,
-    SelectOption,
-    Spinner,
-    Switch,
-    Text,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
+	Alert,
+	AlertGroup,
+	AlertVariant,
+	Bullseye,
+	Button,
+	Card,
+	Divider,
+	Flex,
+	FlexItem,
+	Pagination,
+	Spinner,
+	Switch,
+	Text,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
 import { ReportConfiguration, RunState, runStates } from 'services/ReportsService.types';
@@ -136,10 +138,10 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             label="View only my jobs"
                             labelOff="View only my jobs"
                             isChecked={showOnlyMyJobs}
-                            onChange={handleChange}
+                            onChange={(_event, checked: boolean) => handleChange(checked)}
                         />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -177,7 +179,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 </Bullseye>
             )}
             {reportSnapshots && (
-                <TableComposable aria-label="Simple table" variant="compact">
+                <Table aria-label="Simple table" variant="compact">
                     <Thead>
                         <Tr>
                             <Td>{/* Header for expanded column */}</Td>
@@ -353,7 +355,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             </Tbody>
                         );
                     })}
-                </TableComposable>
+                </Table>
             )}
             <DeleteModal
                 title="Delete downloadable report?"

@@ -4,7 +4,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -102,7 +102,7 @@ function ImageVulnerabilitiesTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -237,7 +237,7 @@ function ImageVulnerabilitiesTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

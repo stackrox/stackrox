@@ -2,14 +2,16 @@
 import React, { ReactElement } from 'react';
 import { FieldArray } from 'formik';
 import {
-    Button,
-    Flex,
-    FlexItem,
-    FormGroup,
-    SelectOption,
-    TextInput,
-    Tooltip,
+	Button,
+	Flex,
+	FlexItem,
+	FormGroup,
+	TextInput,
+	Tooltip
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import { Group } from 'services/AuthService';

@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { SelectOption, Divider, Select } from '@patternfly/react-core';
+import {
+	Divider
+} from '@patternfly/react-core';
+import {
+	SelectOption,
+	Select
+} from '@patternfly/react-core/deprecated';
 
 import { DiscoveredClusterStatus, isStatus, statuses } from 'services/DiscoveredClusterService';
 
@@ -51,7 +57,7 @@ function SearchFilterStatuses({
             placeholderText="Filter by status"
             aria-label="Status filter menu items"
             toggleAriaLabel="Status filter menu toggle"
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             onSelect={onSelect}
             selections={statusesSelected ?? optionAll}
             isDisabled={isDisabled}

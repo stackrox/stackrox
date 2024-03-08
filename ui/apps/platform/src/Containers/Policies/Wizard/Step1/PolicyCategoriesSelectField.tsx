@@ -1,5 +1,12 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { FormGroup, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import {
+	FormGroup
+} from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption,
+	SelectVariant
+} from '@patternfly/react-core/deprecated';
 import { useField } from 'formik';
 
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
@@ -52,7 +59,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 isOpen={isCategoriesOpen}
                 selections={field.value}
                 onSelect={onSelectHandler(field.value)}
-                onToggle={onCategoriesToggle}
+                onToggle={(_event, isOpen) => onCategoriesToggle(isOpen)}
                 onClear={clearSelection}
                 isCreatable={false}
             >

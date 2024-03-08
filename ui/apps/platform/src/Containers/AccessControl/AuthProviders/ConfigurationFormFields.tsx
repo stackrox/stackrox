@@ -1,15 +1,17 @@
 import React, { ReactElement } from 'react';
 import { FormikErrors, FormikTouched } from 'formik';
 import {
-    Alert,
-    Checkbox,
-    FormGroup,
-    GridItem,
-    SelectOption,
-    TextArea,
-    TextInput,
-    ValidatedOptions,
+	Alert,
+	Checkbox,
+	FormGroup,
+	GridItem,
+	TextArea,
+	TextInput,
+	ValidatedOptions
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { oidcCallbackModes } from 'constants/accessControl';
 import { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
@@ -302,7 +304,7 @@ function ConfigurationFormFields({
                                 id="config.disable_offline_access_scope"
                                 name="config.disable_offline_access_scope"
                                 aria-label="Disable 'offline_access' scope"
-                                onChange={(checked) => {
+                                onChange={(_event, checked) => {
                                     setFieldValue('config.disable_offline_access_scope', checked);
                                 }}
                                 isDisabled={isViewing || isAuthProviderDeclarative}

@@ -24,7 +24,7 @@ const UpdatedTimeOrUpdateButton = ({
             lastUpdatedTime
         )}`}</em>
     ) : (
-        <Button isDisabled={isDisabled} isSmall onClick={updateEvents} variant="secondary">
+        <Button isDisabled={isDisabled} size="sm" onClick={updateEvents} variant="secondary">
             {`${countAvailable}${isAvailableEqualToPerPage ? '+' : ''} ${pluralize(
                 'event',
                 countAvailable

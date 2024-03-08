@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Truncate } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { ListDeployment } from 'types/deployment.proto';
 import { riskBasePath } from 'routePaths';
@@ -33,7 +33,7 @@ function DeploymentsAtMostRiskTable({
     searchFilter,
 }: DeploymentsAtMostRiskTableProps) {
     return (
-        <TableComposable aria-label="Deployments at most risk" variant="compact" borders={false}>
+        <Table aria-label="Deployments at most risk" variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th className="pf-u-pl-0">{columnNames.deployment}</Th>
@@ -77,7 +77,7 @@ function DeploymentsAtMostRiskTable({
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

@@ -1,15 +1,17 @@
 import React, { useMemo, useState, ReactElement, useCallback } from 'react';
 import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    Select,
-    SelectOption,
-    SelectProps,
-    SelectVariant,
-    ValidatedOptions,
+	Button,
+	ButtonVariant,
+	Flex,
+	FlexItem,
+	ValidatedOptions
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption,
+	SelectProps,
+	SelectVariant
+} from '@patternfly/react-core/deprecated';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 

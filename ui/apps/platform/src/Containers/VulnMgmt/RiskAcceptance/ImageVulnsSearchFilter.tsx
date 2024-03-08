@@ -1,13 +1,15 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    InputGroup,
-    SelectOption,
-    TextInput,
+	Button,
+	ButtonVariant,
+	Flex,
+	FlexItem,
+	InputGroup,
+	TextInput, InputGroupItem
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { FilterIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
@@ -68,21 +70,21 @@ function ImageVulnsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'CVE' && (
                     <InputGroup>
-                        <TextInput
+                        <InputGroupItem isFill ><TextInput
                             name="cveSearchInput"
                             id="cveSearchInput"
                             type="search"
                             aria-label="CVE search input"
-                            onChange={handleInputChange}
+                            onChange={(_event, value) => handleInputChange(value)}
                             value={inputValue}
-                        />
-                        <Button
+                        /></InputGroupItem>
+                        <InputGroupItem><Button
                             variant={ButtonVariant.control}
                             aria-label="search button for CVE search input"
                             onClick={() => handleSearchChange(inputValue)}
                         >
                             <SearchIcon />
-                        </Button>
+                        </Button></InputGroupItem>
                     </InputGroup>
                 )}
                 {selectedAttribute === 'Fixable' && (

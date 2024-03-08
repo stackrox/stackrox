@@ -2,11 +2,11 @@ import React, { ReactElement, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
-    ApplicationLauncher,
-    ApplicationLauncherGroup,
-    ApplicationLauncherItem,
-    ApplicationLauncherSeparator,
-} from '@patternfly/react-core';
+	ApplicationLauncher,
+	ApplicationLauncherGroup,
+	ApplicationLauncherItem,
+	ApplicationLauncherSeparator
+} from '@patternfly/react-core/deprecated';
 import { QuestionCircleIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';

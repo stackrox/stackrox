@@ -9,7 +9,7 @@ import {
     pluralize,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
@@ -102,7 +102,7 @@ function RolesList({
             <Title headingLevel="h2">{pluralize(rolesFiltered.length, 'result')} found</Title>
             {alertDelete}
             {rolesFiltered.length !== 0 && (
-                <TableComposable variant="compact" isStickyHeader>
+                <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
                             <Th width={15}>Name</Th>
@@ -142,7 +142,7 @@ function RolesList({
                                     </Td>
                                     <Td
                                         actions={{
-                                            disable:
+                                            isDisabled:
                                                 !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
                                                 !isUserResource(traits) ||
@@ -160,7 +160,7 @@ function RolesList({
                             )
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             <Modal
                 variant={ModalVariant.small}

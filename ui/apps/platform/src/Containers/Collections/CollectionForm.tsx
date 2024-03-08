@@ -13,10 +13,10 @@ import {
     FormGroup,
     Label,
     TextInput,
-    Title,
+    Title, EmptyStateHeader, EmptyStateFooter,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Tr, Td } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -52,7 +52,7 @@ function AttachedCollectionTable({
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
 }): ReactElement {
     return collections.length > 0 ? (
-        <TableComposable aria-label="Attached collections">
+        <Table aria-label="Attached collections">
             <Tbody>
                 {collections.map((collection) => (
                     <Tr key={collection.name}>
@@ -64,12 +64,11 @@ function AttachedCollectionTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     ) : (
         <EmptyState>
-            <EmptyStateIcon icon={CubesIcon} />
-            <p>There are no other collections attached to this collection</p>
-        </EmptyState>
+            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} /><EmptyStateFooter><p>There are no other collections attached to this collection</p>
+        </EmptyStateFooter></EmptyState>
     );
 }
 
@@ -341,7 +340,7 @@ function CollectionForm({
                                     name="name"
                                     value={values.name}
                                     validated={nameError ? 'error' : 'default'}
-                                    onChange={(_, e) => {
+                                    onChange={(e, _) => {
                                         if (
                                             configError?.type === 'DuplicateName' ||
                                             configError?.type === 'EmptyName'
@@ -361,7 +360,7 @@ function CollectionForm({
                                     id="description"
                                     name="description"
                                     value={values.description}
-                                    onChange={(_, e) => handleChange(e)}
+                                    onChange={(e, _) => handleChange(e)}
                                     onBlur={handleBlur}
                                     readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />

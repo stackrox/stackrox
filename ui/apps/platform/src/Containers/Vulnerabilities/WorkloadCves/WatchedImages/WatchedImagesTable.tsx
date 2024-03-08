@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { Bullseye, Button } from '@patternfly/react-core';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 
@@ -33,7 +33,7 @@ function WatchedImagesTable({
                 </Bullseye>
             )}
             {watchedImages.length > 0 && (
-                <TableComposable
+                <Table
                     aria-labelledby={props['aria-labelledby']}
                     variant="compact"
                     style={
@@ -71,7 +71,7 @@ function WatchedImagesTable({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
         </div>
     );

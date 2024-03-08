@@ -16,7 +16,7 @@ import {
     NavItem,
     NavList,
     PageSection,
-    Title,
+    Title, EmptyStateHeader,
 } from '@patternfly/react-core';
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
@@ -121,7 +121,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
 
                                     return (
                                         <EmptyState>
-                                            <Title headingLevel="h4">Role not found for user</Title>
+                                            <EmptyStateHeader titleText="Role not found for user" headingLevel="h4" />
                                             <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
                                         </EmptyState>
                                     );

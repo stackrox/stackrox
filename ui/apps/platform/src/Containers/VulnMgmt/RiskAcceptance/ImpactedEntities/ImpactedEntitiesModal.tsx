@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, FlexItem, Modal, ModalVariant, Title } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
@@ -50,7 +50,7 @@ function ImpactedEntitiesModal({
 
     return (
         <Modal variant={ModalVariant.small} header={header} isOpen={isOpen} onClose={onClose}>
-            <TableComposable aria-label="Simple table" variant="compact">
+            <Table aria-label="Simple table" variant="compact">
                 <Thead>
                     <Tr>
                         <Th modifier="fitContent">Name</Th>
@@ -65,7 +65,7 @@ function ImpactedEntitiesModal({
                         </Tr>
                     ))}
                 </Tbody>
-            </TableComposable>
+            </Table>
         </Modal>
     );
 }

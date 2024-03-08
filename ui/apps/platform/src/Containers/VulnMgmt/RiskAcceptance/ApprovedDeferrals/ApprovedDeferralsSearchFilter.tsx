@@ -1,13 +1,15 @@
 import React, { ReactElement, useState } from 'react';
 import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    InputGroup,
-    SelectOption,
-    TextInput,
+	Button,
+	ButtonVariant,
+	Flex,
+	FlexItem,
+	InputGroup,
+	TextInput, InputGroupItem
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { FilterIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
@@ -63,21 +65,21 @@ function ApprovedDeferralsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'Request ID' && (
                     <InputGroup>
-                        <TextInput
+                        <InputGroupItem isFill ><TextInput
                             name="requestIDSearchInput"
                             id="requestIDSearchInput"
                             type="search"
                             aria-label="request id search input"
-                            onChange={handleInputChange}
+                            onChange={(_event, value) => handleInputChange(value)}
                             value={inputValue}
-                        />
-                        <Button
+                        /></InputGroupItem>
+                        <InputGroupItem><Button
                             variant={ButtonVariant.control}
                             aria-label="search button for search input"
                             onClick={() => handleSearchChange(inputValue)}
                         >
                             <SearchIcon />
-                        </Button>
+                        </Button></InputGroupItem>
                     </InputGroup>
                 )}
                 {selectedAttribute === 'Request Status' && (

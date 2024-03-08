@@ -177,7 +177,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                     isRequired
                     className="pf-m-limit-width"
@@ -188,7 +188,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>

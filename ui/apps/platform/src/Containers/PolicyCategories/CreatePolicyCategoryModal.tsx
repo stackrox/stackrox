@@ -96,7 +96,7 @@ function CreatePolicyCategoryModal({
                                 id="name"
                                 type="text"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, _value) => onChange(_value, event)}
                             />
                         </FormGroup>
                     </Form>

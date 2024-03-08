@@ -11,7 +11,7 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 
 import useURLPagination from 'hooks/useURLPagination';
@@ -114,7 +114,7 @@ function ApprovedFalsePositives() {
                         onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
                     />
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -144,7 +144,7 @@ function ApprovedFalsePositives() {
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
-            <TableComposable borders={false}>
+            <Table borders={false}>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Request Name')}>Request name</Th>
@@ -160,7 +160,7 @@ function ApprovedFalsePositives() {
                         <Tr>
                             <Td colSpan={7}>
                                 <Bullseye>
-                                    <Spinner isSVG aria-label="Loading table data" />
+                                    <Spinner  aria-label="Loading table data" />
                                 </Bullseye>
                             </Td>
                         </Tr>
@@ -239,7 +239,7 @@ function ApprovedFalsePositives() {
                             );
                         })}
                 </Tbody>
-            </TableComposable>
+            </Table>
         </PageSection>
     );
 }

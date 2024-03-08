@@ -286,7 +286,7 @@ function DeploymentPageVulnerabilities({
                         )}
                         {vulnerabilityRequest.loading && !vulnerabilityData && (
                             <Bullseye>
-                                <Spinner isSVG />
+                                <Spinner  />
                             </Bullseye>
                         )}
                         {vulnerabilityData && vulnerabilityData.deployment && (

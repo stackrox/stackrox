@@ -111,7 +111,7 @@ function RequirementRow({
                                     aria-label="Type a value"
                                     value={valueInput}
                                     validated={validatedValue}
-                                    onChange={setValueInput}
+                                    onChange={(_event, val) => setValueInput(val)}
                                     onKeyDown={onKeyDown}
                                     ref={refValueInput}
                                     className="pf-m-small"

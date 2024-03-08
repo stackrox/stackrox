@@ -14,7 +14,7 @@ import {
     Truncate,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -103,7 +103,7 @@ function CollectionsTable({
         <Tr>
             <Td colSpan={8}>
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </Bullseye>
             </Td>
         </Tr>
@@ -205,7 +205,7 @@ function CollectionsTable({
                             }}
                         />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             isCompact
                             itemCount={collectionsCount}
@@ -222,7 +222,7 @@ function CollectionsTable({
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
-            <TableComposable>
+            <Table>
                 <Thead>
                     <Tr>
                         <Th modifier="wrap" sort={getEnabledSortParams('Collection Name')}>
@@ -233,7 +233,7 @@ function CollectionsTable({
                     </Tr>
                 </Thead>
                 <Tbody>{tableContent}</Tbody>
-            </TableComposable>
+            </Table>
             {collectionToDelete && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"

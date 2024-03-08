@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { matchPath, useLocation } from 'react-router-dom';
-import { Nav, NavExpandable, NavItemSeparator, NavList, PageSidebar } from '@patternfly/react-core';
+import { Nav, NavExpandable, NavItemSeparator, NavList, PageSidebar, PageSidebarBody } from '@patternfly/react-core';
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -435,7 +435,11 @@ function NavigationSidebar({
         </Nav>
     );
 
-    return <PageSidebar nav={Navigation} />;
+    return <PageSidebar  >
+<PageSidebarBody>
+{Navigation}
+</PageSidebarBody>
+</PageSidebar>;
 }
 
 export default NavigationSidebar;

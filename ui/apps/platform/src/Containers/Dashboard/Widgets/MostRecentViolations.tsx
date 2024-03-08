@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, Title, Truncate } from '@patternfly/react-core';
-import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Tr, Td } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';
@@ -21,7 +21,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                 Most recent violations with critical severity
             </Title>
             {alerts.length > 0 ? (
-                <TableComposable variant="compact" borders={false}>
+                <Table variant="compact" borders={false}>
                     <Tbody>
                         {alerts.map((alert) => {
                             const { id, time, policy } = alert;
@@ -80,7 +80,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                             );
                         })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             ) : (
                 <NoDataEmptyState />
             )}

@@ -37,7 +37,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     let listContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         </PageSection>
     );
@@ -95,7 +95,7 @@ function PolicyCategoriesPage(): React.ReactElement {
                             </div>
                         </ToolbarItem>
                         {hasWriteAccessForPolicy && (
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <Flex>
                                     <Button
                                         variant="primary"

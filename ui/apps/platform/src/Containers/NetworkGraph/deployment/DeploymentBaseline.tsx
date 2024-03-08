@@ -141,7 +141,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
     if (isLoading || isModifying || isToggling) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner  size="lg" />
             </Bullseye>
         );
     }
@@ -208,7 +208,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                             <ToolbarItem>
                                 <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
                             </ToolbarItem>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <FlowsBulkActions
                                     type="baseline"
                                     selectedRows={selectedRows}
@@ -248,7 +248,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                                 id="exclude-ports-and-protocols-checkbox"
                                 label="Exclude ports & protocols"
                                 isChecked={isExcludingPortsAndProtocols}
-                                onChange={setIsExcludingPortsAndProtocols}
+                                onChange={(_event, val) => setIsExcludingPortsAndProtocols(val)}
                             />
                         </FlexItem>
                         <FlexItem>

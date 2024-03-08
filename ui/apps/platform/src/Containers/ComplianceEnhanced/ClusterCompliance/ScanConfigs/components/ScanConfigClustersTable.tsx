@@ -3,13 +3,12 @@
 import React, { useState } from 'react';
 import {
     Card,
-    CardActions,
     CardBody,
     CardHeader,
     CardTitle,
     Pagination,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
 
@@ -100,20 +99,18 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
 
     return (
         <Card>
-            <CardHeader>
-                <CardActions>
-                    <Pagination
+            <CardHeader actions={{ actions: <><Pagination
                         itemCount={clusterScanStatuses.length}
                         page={page}
                         onSetPage={onSetPage}
                         perPage={perPage}
                         onPerPageSelect={onPerPageSelect}
-                    />
-                </CardActions>
+                    /></>, hasNoOffset: false, className: undefined}} >
+                
                 <CardTitle component="h2">Clusters</CardTitle>
             </CardHeader>
             <CardBody>
-                <TableComposable borders={false}>
+                <Table borders={false}>
                     <Thead noWrap>
                         <Tr>
                             <Th sort={getSortParams(0)}>Cluster</Th>
@@ -134,7 +131,7 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
                             );
                         })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </CardBody>
         </Card>
     );
