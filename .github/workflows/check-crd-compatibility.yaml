@@ -1,0 +1,40 @@
+name: Check CRD Compatibility
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  check-crd-compatibility:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    steps:
+    - name: Checkout stackrox/stackrox
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+
+    - name: Checkout crd-schema-checker
+      uses: actions/checkout@v4
+      with:
+        repository: openshift/crd-schema-checker
+        path: .crd-schema-checker
+        ref: master
+
+    - name: Build crd-schema-checker
+      run: |
+       make -C .crd-shema-checker
