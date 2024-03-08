@@ -29,7 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
-      volumes: /tmp:/tmp
+      volumes:
+        - /tmp:/tmp
     strategy:
       fail-fast: false # If one of the versions fails, it should not stop others from succeeding.
       max-parallel: 1 # Jobs are memory intensive, so only run one at a time.
