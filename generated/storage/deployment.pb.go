@@ -585,7 +585,7 @@ type Container struct {
 	Image                *ContainerImage   `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
 	SecurityContext      *SecurityContext  `protobuf:"bytes,4,opt,name=security_context,json=securityContext,proto3" json:"security_context,omitempty"`
 	Volumes              []*Volume         `protobuf:"bytes,5,rep,name=volumes,proto3" json:"volumes,omitempty" sql:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH" search:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH"` // @gotags: sql:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH" search:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH"
-	Ports                []*PortConfig     `protobuf:"bytes,6,rep,name=ports,proto3" json:"ports,omitempty" policy:",ignore" search:"-"`     // @gotags: policy:",ignore" search:"-"
+	Ports                []*PortConfig     `protobuf:"bytes,6,rep,name=ports,proto3" json:"ports,omitempty" policy:",ignore" search:"-"`     // Policies use the port config on the top-level deployment. // @gotags: policy:",ignore" search:"-"
 	Secrets              []*EmbeddedSecret `protobuf:"bytes,7,rep,name=secrets,proto3" json:"secrets,omitempty" sql:"flag=ROX_DEPLOYMENT_SECRET_SEARCH" search:"flag=ROX_DEPLOYMENT_SECRET_SEARCH"` // @gotags: sql:"flag=ROX_DEPLOYMENT_SECRET_SEARCH" search:"flag=ROX_DEPLOYMENT_SECRET_SEARCH"
 	Resources            *Resources        `protobuf:"bytes,8,opt,name=resources,proto3" json:"resources,omitempty"`
 	Name                 string            `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty" policy:"Container Name"` // @gotags: policy:"Container Name"
