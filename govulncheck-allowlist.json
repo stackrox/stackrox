@@ -9,7 +9,27 @@
     },
     "GO-2023-2382": {
       "reason": "Requires version bump",
-      "until": "2024-03-22T00:00:00Z"
+      "until": "2024-04-07T00:00:00Z"
+    },
+    "GO-2024-2598": {
+      "reason": "Requires version bump",
+      "until": "2024-04-07T00:00:00Z"
+    },
+    "GO-2024-2599": {
+      "reason": "Requires version bump",
+      "until": "2024-04-07T00:00:00Z"
+    },
+    "GO-2024-2600": {
+      "reason": "Requires version bump",
+      "until": "2024-04-07T00:00:00Z"
+    },
+    "GO-2024-2609": {
+      "reason": "Requires version bump",
+      "until": "2024-04-07T00:00:00Z"
+    },
+    "GO-2024-2610": {
+      "reason": "Requires version bump",
+      "until": "2024-04-07T00:00:00Z"
     }
   }
 }
