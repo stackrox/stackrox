@@ -1,6 +1,9 @@
 import React, { ReactElement, useCallback, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Wizard, WizardStep } from '@patternfly/react-core';
+import {
+	Wizard,
+	WizardStep
+} from '@patternfly/react-core/deprecated';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedScanConfigsPath } from 'routePaths';
 import isEqual from 'lodash/isEqual';

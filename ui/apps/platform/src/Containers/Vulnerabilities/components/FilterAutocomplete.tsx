@@ -1,5 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { debounce, Select, SelectOption, Skeleton, ToolbarGroup } from '@patternfly/react-core';
+import {
+	debounce,
+	Skeleton,
+	ToolbarGroup
+} from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { useQuery } from '@apollo/client';
 
 import { SearchFilter } from 'types/search';

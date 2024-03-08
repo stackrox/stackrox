@@ -3,7 +3,6 @@ import {
     Badge,
     Button,
     Card,
-    CardActions,
     CardBody,
     CardHeader,
     CardTitle,
@@ -16,7 +15,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
 
@@ -165,23 +164,19 @@ function LabelSelectorCard({
 
     return (
         <Card isCompact isFlat>
-            <CardHeader>
-                <CardTitle className="pf-u-font-size-sm">
-                    {title}
-                    {labelIconLabelSelector}
-                </CardTitle>
-                {hasAction && (
-                    <CardActions>
-                        <Button
+            <CardHeader {...(hasAction && {actions: { actions: <><Button
                             variant="danger"
                             className="pf-m-smaller"
                             isDisabled={activity !== 'ENABLED'}
                             onClick={handleLabelSelectorDelete}
                         >
                             Delete label selector
-                        </Button>
-                    </CardActions>
-                )}
+                        </Button></>, hasNoOffset: false, className: undefined}})} >
+                <CardTitle className="pf-u-font-size-sm">
+                    {title}
+                    {labelIconLabelSelector}
+                </CardTitle>
+                
             </CardHeader>
             <CardBody>
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
@@ -193,7 +188,7 @@ function LabelSelectorCard({
                     </FlexItem>
                 </Flex>
                 {(requirements.length !== 0 || hasAddKey) && (
-                    <TableComposable variant="compact">
+                    <Table variant="compact">
                         <Thead>
                             <Tr>
                                 <Th width={40}>Key</Th>
@@ -241,7 +236,7 @@ function LabelSelectorCard({
                                 />
                             )}
                         </Tbody>
-                    </TableComposable>
+                    </Table>
                 )}
                 {hasAction && (
                     <Toolbar className="pf-u-pb-0" inset={{ default: 'insetNone' }}>
@@ -259,7 +254,7 @@ function LabelSelectorCard({
                                         Add rule
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarGroup alignment={{ default: 'alignRight' }}>
+                                <ToolbarGroup align={{ default: 'alignRight' }}>
                                     <ToolbarItem>
                                         <Button
                                             variant="primary"

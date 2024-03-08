@@ -106,7 +106,7 @@ function DeploymentSideBar({
     if (isLoadingDeployment) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner  size="lg" />
             </Bullseye>
         );
     }

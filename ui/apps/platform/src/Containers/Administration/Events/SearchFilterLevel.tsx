@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Divider, Select, SelectOption } from '@patternfly/react-core';
+import {
+	Divider
+} from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { AdministrationEventLevel, levels } from 'services/AdministrationEventsService';
 
@@ -38,7 +44,7 @@ function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelPro
             variant="single"
             aria-label="Level filter menu items"
             toggleAriaLabel="Level filter menu toggle"
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             onSelect={onSelect}
             selections={level ?? optionAll}
             isDisabled={isDisabled}

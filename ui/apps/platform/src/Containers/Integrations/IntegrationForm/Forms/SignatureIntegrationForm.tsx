@@ -111,7 +111,7 @@ function SignatureIntegrationForm({
                                 type="text"
                                 id="name"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -154,7 +154,7 @@ function SignatureIntegrationForm({
                                                                                     index
                                                                                 ].name || ''
                                                                             }
-                                                                            onChange={onChange}
+                                                                            onChange={(event, value) => onChange(value, event)}
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
                                                                         />
@@ -191,7 +191,7 @@ function SignatureIntegrationForm({
                                                                                 ].publicKeyPemEnc ||
                                                                                 ''
                                                                             }
-                                                                            onChange={onChange}
+                                                                            onChange={(event, value) => onChange(value, event)}
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
                                                                         />

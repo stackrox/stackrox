@@ -5,7 +5,7 @@ import {
     Flex,
     FlexItem,
     PageSection,
-    Title,
+    Title, EmptyStateHeader, EmptyStateFooter,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -40,18 +40,17 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                 spaceItems={{ default: 'spaceItemsXl' }}
             >
                 <EmptyState>
-                    <EmptyStateIcon
+                    <EmptyStateHeader icon={<EmptyStateIcon
                         icon={ExclamationCircleIcon}
                         color="var(--pf-global--danger-color--200)"
-                    />
-                    <Flex
+                    />} /><EmptyStateFooter><Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
                         <Title headingLevel="h1">Cannot display the page</Title>
                         <p>The error has been logged.</p>
                     </Flex>
-                </EmptyState>
+                </EmptyStateFooter></EmptyState>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                     <Title headingLevel="h2">Error message</Title>
                     <ErrorBoundaryCodeBlock

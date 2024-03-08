@@ -154,7 +154,7 @@ function ByLabelSelector({
                                                 id={inputId}
                                                 aria-label={ariaLabel}
                                                 className="pf-u-flex-grow-1 pf-u-w-auto"
-                                                onChange={(val) =>
+                                                onChange={(_event, val) =>
                                                     onChangeLabelValue(
                                                         scopedResourceSelector,
                                                         ruleIndex,

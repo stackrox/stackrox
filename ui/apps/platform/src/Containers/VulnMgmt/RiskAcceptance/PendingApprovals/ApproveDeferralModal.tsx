@@ -127,7 +127,7 @@ function ApproveDeferralModal({
                         type="text"
                         id="comment"
                         value={formik.values.comment}
-                        onChange={onChange}
+                        onChange={(event, value) => onChange(value, event)}
                         onBlur={formik.handleBlur}
                     />
                 </FormLabelGroup>

@@ -112,7 +112,7 @@ function ReobserveCVEModal({
                         type="text"
                         id="comment"
                         value={formik.values.comment}
-                        onChange={onChange}
+                        onChange={(event, value) => onChange(value, event)}
                         onBlur={formik.handleBlur}
                         placeholder="Enter an appropriate reason to reobserve"
                     />

@@ -1,6 +1,14 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Bullseye, Divider, DropdownItem, Spinner, ToolbarItem } from '@patternfly/react-core';
+import {
+	Bullseye,
+	Divider,
+	Spinner,
+	ToolbarItem
+} from '@patternfly/react-core';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
@@ -110,7 +118,7 @@ function CVEsTableContainer({
                 isFiltered={isFiltered}
             >
                 {canSelectRows && (
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem align={{ default: 'alignRight' }}>
                         <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
                             <DropdownItem
                                 key="bulk-defer-cve"
@@ -139,12 +147,12 @@ function CVEsTableContainer({
                         </BulkActionsDropdown>
                     </ToolbarItem>
                 )}
-                <ToolbarItem alignment={{ default: 'alignRight' }} variant="separator" />
+                <ToolbarItem align={{ default: 'alignRight' }} variant="separator" />
             </TableEntityToolbar>
             <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </Bullseye>
             )}
             {error && (

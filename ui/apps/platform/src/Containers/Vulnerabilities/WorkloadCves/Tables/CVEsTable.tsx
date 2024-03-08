@@ -5,7 +5,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -144,7 +144,7 @@ function CVEsTable({
         (showExceptionDetailsLink ? 1 : 0);
 
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -301,7 +301,7 @@ function CVEsTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

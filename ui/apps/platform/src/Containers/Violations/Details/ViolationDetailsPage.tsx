@@ -64,7 +64,7 @@ function ViolationDetailsPage(): ReactElement {
         if (isFetchingSelectedAlert) {
             return (
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </Bullseye>
             );
         }

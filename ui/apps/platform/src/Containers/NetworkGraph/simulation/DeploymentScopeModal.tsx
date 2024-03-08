@@ -10,7 +10,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -86,7 +86,7 @@ function DeploymentScopeModal({
         >
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             isCompact
                             itemCount={scopeDeploymentCount}
@@ -121,7 +121,7 @@ function DeploymentScopeModal({
                 </Bullseye>
             )}
             {!error && (
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Th width={50} sort={getSortParams('Deployment')}>
@@ -140,7 +140,7 @@ function DeploymentScopeModal({
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
         </Modal>
     );

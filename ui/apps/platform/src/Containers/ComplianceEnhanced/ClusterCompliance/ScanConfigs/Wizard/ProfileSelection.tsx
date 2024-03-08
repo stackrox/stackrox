@@ -14,7 +14,7 @@ import {
 } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -131,7 +131,7 @@ function ProfileSelection({
                 <Tr>
                     <Td colSpan={6}>
                         <Bullseye>
-                            <Spinner isSVG />
+                            <Spinner  />
                         </Bullseye>
                     </Td>
                 </Tr>
@@ -189,7 +189,7 @@ function ProfileSelection({
                         isInline
                     />
                 )}
-                <TableComposable>
+                <Table>
                     <Thead noWrap>
                         <Tr>
                             <Th />
@@ -201,7 +201,7 @@ function ProfileSelection({
                         </Tr>
                     </Thead>
                     {renderTableBodyContent()}
-                </TableComposable>
+                </Table>
             </Form>
         </>
     );

@@ -9,7 +9,7 @@ import {
     PageSection,
     TextInput,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
@@ -95,7 +95,7 @@ function TableModal({
                         {!!rows.length && (
                             <>
                                 Select {typeText}s from the table below.
-                                <TableComposable
+                                <Table
                                     variant="compact"
                                     isStickyHeader
                                     data-testid="table-modal-table"
@@ -130,7 +130,7 @@ function TableModal({
                                                             rowIndex,
                                                             onSelect,
                                                             isSelected: selected[rowIndex],
-                                                            disable: readOnly,
+                                                            isDisabled: readOnly,
                                                         }}
                                                     />
                                                     {columns.map((column) => {
@@ -164,7 +164,7 @@ function TableModal({
                                             );
                                         })}
                                     </Tbody>
-                                </TableComposable>
+                                </Table>
                             </>
                         )}
                         {!rows.length && (

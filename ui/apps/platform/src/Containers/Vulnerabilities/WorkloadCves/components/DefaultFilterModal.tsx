@@ -110,7 +110,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 label="Critical"
                                 id="critical-severity"
                                 isChecked={severityValues.includes('Critical')}
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     handleSeverityChange('Critical', isChecked);
                                 }}
                             />
@@ -118,7 +118,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 label="Important"
                                 id="important-severity"
                                 isChecked={severityValues.includes('Important')}
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     handleSeverityChange('Important', isChecked);
                                 }}
                             />
@@ -126,7 +126,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 label="Moderate"
                                 id="moderate-severity"
                                 isChecked={severityValues.includes('Moderate')}
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     handleSeverityChange('Moderate', isChecked);
                                 }}
                             />
@@ -134,7 +134,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 label="Low"
                                 id="low-severity"
                                 isChecked={severityValues.includes('Low')}
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     handleSeverityChange('Low', isChecked);
                                 }}
                             />
@@ -144,7 +144,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 label="Fixable"
                                 id="fixable-status"
                                 isChecked={fixableValues.includes('Fixable')}
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     handleFixableChange('Fixable', isChecked);
                                 }}
                             />
@@ -152,7 +152,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                                 label="Not fixable"
                                 id="not-fixable-status"
                                 isChecked={fixableValues.includes('Not fixable')}
-                                onChange={(isChecked) => {
+                                onChange={(_event, isChecked) => {
                                     handleFixableChange('Not fixable', isChecked);
                                 }}
                             />

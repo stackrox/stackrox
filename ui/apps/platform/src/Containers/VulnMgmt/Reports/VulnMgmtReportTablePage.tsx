@@ -122,7 +122,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                             </TextContent>
                         </ToolbarItem>
                         {hasWriteAccessForReport && (
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <Button
                                     variant={ButtonVariant.primary}
                                     isInline
@@ -147,7 +147,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
             {isLoading && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
                     <Bullseye>
-                        <Spinner isSVG size="lg" />
+                        <Spinner  size="lg" />
                     </Bullseye>
                 </PageSection>
             )}

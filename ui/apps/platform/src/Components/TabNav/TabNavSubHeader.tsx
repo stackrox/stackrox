@@ -14,7 +14,7 @@ function TabNavSubHeader({ description, actions }: TabNavSubHeaderProps) {
                     <ToolbarItem>
                         <div className="pf-u-font-size-sm">{description}</div>
                     </ToolbarItem>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem align={{ default: 'alignRight' }}>
                         <Flex>{actions}</Flex>
                     </ToolbarItem>
                 </ToolbarContent>

@@ -21,7 +21,7 @@ function MitreAttackVectorsView({
         return (
             <Flex className="pf-u-my-md" justifyContent={{ default: 'justifyContentCenter' }}>
                 <FlexItem>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </FlexItem>
             </Flex>
         );

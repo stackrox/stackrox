@@ -83,7 +83,7 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
                 )}
                 {loading && !imageResourcesData && (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 )}
                 {imageResourcesData && (

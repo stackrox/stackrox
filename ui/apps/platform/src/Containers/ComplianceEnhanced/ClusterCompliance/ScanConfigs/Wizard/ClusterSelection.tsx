@@ -13,7 +13,7 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -113,7 +113,7 @@ function ClusterSelection({
             <Tr>
                 <Td colSpan={2}>
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 </Td>
             </Tr>
@@ -169,7 +169,7 @@ function ClusterSelection({
                         isInline
                     />
                 )}
-                <TableComposable>
+                <Table>
                     <Thead noWrap>
                         <Tr>
                             <Th
@@ -183,7 +183,7 @@ function ClusterSelection({
                         </Tr>
                     </Thead>
                     <Tbody>{renderTableBodyContent()}</Tbody>
-                </TableComposable>
+                </Table>
             </Form>
         </>
     );

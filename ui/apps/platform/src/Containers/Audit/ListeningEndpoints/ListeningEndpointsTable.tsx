@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction } from 'react';
 import { Button, ButtonVariant, Card, Text } from '@patternfly/react-core';
-import { Tbody, Tr, Td, TableComposable, Th, Thead } from '@patternfly/react-table';
+import { Tbody, Tr, Td, Table /* data-codemods */, Th, Thead } from '@patternfly/react-table';
 
 import { riskBasePath } from 'routePaths';
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -18,7 +18,7 @@ function EmbeddedTable({
     listeningEndpoints: ProcessListeningOnPort[];
 }) {
     return (
-        <TableComposable isNested aria-label="Listening endpoints for deployment">
+        <Table isNested aria-label="Listening endpoints for deployment">
             <Thead noWrap>
                 <Tr>
                     <Th width={30}>Exec file path</Th>
@@ -41,7 +41,7 @@ function EmbeddedTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 
@@ -63,7 +63,7 @@ function ListeningEndpointsTable({
     const invertedExpansionRowSet = useSet<string>();
 
     return (
-        <TableComposable variant="compact" aria-label="Deployment results">
+        <Table variant="compact" aria-label="Deployment results">
             <Thead noWrap>
                 <Tr>
                     <Th
@@ -145,7 +145,7 @@ function ListeningEndpointsTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

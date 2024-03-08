@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { Title, Button, Bullseye } from '@patternfly/react-core';
 import { useField } from 'formik';
 
@@ -50,7 +50,7 @@ function AttachNotifiersFormSection() {
                 from existing integrations.
             </div>
             {notifiers.length > 0 && (
-                <TableComposable aria-label="Attach notifiers table" borders>
+                <Table aria-label="Attach notifiers table" borders>
                     <Thead>
                         <Tr>
                             <Th
@@ -78,7 +78,7 @@ function AttachNotifiersFormSection() {
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             {notifiers.length === 0 && (
                 <>

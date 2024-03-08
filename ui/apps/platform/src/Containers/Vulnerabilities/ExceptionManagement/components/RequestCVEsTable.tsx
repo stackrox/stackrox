@@ -2,7 +2,7 @@ import React from 'react';
 import { Bullseye, Flex, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -84,7 +84,7 @@ function RequestCVEsTable({
     if (loading && !data) {
         return (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         );
     }
@@ -104,7 +104,7 @@ function RequestCVEsTable({
         <PageSection variant="light">
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h2">{data?.imageCVEs.length || 0} results found</Title>
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Td />
@@ -235,7 +235,7 @@ function RequestCVEsTable({
                                 );
                             }
                         )}
-                </TableComposable>
+                </Table>
             </Flex>
         </PageSection>
     );

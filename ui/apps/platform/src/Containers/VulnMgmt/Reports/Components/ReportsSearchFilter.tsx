@@ -5,7 +5,7 @@ import {
     Flex,
     FlexItem,
     InputGroup,
-    TextInput,
+    TextInput, InputGroupItem,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
@@ -45,22 +45,22 @@ function ReportsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'Report Name' && (
                     <InputGroup>
-                        <TextInput
+                        <InputGroupItem isFill ><TextInput
                             name="reportNameSearchInput"
                             id="reportNameSearchInput"
                             type="search"
                             aria-label="Report name search input"
                             placeholder="Filter by report name"
-                            onChange={handleInputChange}
+                            onChange={(_event, value) => handleInputChange(value)}
                             value={inputValue}
-                        />
-                        <Button
+                        /></InputGroupItem>
+                        <InputGroupItem><Button
                             variant={ButtonVariant.control}
                             aria-label="Perform search"
                             onClick={() => handleSearchChange(inputValue)}
                         >
                             <SearchIcon />
-                        </Button>
+                        </Button></InputGroupItem>
                     </InputGroup>
                 )}
             </FlexItem>

@@ -135,7 +135,7 @@ function ExceptionRequestForm({
                                 name="comment"
                                 isRequired
                                 onBlur={handleBlur('comment')}
-                                onChange={(value) => setFieldValue('comment', value)}
+                                onChange={(_event, value) => setFieldValue('comment', value)}
                                 validated={touched.comment && errors.comment ? 'error' : 'default'}
                             />
                         </FormGroup>

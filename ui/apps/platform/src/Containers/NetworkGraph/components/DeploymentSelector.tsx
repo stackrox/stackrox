@@ -1,20 +1,22 @@
 import React, { useMemo } from 'react';
 import {
-    Badge,
-    Button,
-    Divider,
-    Flex,
-    FlexItem,
-    Menu,
-    MenuContent,
-    MenuFooter,
-    MenuGroup,
-    MenuInput,
-    MenuItem,
-    MenuList,
-    SearchInput,
-    Select,
+	Badge,
+	Button,
+	Divider,
+	Flex,
+	FlexItem,
+	Menu,
+	MenuContent,
+	MenuFooter,
+	MenuGroup,
+	MenuSearch,
+	MenuItem,
+	MenuList,
+	SearchInput, MenuSearchInput
 } from '@patternfly/react-core';
+import {
+	Select
+} from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -50,7 +52,7 @@ function DeploymentSelector({
                 .map((deployment) => (
                     <MenuItem
                         key={deployment.id}
-                        hasCheck
+                        hasCheckbox
                         itemId={deployment.name}
                         isSelected={selectedDeployments.includes(deployment.name)}
                     >
@@ -97,7 +99,7 @@ function DeploymentSelector({
 
     const deploymentSelectMenu = (
         <Menu onSelect={onDeploymentSelect} selected={selectedDeployments} isScrollable>
-            <MenuInput className="pf-u-p-md">
+            <MenuSearch><MenuSearchInput className="pf-u-p-md">
                 <SearchInput
                     value={input}
                     aria-label="Filter deployments"
@@ -105,7 +107,7 @@ function DeploymentSelector({
                     placeholder="Filter deployments..."
                     onChange={(_event, value) => handleTextInputChange(value)}
                 />
-            </MenuInput>
+            </MenuSearchInput></MenuSearch>
             <Divider className="pf-u-m-0" />
             <MenuContent>
                 <MenuList>

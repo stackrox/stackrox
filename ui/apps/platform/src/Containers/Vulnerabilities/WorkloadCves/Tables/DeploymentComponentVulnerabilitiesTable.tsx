@@ -1,5 +1,5 @@
 import React from 'react';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';
@@ -65,7 +65,7 @@ function DeploymentComponentVulnerabilitiesTable({
     );
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
     return (
-        <TableComposable
+        <Table
             className="pf-u-p-md"
             style={{
                 border: '1px solid var(--pf-c-table--BorderColor)',
@@ -147,7 +147,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

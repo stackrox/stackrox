@@ -135,7 +135,7 @@ function EmailTemplateFormModal({
                                 type="text"
                                 value={values.emailSubject}
                                 validated={emailSubjectValidated}
-                                onChange={(_, e) => handleChange(e)}
+                                onChange={(e, _) => handleChange(e)}
                                 onBlur={handleBlur}
                                 isDisabled={isSubmitting}
                                 placeholder={defaultEmailSubject}
@@ -157,7 +157,7 @@ function EmailTemplateFormModal({
                                         className="pf-u-mt-sm"
                                         variant="link"
                                         isInline
-                                        isSmall
+                                        size="sm"
                                         onClick={() => setFieldValue('emailSubject', '')}
                                         isDisabled={values.emailSubject.length === 0}
                                     >
@@ -177,7 +177,7 @@ function EmailTemplateFormModal({
                                 type="text"
                                 value={values.emailBody}
                                 validated={emailBodyValidated}
-                                onChange={(_, e) => handleChange(e)}
+                                onChange={(e, _) => handleChange(e)}
                                 onBlur={handleBlur}
                                 isDisabled={isSubmitting}
                                 style={{ minHeight: '250px' }}
@@ -200,7 +200,7 @@ function EmailTemplateFormModal({
                                         className="pf-u-mt-sm"
                                         variant="link"
                                         isInline
-                                        isSmall
+                                        size="sm"
                                         onClick={() => setFieldValue('emailBody', '')}
                                         isDisabled={values.emailBody.length === 0}
                                     >

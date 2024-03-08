@@ -124,7 +124,7 @@ function ExceptionRequestDetailsPage() {
     if (loading && !vulnerabilityException) {
         return (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner  />
             </Bullseye>
         );
     }

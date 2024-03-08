@@ -1,7 +1,7 @@
 import React, { ReactElement, useRef, useState } from 'react';
 import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { PlusCircleIcon, TimesCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { ClusterLabels } from 'services/ClustersService';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
@@ -72,7 +72,7 @@ function ClusterLabelsTable({
     }
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead>
                 <Tr>
                     <Th>Key</Th>
@@ -120,7 +120,7 @@ function ClusterLabelsTable({
                                 aria-label="Type a label key"
                                 value={keyInput}
                                 validated={validatedKey}
-                                onChange={setKeyInput}
+                                onChange={(_event, val) => setKeyInput(val)}
                                 ref={refKeyInput}
                             />
                             {validatedKey === ValidatedOptions.error && (
@@ -139,7 +139,7 @@ function ClusterLabelsTable({
                                 aria-label="Type a label value"
                                 value={valueInput}
                                 validated={validatedValue}
-                                onChange={setValueInput}
+                                onChange={(_event, val) => setValueInput(val)}
                                 onKeyPress={onKeyPressValue}
                             />
                             {validatedValue === ValidatedOptions.error && (
@@ -172,7 +172,7 @@ function ClusterLabelsTable({
                     </Tr>
                 )}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

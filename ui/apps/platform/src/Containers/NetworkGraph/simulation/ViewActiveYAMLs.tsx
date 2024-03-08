@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
 import {
-    Bullseye,
-    EmptyState,
-    EmptyStateVariant,
-    SelectOption,
-    Stack,
-    StackItem,
-    Title,
+	Bullseye,
+	EmptyState,
+	EmptyStateVariant,
+	Stack,
+	StackItem, EmptyStateHeader,
+	
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
@@ -51,9 +53,7 @@ function ViewActiveYamls({
         return (
             <Bullseye>
                 <EmptyState variant={EmptyStateVariant.xs}>
-                    <Title headingLevel="h4" size="md">
-                        No network policies
-                    </Title>
+                    <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
                 </EmptyState>
             </Bullseye>
         );

@@ -23,7 +23,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
 import {
@@ -182,7 +182,7 @@ function ScanConfigsTablePage({
         <Tr>
             <Td colSpan={5}>
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner  />
                 </Bullseye>
             </Td>
         </Tr>
@@ -250,7 +250,7 @@ function ScanConfigsTablePage({
                 <PageSection>
                     <Toolbar>
                         <ToolbarContent>
-                            <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                                 <Pagination
                                     itemCount={scanSchedulesCount ?? 0}
                                     page={page}
@@ -262,7 +262,7 @@ function ScanConfigsTablePage({
                         </ToolbarContent>
                     </Toolbar>
 
-                    <TableComposable>
+                    <Table>
                         <Thead noWrap>
                             <Tr>
                                 <Th sort={getSortParams('Compliance Scan Config Name')}>Name</Th>
@@ -274,7 +274,7 @@ function ScanConfigsTablePage({
                             </Tr>
                         </Thead>
                         <Tbody>{renderTableBodyContent()}</Tbody>
-                    </TableComposable>
+                    </Table>
                     <DeleteModal
                         title={`Permanently delete scan (${scanConfigsToDelete.length}) ${pluralize(
                             'schedule',
