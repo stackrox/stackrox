@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/protocompat"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"

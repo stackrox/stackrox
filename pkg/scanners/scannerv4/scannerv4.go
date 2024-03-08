@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
