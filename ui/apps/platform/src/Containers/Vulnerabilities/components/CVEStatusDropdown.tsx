@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { SearchFilter } from 'types/search';
 
@@ -23,7 +26,7 @@ function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
             variant="checkbox"
             aria-label="CVE status filter menu items"
             toggleAriaLabel="CVE status filter menu toggle"
-            onToggle={onCveStatusToggle}
+            onToggle={(_event, isOpen: boolean) => onCveStatusToggle(isOpen)}
             onSelect={(e, selection) => {
                 onSelect('FIXABLE', (e.target as HTMLInputElement).checked, selection as string);
             }}

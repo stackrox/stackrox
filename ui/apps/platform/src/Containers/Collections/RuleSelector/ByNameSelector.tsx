@@ -1,11 +1,13 @@
 import React from 'react';
 import {
-    Button,
-    FormGroup,
-    SelectOption,
-    TextInput,
-    ValidatedOptions,
+	Button,
+	FormGroup,
+	TextInput,
+	ValidatedOptions
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 

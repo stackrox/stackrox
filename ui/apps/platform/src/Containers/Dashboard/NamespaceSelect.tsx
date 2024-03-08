@@ -1,12 +1,14 @@
 import React, { ChangeEvent } from 'react';
 import {
-    Divider,
-    Select,
-    SelectGroup,
-    SelectOption,
-    SelectOptionObject,
-    SelectVariant,
+	Divider
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectGroup,
+	SelectOption,
+	SelectOptionObject,
+	SelectVariant
+} from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';

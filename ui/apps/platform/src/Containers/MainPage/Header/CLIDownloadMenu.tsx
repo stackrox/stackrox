@@ -3,11 +3,13 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { DownloadIcon } from '@patternfly/react-icons';
 import {
-    ApplicationLauncher,
-    ApplicationLauncherItem,
-    Flex,
-    FlexItem,
+	Flex,
+	FlexItem
 } from '@patternfly/react-core';
+import {
+	ApplicationLauncher,
+	ApplicationLauncherItem
+} from '@patternfly/react-core/deprecated';
 import Raven from 'raven-js';
 
 import { actions } from 'reducers/notifications';

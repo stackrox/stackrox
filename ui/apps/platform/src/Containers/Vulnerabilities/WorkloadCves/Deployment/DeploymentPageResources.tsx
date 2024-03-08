@@ -80,7 +80,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                 )}
                 {loading && !deploymentResourcesData && (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner  />
                     </Bullseye>
                 )}
                 {deploymentResourcesData && (

@@ -1,11 +1,13 @@
 import {
-    Dropdown,
-    DropdownDirection,
-    DropdownItem,
-    DropdownToggle,
-    Split,
-    SplitItem,
+	Split,
+	SplitItem
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownDirection,
+	DropdownItem,
+	DropdownToggle
+} from '@patternfly/react-core/deprecated';
 import React from 'react';
 import UploadYAMLButton from './UploadYAMLButton';
 
@@ -77,7 +79,7 @@ function NetworkSimulatorActions({
                     position="left"
                     onSelect={onSelect}
                     toggle={
-                        <DropdownToggle id={actionsDropdownId} onToggle={onToggle}>
+                        <DropdownToggle id={actionsDropdownId} onToggle={(_event, isOpen: boolean) => onToggle(isOpen)}>
                             Actions
                         </DropdownToggle>
                     }

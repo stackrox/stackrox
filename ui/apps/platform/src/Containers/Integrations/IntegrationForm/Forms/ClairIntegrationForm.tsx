@@ -119,7 +119,7 @@ function ClairIntegrationForm({
                             type="text"
                             id="name"
                             value={values.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -136,7 +136,7 @@ function ClairIntegrationForm({
                             type="text"
                             id="clair.endpoint"
                             value={values.clair.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -146,7 +146,7 @@ function ClairIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="clair.insecure"
                             isChecked={values.clair.insecure}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

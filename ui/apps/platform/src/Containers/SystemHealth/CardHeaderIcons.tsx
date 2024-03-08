@@ -8,7 +8,7 @@ import {
 } from '@patternfly/react-icons';
 
 // Icon to render while fetching initial request.
-export const SpinnerIcon = <Spinner isSVG size="sm" />;
+export const SpinnerIcon = <Spinner  size="sm" />;
 
 // Icon to render if request fails.
 export const ErrorIcon = <MinusIcon />;

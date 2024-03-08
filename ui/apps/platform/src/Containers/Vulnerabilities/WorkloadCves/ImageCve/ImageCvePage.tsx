@@ -461,7 +461,7 @@ function ImageCvePage() {
                         <>
                             {tableLoading && !tableDataAvailable && (
                                 <Bullseye>
-                                    <Spinner isSVG />
+                                    <Spinner  />
                                 </Bullseye>
                             )}
                             {tableDataAvailable && (

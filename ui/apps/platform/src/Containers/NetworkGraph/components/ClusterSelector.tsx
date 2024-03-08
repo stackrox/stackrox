@@ -1,5 +1,8 @@
 import React from 'react';
-import { Select, SelectOption } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { ClusterScopeObject } from 'services/RolesService';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';

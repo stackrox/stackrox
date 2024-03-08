@@ -27,7 +27,7 @@ const OrchestratorComponentsToggle = (): ReactElement => {
                 id="orchestrator-components-toggle"
                 aria-label="Toggle Showing Orchestrator Components"
                 isChecked={showOrchestratorComponents === 'true'}
-                onChange={handleToggle}
+                onChange={(_event, value) => handleToggle(value)}
             />
             <span className="p-2 text-base-600" aria-hidden="true">
                 Show Orchestrator Components

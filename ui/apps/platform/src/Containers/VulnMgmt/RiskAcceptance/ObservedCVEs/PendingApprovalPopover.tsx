@@ -31,7 +31,7 @@ function PendingApprovalPopover({ vulnRequestId }: PendingApprovalPopoverProps):
                         {pendingRequestURL}
                     </ClipboardCopy>
                 }
-                reference={popoverRef}
+                triggerRef={popoverRef}
             />
             <button type="button" ref={popoverRef}>
                 <InfoCircleIcon

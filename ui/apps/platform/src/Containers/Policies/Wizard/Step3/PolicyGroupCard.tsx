@@ -3,7 +3,6 @@ import {
     Card,
     CardHeader,
     CardTitle,
-    CardActions,
     CardBody,
     Divider,
     Flex,
@@ -74,7 +73,32 @@ function PolicyGroupCard({
     return (
         <>
             <Card isFlat isCompact data-testid="policy-criteria-group-card">
-                <CardHeader className="pf-u-p-0">
+                <CardHeader actions={{ actions: <>{descriptor.negatedName && !readOnly && (
+                            <>
+                                <Divider component="div" orientation={{ default: 'vertical' }} />
+                                <Checkbox
+                                    label="Not"
+                                    isChecked={group.negate}
+                                    onChange={handleNegate}
+                                    id={`${group.fieldName}-negate`}
+                                    isDisabled={readOnly}
+                                    data-testid="policy-criteria-value-negate-checkbox"
+                                />
+                            </>
+                        )}
+                        {!readOnly && (
+                            <>
+                                <Divider orientation={{ default: 'vertical' }} component="div" />
+                                <Button
+                                    variant="plain"
+                                    className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                                    onClick={onDeleteGroup}
+                                    data-testid="delete-policy-criteria-btn"
+                                >
+                                    <TrashIcon />
+                                </Button>
+                            </>
+                        )}</>, hasNoOffset: true, className: "policy-group-card"}}  className="pf-u-p-0">
                     <CardTitle className="pf-u-pl-md">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
@@ -90,34 +114,7 @@ function PolicyGroupCard({
                             </Stack>
                         </Flex>
                     </CardTitle>
-                    <CardActions hasNoOffset className="policy-group-card">
-                        {descriptor.negatedName && !readOnly && (
-                            <>
-                                <Divider component="div" isVertical />
-                                <Checkbox
-                                    label="Not"
-                                    isChecked={group.negate}
-                                    onChange={handleNegate}
-                                    id={`${group.fieldName}-negate`}
-                                    isDisabled={readOnly}
-                                    data-testid="policy-criteria-value-negate-checkbox"
-                                />
-                            </>
-                        )}
-                        {!readOnly && (
-                            <>
-                                <Divider isVertical component="div" />
-                                <Button
-                                    variant="plain"
-                                    className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
-                                    onClick={onDeleteGroup}
-                                    data-testid="delete-policy-criteria-btn"
-                                >
-                                    <TrashIcon />
-                                </Button>
-                            </>
-                        )}
-                    </CardActions>
+                    
                 </CardHeader>
                 <Divider component="div" />
                 <CardBody>

@@ -1,22 +1,24 @@
 import React, { useState, ReactElement } from 'react';
 import {
-    Alert,
-    AlertGroup,
-    AlertVariant,
-    Bullseye,
-    Button,
-    ButtonVariant,
-    DropdownItem,
-    Divider,
-    PageSection,
-    PageSectionVariants,
-    Pagination,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
+	Alert,
+	AlertGroup,
+	AlertVariant,
+	Bullseye,
+	Button,
+	ButtonVariant,
+	Divider,
+	PageSection,
+	PageSectionVariants,
+	Pagination,
+	Toolbar,
+	ToolbarContent,
+	ToolbarItem
 } from '@patternfly/react-core';
+import {
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import usePermissions from 'hooks/usePermissions';
@@ -230,7 +232,7 @@ function ReportingTablePanel({
                             </DropdownItem>
                         </BulkActionsDropdown>
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={reportCount}
                             page={currentPage}
@@ -255,7 +257,7 @@ function ReportingTablePanel({
             )}
             <Divider component="div" />
             <PageSection isFilled hasOverflowScroll>
-                <TableComposable variant="compact">
+                <Table variant="compact">
                     <Thead>
                         <Tr>
                             <Th
@@ -364,7 +366,7 @@ function ReportingTablePanel({
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
             <ConfirmationModal
                 ariaLabel="Confirm deleting reports"

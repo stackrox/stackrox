@@ -2,13 +2,15 @@ import React, { useState, useEffect, ReactElement } from 'react';
 import { FormikErrors, FormikTouched } from 'formik';
 
 import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    SelectOption,
-    TextInput,
+	Button,
+	ButtonVariant,
+	Flex,
+	FlexItem,
+	TextInput
 } from '@patternfly/react-core';
+import {
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
@@ -127,7 +129,7 @@ function NotifierSelection({
                     type="text"
                     id="emailConfig.mailingLists"
                     value={joinedMailingLists}
-                    onChange={onMailingListsChange}
+                    onChange={(_event, value) => onMailingListsChange(value)}
                     onBlur={handleBlur}
                     placeholder="annie@example.com,jack@example.com"
                 />

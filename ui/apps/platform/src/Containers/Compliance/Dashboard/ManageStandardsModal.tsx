@@ -116,7 +116,7 @@ function ManageStandardsModal({
                             name={id}
                             label={name}
                             isChecked={values[id]}
-                            onChange={(value) => {
+                            onChange={(_event, value) => {
                                 return setFieldValue(id, value);
                             }}
                         />

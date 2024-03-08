@@ -137,7 +137,7 @@ function ReviewPolicyForm({
             </Flex>
             {showPolicyResults && (
                 <>
-                    <Divider component="div" isVertical />
+                    <Divider component="div" orientation={{ default: 'vertical' }} />
                     <Flex
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
@@ -166,7 +166,7 @@ function ReviewPolicyForm({
                         {isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
                                 <FlexItem>
-                                    <Spinner isSVG />
+                                    <Spinner  />
                                 </FlexItem>
                             </Flex>
                         ) : checkDryRunErrorMessage ? (

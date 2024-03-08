@@ -106,7 +106,7 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                 >
                     <FlexItem>{image.name}</FlexItem>
                     <FlexItem>
-                        <Button variant="danger" isSmall onClick={getRemoveFromWatch(image.name)}>
+                        <Button variant="danger" size="sm" onClick={getRemoveFromWatch(image.name)}>
                             Remove watch
                         </Button>
                     </FlexItem>

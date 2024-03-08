@@ -65,7 +65,7 @@ function ImportPolicyJSONUpload({
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
-                    onChange={handleFileChange}
+                    
                     onReadStarted={handleFileReadStarted}
                     onReadFinished={handleFileReadFinished}
                     isLoading={isFileLoading}

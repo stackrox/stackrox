@@ -1,19 +1,21 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-    ActionGroup,
-    Alert,
-    Button,
-    Divider,
-    Flex,
-    Form,
-    FormGroup,
-    PageSection,
-    Radio,
-    Select,
-    SelectOption,
-    TextInput,
+	ActionGroup,
+	Alert,
+	Button,
+	Divider,
+	Flex,
+	Form,
+	FormGroup,
+	PageSection,
+	Radio,
+	TextInput
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -140,7 +142,7 @@ function InitBundleForm(): ReactElement {
                                 isRequired
                                 value={values.name}
                                 onBlur={handleBlur}
-                                onChange={onChangeTextInput}
+                                onChange={(event, value) => onChangeTextInput(value, event)}
                             />
                         </FormLabelGroup>
                         <FormGroup

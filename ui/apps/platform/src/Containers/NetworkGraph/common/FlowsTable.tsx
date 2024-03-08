@@ -3,7 +3,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -180,7 +180,7 @@ function FlowsTable({
     };
 
     return (
-        <TableComposable aria-label={label} variant="compact">
+        <Table aria-label={label} variant="compact">
             <Thead>
                 <Tr>
                     <Td />
@@ -403,7 +403,7 @@ function FlowsTable({
                     direction="Ingress"
                 />
             )}
-        </TableComposable>
+        </Table>
     );
 }
 
