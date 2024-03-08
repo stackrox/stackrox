@@ -246,7 +246,6 @@ task testSensorBounceNext(type: Test) {
 }
 
 task runSampleScript(dependsOn: 'classes', type: JavaExec) {
-    environment "TEST_TARGET", "sampleScript"
     if (project.hasProperty("runScript")) {
         main = "sampleScripts." + project.getProperty("runScript")
         classpath = sourceSets.main.runtimeClasspath
