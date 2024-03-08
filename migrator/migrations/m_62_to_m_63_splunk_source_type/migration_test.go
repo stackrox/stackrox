@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -95,11 +96,11 @@ func (suite *migrateSplunkSourceTypeTestSuite) TestMigration() {
 		bucket := tx.Bucket(notifiersBucket)
 
 		notifier := &storage.Notifier{}
-		suite.NoError(proto.Unmarshal(bucket.Get([]byte(noDerivedField.GetId())), notifier))
+		suite.NoError(protocompat.Unmarshal(bucket.Get([]byte(noDerivedField.GetId())), notifier))
 		suite.Equal(expectedNoDerivedField, notifier)
 
 		notifier = &storage.Notifier{}
-		suite.NoError(proto.Unmarshal(bucket.Get([]byte(derivedField.GetId())), notifier))
+		suite.NoError(protocompat.Unmarshal(bucket.Get([]byte(derivedField.GetId())), notifier))
 		suite.Equal(expectedDerivedField, notifier)
 
 		return nil

@@ -26,17 +26,17 @@ func TestErrorOnNilMarshal(t *testing.T) {
 }
 
 func TestErrorOnNilUnmarshal(t *testing.T) {
-	err := proto.Unmarshal(nil, nil)
+	err := protocompat.Unmarshal(nil, nil)
 	assert.Equal(t, proto.ErrNil, err)
 
-	err = proto.Unmarshal(nil, (*storage.Image)(nil))
+	err = protocompat.Unmarshal(nil, (*storage.Image)(nil))
 	assert.Equal(t, proto.ErrNil, err)
 
 	var img *storage.Image
-	err = proto.Unmarshal(nil, img)
+	err = protocompat.Unmarshal(nil, img)
 	assert.Equal(t, proto.ErrNil, err)
 
 	img = &storage.Image{}
-	err = proto.Unmarshal([]byte{}, img)
+	err = protocompat.Unmarshal([]byte{}, img)
 	assert.NoError(t, err)
 }

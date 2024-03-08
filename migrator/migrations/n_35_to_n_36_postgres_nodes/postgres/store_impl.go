@@ -6,7 +6,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
@@ -537,7 +536,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 
 	var node storage.Node
-	if err := proto.Unmarshal(data, &node); err != nil {
+	if err := protocompat.Unmarshal(data, &node); err != nil {
 		return nil, false, err
 	}
 
@@ -613,7 +612,7 @@ func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) 
 			return nil, err
 		}
 		msg := &storage.NodeComponentEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
@@ -634,7 +633,7 @@ func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []stri
 			return nil, err
 		}
 		msg := &storage.NodeComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -655,7 +654,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 			return nil, err
 		}
 		msg := &storage.NodeComponentCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
@@ -686,7 +685,7 @@ func (s *storeImpl) GetNodeMetadata(ctx context.Context, id string) (*storage.No
 	}
 
 	var msg storage.Node
-	if err := proto.Unmarshal(data, &msg); err != nil {
+	if err := protocompat.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -705,7 +704,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.NodeCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

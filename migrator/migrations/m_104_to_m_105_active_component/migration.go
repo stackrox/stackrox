@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -61,7 +62,7 @@ func updateActiveComponents(db *gorocksdb.DB) error {
 	wb := gorocksdb.NewWriteBatch()
 	for it.Seek(activeComponentsPrefix); it.ValidForPrefix(activeComponentsPrefix); it.Next() {
 		var activeComponent storage.ActiveComponent
-		if err := proto.Unmarshal(it.Value().Data(), &activeComponent); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &activeComponent); err != nil {
 			return errors.Wrap(err, "unable to marshal active component")
 		}
 

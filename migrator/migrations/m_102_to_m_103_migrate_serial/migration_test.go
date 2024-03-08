@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -93,7 +93,7 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 		idx := 0
 		err := bucket.ForEach(func(k, v []byte) error {
 			var si storage.ServiceIdentity
-			suite.NoError(proto.Unmarshal(v, &si))
+			suite.NoError(protocompat.Unmarshal(v, &si))
 			suite.Equal(cases[idx].newSerial, &si)
 			idx++
 			return nil

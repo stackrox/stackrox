@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
@@ -25,7 +26,7 @@ func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ImageIntegration, erro
 		b := tx.Bucket(imageIntegrationBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var integration storage.ImageIntegration
-			if err := proto.Unmarshal(v, &integration); err != nil {
+			if err := protocompat.Unmarshal(v, &integration); err != nil {
 				return err
 			}
 			integrations = append(integrations, &integration)

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/admission-control/common"
 	"github.com/stackrox/rox/sensor/admission-control/manager"
 )
@@ -81,7 +82,7 @@ func (p *persister) loadExisting() (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var settings sensor.AdmissionControlSettings
-	if err := proto.Unmarshal(bytes, &settings); err != nil {
+	if err := protocompat.Unmarshal(bytes, &settings); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling initial admission control settings from %s", settingsPath)
 	}
 

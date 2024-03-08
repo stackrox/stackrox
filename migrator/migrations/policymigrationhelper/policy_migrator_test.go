@@ -57,7 +57,7 @@ func comparePolicyWithDB(suite *policyMigratorTestSuite, bucket bolthelpers.Buck
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.Id))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }

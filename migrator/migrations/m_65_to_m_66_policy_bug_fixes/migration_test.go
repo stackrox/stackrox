@@ -80,7 +80,7 @@ func checkPolicyMatches(suite *policyUpdatesTestSuite, bucket bolthelpers.Bucket
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }

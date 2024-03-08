@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -29,7 +30,7 @@ func addClusterIDToNetworkPolicyApplicationUndoRecord(db *bolt.DB) error {
 		bucket := tx.Bucket(bucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.NetworkPolicyApplicationUndoRecord
-			if err := proto.Unmarshal(v, &np); err != nil {
+			if err := protocompat.Unmarshal(v, &np); err != nil {
 				return err
 			}
 			np.ClusterId = string(k)

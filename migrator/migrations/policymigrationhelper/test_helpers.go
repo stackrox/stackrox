@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ func getAndNormalizePolicies(t *testing.T, bucket bolthelpers.BucketRef, policy 
 	normalizedFromDB = &storage.Policy{}
 	assert.NoError(t, bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, normalizedFromDB)
+		return protocompat.Unmarshal(v, normalizedFromDB)
 	}))
 
 	normalizedExpected = policy.Clone()

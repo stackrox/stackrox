@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policyutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/set"
 	bolt "go.etcd.io/bbolt"
@@ -28,7 +29,7 @@ func (s *storeImpl) getAllFromStore(_ context.Context) ([]*storage.Policy, error
 		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
-			if err := proto.Unmarshal(v, &policy); err != nil {
+			if err := protocompat.Unmarshal(v, &policy); err != nil {
 				return err
 			}
 			policies = append(policies, &policy)

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -43,7 +44,7 @@ func addIDToClusterHealthStatus(db *types.Databases) error {
 		key := it.Key().Copy()
 
 		var healthStatus storage.ClusterHealthStatus
-		err := proto.Unmarshal(it.Value().Data(), &healthStatus)
+		err := protocompat.Unmarshal(it.Value().Data(), &healthStatus)
 		if err != nil {
 			return err
 		}

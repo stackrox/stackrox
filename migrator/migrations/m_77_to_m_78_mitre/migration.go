@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -58,7 +59,7 @@ func updatePoliciesWithMitre(db *bolt.DB) error {
 			}
 
 			storedPolicy := &storage.Policy{}
-			if err := proto.Unmarshal(val, storedPolicy); err != nil {
+			if err := protocompat.Unmarshal(val, storedPolicy); err != nil {
 				return errors.Wrapf(err, "unmarshaling policy with id %q", key)
 			}
 

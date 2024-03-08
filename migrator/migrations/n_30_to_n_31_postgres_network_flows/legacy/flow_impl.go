@@ -86,7 +86,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 
 	err = generic.DefaultForEachItemWithPrefix(s.db, s.keyPrefix, true, func(k, v []byte) error {
 		if bytes.Equal(k, updatedTSKey) {
-			return proto.Unmarshal(v, lastUpdateTS)
+			return protocompat.Unmarshal(v, lastUpdateTS)
 		}
 		if pred != nil {
 			props, err := common.ParseID(k)
@@ -99,7 +99,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 		}
 
 		flow := new(storage.NetworkFlow)
-		if err := proto.Unmarshal(v, flow); err != nil {
+		if err := protocompat.Unmarshal(v, flow); err != nil {
 			return err
 		}
 		if since != nil && flow.LastSeenTimestamp != nil {

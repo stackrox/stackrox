@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/common/test"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
@@ -157,7 +157,7 @@ func runTest(t *testing.T, policy *storage.Policy, mustBeDefault bool) {
 		assert.NotNil(t, val)
 
 		var storedPolicy storage.Policy
-		if err := proto.Unmarshal(val, &storedPolicy); err != nil {
+		if err := protocompat.Unmarshal(val, &storedPolicy); err != nil {
 			return errors.Wrapf(err, "unmarshaling policy %s", policy.GetId())
 		}
 		assert.Equal(t, mustBeDefault, storedPolicy.GetIsDefault())

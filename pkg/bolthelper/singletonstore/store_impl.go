@@ -52,7 +52,7 @@ func (s *singletonStore) Get() (protocompat.Message, error) {
 			return nil
 		}
 		object = s.allocFunc()
-		if err := proto.Unmarshal(bytes, object); err != nil {
+		if err := protocompat.Unmarshal(bytes, object); err != nil {
 			return errors.Wrapf(err, "failed to unmarshal %s", s.objectName)
 		}
 		return nil
