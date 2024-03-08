@@ -208,7 +208,7 @@ class ImageScanningTest extends BaseSpecification {
     // GCR doesn't have MA images to verify the GCR-image-integrations on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Image Registry+Scanner Integrations: #testName"() {
-        Assume.assumeFalse(Env.getTestTarget() == "BAT" && (testName == "gcr-duplicate" || testName == "gcr-and-other"))
+        Assume.assumeFalse(Env.getTestTarget() == "bat-test" && (testName == "gcr-duplicate" || testName == "gcr-and-other"))
 
         given:
         "Get deployment details used to test integration"
@@ -559,7 +559,7 @@ class ImageScanningTest extends BaseSpecification {
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
-        Assume.assumeFalse(Env.getTestTarget() == "BAT" && (testName == "acr-config-only" || testName == "gcr-auto"))
+        Assume.assumeFalse(Env.getTestTarget() == "bat-test" && (testName == "acr-config-only" || testName == "gcr-auto"))
 
         if (coreImageIntegrationId != null && integration == "quay") {
             // For this test we don't want it
@@ -745,7 +745,8 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
-        Assume.assumeFalse(Env.getTestTarget() == "BAT" && testName =~ /quay registry+scanner with token/)
+        log.info "Target: ${Env.getTestTarget()}, Name: ${testName}"
+        Assume.assumeFalse(Env.getTestTarget() == "bat-test" && testName =~ /quay registry+scanner with token/)
 
         if (coreImageIntegrationId != null) {
             // For this test we don't want it
