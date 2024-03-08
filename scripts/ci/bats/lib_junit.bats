@@ -126,3 +126,21 @@ _EO_DETAILS_
     run grep -c 'more failure details' "${junit_dir}/junit-UNITTest.xml"
     assert_output 3
 }
+
+@test "escapes XML in name - double quote" {
+    run save_junit_failure 'UNITTest' '"A unit test"' "nada"
+    run cat "${junit_dir}/junit-UNITTest.xml"
+    assert_output --partial 'name="&quot;A unit test&quot;"'
+}
+
+@test "escapes XML in name - single quote" {
+    run save_junit_failure 'UNITTest' "'A unit test'" "nada"
+    run cat "${junit_dir}/junit-UNITTest.xml"
+    assert_output --partial 'name="&#39;A unit test&#39;"'
+}
+
+@test "escapes XML in name - <>&" {
+    run save_junit_failure 'UNITTest' "A <unit> &test" "nada"
+    run cat "${junit_dir}/junit-UNITTest.xml"
+    assert_output --partial 'name="A &lt;unit&gt; &amp;test"'
+}
