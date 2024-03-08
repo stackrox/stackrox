@@ -1,7 +1,5 @@
 import static util.Helpers.withRetry
 
-import java.util.concurrent.TimeUnit
-
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.storage.ClusterOuterClass
@@ -37,8 +35,6 @@ import util.SplunkUtil
 import util.SyslogServer
 
 import org.junit.Assume
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -57,10 +53,6 @@ class IntegrationsTest extends BaseSpecification {
     private static final CA_CERT = Env.mustGetInCI("GENERIC_WEBHOOK_SERVER_CA_CONTENTS")
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
-
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)

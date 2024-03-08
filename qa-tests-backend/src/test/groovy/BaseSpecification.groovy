@@ -196,9 +196,13 @@ class BaseSpecification extends Specification {
         globalSetupDone = true
     }
 
+    // `globalTimeout` serves to stop stuck tests hogging clusters. A side
+    // effect is that it can abort tests legitimately taking longer. Reaching
+    // `globalTimeout` is to be avoided because it upsets Spock and generates
+    // confusing junit reports.
     @Rule
     Timeout globalTimeout = new Timeout(
-            isRaceBuild() ? 2500 : 800,
+            isRaceBuild() ? 6000 : 2000,
             TimeUnit.SECONDS
     )
     @Rule

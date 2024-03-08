@@ -21,8 +21,6 @@ import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
@@ -30,10 +28,6 @@ import spock.lang.Tag
 // ROX-14228 skipping tests for 1st release on power & z
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000 + Constants.TEST_FEATURE_TIMEOUT_PAD, TimeUnit.SECONDS)
-
     private static final String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
     private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
