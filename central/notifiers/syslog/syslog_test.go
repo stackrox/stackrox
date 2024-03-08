@@ -35,7 +35,6 @@ func (s *SyslogNotifierTestSuite) SetupTest() {
 
 	s.mockSender = mocks.NewMocksyslogSender(s.mockCtrl)
 	s.mockMetadataGetter = metadataGetterMocks.NewMockMetadataGetter(s.mockCtrl)
-	s.T().Setenv(features.RoxSyslogExtraFields.EnvVar(), "true")
 	s.T().Setenv(features.SyslogNamespaceLabels.EnvVar(), "true")
 }
 
@@ -145,11 +144,6 @@ func (s *SyslogNotifierTestSuite) TestCEFExtensionFromPairs() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateSyslogEmptyExtrafields() {
-	if !features.RoxSyslogExtraFields.Enabled() {
-		s.T().Skip("Skip syslog extra fields tests")
-		s.T().SkipNow()
-	}
-
 	keyVals := []*storage.KeyValuePair{{Key: "", Value: ""}}
 
 	notifier := makeNotifierExtrafields(keyVals)
@@ -159,11 +153,6 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogEmptyExtrafields() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFieldsEmptyList() {
-	if !features.RoxSyslogExtraFields.Enabled() {
-		s.T().Skip("Skip syslog extra fields tests")
-		s.T().SkipNow()
-	}
-
 	keyVals := []*storage.KeyValuePair{}
 	notifier := makeNotifierExtrafields(keyVals)
 
@@ -178,11 +167,6 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFieldsEmptyList() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
-	if !features.RoxSyslogExtraFields.Enabled() {
-		s.T().Skip("Skip syslog extra fields tests")
-		s.T().SkipNow()
-	}
-
 	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
 	notifier := makeNotifierExtrafields(keyVals)
 	sys := notifier.GetSyslog()
@@ -191,11 +175,6 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithExtraFields() {
-	if !features.RoxSyslogExtraFields.Enabled() {
-		s.T().Skip("Skip syslog extra fields tests")
-		s.T().SkipNow()
-	}
-
 	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
 	notifier := makeNotifierExtrafields(keyVals)
 	testAlert := fixtures.GetAlert()
@@ -205,11 +184,6 @@ func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithExtraFields() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithNamespaceLabels() {
-	if !features.SyslogNamespaceLabels.Enabled() {
-		s.T().Skip("Skipping since ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG is not enabled")
-		s.T().SkipNow()
-	}
-
 	cases := []struct {
 		title                  string
 		alert                  *storage.Alert
@@ -258,11 +232,6 @@ func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithNamespaceLabels() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
-	if !features.RoxSyslogExtraFields.Enabled() {
-		s.T().Skip("Skip syslog extra fields tests")
-		s.T().SkipNow()
-	}
-
 	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
 	notifier := makeNotifierExtrafields(keyVals)
 	testAuditMessage := &v1.Audit_Message{
