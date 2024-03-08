@@ -14,8 +14,6 @@ on:
 
 jobs:
   check-crd-compatibility:
-    env:
-      ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
@@ -37,4 +35,4 @@ jobs:
 
     - name: Build crd-schema-checker
       run: |
-       make -C .crd-shema-checker
+       make -C .crd-schema-checker
