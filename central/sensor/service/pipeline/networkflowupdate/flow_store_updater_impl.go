@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
+	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -35,6 +36,18 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 			return err
 		}
 		s.firstUpdateSeen = true
+	}
+
+	// Sensor may have forwarded unknown NetworkEntities that we want to learn
+	for _, newFlow := range newFlows {
+		err := s.learnExternalEntity(ctx, newFlow.GetProps().DstEntity)
+		if err != nil {
+			return err
+		}
+		err = s.learnExternalEntity(ctx, newFlow.GetProps().SrcEntity)
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
@@ -96,4 +109,17 @@ func convertTS(ts timestamp.MicroTS) *types.Timestamp {
 		return nil
 	}
 	return ts.GogoProtobuf()
+}
+
+func (s *flowPersisterImpl) learnExternalEntity(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
+	if !entityInfo.GetExternalSource().GetLearned() {
+		return nil
+	}
+
+	entity := &storage.NetworkEntity{
+		Info: entityInfo,
+		// Scope.ClusterId defaults to "", which is the default cluster
+	}
+
+	return entityDataStore.Singleton().UpdateExternalNetworkEntity(ctx, entity, true)
 }
