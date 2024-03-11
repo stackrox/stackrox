@@ -1,45 +1,73 @@
 {{/*
-  srox.labels $ $objType $objName
+  srox.labels $ $objType $objName [ $labels ]
 
   Format labels for $objType/$objName as YAML.
    */}}
 {{- define "srox.labels" -}}
-{{- $labels := dict -}}
-{{- $_ := include "srox._labels" (append (prepend . $labels) false) -}}
-{{- toYaml $labels -}}
+  {{- $ := index . 0 -}}
+  {{- $objType := index . 1 -}}
+  {{- $objName := index . 2 -}}
+  {{- $labels := dict -}}
+  {{- if gt (len .) 3 -}}
+    {{- $labels = default dict (index . 3) -}}
+  {{- end -}}
+  {{- $resultingLabels := dict -}}
+  {{- $_ := include "srox._labels" (list $ $resultingLabels $labels $objType $objName false) }}
+  {{- toYaml $resultingLabels -}}
 {{- end -}}
 
 {{/*
-  srox.podLabels $ $objType $objName
+  srox.podLabels $ $objType $objName [ $labels ]
 
   Format pod labels for $objType/$objName as YAML.
    */}}
 {{- define "srox.podLabels" -}}
-{{- $labels := dict -}}
-{{- $_ := include "srox._labels" (append (prepend . $labels) true) -}}
-{{- toYaml $labels -}}
+  {{- $ := index . 0 -}}
+  {{- $objType := index . 1 -}}
+  {{- $objName := index . 2 -}}
+  {{- $labels := dict -}}
+  {{- if gt (len .) 3 -}}
+    {{- $labels = default dict (index . 3) -}}
+  {{- end -}}
+  {{- $resultingLabels := dict -}}
+  {{- $_ := include "srox._labels" (list $ $resultingLabels $labels $objType $objName true) }}
+  {{- toYaml $resultingLabels -}}
 {{- end -}}
 
 {{/*
-  srox.annotations $ $objType $objName
+  srox.annotations $ $objType $objName [ $annotations ]
 
   Format annotations for $objType/$objName as YAML.
    */}}
 {{- define "srox.annotations" -}}
-{{- $annotations := dict -}}
-{{- $_ := include "srox._annotations" (append (prepend . $annotations) false) -}}
-{{- toYaml $annotations -}}
+  {{- $ := index . 0 -}}
+  {{- $objType := index . 1 -}}
+  {{- $objName := index . 2 -}}
+  {{- $annotations := dict -}}
+  {{- if gt (len .) 3 -}}
+    {{- $annotations = default dict (index . 3) -}}
+  {{- end -}}
+  {{- $resultingAnnotations := dict -}}
+  {{- $_ := include "srox._annotations" (list $ $resultingAnnotations $annotations $objType $objName false) -}}
+  {{- toYaml $resultingAnnotations -}}
 {{- end -}}
 
 {{/*
-  srox.podAnnotations $ $objType $objName
+  srox.podAnnotations $ $objType $objName [ $annotations ]
 
   Format pod annotations for $objType/$objName as YAML.
    */}}
 {{- define "srox.podAnnotations" -}}
-{{- $annotations := dict -}}
-{{- $_ := include "srox._annotations" (append (prepend . $annotations) true) -}}
-{{- toYaml $annotations -}}
+  {{- $ := index . 0 -}}
+  {{- $objType := index . 1 -}}
+  {{- $objName := index . 2 -}}
+  {{- $annotations := dict -}}
+  {{- if gt (len .) 3 -}}
+    {{- $annotations = default dict (index . 3) -}}
+  {{- end -}}
+  {{- $resultingAnnotations := dict -}}
+  {{- $_ := include "srox._annotations" (list $ $resultingAnnotations $annotations $objType $objName true) -}}
+  {{- toYaml $resultingAnnotations -}}
 {{- end -}}
 
 {{/*
@@ -63,7 +91,7 @@
 {{- end -}}
 
 {{/*
-  srox._annotations $annotations $ $objType $objName $forPod
+  srox._annotations $ $resultingAnnotations $annotations $objType $objName $forPod
 
   Writes all applicable [pod] annotations (including default annotations) for
   $objType/$objName into $annotations. Pod labels are written iff $forPod is true.
@@ -72,20 +100,21 @@
   such that it can be used easier in "srox.annotations".
    */}}
 {{ define "srox._annotations" }}
-{{ $annotations := index . 0 }}
-{{ $ := index . 1  }}
-{{ $objType := index . 2 }}
-{{ $objName := index . 3 }}
-{{ $forPod := index . 4 }}
-{{ $_ := set $annotations "meta.helm.sh/release-namespace" $.Release.Namespace }}
-{{ $_ = set $annotations "meta.helm.sh/release-name" $.Release.Name }}
-{{ $_ = set $annotations "owner" "stackrox" }}
-{{ $_ = set $annotations "email" "support@stackrox.com" }}
+{{ $ := index . 0  }}
+{{ $resultingAnnotations := index . 1 }}
+{{ $annotations := index . 2 }}
+{{ $objType := index . 3 }}
+{{ $objName := index . 4 }}
+{{ $forPod := index . 5 }}
+{{ $_ := set $resultingAnnotations "meta.helm.sh/release-namespace" $.Release.Namespace }}
+{{ $_ = set $resultingAnnotations "meta.helm.sh/release-name" $.Release.Name }}
+{{ $_ = set $resultingAnnotations "owner" "stackrox" }}
+{{ $_ = set $resultingAnnotations "email" "support@stackrox.com" }}
 {{ $metadataNames := list "annotations" }}
 {{ if $forPod }}
   {{ $metadataNames = append $metadataNames "podAnnotations" }}
 {{ end }}
-{{ include "srox._customizeMetadata" (list $ $annotations $objType $objName $metadataNames) }}
+{{ include "srox._customizeMetadata" (list $ $resultingAnnotations $annotations $objType $objName $metadataNames) }}
 {{ end }}
 
 {{/*
@@ -104,7 +133,7 @@
 {{ $objName := index . 3 }}
 {{ $containerName := index . 4 }}
 {{ $metadataNames := list "envVars" }}
-{{ include "srox._customizeMetadata" (list $ $envVars $objType $objName $metadataNames) }}
+{{ include "srox._customizeMetadata" (list $ $envVars dict $objType $objName $metadataNames) }}
 {{ if $containerName }}
   {{ $containerKey := printf "/%s" $containerName }}
   {{ $envVarsForContainer := index $envVars $containerKey }}
@@ -122,7 +151,7 @@
 {{ end }}
 
 {{/*
-  srox._customizeMetadata $ $metadata $objType $objName $metadataNames
+  srox._customizeMetadata $ $resultingMetadata $metadata $objType $objName $metadataNames
 
   Writes custom key/value metadata to $metadata by consulting all sub-dicts with names in
   $metadataNames under the applicable custom metadata locations (._rox.customize,
@@ -133,10 +162,11 @@
    */}}
 {{ define "srox._customizeMetadata" }}
 {{ $ := index . 0 }}
-{{ $metadata := index . 1 }}
-{{ $objType := index . 2 }}
-{{ $objName := index . 3 }}
-{{ $metadataNames := index . 4 }}
+{{ $resultingMetadata := index . 1 }}
+{{ $metadata := index . 2 }}
+{{ $objType := index . 3 }}
+{{ $objName := index . 4 }}
+{{ $metadataNames := index . 5 }}
 
 {{ $overrideDictPaths := list "" (printf "other.%s/*" $objType) (printf "other.%s/%s" $objType $objName) }}
 {{ if has $objType (list "deployment" "daemonset")  }}
@@ -153,7 +183,7 @@
   {{ if $customizeDict }}
     {{ range $metadataName := $metadataNames }}
       {{ $customMetadata := index $customizeDict $metadataName }}
-      {{ include "srox.destructiveMergeOverwrite" (list $metadata $customMetadata) }}
+      {{ include "srox.destructiveMergeOverwrite" (list $resultingMetadata $metadata $customMetadata) }}
     {{ end }}
   {{ end }}
 {{ end }}
@@ -198,3 +228,41 @@
   {{ include "srox.note" (list $ (printf "Global Kubernetes resources are prefixed with '%s'." $._rox.globalPrefix)) }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+  srox.getAnnotationTemplate . $name $out
+
+  Retrieve the annotation template with the given $name and and store it in the provided $out parameter.
+   */}}
+{{ define "srox.getAnnotationTemplate" }}
+  {{ $ := index . 0 }}
+  {{ $name := index . 1 }}
+  {{ $out := index . 2 }}
+  {{ if kindIs "invalid" $._rox._annotationTemplates }}
+    {{ include "srox.fail" "Annotation templates not initialized" }}
+  {{ end }}
+  {{ $annotationTemplates := get $._rox._annotationTemplates $name }}
+  {{ if not $annotationTemplates }}
+    {{ include "srox.fail" (printf "Failed to retrieve annotation template %q" $name) }}
+  {{ end }}
+  {{ range $key, $value := $annotationTemplates }}
+    {{ $_ := set $out $key $value }}
+  {{ end }}
+{{ end }}
+
+{{/*
+  srox.initAnnotationTemplates .
+
+  Load the annotation templates from `internal/annotations` and store them within $._rox.
+  The templates can later be trieved with `srox.getAnnotationTemplates`.
+   */}}
+{{ define "srox.initAnnotationTemplates" }}
+  {{ $ := . }}
+  {{ if kindIs "invalid" $._rox._annotationTemplates }}
+    {{ $_ := set $._rox "_annotationTemplates" dict }}
+  {{ end }}
+  {{ range $fileName, $annotations := $.Files.Glob "internal/annotations/*.yaml" }}
+    {{ $name := trimSuffix ".yaml" (base $fileName) }}
+    {{ $_ := set $._rox._annotationTemplates $name ($annotations | toString | fromYaml) }}
+  {{ end }}
+{{ end }}
