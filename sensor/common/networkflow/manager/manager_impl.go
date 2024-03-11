@@ -3,6 +3,8 @@ package manager
 import (
 	"context"
 	"fmt"
+	"math"
+	"os"
 	"strconv"
 	"time"
 
@@ -249,8 +251,28 @@ func NewManager(
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 	}
 
+	nfBufferSize := env.NetworkFlowBufferSize.IntegerSetting()
+	if nfBufferSize == env.NetworkFlowBufferSize.DefaultValue() {
+		// Only apply autoscaling if this var is not overridden
+
+		// TODO: refactor out to lib
+		if roxLimit := os.Getenv("ROX_MEMLIMIT"); roxLimit != "" {
+			l, err := strconv.ParseInt(roxLimit, 10, 64)
+			if err != nil {
+				log.Errorf("ROX_MEMLIMIT must be an integer in bytes: %v", err)
+			}
+			defaultMemlimit := float64(4194304000)
+			ratio := defaultMemlimit / float64(l) // FIXME: Convert correctly
+
+			log.Errorf("Got effective memlimit of %d. Scaling queues to %f percent", l, ratio*100)
+
+			nfBufferSize = int(math.Round(ratio)) // FIXME: Ensure this is always at least 1
+		}
+
+	}
+
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
+		mgr.sensorUpdates = make(chan *message.ExpiringMessage, nfBufferSize)
 	} else {
 		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
