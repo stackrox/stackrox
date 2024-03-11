@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -95,7 +95,7 @@ func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
 		// parent primary keys start
 		obj.GetName(),
 		obj.GetLength(),
-		pgutils.NilOrTime(obj.GetModifiedTime()),
+		protocompat.NilOrTime(obj.GetModifiedTime()),
 		serialized,
 	}
 
@@ -137,7 +137,7 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		inputRows = append(inputRows, []interface{}{
 			obj.GetName(),
 			obj.GetLength(),
-			pgutils.NilOrTime(obj.GetModifiedTime()),
+			protocompat.NilOrTime(obj.GetModifiedTime()),
 			serialized,
 		})
 

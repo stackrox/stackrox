@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -102,7 +103,7 @@ func insertIntoTestSingleKeyStructs(batch *pgx.Batch, obj *storage.TestSingleKey
 		obj.GetInt64(),
 		obj.GetFloat(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
-		pgutils.NilOrTime(obj.GetTimestamp()),
+		protocompat.NilOrTime(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
 		serialized,
@@ -160,7 +161,7 @@ func copyFromTestSingleKeyStructs(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetInt64(),
 			obj.GetFloat(),
 			pgutils.EmptyOrMap(obj.GetLabels()),
-			pgutils.NilOrTime(obj.GetTimestamp()),
+			protocompat.NilOrTime(obj.GetTimestamp()),
 			obj.GetEnum(),
 			obj.GetEnums(),
 			serialized,

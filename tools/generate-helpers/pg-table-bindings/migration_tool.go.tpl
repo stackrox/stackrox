@@ -1,7 +1,7 @@
 {{- define "convertField" }}
     {{- $field := . }}
     {{- if eq $field.DataType "datetime" -}}
-    pgutils.NilOrTime({{$field.Getter "obj"}}),
+    protocompat.NilOrTime({{$field.Getter "obj"}}),
     {{- else -}}{{if eq $field.DataType "stringarray" -}}
     pq.Array({{$field.Getter "obj"}}).(*pq.StringArray),
     {{- else -}}{{if eq $field.DataType "enumarray" -}}
@@ -52,6 +52,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 {{- template "convertProtoToModel" .Schema }}

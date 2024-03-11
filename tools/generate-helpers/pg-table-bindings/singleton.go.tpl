@@ -23,6 +23,7 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
+    "github.com/stackrox/rox/pkg/protocompat"
     "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
@@ -82,7 +83,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgr
         // parent primary keys start
         {{- range $field := $schema.DBColumnFields -}}
         {{- if eq $field.DataType "datetime" }}
-        pgutils.NilOrTime({{$field.Getter "obj"}}),
+        protocompat.NilOrTime({{$field.Getter "obj"}}),
         {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
         {{- else }}
