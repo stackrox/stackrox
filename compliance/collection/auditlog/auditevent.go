@@ -79,7 +79,7 @@ func (e *auditEvent) parseTimestamp(timestamp string) (*types.Timestamp, error) 
 	if err != nil {
 		return nil, err
 	}
-	protoTime, err := types.TimestampProto(t)
+	protoTime, err := protocompat.ConvertTimeToTimestampOrError(t)
 	if err != nil {
 		return nil, err
 	}

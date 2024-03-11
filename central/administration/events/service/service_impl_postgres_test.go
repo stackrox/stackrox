@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/administration/events/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -51,13 +51,13 @@ func (s *servicePostgresTestSuite) TearDownTest() {
 }
 
 func (s *servicePostgresTestSuite) TestCount() {
-	fromBeforeNow, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
+	fromBeforeNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
 	s.Require().NoError(err)
-	fromAfterNow, err := types.TimestampProto(time.Now().Add(1 * time.Hour))
+	fromAfterNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(1 * time.Hour))
 	s.Require().NoError(err)
-	untilBeforeNow, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
+	untilBeforeNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
 	s.Require().NoError(err)
-	untilAfterNow, err := types.TimestampProto(time.Now().Add(1 * time.Hour))
+	untilAfterNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(1 * time.Hour))
 	s.Require().NoError(err)
 
 	s.addEvents(50)

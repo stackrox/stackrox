@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -62,7 +62,7 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		}
 	}
 
-	sinceTs, err := types.TimestampProto(since)
+	sinceTs, err := protocompat.ConvertTimeToTimestampOrError(since)
 	if err != nil {
 		return errors.Wrap(err, "could not convert since timestamp")
 	}

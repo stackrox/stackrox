@@ -251,7 +251,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
 }
 
 func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
-	modifiedTime, err := types.TimestampProto(modTime)
+	modifiedTime, err := protocompat.ConvertTimeToTimestampOrError(modTime)
 	s.Require().NoError(err)
 	blob := &storage.Blob{
 		Name:         offlineScannerDefinitionBlobName,

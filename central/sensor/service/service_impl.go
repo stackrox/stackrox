@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/hashicorp/go-multierror"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -169,7 +169,7 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 	var multiErr error
 
 	if !notAfter.IsZero() {
-		expiryTimestamp, err := types.TimestampProto(notAfter)
+		expiryTimestamp, err := protocompat.ConvertTimeToTimestampOrError(notAfter)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		} else {
@@ -177,7 +177,7 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 		}
 	}
 	if !notBefore.IsZero() {
-		notBeforeTimestamp, err := types.TimestampProto(notBefore)
+		notBeforeTimestamp, err := protocompat.ConvertTimeToTimestampOrError(notBefore)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		} else {

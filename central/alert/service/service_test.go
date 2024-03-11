@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alert/mappings"
@@ -915,7 +914,7 @@ func (s *patchAlertTests) TearDownTest() {
 func (s *patchAlertTests) TestSnoozeAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	snoozeTill, err := types.TimestampProto(time.Now().Add(1 * time.Hour))
+	snoozeTill, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(1 * time.Hour))
 	s.NoError(err)
 	fakeAlert.SnoozeTill = snoozeTill
 	s.storage.EXPECT().UpsertAlert(gomock.Any(), fakeAlert).Return(nil)
@@ -932,7 +931,7 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
 
-	snoozeTill, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
+	snoozeTill, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
 	s.EqualError(err, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg).Error())

@@ -3,11 +3,11 @@ package resources
 import (
 	"sort"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protocompat"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -244,7 +244,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 	if credentials == nil {
 		return nil
 	}
-	expiresAt, err := types.TimestampProto(credentials.ExpirestAt)
+	expiresAt, err := protocompat.ConvertTimeToTimestampOrError(credentials.ExpirestAt)
 	if err != nil {
 		log.Error("ignoring invalid registry credentials: failed to parse timestamp")
 		return nil
@@ -334,7 +334,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 		return event
 	}
 
-	started, err := types.TimestampProto(k8sPod.GetCreationTimestamp().Time)
+	started, err := protocompat.ConvertTimeToTimestampOrError(k8sPod.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Errorf("converting start time from Kubernetes (%v) to proto: %v", k8sPod.GetCreationTimestamp().Time, err)
 	}

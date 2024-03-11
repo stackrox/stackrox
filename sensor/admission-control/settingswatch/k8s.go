@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -82,7 +81,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse timestamp %q from configmap", timestampStr)
 	}
-	tsProto, err := types.TimestampProto(timestamp)
+	tsProto, err := protocompat.ConvertTimeToTimestampOrError(timestamp)
 	if err != nil {
 		return nil, errors.Wrap(err, "timestamp in configmap is not valid")
 	}

@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	gogoProto "github.com/gogo/protobuf/types"
 	accountsmgmtv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,22 +20,22 @@ func TestMapToDiscoveredClusters(t *testing.T) {
 
 	cluster1, err := time.Parse(time.RFC3339, "2024-02-13T21:34:35.11432Z")
 	require.NoError(t, err)
-	cluster1TS, err := gogoProto.TimestampProto(cluster1)
+	cluster1TS, err := protocompat.ConvertTimeToTimestampOrError(cluster1)
 	require.NoError(t, err)
 
 	cluster2, err := time.Parse(time.RFC3339, "2024-02-13T21:34:03.763759Z")
 	require.NoError(t, err)
-	cluster2TS, err := gogoProto.TimestampProto(cluster2)
+	cluster2TS, err := protocompat.ConvertTimeToTimestampOrError(cluster2)
 	require.NoError(t, err)
 
 	cluster3, err := time.Parse(time.RFC3339, "2024-02-13T21:30:57.000508Z")
 	require.NoError(t, err)
-	cluster3TS, err := gogoProto.TimestampProto(cluster3)
+	cluster3TS, err := protocompat.ConvertTimeToTimestampOrError(cluster3)
 	require.NoError(t, err)
 
 	cluster4, err := time.Parse(time.RFC3339, "2024-02-13T21:28:54.916088Z")
 	require.NoError(t, err)
-	cluster4TS, err := gogoProto.TimestampProto(cluster4)
+	cluster4TS, err := protocompat.ConvertTimeToTimestampOrError(cluster4)
 	require.NoError(t, err)
 
 	expectedClusters := []*discoveredclusters.DiscoveredCluster{

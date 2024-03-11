@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -17,6 +16,7 @@ import (
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -78,9 +78,9 @@ func testDeployments() []*storage.Deployment {
 }
 
 func testImages() []*storage.Image {
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	return []*storage.Image{
 		{
@@ -277,9 +277,9 @@ func testCluster() []*storage.Cluster {
 
 func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 	cveIds := []string{"clusterCve1", "clusterCve2", "clusterCve3", "clusterCve4", "clusterCve5"}
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	return []converter.ClusterCVEParts{
 		{
@@ -428,9 +428,9 @@ func testImagesWithOperatingSystems() []*storage.Image {
 }
 
 func testNodes() []*storage.Node {
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	return []*storage.Node{
 		{
