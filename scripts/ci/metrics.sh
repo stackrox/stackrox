@@ -177,7 +177,7 @@ LIMIT
     }
 
     local body
-    if [[ -s "${data_file}" ]]; then
+    if [[ $(cat "${data_file}") != "[]" ]]; then
         jq < "${data_file}"
         # shellcheck disable=SC2016
         body='{"blocks":[
