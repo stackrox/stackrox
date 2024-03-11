@@ -41,7 +41,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_A =
             createAndRegisterDeployment()
                     .setName("deployment-a")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/more:0.3")
                     .setCapabilities(["NET_ADMIN", "SYSLOG"], ["IPC_LOCK", "WAKE_ALARM"])
                     .addLimits("cpu", "0.5")
                     .addRequest("cpu", "0.25")
@@ -111,7 +111,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_B =
             createAndRegisterDeployment()
                     .setName("deployment-b")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/most:0.19")
                     .setCapabilities(["NET_ADMIN"], ["IPC_LOCK"])
                     .addLimits("cpu", "1")
                     .addRequest("cpu", "0.5")
@@ -183,7 +183,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_C =
             createAndRegisterDeployment()
                     .setName("deployment-c")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/alpine:0.6")
                     .addAnnotation("im-a-key", "with a different value")
                     .addAnnotation("another-key", "and a value")
                     .addLabel("im-a-key", "with_a_different_value")
@@ -550,7 +550,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private NO_IMAGE_REMOTE = setPolicyFieldANDValues(
             BASE_POLICY.clone().setName("AAA_NO_IMAGE_REMOTE"),
             "Image Remote",
-            ["stackrox-ci/qa/trigger-policy-violations/more"]
+            ["acs-san-stackroxci/qa/trigger-policy-violations/more"]
     )
 
     // "Image Tag"
