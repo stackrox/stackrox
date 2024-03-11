@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
-
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
@@ -12,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 // Refer to v1.AuthMachineToMachineConfig for a more detailed doc.
 // Next tag: 6.
 message AuthMachineToMachineConfig {
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
 
   enum Type {
     GENERIC = 0;
@@ -25,11 +23,11 @@ message AuthMachineToMachineConfig {
   message Mapping {
     string key = 1;
     string value_expression = 2;
-    string role = 3 [(gogoproto.moretags) = 'sql:"fk(Role:name),restrict-delete"'];
+    string role = 3; // @gotags: sql:"fk(Role:name),restrict-delete"
   }
   repeated Mapping mappings = 4;
 
   // The issuer is related to an ID token's issuer.
   // Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
-  string issuer = 5 [(gogoproto.moretags) = 'sql:"unique"'];
+  string issuer = 5; // @gotags: sql:"unique"
 }

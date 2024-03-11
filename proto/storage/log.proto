@@ -2,14 +2,13 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 message LogImbue {
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-  google.protobuf.Timestamp timestamp = 2 [(gogoproto.moretags) = 'search:"Log Imbue Creation Time,hidden"'];
+  string id = 1; // @gotags: sql:"pk"
+  google.protobuf.Timestamp timestamp = 2; // @gotags: search:"Log Imbue Creation Time,hidden"
   bytes log = 3;
 }
