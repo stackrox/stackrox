@@ -518,8 +518,9 @@ docker-push-index: ## Push docker image with the index.
 # To properly provided solutions that supports more than one platform you should use this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 DOCKER_BUILDX_ARGS ?=
+CI ?= false
 
-ifneq (CI, true) # set default platforms for non-ci environment
+ifneq ($(CI),true) # set default platforms for non-ci environment
 	PLATFORMS = linux/$(shell go env GOARCH)
 	DOCKER_BUILDX_ARGS += --load
 endif
