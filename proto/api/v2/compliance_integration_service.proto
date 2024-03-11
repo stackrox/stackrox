@@ -8,7 +8,7 @@ import weak "google/api/annotations.proto";
 option go_package = "v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-// Next Tag: 7
+// Next Tag: 8
 message ComplianceIntegration {
   string id = 1;
   string version = 2;
@@ -17,6 +17,7 @@ message ComplianceIntegration {
   string namespace = 5;
   // Collection of errors that occurred while trying to obtain compliance operator health info.
   repeated string status_errors = 6;
+  bool operator_installed = 7;
 }
 
 message ComplianceIntegrationStatusRequest {

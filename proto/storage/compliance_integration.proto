@@ -5,7 +5,7 @@ package storage;
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next Tag: 6
+// Next Tag: 7
 message ComplianceIntegration {
   string id = 1; // @gotags: sql:"pk,type(uuid)"
   string version = 2; // @gotags: search:"Compliance Operator Version,hidden,store"
@@ -13,4 +13,5 @@ message ComplianceIntegration {
   string compliance_namespace = 4;
   // Collection of errors that occurred while trying to obtain compliance health info.
   repeated string status_errors = 5;
+  bool operator_installed = 6;
 }
