@@ -3,7 +3,6 @@ package m64to65
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/protocompat"

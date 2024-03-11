@@ -9,7 +9,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/jsonutil"

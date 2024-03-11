@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"

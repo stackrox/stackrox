@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	ctTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/pkg/errors"
