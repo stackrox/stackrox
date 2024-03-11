@@ -678,6 +678,7 @@ class Enforcement extends BaseSpecification {
                 APT_GET_POLICY
     }
 
+    @Tag("BAT")
     @Tag("PolicyEnforcement")
     def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of

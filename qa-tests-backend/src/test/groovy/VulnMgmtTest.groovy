@@ -6,6 +6,7 @@ import services.ImageService
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("BAT")
 @Tag("PZ")
 class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE_DIGEST =

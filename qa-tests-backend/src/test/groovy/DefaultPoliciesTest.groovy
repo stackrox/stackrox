@@ -403,8 +403,6 @@ class DefaultPoliciesTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     def "Verify risk factors on struts deployment: #riskFactor"() {
-        Assume.assumeFalse(Env.getTestTarget() == "BAT" && riskFactor == "Number of Components in Image")
-
         given:
         "Check Feature Flags"
         featureDependencies.each {
