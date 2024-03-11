@@ -22,7 +22,6 @@ var (
 //go:generate mockgen-wrapper
 type Handler interface {
 	common.SensorComponent
-	ProcessReprocessDeployments(*central.ReprocessDeployment) error
 	ProcessInvalidateImageCache(*central.InvalidateImageCache) error
 }
 
@@ -60,18 +59,6 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
-}
-
-func (h *handlerImpl) ProcessReprocessDeployments(req *central.ReprocessDeployment) error {
-	log.Debug("Received request to reprocess deployments from Central")
-
-	select {
-	case <-h.stopSig.Done():
-		return errors.Wrap(h.stopSig.Err(), "could not fulfill re-process deployment(s) request")
-	default:
-		go h.detector.ReprocessDeployments(req.GetDeploymentIds()...)
-	}
 	return nil
 }
 

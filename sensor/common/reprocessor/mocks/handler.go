@@ -96,20 +96,6 @@ func (mr *MockHandlerMockRecorder) ProcessMessage(msg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), msg)
 }
 
-// ProcessReprocessDeployments mocks base method.
-func (m *MockHandler) ProcessReprocessDeployments(arg0 *central.ReprocessDeployment) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessReprocessDeployments", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessReprocessDeployments indicates an expected call of ProcessReprocessDeployments.
-func (mr *MockHandlerMockRecorder) ProcessReprocessDeployments(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReprocessDeployments", reflect.TypeOf((*MockHandler)(nil).ProcessReprocessDeployments), arg0)
-}
-
 // ResponsesC mocks base method.
 func (m *MockHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()

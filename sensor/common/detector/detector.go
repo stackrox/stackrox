@@ -60,8 +60,7 @@ type Detector interface {
 	common.SensorComponent
 	common.CentralGRPCConnAware
 
-	ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction)
-	ReprocessDeployments(deploymentIDs ...string)
+	ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction, force bool)
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
@@ -284,7 +283,8 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 	// Take deployment lock and flush
 	concurrency.WithLock(&d.deploymentDetectionLock, func() {
 		for _, deployment := range d.deploymentStore.GetAll() {
-			d.processDeploymentNoLock(ctx, deployment, central.ResourceAction_UPDATE_RESOURCE)
+			// Since the deduper is reset above, we do not need to force removal again.
+			d.processDeploymentNoLock(ctx, deployment, central.ResourceAction_UPDATE_RESOURCE, false)
 		}
 	})
 
@@ -467,7 +467,7 @@ func (d *detectorImpl) markDeploymentForProcessing(id string) {
 	}
 }
 
-func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
+func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction, force bool) {
 	// Don't  process the deployment if the context has already expired
 	select {
 	case <-ctx.Done():
@@ -477,10 +477,10 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
-	d.processDeploymentNoLock(ctx, deployment, action)
+	d.processDeploymentNoLock(ctx, deployment, action, force)
 }
 
-func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
+func (d *detectorImpl) RemoveDeploymentsFromDeduper(deploymentIDs ...string) {
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
 
@@ -494,7 +494,7 @@ func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment)
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(networkPolicies)
 }
 
-func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
+func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction, force bool) {
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.baselineEval.RemoveDeployment(deployment.GetId())
@@ -520,7 +520,9 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
-		if !d.deduper.needsProcessing(deployment) {
+		if force {
+			d.deduper.removeDeployment(deployment.GetId())
+		} else if !d.deduper.needsProcessing(deployment) {
 			metrics.IncrementDetectorCacheHit()
 			return
 		}
