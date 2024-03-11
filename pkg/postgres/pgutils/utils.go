@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
@@ -50,11 +49,6 @@ func ConvertEnumSliceToIntArray[T ~int32](enumSlice []T) []int32 {
 		resultSlice = append(resultSlice, int32(v))
 	}
 	return resultSlice
-}
-
-// NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres
-func NilOrTime(t *types.Timestamp) *time.Time {
-	return protocompat.NilOrTime(t)
 }
 
 // NilOrNow allows for a proto timestamp to be stored a timestamp type in Postgres

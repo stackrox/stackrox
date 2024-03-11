@@ -15,6 +15,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -76,7 +77,7 @@ func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.Token
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		pgutils.NilOrTime(obj.GetExpiration()),
+		protocompat.NilOrTime(obj.GetExpiration()),
 		obj.GetRevoked(),
 		serialized,
 	}
@@ -123,7 +124,7 @@ func (s *storeImpl) copyFromAPITokens(ctx context.Context, tx *postgres.Tx, objs
 
 			obj.GetId(),
 
-			pgutils.NilOrTime(obj.GetExpiration()),
+			protocompat.NilOrTime(obj.GetExpiration()),
 
 			obj.GetRevoked(),
 
