@@ -7,10 +7,10 @@ import (
 	"time"
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
-	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +50,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 
 func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
 
 	tests := map[string]struct {
@@ -606,7 +606,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability

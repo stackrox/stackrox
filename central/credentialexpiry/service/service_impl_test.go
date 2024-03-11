@@ -70,7 +70,7 @@ func TestEnsureTLSAndReturnAddr(t *testing.T) {
 
 func TestGetScannerV4CertExpiry(t *testing.T) {
 	expiryCur := protocompat.TimestampNow()
-	expiryOld, err := types.TimestampProto(time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC))
+	expiryOld, err := protocompat.ConvertTimeToTimestampOrError(time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC))
 	require.NoError(t, err)
 
 	successExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{

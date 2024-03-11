@@ -573,7 +573,7 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
 	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
-	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
+	cutOffTime, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
 	if err != nil {
 		log.Errorf("Failed to determine downloadable report retention %v", err)
 		return

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/administration/usage/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -97,7 +97,7 @@ func (suite *UsageDataStoreTestSuite) TestWalk() {
 	first := time.Now()
 	last := first
 	for i := 0; i < N; i++ {
-		ts, _ := types.TimestampProto(last)
+		ts, _ := protocompat.ConvertTimeToTimestampOrError(last)
 		err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{
 			Timestamp:   ts,
 			NumNodes:    int64(i),
@@ -131,7 +131,7 @@ func (suite *UsageDataStoreTestSuite) TestGetMax() {
 	first := time.Now()
 	last := first
 	for i := 0; i < N; i++ {
-		ts, _ := types.TimestampProto(last)
+		ts, _ := protocompat.ConvertTimeToTimestampOrError(last)
 		err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{
 			Timestamp:   ts,
 			NumNodes:    int64(i),

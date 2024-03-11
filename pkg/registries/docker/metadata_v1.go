@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	instructionTypes "github.com/stackrox/rox/pkg/registries/types"
 )
@@ -47,7 +47,7 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 	if img.Created != nil {
 		created = *img.Created
 	}
-	protoTS, err := types.TimestampProto(created)
+	protoTS, err := protocompat.ConvertTimeToTimestampOrError(created)
 	if err != nil {
 		log.Error(err)
 	}

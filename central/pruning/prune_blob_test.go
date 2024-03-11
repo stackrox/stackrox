@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -131,7 +131,7 @@ func TestDownloadableReportPruning(t *testing.T) {
 			}
 			var existingBlobs []*storage.Blob
 			for _, bt := range c.existing {
-				modTime, err := types.TimestampProto(now.Add(-time.Duration(bt.modTimeMinusDays) * 24 * time.Hour))
+				modTime, err := protocompat.ConvertTimeToTimestampOrError(now.Add(-time.Duration(bt.modTimeMinusDays) * 24 * time.Hour))
 				require.NoError(t, err)
 				existingBlobs = append(existingBlobs, &storage.Blob{
 					Name:         bt.name,
