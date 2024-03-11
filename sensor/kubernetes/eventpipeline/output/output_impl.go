@@ -18,7 +18,8 @@ type outputQueueImpl struct {
 	stopSig      concurrency.Signal
 }
 
-// Send a ResourceEvent message to the inner queue
+// Send a ResourceEvent to outside the pipeline. This will trigger alert detection if component.ResourceEvent
+// has any DetectorMessages (component.DeploytimeDetectionRequest).
 func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 	q.innerQueue <- msg
 	metrics.IncOutputChannelSize()

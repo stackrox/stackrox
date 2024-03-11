@@ -303,7 +303,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
-	detectionObject := []component.DetectorMessage{
+	detectionObject := []component.DeploytimeDetectionRequest{
 		{
 			Object: &storage.Deployment{Id: "1234"},
 			Action: central.ResourceAction_UPDATE_RESOURCE,
@@ -334,7 +334,7 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	// All events are merged in the same `ForwardedMessages` in the end, and passed to the
 	// output component to be sent to central.
 	testCases := map[string]struct {
-		resolver                    resolver.DeploymentReference
+		resolver                    resolver.DeploymentResolution
 		forwardedMessages           []*central.SensorEvent
 		expectedDeploymentProcessed int
 		expectedEvents              int
@@ -591,7 +591,7 @@ func (m *deploymentMatcher) String() string {
 }
 
 type detectionObjectMatcher struct {
-	expected []component.DetectorMessage
+	expected []component.DeploytimeDetectionRequest
 	error    string
 }
 
