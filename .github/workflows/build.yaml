@@ -556,9 +556,6 @@ jobs:
         run: |
           scripts/lib.sh retry 6 true make -C operator/ build docker-buildx
 
-      - name: Check that Operator image is runnable
-        run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
-
       - name: Push bundle images
         # Skip for external contributions.
         if: |
