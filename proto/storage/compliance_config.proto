@@ -2,12 +2,10 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
-
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 message ComplianceConfig {
-  string standard_id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string standard_id = 1; // @gotags: sql:"pk"
   bool hideScanResults = 2;
 }
