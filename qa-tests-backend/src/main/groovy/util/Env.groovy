@@ -267,6 +267,14 @@ class Env {
         return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
     }
 
+    static String mustGetGCRServiceAccount() {
+        return mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER_V2")
+    }
+
+    static String mustGetGCRNoAccessServiceAccount() {
+        return mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2")
+    }
+
     static String mustGetPagerdutyToken() {
         return mustGet("PAGERDUTY_TOKEN")
     }
