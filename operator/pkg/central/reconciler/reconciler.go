@@ -62,7 +62,10 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		translation.WithEnrichment(
 			centralTranslation.New(mgr.GetClient()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
-			legacy.NewImagePullSecretReferenceInjector(mgr.GetClient(), "imagePullSecrets",
+			// Using uncached APIReader since this is reading secrets not
+			// owned by the operator so we can't guarantee labels for cache
+			// are set propperly
+			legacy.NewImagePullSecretReferenceInjector(mgr.GetAPIReader(), "imagePullSecrets",
 				"stackrox", "stackrox-scanner", "stackrox-scanner-v4")),
 		opts...,
 	)

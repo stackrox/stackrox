@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/strings/slices"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -105,29 +105,38 @@ func getUseExisting(vals chartutil.Values, key string) ([]string, error) {
 
 func (i *injector) enrich(ctx context.Context, vals chartutil.Values, key string, secretNames []string, namespaceName string) (chartutil.Values, error) {
 	var secretNamesToAdd []string
-	for _, secretName := range secretNames {
-		if ok, err := i.secretExists(ctx, secretName, namespaceName); err != nil {
-			return nil, err
-		} else if ok {
-			secretNamesToAdd = append(secretNamesToAdd, secretName)
+
+	existingSecretNames, err := i.getExistingSecretNames(ctx, namespaceName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, name := range existingSecretNames {
+		if slices.Contains(secretNames, name) {
+			secretNamesToAdd = append(secretNamesToAdd, name)
 		}
 	}
+
 	if len(secretNamesToAdd) == 0 {
 		return vals, nil
 	}
 	return appendUseExisting(vals, key, secretNamesToAdd)
 }
 
-func (i *injector) secretExists(ctx context.Context, secretName, namespaceName string) (bool, error) {
-	key := ctrlClient.ObjectKey{Namespace: namespaceName, Name: secretName}
-	secret := &corev1.Secret{}
-	if err := i.client.Get(ctx, key, secret); err != nil {
-		if apiErrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("failed to check existence of secret %q in ns %q: %w", secretName, namespaceName, err)
+func (i *injector) getExistingSecretNames(ctx context.Context, namespaceName string) ([]string, error) {
+	existingSecrets := corev1.SecretList{}
+
+	err := i.client.List(ctx, &existingSecrets, &ctrlClient.ListOptions{Namespace: namespaceName})
+	if err != nil {
+		return []string{}, fmt.Errorf("failed to list secrets in namespace: %s: %w", namespaceName, err)
 	}
-	return true, nil
+
+	secretNames := make([]string, len(existingSecrets.Items))
+	for i, secret := range existingSecrets.Items {
+		secretNames[i] = secret.Name
+	}
+
+	return secretNames, nil
 }
 
 // appendUseExisting creates or appends secretNamesToAdd to vals[key]["useExisting"] slice, with error checking.

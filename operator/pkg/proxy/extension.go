@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -99,6 +100,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: obj.GetNamespace(),
+				Labels:    commonLabels.DefaultLabels(),
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(obj, obj.GetObjectKind().GroupVersionKind()),
 				},
@@ -121,7 +123,24 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 	secret.StringData = proxyEnvVars
 
 	if secret.ResourceVersion == "" {
-		return client.Create(ctx, secret)
+		// secret was not returned by cached client
+		if err := client.Create(ctx, secret); err != nil {
+			if !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
+			// the secret exists but was not in the cache, try to get and update it using
+			// an unstructured object which doesn't use the default cache
+			existingSecret, err := utils.GetSecretWithUnstrucuteredObj(ctx, secret.Name, secret.Namespace, client)
+			if err != nil {
+				return errors.Wrap(err, "getting secret with unstructured object")
+			}
+
+			// don't pass to client.Update if existingSecret is not owned
+			if !metav1.IsControlledBy(existingSecret, obj) {
+				return nil
+			}
+		}
 	}
+
 	return client.Update(ctx, secret)
 }

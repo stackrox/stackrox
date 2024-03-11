@@ -47,8 +47,11 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
+	// Using uncached APIReader since this is reading secrets not
+	// owned by the operator so we can't guarantee labels for cache
+	// are set propperly
 	pullSecretRefInjector := legacy.NewImagePullSecretReferenceInjector(
-		mgr.GetClient(), "imagePullSecrets",
+		mgr.GetAPIReader(), "imagePullSecrets",
 		"secured-cluster-services-main", "stackrox", "stackrox-scanner", "stackrox-scanner-v4")
 	pullSecretRefInjector = pullSecretRefInjector.WithExtraImagePullSecrets(
 		"mainImagePullSecrets", "secured-cluster-services-main", "stackrox")
@@ -59,7 +62,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		mgr, platform.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
 		translation.WithEnrichment(
-			scTranslation.New(mgr.GetClient()),
+			scTranslation.New(mgr.GetClient(), mgr.GetAPIReader()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			pullSecretRefInjector,
 		),

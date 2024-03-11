@@ -12,10 +12,10 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/renderer"
-	coreV1 "k8s.io/api/core/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -60,9 +60,10 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret(ct
 
 	r.passwordSecretName = r.centralObj.Spec.Central.AdminPasswordSecret.Name
 
-	passwordSecret := &coreV1.Secret{}
-	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
-	if err := r.Client().Get(ctx, key, passwordSecret); err != nil {
+	// using unstructured client to call API server instead of cache, because we can't
+	// ensure that a user provided secret matches the selectors configured for the cache
+	passwordSecret, err := utils.GetSecretWithUnstrucuteredObj(ctx, r.passwordSecretName, r.centralObj.GetNamespace(), r.Client())
+	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
 
