@@ -50,7 +50,7 @@ export function isVulnMgmtLocalStorage(value: unknown): value is VulnMgmtLocalSt
     }
 }
 
-export const detailsTabValues = ['Vulnerabilities', 'Resources'] as const;
+export const detailsTabValues = ['Vulnerabilities', 'Details', 'Resources'] as const;
 
 export type DetailsTab = (typeof detailsTabValues)[number];
 
