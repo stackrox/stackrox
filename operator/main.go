@@ -45,7 +45,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -167,7 +167,7 @@ func run() error {
 			// Limit caching of Secret and ConfigMaps to labeled
 			// resources because those are usually the objects
 			// with highest impact on memory consumption
-			ByObject: map[client.Object]cache.ByObject{
+			ByObject: map[ctrlClient.Object]cache.ByObject{
 				&coreV1.Secret{}: {
 					Label: cacheLabelSelector,
 				},
