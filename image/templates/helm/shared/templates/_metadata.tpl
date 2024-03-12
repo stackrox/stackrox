@@ -243,7 +243,7 @@
   {{ end }}
   {{ $annotationTemplates := get $._rox._annotationTemplates $name }}
   {{ if not $annotationTemplates }}
-    {{ include "srox.fail" (printf "Failed to retrieve annotation template %q" $name) }}
+    {{ include "srox.fail" (printf "Annotation template %q does not exist in internal/annotations/" $name) }}
   {{ end }}
   {{ range $key, $value := $annotationTemplates }}
     {{ $_ := set $out $key $value }}
