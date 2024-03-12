@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/views"
@@ -20,6 +19,7 @@ import (
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -751,7 +751,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					continue
 				}
 
-				vulnTime, _ := types.TimestampFromProto(vuln.GetFirstSystemOccurrence())
+				vulnTime, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetFirstSystemOccurrence())
 				vulnTime = vulnTime.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
