@@ -1,5 +1,5 @@
 {{/*
-  srox._labels $ $resultingLabels $labels $objType $objName $forPod
+  srox._labels $ $labels $extraLabels $objType $objName $forPod
 
   Writes all applicable [pod] labels (including default labels) for $objType/$objName
   into $labels. Pod labels are written iff $forPod is true.
@@ -9,17 +9,17 @@
    */}}
 {{ define "srox._labels" }}
 {{ $ := index . 0  }}
-{{ $resultingLabels := index . 1 }}
-{{ $labels := index . 2 }}
+{{ $labels := index . 1 }}
+{{ $extraLabels := index . 2 }}
 {{ $objType := index . 3 }}
 {{ $objName := index . 4 }}
 {{ $forPod := index . 5 }}
-{{ $_ := set $resultingLabels "app.kubernetes.io/name" "stackrox" }}
-{{ $_ = set $resultingLabels "app.kubernetes.io/managed-by" $.Release.Service }}
-{{ $_ = set $resultingLabels "helm.sh/chart" (printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_")) }}
-{{ $_ = set $resultingLabels "app.kubernetes.io/instance" $.Release.Name }}
-{{ $_ = set $resultingLabels "app.kubernetes.io/version" $.Chart.AppVersion }}
-{{ $_ = set $resultingLabels "app.kubernetes.io/part-of" "stackrox-secured-cluster-services" }}
+{{ $_ := set $labels "app.kubernetes.io/name" "stackrox" }}
+{{ $_ = set $labels "app.kubernetes.io/managed-by" $.Release.Service }}
+{{ $_ = set $labels "helm.sh/chart" (printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_")) }}
+{{ $_ = set $labels "app.kubernetes.io/instance" $.Release.Name }}
+{{ $_ = set $labels "app.kubernetes.io/version" $.Chart.AppVersion }}
+{{ $_ = set $labels "app.kubernetes.io/part-of" "stackrox-secured-cluster-services" }}
 {{ $component := regexReplaceAll "^.*/(admission-control|collector|sensor)[^/]*\\.yaml" $.Template.Name "${1}" }}
 {{ if not (contains "/" $component) }}
   {{ $_ = set $labels "app.kubernetes.io/component" $component }}
@@ -28,5 +28,5 @@
 {{ if $forPod }}
   {{ $metadataNames = append $metadataNames "podLabels" }}
 {{ end }}
-{{ include "srox._customizeMetadata" (list $ $resultingLabels $labels $objType $objName $metadataNames) }}
+{{ include "srox._customizeMetadata" (list $ $labels $extraLabels $objType $objName $metadataNames) }}
 {{ end }}

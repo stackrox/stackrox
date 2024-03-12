@@ -7,13 +7,13 @@
   {{- $ := index . 0 -}}
   {{- $objType := index . 1 -}}
   {{- $objName := index . 2 -}}
-  {{- $labels := dict -}}
+  {{- $extraLabels := dict -}}
   {{- if gt (len .) 3 -}}
-    {{- $labels = default dict (index . 3) -}}
+    {{- $extraLabels = default dict (index . 3) -}}
   {{- end -}}
-  {{- $resultingLabels := dict -}}
-  {{- $_ := include "srox._labels" (list $ $resultingLabels $labels $objType $objName false) }}
-  {{- toYaml $resultingLabels -}}
+  {{- $labels := dict -}}
+  {{- $_ := include "srox._labels" (list $ $labels $extraLabels $objType $objName false) }}
+  {{- toYaml $labels -}}
 {{- end -}}
 
 {{/*
@@ -25,13 +25,13 @@
   {{- $ := index . 0 -}}
   {{- $objType := index . 1 -}}
   {{- $objName := index . 2 -}}
-  {{- $labels := dict -}}
+  {{- $extraLabels := dict -}}
   {{- if gt (len .) 3 -}}
-    {{- $labels = default dict (index . 3) -}}
+    {{- $extraLabels = default dict (index . 3) -}}
   {{- end -}}
-  {{- $resultingLabels := dict -}}
-  {{- $_ := include "srox._labels" (list $ $resultingLabels $labels $objType $objName true) }}
-  {{- toYaml $resultingLabels -}}
+  {{- $labels := dict -}}
+  {{- $_ := include "srox._labels" (list $ $labels $extraLabels $objType $objName true) }}
+  {{- toYaml $labels -}}
 {{- end -}}
 
 {{/*
@@ -43,13 +43,13 @@
   {{- $ := index . 0 -}}
   {{- $objType := index . 1 -}}
   {{- $objName := index . 2 -}}
-  {{- $annotations := dict -}}
+  {{- $extraAnnotations := dict -}}
   {{- if gt (len .) 3 -}}
-    {{- $annotations = default dict (index . 3) -}}
+    {{- $extraAnnotations = default dict (index . 3) -}}
   {{- end -}}
-  {{- $resultingAnnotations := dict -}}
-  {{- $_ := include "srox._annotations" (list $ $resultingAnnotations $annotations $objType $objName false) -}}
-  {{- toYaml $resultingAnnotations -}}
+  {{- $annotations := dict -}}
+  {{- $_ := include "srox._annotations" (list $ $annotations $extraAnnotations $objType $objName false) -}}
+  {{- toYaml $annotations -}}
 {{- end -}}
 
 {{/*
@@ -61,13 +61,13 @@
   {{- $ := index . 0 -}}
   {{- $objType := index . 1 -}}
   {{- $objName := index . 2 -}}
-  {{- $annotations := dict -}}
+  {{- $extraAnnotations := dict -}}
   {{- if gt (len .) 3 -}}
-    {{- $annotations = default dict (index . 3) -}}
+    {{- $extraAnnotations = default dict (index . 3) -}}
   {{- end -}}
-  {{- $resultingAnnotations := dict -}}
-  {{- $_ := include "srox._annotations" (list $ $resultingAnnotations $annotations $objType $objName true) -}}
-  {{- toYaml $resultingAnnotations -}}
+  {{- $annotations := dict -}}
+  {{- $_ := include "srox._annotations" (list $ $annotations $extraAnnotations $objType $objName true) -}}
+  {{- toYaml $annotations -}}
 {{- end -}}
 
 {{/*
@@ -91,7 +91,7 @@
 {{- end -}}
 
 {{/*
-  srox._annotations $ $resultingAnnotations $annotations $objType $objName $forPod
+  srox._annotations $ $annotations $extraAnnotations $objType $objName $forPod
 
   Writes all applicable [pod] annotations (including default annotations) for
   $objType/$objName into $annotations. Pod labels are written iff $forPod is true.
@@ -101,20 +101,20 @@
    */}}
 {{ define "srox._annotations" }}
 {{ $ := index . 0  }}
-{{ $resultingAnnotations := index . 1 }}
-{{ $annotations := index . 2 }}
+{{ $annotations := index . 1 }}
+{{ $extraAnnotations := index . 2 }}
 {{ $objType := index . 3 }}
 {{ $objName := index . 4 }}
 {{ $forPod := index . 5 }}
-{{ $_ := set $resultingAnnotations "meta.helm.sh/release-namespace" $.Release.Namespace }}
-{{ $_ = set $resultingAnnotations "meta.helm.sh/release-name" $.Release.Name }}
-{{ $_ = set $resultingAnnotations "owner" "stackrox" }}
-{{ $_ = set $resultingAnnotations "email" "support@stackrox.com" }}
+{{ $_ := set $annotations "meta.helm.sh/release-namespace" $.Release.Namespace }}
+{{ $_ = set $annotations "meta.helm.sh/release-name" $.Release.Name }}
+{{ $_ = set $annotations "owner" "stackrox" }}
+{{ $_ = set $annotations "email" "support@stackrox.com" }}
 {{ $metadataNames := list "annotations" }}
 {{ if $forPod }}
   {{ $metadataNames = append $metadataNames "podAnnotations" }}
 {{ end }}
-{{ include "srox._customizeMetadata" (list $ $resultingAnnotations $annotations $objType $objName $metadataNames) }}
+{{ include "srox._customizeMetadata" (list $ $annotations $extraAnnotations $objType $objName $metadataNames) }}
 {{ end }}
 
 {{/*
@@ -151,7 +151,7 @@
 {{ end }}
 
 {{/*
-  srox._customizeMetadata $ $resultingMetadata $metadata $objType $objName $metadataNames
+  srox._customizeMetadata $ $metadata $extraMetadata $objType $objName $metadataNames
 
   Writes custom key/value metadata to $metadata by consulting all sub-dicts with names in
   $metadataNames under the applicable custom metadata locations (._rox.customize,
@@ -162,8 +162,8 @@
    */}}
 {{ define "srox._customizeMetadata" }}
 {{ $ := index . 0 }}
-{{ $resultingMetadata := index . 1 }}
-{{ $metadata := index . 2 }}
+{{ $metadata := index . 1 }}
+{{ $extraMetadata := index . 2 }}
 {{ $objType := index . 3 }}
 {{ $objName := index . 4 }}
 {{ $metadataNames := index . 5 }}
@@ -183,7 +183,7 @@
   {{ if $customizeDict }}
     {{ range $metadataName := $metadataNames }}
       {{ $customMetadata := index $customizeDict $metadataName }}
-      {{ include "srox.destructiveMergeOverwrite" (list $resultingMetadata $metadata $customMetadata) }}
+      {{ include "srox.destructiveMergeOverwrite" (list $metadata $extraMetadata $customMetadata) }}
     {{ end }}
   {{ end }}
 {{ end }}
