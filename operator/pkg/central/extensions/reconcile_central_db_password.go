@@ -10,8 +10,8 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/renderer"
-	coreV1 "k8s.io/api/core/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,8 +39,8 @@ func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client
 
 type reconcileCentralDBPasswordExtensionRun struct {
 	*commonExtensions.SecretReconciliator
-	centralObj *platform.Central
-	password   string
+	centralObj       *platform.Central
+	externalPassword string
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReferencedSecret(ctx context.Context) error {
@@ -50,9 +50,8 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 	passwordSecretName := r.centralObj.Spec.Central.DB.PasswordSecret.Name
 
-	passwordSecret := &coreV1.Secret{}
-	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: passwordSecretName}
-	if err := r.Client().Get(ctx, key, passwordSecret); err != nil {
+	passwordSecret, err := utils.GetSecretWithUnstrucuteredObj(ctx, passwordSecretName, r.centralObj.GetNamespace(), r.Client())
+	if err != nil {
 		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
 	}
 
@@ -61,7 +60,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 		return errors.Wrapf(err, "reading central db password from secret %s", passwordSecretName)
 	}
 
-	r.password = password
+	r.externalPassword = password
 	return nil
 }
 
@@ -102,22 +101,23 @@ func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.S
 	if err != nil {
 		return errors.Wrap(err, "error validating existing secret data")
 	}
-	if r.password != "" && r.password != password {
+	if r.externalPassword != "" && r.externalPassword != password {
 		return errors.New("existing password does not match expected one")
 	}
-	// The following assignment shouldn't have any consequences, as a successful validation should prevent generation
-	// from being invoked, but better safe than sorry (about clobbering a user-set password).
-	r.password = password
+
 	return nil
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword(_ types.SecretDataMap) (types.SecretDataMap, error) {
-	if r.password == "" {
-		r.password = renderer.CreatePassword()
+	var password string
+	if r.externalPassword != "" {
+		password = r.externalPassword
+	} else {
+		password = renderer.CreatePassword()
 	}
 
 	return types.SecretDataMap{
-		centralDBPasswordKey: []byte(r.password),
+		centralDBPasswordKey: []byte(password),
 	}, nil
 }
 
