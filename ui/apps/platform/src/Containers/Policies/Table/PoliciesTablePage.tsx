@@ -28,7 +28,7 @@ import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService'
 import { getSearchOptionsForCategory } from 'services/SearchService';
 import { ListPolicy } from 'types/policy.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -88,7 +88,7 @@ function PoliciesTablePage({
             });
     }
 
-    function fetchPolicies(query: string) {
+    function fetchPolicies(query: string, sortOption: ApiSortOption) {
         setIsLoading(true);
         getPolicies(query)
             .then((data) => {
@@ -121,7 +121,7 @@ function PoliciesTablePage({
         const policyText = pluralize('policy', ids.length);
         return deletePolicies(ids)
             .then(() => {
-                fetchPolicies(query);
+                fetchPolicies(query, sortOption);
                 addToast(`Successfully deleted ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -148,7 +148,7 @@ function PoliciesTablePage({
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, false)
             .then(() => {
-                fetchPolicies(query);
+                fetchPolicies(query, sortOption);
                 addToast(`Successfully enabled ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -160,7 +160,7 @@ function PoliciesTablePage({
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, true)
             .then(() => {
-                fetchPolicies(query);
+                fetchPolicies(query, sortOption);
                 addToast(`Successfully disabled ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -192,8 +192,7 @@ function PoliciesTablePage({
     }, []);
 
     useEffect(() => {
-        fetchPolicies(query);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        fetchPolicies(query, sortOption);
     }, [query, sortOption]);
 
     let pageContent = (
@@ -219,7 +218,7 @@ function PoliciesTablePage({
             <PoliciesTable
                 notifiers={notifiers}
                 policies={policies}
-                fetchPoliciesHandler={() => fetchPolicies(query)}
+                fetchPoliciesHandler={() => fetchPolicies(query, sortOption)}
                 addToast={addToast}
                 hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                 deletePoliciesHandler={deletePoliciesHandler}
@@ -263,7 +262,7 @@ function PoliciesTablePage({
                 cancelModal={() => {
                     setIsImportModalOpen(false);
                 }}
-                fetchPoliciesWithQuery={() => fetchPolicies(query)}
+                fetchPoliciesWithQuery={() => fetchPolicies(query, sortOption)}
             />
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (

@@ -98,8 +98,6 @@ function PoliciesTable({
 
     const [enableDisableType, setEnableDisableType] = useState<EnableDisableType | null>(null);
 
-    // index of the currently active column
-    // sort direction of the currently active column
     // Handle Bulk Actions dropdown state.
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     // For sorting data client side
