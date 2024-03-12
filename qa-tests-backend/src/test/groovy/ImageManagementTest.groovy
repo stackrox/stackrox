@@ -109,7 +109,7 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        qaImageTag             | expected         | flaku
+        qaImageTag             | expected         | flaky
         "nginx-1.19-alpine"    | "alpine:v3.13"   | true
         "busybox-1-30"         | "busybox:1.30.1" | true
         "centos7-base"         | "centos:7"       | true
