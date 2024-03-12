@@ -1,7 +1,6 @@
 package m110tom111
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -109,7 +108,7 @@ func migrateReplacedResourcesInPermissionSets(db *gorocksdb.DB) error {
 			newPermissionSet.ResourceToAccess[resource] =
 				propagateAccessForPermission(resource, accessLevel, newPermissionSet.ResourceToAccess)
 		}
-		data, err := proto.Marshal(newPermissionSet)
+		data, err := protocompat.Marshal(newPermissionSet)
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal permission set")
 		}

@@ -3,7 +3,6 @@ package m59tom60
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -33,7 +32,7 @@ func TestPolicyMigration(t *testing.T) {
 			if i == 0 {
 				testPolicy.Categories = append(testPolicy.Categories, dockerCIS)
 			}
-			bytes, err := proto.Marshal(testPolicy)
+			bytes, err := protocompat.Marshal(testPolicy)
 			if err != nil {
 				return err
 			}

@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/common"
@@ -60,7 +59,7 @@ func (s *flowStoreImpl) UpsertFlows(_ context.Context, flows []*storage.NetworkF
 	batch.Put(s.getFullKey(updatedTSKey), tsData)
 	for _, flow := range flows {
 		k := s.getID(flow.GetProps())
-		v, err := proto.Marshal(flow)
+		v, err := protocompat.Marshal(flow)
 		if err != nil {
 			return err
 		}

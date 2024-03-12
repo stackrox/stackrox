@@ -6,7 +6,6 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -47,7 +46,7 @@ func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ServiceIdentity, error
 func (b *storeImpl) upsertServiceIdentity(serviceIdentity *storage.ServiceIdentity) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(serviceIdentityBucket))
-		bytes, err := proto.Marshal(serviceIdentity)
+		bytes, err := protocompat.Marshal(serviceIdentity)
 		if err != nil {
 			return err
 		}

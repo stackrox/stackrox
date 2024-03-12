@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -110,7 +110,7 @@ func (suite *activeComponentMigrationTestSuite) TestMigration() {
 		},
 	}
 	for _, initial := range initialActiveComponents {
-		data, err := proto.Marshal(initial)
+		data, err := protocompat.Marshal(initial)
 		suite.NoError(err)
 
 		key := rocksdbmigration.GetPrefixedKey(activeComponentsPrefix, []byte(initial.GetId()))

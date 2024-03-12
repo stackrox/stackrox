@@ -1,7 +1,6 @@
 package crud
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
@@ -26,7 +25,7 @@ func (uc *upserterImpl) UpsertIn(parentKey []byte, msg protocompat.Message, dack
 	}
 
 	// Marshal an upsert the base object.
-	toWrite, err := proto.Marshal(msg)
+	toWrite, err := protocompat.Marshal(msg)
 	if err != nil {
 		return err
 	}

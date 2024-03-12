@@ -3,11 +3,11 @@ package m61tom62
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	rocksdbopts "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -97,7 +97,7 @@ func (suite *multipleCVETypesMigrationTestSuite) TestMultipleCVETypesMigration()
 
 	for _, cve := range cves {
 		key := rocksdbmigration.GetPrefixedKey(cveBucket, []byte(cve.GetId()))
-		value, err := proto.Marshal(cve)
+		value, err := protocompat.Marshal(cve)
 		suite.NoError(err)
 		suite.NoError(suite.db.Put(writeOpts, key, value))
 	}

@@ -1,7 +1,6 @@
 package m107tom108
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -48,7 +47,7 @@ func migratePS(db *gorocksdb.DB) error {
 		}
 		if _, ok := ps.ResourceToAccess[authPluginResourceName]; ok {
 			delete(ps.ResourceToAccess, authPluginResourceName)
-			data, err := proto.Marshal(ps)
+			data, err := protocompat.Marshal(ps)
 			if err != nil {
 				return errors.Wrap(err, "unable to marshal permission set")
 			}

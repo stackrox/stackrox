@@ -6,7 +6,6 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -65,7 +64,7 @@ func (b *storeImpl) Upsert(_ context.Context, integration *storage.ImageIntegrat
 				return err
 			}
 		}
-		bytes, err := proto.Marshal(integration)
+		bytes, err := protocompat.Marshal(integration)
 		if err != nil {
 			return err
 		}

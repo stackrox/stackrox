@@ -1,7 +1,6 @@
 package m108tom109
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -39,7 +38,7 @@ func removeComplianceRunScheduleFromPermissionSets(db *gorocksdb.DB) error {
 			continue
 		}
 		delete(ps.ResourceToAccess, permissionName)
-		data, err := proto.Marshal(ps)
+		data, err := protocompat.Marshal(ps)
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal permission set")
 		}

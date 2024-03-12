@@ -3,7 +3,6 @@ package m64to65
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -56,7 +55,7 @@ func (suite *openshift4ClusterTypeMigrationTestSuite) TestMigrateClustersWithExe
 
 	wb := gorocksdb.NewWriteBatch()
 	for _, c := range clusters {
-		bytes, err := proto.Marshal(c)
+		bytes, err := protocompat.Marshal(c)
 		suite.NoError(err)
 
 		wb.Put(rocksdbmigration.GetPrefixedKey(clustersPrefix, []byte(c.Id)), bytes)

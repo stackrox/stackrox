@@ -3,12 +3,12 @@ package m91tom92
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/dackboxhelpers"
 	"github.com/stackrox/rox/migrator/migrations/m_91_to_m_92_write_edges_to_graph/sortedkeys"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -60,7 +60,7 @@ func (suite *snoozedStateMigrationTestSuite) TestImagesCVEEdgeMigration() {
 		for cve := range cves {
 			edge := &storage.ImageCVEEdge{Id: dackboxhelpers.EdgeID{ParentID: image, ChildID: cve}.ToString()}
 			key := rocksdbmigration.GetPrefixedKey(imageCVEEdgePrefix, []byte(edge.GetId()))
-			value, err := proto.Marshal(edge)
+			value, err := protocompat.Marshal(edge)
 			suite.NoError(err)
 			suite.NoError(suite.databases.RocksDB.Put(writeOpts, key, value))
 		}

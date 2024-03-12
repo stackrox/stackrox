@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
@@ -80,7 +79,7 @@ func (s *storeImpl) Upsert(_ context.Context, policy *storage.Policy) error {
 			}
 		}
 
-		bytes, err := proto.Marshal(policy)
+		bytes, err := protocompat.Marshal(policy)
 		if err != nil {
 			return err
 		}
