@@ -30,7 +30,7 @@ type ComplianceIntegration struct {
 	ComplianceNamespace string `protobuf:"bytes,4,opt,name=compliance_namespace,json=complianceNamespace,proto3" json:"compliance_namespace,omitempty"`
 	// Collection of errors that occurred while trying to obtain compliance health info.
 	StatusErrors         []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
-	OperatorInstalled    bool     `protobuf:"varint,6,opt,name=operator_installed,json=operatorInstalled,proto3" json:"operator_installed,omitempty"`
+	OperatorInstalled    bool     `protobuf:"varint,6,opt,name=operator_installed,json=operatorInstalled,proto3" json:"operator_installed,omitempty" search:"Compliance Operator Installed,hidden,store"` // @gotags: search:"Compliance Operator Installed,hidden,store"
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
