@@ -3,6 +3,8 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 
+import './FilterDropdowns.css';
+
 type CVESeverityDropdownProps = {
     searchFilter: SearchFilter;
     onSelect: (filterType: 'SEVERITY', checked: boolean, selection: string) => void;
@@ -27,7 +29,7 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
             selections={searchFilter.SEVERITY}
             isOpen={cveSeverityIsOpen}
             placeholderText="CVE severity"
-            className="cve-severity-select"
+            className="vm-filter-toolbar-dropdown cve-severity-select"
         >
             <SelectOption key="Critical" value="Critical" />
             <SelectOption key="Important" value="Important" />

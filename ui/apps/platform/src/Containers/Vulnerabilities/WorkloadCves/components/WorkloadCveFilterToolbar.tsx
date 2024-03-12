@@ -19,10 +19,8 @@ import { DefaultFilters } from '../../types';
 import FilterAutocomplete, {
     FilterAutocompleteSelectProps,
 } from '../../components/FilterAutocomplete';
-import CVESeverityDropdown from './CVESeverityDropdown';
-import CVEStatusDropdown from './CVEStatusDropdown';
-
-import './WorkloadCveFilterToolbar.css';
+import CVESeverityDropdown from '../../components/CVESeverityDropdown';
+import CVEStatusDropdown from '../../components/CVEStatusDropdown';
 
 type FilterChipProps = {
     isGlobal?: boolean;
@@ -159,7 +157,7 @@ function WorkloadCveFilterToolbar({
     }
 
     return (
-        <Toolbar className="workload-table-toolbar">
+        <Toolbar>
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
