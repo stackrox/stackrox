@@ -17,7 +17,7 @@ import spock.lang.Unroll
 import util.Env
 
 @Tag("Parallel")
-// @Tag("PZ") // ROX-22846: uncomment when resolved.
+@Tag("PZ")
 class ImageManagementTest extends BaseSpecification {
 
     private static final String TEST_NAMESPACE = "qa-image-management"
