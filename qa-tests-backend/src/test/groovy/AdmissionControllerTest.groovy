@@ -138,7 +138,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
-    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.desc == "nginx w/ inline scan"})
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.desc == "nginx w/ inline scan" })
     def "Verify Admission Controller Config: #desc"() {
         when:
         prepareChaosMonkey()
@@ -310,7 +310,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
-    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.desc == "nginx w/ inline scan"})
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.desc == "nginx w/ inline scan" })
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
         when:
         prepareChaosMonkey()
