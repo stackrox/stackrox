@@ -45,7 +45,7 @@
 #   # The registry relative to which all image references are resolved, unless
 #   # a specific registry is provided for particular workloads which takes precedence
 #   # (see `central.image`, `db.image`, `scanner.image`, and `scanner.dbImage` below).
-#   # This can be just a registry hostname such as `stackrox.io`, or a registry hostname with
+#   # This can be just a registry hostname such as `quay.io`, or a registry hostname with
 #   # a "remote" component such as `us.gcr.io/my-stackrox-mirror`.
 #   registry: us.gcr.io/my-stackrox-mirror
 #
