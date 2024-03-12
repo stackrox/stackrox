@@ -1,7 +1,6 @@
 package m73tom74
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -70,7 +69,7 @@ func migrateDefaultRuntimeEventSource(db *bolt.DB) error {
 			}
 
 			policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
-			obj, err := proto.Marshal(policy)
+			obj, err := protocompat.Marshal(policy)
 			if err != nil {
 				// Unclear how to recover from marshal error, abort the transaction.
 				return errors.Wrapf(err, "failed to marshal migrated policy %q for key %q", policy.GetName(), policy.GetId())

@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
@@ -128,7 +127,7 @@ func updateVersion(ctx context.Context, databases *types.Databases, newVersion *
 		return nil
 	}
 
-	versionBytes, err := proto.Marshal(newVersion)
+	versionBytes, err := protocompat.Marshal(newVersion)
 	if err != nil {
 		return errors.Wrap(err, "marshalling version")
 	}

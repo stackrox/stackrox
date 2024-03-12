@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
@@ -72,7 +71,7 @@ func migrateScanner(db *bolt.DB) error {
 
 			imageIntegration.Categories = append(imageIntegration.Categories, storage.ImageIntegrationCategory_NODE_SCANNER)
 
-			newValue, err := proto.Marshal(&imageIntegration)
+			newValue, err := protocompat.Marshal(&imageIntegration)
 			if err != nil {
 				return errors.Wrapf(err, "error marshalling external backup %s", k)
 			}

@@ -4,7 +4,6 @@ import (
 	"embed"
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
@@ -78,7 +77,7 @@ func updatePoliciesWithDefaultFlag(db *bolt.DB) error {
 
 			storedPolicy.IsDefault = true
 
-			data, err := proto.Marshal(storedPolicy)
+			data, err := protocompat.Marshal(storedPolicy)
 			if err != nil {
 				return errors.Wrapf(err, "marshalling policy %s", policy.GetId())
 			}

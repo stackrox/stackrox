@@ -3,7 +3,6 @@ package m94tom95
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
@@ -50,14 +49,14 @@ func (s *clusterHealthStatusIDTestSuite) TestMigrationAddsIdToClusterHealthStatu
 	}
 
 	key := rocksdbmigration.GetPrefixedKey(clusterBucket, []byte(existingCluster.GetId()))
-	value, err := proto.Marshal(existingCluster)
+	value, err := protocompat.Marshal(existingCluster)
 	s.NoError(err)
 	s.NoError(s.databases.RocksDB.Put(writeOpts, key, value))
 
 	// Add in a cluster health status just to validate that it won't get picked up by the iterator
 	chs := &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY}
 	chsKey := rocksdbmigration.GetPrefixedKey([]byte("clusters_health_status"), []byte(existingCluster.GetId()))
-	chsValue, err := proto.Marshal(chs)
+	chsValue, err := protocompat.Marshal(chs)
 	s.NoError(err)
 	s.NoError(s.databases.RocksDB.Put(writeOpts, chsKey, chsValue))
 

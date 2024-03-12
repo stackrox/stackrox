@@ -1,7 +1,6 @@
 package m89tom90
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -62,7 +61,7 @@ func updateImageCVEEdgesWithVulnState(databases *types.Databases) error {
 		}
 		imageCVEEdge.State = storage.VulnerabilityState_DEFERRED
 
-		newData, err := proto.Marshal(imageCVEEdge)
+		newData, err := protocompat.Marshal(imageCVEEdge)
 		if err != nil {
 			return errors.Wrapf(err, "marshaling image-cve edge %s", key)
 		}

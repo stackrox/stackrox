@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/generic"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -78,7 +77,7 @@ func NewMessageCrudForBucket(
 	serializeFunc := func(x interface{}) ([]byte, []byte, error) {
 		msg := x.(protocompat.Message)
 		key := keyFunc(msg)
-		bytes, err := proto.Marshal(msg)
+		bytes, err := protocompat.Marshal(msg)
 		return key, bytes, err
 	}
 

@@ -1,7 +1,6 @@
 package generic
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -117,7 +116,7 @@ func (c *crudImpl) GetMany(ids []string) (msgs []protocompat.Message, missingInd
 }
 
 func (c *crudImpl) addToWriteBatch(batch *gorocksdb.WriteBatch, msg protocompat.Message) error {
-	data, err := proto.Marshal(msg)
+	data, err := protocompat.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshaling message")
 	}
@@ -180,7 +179,7 @@ func (c *crudImpl) UpsertWithID(id string, msg protocompat.Message) error {
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
-	data, err := proto.Marshal(msg)
+	data, err := protocompat.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshaling message")
 	}
@@ -209,7 +208,7 @@ func (c *crudImpl) UpsertManyWithIDs(ids []string, msgs []protocompat.Message) e
 	defer batch.Destroy()
 
 	for i, msg := range msgs {
-		data, err := proto.Marshal(msg)
+		data, err := protocompat.Marshal(msg)
 		if err != nil {
 			return errors.Wrap(err, "marshaling message")
 		}

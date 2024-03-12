@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -75,7 +74,7 @@ func updateActiveComponents(db *gorocksdb.DB) error {
 		activeComponent.ActiveContextsSlice = convertActiveContextsMapToSlice(activeComponent.GetDEPRECATEDActiveContexts())
 		activeComponent.DEPRECATEDActiveContexts = nil
 
-		data, err := proto.Marshal(&activeComponent)
+		data, err := protocompat.Marshal(&activeComponent)
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal active component")
 		}

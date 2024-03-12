@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -98,7 +97,7 @@ func (p *persister) persistCurrent() error {
 		return nil
 	}
 
-	bytes, err := proto.Marshal(settings)
+	bytes, err := protocompat.Marshal(settings)
 	if err != nil {
 		return errors.Wrap(err, "marshaling settings proto")
 	}

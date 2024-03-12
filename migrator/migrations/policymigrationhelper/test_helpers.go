@@ -9,7 +9,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -24,7 +23,7 @@ import (
 
 func insertPolicy(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) {
 	require.NoError(t, bucket.Update(func(b *bolt.Bucket) error {
-		policyBytes, err := proto.Marshal(policy)
+		policyBytes, err := protocompat.Marshal(policy)
 		if err != nil {
 			return err
 		}

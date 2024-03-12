@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -88,7 +87,7 @@ func (s *storeImpl) Upsert(_ context.Context, authProvider *storage.AuthProvider
 				return err
 			}
 		}
-		bytes, err := proto.Marshal(authProvider)
+		bytes, err := protocompat.Marshal(authProvider)
 		if err != nil {
 			return err
 		}

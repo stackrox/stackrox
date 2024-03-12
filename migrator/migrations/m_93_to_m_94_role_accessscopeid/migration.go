@@ -1,7 +1,6 @@
 package m93tom94
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -56,7 +55,7 @@ func updateRoles(db *gorocksdb.DB) error {
 	defer rocksWriteBatch.Destroy()
 	for _, role := range roles {
 		name := role.GetName()
-		bytes, err := proto.Marshal(role)
+		bytes, err := protocompat.Marshal(role)
 		if err != nil {
 			return errors.Wrapf(err, "failed to marshal role data for name %q", name)
 		}

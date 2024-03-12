@@ -3,7 +3,6 @@ package m65tom66
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -68,7 +67,7 @@ func (suite *policyUpdatesTestSuite) TearDownTest() {
 
 func insertPolicy(bucket bolthelpers.BucketRef, id string, pb protocompat.Message) error {
 	return bucket.Update(func(b *bolt.Bucket) error {
-		bytes, err := proto.Marshal(pb)
+		bytes, err := protocompat.Marshal(pb)
 		if err != nil {
 			return err
 		}

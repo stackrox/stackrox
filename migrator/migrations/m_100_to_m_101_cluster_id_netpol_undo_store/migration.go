@@ -1,7 +1,6 @@
 package m100tom101
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -34,7 +33,7 @@ func addClusterIDToNetworkPolicyApplicationUndoRecord(db *bolt.DB) error {
 				return err
 			}
 			np.ClusterId = string(k)
-			data, err := proto.Marshal(&np)
+			data, err := protocompat.Marshal(&np)
 			if err != nil {
 				return err
 			}

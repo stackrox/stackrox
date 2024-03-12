@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
@@ -41,7 +40,7 @@ func (s *alertScopeInfoCopyTestSuite) TearDownTest() {
 
 func (s *alertScopeInfoCopyTestSuite) writeAlertToStore(alert *storage.Alert) {
 	writeOpts := gorocksdb.NewDefaultWriteOptions()
-	value, err := proto.Marshal(alert)
+	value, err := protocompat.Marshal(alert)
 	s.NoError(err)
 	err = s.db.Put(writeOpts,
 		rocksdbmigration.GetPrefixedKey(alertBucket, []byte(alert.GetId())),

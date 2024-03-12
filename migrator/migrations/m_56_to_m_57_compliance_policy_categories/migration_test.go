@@ -3,7 +3,6 @@ package m56tom57
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -32,7 +31,7 @@ func TestPolicyMigration(t *testing.T) {
 				Name:       testName,
 				Categories: append(policyChange.removeCategories, someOtherCategory),
 			}
-			bytes, err := proto.Marshal(testPolicy)
+			bytes, err := protocompat.Marshal(testPolicy)
 			if err != nil {
 				return err
 			}

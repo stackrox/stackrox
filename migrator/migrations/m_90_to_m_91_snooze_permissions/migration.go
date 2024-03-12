@@ -1,7 +1,6 @@
 package m90tom91
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -58,7 +57,7 @@ func updateVulnSnoozePermissions(databases *types.Databases) error {
 		permSet.ResourceToAccess[vulnMgmtRequestsResource] = storage.Access_READ_WRITE_ACCESS
 		permSet.ResourceToAccess[vulnMgmtApprovalsResource] = storage.Access_READ_WRITE_ACCESS
 
-		newData, err := proto.Marshal(&permSet)
+		newData, err := protocompat.Marshal(&permSet)
 		if err != nil {
 			return errors.Wrapf(err, "marshaling permission set %s", key)
 		}
