@@ -232,7 +232,7 @@
 {{/*
   srox.getAnnotationTemplate . $name $out
 
-  Retrieve the annotation template with the given $name and and store it in the provided $out parameter.
+  Retrieve the annotation template with the given $name and store it in the provided $out parameter.
    */}}
 {{ define "srox.getAnnotationTemplate" }}
   {{ $ := index . 0 }}
