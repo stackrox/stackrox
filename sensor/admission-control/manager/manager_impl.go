@@ -3,9 +3,9 @@ package manager
 import (
 	"context"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
-	"github.com/gogo/protobuf/types"
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -85,7 +85,7 @@ type manager struct {
 
 	settingsStream     *concurrency.ValueStream[*sensor.AdmissionControlSettings]
 	settingsC          chan *sensor.AdmissionControlSettings
-	lastSettingsUpdate *types.Timestamp
+	lastSettingsUpdate *time.Time
 
 	syncC chan *concurrency.Signal
 
@@ -230,7 +230,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return
 	}
 
-	if m.lastSettingsUpdate != nil && protocompat.CompareTimestamps(newSettings.GetTimestamp(), m.lastSettingsUpdate) <= 0 {
+	if m.lastSettingsUpdate != nil && protocompat.CompareTimestampToTime(newSettings.GetTimestamp(), m.lastSettingsUpdate) <= 0 {
 		return // no update
 	}
 
@@ -329,7 +329,11 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")
 	}
-	m.lastSettingsUpdate = newSettings.GetTimestamp()
+	if newSettings.GetTimestamp() != nil {
+		if updateTime, err := protocompat.ConvertTimestampToTimeOrError(newSettings.GetTimestamp()); err == nil {
+			m.lastSettingsUpdate = &updateTime
+		}
+	}
 
 	enforceablePolicies := 0
 	for _, policy := range allRuntimePolicySet.GetCompiledPolicies() {

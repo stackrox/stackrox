@@ -1,10 +1,13 @@
 package resources
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/service"
 	v1 "k8s.io/api/core/v1"
@@ -112,6 +115,14 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 				podID = id.Name
 			}
 
+			var instStartTime *time.Time
+			if inst.GetStarted() != nil {
+				startTime, err := protocompat.ConvertTimestampToTimeOrError(inst.GetStarted())
+				if err == nil {
+					instStartTime = &startTime
+				}
+			}
+
 			result.AddContainerID(id, clusterentities.ContainerMetadata{
 				DeploymentID:  w.GetId(),
 				DeploymentTS:  w.GetStateTimestamp(),
@@ -120,7 +131,7 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 				ContainerName: inst.GetContainerName(),
 				ContainerID:   id,
 				Namespace:     w.GetNamespace(),
-				StartTime:     inst.GetStarted(),
+				StartTime:     instStartTime,
 				ImageID:       inst.GetImageDigest(),
 			})
 		}
