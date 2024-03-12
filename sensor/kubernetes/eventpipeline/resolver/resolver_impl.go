@@ -157,7 +157,6 @@ func (r *resolverImpl) runPullAndResolve() {
 		case <-r.stopSig.Done():
 			return
 		default:
-			break
 		}
 		ref, ok := item.(*deploymentRef)
 		if !ok {
