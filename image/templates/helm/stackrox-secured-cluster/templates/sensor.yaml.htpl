@@ -303,7 +303,7 @@ metadata:
     auto-upgrade.stackrox.io/component: sensor
   annotations:
     {{- $annotations := dict -}}
-    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_pre-install,pre-upgrade_keep" $annotations) -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
     {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name" $annotations) | nindent 4 }}
 stringData:
   cluster-name: |
