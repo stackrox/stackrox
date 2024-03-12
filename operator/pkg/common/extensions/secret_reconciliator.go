@@ -34,9 +34,8 @@ func NewSecretReconciliator(client ctrlClient.Client, obj types.K8sObject) *Secr
 
 // SecretReconciliator reconciles a secret.
 type SecretReconciliator struct {
-	client         ctrlClient.Client
-	uncachedReader ctrlClient.Reader
-	obj            types.K8sObject
+	client ctrlClient.Client
+	obj    types.K8sObject
 }
 
 // Client returns the controller-runtime client used by the extension.
