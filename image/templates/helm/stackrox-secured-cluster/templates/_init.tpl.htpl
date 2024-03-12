@@ -123,7 +123,7 @@
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
-{{ $_ = include "srox.initAnnotationTemplates" $ }}
+{{ $_ = include "srox.loadAnnotationTemplates" $ }}
 
 {{/*
     General validation of effective settings.
