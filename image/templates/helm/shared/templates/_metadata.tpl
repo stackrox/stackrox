@@ -1,7 +1,9 @@
 {{/*
-  srox.labels $ $objType $objName [ $labels ]
+  srox.labels $ $objType $objName [ $extraLabels ]
 
-  Format labels for $objType/$objName as YAML.
+  Format labels for $objType/$objName as YAML. This takes into consideration the $extraLabels,
+  if provided, plus labels added using the generic `customize` configuration mechanism.
+  Note that provided $eextraLabels can be modified via `customize`.
    */}}
 {{- define "srox.labels" -}}
   {{- $ := index . 0 -}}
@@ -17,9 +19,11 @@
 {{- end -}}
 
 {{/*
-  srox.podLabels $ $objType $objName [ $labels ]
+  srox.podLabels $ $objType $objName [ $extraLabels ]
 
-  Format pod labels for $objType/$objName as YAML.
+  Format pod labels for $objType/$objName as YAML. This takes into consideration the $extraLabels,
+  if provided, plus labels added using the generic `customize` configuration mechanism.
+  Note that provided $eextraLabels can be modified via `customize`.
    */}}
 {{- define "srox.podLabels" -}}
   {{- $ := index . 0 -}}
@@ -35,9 +39,11 @@
 {{- end -}}
 
 {{/*
-  srox.annotations $ $objType $objName [ $annotations ]
+  srox.annotations $ $objType $objName [ $extraAnnotations ]
 
-  Format annotations for $objType/$objName as YAML.
+  Format annotations for $objType/$objName as YAML. This takes into consideration the $extraAnnotations,
+  if provided, plus annotations added using the generic `customize` configuration mechanism.
+  Note that provided $extraAnnotations can be modified via `customize`.
    */}}
 {{- define "srox.annotations" -}}
   {{- $ := index . 0 -}}
@@ -53,9 +59,11 @@
 {{- end -}}
 
 {{/*
-  srox.podAnnotations $ $objType $objName [ $annotations ]
+  srox.podAnnotations $ $objType $objName [ $extraAnnotations ]
 
-  Format pod annotations for $objType/$objName as YAML.
+  Format pod annotations for $objType/$objName as YAML. This takes into consideration the $extraAnnotations,
+  if provided, plus annotations added using the generic `customize` configuration mechanism.
+  Note that provided $extraAnnotations can be modified via `customize`.
    */}}
 {{- define "srox.podAnnotations" -}}
   {{- $ := index . 0 -}}
@@ -95,9 +103,8 @@
 
   Writes all applicable [pod] annotations (including default annotations) for
   $objType/$objName into $annotations. Pod labels are written iff $forPod is true.
-
-  This template receives the $ parameter as its second (not its first, as usual) parameter
-  such that it can be used easier in "srox.annotations".
+  The dict $extraAnnotations can be used for specifying additional annotations which
+  can be modified using `customize` entries before before they are added to $annotations.
    */}}
 {{ define "srox._annotations" }}
 {{ $ := index . 0  }}
@@ -153,8 +160,8 @@
 {{/*
   srox._customizeMetadata $ $metadata $extraMetadata $objType $objName $metadataNames
 
-  Writes custom key/value metadata to $metadata by consulting all sub-dicts with names in
-  $metadataNames under the applicable custom metadata locations (._rox.customize,
+  Writes custom key/value metadata to $metadata by consulting $extraMetadata in addition to all
+  sub-dicts with names in $metadataNames under the applicable custom metadata locations (._rox.customize,
   ._rox.customize.other.$objType/*, ._rox.customize.other.$objType/$objName, and
   ._rox.customizer.$objName [workloads only]). Dictionaries are consulted in this order, with
   values from dictionaries consulted later overwriting values from dictionaries consulted
