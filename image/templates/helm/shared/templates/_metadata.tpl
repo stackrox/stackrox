@@ -254,7 +254,7 @@
   srox.initAnnotationTemplates .
 
   Load the annotation templates from `internal/annotations` and store them within $._rox.
-  The templates can later be trieved with `srox.getAnnotationTemplates`.
+  The templates can later be retrieved with `srox.getAnnotationTemplate`.
    */}}
 {{ define "srox.initAnnotationTemplates" }}
   {{ $ := . }}
