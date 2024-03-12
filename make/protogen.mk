@@ -101,7 +101,7 @@ $(MODFILE_DIR)/%/UPDATE_CHECK: go.sum
 	$(SILENT)go list -m -json $* | jq '.Dir' >"$@.tmp"
 	$(SILENT)(cmp -s "$@.tmp" "$@" && rm "$@.tmp") || mv "$@.tmp" "$@"
 
-GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
+GOGO_M_STR := Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
 # The --go_out=M... argument specifies the go package to use for an imported proto file.
 # Here, we instruct protoc-gen-go to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
@@ -129,7 +129,6 @@ GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
 
 $(PROTOC_INCLUDES): $(PROTOC)
 
-GOGO_DIR = $(shell go list -f '{{.Dir}}' -m github.com/gogo/protobuf)
 GRPC_GATEWAY_DIR = $(shell go list -f '{{.Dir}}' -m github.com/grpc-ecosystem/grpc-gateway)
 
 PROTO_DEPS=$(PROTOC) $(PROTOC_INCLUDES)
@@ -195,7 +194,6 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -231,7 +229,6 @@ endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOGO_DIR) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
@@ -247,7 +244,6 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -262,7 +258,6 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
