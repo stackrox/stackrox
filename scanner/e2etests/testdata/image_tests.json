@@ -43,10 +43,10 @@
         "only_check_specified_vulns": true
     },
     {
-        "image": "us.gcr.io/stackrox-ci/qa/apache/server:latest",
-        "registry": "https://us.gcr.io",
-        "username": "_json_key",
-        "password": "GOOGLE_SA_CIRCLECI_SCANNER",
+        "image": "quay.io/rhacs-eng/qa:apache-server-scannerci",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
         "source": "NVD",
         "namespace": "ubuntu:14.04",
         "expected_features": [
