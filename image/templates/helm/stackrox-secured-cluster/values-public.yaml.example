@@ -102,7 +102,7 @@
 #    registry: null  # if set to null, use `image.registry`
 #    name: main      # the final image name is composed of the registry and the name, plus the tag below
 #    tag: null       # should be left as null - will get picked up from the Chart version.
-#    fullRef: null   # you can set a full image reference such as stackrox.io/main:1.2.3.4 here, but this is not
+#    fullRef: null   # you can set a full image reference such as quay.io/stackrox-io/main:1.2.3.4 here, but this is not
 #                    # recommended.
 #    # The default pull policy for this image. Can be overridden for each individual service.
 #    pullPolicy: IfNotPresent

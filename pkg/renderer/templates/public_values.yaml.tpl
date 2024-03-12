@@ -65,7 +65,7 @@ central:
     {{- if .K8sConfig.ImageOverrides.Main.Tag }}
     # WARNING: You are using a non-default main image tag. Upgrades via 'helm upgrade'
     # will not work as expected. To ensure a smooth upgrade experience, make sure
-    # StackRox images are mirrored with the same tags as in the stackrox.io registry.
+    # StackRox images are mirrored with the same tags as in the quay.io/stackrox-io registry.
     tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
     {{- end }}
   {{- end }}
@@ -108,7 +108,7 @@ central:
       {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
       # WARNING: You are using a non-default Central DB image tag. Upgrades via
       # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
-      # make sure StackRox images are mirrored with the same tags as in the stackrox.io
+      # make sure StackRox images are mirrored with the same tags as in the quay.io/stackrox-io
       # registry.
       tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
       {{- end }}
@@ -143,7 +143,7 @@ scanner:
     {{- if .K8sConfig.ImageOverrides.Scanner.Tag }}
     # WARNING: You are using a non-default Scanner image tag. Upgrades via 'helm upgrade'
     # will not work as expected. To ensure a smooth upgrade experience, make sure
-    # StackRox images are mirrored with the same tags as in the stackrox.io registry.
+    # StackRox images are mirrored with the same tags as in the quay.io/stackrox-io registry.
     tag: {{ .K8sConfig.ImageOverrides.Scanner.Tag }}
     {{- end }}
   {{- end }}
@@ -159,7 +159,7 @@ scanner:
     {{- if .K8sConfig.ImageOverrides.ScannerDB.Tag }}
     # WARNING: You are using a non-default Scanner DB image tag. Upgrades via
     # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
-    # make sure StackRox images are mirrored with the same tags as in the stackrox.io
+    # make sure StackRox images are mirrored with the same tags as in the quay.io/stackrox-io
     # registry.
     tag: {{ .K8sConfig.ImageOverrides.ScannerDB.Tag }}
     {{- end }}

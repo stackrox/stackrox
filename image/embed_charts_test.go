@@ -58,7 +58,6 @@ func (s *embedTestSuite) TestLoadChartForFlavor() {
 	testCases := []defaults.ImageFlavor{
 		flavorUtils.MakeImageFlavorForTest(s.T()),
 		defaults.DevelopmentBuildImageFlavor(),
-		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
 		defaults.OpenSourceImageFlavor(),
 	}

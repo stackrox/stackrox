@@ -56,9 +56,8 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	imageFlavorCases := map[string]defaults.ImageFlavor{
-		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":    defaults.RHACSReleaseImageFlavor(),
-		"custom":   customFlavor(t),
+		"rhacs":  defaults.RHACSReleaseImageFlavor(),
+		"custom": customFlavor(t),
 	}
 	if buildinfo.ReleaseBuild {
 		imageFlavorCases["development_build-release"] = defaults.DevelopmentBuildImageFlavor()
