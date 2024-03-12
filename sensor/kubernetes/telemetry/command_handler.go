@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/prometheusutil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -269,7 +270,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		return sendMsgCb(ctx, createKubernetesPayload(file))
 	}
 
-	sinceTs, err := types.TimestampFromProto(since)
+	sinceTs, err := protocompat.ConvertTimestampToTimeOrError(since)
 	if err != nil {
 		return errors.Wrap(err, "error parsing since timestamp")
 	}

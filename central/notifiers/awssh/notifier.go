@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/securityhub"
 	"github.com/aws/aws-sdk-go/service/securityhub/securityhubiface"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
@@ -323,8 +322,8 @@ func (n *notifier) run(ctx context.Context) error {
 func (n *notifier) processAlert(alert *storage.Alert) {
 	cached := n.cache[alert.GetId()]
 	if cached != nil {
-		tsAlert, tsAlertErr := types.TimestampFromProto(alert.GetTime())
-		tsCached, tsCachedErr := types.TimestampFromProto(cached.GetTime())
+		tsAlert, tsAlertErr := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
+		tsCached, tsCachedErr := protocompat.ConvertTimestampToTimeOrError(cached.GetTime())
 
 		switch {
 		case tsCachedErr != nil || tsCached.Before(tsAlert):

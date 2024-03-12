@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -99,13 +100,10 @@ func validateSyslog(syslog *storage.Syslog) error {
 		return errors.Errorf("invalid facility %s must be between 0 and 7", facility.String())
 	}
 
-	if features.RoxSyslogExtraFields.Enabled() {
-		for _, f := range syslog.GetExtraFields() {
-			if f.GetKey() == "" || f.GetValue() == "" {
-				return errors.New("all extra fields must have both a key and a value")
-			}
+	for _, f := range syslog.GetExtraFields() {
+		if f.GetKey() == "" || f.GetValue() == "" {
+			return errors.New("all extra fields must have both a key and a value")
 		}
-
 	}
 
 	return nil
@@ -150,13 +148,10 @@ func (s *syslog) auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Not
 	extensionList = append(extensionList, makeExtensionPair(requestClientApplication, auditLog.GetMethod().String()))
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAuditLog, auditLog))
 
-	if features.RoxSyslogExtraFields.Enabled() {
-		// add custom fields to alert
-		for _, k := range notifier.GetSyslog().GetExtraFields() {
-			extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
-		}
+	// add custom fields to alert
+	for _, k := range notifier.GetSyslog().GetExtraFields() {
+		extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
 	}
-
 	return s.getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
 }
 
@@ -191,11 +186,9 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAlert, alert))
 
-	if features.RoxSyslogExtraFields.Enabled() {
-		// add custom fields to alert
-		for _, k := range s.Notifier.GetSyslog().GetExtraFields() {
-			extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
-		}
+	// add custom fields to alert
+	for _, k := range s.Notifier.GetSyslog().GetExtraFields() {
+		extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
 	}
 
 	severity := alertToCEFSeverityMap[alert.GetPolicy().GetSeverity()]
@@ -267,7 +260,7 @@ func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, m
 func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	unstructuredData := s.alertToCEF(ctx, alert)
 	severity := alertToSyslogSeverityMap[alert.GetPolicy().GetSeverity()]
-	timestamp, err := types.TimestampFromProto(alert.GetTime())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
 	if err != nil {
 		return err
 	}
@@ -302,7 +295,7 @@ func (s *syslog) Test(context.Context) *notifiers.NotifierError {
 
 func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {
 	unstructuredData := s.auditLogToCEF(msg, s.Notifier)
-	timestamp, err := types.TimestampFromProto(msg.GetTime())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(msg.GetTime())
 	if err != nil {
 		return err
 	}
