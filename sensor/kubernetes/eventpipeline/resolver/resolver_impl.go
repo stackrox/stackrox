@@ -163,7 +163,6 @@ func (r *resolverImpl) runPullAndResolve() {
 		case <-r.stopper.Flow().StopRequested():
 			return
 		default:
-			break
 		}
 		ref, ok := item.(*deploymentRef)
 		if !ok {
