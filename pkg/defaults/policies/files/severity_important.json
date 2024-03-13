@@ -1,7 +1,7 @@
 {
   "id": "a919ccaf-6b43-4160-ac5d-a405e1440a41",
   "name": "Fixable Severity at least Important",
-  "description": "Alert on deployments with fixable vulnerabilities with a Severity Rating at least Important",
+  "description": "Alert on deployments with fixable vulnerabilities with a Severity Rating at least Important. If prefer CVSS-based policy instead, consider enabling 'Fixable CVSS >= 7' instead.",
   "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
   "remediation": "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.",
   "categories": [
