@@ -3,7 +3,7 @@
 
   Format labels for $objType/$objName as YAML. This takes into consideration the $extraLabels,
   if provided, plus labels added using the generic `customize` configuration mechanism.
-  Note that provided $eextraLabels can be modified via `customize`.
+  Note that provided $extraLabels can be modified by the user via `customize`.
    */}}
 {{- define "srox.labels" -}}
   {{- $ := index . 0 -}}
