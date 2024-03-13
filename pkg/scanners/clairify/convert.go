@@ -190,8 +190,20 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 	if v.GetMetadataV2() != nil {
 		m := v.GetMetadataV2()
 
-		vuln.PublishedOn = clair.ConvertTime(m.GetPublishedDateTime())
-		vuln.LastModified = clair.ConvertTime(m.GetLastModifiedDateTime())
+		publishedDate := clair.ParseTime(m.GetPublishedDateTime())
+		if publishedDate != nil {
+			publishedOn, err := protocompat.ConvertTimeToTimestampOrError(*publishedDate)
+			if err == nil {
+				vuln.PublishedOn = publishedOn
+			}
+		}
+		lastModifiedDateTime := clair.ParseTime(m.GetLastModifiedDateTime())
+		if lastModifiedDateTime != nil {
+			lastModified, err := protocompat.ConvertTimeToTimestampOrError(*lastModifiedDateTime)
+			if err == nil {
+				vuln.LastModified = lastModified
+			}
+		}
 		if m.GetCvssV2() != nil && m.GetCvssV2().Vector != "" {
 			if cvssV2, err := cvssv2.ParseCVSSV2(m.GetCvssV2().GetVector()); err == nil {
 				cvssV2.ExploitabilityScore = m.GetCvssV2().GetExploitabilityScore()

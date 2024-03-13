@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
@@ -106,7 +105,7 @@ func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.Ind
 	return ir, nil
 }
 
-func (s *matcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.Metadata, error) {
+func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) (*v4.Metadata, error) {
 	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting last vulnerability update time: %w", err)

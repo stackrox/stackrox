@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/storage"
@@ -127,18 +126,16 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 			continue
 		}
 
-		var publishedTime *gogotypes.Timestamp
-		if !ccVuln.Issued.IsZero() {
-			// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
-			publishedTime, _ = protocompat.ConvertTimeToTimestampOrError(ccVuln.Issued)
-		}
 		vuln := &storage.EmbeddedVulnerability{
 			Cve:               vulnName(ccVuln.Name),
 			Summary:           ccVuln.Description,
 			Link:              link(ccVuln.Links),
-			PublishedOn:       publishedTime,
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.NormalizedSeverity),
+		}
+		if !ccVuln.Issued.IsZero() {
+			// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
+			vuln.PublishedOn, _ = protocompat.ConvertTimeToTimestampOrError(ccVuln.Issued)
 		}
 
 		if ccVuln.FixedInVersion != "" {

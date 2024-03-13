@@ -2,12 +2,11 @@ package clair
 
 import (
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protocompat"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/component"
 	"github.com/stretchr/testify/assert"
@@ -158,10 +157,12 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 	}
 }
 
-func TestConvertTime(t *testing.T) {
+func TestParseTime(t *testing.T) {
+	time1 := time.Unix(1518046140, 0).UTC()
+	time2 := time.Unix(1547942400, 0).UTC()
 	cases := []struct {
 		input  string
-		output *types.Timestamp
+		output *time.Time
 	}{
 		{
 			input:  "",
@@ -173,16 +174,16 @@ func TestConvertTime(t *testing.T) {
 		},
 		{
 			input:  "2018-02-07T23:29Z",
-			output: protocompat.GetProtoTimestampFromSeconds(1518046140),
+			output: &time1,
 		},
 		{
 			input:  "2019-01-20T00:00:00Z",
-			output: protocompat.GetProtoTimestampFromSeconds(1547942400),
+			output: &time2,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ConvertTime(c.input))
+			assert.Equal(t, c.output, ParseTime(c.input))
 		})
 	}
 }

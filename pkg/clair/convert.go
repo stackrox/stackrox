@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	clairV1 "github.com/stackrox/scanner/api/v1"
@@ -104,8 +103,20 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	if err := json.Unmarshal(d, &m); err != nil {
 		return vul
 	}
-	vul.PublishedOn = ConvertTime(m.PublishedOn)
-	vul.LastModified = ConvertTime(m.LastModified)
+	publishedDate := ParseTime(m.PublishedOn)
+	if publishedDate != nil {
+		publishedOn, err := protocompat.ConvertTimeToTimestampOrError(*publishedDate)
+		if err == nil {
+			vul.PublishedOn = publishedOn
+		}
+	}
+	lastModifiedDateTime := ParseTime(m.LastModified)
+	if lastModifiedDateTime != nil {
+		lastModified, err := protocompat.ConvertTimeToTimestampOrError(*lastModifiedDateTime)
+		if err == nil {
+			vul.LastModified = lastModified
+		}
+	}
 
 	if m.CvssV2 != nil && m.CvssV2.Vectors != "" {
 		if cvssV2, err := cvssv2.ParseCVSSV2(m.CvssV2.Vectors); err == nil {
@@ -220,15 +231,15 @@ func ConvertFeatures(image *storage.Image, features []clairV1.Feature, os string
 	return
 }
 
-// ConvertTime converts a vulnerability time string into a proto timestamp
-func ConvertTime(str string) *timestamp.Timestamp {
+// ParseTime converts a vulnerability time string into nil or a *time.Time object.
+func ParseTime(str string) *time.Time {
 	if str == "" {
 		return nil
 	}
 	if ts, err := time.Parse(timeFormat, str); err == nil {
-		return protoconv.ConvertTimeToTimestamp(ts)
+		return &ts
 	} else if ts, err := time.Parse(extendedTimeFormat, str); err == nil {
-		return protoconv.ConvertTimeToTimestamp(ts)
+		return &ts
 	}
 	return nil
 }
