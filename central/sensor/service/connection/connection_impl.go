@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dedupingqueue"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -58,7 +59,7 @@ type sensorConnection struct {
 
 	sensorEventHandler *sensorEventHandler
 
-	queues      map[string]*dedupingQueue
+	queues      map[string]*dedupingqueue.DedupingQueue[string]
 	queuesMutex sync.Mutex
 
 	eventPipeline pipeline.ClusterPipeline
@@ -99,7 +100,7 @@ func newConnection(ctx context.Context,
 		stoppedSig:    concurrency.NewErrorSignal(),
 		sendC:         make(chan *central.MsgToSensor),
 		eventPipeline: eventPipeline,
-		queues:        make(map[string]*dedupingQueue),
+		queues:        make(map[string]*dedupingqueue.DedupingQueue[string]),
 
 		clusterID:                  cluster.GetId(),
 		clusterMgr:                 clusterMgr,
@@ -148,7 +149,7 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // populated with a subset of the entries from `c.queues`. This avoids mutex lock acquisitions for every
 // invocation of `multiplexedPush` with a previously seen (from the perspective of the caller)
 // event type.
-func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor, queues map[string]*dedupingQueue) {
+func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor, queues map[string]*dedupingqueue.DedupingQueue[string]) {
 	if msg.GetMsg() == nil {
 		// This is likely because sensor is a newer version than central and is sending a message that this central doesn't know about
 		// This is already logged, so it's fine to just ignore it for now
@@ -161,7 +162,9 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		concurrency.WithLock(&c.queuesMutex, func() {
 			queue = c.queues[typ]
 			if queue == nil {
-				queue = newDedupingQueue(stripTypePrefix(typ))
+				queue = dedupingqueue.NewDedupingQueue[string](
+					dedupingqueue.WithQueueName[string](stripTypePrefix(typ)),
+					dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
 				go c.handleMessages(ctx, queue)
 				c.queues[typ] = queue
 			}
@@ -170,7 +173,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 			queues[typ] = queue
 		}
 	}
-	queue.push(msg)
+	queue.Push(msg)
 }
 
 func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
@@ -183,7 +186,7 @@ func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
 }
 
 func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
-	queues := make(map[string]*dedupingQueue)
+	queues := make(map[string]*dedupingqueue.DedupingQueue[string])
 	for !c.stopSig.IsDone() {
 		msg, err := grpcServer.Recv()
 		if err != nil {
@@ -201,15 +204,20 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 	}
 }
 
-func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQueue) {
-	for msg := queue.pullBlocking(&c.stopSig); msg != nil; msg = queue.pullBlocking(&c.stopSig) {
+func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingqueue.DedupingQueue[string]) {
+	for msg := queue.PullBlocking(&c.stopSig); msg != nil; msg = queue.PullBlocking(&c.stopSig) {
+		msgFromSensor, ok := msg.(*central.MsgFromSensor)
+		if !ok {
+			log.Error("Invalid sensor message")
+			continue
+		}
 		err := safe.Run(func() {
-			if err := c.handleMessage(ctx, msg); err != nil {
+			if err := c.handleMessage(ctx, msgFromSensor); err != nil {
 				log.Errorf("Error handling sensor message: %v", err)
 			}
 		})
 		if err != nil {
-			metrics.IncrementPipelinePanics(msg)
+			metrics.IncrementPipelinePanics(msgFromSensor)
 			log.Errorf("panic in handle message: %v", err)
 		}
 	}
