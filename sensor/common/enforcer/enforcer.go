@@ -3,7 +3,6 @@ package enforcer
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 )
@@ -107,14 +107,14 @@ func (e *enforcer) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 
 	if enforcement.GetEnforcement() == storage.EnforcementAction_UNSET_ENFORCEMENT {
-		return errors.Errorf("received enforcement with unset action: %s", proto.MarshalTextString(enforcement))
+		return errors.Errorf("received enforcement with unset action: %s", protocompat.MarshalTextString(enforcement))
 	}
 
 	select {
 	case e.actionsC <- enforcement:
 		return nil
 	case <-e.stopper.Flow().StopRequested():
-		return errors.Errorf("unable to send enforcement: %s", proto.MarshalTextString(enforcement))
+		return errors.Errorf("unable to send enforcement: %s", protocompat.MarshalTextString(enforcement))
 	}
 }
 
@@ -131,9 +131,9 @@ func (e *enforcer) start() {
 			}
 
 			if err := f(concurrency.AsContext(e.stopper.LowLevel().GetStopRequestSignal()), action); err != nil {
-				log.Errorf("error during enforcement. action: %s err: %v", proto.MarshalTextString(action), err)
+				log.Errorf("error during enforcement. action: %s err: %v", protocompat.MarshalTextString(action), err)
 			} else {
-				log.Infof("enforcement successful. action %s", proto.MarshalTextString(action))
+				log.Infof("enforcement successful. action %s", protocompat.MarshalTextString(action))
 			}
 		case <-e.stopper.Flow().StopRequested():
 			log.Info("Shutting down Enforcer")

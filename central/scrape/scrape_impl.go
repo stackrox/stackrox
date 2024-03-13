@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -76,7 +76,7 @@ func (s *scrapeImpl) AcceptUpdate(update *central.ScrapeUpdate) {
 	case *central.ScrapeUpdate_ScrapeKilled:
 		s.acceptKill(update.GetScrapeKilled())
 	default:
-		log.Errorf("unrecognized scrape update: %s", proto.MarshalTextString(update))
+		log.Errorf("unrecognized scrape update: %s", protocompat.MarshalTextString(update))
 	}
 }
 

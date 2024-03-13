@@ -4,10 +4,10 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
@@ -130,7 +130,7 @@ func getCVEEdgeQuery(q *v1.Query) {
 				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, val).ProtoQuery())
 		}
 	default:
-		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
+		log.Errorf("Unhandled query type: %T; query was %s", q, protocompat.MarshalTextString(q))
 	}
 }
 
