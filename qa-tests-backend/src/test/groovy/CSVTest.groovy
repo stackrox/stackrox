@@ -11,6 +11,7 @@ import objects.Pagination
 import objects.SortOption
 import services.GraphQLService
 import services.ImageService
+import services.ClusterService
 import util.Env
 
 import spock.lang.Tag
@@ -19,9 +20,14 @@ import spock.lang.Unroll
 @Unroll
 @Tag("BAT")
 @Tag("PZ")
+@Tag("PZDebug")
 class CSVTest extends BaseSpecification {
 
+    //FIXME: GKE can't fetch multi-arch sha value, OCP does!
     private static final IMAGE_SHA = "sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
+    //private static final IMAGE_SHA = ((ClusterService.isOpenShift4()) ?
+    //    "a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e":
+    //    "6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec")
 
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
@@ -233,6 +239,7 @@ class CSVTest extends BaseSpecification {
         "Query fixable CVEs from graphQL"
         def gqlService = new GraphQLService()
         def ret = gqlService.Call(graphQLQuery, graphQLPayload)
+        sleep(5000) // wait 5s for the vulnerabilities to list
         assert ret.getCode() == 200
         assert ret.value.result.vulnerabilities.toList().size() > 0
 
