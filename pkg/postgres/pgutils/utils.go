@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
