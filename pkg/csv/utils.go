@@ -7,7 +7,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/pkg/grpc/errors"
-	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
