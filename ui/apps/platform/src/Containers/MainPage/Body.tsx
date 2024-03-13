@@ -40,6 +40,8 @@ import {
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
     exceptionManagementPath,
+    vulnerabilitiesNodeCvesPath,
+    vulnerabilitiesPlatformCvesPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -165,6 +167,16 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'network-graph': {
         component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
         path: networkPath,
+    },
+    'node-cves': {
+        component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
+        path: vulnerabilitiesNodeCvesPath,
+    },
+    'platform-cves': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
+        ),
+        path: vulnerabilitiesPlatformCvesPath,
     },
     'policy-management': {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
