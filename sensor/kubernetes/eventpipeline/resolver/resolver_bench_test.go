@@ -161,13 +161,14 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal) {
 func createEvents(randomIDs bool, numEvents, numDeploymentRefs int) []*component.ResourceEvent {
 	ret := make([]*component.ResourceEvent, numEvents+1)
 	var ids []string
-	if randomIDs {
-		ids = createRandomIds(numDeploymentRefs)
-	} else {
+	if !randomIDs {
 		ids = createIds(numDeploymentRefs)
 	}
 	for i := 0; i < numEvents; i++ {
 		var event component.ResourceEvent
+		if randomIDs {
+			ids = createRandomIds(numDeploymentRefs)
+		}
 		event.AddDeploymentReference(resolver.ResolveDeploymentIds(ids...))
 		ret[i] = &event
 	}
