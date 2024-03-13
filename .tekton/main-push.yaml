@@ -64,6 +64,26 @@ spec:
     secret:
       secretName: subscription-manager-activation-key
 
+  taskRunSpecs:
+  - pipelineTaskName: build-container
+    stepSpecs:
+    # Provision more CPU to speed up build compared to the defaults.
+    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
+    - name: build
+      computeResources:
+        limits:
+          cpu: 4
+        requests:
+          cpu: 4
+  - pipelineTaskName: clamav-scan
+    stepSpecs:
+    # Provision more CPU to speed up ClamAV scan compared to the defaults.
+    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/clamav-scan/0.1/clamav-scan.yaml#L48
+    - name: extract-and-scan-image
+      computeResources:
+        requests:
+          cpu: 1
+
   pipelineSpec:
 
     finally:
