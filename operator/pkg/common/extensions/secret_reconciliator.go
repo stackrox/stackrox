@@ -139,17 +139,7 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		needsUpdate = true
 	}
 
-	for k, v := range commonLabels.DefaultLabels() {
-		value, hasKey := secret.Labels[k]
-		if !hasKey || value != v {
-			needsUpdate = true
-			if secret.Labels == nil {
-				secret.Labels = map[string]string{}
-			}
-			secret.Labels[k] = v
-		}
-	}
-
+	needsUpdate = commonLabels.SetDefaultLabels(secret.Labels)
 	if !needsUpdate || !isManaged {
 		return nil
 	}

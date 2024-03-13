@@ -126,12 +126,6 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 		return client.Create(ctx, secret)
 	}
 
-	for k, v := range commonLabels.DefaultLabels() {
-		if secret.Labels == nil {
-			secret.Labels = map[string]string{}
-		}
-		secret.Labels[k] = v
-	}
-
+	commonLabels.SetDefaultLabels(secret.Labels)
 	return client.Update(ctx, secret)
 }
