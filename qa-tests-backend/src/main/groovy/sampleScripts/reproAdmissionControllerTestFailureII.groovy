@@ -94,7 +94,9 @@ if (false) {
 
 def i=0
 while (i<1000) {
+        LOG.debug("About to create")
         def created = client.createDeploymentNoWait(NGINX_DEPLOYMENT)
+        LOG.debug("Created: ${created}")
         assert !created
-        println "iteration ${i++}"
+        LOG.debug("Iteration: ${i++}")
 }
