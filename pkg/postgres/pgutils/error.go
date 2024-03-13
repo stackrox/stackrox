@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/net/context"
 )
@@ -66,16 +67,16 @@ func IsTransientError(err error) bool {
 	if pgconn.SafeToRetry(err) {
 		return true
 	}
-	if errorhelpers.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
+	if errox.IsAny(err, pgx.ErrNoRows, pgx.ErrTxClosed, pgx.ErrTxCommitRollback) {
 		return false
 	}
 	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 		return true
 	}
-	if errorhelpers.IsAny(err, context.DeadlineExceeded) {
+	if errox.IsAny(err, context.DeadlineExceeded) {
 		return true
 	}
-	if errorhelpers.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE) {
+	if errox.IsAny(err, io.EOF, io.ErrUnexpectedEOF, io.ErrClosedPipe, syscall.ECONNREFUSED, syscall.ECONNRESET, syscall.ECONNABORTED, syscall.EPIPE) {
 		return true
 	}
 	if err := errors.Unwrap(err); err != nil {
