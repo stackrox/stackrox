@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore"
