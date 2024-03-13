@@ -104,7 +104,7 @@
   Writes all applicable [pod] annotations (including default annotations) for
   $objType/$objName into $annotations. Pod labels are written iff $forPod is true.
   The dict $extraAnnotations can be used for specifying additional annotations which
-  can be modified using `customize` entries before before they are added to $annotations.
+  can be modified by the user using `customize` entries before before they are added to $annotations.
    */}}
 {{ define "srox._annotations" }}
 {{ $ := index . 0  }}
