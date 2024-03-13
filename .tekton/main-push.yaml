@@ -38,7 +38,10 @@ spec:
   #   value: "true"
   # TODO: Enable prefetching - will be done as part of ROX-20160.
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" }
+      ]
   - name: build-source-image
     value: 'true'
 

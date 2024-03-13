@@ -1,14 +1,14 @@
 FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
 
-# Switch to root because ubi8/nodejs image runs as non-root by default which does not let e.g. install yarn.
-USER 0:0
-
 WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Install yarn
-RUN make -C ui/.yarn-dist install
+# This installs yarn from Cachi2 and makes `yarn` executable available.
+# Not using `npm install --global` because it won't get us `yarn` globally.
+RUN cd scripts/konflux/bootstrap-yarn && \
+    npm ci --no-audit --no-fund
+ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/scripts/konflux/bootstrap-yarn/node_modules/.bin/"
 
 # This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
