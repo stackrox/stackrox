@@ -222,6 +222,11 @@ func (m *manager) kickOffImgScansAndDetect(
 					log.Debugf("%d alerts, err %v", len(alerts), nextRes.err)
 					continue
 				}
+				img := nextRes.img
+				scan := img.GetScan()
+				log.Debugf("Got image %s, %v", img.GetName().GetFullName(), img.GetNotes())
+				log.Debugf("Scan: %s, %d, %v, %v", scan.GetScanTime(), len(scan.GetComponents()),
+					scan.GetDataSource(), scan.GetNotes())
 				images[nextRes.idx] = nextRes.img
 
 			case <-fetchImgCtx.Done():
