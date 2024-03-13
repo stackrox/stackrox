@@ -8,6 +8,7 @@
 {{ define "srox.init" }}
 
 {{ $ := . }}
+{{- include "srox.checkVersionRequirements" $ -}}
 
 {{/*
     On first(!) instantiation, set up the $._rox structure, containing everything required by
