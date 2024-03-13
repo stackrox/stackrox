@@ -1,7 +1,7 @@
 {
   "id": "f09f8da1-6111-4ca0-8f49-294a76c65115",
   "name": "Fixable CVSS >= 7",
-  "description": "Alert on deployments with fixable vulnerabilities with a CVSS of at least 7",
+  "description": "Alert on deployments with fixable vulnerabilities with a CVSS of at least 7. While we suggest to rely on Severity instead of CVSS by default, you may want to favor CVSS, for example, because of FedRAMP requirements. If you decide to use this policy, consider disabling 'Fixable Severity at least Important' to avoid multiple violations for the same problem.",
   "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
   "remediation": "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.",
   "disabled": true,
