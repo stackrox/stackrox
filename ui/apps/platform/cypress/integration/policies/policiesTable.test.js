@@ -82,12 +82,23 @@ describe('Policies table', () => {
         // 0. Initial table state is sorted by the Policy column.
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
-        // 1. Sort ascending by the Severity column.
+        // 1. Sort descending by the Severity column.
         cy.get(thSelector).click();
-        // TODO Move sort order from invisible page state to visible query parameters in page address.
-        /*
-        cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
-        */
+        cy.location('search').should(
+            'eq',
+            '?sortOption[field]=Severity&sortOption[direction]=desc'
+        );
+
+        cy.wait(1000);
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
+        });
+
+        // 2. Sort ascending by the Severity column.
+        cy.get(thSelector).click();
+        cy.location('search').should('eq', '?sortOption[field]=Severity&sortOption[direction]=asc');
 
         // There is no request because front-end sorting.
         cy.wait(1000);
@@ -97,32 +108,14 @@ describe('Policies table', () => {
             assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
 
-        // 2. Sort descending by the Severity column.
+        // 3. Sort descending by the Severity column.
         cy.get(thSelector).click();
-        // TODO Move sort order from invisible page state to visible query parameters in page address.
-        /*
         cy.location('search').should(
             'eq',
-            '?sort[id]=Severity&sort[desc]=true'
+            '?sortOption[field]=Severity&sortOption[direction]=desc'
         );
-        */
-
-        // There is no request because front-end sorting.
-        cy.wait(1000);
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
-        });
-
-        // 3. Sort ascending by the Severity column.
-        cy.get(thSelector).click();
-        // TODO Move sort order from invisible page state to visible query parameters in page address.
-        /*
-        cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
-        */
-
-        cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
     });
 
     it('should have expected status values', () => {
