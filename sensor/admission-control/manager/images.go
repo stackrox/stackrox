@@ -150,6 +150,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 // returned.
 func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.AdmissionRequest) bool {
 	if req.OldObject.Raw == nil {
+		log.Debug("true")
 		return true
 	}
 
@@ -166,6 +167,7 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 	}
 
 	if oldDeployment == nil {
+		log.Debug("true")
 		return true
 	}
 
@@ -176,10 +178,12 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 
 	for _, container := range deployment.GetContainers() {
 		if !oldImages.Contains(container.GetImage().GetName().GetFullName()) {
+			log.Debug("true: %s", container.GetImage().GetName().GetFullName())
 			return true
 		}
 	}
 
+	log.Debug("false")
 	return false
 }
 
@@ -207,6 +211,7 @@ func (m *manager) kickOffImgScansAndDetect(
 					break resultsLoop
 				}
 				if nextRes.err != nil {
+					log.Debugf("%d alerts, err %v", len(alerts), nextRes.err)
 					continue
 				}
 				images[nextRes.idx] = nextRes.img
