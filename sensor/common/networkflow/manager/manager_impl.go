@@ -250,18 +250,8 @@ func NewManager(
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 	}
 
-	nfBufferSize := env.NetworkFlowBufferSize.IntegerSetting()
-	if nfBufferSize == env.NetworkFlowBufferSize.DefaultValue() {
-		// Only apply autoscaling if this var is not overridden
-		scaledBuffer, err := queue.ScaleSize(nfBufferSize)
-		if err == nil {
-			nfBufferSize = scaledBuffer
-		}
-	}
-
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		log.Infof("Scaling netflow buffer. Default: %i, Scaled: %i", env.NetworkFlowBufferSize.IntegerSetting(), nfBufferSize)
-		mgr.sensorUpdates = make(chan *message.ExpiringMessage, nfBufferSize)
+		mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 	} else {
 		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)

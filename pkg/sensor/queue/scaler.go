@@ -5,12 +5,13 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
-	log              = logging.LoggerForModule()
-	DEFAULT_MEMLIMIT = float64(4194304000)
+	log             = logging.LoggerForModule()
+	defaultMemlimit = float64(4194304000)
 )
 
 // ScaleSize will scale the size of a given queue size based on the Sensor memory limit relative
@@ -25,7 +26,7 @@ func ScaleSize(queueSize int) (int, error) {
 		if l == 0 {
 			log.Warn("ROX_MEMLIMIT is set to 0!")
 		}
-		ratio := float64(l) / DEFAULT_MEMLIMIT // FIXME: Convert correctly
+		ratio := float64(l) / defaultMemlimit // FIXME: Convert correctly
 
 		log.Warnf("Got effective memlimit of %d. Scaling queue to %.2f percent", l, ratio*100) // FIXME: Remove
 
@@ -36,4 +37,24 @@ func ScaleSize(queueSize int) (int, error) {
 		}
 	}
 	return queueSize, nil
+}
+
+// ScaleSizeOnNonDefault only scales the given integer setting if it is
+// set to its default value (e.g. not changed by hand).
+func ScaleSizeOnNonDefault(setting *env.IntegerSetting) int {
+	v := setting.IntegerSetting()
+	if v != setting.DefaultValue() {
+		// Setting has been changed somewhere - don't scale it
+		log.Debugf("Detected non-default value. Not scaling %s", setting.EnvVar())
+		return v
+	}
+
+	scaled, err := ScaleSize(v)
+	if err != nil {
+		log.Warnf("Failed to scale setting %s. Returning its unscaled value", setting.EnvVar())
+		return v
+	}
+
+	log.Infof("Scaling %s - Default: %d, Scaled: %d", setting.EnvVar(), v, scaled)
+	return scaled
 }
