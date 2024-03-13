@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"k8s.io/client-go/kubernetes"
@@ -90,7 +90,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	case h.commandsC <- cmd:
 		return nil
 	case <-h.stopSig.Done():
-		return errors.Errorf("unable to apply network policies: %s", proto.MarshalTextString(cmd))
+		return errors.Errorf("unable to apply network policies: %s", protocompat.MarshalTextString(cmd))
 	}
 }
 

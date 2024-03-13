@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/cve.proto";
 import "storage/role.proto";
@@ -17,14 +16,14 @@ message ReportConfiguration {
     VULNERABILITY = 0;
   }
 
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-  string name = 2 [(gogoproto.moretags) = 'search:"Report Name"'];
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2; // @gotags: search:"Report Name"
   string description = 3;
-  ReportType type = 4 [(gogoproto.moretags) = 'search:"Report Type"'];
+  ReportType type = 4; // @gotags: search:"Report Type"
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
   }
-  string scope_id = 6 [(gogoproto.moretags) = 'search:"Embedded Collection ID"'];
+  string scope_id = 6; // @gotags: search:"Embedded Collection ID"
   oneof notifier_config {
     EmailNotifierConfiguration email_config = 7;
   }
@@ -33,7 +32,7 @@ message ReportConfiguration {
   google.protobuf.Timestamp last_successful_run_time = 10;
   ResourceScope resource_scope = 11;
   repeated NotifierConfiguration notifiers = 12;
-  SlimUser creator = 13 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+  SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
   int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 }
 
@@ -73,7 +72,7 @@ message VulnerabilityReportFilters {
 
 message ResourceScope {
   oneof scope_reference {
-    string collection_id = 1 [(gogoproto.moretags) = 'search:"Collection ID"'];
+    string collection_id = 1; // @gotags: search:"Collection ID"
   }
 }
 
@@ -90,7 +89,7 @@ message NotifierConfiguration {
   // values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
   // unset value, which is a requirement within SQL."
   oneof ref {
-    string id = 2 [(gogoproto.moretags) = 'sql:"fk(Notifier:id),restrict-delete"'];
+    string id = 2; // @gotags: sql:"fk(Notifier:id),restrict-delete"
   }
 }
 

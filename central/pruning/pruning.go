@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
@@ -573,7 +572,7 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
 	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
-	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
+	cutOffTime, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
 	if err != nil {
 		log.Errorf("Failed to determine downloadable report retention %v", err)
 		return
@@ -629,7 +628,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}()
 
 	// Allow 24hrs grace period after the config changes
-	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
+	lastUpdateTime, err := protocompat.ConvertTimestampToTimeOrError(clusterRetention.GetLastUpdated())
 	if err != nil {
 		log.Error(err)
 		return
@@ -641,7 +640,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}
 
 	// Retention should start counting _after_ the config is created (which is basically when upgraded to 71)
-	configCreationTime, err := types.TimestampFromProto(clusterRetention.GetCreatedAt())
+	configCreationTime, err := protocompat.ConvertTimestampToTimeOrError(clusterRetention.GetCreatedAt())
 	if err != nil {
 		log.Error(err)
 		return

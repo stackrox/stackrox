@@ -2,16 +2,14 @@ name: Scanner dev vulnerability update
 on:
   schedule:
   - cron: "30 */4 * * *"
-  push:
-    branches:
-    - yli3/*
 
 jobs:
   upload-dev-vulnerabilities:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
-      options: -v /tmp:/tmp # make sure Claicore blob can access tmp folder
+      volumes:
+        - /tmp:/tmp # make sure Claircore blob can access tmp folder
     steps:
     - name: Checkout
       uses: actions/checkout@v4

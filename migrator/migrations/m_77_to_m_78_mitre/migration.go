@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
@@ -66,7 +65,7 @@ func updatePoliciesWithMitre(db *bolt.DB) error {
 			storedPolicy.MitreAttackVectors = policy.MitreAttackVectors
 			storedPolicy.MitreVectorsLocked = policy.MitreVectorsLocked
 
-			data, err := proto.Marshal(storedPolicy)
+			data, err := protocompat.Marshal(storedPolicy)
 			if err != nil {
 				return errors.Wrapf(err, "marshalling policy %s", key)
 			}

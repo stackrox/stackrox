@@ -2,10 +2,10 @@ package dispatchers
 
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,7 +32,7 @@ func getProfileNames(profiles []v1alpha1.NamedObjectReference) []string {
 func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOperatorCondition {
 	statusConditions := make([]*central.ComplianceOperatorCondition, 0, len(conditions))
 	for _, c := range conditions {
-		lastTransitionTime, err := types.TimestampProto(c.LastTransitionTime.Time)
+		lastTransitionTime, err := protocompat.ConvertTimeToTimestampOrError(c.LastTransitionTime.Time)
 		if err != nil {
 			log.Warnf("unable to convert last transition time %v, skipping condition", err)
 			continue

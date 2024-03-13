@@ -6,7 +6,6 @@ package legacy
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
@@ -31,7 +30,7 @@ func (b *storeImpl) Walk(_ context.Context, fn func(np *storage.NetworkPolicy) e
 
 // Upsert upserts a network policy to bolt
 func (b *storeImpl) Upsert(_ context.Context, np *storage.NetworkPolicy) error {
-	bytes, err := proto.Marshal(np)
+	bytes, err := protocompat.Marshal(np)
 	if err != nil {
 		return err
 	}

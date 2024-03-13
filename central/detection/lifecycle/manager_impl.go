@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -312,7 +310,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error {
 	if indicator.GetId() == "" {
-		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
+		return fmt.Errorf("invalid indicator received: %s, id was empty", protocompat.MarshalTextString(indicator))
 	}
 
 	// Evaluate filter before even adding to the queue
@@ -322,7 +320,7 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 	}
 	metrics.ProcessFilterCounterInc("Added")
 
-	observationEnd, _ := types.TimestampProto(time.Now().Add(genDuration))
+	observationEnd, _ := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(genDuration))
 	m.deploymentObservationQueue.Push(&queue.DeploymentObservation{DeploymentID: indicator.GetDeploymentId(), InObservation: true, ObservationEnd: observationEnd})
 
 	m.addToIndicatorQueue(indicator)

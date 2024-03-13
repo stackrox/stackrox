@@ -6,7 +6,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
@@ -202,15 +201,15 @@ func sortPolicies(policies []*storage.NetworkPolicy) {
 	for _, policy := range policies {
 		for _, ingressRule := range policy.Spec.Ingress {
 			sort.Slice(ingressRule.From, func(i, j int) bool {
-				return proto.MarshalTextString(ingressRule.From[i]) < proto.MarshalTextString(ingressRule.From[j])
+				return protocompat.MarshalTextString(ingressRule.From[i]) < protocompat.MarshalTextString(ingressRule.From[j])
 			})
 		}
 		sort.Slice(policy.Spec.Ingress, func(i, j int) bool {
-			return proto.MarshalTextString(policy.Spec.Ingress[i]) < proto.MarshalTextString(policy.Spec.Ingress[j])
+			return protocompat.MarshalTextString(policy.Spec.Ingress[i]) < protocompat.MarshalTextString(policy.Spec.Ingress[j])
 		})
 	}
 	sort.Slice(policies, func(i, j int) bool {
-		return proto.MarshalTextString(policies[i]) < proto.MarshalTextString(policies[j])
+		return protocompat.MarshalTextString(policies[i]) < protocompat.MarshalTextString(policies[j])
 	})
 }
 

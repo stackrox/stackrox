@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -86,7 +85,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "parsing last update timestamp from file %s", timestampPath)
 	}
 
-	tsProto, err := types.TimestampProto(timestamp)
+	tsProto, err := protocompat.ConvertTimeToTimestampOrError(timestamp)
 	if err != nil {
 		return nil, errors.Wrapf(err, "timestamp in file %s is invalid", timestampPath)
 	}

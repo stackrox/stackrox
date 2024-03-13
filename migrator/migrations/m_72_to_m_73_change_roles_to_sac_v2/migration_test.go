@@ -3,7 +3,6 @@ package m72tom73
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
@@ -97,7 +96,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestRolesGlobalAccessMigration() 
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
 	for _, ps := range newFormatPermissionSets {
-		bytes, err := proto.Marshal(ps)
+		bytes, err := protocompat.Marshal(ps)
 		suite.NoError(err)
 		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(psBucket, []byte(ps.Id)), bytes)
 	}
@@ -108,7 +107,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestRolesGlobalAccessMigration() 
 		bucket := tx.Bucket(rolesBucket)
 
 		for _, role := range rolesToUpsert {
-			bytes, err := proto.Marshal(role)
+			bytes, err := protocompat.Marshal(role)
 			if err != nil {
 				return err
 			}

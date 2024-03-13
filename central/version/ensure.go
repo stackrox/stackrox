@@ -3,7 +3,6 @@ package version
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	vStore "github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,7 +47,7 @@ func Ensure(versionStore vStore.Store) error {
 	}
 
 	if int(version.GetSeqNum()) != migrations.CurrentDBVersionSeqNum() {
-		return fmt.Errorf("invalid DB version found: %s", proto.MarshalTextString(version))
+		return fmt.Errorf("invalid DB version found: %s", protocompat.MarshalTextString(version))
 	}
 
 	// TYPICAL CASE: DB is of the same version. This happens if Central does a regular restart, and was not patched.

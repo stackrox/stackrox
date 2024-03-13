@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
@@ -48,14 +47,14 @@ func (s *cleanupAfterClusterTestSuite) TestMigrationRemovesOrphanedClusterObject
 	}
 
 	key := rocksdbmigration.GetPrefixedKey(clusterBucket, []byte(existingCluster.GetId()))
-	value, err := proto.Marshal(existingCluster)
+	value, err := protocompat.Marshal(existingCluster)
 	s.NoError(err)
 	s.NoError(s.databases.RocksDB.Put(writeOpts, key, value))
 
 	// Add in a cluster health status just to validate that it won't get picked up by the iterator
 	chs := &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY}
 	chsKey := rocksdbmigration.GetPrefixedKey([]byte("clusters_health_status"), []byte(existingCluster.GetId()))
-	chsValue, err := proto.Marshal(chs)
+	chsValue, err := protocompat.Marshal(chs)
 	s.NoError(err)
 	s.NoError(s.databases.RocksDB.Put(writeOpts, chsKey, chsValue))
 
@@ -118,7 +117,7 @@ func (s *cleanupAfterClusterTestSuite) getServiceAccounts(existingCluster *stora
 		}
 
 		key := rocksdbmigration.GetPrefixedKey(serviceAccountBucket, []byte(sa.GetId()))
-		value, err := proto.Marshal(sa)
+		value, err := protocompat.Marshal(sa)
 		s.NoError(err)
 		s.NoError(s.databases.RocksDB.Put(writeOpts, key, value))
 	}
@@ -146,7 +145,7 @@ func (s *cleanupAfterClusterTestSuite) getK8SRoles(existingCluster *storage.Clus
 		}
 
 		key := rocksdbmigration.GetPrefixedKey(k8sRoleBucket, []byte(role.GetId()))
-		value, err := proto.Marshal(role)
+		value, err := protocompat.Marshal(role)
 		s.NoError(err)
 		s.NoError(s.databases.RocksDB.Put(writeOpts, key, value))
 	}
@@ -174,7 +173,7 @@ func (s *cleanupAfterClusterTestSuite) getRoleBindings(existingCluster *storage.
 		}
 
 		key := rocksdbmigration.GetPrefixedKey(roleBindingsBucket, []byte(rb.GetId()))
-		value, err := proto.Marshal(rb)
+		value, err := protocompat.Marshal(rb)
 		s.NoError(err)
 		s.NoError(s.databases.RocksDB.Put(writeOpts, key, value))
 	}

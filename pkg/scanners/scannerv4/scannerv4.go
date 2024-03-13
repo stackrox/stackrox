@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -40,7 +39,7 @@ var (
 
 	// zeroProtoTimestampFromTime represents the zero value of a proto
 	// timestamp when initialized from the zero time.
-	zeroProtoTimestampFromTime, _ = protoTypes.TimestampProto(time.Time{})
+	zeroProtoTimestampFromTime, _ = protocompat.ConvertTimeToTimestampOrError(time.Time{})
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.

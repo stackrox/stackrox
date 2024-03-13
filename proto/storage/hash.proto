@@ -2,12 +2,10 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
-
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 message Hash {
-  string cluster_id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string cluster_id = 1; // @gotags: sql:"pk"
   map<string, uint64> hashes = 2;
 }

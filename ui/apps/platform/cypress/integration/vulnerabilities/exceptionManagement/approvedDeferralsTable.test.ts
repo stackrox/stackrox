@@ -7,8 +7,8 @@ import {
 import {
     deferAndVisitRequestDetails,
     visitApprovedDeferralsTab,
+    approveRequest,
 } from './ExceptionManagement.helpers';
-import { approveRequest } from './approveRequestFlow.test';
 import { selectors } from './ExceptionManagement.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 

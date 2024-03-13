@@ -1,7 +1,6 @@
 package m95tom96
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -70,7 +69,7 @@ func copyAlertScopingInformationToRoot(db *types.Databases) error {
 			alert.NamespaceId = ""
 		}
 
-		data, err := proto.Marshal(&alert)
+		data, err := protocompat.Marshal(&alert)
 		if err != nil {
 			return err
 		}

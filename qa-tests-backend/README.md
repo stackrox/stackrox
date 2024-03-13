@@ -40,7 +40,7 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
 
 ### Tests dependent on integration credentials
 - If your tests depend on an integration password or token in an environment variable such as:
-  `GOOGLE_CREDENTIALS_GCR_SCANNER`, `EMAIL_NOTIFIER_PASSWORD`,
+  `GOOGLE_CREDENTIALS_GCR_SCANNER_V2`, `EMAIL_NOTIFIER_PASSWORD`,
   `MAILGUN_PASSWORD`, `JIRA_TOKEN`, `DTR_REGISTRY_PASSWORD`, `QUAY_PASSWORD`
   - Create a `qa-tests-backend/qa-test-settings.properties` file that contains environment variable assignments.
   - Copy environment variable settings from the [StackRox 1Password Vault](https://stackrox.1password.com)

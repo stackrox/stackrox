@@ -150,7 +150,7 @@ SELECT
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
-    CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
+    CONTAINS_SUBSTR(ShortJobName, "'"${job_name_match}"'")
     AND NOT IsPullRequest
     AND CONTAINS_SUBSTR(JobName, "master")
     AND NOT STARTS_WITH(JobName, "rehearse-")
@@ -177,7 +177,7 @@ LIMIT
     }
 
     local body
-    if [[ -s "${data_file}" ]]; then
+    if [[ $(cat "${data_file}") != "[]" ]]; then
         jq < "${data_file}"
         # shellcheck disable=SC2016
         body='{"blocks":[

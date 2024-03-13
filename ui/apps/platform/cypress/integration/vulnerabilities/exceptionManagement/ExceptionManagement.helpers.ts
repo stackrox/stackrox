@@ -1,3 +1,4 @@
+import { getInputByLabel } from '../../../helpers/formHelpers';
 import { visit } from '../../../helpers/visit';
 import {
     fillAndSubmitExceptionForm,
@@ -33,6 +34,14 @@ export function visitPendingRequestsTab() {
 
 export function visitApprovedDeferralsTab() {
     visitExceptionManagementTab(approvedDeferralsPath);
+}
+
+export function visitApprovedFalsePositivesTab() {
+    visitExceptionManagementTab(approvedFalsePositivesPath);
+}
+
+export function visitDeniedRequestsTab() {
+    visitExceptionManagementTab(deniedRequestsPath);
 }
 
 export function deferAndVisitRequestDetails({
@@ -102,4 +111,30 @@ export function markFalsePositiveAndVisitRequestDetails({
                 visit(url);
             });
     });
+}
+
+// This function approves a request on the exception management request details page
+export function approveRequest() {
+    cy.get('button:contains("Approve request")').click();
+    cy.get('div[role="dialog"]').should('exist');
+    getInputByLabel('Approval rationale').type('Approved');
+    cy.get('div[role="dialog"] button:contains("Approve")').click();
+    cy.get('div[role="dialog"]').should('not.exist');
+    cy.get('div[aria-label="Success Alert"]').should(
+        'contain',
+        'The vulnerability request was successfully approved.'
+    );
+}
+
+// This function denies a request on the exception management request details page
+export function denyRequest() {
+    cy.get('button:contains("Deny request")').click();
+    cy.get('div[role="dialog"]').should('exist');
+    getInputByLabel('Denial rationale').type('Denied');
+    cy.get('div[role="dialog"] button:contains("Deny")').click();
+    cy.get('div[role="dialog"]').should('not.exist');
+    cy.get('div[aria-label="Success Alert"]').should(
+        'contain',
+        'The vulnerability request was successfully denied.'
+    );
 }

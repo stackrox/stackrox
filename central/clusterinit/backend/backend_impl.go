@@ -67,7 +67,7 @@ func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error)
 	if sensorCert == nil {
 		return nil, errors.New("no sensor certificate in init bundle")
 	}
-	timestamp, err := types.TimestampProto(sensorCert.X509Cert.NotAfter)
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(sensorCert.X509Cert.NotAfter)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting expiry date to timestamp")
 	}

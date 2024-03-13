@@ -38,7 +38,7 @@ spec:
           secretName: clairsecret
       containers:
       - name: clair
-        image: us.gcr.io/stackrox-ci/clair:v2.1.4
+        image: us.gcr.io/acs-san-stackroxci/clair:v2.1.4
         args:
           - "-config"
           - "/config/config.yaml"
@@ -66,7 +66,7 @@ spec:
         app: postgres
     spec:
       containers:
-      - image: us.gcr.io/stackrox-ci/postgres:9.6.18
+      - image: us.gcr.io/acs-san-stackroxci/postgres:9.6.18
         name: postgres
         env:
         - name: POSTGRES_PASSWORD

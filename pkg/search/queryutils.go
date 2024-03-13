@@ -3,9 +3,9 @@ package search
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -34,7 +34,7 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 	case *v1.Query_BaseQuery:
 		fn(typedQ.BaseQuery)
 	default:
-		utils.Should(fmt.Errorf("unhandled query type: %T; query was %s", q, proto.MarshalTextString(q)))
+		utils.Should(fmt.Errorf("unhandled query type: %T; query was %s", q, protocompat.MarshalTextString(q)))
 	}
 }
 
@@ -114,7 +114,7 @@ func FilterQuery(q *v1.Query, fn func(*v1.BaseQuery) bool) (*v1.Query, bool) {
 		}
 		return nil, false
 	default:
-		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
+		log.Errorf("Unhandled query type: %T; query was %s", q, protocompat.MarshalTextString(q))
 		return nil, false
 	}
 }

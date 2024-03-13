@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/probeupload"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
@@ -120,7 +120,7 @@ func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManife
 		return utils.ShouldErr(errors.Wrap(err, "generated invalid manifest"))
 	}
 
-	manifestBytes, err := proto.Marshal(manifest)
+	manifestBytes, err := protocompat.Marshal(manifest)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal manifest")
 	}

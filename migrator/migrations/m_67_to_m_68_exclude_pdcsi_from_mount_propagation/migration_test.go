@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,7 +37,7 @@ func TestPolicyMigration(t *testing.T) {
 			policy, ok := beforeMigrationPolicies[policyID]
 			require.True(t, ok)
 
-			policyBytes, err := proto.Marshal(policy)
+			policyBytes, err := protocompat.Marshal(policy)
 			if err != nil {
 				return err
 			}

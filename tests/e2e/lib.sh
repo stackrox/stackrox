@@ -139,8 +139,6 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
-    ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
@@ -1060,6 +1058,7 @@ _record_build_info() {
     update_job_record "build" "${build_info}"
 }
 
+# TODO(ROX-22872): remove
 restore_56_1_backup() {
     info "Restoring a 56.1 backup"
 
@@ -1069,6 +1068,17 @@ restore_56_1_backup() {
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+}
+
+restore_4_1_postgres_backup() {
+    info "Restoring a 4.1 postgres backup"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+        central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
 
 update_public_config() {

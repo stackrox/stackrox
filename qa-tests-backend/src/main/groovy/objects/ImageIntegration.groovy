@@ -304,10 +304,10 @@ class GCRImageIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: "gcr",
-                project: "stackrox-ci",
+                project: "acs-san-stackroxci",
                 endpoint: "us.gcr.io",
                 includeScanner: true,
-                serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                serviceAccount: Env.mustGetGCRServiceAccount(),
                 wifEnabled: false,
                 skipTestIntegration: false,
         ]

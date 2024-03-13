@@ -3,10 +3,10 @@ package m93tom94
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -46,7 +46,7 @@ func (suite *rolesUpdateTestSuite) TestRolesUpdate() {
 	writeOpts := gorocksdb.NewDefaultWriteOptions()
 
 	for _, role := range roles {
-		value, err := proto.Marshal(role)
+		value, err := protocompat.Marshal(role)
 		suite.NoError(err)
 		suite.NoError(suite.db.Put(writeOpts,
 			rocksdbmigration.GetPrefixedKey(rolesBucket, []byte(role.Name)),

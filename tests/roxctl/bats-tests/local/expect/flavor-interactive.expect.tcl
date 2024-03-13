@@ -45,7 +45,7 @@ expect "The directory to output the deployment bundle to*:*: " { send "$out_dir\
 expect "Whether to enable telemetry*:" { send "\n" }
 
 # Central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
-# Central-db image to use (default: "stackrox.io/central-db:3.67.x-296-g56df6a892d"):
+# Central-db image to use (default: "quay.io/stackrox-io/central-db:3.67.x-296-g56df6a892d"):
 # Central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
@@ -72,7 +72,7 @@ expect "List of secrets to add as declarative configuration*:" { send "\n" }
 expect "The method of exposing Central*:*: " { send "none\n" }
 
 # Main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):
-# Main image to use (default: "stackrox.io/main:3.67.x-296-g56df6a892d")
+# Main image to use (default: "quay.io/stackrox-io/main:3.67.x-296-g56df6a892d")
 # Main image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
@@ -100,7 +100,7 @@ expect "The deployment tool to use (kubectl, helm, helm-values)*:" { send "\n" }
 expect "Istio version when deploying into an Istio-enabled cluster*:" { send "\n" }
 
 # Scanner-db image to use (default: "docker.io/stackrox/scanner-db:2.21.0-15-g448f2dc8fa"):
-# Scanner-db image to use (default: "stackrox.io/scanner-db:3.67.x-296-g56df6a892d"):
+# Scanner-db image to use (default: "quay.io/stackrox-io/scanner-db:3.67.x-296-g56df6a892d"):
 # Scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
@@ -123,7 +123,7 @@ expect {
   }
 }
 # Scanner image to use (default: "docker.io/stackrox/scanner:2.21.0-15-g448f2dc8fa"):
-# Scanner image to use (default: "stackrox.io/scanner:3.67.x-296-g56df6a892d"):
+# Scanner image to use (default: "quay.io/stackrox-io/scanner:3.67.x-296-g56df6a892d"):
 expect {
   default {
     send_user "\nFATAL: No question about scanner image\n"

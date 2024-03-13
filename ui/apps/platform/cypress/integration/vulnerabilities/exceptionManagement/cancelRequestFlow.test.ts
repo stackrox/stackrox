@@ -5,8 +5,8 @@ import {
     deferAndVisitRequestDetails,
     markFalsePositiveAndVisitRequestDetails,
     visitPendingRequestsTab,
+    approveRequest,
 } from './ExceptionManagement.helpers';
-import { approveRequest } from './approveRequestFlow.test';
 import { selectors } from './ExceptionManagement.selectors';
 
 const comment = 'Defer me';

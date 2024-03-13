@@ -34,7 +34,7 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     private final static String IMAGE_SIGNATURE = "Image Signature Test"
 
     private final static String NON_EXISTENT_IMAGE = "non-existent:image"
-    private final static String IMAGE_WITH_SCANS = "us.gcr.io/stackrox-ci/nginx:1.12"
+    private final static String IMAGE_WITH_SCANS = "us.gcr.io/acs-san-stackroxci/nginx:1.12"
 
     def setupSpec() {
         noImageScansEnforcements = Services.updatePolicyEnforcement(

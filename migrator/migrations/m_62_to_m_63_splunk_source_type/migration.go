@@ -1,7 +1,6 @@
 package m62tom63
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
@@ -55,7 +54,7 @@ func migrateSplunkSourceType(db *bolt.DB) error {
 				}
 			}
 			splunk.DerivedSourceTypeDeprecated = nil
-			newData, err := proto.Marshal(&notifier)
+			newData, err := protocompat.Marshal(&notifier)
 			if err != nil {
 				return err
 			}

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
@@ -100,7 +101,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 		return nil, err
 	}
 	if group == nil {
-		return nil, errors.Wrapf(errox.NotFound, "group %q not found", proto.MarshalTextString(props))
+		return nil, errors.Wrapf(errox.NotFound, "group %q not found", protocompat.MarshalTextString(props))
 	}
 	return group, nil
 }

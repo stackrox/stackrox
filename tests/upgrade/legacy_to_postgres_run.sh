@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 
+# TODO(ROX-22872): Remove this test
 set -euo pipefail
 
 # Tests upgrade to Postgres.
@@ -60,6 +61,7 @@ test_upgrade() {
     fi
 
     preamble
+    preamble_postgres
     setup_deployment_env false false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources

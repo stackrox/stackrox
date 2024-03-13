@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/protocompat"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
@@ -18,7 +17,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 	errExpected := true
 	var noErr error
 	var noMetadata *v4.Metadata
-	tmsFromTime, _ := types.TimestampProto(time.Time{})
+	tmsFromTime, _ := protocompat.ConvertTimeToTimestampOrError(time.Time{})
 	testCases := []struct {
 		desc         string
 		clientRet    *v4.Metadata

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,7 +83,7 @@ func Test_matchesECRAuth(t *testing.T) {
 		}
 	}
 	createAuthData := func(u, p string, e time.Time) *storage.ECRConfig_AuthorizationData {
-		ts, err := types.TimestampProto(e)
+		ts, err := protocompat.ConvertTimeToTimestampOrError(e)
 		if err != nil {
 			assert.FailNow(t, "failed to convert timestamp: %v", err)
 		}

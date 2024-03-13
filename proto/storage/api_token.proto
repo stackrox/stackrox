@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "storage";
@@ -11,12 +10,12 @@ option java_package = "io.stackrox.proto.storage";
 message TokenMetadata {
   // Next available tag: 8
 
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string id = 1; // @gotags: sql:"pk"
   string name = 2;
   repeated string roles = 7;
   google.protobuf.Timestamp issued_at = 4;
-  google.protobuf.Timestamp expiration = 5 [(gogoproto.moretags) = 'search:"Expiration,store"'];
-  bool revoked = 6 [(gogoproto.moretags) = 'search:"Revoked,store"'];
+  google.protobuf.Timestamp expiration = 5; // @gotags: search:"Expiration,store"
+  bool revoked = 6; // @gotags: search:"Revoked,store"
 
   string role = 3 [deprecated = true];
 }

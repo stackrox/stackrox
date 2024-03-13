@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -215,7 +216,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 }
 
 func (suite *ClusterServiceTestSuite) timeBeforeDays(days int) *types.Timestamp {
-	result, err := types.TimestampProto(time.Now().Add(-24 * time.Duration(days) * time.Hour))
+	result, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-24 * time.Duration(days) * time.Hour))
 	suite.NoError(err)
 	return result
 }

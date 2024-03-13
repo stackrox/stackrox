@@ -5,12 +5,12 @@ import (
 	"testing"
 	"text/template"
 
-	types2 "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -355,7 +355,7 @@ func runFormatTest(t *testing.T, alert *storage.Alert, expectedFormattedAlert st
 
 	testFormat := func(alert *storage.Alert, expected string) {
 		var err error
-		alert.Time, err = types2.TimestampProto(timeutil.MustParse("2006-01-02 15:04:05", "2021-01-20 22:42:02"))
+		alert.Time, err = protocompat.ConvertTimeToTimestampOrError(timeutil.MustParse("2006-01-02 15:04:05", "2021-01-20 22:42:02"))
 		require.NoError(t, err)
 		formatted, err := FormatAlert(alert, AlertLink("https://localhost:8080", alert), funcMap, mitreDataStore.Singleton())
 		require.NoError(t, err)

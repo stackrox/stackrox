@@ -130,7 +130,7 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 		var publishedTime *gogotypes.Timestamp
 		if !ccVuln.Issued.IsZero() {
 			// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
-			publishedTime, _ = gogotypes.TimestampProto(ccVuln.Issued)
+			publishedTime, _ = protocompat.ConvertTimeToTimestampOrError(ccVuln.Issued)
 		}
 		vuln := &storage.EmbeddedVulnerability{
 			Cve:               vulnName(ccVuln.Name),

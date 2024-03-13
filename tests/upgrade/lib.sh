@@ -84,6 +84,7 @@ function roxcurl() {
   curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
+# TODO(ROX-22872): remove
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
@@ -115,10 +116,49 @@ deploy_earlier_central() {
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
+deploy_earlier_postgres_central() {
+    info "Deploying: $EARLIER_TAG..."
+
+    make cli
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+
+    # Let's try helm
+    ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         --set central.adminPassword.value="${ROX_PASSWORD}" \
+         --set central.db.enabled=true \
+         --set central.persistence.none=true \
+         --set central.exposure.loadBalancer.enabled=true \
+         --set system.enablePodSecurityPolicies=false \
+         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="$(cat SCANNER_VERSION)" \
+         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
+
+    # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
+    # the scripts.  So we will give it a minute for things to get started before we proceed
+    sleep 60
+
+    ROX_USERNAME="admin"
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+}
+
+# TODO(ROX-22872): remove
 restore_backup_test() {
     info "Restoring a 56.1 backup into a newer central"
 
     restore_56_1_backup
+}
+
+restore_4_1_backup() {
+    info "Restoring a 4.1 backup into a newer central"
+
+    restore_4_1_postgres_backup
 }
 
 force_rollback() {
@@ -443,16 +483,6 @@ preamble() {
         (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
 
-    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
-        if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
-            if is_CI; then
-              info "Repo for time travel already exists! Will use it."
-            fi
-            (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
-        else
-            (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
-        fi
-
     if is_CI; then
         if ! command -v yq >/dev/null 2>&1; then
             sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
@@ -460,5 +490,20 @@ preamble() {
         fi
     else
         require_executable yq
+    fi
+}
+
+# TODO(ROX-22872):  remove
+preamble_postgres() {
+    info "Starting test preamble postgres"
+
+    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
+    if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
+        if is_CI; then
+          info "Repo for time travel already exists! Will use it."
+        fi
+        (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+    else
+        (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
     fi
 }
