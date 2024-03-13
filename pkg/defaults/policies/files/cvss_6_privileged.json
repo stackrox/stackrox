@@ -1,7 +1,7 @@
 {
   "id": "93f4b2dd-ef5a-419e-8371-38aed480fb36",
   "name": "Fixable CVSS >= 6 and Privileged",
-  "description": "Alert on deployments running in privileged mode with fixable vulnerabilities with a CVSS of at least 6",
+  "description": "Alert on deployments running in privileged mode with fixable vulnerabilities with a CVSS of at least 6. While we suggest to rely on Severity instead of CVSS by default, you may want to favor CVSS, for example, because of FedRAMP requirements. If you decide to use this policy, consider disabling 'Privileged Containers with Important and Critical Fixable CVEs' to avoid multiple violations for the same problem.",
   "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application, and highly privileged containers pose greater risk. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
   "remediation": "Use your package manager to update to a fixed version in future builds, run your container with lower privileges, or speak with your security team to mitigate the vulnerabilities.",
   "disabled": true,
