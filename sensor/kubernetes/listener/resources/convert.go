@@ -345,10 +345,10 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 				}
 			}
 
-			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
-			// with an image digest. e.g. quay.io/stackrox-io/main@sha256:xyz
-			// Also ensure the registry and remote match what was provided by the runtime.
-			// TODO: Update this comment to be more accurate
+			// If there already is an image ID for the image then that implies that the name of the image
+			// had a digest. e.g. quay.io/stackrox-io/main@sha256:xyz or main@sha256:xyz
+			// If the ID already exists populate NotPullable and IsClusterLocal, also sync the registry
+			// and remote with the container runtime.
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
