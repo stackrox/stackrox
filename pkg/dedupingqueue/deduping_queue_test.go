@@ -1,4 +1,4 @@
-package uniqueue
+package dedupingqueue
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func TestUniQueue(t *testing.T) {
 func (s *uniQueueSuite) TestPushPull() {
 	items := []*testItem{{1}, {2}, {1}, {3}}
 	expectedItems := []*testItem{{1}, {2}, {3}}
-	q := NewUniQueue()
+	q := NewDedupingQueue[string]()
 	for _, i := range items {
 		q.Push(i)
 	}
@@ -37,7 +37,7 @@ func (s *uniQueueSuite) TestPushPull() {
 }
 
 func (s *uniQueueSuite) TestPullBlocking() {
-	q := NewUniQueue()
+	q := NewDedupingQueue[string]()
 	stopSignal := concurrency.NewSignal()
 	time.AfterFunc(200*time.Millisecond, func() {
 		stopSignal.Signal()
@@ -52,6 +52,6 @@ type testItem struct {
 	value int
 }
 
-func (i *testItem) GetKey() string {
+func (i *testItem) GetDedupeKey() string {
 	return fmt.Sprintf("%d", i.value)
 }
