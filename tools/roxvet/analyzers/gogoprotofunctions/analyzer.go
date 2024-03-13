@@ -30,8 +30,9 @@ var (
 		// - inner key is the function name in the gogo protobuf library
 		// - inner value is the replacement function name in protocompat
 		"github.com/gogo/protobuf/proto": {
-			"Marshal":   "Marshal",
-			"Unmarshal": "Unmarshal",
+			"Marshal":           "Marshal",
+			"MarshalTextString": "MarshalTextString",
+			"Unmarshal":         "Unmarshal",
 		},
 		"github.com/gogo/protobuf/types": {
 			"TimestampFromProto": "ConvertTimestampToTimeOrError",

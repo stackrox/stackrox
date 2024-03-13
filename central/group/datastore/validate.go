@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -36,13 +36,13 @@ func ValidateGroup(group *storage.Group, requireID bool) error {
 //   - if no key is given, no value shall be given.
 func ValidateProps(props *storage.GroupProperties, requireID bool) error {
 	if requireID && props.GetId() == "" {
-		return errors.Errorf("group ID must be set in {%s}", proto.MarshalTextString(props))
+		return errors.Errorf("group ID must be set in {%s}", protocompat.MarshalTextString(props))
 	}
 	if props.GetAuthProviderId() == "" {
-		return errors.Errorf("authprovider ID must be set in {%s}", proto.MarshalTextString(props))
+		return errors.Errorf("authprovider ID must be set in {%s}", protocompat.MarshalTextString(props))
 	}
 	if props.GetKey() == "" && props.GetValue() != "" {
-		return errors.Errorf("cannot have a value without a key in {%s}", proto.MarshalTextString(props))
+		return errors.Errorf("cannot have a value without a key in {%s}", protocompat.MarshalTextString(props))
 	}
 	if props.GetKey() == "" && props.GetValue() == "" &&
 		props.GetTraits().GetMutabilityMode() == storage.Traits_ALLOW_MUTATE_FORCED {

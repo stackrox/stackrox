@@ -77,8 +77,3 @@ func MustConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 	}
 	return t
 }
-
-// CompareTimestamps ...
-func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
-	return t1.Compare(t2)
-}

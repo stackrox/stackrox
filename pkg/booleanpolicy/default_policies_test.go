@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
@@ -106,7 +105,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deployment) string {
 	suite.Require().Len(deployment.GetContainers(), 1, "This function only supports deployments with exactly one container")
 	id := deployment.GetContainers()[0].GetImage().GetId()
-	suite.NotEmpty(id, "Deployment '%s' had no image id", proto.MarshalTextString(deployment))
+	suite.NotEmpty(id, "Deployment '%s' had no image id", protocompat.MarshalTextString(deployment))
 	return id
 }
 
