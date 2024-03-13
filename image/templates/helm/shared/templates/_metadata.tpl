@@ -63,7 +63,7 @@
 
   Format pod annotations for $objType/$objName as YAML. This takes into consideration the $extraAnnotations,
   if provided, plus annotations added using the generic `customize` configuration mechanism.
-  Note that provided $extraAnnotations can be modified via `customize`.
+  Note that provided $extraAnnotations can be modified by the user via `customize`.
    */}}
 {{- define "srox.podAnnotations" -}}
   {{- $ := index . 0 -}}
