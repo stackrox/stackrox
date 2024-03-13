@@ -64,11 +64,7 @@ function ProfileSelection({
         [formikValues.profiles]
     );
 
-    const { allRowsSelected, selected, onSelect, onSelectAll } = useTableSelection(
-        profiles,
-        profileIsPreSelected,
-        'name'
-    );
+    const { selected, onSelect } = useTableSelection(profiles, profileIsPreSelected, 'name');
 
     const handleSelect = (
         event: React.FormEvent<HTMLInputElement>,
@@ -82,15 +78,6 @@ function ProfileSelection({
                 return index === rowId ? isSelected : selected[index];
             })
             .map((profile) => profile.name);
-
-        setTouched({ ...formikTouched, profiles: true });
-        setFieldValue('profiles', newSelectedProfileNames);
-    };
-
-    const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
-        onSelectAll(event, isSelected);
-
-        const newSelectedProfileNames = isSelected ? profiles.map((profile) => profile.name) : [];
 
         setTouched({ ...formikTouched, profiles: true });
         setFieldValue('profiles', newSelectedProfileNames);
@@ -205,12 +192,7 @@ function ProfileSelection({
                 <TableComposable>
                     <Thead noWrap>
                         <Tr>
-                            <Th
-                                select={{
-                                    onSelect: handleSelectAll,
-                                    isSelected: allRowsSelected,
-                                }}
-                            />
+                            <Th />
                             <Th />
                             <Th>Profile</Th>
                             <Th>Rule set</Th>
