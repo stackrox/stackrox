@@ -4,7 +4,7 @@
   Writes all applicable [pod] labels (including default labels) for $objType/$objName
   into $labels. Pod labels are written iff $forPod is true.
   The dict $extraLabels can be used for specifying additional labels which
-  can be modified using `customize` entries before before they are added to $labels.
+  can be modified by the user using `customize` entries before before they are added to $labels.
    */}}
 {{ define "srox._labels" }}
 {{ $ := index . 0  }}
