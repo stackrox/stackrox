@@ -102,4 +102,7 @@ var (
 
 	// CloudSources enables support for cloud source integrations.
 	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", true)
+
+	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
+	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", true)
 )
