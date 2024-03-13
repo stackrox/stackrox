@@ -194,6 +194,7 @@ func (m *manager) kickOffImgScansAndDetect(
 	}
 	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
 	alerts, err := getAlertsFunc(deployment, images)
+	log.Debugf("%d alerts, err %v", len(alerts), err)
 
 	if fetchImgCtx != nil {
 		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
@@ -202,6 +203,7 @@ func (m *manager) kickOffImgScansAndDetect(
 			select {
 			case nextRes, ok := <-resultChan:
 				if !ok {
+					log.Debug("not ok")
 					break resultsLoop
 				}
 				if nextRes.err != nil {
@@ -210,13 +212,17 @@ func (m *manager) kickOffImgScansAndDetect(
 				images[nextRes.idx] = nextRes.img
 
 			case <-fetchImgCtx.Done():
+				log.Debug("done")
 				break resultsLoop
 			}
 
 			alerts, err = getAlertsFunc(deployment, images)
+			log.Debugf("%d alerts, err %v", len(alerts), err)
 		}
 	} else {
 		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying
+		log.Debugf("%d alerts", len(alerts))
 	}
+	log.Debugf("%d alerts, err %v", len(alerts), err)
 	return alerts, err
 }
