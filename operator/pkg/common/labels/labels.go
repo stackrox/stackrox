@@ -25,22 +25,24 @@ func DefaultLabels() map[string]string {
 	return labels
 }
 
-// SetDefaultLabels sets the labels defined in DefaultLabels on the given map.
-// It returns a bool to indicate whether the given map was updated or not
-func SetDefaultLabels(labels map[string]string) bool {
+// WithDefaults return a copy of the given labels with the default labels added.
+// It returns a bool as second argument to indicate whether default labels had to be added or not
+func WithDefaults(labels map[string]string) (map[string]string, bool) {
 	updated := false
+	newLabels := map[string]string{}
+	for k, v := range labels {
+		newLabels[k] = v
+	}
+
 	for k, v := range defaultLabels {
-		value, hasKey := labels[k]
+		value, hasKey := newLabels[k]
 		if !hasKey || value != v {
 			updated = true
-			if labels == nil {
-				labels = map[string]string{}
-			}
-			labels[k] = v
+			newLabels[k] = v
 		}
 	}
 
-	return updated
+	return newLabels, updated
 }
 
 // NewLabelPostRenderer is a postrenderer for helm operator plugin kube clients to add

@@ -126,6 +126,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 		return client.Create(ctx, secret)
 	}
 
-	commonLabels.SetDefaultLabels(secret.Labels)
+	labels, _ := commonLabels.WithDefaults(secret.Labels)
+	secret.Labels = labels
 	return client.Update(ctx, secret)
 }
