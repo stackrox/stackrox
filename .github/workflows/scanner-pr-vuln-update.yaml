@@ -10,6 +10,10 @@ jobs:
   upload-pr-vulnerabilities:
     if: contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      volumes:
+        - /tmp:/tmp # make sure Claircore blob can access tmp folder
     steps:
     - name: Checkout
       uses: actions/checkout@v4
