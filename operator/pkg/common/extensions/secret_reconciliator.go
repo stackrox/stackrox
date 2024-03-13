@@ -45,6 +45,7 @@ func (r *SecretReconciliator) Client() ctrlClient.Client {
 	return r.client
 }
 
+// APIReader returns the controller-runtime APIReader used by the extension.
 func (r *SecretReconciliator) APIReader() ctrlClient.Reader {
 	return r.apiReader
 }
@@ -54,7 +55,7 @@ func (r *SecretReconciliator) APIReader() ctrlClient.Reader {
 func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
-	if err := r.Client().Get(ctx, key, secret); err != nil {
+	if err := utils.GetWithFallbackToAPIReader(ctx, r.Client(), r.APIReader(), key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
