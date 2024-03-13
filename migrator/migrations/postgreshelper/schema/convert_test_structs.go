@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertTestStructFromProto converts a `*storage.TestStruct` to Gorm model
@@ -22,7 +23,7 @@ func ConvertTestStructFromProto(obj *storage.TestStruct) (*TestStructs, error) {
 		Int64:             obj.GetInt64(),
 		Float:             obj.GetFloat(),
 		Labels:            obj.GetLabels(),
-		Timestamp:         pgutils.NilOrTime(obj.GetTimestamp()),
+		Timestamp:         protocompat.NilOrTime(obj.GetTimestamp()),
 		Enum:              obj.GetEnum(),
 		Enums:             pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
 		String:            obj.GetString_(),
