@@ -91,8 +91,10 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
 	defer func() {
 		if atomic.AddInt32(pendingCount, -1) == 0 {
+			log.Debug("PendingCount is 0, closing the image channel")
 			close(resultChan)
 		}
+		log.Debug("PendingCount is %d", pendingCount)
 	}()
 
 	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
@@ -105,6 +107,8 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		return
 	}
 
+	log.Debugf("Image %d %s scanned", idx, image.GetName().GetFullName())
+
 	m.cacheImage(scannedImg)
 	// resultChan is exactly sized so this will be nonblocking
 	resultChan <- fetchImageResult{
@@ -114,6 +118,7 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 }
 
 func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *state, deployment *storage.Deployment) ([]*storage.Image, <-chan fetchImageResult) {
+	log.Debugf("Getting images for deployment %s, %d", deployment.GetName(), len(deployment.GetContainers()))
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	imgChan := make(chan fetchImageResult, len(deployment.GetContainers()))
 
@@ -126,11 +131,13 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image)
 			if cachedImage != nil {
+				log.Debugf("The image for %s is cached", container.GetName())
 				images[idx] = cachedImage
 			}
 			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
 			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
+				log.Debugf("The image for %s requires a fetch, %d pending", container.GetName(), pendingCount)
 				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 			}
 		}
@@ -140,6 +147,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 	}
 
 	if atomic.AddInt32(&pendingCount, -1) == 0 {
+		log.Debug("PendingCount is 0, closing the image channel"))
 		close(imgChan)
 	}
 	return images, imgChan
