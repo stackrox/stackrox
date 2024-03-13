@@ -88,6 +88,7 @@ import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
 import io.fabric8.kubernetes.client.dsl.MixedOperation
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
@@ -158,7 +159,7 @@ class Kubernetes implements OrchestratorMain {
     def ensureNamespaceExists(String ns) {
         Namespace namespace = newNamespace(ns)
         try {
-            client.namespaces().create(namespace)
+            client.resource(namespace).create()
             log.info "Created namespace ${ns}"
             defaultPspForNamespace(ns)
             provisionDefaultServiceAccount(ns)
@@ -447,7 +448,8 @@ class Kubernetes implements OrchestratorMain {
     def createOrchestratorDeployment(K8sDeployment dep) {
         dep.setApiVersion("")
         dep.metadata.setResourceVersion("")
-        return this.deployments.inNamespace(dep.metadata.namespace).create(dep)
+
+        return client.resource(dep).create()
     }
 
     K8sDeployment getOrchestratorDeployment(String ns, String name) {
