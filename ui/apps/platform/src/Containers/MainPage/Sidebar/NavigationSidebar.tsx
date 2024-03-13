@@ -30,8 +30,6 @@ import {
     vulnManagementPath,
     vulnManagementReportsPath,
     vulnManagementRiskAcceptancePath,
-    vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
@@ -165,18 +163,6 @@ const navDescriptions: NavDescription[] = [
                 content: <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
                 path: vulnerabilitiesWorkloadCvesPath,
                 routeKey: 'workload-cves',
-            },
-            {
-                type: 'link',
-                content: 'Platform CVEs',
-                path: vulnerabilitiesPlatformCvesPath,
-                routeKey: 'platform-cves',
-            },
-            {
-                type: 'link',
-                content: 'Node CVEs',
-                path: vulnerabilitiesNodeCvesPath,
-                routeKey: 'node-cves',
             },
             {
                 type: 'separator',

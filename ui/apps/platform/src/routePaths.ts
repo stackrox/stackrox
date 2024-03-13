@@ -76,8 +76,6 @@ export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
-export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
-export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
@@ -171,8 +169,6 @@ export type RouteKey =
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
-    | 'node-cves'
-    | 'platform-cves'
     | 'policy-management'
     | 'risk'
     | 'search'
@@ -291,14 +287,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'network-graph': {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
-    },
-    'node-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_NODE_PLATFORM_CVES']),
-        resourceAccessRequirements: everyResource(['Node']),
-    },
-    'platform-cves': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_NODE_PLATFORM_CVES']),
-        resourceAccessRequirements: everyResource(['Cluster']),
     },
     'policy-management': {
         // The resources that are optional to view policies might become required to clone/create/edit a policy.
@@ -451,8 +439,6 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
-    [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
-    [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
     [exceptionManagementPath]: 'Exception Management',
 };
