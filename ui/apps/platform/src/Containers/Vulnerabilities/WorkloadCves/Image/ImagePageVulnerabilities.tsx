@@ -35,7 +35,7 @@ import {
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
 } from '../../searchOptions';
-import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
+import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
     resourceCountByCveSeverityAndStatusFragment,
@@ -44,13 +44,13 @@ import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
 } from '../Tables/ImageVulnerabilitiesTable';
-import { DynamicTableLabel } from '../components/DynamicIcon';
+import { DynamicTableLabel } from '../../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
-    parseQuerySearchFilter,
+    parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
@@ -115,7 +115,7 @@ function ImagePageVulnerabilities({
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
@@ -333,7 +333,7 @@ function ImagePageVulnerabilities({
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
-                    <WorkloadTableToolbar
+                    <WorkloadCveFilterToolbar
                         searchOptions={searchOptions}
                         autocompleteSearchContext={{
                             'Image SHA': imageId,

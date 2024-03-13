@@ -8,7 +8,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { EyeIcon } from '@patternfly/react-icons';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistance from '../../components/DateDistance';
 import TooltipTh from '../components/TooltipTh';

@@ -22,7 +22,7 @@ import FilterAutocomplete, {
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
 
-import './WorkloadTableToolbar.css';
+import './WorkloadCveFilterToolbar.css';
 
 type FilterChipProps = {
     isGlobal?: boolean;
@@ -46,19 +46,19 @@ const emptyDefaultFilters = {
     FIXABLE: [],
 };
 
-type WorkloadTableToolbarProps = {
+type WorkloadCveFilterToolbarProps = {
     defaultFilters?: DefaultFilters;
     searchOptions: SearchOption[];
     autocompleteSearchContext?: FilterAutocompleteSelectProps['autocompleteSearchContext'];
     onFilterChange?: (searchFilter: SearchFilter) => void;
 };
 
-function WorkloadTableToolbar({
+function WorkloadCveFilterToolbar({
     defaultFilters = emptyDefaultFilters,
     searchOptions,
     autocompleteSearchContext,
     onFilterChange = noop,
-}: WorkloadTableToolbarProps) {
+}: WorkloadCveFilterToolbarProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
     const { analyticsTrack } = useAnalytics();
@@ -189,4 +189,4 @@ function WorkloadTableToolbar({
     );
 }
 
-export default WorkloadTableToolbar;
+export default WorkloadCveFilterToolbar;

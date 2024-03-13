@@ -3,11 +3,11 @@ import { VulnerabilityState } from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 
-import { EntityTab } from '../../types';
+import { WorkloadEntityTab } from '../../types';
 
 type WorkloadCvesSearch = {
     vulnerabilityState: VulnerabilityState;
-    entityTab?: EntityTab;
+    entityTab?: WorkloadEntityTab;
     s?: SearchFilter;
 };
 
