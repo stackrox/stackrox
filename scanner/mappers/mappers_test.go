@@ -990,9 +990,17 @@ func Test_vulnerabilityName(t *testing.T) {
 			name:     "DSA-4591-1 cyrus-sasl2",
 			expected: "DSA-4591-1",
 		},
-		"RHEL": {
+		"RHEL/RHSA": {
 			name:     "RHSA-2023:0173: libxml2 security update (Moderate)",
 			expected: "RHSA-2023:0173",
+		},
+		"RHEL/RHBA": {
+			name:     "RHBA-2019:1992: cloud-init bug fix and enhancement update (Moderate)",
+			expected: "RHBA-2019:1992",
+		},
+		"RHEL/RHEA": {
+			name:     "RHEA-2019:3845: microcode_ctl bug fix and enhancement update (Important)",
+			expected: "RHEA-2019:3845",
 		},
 		"Ubuntu": {
 			name:     "CVE-2022-45061 on Ubuntu 22.04 LTS (jammy) - medium.",
