@@ -88,7 +88,6 @@ import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
 import io.fabric8.kubernetes.client.dsl.MixedOperation
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
@@ -202,7 +201,7 @@ class Kubernetes implements OrchestratorMain {
         } else {
             log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
-        // Our createDeployment actually uses createOrReplace so it should work for these purposes
+        // Our createDeployment actually uses serverSideApply so it should work for these purposes
         return createDeployment(deployment)
     }
 
@@ -743,7 +742,7 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             log.debug "Told the orchestrator to create job " + job.getName()
-            return this.jobs.inNamespace(job.namespace).createOrReplace(k8sJob)
+            return client.resource(k8sJob).serverSideApply()
         } catch (Exception e) {
             log.warn("Error creating k8s job", e)
         }
@@ -923,7 +922,7 @@ class Kubernetes implements OrchestratorMain {
                             type: deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP"
                     )
             )
-            def created = client.services().inNamespace(deployment.namespace).createOrReplace(service)
+            def created = client.resource(service).serverSideApply()
             if (created == null) {
                 log.debug deployment.serviceName ?: deployment.name + " service not created"
                 assert created
@@ -959,7 +958,7 @@ class Kubernetes implements OrchestratorMain {
                             type: s.type.toString()
                     )
             )
-            client.services().inNamespace(s.namespace).createOrReplace(service)
+            client.resource(service).serverSideApply()
         }
         log.debug "${s.name}: Service created"
         if (objects.Service.Type.LOADBALANCER == s.type) {
@@ -1115,7 +1114,7 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        K8sSecret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(k8sSecret)
+        K8sSecret createdSecret = client.resource(k8sSecret).serverSideApply()
         if (createdSecret != null) {
             createdSecret = waitForSecretCreation(secret.name, namespace)
             return createdSecret.metadata.uid
@@ -1134,7 +1133,7 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        def sec = client.secrets().inNamespace(secret.namespace).createOrReplace(k8sSecret)
+        def sec = client.resource(k8sSecret).serverSideApply()
         log.debug secret.name + ": Secret created."
         return sec.metadata.uid
     }
@@ -1156,7 +1155,7 @@ class Kubernetes implements OrchestratorMain {
             )
 
             try {
-                K8sSecret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
+                K8sSecret createdSecret = client.resource(secret).serverSideApply()
                 if (createdSecret != null) {
                     createdSecret = waitForSecretCreation(name, namespace)
                     return createdSecret.metadata.uid
@@ -1170,7 +1169,7 @@ class Kubernetes implements OrchestratorMain {
 
     def updateSecret(K8sSecret secret) {
         withRetry(2, 3) {
-            client.secrets().inNamespace(secret.metadata.namespace).createOrReplace(secret)
+            client.resource(secret).serverSideApply()
         }
     }
 
@@ -1216,10 +1215,7 @@ class Kubernetes implements OrchestratorMain {
             log.debug "${networkPolicy.metadata.name}: NetworkPolicy created:"
             log.debug YamlGenerator.toYaml(networkPolicy)
             io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy createdPolicy =
-                    client.network().networkPolicies()
-                            .inNamespace(networkPolicy.metadata.namespace ?
-                                    networkPolicy.metadata.namespace :
-                                    this.namespace).createOrReplace(networkPolicy)
+                    client.resource(networkPolicy).serverSideApply()
             policy.uid = createdPolicy.metadata.uid
             return createdPolicy.metadata.uid
         }
@@ -1387,7 +1383,7 @@ class Kubernetes implements OrchestratorMain {
                     imagePullSecrets: serviceAccount.imagePullSecrets.collect {
                         String name -> new LocalObjectReference(name) }
             )
-            client.serviceAccounts().inNamespace(sa.metadata.namespace).createOrReplace(sa)
+            client.resource(sa).serverSideApply()
         }
     }
 
@@ -1410,7 +1406,7 @@ class Kubernetes implements OrchestratorMain {
             imagePullSecretsList.addAll(imagePullSecretsSet)
             serviceAccount.setImagePullSecrets(imagePullSecretsList)
 
-            client.serviceAccounts().inNamespace(namespace).withName(accountName).createOrReplace(serviceAccount)
+            client.resource(serviceAccount).serverSideApply()
         }
     }
 
@@ -1426,7 +1422,7 @@ class Kubernetes implements OrchestratorMain {
         imagePullSecretsList.addAll(imagePullSecretsSet)
         serviceAccount.setImagePullSecrets(imagePullSecretsList)
 
-        client.serviceAccounts().inNamespace(namespace).withName(accountName).createOrReplace(serviceAccount)
+        client.resource(serviceAccount).serverSideApply()
     }
 
     def provisionDefaultServiceAccount(String forNamespace) {
@@ -1460,7 +1456,7 @@ class Kubernetes implements OrchestratorMain {
                                 name: secret.metadata.name,
                         )
             )
-            client.secrets().inNamespace(forNamespace).createOrReplace(copy)
+            client.resource(copy).serverSideApply()
             assert waitForSecretCreation(copy.metadata.name, forNamespace), "could not copy the secret"
         }
 
@@ -1524,7 +1520,7 @@ class Kubernetes implements OrchestratorMain {
                         )
                     }
             )
-            role.uid = client.rbac().roles().inNamespace(role.namespace).createOrReplace(r).metadata.uid
+            role.uid = client.resource(r).serverSideApply().metadata.uid
         }
     }
 
@@ -1583,7 +1579,7 @@ class Kubernetes implements OrchestratorMain {
                             kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
                     )
             )
-            client.rbac().roleBindings().inNamespace(roleBinding.namespace).createOrReplace(r)
+            client.resource(r).serverSideApply()
         }
     }
 
@@ -1643,7 +1639,7 @@ class Kubernetes implements OrchestratorMain {
                         )
                     }
             )
-            role.uid = client.rbac().clusterRoles().createOrReplace(r).metadata.uid
+            role.uid = client.resource(r).serverSideApply().metadata.uid
         }
     }
 
@@ -1700,7 +1696,7 @@ class Kubernetes implements OrchestratorMain {
                             kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
                     )
             )
-            client.rbac().clusterRoleBindings().createOrReplace(r)
+            client.resource(r).serverSideApply()
         }
     }
 
@@ -1763,7 +1759,7 @@ class Kubernetes implements OrchestratorMain {
                 .withNewFsGroup().withRule("RunAsAny").endFsGroup()
                 .endSpec()
                 .build()
-            client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
+            client.resource(psp).serverSideApply()
             createClusterRole(generatePspRole())
             createClusterRoleBinding(generatePspRoleBinding(namespace))
         }
@@ -1807,7 +1803,7 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        def config = client.configMaps().inNamespace(namespace).createOrReplace(configMap)
+        def config = client.resource(configMap).serverSideApply()
         log.debug name + ": ConfigMap created."
         return config.metadata.uid
     }
@@ -2031,8 +2027,8 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             withK8sClientRetry(maxNumRetries, 1) {
-                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name
+                client.resource(d).serverSideApply()
+                log.debug "Told the orchestrator to serverSideApply " + deployment.name
             }
             if (deployment.exposeAsService && deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
@@ -2120,7 +2116,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            this.daemonsets.inNamespace(daemonSet.namespace).createOrReplace(ds)
+            client.resource(ds).serverSideApply()
             log.debug "Told the orchestrator to create " + daemonSet.getName()
         } catch (Exception e) {
             log.warn("Error creating k8s deployment", e)
@@ -2432,7 +2428,7 @@ class Kubernetes implements OrchestratorMain {
     String createNamespace(String ns) {
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
-            def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
+            def namespaceId = client.resource(namespace).serverSideApply().metadata.getUid()
             defaultPspForNamespace(ns)
             return namespaceId
         }

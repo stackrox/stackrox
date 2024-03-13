@@ -71,7 +71,7 @@ class OpenShift extends Kubernetes {
                     setAllowedCapabilities(["*"])
                     setAllowedUnsafeSysctls(["*"])
                 }
-                oClient.securityContextConstraints().createOrReplace(anyuid)
+                oClient.resource(anyuid).serverSideApply()
             }
         } catch (Exception e) {
             log.warn("could not check if namespace exists", e)
@@ -98,7 +98,7 @@ class OpenShift extends Kubernetes {
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata()
                     .withNewSpec().withNewTo().withName(routeName).endTo().endSpec().build()
-            oClient.routes().inNamespace(namespace).createOrReplace(route)
+            oClient.resource(route).serverSideApply()
         }
     }
 
@@ -107,7 +107,7 @@ class OpenShift extends Kubernetes {
         log.debug "Deleting a route: " + routeName
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata().build()
-            oClient.routes().inNamespace(namespace).delete(route)
+            oClient.resource(route).delete()
         }
     }
 
