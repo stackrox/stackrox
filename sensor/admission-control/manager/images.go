@@ -94,7 +94,7 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 			log.Debug("PendingCount is 0, closing the image channel")
 			close(resultChan)
 		}
-		log.Debug("PendingCount is %d", pendingCount)
+		log.Debugf("PendingCount is %d", pendingCount)
 	}()
 
 	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
@@ -186,7 +186,7 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 
 	for _, container := range deployment.GetContainers() {
 		if !oldImages.Contains(container.GetImage().GetName().GetFullName()) {
-			log.Debug("true: %s", container.GetImage().GetName().GetFullName())
+			log.Debugf("true: %s", container.GetImage().GetName().GetFullName())
 			return true
 		}
 	}
