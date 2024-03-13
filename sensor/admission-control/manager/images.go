@@ -147,7 +147,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 	}
 
 	if atomic.AddInt32(&pendingCount, -1) == 0 {
-		log.Debug("PendingCount is 0, closing the image channel"))
+		log.Debug("PendingCount is 0, closing the image channel")
 		close(imgChan)
 	}
 	return images, imgChan
