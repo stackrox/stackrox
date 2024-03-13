@@ -12,10 +12,10 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/renderer"
+	coreV1 "k8s.io/api/core/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,13 +28,13 @@ const (
 )
 
 // ReconcileAdminPasswordExtension returns an extension that takes care of reconciling the central-htpasswd secret.
-func ReconcileAdminPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileAdminPassword, client)
+func ReconcileAdminPasswordExtension(client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileAdminPassword, client, apiReader)
 }
 
-func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), _ logr.Logger) error {
+func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, statusUpdater func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, apiReader, c),
 		statusUpdater:       statusUpdater,
 		centralObj:          c,
 	}
@@ -60,10 +60,11 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret(ct
 
 	r.passwordSecretName = r.centralObj.Spec.Central.AdminPasswordSecret.Name
 
-	// using unstructured client to call API server instead of cache, because we can't
-	// ensure that a user provided secret matches the selectors configured for the cache
-	passwordSecret, err := utils.GetSecretWithUnstrucuteredObj(ctx, r.passwordSecretName, r.centralObj.GetNamespace(), r.Client())
-	if err != nil {
+	passwordSecret := &coreV1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
+	// using APIReader for uncached access because the operator might not own this secret
+	// thus we can't guarantee that labels are set propperly for it to be in the cache
+	if err := r.APIReader().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
 

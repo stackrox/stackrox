@@ -29,15 +29,15 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
 			utils.CreateAndDeleteOnlyPredicate{}),
-		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(nil)),
-		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
+		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(nil, nil)),
+		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
-		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 	}
 
 	if features.ScannerV4Support.Enabled() {
-		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient())))
+		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())))
 	}
 
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)

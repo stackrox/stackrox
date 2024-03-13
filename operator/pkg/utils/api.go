@@ -4,10 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	coreV1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,25 +21,17 @@ func RemoveOwnerRef(obj metav1.Object, owner metav1.Object) {
 	obj.SetOwnerReferences(r)
 }
 
-// GetSecretWithUnstrucuteredObj gets a secret by using a unstrucutrued.Unstructured object.
-// Using unstructured makes sure to don't use the default cache of the controller runtime client
-func GetSecretWithUnstrucuteredObj(ctx context.Context, name string, namespace string, client ctrlClient.Client) (*coreV1.Secret, error) {
-	secret := &coreV1.Secret{}
-	unstructuredSecret := unstructured.Unstructured{}
-
-	unstructuredSecret.SetKind("Secret")
-	unstructuredSecret.SetAPIVersion(coreV1.SchemeGroupVersion.Version)
-	key := ctrlClient.ObjectKey{Namespace: namespace, Name: name}
-
-	err := client.Get(ctx, key, &unstructuredSecret)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get unstructured secret")
+// GetWithFallbackToAPIReader attempts to get a k8s object from the cached client
+// if it does not find a matching object it will try to use a direct read
+// to the k8s API server. This is necessary because controller-runtime returns
+// 404 for all objects that don't match the cache selector
+func GetWithFallbackToAPIReader(ctx context.Context, client ctrlClient.Client, apiReader ctrlClient.Reader, key ctrlClient.ObjectKey, obj ctrlClient.Object) error {
+	if err := client.Get(ctx, key, obj); err != nil {
+		if !apiErrors.IsNotFound(err) {
+			return errors.Wrapf(err, "checking existence of %s secret", key.Name)
+		}
+		return apiReader.Get(ctx, key, obj)
 	}
 
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredSecret.Object, secret)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert unstrucutred secret to structured secret")
-	}
-
-	return secret, nil
+	return nil
 }

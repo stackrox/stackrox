@@ -10,8 +10,8 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/renderer"
+	coreV1 "k8s.io/api/core/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,13 +25,13 @@ const (
 )
 
 // ReconcileCentralDBPasswordExtension returns an extension that takes care of reconciling the central-db-password secret.
-func ReconcileCentralDBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralDBPassword, client)
+func ReconcileCentralDBPasswordExtension(client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralDBPassword, client, apiReader)
 }
 
-func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileCentralDBPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, apiReader, c),
 		centralObj:          c,
 	}
 	return run.Execute(ctx)
@@ -50,8 +50,11 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 	passwordSecretName := r.centralObj.Spec.Central.DB.PasswordSecret.Name
 
-	passwordSecret, err := utils.GetSecretWithUnstrucuteredObj(ctx, passwordSecretName, r.centralObj.GetNamespace(), r.Client())
-	if err != nil {
+	passwordSecret := &coreV1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: passwordSecretName}
+	// using APIReader for uncached access because the operator might not own this secret
+	// thus we can't guarantee that labels are set propperly for it to be in the cache
+	if err := r.APIReader().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
 	}
 

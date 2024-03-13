@@ -83,7 +83,7 @@ func (s *secretReconcilerTestSuite) SetupTest() {
 
 	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
-	s.reconciliator = NewSecretReconciliator(s.client, s.centralObj)
+	s.reconciliator = NewSecretReconciliator(s.client, s.client, s.centralObj)
 }
 
 func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {

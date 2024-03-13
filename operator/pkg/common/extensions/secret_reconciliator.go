@@ -25,22 +25,28 @@ type generateSecretDataFunc func(types.SecretDataMap) (types.SecretDataMap, erro
 
 // NewSecretReconciliator creates a new SecretReconciliator. It takes a context and controller client.
 // The obj parameter is the owner object (i.e. a custom resource).
-func NewSecretReconciliator(client ctrlClient.Client, obj types.K8sObject) *SecretReconciliator {
+func NewSecretReconciliator(client ctrlClient.Client, apiReader ctrlClient.Reader, obj types.K8sObject) *SecretReconciliator {
 	return &SecretReconciliator{
-		client: client,
-		obj:    obj,
+		client:    client,
+		obj:       obj,
+		apiReader: apiReader,
 	}
 }
 
 // SecretReconciliator reconciles a secret.
 type SecretReconciliator struct {
-	client ctrlClient.Client
-	obj    types.K8sObject
+	client    ctrlClient.Client
+	obj       types.K8sObject
+	apiReader ctrlClient.Reader
 }
 
 // Client returns the controller-runtime client used by the extension.
 func (r *SecretReconciliator) Client() ctrlClient.Client {
 	return r.client
+}
+
+func (r *SecretReconciliator) APIReader() ctrlClient.Reader {
+	return r.apiReader
 }
 
 // DeleteSecret makes sure a secret with the given name does NOT exist.
@@ -70,7 +76,11 @@ func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) err
 func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
-	if err := r.Client().Get(ctx, key, secret); err != nil {
+
+	// Fallback to read directly from API server as oposed to a cache client
+	// to make sure we recognize old secrets that have not been labeled properly
+	// to match the cache selector
+	if err := utils.GetWithFallbackToAPIReader(ctx, r.Client(), r.APIReader(), key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
@@ -100,19 +110,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	}
 
 	if err := r.Client().Create(ctx, newSecret); err != nil {
-		if !apiErrors.IsAlreadyExists(err) {
-			return errors.Wrapf(err, "creating new %s secret failed", name)
-		}
-
-		// the secret exists but was not in the cache, try to get and update it using
-		// an unstructured object which doesn't use the default cache
-		secret, err := utils.GetSecretWithUnstrucuteredObj(ctx, name, r.obj.GetNamespace(), r.client)
-		if err != nil {
-			return errors.Wrap(err, "getting secret with unstructured object")
-		}
-
-		err = r.updateExisting(ctx, secret, validate, generate)
-		return err
+		return errors.Wrapf(err, "creating new %s secret failed", name)
 	}
 
 	return nil

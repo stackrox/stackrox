@@ -19,13 +19,13 @@ import (
 )
 
 // ReconcileProxySecretExtension returns a reconcile extension that ensures that a proxy secret exists.
-func ReconcileProxySecretExtension(client ctrlClient.Client, proxyEnv map[string]string) extensions.ReconcileExtension {
+func ReconcileProxySecretExtension(client ctrlClient.Client, apiReader ctrlClient.Reader, proxyEnv map[string]string) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), _ logr.Logger) error {
 		if obj.GetDeletionTimestamp() != nil {
-			return deleteProxyEnvSecret(ctx, obj, client)
+			return deleteProxyEnvSecret(ctx, obj, client, apiReader)
 		}
 
-		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client)
+		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client, apiReader)
 	}
 }
 
@@ -33,12 +33,12 @@ func getProxyEnvSecretName(obj k8sutil.Object) string {
 	return strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind + "-" + obj.GetName() + "-proxy-env")
 }
 
-func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client) error {
+func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client, apiReader ctrlClient.Reader) error {
 	var err error
 	if len(proxyEnvVars) == 0 {
-		err = deleteProxyEnvSecret(ctx, obj, client)
+		err = deleteProxyEnvSecret(ctx, obj, client, apiReader)
 	} else {
-		err = updateProxyEnvSecret(ctx, obj, client, proxyEnvVars)
+		err = updateProxyEnvSecret(ctx, obj, client, apiReader, proxyEnvVars)
 	}
 
 	if err != nil {
@@ -66,10 +66,10 @@ func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars 
 	return nil
 }
 
-func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client) error {
+func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, apiReader ctrlClient.Reader) error {
 	existingSecret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: getProxyEnvSecretName(obj)}
-	if err := client.Get(ctx, key, existingSecret); err != nil {
+	if err := utils.GetWithFallbackToAPIReader(ctx, client, apiReader, key, existingSecret); err != nil {
 		if apiErrors.IsNotFound(err) {
 			return nil
 		}
@@ -83,12 +83,12 @@ func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 	return utils.DeleteExact(ctx, client, existingSecret)
 }
 
-func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, proxyEnvVars map[string]string) error {
+func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, apiReader ctrlClient.Reader, proxyEnvVars map[string]string) error {
 	secretName := getProxyEnvSecretName(obj)
 
 	secret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: secretName}
-	if err := client.Get(ctx, key, secret); err != nil {
+	if err := utils.GetWithFallbackToAPIReader(ctx, client, apiReader, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return err
 		}
@@ -123,23 +123,14 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 	secret.StringData = proxyEnvVars
 
 	if secret.ResourceVersion == "" {
-		// secret was not returned by cached client
-		if err := client.Create(ctx, secret); err != nil {
-			if !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
-			// the secret exists but was not in the cache, try to get and update it using
-			// an unstructured object which doesn't use the default cache
-			existingSecret, err := utils.GetSecretWithUnstrucuteredObj(ctx, secret.Name, secret.Namespace, client)
-			if err != nil {
-				return errors.Wrap(err, "getting secret with unstructured object")
-			}
+		return client.Create(ctx, secret)
+	}
 
-			// don't pass to client.Update if existingSecret is not owned
-			if !metav1.IsControlledBy(existingSecret, obj) {
-				return nil
-			}
+	for k, v := range commonLabels.DefaultLabels() {
+		if secret.Labels == nil {
+			secret.Labels = map[string]string{}
 		}
+		secret.Labels[k] = v
 	}
 
 	return client.Update(ctx, secret)
