@@ -35,6 +35,7 @@ tests/performance           @stackrox/merlin
 /ui/**/* @stackrox/ui
 
 pkg/images/defaults/**/*    @stackrox/maple
+roxctl/netpol/**/*          @stackrox/maple
 sensor/**/*                 @stackrox/maple
 
 operator/**/* @stackrox/draco
