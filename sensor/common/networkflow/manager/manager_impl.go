@@ -262,16 +262,17 @@ func NewManager(
 				log.Errorf("ROX_MEMLIMIT must be an integer in bytes: %v", err)
 			}
 			defaultMemlimit := float64(4194304000)
-			ratio := defaultMemlimit / float64(l) // FIXME: Convert correctly
+			ratio := float64(l) / defaultMemlimit // FIXME: Convert correctly
 
 			log.Errorf("Got effective memlimit of %d. Scaling queues to %f percent", l, ratio*100)
 
-			nfBufferSize = int(math.Round(ratio)) // FIXME: Ensure this is always at least 1
+			nfBufferSize = int(math.Round(ratio * float64(nfBufferSize))) // FIXME: Ensure this is always at least 1
 		}
 
 	}
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
+		log.Infof("Scaling netflow buffer. Default: %i, Scaled: %i", env.NetworkFlowBufferSize.IntegerSetting(), nfBufferSize)
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, nfBufferSize)
 	} else {
 		enricherTicker.Stop()
