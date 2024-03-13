@@ -89,6 +89,9 @@ spec:
         value: $(params.output-image)
       - name: build-task-status
         value: $(tasks.build-container.status)
+      workspaces:
+      - name: workspace
+        workspace: workspace
       taskRef:
         params:
         - name: name
