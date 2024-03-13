@@ -26,9 +26,7 @@ func ScaleSize(queueSize int) (int, error) {
 		if l == 0 {
 			log.Warn("ROX_MEMLIMIT is set to 0!")
 		}
-		ratio := float64(l) / defaultMemlimit // FIXME: Convert correctly
-
-		log.Warnf("Got effective memlimit of %d. Scaling queue to %.2f percent", l, ratio*100) // FIXME: Remove
+		ratio := float64(l) / defaultMemlimit
 
 		queueSize = int(math.Round(ratio * float64(queueSize)))
 		if queueSize <= 0 {
@@ -55,6 +53,6 @@ func ScaleSizeOnNonDefault(setting *env.IntegerSetting) int {
 		return v
 	}
 
-	log.Infof("Scaling %s - Default: %d, Scaled: %d", setting.EnvVar(), v, scaled)
+	log.Debugf("Scaling %s - Default: %d, Scaled: %d", setting.EnvVar(), v, scaled)
 	return scaled
 }
