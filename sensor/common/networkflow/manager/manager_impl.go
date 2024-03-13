@@ -3,8 +3,6 @@ package manager
 import (
 	"context"
 	"fmt"
-	"math"
-	"os"
 	"strconv"
 	"time"
 
@@ -22,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
@@ -254,21 +253,10 @@ func NewManager(
 	nfBufferSize := env.NetworkFlowBufferSize.IntegerSetting()
 	if nfBufferSize == env.NetworkFlowBufferSize.DefaultValue() {
 		// Only apply autoscaling if this var is not overridden
-
-		// TODO: refactor out to lib
-		if roxLimit := os.Getenv("ROX_MEMLIMIT"); roxLimit != "" {
-			l, err := strconv.ParseInt(roxLimit, 10, 64)
-			if err != nil {
-				log.Errorf("ROX_MEMLIMIT must be an integer in bytes: %v", err)
-			}
-			defaultMemlimit := float64(4194304000)
-			ratio := float64(l) / defaultMemlimit // FIXME: Convert correctly
-
-			log.Errorf("Got effective memlimit of %d. Scaling queues to %f percent", l, ratio*100)
-
-			nfBufferSize = int(math.Round(ratio * float64(nfBufferSize))) // FIXME: Ensure this is always at least 1
+		scaledBuffer, err := queue.ScaleSize(nfBufferSize)
+		if err == nil {
+			nfBufferSize = scaledBuffer
 		}
-
 	}
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
