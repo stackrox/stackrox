@@ -142,6 +142,11 @@ func (s *baseSuite) TestHelmVersionRequirements() {
 	helmVals, err := chartutil.ReadValues([]byte(autogenerateAll))
 	s.Require().NoError(err, "failed to parse values string %s", autogenerateAll)
 
+	confAllowUnsupporteVersion := "allowUnsupportedHelmVersion: true"
+	helmValsAllowingUnsupportedVersion, err := chartutil.ReadValues([]byte(confAllowUnsupporteVersion))
+	s.Require().NoError(err, "failed to parse values string %s", confAllowUnsupporteVersion)
+	helmValsAllowingUnsupportedVersion = chartutil.CoalesceTables(helmValsAllowingUnsupportedVersion, helmVals)
+
 	// Retrieve template files from box.
 	tpl, err := helmImage.GetCentralServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
@@ -154,8 +159,10 @@ func (s *baseSuite) TestHelmVersionRequirements() {
 	_, err = helmUtil.Render(ch, helmVals, effectiveInstallOpts)
 	s.Require().Error(err, "successfully rendered chart")
 
-	effectiveInstallOpts.HelmVersion = "v3.9.0"
+	_, err = helmUtil.Render(ch, helmValsAllowingUnsupportedVersion, effectiveInstallOpts)
+	s.Require().NoError(err, "failed to render chart while allowing unsupported Helm versions")
 
+	effectiveInstallOpts.HelmVersion = "v3.9.0"
 	_, err = helmUtil.Render(ch, helmVals, effectiveInstallOpts)
 	s.Require().NoError(err, "failed to render chart")
 }
