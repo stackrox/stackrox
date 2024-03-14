@@ -917,8 +917,11 @@
     "v2ComplianceProfileScanStats": {
       "type": "object",
       "properties": {
-        "scanStats": {
-          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
         },
         "profileName": {
           "type": "string"

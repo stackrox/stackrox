@@ -47,5 +47,6 @@ func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckRe
 		Rationale:      sensorData.GetRationale(),
 		ValuesUsed:     sensorData.GetValuesUsed(),
 		Warnings:       sensorData.GetWarnings(),
+		ScanRefId:      BuildScanRefID(clusterID, sensorData.GetScanName()),
 	}
 }

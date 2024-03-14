@@ -98,9 +98,24 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 }
 
 // GetComplianceProfileScanStats lists current scan stats grouped by profile
-func (s *serviceImpl) GetComplianceProfileScanStats(_ context.Context, _ *v2.RawQuery) (*v2.ListComplianceProfileScanStatsResponse, error) {
-	// TODO(ROX-18102):  Need profiles stored first
-	return nil, errox.NotImplemented
+func (s *serviceImpl) GetComplianceProfileScanStats(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceProfileScanStatsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.ComplianceProfileResultStats(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %v", query)
+	}
+
+	return &v2.ListComplianceProfileScanStatsResponse{
+		ScanStats: storagetov2.ComplianceV2ProfileStats(scanResults),
+	}, nil
 }
 
 // GetComplianceClusterScanStats lists current scan stats grouped by cluster

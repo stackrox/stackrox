@@ -80,7 +80,7 @@ message ComplianceScanResultsOverview {
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
 message ComplianceProfileScanStats {
-  ComplianceScanStatsShim scan_stats = 1;
+  repeated ComplianceCheckStatusCount check_stats = 1;
   string profile_name = 2;
 }
 

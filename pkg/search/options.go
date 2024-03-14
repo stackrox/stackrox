@@ -230,6 +230,8 @@ var (
 	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
 	ComplianceOperatorScanResult             = newFieldLabel("Compliance Scan Result")
 	ComplianceOperatorScanType               = newFieldLabel("Compliance Scan Type")
+	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
+	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")

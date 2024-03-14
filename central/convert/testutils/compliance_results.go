@@ -279,6 +279,20 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 	}
 }
 
+// GetComplianceStorageProfileScanCount returns mock data shaped like count query would return
+func GetComplianceStorageProfileScanCount(_ *testing.T, profileName string) *datastore.ResourceResultCountByProfile {
+	return &datastore.ResourceResultCountByProfile{
+		PassCount:          passCount,
+		FailCount:          failCount,
+		ErrorCount:         errorCount,
+		InconsistentCount:  inconsistentCount,
+		InfoCount:          infoCount,
+		ManualCount:        manualCount,
+		NotApplicableCount: notApplicableCount,
+		ProfileName:        profileName,
+	}
+}
+
 // GetComplianceStorageClusterScanCount returns mock data shaped like count query would return
 func GetComplianceStorageClusterScanCount(_ *testing.T, clusterID string) *datastore.ResourceResultCountByClusterScan {
 	return &datastore.ResourceResultCountByClusterScan{
@@ -334,6 +348,43 @@ func GetComplianceClusterScanV2Count(_ *testing.T, clusterID string) *v2.Complia
 					Count:  notApplicableCount,
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 				},
+			},
+		},
+	}
+}
+
+// GetComplianceProfileScanV2Count returns V2 count matching that from GetComplianceStorageProfileScanCount
+func GetComplianceProfileScanV2Count(_ *testing.T, profileName string) *v2.ComplianceProfileScanStats {
+	return &v2.ComplianceProfileScanStats{
+		ProfileName: profileName,
+		CheckStats: []*v2.ComplianceCheckStatusCount{
+			{
+				Count:  failCount,
+				Status: v2.ComplianceCheckStatus_FAIL,
+			},
+			{
+				Count:  infoCount,
+				Status: v2.ComplianceCheckStatus_INFO,
+			},
+			{
+				Count:  passCount,
+				Status: v2.ComplianceCheckStatus_PASS,
+			},
+			{
+				Count:  errorCount,
+				Status: v2.ComplianceCheckStatus_ERROR,
+			},
+			{
+				Count:  manualCount,
+				Status: v2.ComplianceCheckStatus_MANUAL,
+			},
+			{
+				Count:  inconsistentCount,
+				Status: v2.ComplianceCheckStatus_INCONSISTENT,
+			},
+			{
+				Count:  notApplicableCount,
+				Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 			},
 		},
 	}
