@@ -24,7 +24,7 @@ kind: Pod
 metadata:
   name: operator-metrics-unprivileged
 status:
-  phase: Succeeded
+  phase: ProvokeFailureOnPurposePleaseIgnoreThanksMarcin
 ---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
