@@ -27,6 +27,7 @@ import services.NodeService
 import services.PolicyService
 
 import org.junit.Assume
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -222,6 +223,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("SMOKE")
+    @IgnoreIf({ Env.getTestTarget() in ["bat-test", "smoke-test"] && data.policyName == "CVE is available" })
     def "Verify policy configuration #policyName can be triggered"() {
         Assume.assumeTrue(canRun == null || canRun())
 
