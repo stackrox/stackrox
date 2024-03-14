@@ -40,11 +40,12 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 	updateTicker := time.NewTicker(updateInterval)
 	updateTicker.Stop()
 	return &updaterImpl{
-		client:         client,
-		updateInterval: updateInterval,
-		response:       make(chan *message.ExpiringMessage),
-		stopSig:        concurrency.NewSignal(),
-		updateTicker:   updateTicker,
+		client:               client,
+		updateInterval:       updateInterval,
+		response:             make(chan *message.ExpiringMessage),
+		stopSig:              concurrency.NewSignal(),
+		updateTicker:         updateTicker,
+		complianceOperatorNS: "openshift-compliance",
 	}
 }
 
