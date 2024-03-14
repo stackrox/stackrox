@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -400,7 +401,7 @@ func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, quer
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime == nil || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
+			if latestTime == nil || protocompat.CompareTimestamps(image.GetScan().GetScanTime(), latestTime) > 0 {
 				idToComponent[thisComponentID].lastScanned = image.GetScan().GetScanTime()
 			}
 		}

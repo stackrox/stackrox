@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/node/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	utils "github.com/stackrox/rox/pkg/utils"
@@ -188,7 +189,7 @@ func mapNodesToComponentResolvers(root *Resolver, nodes []*storage.Node, query *
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime == nil || node.GetScan().GetScanTime().Compare(latestTime) > 0 {
+			if latestTime == nil || protocompat.CompareTimestamps(node.GetScan().GetScanTime(), latestTime) > 0 {
 				idToComponent[thisComponentID].lastScanned = node.GetScan().GetScanTime()
 			}
 		}

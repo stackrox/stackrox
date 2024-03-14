@@ -140,7 +140,7 @@ func TestDownloadableReportPruning(t *testing.T) {
 				})
 			}
 			sort.Slice(existingBlobs, func(i, j int) bool {
-				return existingBlobs[i].GetModifiedTime().Compare(existingBlobs[j].GetModifiedTime()) > 0
+				return protocompat.CompareTimestamps(existingBlobs[i].GetModifiedTime(), existingBlobs[j].GetModifiedTime()) > 0
 			})
 			toRemoveSet := set.NewStringSet()
 			for _, bt := range c.toRemove {

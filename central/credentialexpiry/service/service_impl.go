@@ -233,7 +233,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	}
 
 	sort.Slice(expiries, func(i, j int) bool {
-		return expiries[i].Compare(expiries[j]) < 0
+		return protocompat.CompareTimestamps(expiries[i], expiries[j]) < 0
 	})
 
 	return &v1.GetCertExpiry_Response{Expiry: expiries[0]}, nil

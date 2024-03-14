@@ -219,7 +219,8 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 			seenViolations = true
 
 			timestamp := getProcessViolationTime(alert, procIndicator)
-			if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+			if protocompat.CompareTimestamps(timestamp, fromTimestamp) <= 0 ||
+				protocompat.CompareTimestamps(timestamp, toTimestamp) > 0 {
 				continue
 			}
 
@@ -241,7 +242,8 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 		seenViolations = true
 
 		timestamp := getNonProcessViolationTime(alert, v)
-		if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+		if protocompat.CompareTimestamps(timestamp, fromTimestamp) <= 0 ||
+			protocompat.CompareTimestamps(timestamp, toTimestamp) > 0 {
 			continue
 		}
 

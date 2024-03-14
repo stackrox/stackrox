@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -121,7 +122,7 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 	// The staleNotificationDate and staleNotificationTimestamp contain the point in time until which a notification
 	// is considered stale. If the last notification occurred before then, the back-off window has run out and a new
 	// notification can be sent. Otherwise, nothing needs to be done (at least) until the next loop cycle.
-	if notificationSchedule.GetLastRun().Compare(staleNotificationTimestamp) >= 0 {
+	if protocompat.CompareTimestamps(notificationSchedule.GetLastRun(), staleNotificationTimestamp) >= 0 {
 		return
 	}
 	notificationSchedule.LastRun = protoconv.ConvertTimeToTimestamp(now)

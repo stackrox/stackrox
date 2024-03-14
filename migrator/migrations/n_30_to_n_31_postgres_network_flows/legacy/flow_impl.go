@@ -102,7 +102,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 			return err
 		}
 		if since != nil && flow.LastSeenTimestamp != nil {
-			if flow.LastSeenTimestamp.Compare(since) < 0 {
+			if protocompat.CompareTimestamps(flow.LastSeenTimestamp, since) < 0 {
 				return nil
 			}
 		}
