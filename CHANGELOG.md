@@ -17,8 +17,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
-## [4.4.0]
+- Dropped support for older Helm versions: For rendering the Helm charts stackrox-central-services and
+  stackrox-secured-cluster-services a Helm version >= 3.9.0 is now required.
 
+## [4.4.0]
 
 
 ### Added Features
