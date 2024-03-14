@@ -4,10 +4,14 @@
 set -euo pipefail
 
 # Tests upgrade to Postgres.
-# NOTE:  This test will upgrade RocksDB to Postgres at release 4.4.
-# After 4.4 upgrades from RocksDB are no longer possible.
-# TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to
-# 4.5 will return an error
+# NOTE:  Version 3.74 was final release major version 3.
+# The switch to major version 4.0 brought with it a complete database
+# change.  RocksDB was replaced with Postgres.  With release 4.5 ACS will
+# no longer support upgrading from a 3.X release to 4.5 and beyond.  For,
+# posterity we will use this test to verify that a 3.X release can be upgraded
+# to 4.4.  This test will also verify that an attempt to upgraded from
+# a 3.X release to 4.5 will result in an error.
+# TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 LAST_POSTGRES_TAG="4.4.0-rc.9"
@@ -99,7 +103,7 @@ test_upgrade_paths() {
     wait_for_api
     setup_client_TLS_certs
 
-    restore_56_1_backup
+    restore_3_56_1_backup
     wait_for_api
 
     # Add some access scopes and see that they survive the upgrade and rollback process
@@ -242,8 +246,8 @@ check_legacy_db_status() {
     test_equals_non_silent "$(echo "$dbStatus" | jq '.databaseType' -r)" "RocksDB"
 }
 
-restore_56_1_backup() {
-    info "Restoring a 56.1 backup"
+restore_3_56_1_backup() {
+    info "Restoring a backup from ACS version 3.56.1"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
