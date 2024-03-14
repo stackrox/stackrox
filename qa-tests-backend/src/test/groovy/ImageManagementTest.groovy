@@ -35,6 +35,8 @@ class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
+    // The "latest" tag tests are the only ones stable enough for BAT
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.imageTag != "latest" })
     def "Verify CI/CD Integration Endpoint - #policyName - #imageRegistry #note"() {
         when:
         "Clone and scope the policy for test"
@@ -79,7 +81,6 @@ class ImageManagementTest extends BaseSpecification {
         "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
-    @Tag("BAT")
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
@@ -99,6 +100,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.flaky })
     def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
         def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag", false)
@@ -107,17 +109,17 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        qaImageTag             | expected
-        "nginx-1.19-alpine"    | "alpine:v3.13"
-        "busybox-1-30"         | "busybox:1.30.1"
-        "centos7-base"         | "centos:7"
+        qaImageTag             | expected         | flaky
+        "nginx-1.19-alpine"    | "alpine:v3.13"   | true
+        "busybox-1-30"         | "busybox:1.30.1" | true
+        "centos7-base"         | "centos:7"       | true
         // We explicitly do not support Fedora at this time.
-        FEDORA_28              | "unknown"
-        "nginx-1-9"            | "debian:8"
-        "nginx-1-17-1"         | "debian:9"
-        "ubi9-slf4j"           | "rhel:9"
-        "apache-server"        | "ubuntu:14.04"
-        "ubuntu-22.10-openssl" | "ubuntu:22.10"
+        FEDORA_28              | "unknown"        | false
+        "nginx-1-9"            | "debian:8"       | false
+        "nginx-1-17-1"         | "debian:9"       | false
+        "ubi9-slf4j"           | "rhel:9"         | false
+        "apache-server"        | "ubuntu:14.04"   | false
+        "ubuntu-22.10-openssl" | "ubuntu:22.10"   | false
     }
 
     @Unroll

@@ -116,6 +116,7 @@ class BaseSpecification extends Specification {
                 LOG.info "isGKE: ${orchestrator.isGKE()}"
                 LOG.info "isEKS: ${ClusterService.isEKS()}"
                 LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "testTarget: ${Env.getTestTarget()}"
             }
             catch (Exception ex) {
                 LOG.info "Cannot connect to central : ${ex.message}"
