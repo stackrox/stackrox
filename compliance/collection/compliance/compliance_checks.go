@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
 	"github.com/stackrox/rox/compliance/collection/file"
@@ -150,6 +152,6 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 		log.Errorf("collecting kubelet configuration failed: %v", err)
 	}
 
-	complianceData.Time = protocompat.TimestampNow()
+	complianceData.Time = time.Now()
 	return complianceData
 }

@@ -2,9 +2,7 @@ package auditlog
 
 import (
 	"strings"
-	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
@@ -74,34 +72,17 @@ func (u *userRef) ToKubernetesEventUser() *storage.KubernetesEvent_User {
 	}
 }
 
-func (e *auditEvent) parseTimestamp(timestamp string) (*types.Timestamp, error) {
-	t, err := time.Parse(time.RFC3339Nano, timestamp)
-	if err != nil {
-		return nil, err
-	}
-	protoTime, err := protocompat.ConvertTimeToTimestampOrError(t)
-	if err != nil {
-		return nil, err
-	}
-	return protoTime, nil
-}
-
-func (e *auditEvent) getEventTime() (*types.Timestamp, error) {
-	protoTime, err := e.parseTimestamp(e.StageTimestamp)
+func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
+	protoTime, err := protocompat.ParseRFC3339NanoTimestamp(e.StageTimestamp)
 	if err != nil {
 		log.Errorf("Failed to parse stage time %s from audit log, so falling back to received time: %v", e.StageTimestamp, err)
 		// If StageTimestamp (which is the time for this particular stage) is not parsable, try the RequestReceivedTimestamp
 		// While it's not as accurate it should be relatively close. This should also be a rare occurrence.
-		protoTime, err = e.parseTimestamp(e.RequestReceivedTimestamp)
+		protoTime, err = protocompat.ParseRFC3339NanoTimestamp(e.RequestReceivedTimestamp)
 		if err != nil {
-			return nil, err
+			protoTime = nil
 		}
 	}
-	return protoTime, nil
-}
-
-func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
-	protoTime, err := e.getEventTime()
 	if err != nil {
 		// If we're still not able to get a valid time, fall back to "now".
 		log.Errorf(
