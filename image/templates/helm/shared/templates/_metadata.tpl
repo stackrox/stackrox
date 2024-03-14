@@ -4,6 +4,19 @@
   Format labels for $objType/$objName as YAML. This takes into consideration the $extraLabels,
   if provided, plus labels added using the generic `customize` configuration mechanism.
   Note that provided $extraLabels can be modified by the user via `customize`.
+
+  Note that pod resources are treated specially when it comes to customizing labels.
+  For enabling the user to define labels which shall only be applied to pods belonging
+  to a specific workload, the following rules apply for the Helm chart templates:
+
+  - use the "srox.podLabels" template for injecting labels into pod templates and
+  - use the "srox.labels" template for injecting labels into all other resources.
+
+  The user of the Helm charts may define `labels` within the `customize` structure for any
+  resources rendered as part of the charts. Such labels defined for workloads, e.g. a deployment,
+  will be injected into the deployment resource *and* will also be inherited to the pods belonging
+  to the workload. On the other hand, labels defined via `podLabels` are only meaningful for workload
+  resources and are only injected into the respective pods.
    */}}
 {{- define "srox.labels" -}}
   {{- $ := index . 0 -}}
@@ -24,6 +37,9 @@
   Format pod labels for $objType/$objName as YAML. This takes into consideration the $extraLabels,
   if provided, plus labels added using the generic `customize` configuration mechanism.
   Note that provided $extraLabels can be modified by the user via `customize`.
+
+  See the description above for the template "srox.labels" for an explanation of the differences between
+  "srox.labels" and "srox.podLabels".
    */}}
 {{- define "srox.podLabels" -}}
   {{- $ := index . 0 -}}
@@ -44,6 +60,19 @@
   Format annotations for $objType/$objName as YAML. This takes into consideration the $extraAnnotations,
   if provided, plus annotations added using the generic `customize` configuration mechanism.
   Note that provided $extraAnnotations can be modified by the user via `customize`.
+
+  Note that pod resources are treated specially when it comes to customizing annotations.
+  For enabling the user to define annotations which shall only be applied to pods belonging
+  to a specific workload, the following rules apply for the Helm chart templates:
+
+  - use the "srox.podAnnotations" template for injecting annotations into pod templates and
+  - use the "srox.annotations" template for injecting annotations into all other resources.
+
+  The user of the Helm charts may define `annotations` within the `customize` structure for any
+  resources rendered as part of the charts. Such annotations defined for workloads, e.g. a deployment,
+  will be injected into the deployment resource *and* will also be inherited to the pods belonging
+  to the workload. On the other hand, annotations defined via `podAnnotations` are only meaningful
+  for workload resources and are only injected into the respective pods.
    */}}
 {{- define "srox.annotations" -}}
   {{- $ := index . 0 -}}
@@ -64,6 +93,9 @@
   Format pod annotations for $objType/$objName as YAML. This takes into consideration the $extraAnnotations,
   if provided, plus annotations added using the generic `customize` configuration mechanism.
   Note that provided $extraAnnotations can be modified by the user via `customize`.
+
+  See the description above for the template "srox.annotations" for an explanation of the differences between
+  "srox.annotations" and "srox.podAnnotations".
    */}}
 {{- define "srox.podAnnotations" -}}
   {{- $ := index . 0 -}}
