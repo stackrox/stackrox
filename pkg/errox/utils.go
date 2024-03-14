@@ -1,4 +1,4 @@
-package errorhelpers
+package errox
 
 import "github.com/pkg/errors"
 
