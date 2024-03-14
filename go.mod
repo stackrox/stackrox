@@ -447,7 +447,6 @@ require (
 // for Go build tools to accept the `go.mod`.
 replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
-	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20240207122816-e936d453291c
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
 
@@ -457,14 +456,21 @@ replace (
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
-	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20231206143943-626efb842da7
-
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20230918235618-2bd149903d0e
 )
 
 // @stackrox/merlin
 replace (
+	// Our fork has following features:
+	// - generate MessageClone() and Clone() functions
+	// - error on nil unmarshal instead of panic
+	// - trailing comments propagation to generated code
+	github.com/gogo/protobuf => github.com/stackrox/protobuf v1.2.2-0.20240207122816-e936d453291c
+
+	// We need to fetch signatures without remote get.
+	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20231206143943-626efb842da7
+
 	// Our fork has a change exposing a method to do generic POST requests
 	// against the OAuth server in order to realize the refresh token flow.
 	// The problem is that:
