@@ -30,9 +30,12 @@ type Resolver interface {
 	Send(event *ResourceEvent)
 }
 
-// OutputQueue component that redirects Resource Events and Alerts to the output channel. This component is the last step
+// OutputQueue component that redirects Resource Events to the output channel. This component is the last step
 // before dispatching Kubernetes events to other components (detector or to the Sensor gRPC connection). It converts component.ResourceEvent
 // messages to protobuf messages, and communicates with the detector for any event that requires processing.
+//
+// Messages written in the .ResponsesC channel here will be copied to the parent component .ResponsesC (which will eventually be picked up by
+// the gRPC component)
 //
 //go:generate mockgen-wrapper
 type OutputQueue interface {
