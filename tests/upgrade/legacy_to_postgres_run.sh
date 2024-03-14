@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 
-# TODO(ROX-22872): Remove this test
 set -euo pipefail
 
 # Tests upgrade to Postgres.
@@ -12,7 +11,7 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 LAST_POSTGRES_TAG="4.4.0-rc.9"
-LAST_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
+LAST_POSTGRES_SHA="4b772ddf2348c90a90df1c3e7c9ce8fd08a459f2"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -283,6 +282,20 @@ deploy_earlier_rocks_central() {
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+}
+
+preamble_postgres() {
+    info "Starting test preamble postgres"
+
+    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
+    if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
+        if is_CI; then
+          info "Repo for time travel already exists! Will use it."
+        fi
+        (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
+    else
+        (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
