@@ -5,8 +5,14 @@
 set -euo pipefail
 
 # Tests upgrade to Postgres.
+# NOTE:  This test will upgrade RocksDB to Postgres at release 4.4.
+# After 4.4 upgrades from RocksDB are no longer possible.
+# TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to
+# 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+LAST_POSTGRES_TAG="4.4.0-rc.9"
+LAST_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -25,7 +31,7 @@ source "$TEST_ROOT/tests/upgrade/lib.sh"
 source "$TEST_ROOT/tests/upgrade/validation.sh"
 
 test_upgrade() {
-    info "Starting Rocks to 4.0 Postgres back to Rocks at 3.74 upgrade/rollback test"
+    info "Starting Rocks to 4.4 Postgres back to Rocks at 3.74 upgrade/rollback test"
 
     # Need to push the flag to ci so that is where it needs to be for the part
     # of the test.  We start this test with RocksDB
@@ -90,11 +96,11 @@ test_upgrade_paths() {
     ########################################################################################
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
     ########################################################################################
-    deploy_earlier_central
+    deploy_earlier_rocks_central
     wait_for_api
     setup_client_TLS_certs
 
-    restore_backup_test
+    restore_56_1_backup
     wait_for_api
 
     # Add some access scopes and see that they survive the upgrade and rollback process
@@ -106,12 +112,13 @@ test_upgrade_paths() {
     export API_TOKEN
 
     cd "$TEST_ROOT"
+    git checkout "$LAST_POSTGRES_SHA"
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
     ########################################################################################
-    info "Upgrade to ${CURRENT_TAG} via helm"
-    helm_upgrade_to_latest_postgres
+    info "Upgrade to ${LAST_POSTGRES_TAG} via helm"
+    helm_upgrade_to_last_postgres
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -184,8 +191,8 @@ test_upgrade_paths() {
     collect_and_check_stackrox_logs "$log_output_dir" "02_final_back_to_Rocks"
 }
 
-helm_upgrade_to_latest_postgres() {
-    info "Helm upgrade to Postgres build ${CURRENT_TAG}"
+helm_upgrade_to_last_postgres() {
+    info "Helm upgrade to Postgres build ${LAST_POSTGRES_TAG}"
 
     # Need to push the flag to ci so that the collect scripts pull from
     # Postgres and not Rocks
@@ -234,6 +241,48 @@ check_legacy_db_status() {
     dbStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/database/status)
     echo "database status: ${dbStatus}"
     test_equals_non_silent "$(echo "$dbStatus" | jq '.databaseType' -r)" "RocksDB"
+}
+
+restore_56_1_backup() {
+    info "Restoring a 56.1 backup"
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+        central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+}
+
+deploy_earlier_rocks_central() {
+    info "Deploying: $EARLIER_TAG..."
+
+    make cli
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+
+    # Let's try helm
+    ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         --set central.adminPassword.value="${ROX_PASSWORD}" \
+         --set central.db.enabled=false \
+         --set central.exposure.loadBalancer.enabled=true \
+         --set system.enablePodSecurityPolicies=false \
+         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="$(cat SCANNER_VERSION)" \
+         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
+
+    # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
+    # the scripts.  So we will give it a minute for things to get started before we proceed
+    sleep 60
+
+    ROX_USERNAME="admin"
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
