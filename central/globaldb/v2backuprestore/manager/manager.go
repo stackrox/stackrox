@@ -4,18 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/moby/sys/mountinfo"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -95,17 +92,6 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 	return handlerFuncs, totalSizeUncompressed, nil
 }
 
-func (m *manager) checkDiskSpace(requiredBytes int64) error {
-	availableBytes, err := fsutils.AvailableBytesIn(m.outputRoot)
-	if err != nil {
-		return errors.Errorf("could not determine free disk space of volume containing %s: %v. Assuming free space is not sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
-	}
-	if availableBytes < uint64(requiredBytes) {
-		return errors.Errorf("restoring backup requires %d bytes of free disk space, but volume containing %s only has %d bytes available", requiredBytes, m.outputRoot, availableBytes)
-	}
-	return nil
-}
-
 func (m *manager) finalOutputDir() string {
 	return filepath.Join(m.outputRoot, ".restore")
 }
@@ -118,7 +104,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
 	}
 
-	handlerFuncs, totalSizeUncompressed, err := analyzeManifest(requestHeader.GetManifest(), format)
+	handlerFuncs, _, err := analyzeManifest(requestHeader.GetManifest(), format)
 	if err != nil {
 		return nil, err
 	}
@@ -129,15 +115,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	}
 
 	if !process.postgresBundle {
-		if _, err := os.Stat(m.outputRoot); os.IsNotExist(err) {
-			return nil, errors.Errorf("the required directory %q does not exist", m.outputRoot)
-		}
-		if mounted, err := mountinfo.Mounted(m.outputRoot); !mounted || err != nil {
-			return nil, errors.Errorf("the directory %q must be a mounted volume", m.outputRoot)
-		}
-		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
-			return nil, err
-		}
+		return nil, errors.New("restoration of a database prior to 4.0 is not supported.  Please use a backup from 4.0 or later.")
 	}
 
 	if process.postgresBundle && pgconfig.IsExternalDatabase() {

@@ -4,8 +4,6 @@ import (
 	"context"
 	"hash/crc32"
 	"io"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -160,13 +158,6 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 }
 
 func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {
-	// If processing a postgres bundle, do not create the restore directories
-	if !p.postgresBundle {
-		if err := os.MkdirAll(tempOutputDir, 0700); err != nil {
-			return errors.Wrapf(err, "could not create temporary output directory %s", tempOutputDir)
-		}
-	}
-
 	// store if Postgres bundle here
 	restoreCtx := newRestoreProcessContext(ctx, tempOutputDir, p.postgresBundle)
 
@@ -174,18 +165,7 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 		return err
 	}
 
-	if err := restoreCtx.waitForAsyncChecks(); err != nil {
-		return err
-	}
-
-	// If processing a postgres bundle, do not update the restore symlink
-	if !p.postgresBundle {
-		if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
-			return errors.Wrapf(err, "failed to atomically create a symbolic link to restore directory %s", tempOutputDir)
-		}
-	}
-
-	return nil
+	return restoreCtx.waitForAsyncChecks()
 }
 
 func (p *restoreProcess) Cancel() {
