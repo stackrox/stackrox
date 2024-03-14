@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -185,126 +181,6 @@ var fileDescriptor_16da3126c9d20a5c = []byte{
 	0x7f, 0x28, 0x12, 0x40, 0x95, 0x9d, 0x93, 0x70, 0xe7, 0xae, 0x4c, 0x59, 0x2d, 0xa8, 0xc9, 0x2e,
 	0x43, 0x93, 0x5d, 0x84, 0x57, 0x2b, 0x33, 0x6d, 0xef, 0x3b, 0x00, 0x00, 0xff, 0xff, 0xaf, 0x36,
 	0xc9, 0xc7, 0x77, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// MitreAttackServiceClient is the client API for MitreAttackService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type MitreAttackServiceClient interface {
-	// ListMitreAttackVectors returns all MITRE ATT&CK vectors.
-	ListMitreAttackVectors(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListMitreAttackVectorsResponse, error)
-	// GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
-	GetMitreAttackVector(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetMitreVectorResponse, error)
-}
-
-type mitreAttackServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewMitreAttackServiceClient(cc grpc.ClientConnInterface) MitreAttackServiceClient {
-	return &mitreAttackServiceClient{cc}
-}
-
-func (c *mitreAttackServiceClient) ListMitreAttackVectors(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListMitreAttackVectorsResponse, error) {
-	out := new(ListMitreAttackVectorsResponse)
-	err := c.cc.Invoke(ctx, "/v1.MitreAttackService/ListMitreAttackVectors", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *mitreAttackServiceClient) GetMitreAttackVector(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetMitreVectorResponse, error) {
-	out := new(GetMitreVectorResponse)
-	err := c.cc.Invoke(ctx, "/v1.MitreAttackService/GetMitreAttackVector", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// MitreAttackServiceServer is the server API for MitreAttackService service.
-type MitreAttackServiceServer interface {
-	// ListMitreAttackVectors returns all MITRE ATT&CK vectors.
-	ListMitreAttackVectors(context.Context, *Empty) (*ListMitreAttackVectorsResponse, error)
-	// GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
-	GetMitreAttackVector(context.Context, *ResourceByID) (*GetMitreVectorResponse, error)
-}
-
-// UnimplementedMitreAttackServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedMitreAttackServiceServer struct {
-}
-
-func (*UnimplementedMitreAttackServiceServer) ListMitreAttackVectors(ctx context.Context, req *Empty) (*ListMitreAttackVectorsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMitreAttackVectors not implemented")
-}
-func (*UnimplementedMitreAttackServiceServer) GetMitreAttackVector(ctx context.Context, req *ResourceByID) (*GetMitreVectorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMitreAttackVector not implemented")
-}
-
-func RegisterMitreAttackServiceServer(s *grpc.Server, srv MitreAttackServiceServer) {
-	s.RegisterService(&_MitreAttackService_serviceDesc, srv)
-}
-
-func _MitreAttackService_ListMitreAttackVectors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MitreAttackServiceServer).ListMitreAttackVectors(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.MitreAttackService/ListMitreAttackVectors",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MitreAttackServiceServer).ListMitreAttackVectors(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MitreAttackService_GetMitreAttackVector_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResourceByID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MitreAttackServiceServer).GetMitreAttackVector(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.MitreAttackService/GetMitreAttackVector",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MitreAttackServiceServer).GetMitreAttackVector(ctx, req.(*ResourceByID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _MitreAttackService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.MitreAttackService",
-	HandlerType: (*MitreAttackServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "ListMitreAttackVectors",
-			Handler:    _MitreAttackService_ListMitreAttackVectors_Handler,
-		},
-		{
-			MethodName: "GetMitreAttackVector",
-			Handler:    _MitreAttackService_GetMitreAttackVector_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/mitre_service.proto",
 }
 
 func (m *ListMitreAttackVectorsResponse) Marshal() (dAtA []byte, err error) {

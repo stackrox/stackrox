@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -299,152 +295,6 @@ var fileDescriptor_4e7d8a93856728d1 = []byte{
 	0x56, 0xab, 0x2e, 0x1c, 0x81, 0xd0, 0x86, 0x93, 0x36, 0x7f, 0x1d, 0xb7, 0xf9, 0xab, 0xe8, 0xf4,
 	0xba, 0xff, 0xf7, 0xf8, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe5, 0xdd, 0xe6, 0x0d, 0x88, 0x03,
 	0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// AdministrationUsageServiceClient is the client API for AdministrationUsageService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type AdministrationUsageServiceClient interface {
-	// GetCurrentSecuredUnitsUsage returns the current secured units usage
-	// metrics values.
-	//
-	// The secured units metrics are collected from all connected clusters every
-	// 5 minutes, so the returned result includes data for the connected
-	// clusters accurate to about these 5 minutes, and potentially some outdated
-	// data for the disconnected clusters.
-	GetCurrentSecuredUnitsUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SecuredUnitsUsageResponse, error)
-	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
-	// usage observed during a given time range, together with the time when
-	// this maximum was aggregated and stored.
-	//
-	// The usage metrics are continuously collected from all the connected
-	// clusters. The maximum values are kept for some period of time in memory,
-	// and then, periodically, are stored to the database.
-	// The last data from disconnected clusters are taken into account.
-	GetMaxSecuredUnitsUsage(ctx context.Context, in *TimeRange, opts ...grpc.CallOption) (*MaxSecuredUnitsUsageResponse, error)
-}
-
-type administrationUsageServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewAdministrationUsageServiceClient(cc grpc.ClientConnInterface) AdministrationUsageServiceClient {
-	return &administrationUsageServiceClient{cc}
-}
-
-func (c *administrationUsageServiceClient) GetCurrentSecuredUnitsUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SecuredUnitsUsageResponse, error) {
-	out := new(SecuredUnitsUsageResponse)
-	err := c.cc.Invoke(ctx, "/v1.AdministrationUsageService/GetCurrentSecuredUnitsUsage", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *administrationUsageServiceClient) GetMaxSecuredUnitsUsage(ctx context.Context, in *TimeRange, opts ...grpc.CallOption) (*MaxSecuredUnitsUsageResponse, error) {
-	out := new(MaxSecuredUnitsUsageResponse)
-	err := c.cc.Invoke(ctx, "/v1.AdministrationUsageService/GetMaxSecuredUnitsUsage", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// AdministrationUsageServiceServer is the server API for AdministrationUsageService service.
-type AdministrationUsageServiceServer interface {
-	// GetCurrentSecuredUnitsUsage returns the current secured units usage
-	// metrics values.
-	//
-	// The secured units metrics are collected from all connected clusters every
-	// 5 minutes, so the returned result includes data for the connected
-	// clusters accurate to about these 5 minutes, and potentially some outdated
-	// data for the disconnected clusters.
-	GetCurrentSecuredUnitsUsage(context.Context, *Empty) (*SecuredUnitsUsageResponse, error)
-	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
-	// usage observed during a given time range, together with the time when
-	// this maximum was aggregated and stored.
-	//
-	// The usage metrics are continuously collected from all the connected
-	// clusters. The maximum values are kept for some period of time in memory,
-	// and then, periodically, are stored to the database.
-	// The last data from disconnected clusters are taken into account.
-	GetMaxSecuredUnitsUsage(context.Context, *TimeRange) (*MaxSecuredUnitsUsageResponse, error)
-}
-
-// UnimplementedAdministrationUsageServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedAdministrationUsageServiceServer struct {
-}
-
-func (*UnimplementedAdministrationUsageServiceServer) GetCurrentSecuredUnitsUsage(ctx context.Context, req *Empty) (*SecuredUnitsUsageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentSecuredUnitsUsage not implemented")
-}
-func (*UnimplementedAdministrationUsageServiceServer) GetMaxSecuredUnitsUsage(ctx context.Context, req *TimeRange) (*MaxSecuredUnitsUsageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMaxSecuredUnitsUsage not implemented")
-}
-
-func RegisterAdministrationUsageServiceServer(s *grpc.Server, srv AdministrationUsageServiceServer) {
-	s.RegisterService(&_AdministrationUsageService_serviceDesc, srv)
-}
-
-func _AdministrationUsageService_GetCurrentSecuredUnitsUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdministrationUsageServiceServer).GetCurrentSecuredUnitsUsage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.AdministrationUsageService/GetCurrentSecuredUnitsUsage",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdministrationUsageServiceServer).GetCurrentSecuredUnitsUsage(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdministrationUsageService_GetMaxSecuredUnitsUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TimeRange)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdministrationUsageServiceServer).GetMaxSecuredUnitsUsage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.AdministrationUsageService/GetMaxSecuredUnitsUsage",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdministrationUsageServiceServer).GetMaxSecuredUnitsUsage(ctx, req.(*TimeRange))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _AdministrationUsageService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.AdministrationUsageService",
-	HandlerType: (*AdministrationUsageServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetCurrentSecuredUnitsUsage",
-			Handler:    _AdministrationUsageService_GetCurrentSecuredUnitsUsage_Handler,
-		},
-		{
-			MethodName: "GetMaxSecuredUnitsUsage",
-			Handler:    _AdministrationUsageService_GetMaxSecuredUnitsUsage_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/administration_usage_service.proto",
 }
 
 func (m *TimeRange) Marshal() (dAtA []byte, err error) {
