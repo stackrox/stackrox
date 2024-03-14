@@ -147,14 +147,6 @@
                         "value": "sensor.stackrox.svc:443"
                     },
                     {
-                        "name": "ROX_CSV_EXPORT",
-                        "value": "false"
-                    },
-                    {
-                        "name": "ROX_INTEGRATIONS_AS_CONFIG",
-                        "value": "false"
-                    },
-                    {
                         "name": "ROX_NETPOL_FIELDS",
                         "value": "true"
                     },

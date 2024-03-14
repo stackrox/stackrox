@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -174,14 +173,12 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime())...)
 	}
 
-	if features.SyslogNamespaceLabels.Enabled() {
-		if namespaceName := getNamespaceFromAlert(alert); namespaceName != "" {
-			extensionList = append(extensionList, makeExtensionPair("ns", alert.GetNamespace()))
-			extensionList = append(extensionList, makeJSONExtensionPair("nslabels", s.metadataGetter.GetNamespaceLabels(ctx, alert)))
-		} else {
-			// This may not be an error as image alerts and certain resource alerts don't have a namespace associated with it
-			log.Debugf("Alert entity doesn't contain namespace: %+v", alert.GetEntity())
-		}
+	if namespaceName := getNamespaceFromAlert(alert); namespaceName != "" {
+		extensionList = append(extensionList, makeExtensionPair("ns", alert.GetNamespace()))
+		extensionList = append(extensionList, makeJSONExtensionPair("nslabels", s.metadataGetter.GetNamespaceLabels(ctx, alert)))
+	} else {
+		// This may not be an error as image alerts and certain resource alerts don't have a namespace associated with it
+		log.Debugf("Alert entity doesn't contain namespace: %+v", alert.GetEntity())
 	}
 
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAlert, alert))
