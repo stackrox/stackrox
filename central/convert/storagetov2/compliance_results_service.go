@@ -51,7 +51,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 		key := checkResultKey{
 			scanConfigName: result.GetScanConfigName(),
 			scanConfigID:   scanToScanID[result.GetScanConfigName()],
-			profileName:    "", // TODO(ROX-20334)
+			profileName:    "", // TODO(ROX-21647)
 			checkName:      result.GetCheckName(),
 		}
 		workingResult, found := resultsByScanCheck[key]
