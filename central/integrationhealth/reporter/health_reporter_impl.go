@@ -127,7 +127,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 				if err := d.integrationDS.UpsertIntegrationHealth(integrationWriteCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
-			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
+			} else if protocompat.CompareTimestamps(health.LastTimestamp, d.latestDBTimestampMap[health.Id]) > 0 {
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
 				_, exists, err := d.integrationDS.GetIntegrationHealth(integrationWriteCtx, health.Id)
 				if err != nil {

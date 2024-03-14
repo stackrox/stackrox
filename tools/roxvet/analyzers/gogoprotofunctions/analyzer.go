@@ -35,6 +35,7 @@ var (
 			"Unmarshal":         "Unmarshal",
 		},
 		"github.com/gogo/protobuf/types": {
+			"Compare":            "CompareTimestamps",
 			"TimestampFromProto": "ConvertTimestampToTimeOrError",
 			"TimestampNow":       "TimestampNow",
 			"TimestampProto":     "ConvertTimeToTimestampOrError",

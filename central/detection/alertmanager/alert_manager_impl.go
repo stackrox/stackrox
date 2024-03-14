@@ -149,7 +149,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	for _, resolvedAlert := range resolvedAlerts {
 		resolvedAt := resolvedAlert.GetResolvedAt()
 		// This alert was resolved very recently, so debounce the notification.
-		if resolvedAt != nil && resolvedAt.Compare(maxAllowedResolvedAtTime) > 0 {
+		if resolvedAt != nil && protocompat.CompareTimestamps(resolvedAt, maxAllowedResolvedAtTime) > 0 {
 			return true
 		}
 	}
@@ -207,7 +207,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	}
 
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
-		if process.GetSignal().GetTime().Compare(timestamp) > 0 {
+		if protocompat.CompareTimestamps(process.GetSignal().GetTime(), timestamp) > 0 {
 			newAlertHasNewProcesses = true
 			newProcessesSlice = append(newProcessesSlice, process)
 		}

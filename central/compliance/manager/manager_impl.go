@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -144,7 +145,7 @@ func (m *manager) interrupt() {
 }
 
 func runMatches(request *v1.GetRecentComplianceRunsRequest, runProto *v1.ComplianceRun) bool {
-	if request.GetSince() != nil && runProto.GetStartTime().Compare(request.GetSince()) < 0 {
+	if request.GetSince() != nil && protocompat.CompareTimestamps(runProto.GetStartTime(), request.GetSince()) < 0 {
 		return false
 	}
 	if request.GetClusterIdOpt() != nil && runProto.GetClusterId() != request.GetClusterId() {

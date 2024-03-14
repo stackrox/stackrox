@@ -593,7 +593,7 @@ func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfi
 	var toFree bool
 	for _, blob := range blobs {
 		if !toFree {
-			if remainingQuota > blob.GetLength() && blob.GetModifiedTime().Compare(cutOffTime) > 0 {
+			if remainingQuota > blob.GetLength() && protocompat.CompareTimestamps(blob.GetModifiedTime(), cutOffTime) > 0 {
 				remainingQuota = remainingQuota - blob.GetLength()
 				continue
 			}
