@@ -10,6 +10,7 @@ type TableErrorComponentProps = {
     message: string;
 };
 
+// TODO: Consider renaming this component to CenteredError or something similar, since it can be used in non-table cases
 function TableErrorComponent({ error, message }: TableErrorComponentProps) {
     return (
         <Bullseye>
