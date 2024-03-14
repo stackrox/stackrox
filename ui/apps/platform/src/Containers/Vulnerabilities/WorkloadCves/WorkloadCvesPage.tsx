@@ -5,7 +5,11 @@ import { PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
-import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import {
+    vulnManagementPath,
+    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityNamespaceViewPath,
+} from 'routePaths';
 import TechPreviewBanner from 'Components/TechPreviewBanner';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import usePermissions from 'hooks/usePermissions';
@@ -13,6 +17,7 @@ import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCve/ImageCvePage';
+import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 
 import './WorkloadCvesPage.css';
 
@@ -39,6 +44,7 @@ function WorkloadCvesPage() {
                     path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
                     component={DeploymentPage}
                 />
+                <Route path={vulnerabilityNamespaceViewPath} component={NamespaceViewPage} />
                 <Route
                     exact
                     path={vulnerabilitiesWorkloadCvesPath}

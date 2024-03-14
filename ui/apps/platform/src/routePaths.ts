@@ -76,6 +76,7 @@ export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
+export const vulnerabilityNamespaceViewPath = `${vulnerabilitiesWorkloadCvesPath}/namespace-view`;
 export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
@@ -370,7 +371,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'workload-cves': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'Namespace']),
     },
 };
 
@@ -451,6 +452,7 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
+    [vulnerabilityNamespaceViewPath]: 'Namespace View',
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
