@@ -451,14 +451,6 @@ replace (
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
 
-	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
-	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
-	// so dependabot is not able to check dependecies.
-	// See https://github.com/go-yaml/yaml/issues/772
-	// Therefore we point all to our fork of `go-yaml` - github.com/stackrox/yaml/v2|v3
-	// where we provide the actual `go.sum`.
-	github.com/mikefarah/yamlg/v2 => gopkg.in/yaml.v2 v2.4.0
-
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
@@ -469,6 +461,10 @@ replace (
 
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20230918235618-2bd149903d0e
+)
+
+// @stackrox/merlin
+replace (
 	// Our fork has a change exposing a method to do generic POST requests
 	// against the OAuth server in order to realize the refresh token flow.
 	// The problem is that:
@@ -479,6 +475,11 @@ replace (
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df
 
+	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
+	// so dependabot is not able to check dependecies.
+	// See https://github.com/go-yaml/yaml/issues/772
+	// Therefore we point all to our fork of `go-yaml` - github.com/stackrox/yaml/v2|v3
+	// where we provide the actual `go.sum`.
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
