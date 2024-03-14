@@ -23,7 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -217,7 +217,7 @@ func writeErrorBadRequest(w http.ResponseWriter) {
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
-	if errorhelpers.IsAny(err, fs.ErrNotExist, snapshot.ErrBlobNotExist) {
+	if errox.IsAny(err, fs.ErrNotExist, snapshot.ErrBlobNotExist) {
 		writeErrorNotFound(w)
 		return
 	}
