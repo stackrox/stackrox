@@ -1,6 +1,0 @@
-{
-  "id": "93f4b2dd-ef5a-419e-8371-38aed480fb36",
-  "name": "Fixable CVSS >= 6 and Privileged",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}
