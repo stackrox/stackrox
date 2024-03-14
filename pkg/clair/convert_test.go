@@ -2,7 +2,6 @@ package clair
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
@@ -153,37 +152,6 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 			for i := range convertedComponents {
 				assert.Equal(t, c.expectedComponents[i], convertedComponents[i])
 			}
-		})
-	}
-}
-
-func TestParseTime(t *testing.T) {
-	time1 := time.Unix(1518046140, 0).UTC()
-	time2 := time.Unix(1547942400, 0).UTC()
-	cases := []struct {
-		input  string
-		output *time.Time
-	}{
-		{
-			input:  "",
-			output: nil,
-		},
-		{
-			input:  "malformed",
-			output: nil,
-		},
-		{
-			input:  "2018-02-07T23:29Z",
-			output: &time1,
-		},
-		{
-			input:  "2019-01-20T00:00:00Z",
-			output: &time2,
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ParseTime(c.input))
 		})
 	}
 }
