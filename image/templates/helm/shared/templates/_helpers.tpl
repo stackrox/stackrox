@@ -77,8 +77,18 @@ true
   {{- end -}}
 
   {{- if empty $helmVersion -}}
-    {{- include "srox.fail" (printf "Failed to retrieve Helm version. Please make sure you are running Helm >= v%s." $minHelmVersion) -}}
+    {{- $msg := printf "Failed to retrieve Helm version. Please make sure you are running Helm >= v%s." $minHelmVersion -}}
+    {{- if $._rox.allowUnsupportedHelmVersion -}}
+      {{- include "srox.warn" (list $ $msg) -}}
+    {{- else -}}
+      {{- include "srox.fail" $msg -}}
+    {{- end -}}
   {{- else if semverCompare (printf "< %s" $minHelmVersion) $helmVersion -}}
-    {{- include "srox.fail" (printf "Helm version requirements not satisfied. Your Helm %s is too old. Please update to Helm >= v%s." $helmVersion $minHelmVersion) -}}
+    {{- $msg := printf "Helm version requirements not satisfied. Your Helm %s is too old. Please update to Helm >= v%s." $helmVersion $minHelmVersion -}}
+    {{- if $._rox.allowUnsupportedHelmVersion -}}
+      {{- include "srox.warn" (list $ $msg) -}}
+    {{- else -}}
+      {{- include "srox.fail" $msg -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
