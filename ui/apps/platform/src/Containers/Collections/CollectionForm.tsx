@@ -13,7 +13,12 @@ import {
     FormGroup,
     Label,
     TextInput,
-    Title, EmptyStateHeader, EmptyStateFooter,
+    Title,
+    EmptyStateHeader,
+    EmptyStateFooter,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 import { Table /* data-codemods */, Tbody, Tr, Td } from '@patternfly/react-table';
@@ -67,8 +72,11 @@ function AttachedCollectionTable({
         </Table>
     ) : (
         <EmptyState>
-            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} /><EmptyStateFooter><p>There are no other collections attached to this collection</p>
-        </EmptyStateFooter></EmptyState>
+            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+            <EmptyStateFooter>
+                <p>There are no other collections attached to this collection</p>
+            </EmptyStateFooter>
+        </EmptyState>
     );
 }
 
@@ -328,13 +336,14 @@ function CollectionForm({
                     <Title headingLevel="h2">Collection details</Title>
                     <Flex direction={{ default: 'column', lg: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <FormGroup
-                                label="Name"
-                                fieldId="name"
-                                isRequired={!isReadOnly}
-                                helperTextInvalid={nameError}
-                                validated={nameError ? 'error' : 'default'}
-                            >
+                            <FormGroup label="Name" fieldId="name" isRequired={!isReadOnly}>
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameError ? 'error' : 'default'}>
+                                            {nameError}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                                 <TextInput
                                     id="name"
                                     name="name"

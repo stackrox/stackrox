@@ -1,5 +1,13 @@
 import React from 'react';
-import { Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
+import {
+    Button,
+    Form,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    TextInput,
+} from '@patternfly/react-core';
 import { FormikHelpers, useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -46,14 +54,15 @@ function WatchedImagesForm({
 
     return (
         <Form onSubmit={handleSubmit}>
-            <FormGroup
-                label="Image name"
-                fieldId="imageName"
-                isRequired
-                validated={nameFieldValidated}
-                helperText="The fully-qualified image name, beginning with the registry, and ending with the tag."
-                helperTextInvalid={errors.imageName}
-            >
+            <FormGroup label="Image name" fieldId="imageName" isRequired>
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameFieldValidated}>
+                            {errors.imageName ||
+                                'The fully-qualified image name, beginning with the registry, and ending with the tag.'}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
                 <TextInput
                     id="imageName"
                     type="text"

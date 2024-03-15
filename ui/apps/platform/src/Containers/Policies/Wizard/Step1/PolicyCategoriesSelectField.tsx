@@ -1,12 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import {
-	FormGroup
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption,
-	SelectVariant
-} from '@patternfly/react-core/deprecated';
+import { FormGroup, FormHelperText, HelperText, HelperTextItem } from '@patternfly/react-core';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 import { useField } from 'formik';
 
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
@@ -46,12 +40,14 @@ function PolicyCategoriesSelectField(): ReactElement {
     }, []);
 
     return (
-        <FormGroup
-            helperText="Select policy categories you want to apply to this policy"
-            fieldId="policy-categories"
-            label="Categories"
-            isRequired
-        >
+        <FormGroup fieldId="policy-categories" label="Categories" isRequired>
+            <FormHelperText>
+                <HelperText>
+                    <HelperTextItem>
+                        Select policy categories you want to apply to this policy
+                    </HelperTextItem>
+                </HelperText>
+            </FormHelperText>
             <Select
                 variant={SelectVariant.typeaheadMulti}
                 name={field.name}

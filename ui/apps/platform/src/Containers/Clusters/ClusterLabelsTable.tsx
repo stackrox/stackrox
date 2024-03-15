@@ -1,5 +1,5 @@
 import React, { ReactElement, useRef, useState } from 'react';
-import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { PlusCircleIcon, TimesCircleIcon } from '@patternfly/react-icons';
 import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
@@ -159,13 +159,15 @@ function ClusterLabelsTable({
                                     isDisabled={!isValid}
                                     onClick={() => onAddLabel()}
                                 >
-                                    <PlusCircleIcon
+                                    <Icon
                                         color={
                                             isReplace
                                                 ? 'var(--pf-global--warning-color--100)'
                                                 : 'var(--pf-global--success-color--100)'
                                         }
-                                    />
+                                    >
+                                        <PlusCircleIcon />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                         </Td>

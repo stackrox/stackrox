@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useEffect, useState, ReactElement, FormEvent } from 'react';
 import {
-	Form,
-	FormGroup,
-	TextInput
+    Form,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    TextInput,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption,
-	SelectVariant
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
@@ -83,11 +82,14 @@ function DiagnosticBundleForm({
         <Form>
             <p>You can filter which platform data to include in the Zip file (max size 50MB)</p>
             {hasReadAccessForCluster && (
-                <FormGroup
-                    label="Filter by clusters"
-                    fieldId="filterByClusters"
-                    helperText="No clusters selected will include all clusters"
-                >
+                <FormGroup label="Filter by clusters" fieldId="filterByClusters">
+                    <FormHelperText>
+                        <HelperText>
+                            <HelperTextItem>
+                                No clusters selected will include all clusters
+                            </HelperTextItem>
+                        </HelperText>
+                    </FormHelperText>
                     <Select
                         id="filterByClusters"
                         variant={SelectVariant.typeaheadMulti}
@@ -115,8 +117,14 @@ function DiagnosticBundleForm({
                     />
                 }
                 fieldId="filterByStartingTime"
-                helperText="To override default, use UTC format (seconds are optional)"
             >
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem>
+                            To override default, use UTC format (seconds are optional)
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
                 <TextInput
                     type="text"
                     id="filterByStartingTime"

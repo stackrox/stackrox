@@ -15,6 +15,9 @@ import {
     Radio,
     Switch,
     Title,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
@@ -211,12 +214,15 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             </Flex>
             <Form>
                 <div className="pf-u-px-lg">
-                    <FormGroup
-                        helperText="Choose lifecycle stage to which your policy is applicable. You can select more than one stage."
-                        fieldId="policy-lifecycle-stage"
-                        label="Lifecycle stages"
-                        isRequired
-                    >
+                    <FormGroup fieldId="policy-lifecycle-stage" label="Lifecycle stages" isRequired>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Choose lifecycle stage to which your policy is applicable. You
+                                    can select more than one stage.
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <Flex direction={{ default: 'row' }} className="pf-u-pb-sm">
                             <Checkbox
                                 label="Build"
@@ -259,9 +265,13 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         fieldId="policy-event-source"
                         label="Event sources (Runtime lifecycle only)"
                         isRequired={hasRuntime}
-                        helperText={eventSourceHelperText}
                         className="pf-u-pt-lg"
                     >
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <Flex direction={{ default: 'row' }}>
                             <Radio
                                 label="Deployment"
@@ -292,11 +302,12 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     <div className="pf-u-mb-md pf-u-mt-sm">
                         Select a method to address violations of this policy.
                     </div>
-                    <FormGroup
-                        fieldId="policy-response-method"
-                        className="pf-u-mb-lg"
-                        helperText={responseMethodHelperText}
-                    >
+                    <FormGroup fieldId="policy-response-method" className="pf-u-mb-lg">
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>{responseMethodHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <Flex direction={{ default: 'row' }}>
                             <Radio
                                 label="Inform"

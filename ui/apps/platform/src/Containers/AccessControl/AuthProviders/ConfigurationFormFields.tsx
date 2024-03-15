@@ -1,17 +1,18 @@
 import React, { ReactElement } from 'react';
 import { FormikErrors, FormikTouched } from 'formik';
 import {
-	Alert,
-	Checkbox,
-	FormGroup,
-	GridItem,
-	TextArea,
-	TextInput,
-	ValidatedOptions
+    Alert,
+    Checkbox,
+    FormGroup,
+    FormHelperText,
+    GridItem,
+    HelperText,
+    HelperTextItem,
+    TextArea,
+    TextInput,
+    ValidatedOptions,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import { oidcCallbackModes } from 'constants/accessControl';
 import { AuthProviderConfig, AuthProviderType } from 'services/AuthService';
@@ -106,19 +107,25 @@ function ConfigurationFormFields({
             {type === 'auth0' && (
                 <>
                     <GridItem span={12} lg={6}>
-                        <FormGroup
-                            label="Auth0 tenant"
-                            fieldId="config.issuer"
-                            isRequired
-                            helperText={
-                                <span className="pf-u-font-size-sm">
-                                    for example,{' '}
-                                    <kbd className="pf-u-font-size-xs">your-tenant.auth0.com</kbd>
-                                </span>
-                            }
-                            helperTextInvalid={configErrors?.issuer || ''}
-                            validated={showIssuerError ? ValidatedOptions.error : 'default'}
-                        >
+                        <FormGroup label="Auth0 tenant" fieldId="config.issuer" isRequired>
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showIssuerError ? ValidatedOptions.error : 'default'
+                                        }
+                                    >
+                                        {configErrors?.issuer || (
+                                            <span className="pf-u-font-size-sm">
+                                                for example,{' '}
+                                                <kbd className="pf-u-font-size-xs">
+                                                    your-tenant.auth0.com
+                                                </kbd>
+                                            </span>
+                                        )}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 type="text"
                                 id="config.issuer"
@@ -132,13 +139,18 @@ function ConfigurationFormFields({
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
-                        <FormGroup
-                            label="Client ID"
-                            fieldId="config.client_id"
-                            isRequired
-                            helperTextInvalid={configErrors?.client_id || ''}
-                            validated={showClientIdError ? ValidatedOptions.error : 'default'}
-                        >
+                        <FormGroup label="Client ID" fieldId="config.client_id" isRequired>
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showClientIdError ? ValidatedOptions.error : 'default'
+                                        }
+                                    >
+                                        {configErrors?.client_id || ''}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 type="text"
                                 id="config.client_id"
@@ -185,21 +197,25 @@ function ConfigurationFormFields({
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
-                        <FormGroup
-                            label="Issuer"
-                            fieldId="config.issuer"
-                            isRequired
-                            helperText={
-                                <span className="pf-u-font-size-sm">
-                                    for example,{' '}
-                                    <kbd className="pf-u-font-size-xs">
-                                        tenant.auth-provider.com
-                                    </kbd>
-                                </span>
-                            }
-                            helperTextInvalid={configErrors?.issuer || ''}
-                            validated={showIssuerError ? ValidatedOptions.error : 'default'}
-                        >
+                        <FormGroup label="Issuer" fieldId="config.issuer" isRequired>
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showIssuerError ? ValidatedOptions.error : 'default'
+                                        }
+                                    >
+                                        {configErrors?.issuer || (
+                                            <span className="pf-u-font-size-sm">
+                                                for example,{' '}
+                                                <kbd className="pf-u-font-size-xs">
+                                                    tenant.auth-provider.com
+                                                </kbd>
+                                            </span>
+                                        )}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 type="text"
                                 id="config.issuer"
@@ -213,13 +229,18 @@ function ConfigurationFormFields({
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
-                        <FormGroup
-                            label="Client ID"
-                            fieldId="config.client_id"
-                            isRequired
-                            helperTextInvalid={configErrors?.client_id || ''}
-                            validated={showClientIdError ? ValidatedOptions.error : 'default'}
-                        >
+                        <FormGroup label="Client ID" fieldId="config.client_id" isRequired>
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showClientIdError ? ValidatedOptions.error : 'default'
+                                        }
+                                    >
+                                        {configErrors?.client_id || ''}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 type="text"
                                 id="config.client_id"
@@ -243,12 +264,24 @@ function ConfigurationFormFields({
                                     clientOnly?.clientSecretStored
                                 )
                             }
-                            helperText={
-                                <span className="pf-u-font-size-sm">{clientSecretHelperText}</span>
-                            }
-                            helperTextInvalid={configErrors?.client_secret || ''}
-                            validated={showClientSecretError ? ValidatedOptions.error : 'default'}
                         >
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showClientSecretError
+                                                ? ValidatedOptions.error
+                                                : 'default'
+                                        }
+                                    >
+                                        {configErrors?.client_secret || (
+                                            <span className="pf-u-font-size-sm">
+                                                {clientSecretHelperText}
+                                            </span>
+                                        )}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 type="password"
                                 id="config.client_secret"
@@ -289,15 +322,17 @@ function ConfigurationFormFields({
                         </FormGroup>
                     </GridItem>
                     <GridItem span={6} lg={6}>
-                        <FormGroup
-                            fieldId="config.disable_offline_access_scope"
-                            helperText={
-                                <span className="pf-u-font-size-sm">
-                                    Use if the identity provider has a limit on the number of
-                                    offline tokens that it can issue.
-                                </span>
-                            }
-                        >
+                        <FormGroup fieldId="config.disable_offline_access_scope">
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        <span className="pf-u-font-size-sm">
+                                            Use if the identity provider has a limit on the number
+                                            of offline tokens that it can issue.
+                                        </span>
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <Checkbox
                                 isChecked={config.disable_offline_access_scope as boolean}
                                 label="Disable 'offline_access' scope"
@@ -333,17 +368,25 @@ function ConfigurationFormFields({
                             label="Service Provider issuer"
                             fieldId="config.sp_issuer"
                             isRequired
-                            helperText={
-                                <span className="pf-u-font-size-sm">
-                                    for example,{' '}
-                                    <kbd className="pf-u-font-size-xs">
-                                        https://prevent.stackrox.io
-                                    </kbd>
-                                </span>
-                            }
-                            helperTextInvalid={configErrors?.sp_issuer || ''}
-                            validated={showSpIssuerError ? ValidatedOptions.error : 'default'}
                         >
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showSpIssuerError ? ValidatedOptions.error : 'default'
+                                        }
+                                    >
+                                        {configErrors?.sp_issuer || (
+                                            <span className="pf-u-font-size-sm">
+                                                for example,{' '}
+                                                <kbd className="pf-u-font-size-xs">
+                                                    https://prevent.stackrox.io
+                                                </kbd>
+                                            </span>
+                                        )}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 type="text"
                                 id="config.sp_issuer"
@@ -384,19 +427,27 @@ function ConfigurationFormFields({
                                     label="IdP Metadata URL"
                                     fieldId="config.idp_metadata_url"
                                     isRequired
-                                    helperText={
-                                        <span className="pf-u-font-size-sm">
-                                            for example,{' '}
-                                            <kbd className="pf-u-font-size-xs">
-                                                https://idp.example.com/metadata
-                                            </kbd>
-                                        </span>
-                                    }
-                                    helperTextInvalid={configErrors?.idp_metadata_url || ''}
-                                    validated={
-                                        showIdpMetadataUrlError ? ValidatedOptions.error : 'default'
-                                    }
                                 >
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem
+                                                variant={
+                                                    showIdpMetadataUrlError
+                                                        ? ValidatedOptions.error
+                                                        : 'default'
+                                                }
+                                            >
+                                                {configErrors?.idp_metadata_url || (
+                                                    <span className="pf-u-font-size-sm">
+                                                        for example,{' '}
+                                                        <kbd className="pf-u-font-size-xs">
+                                                            https://idp.example.com/metadata
+                                                        </kbd>
+                                                    </span>
+                                                )}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                     <TextInput
                                         type="text"
                                         id="config.idp_metadata_url"
@@ -422,24 +473,32 @@ function ConfigurationFormFields({
                                     label="IdP Issuer"
                                     fieldId="config.idp_issuer"
                                     isRequired={config.configurationType === 'static'}
-                                    helperText={
-                                        <span className="pf-u-font-size-sm">
-                                            for example,{' '}
-                                            <kbd className="pf-u-font-size-xs">
-                                                https://idp.example.com/
-                                            </kbd>
-                                            {', '}
-                                            or{' '}
-                                            <kbd className="pf-u-font-size-xs">
-                                                urn:something:else
-                                            </kbd>
-                                        </span>
-                                    }
-                                    helperTextInvalid={configErrors?.idp_issuer || ''}
-                                    validated={
-                                        showIdpIssuerError ? ValidatedOptions.error : 'default'
-                                    }
                                 >
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem
+                                                variant={
+                                                    showIdpIssuerError
+                                                        ? ValidatedOptions.error
+                                                        : 'default'
+                                                }
+                                            >
+                                                {configErrors?.idp_issuer || (
+                                                    <span className="pf-u-font-size-sm">
+                                                        for example,{' '}
+                                                        <kbd className="pf-u-font-size-xs">
+                                                            https://idp.example.com/
+                                                        </kbd>
+                                                        {', '}
+                                                        or{' '}
+                                                        <kbd className="pf-u-font-size-xs">
+                                                            urn:something:else
+                                                        </kbd>
+                                                    </span>
+                                                )}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                     <TextInput
                                         type="text"
                                         id="config.idp_issuer"
@@ -459,19 +518,27 @@ function ConfigurationFormFields({
                                     label="IdP SSO URL"
                                     fieldId="config.idp_sso_url"
                                     isRequired={config.configurationType === 'static'}
-                                    helperText={
-                                        <span className="pf-u-font-size-sm">
-                                            for example,{' '}
-                                            <kbd className="pf-u-font-size-xs">
-                                                https://idp.example.com/login
-                                            </kbd>
-                                        </span>
-                                    }
-                                    helperTextInvalid={configErrors?.idp_sso_url || ''}
-                                    validated={
-                                        showIdpSsoUrlError ? ValidatedOptions.error : 'default'
-                                    }
                                 >
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem
+                                                variant={
+                                                    showIdpSsoUrlError
+                                                        ? ValidatedOptions.error
+                                                        : 'default'
+                                                }
+                                            >
+                                                {configErrors?.idp_sso_url || (
+                                                    <span className="pf-u-font-size-sm">
+                                                        for example,{' '}
+                                                        <kbd className="pf-u-font-size-xs">
+                                                            https://idp.example.com/login
+                                                        </kbd>
+                                                    </span>
+                                                )}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                     <TextInput
                                         type="text"
                                         id="config.idp_sso_url"
@@ -490,15 +557,19 @@ function ConfigurationFormFields({
                                 <FormGroup
                                     label="Name/ID Format"
                                     fieldId="config.idp_nameid_format"
-                                    helperText={
-                                        <span className="pf-u-font-size-sm">
-                                            for example,{' '}
-                                            <kbd className="pf-u-font-size-xs">
-                                                urn:oasis:names:tc:SAML:1.1:nameid-format:persistent
-                                            </kbd>
-                                        </span>
-                                    }
                                 >
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem>
+                                                <span className="pf-u-font-size-sm">
+                                                    for example,{' '}
+                                                    <kbd className="pf-u-font-size-xs">
+                                                        urn:oasis:names:tc:SAML:1.1:nameid-format:persistent
+                                                    </kbd>
+                                                </span>
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                     <TextInput
                                         type="text"
                                         id="config.idp_nameid_format"
@@ -514,11 +585,20 @@ function ConfigurationFormFields({
                                     label="IdP Certificate(s) (PEM)"
                                     fieldId="config.idp_cert_pem"
                                     isRequired={config.configurationType === 'static'}
-                                    helperTextInvalid={configErrors?.idp_cert_pem || ''}
-                                    validated={
-                                        showIdpCertPemError ? ValidatedOptions.error : 'default'
-                                    }
                                 >
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem
+                                                variant={
+                                                    showIdpCertPemError
+                                                        ? ValidatedOptions.error
+                                                        : 'default'
+                                                }
+                                            >
+                                                {configErrors?.idp_cert_pem || ''}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                     <TextArea
                                         className="certificate-input"
                                         autoResize
@@ -558,13 +638,18 @@ function ConfigurationFormFields({
             )}
             {type === 'userpki' && (
                 <GridItem span={12} lg={6}>
-                    <FormGroup
-                        label="CA certificate(s) (PEM)"
-                        fieldId="config.keys"
-                        isRequired
-                        helperTextInvalid={configErrors?.keys || ''}
-                        validated={showUserPkiKeysError ? ValidatedOptions.error : 'default'}
-                    >
+                    <FormGroup label="CA certificate(s) (PEM)" fieldId="config.keys" isRequired>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem
+                                    variant={
+                                        showUserPkiKeysError ? ValidatedOptions.error : 'default'
+                                    }
+                                >
+                                    {configErrors?.keys || ''}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <TextArea
                             className="certificate-input"
                             autoResize
@@ -585,21 +670,23 @@ function ConfigurationFormFields({
             )}
             {type === 'iap' && (
                 <GridItem span={12} lg={6}>
-                    <FormGroup
-                        label="Audience"
-                        fieldId="config.audience"
-                        isRequired
-                        helperText={
-                            <span className="pf-u-font-size-sm">
-                                for example,{' '}
-                                <kbd className="pf-u-font-size-xs">
-                                    /projects/&lt;PROJECT_NUMBER&gt;/global/backendServices/&lt;SERVICE_ID&gt;
-                                </kbd>
-                            </span>
-                        }
-                        helperTextInvalid={configErrors?.audience || ''}
-                        validated={showAudienceError ? ValidatedOptions.error : 'default'}
-                    >
+                    <FormGroup label="Audience" fieldId="config.audience" isRequired>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem
+                                    variant={showAudienceError ? ValidatedOptions.error : 'default'}
+                                >
+                                    {configErrors?.audience || (
+                                        <span className="pf-u-font-size-sm">
+                                            for example,{' '}
+                                            <kbd className="pf-u-font-size-xs">
+                                                /projects/&lt;PROJECT_NUMBER&gt;/global/backendServices/&lt;SERVICE_ID&gt;
+                                            </kbd>
+                                        </span>
+                                    )}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <TextInput
                             type="text"
                             id="config.audience"

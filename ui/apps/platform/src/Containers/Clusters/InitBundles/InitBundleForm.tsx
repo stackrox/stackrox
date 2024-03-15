@@ -1,21 +1,21 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-	ActionGroup,
-	Alert,
-	Button,
-	Divider,
-	Flex,
-	Form,
-	FormGroup,
-	PageSection,
-	Radio,
-	TextInput
+    ActionGroup,
+    Alert,
+    Button,
+    Divider,
+    Flex,
+    Form,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    PageSection,
+    Radio,
+    TextInput,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -172,9 +172,16 @@ function InitBundleForm(): ReactElement {
                         <FormGroup
                             fieldId="installation"
                             label="Installation method for secured cluster services"
-                            helperText="You can use one bundle to secure multiple clusters that have the same installation method."
                             isRequired
                         >
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        You can use one bundle to secure multiple clusters that have
+                                        the same installation method.
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <Select
                                 variant="single"
                                 toggleAriaLabel="Installation method menu toggle"
