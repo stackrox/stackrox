@@ -97,7 +97,7 @@ function ClairIntegrationForm({
                     title="Deprecation notice"
                     variant={AlertVariant.warning}
                     isInline
-                    className="pf-u-mb-lg"
+                    className="pf-v5-u-mb-lg"
                 >
                     <Text>
                         CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster

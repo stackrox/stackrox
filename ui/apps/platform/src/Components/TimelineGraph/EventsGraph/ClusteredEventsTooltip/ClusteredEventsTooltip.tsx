@@ -79,7 +79,7 @@ const ClusteredEventsTooltip = ({
         <Popover
             aria-label="Open to see individual processes"
             headerContent={
-                <Text className="pf-u-font-weight-bold" component={TextVariants.h3}>
+                <Text className="pf-v5-u-font-weight-bold" component={TextVariants.h3}>
                     Events in this group
                 </Text>
             }

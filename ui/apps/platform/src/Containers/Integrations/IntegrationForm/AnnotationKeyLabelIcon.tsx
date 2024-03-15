@@ -19,7 +19,7 @@ function AnnotationKeyLabelIcon(): ReactElement {
                 aria-label="More info for annotation field"
                 onClick={(e) => e.preventDefault()}
                 aria-describedby="simple-form-name-01"
-                className="pf-c-form__group-label-help"
+                className="pf-v5-c-form__group-label-help"
             >
                 <HelpIcon />
             </button>

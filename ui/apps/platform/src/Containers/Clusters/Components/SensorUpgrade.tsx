@@ -59,7 +59,7 @@ function SensorUpgrade({
                     actionElement = (
                         <button
                             type="button"
-                            className="bg-transparent leading-normal m-0 p-0 pf-u-link-color underline"
+                            className="bg-transparent leading-normal m-0 p-0 pf-v5-u-link-color underline"
                             onClick={onClick}
                         >
                             {actionText}

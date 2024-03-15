@@ -43,9 +43,9 @@ function AttachNotifiersFormSection() {
     }
 
     return (
-        <div className="pf-u-px-lg">
+        <div className="pf-v5-u-px-lg">
             <Title headingLevel="h2">Attach notifiers</Title>
-            <div className="pf-u-mb-md pf-u-mt-sm">
+            <div className="pf-v5-u-mb-md pf-v5-u-mt-sm">
                 Forward policy violations to external tooling by selecting one or more notifiers
                 from existing integrations.
             </div>
@@ -84,7 +84,7 @@ function AttachNotifiersFormSection() {
                 <>
                     No notifiers found. Add notifiers in the Integrations Page to add them to this
                     policy.
-                    <Bullseye className="pf-u-mt-md">
+                    <Bullseye className="pf-v5-u-mt-md">
                         <Button
                             variant="secondary"
                             component="a"

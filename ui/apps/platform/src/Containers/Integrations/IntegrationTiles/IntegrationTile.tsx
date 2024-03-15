@@ -37,19 +37,27 @@ function IntegrationTile({
         <GalleryItem>
             <Link to={linkTo} data-testid="integration-tile">
                 <Card isSelectable isCompact isFlat style={styleCard}>
-                    <CardHeader actions={{ actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>, hasNoOffset: false, className: undefined}}  className="pf-u-mb-lg">
-                        actions={<>
+                    <CardHeader
+                        actions={{
+                            actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>,
+                            hasNoOffset: false,
+                            className: undefined,
+                        }}
+                        className="pf-v5-u-mb-lg"
+                    >
+                        <>
                             <img src={image} alt="" style={{ height: '100px' }} />
-                        </>}
-                        
+                        </>
                     </CardHeader>
-                    <CardTitle className="pf-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                    <CardTitle className="pf-v5-u-color-100" style={{ whiteSpace: 'nowrap' }}>
                         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                             <span>{label}</span>
                             {isTechPreview && <TechPreviewLabel />}
                         </Flex>
                     </CardTitle>
-                    {categories && <CardFooter className="pf-u-color-200">{categories}</CardFooter>}
+                    {categories && (
+                        <CardFooter className="pf-v5-u-color-200">{categories}</CardFooter>
+                    )}
                 </Card>
             </Link>
         </GalleryItem>

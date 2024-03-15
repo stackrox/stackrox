@@ -137,7 +137,7 @@ function FilterAutocompleteSelect({
     return (
         <ToolbarGroup
             variant="filter-group"
-            className="pf-u-display-flex pf-u-flex-grow-1"
+            className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
             id="filter-autocomplete-toolbar-group"
         >
             <SearchOptionsDropdown
@@ -179,7 +179,7 @@ function FilterAutocompleteSelect({
                     setIsTyping(true);
                     updateTypeahead(val);
                 }}
-                className="pf-u-flex-grow-1"
+                className="pf-v5-u-flex-grow-1"
             >
                 {getSuggestedOptions()}
             </Select>

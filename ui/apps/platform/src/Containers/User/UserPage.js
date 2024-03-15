@@ -27,13 +27,13 @@ import User from 'utils/User';
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
 import UserPermissionsTable from './UserPermissionsTable';
 
-const spacerPageSection = 'var(--pf-global--spacer--md)';
+const spacerPageSection = 'var(--pf-v5-global--spacer--md)';
 
 const stylePageSection = {
-    '--pf-c-page__main-section--PaddingTop': spacerPageSection,
-    '--pf-c-page__main-section--PaddingRight': spacerPageSection,
-    '--pf-c-page__main-section--PaddingBottom': spacerPageSection,
-    '--pf-c-page__main-section--PaddingLeft': spacerPageSection,
+    '--pf-v5-c-page__main-section--PaddingTop': spacerPageSection,
+    '--pf-v5-c-page__main-section--PaddingRight': spacerPageSection,
+    '--pf-v5-c-page__main-section--PaddingBottom': spacerPageSection,
+    '--pf-v5-c-page__main-section--PaddingLeft': spacerPageSection,
 };
 
 const getUserRolePath = (roleName) => `${userBasePath}/roles/${roleName}`;
@@ -71,7 +71,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
             <PageSection variant="light" style={stylePageSection} isFilled>
                 <Flex>
                     <FlexItem>
-                        <div className="pf-u-background-color-200">
+                        <div className="pf-v5-u-background-color-200">
                             <Nav aria-label="Roles" theme="light">
                                 <NavList>
                                     <NavItem>

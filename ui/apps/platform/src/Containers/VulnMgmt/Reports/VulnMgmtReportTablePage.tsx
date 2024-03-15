@@ -141,7 +141,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     isInline
                     variant={AlertVariant.danger}
                     title={error}
-                    className="pf-u-mb-lg"
+                    className="pf-v5-u-mb-lg"
                 />
             )}
             {isLoading && (

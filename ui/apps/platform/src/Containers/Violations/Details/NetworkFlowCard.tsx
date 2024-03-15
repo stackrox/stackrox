@@ -27,7 +27,7 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
     }
 
     return (
-        <div className="pf-u-mb-md" key={message}>
+        <div className="pf-v5-u-mb-md" key={message}>
             <Card isExpanded={isExpanded} id={message} isFlat>
                 <CardHeader onExpand={onExpand}>
                     <CardTitle>{message}</CardTitle>

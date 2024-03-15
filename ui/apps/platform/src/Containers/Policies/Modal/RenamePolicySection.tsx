@@ -35,7 +35,7 @@ const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionPro
                     const validated =
                         form.touched.newName && form.errors.newName ? 'error' : 'default';
                     return (
-                        <FormGroup fieldId="policy-rename" className="pf-u-pt-sm">
+                        <FormGroup fieldId="policy-rename" className="pf-v5-u-pt-sm">
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem variant={validated}>

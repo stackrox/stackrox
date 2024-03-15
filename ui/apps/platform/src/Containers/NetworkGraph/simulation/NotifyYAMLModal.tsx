@@ -124,7 +124,7 @@ function NotifyYAMLModal({
                     isInline
                     variant={AlertVariant.danger}
                     title={errorMessage}
-                    className="pf-u-mb-lg"
+                    className="pf-v5-u-mb-lg"
                 />
             )}
             {content}

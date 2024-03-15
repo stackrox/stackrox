@@ -68,7 +68,7 @@ function AffectedComponentsModal({
             isOpen={isOpen}
             onClose={onCloseHandler}
         >
-            <InputGroup className="pf-u-mt-md">
+            <InputGroup className="pf-v5-u-mt-md">
                 <InputGroupItem isFill ><TextInput
                     name="componentsFilter"
                     id="componentsFilter"
@@ -79,7 +79,7 @@ function AffectedComponentsModal({
                     onChange={(_event, value) => onInputValueChange(value)}
                 /></InputGroupItem>
             </InputGroup>
-            <Card isFlat className="pf-u-mt-lg">
+            <Card isFlat className="pf-v5-u-mt-lg">
                 <Table aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>

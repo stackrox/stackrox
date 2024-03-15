@@ -7,7 +7,7 @@ type ContainerArgumentsInfoProps = {
 
 const styleConstant = {
     overflow: 'scroll',
-    '--pf-u-max-height--MaxHeight': '12ch',
+    '--pf-v5-u-max-height--MaxHeight': '12ch',
 } as CSSProperties;
 
 function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps) {
@@ -15,8 +15,8 @@ function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps) {
         <Card>
             <CardTitle>Arguments</CardTitle>
             {args.length > 0 ? (
-                <CardBody className="pf-u-background-color-200 pf-u-pt-lg pf-u-mx-lg pf-u-mb-lg">
-                    <List isPlain className="pf-u-max-height" style={styleConstant}>
+                <CardBody className="pf-v5-u-background-color-200 pf-v5-u-pt-lg pf-v5-u-mx-lg pf-v5-u-mb-lg">
+                    <List isPlain className="pf-v5-u-max-height" style={styleConstant}>
                         {args.map((arg) => (
                             <ListItem>--{arg}</ListItem>
                         ))}

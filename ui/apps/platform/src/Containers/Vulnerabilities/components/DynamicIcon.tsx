@@ -5,14 +5,14 @@ import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 export function DynamicIcon(props: SVGIconProps) {
     return (
-        <Icon color="var(--pf-global--palette--blue-300)">
+        <Icon color="var(--pf-v5-global--palette--blue-300)">
             <FilterIcon {...props} />
         </Icon>
     );
 }
 
 export function DynamicColumnIcon() {
-    return <DynamicIcon className="pf-u-display-inline pf-u-ml-sm" />;
+    return <DynamicIcon className="pf-v5-u-display-inline pf-v5-u-ml-sm" />;
 }
 
 export function DynamicTableLabel() {

@@ -133,7 +133,7 @@ function CloneVulnReportPage() {
         <>
             <PageTitle title="Create vulnerability report" />
             <ReportFormErrorAlert error={createError} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
@@ -143,7 +143,7 @@ function CloneVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h1">Clone report</Title>
                     </FlexItem>

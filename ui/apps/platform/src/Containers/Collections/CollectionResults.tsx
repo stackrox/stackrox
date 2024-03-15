@@ -44,15 +44,15 @@ function fetchMatchingDeployments(
 
 function DeploymentSkeleton() {
     return (
-        <Flex className="pf-u-mb-0">
+        <Flex className="pf-v5-u-mb-0">
             <FlexItem style={{ flex: '0 1 24px' }}>
                 <Skeleton />
             </FlexItem>
-            <FlexItem className="pf-u-flex-grow-1">
-                <Skeleton className="pf-u-mb-sm" fontSize="sm" />
+            <FlexItem className="pf-v5-u-flex-grow-1">
+                <Skeleton className="pf-v5-u-mb-sm" fontSize="sm" />
                 <Skeleton fontSize="sm" />
             </FlexItem>
-            <Divider component="div" className="pf-u-mt-xs" />
+            <Divider component="div" className="pf-v5-u-mt-xs" />
         </Flex>
     );
 }
@@ -65,12 +65,12 @@ function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
             </FlexItem>
             <FlexItem>
                 <div>{deployment.name}</div>
-                <span className="pf-u-color-300 pf-u-font-size-xs">
+                <span className="pf-v5-u-color-300 pf-v5-u-font-size-xs">
                     In &quot;{deployment.cluster} / {deployment.namespace}
                     &quot;
                 </span>
             </FlexItem>
-            <Divider className="pf-u-mt-md" />
+            <Divider className="pf-v5-u-mt-md" />
         </Flex>
     );
 }
@@ -153,7 +153,7 @@ function CollectionResults({
         content = (
             <EmptyState variant={EmptyStateVariant.xs}>
                 <EmptyStateHeader icon={<EmptyStateIcon
-                    style={{ color: 'var(--pf-global--danger-color--200)' }}
+                    style={{ color: 'var(--pf-v5-global--danger-color--200)' }}
                     icon={ExclamationCircleIcon}
                 />} /><EmptyStateFooter><Flex spaceItems={{ default: 'spaceItemsMd' }} direction={{ default: 'column' }}>
                     <Title headingLevel="h2" size="md">
@@ -174,7 +174,7 @@ function CollectionResults({
             <Flex
                 direction={{ default: 'column' }}
                 grow={{ default: 'grow' }}
-                className="pf-u-mt-lg"
+                className="pf-v5-u-mt-lg"
             >
                 {isRefreshingResults ? (
                     <>
@@ -193,14 +193,14 @@ function CollectionResults({
                             <Button
                                 variant="link"
                                 isInline
-                                className="pf-u-text-align-center"
+                                className="pf-v5-u-text-align-center"
                                 isLoading={isFetchingNextPage}
                                 onClick={() => fetchNextPage(true)}
                             >
                                 View more
                             </Button>
                         ) : (
-                            <span className="pf-u-color-300 pf-u-text-align-center pf-u-font-size-sm">
+                            <span className="pf-v5-u-color-300 pf-v5-u-text-align-center pf-v5-u-font-size-sm">
                                 end of results
                             </span>
                         )}
@@ -212,8 +212,8 @@ function CollectionResults({
 
     return (
         <>
-            <div className="pf-u-p-lg pf-u-display-flex pf-u-align-items-center">
-                <div className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
+            <div className="pf-v5-u-p-lg pf-v5-u-display-flex pf-v5-u-align-items-center">
+                <div className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
                     <Title headingLevel="h2">Collection results</Title>
                     <Text>See a preview of current matches.</Text>
                 </div>
@@ -228,7 +228,7 @@ function CollectionResults({
                 {headerContent}
             </div>
             <Divider />
-            <div className="pf-u-h-100 pf-u-p-lg" style={{ overflow: 'auto' }}>
+            <div className="pf-v5-u-h-100 pf-v5-u-p-lg" style={{ overflow: 'auto' }}>
                 <Flex
                     spaceItems={{ default: 'spaceItemsNone' }}
                     alignItems={{ default: 'alignItemsStretch' }}
@@ -249,7 +249,7 @@ function CollectionResults({
                                 <SelectOption value="Cluster">Cluster</SelectOption>
                             </Select>
                         </FlexItem>
-                        <div className="pf-u-flex-grow-1 pf-u-flex-basis-0">
+                        <div className="pf-v5-u-flex-grow-1 pf-v5-u-flex-basis-0">
                             <SearchInput
                                 aria-label="Filter by name"
                                 placeholder="Filter by name"

@@ -33,7 +33,7 @@ function VulnMgmtEditReportPage({
         <>
             <PageSection variant="light">
                 <PageTitle title="Vulnerability Management - Edit" />
-                <Breadcrumb className="pf-u-mb-md">
+                <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={vulnManagementReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>

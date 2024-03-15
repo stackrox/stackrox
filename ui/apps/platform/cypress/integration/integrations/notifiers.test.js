@@ -65,10 +65,10 @@ describe('Notifier Integrations', () => {
             // Step 2.1, enable container IAM role, this should remove the AWS credentials fields
             getInputByLabel('Use container IAM role').click();
             cy.get(
-                `.pf-c-form__group:has('.pf-c-form__control:contains("Access key ID")') input`
+                `.pf-v5-c-form__group:has('.pf-v5-c-form__control:contains("Access key ID")') input`
             ).should('not.exist');
             cy.get(
-                `.pf-c-form__group:has('.pf-c-form__control:contains("Secret access key")') input`
+                `.pf-v5-c-form__group:has('.pf-v5-c-form__control:contains("Secret access key")') input`
             ).should('not.exist');
             // Step 2.2, disable container IAM role, this should render the AWS credentials fields again
             getInputByLabel('Use container IAM role').click();
@@ -592,9 +592,9 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Receiver port').click().clear().blur();
 
             // check format toggle
-            cy.get('.pf-c-form__group-label .pf-c-form__label-text:contains("Message Format")');
+            cy.get('.pf-v5-c-form__group-label .pf-v5-c-form__label-text:contains("Message Format")');
             cy.get(
-                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button.pf-m-selected:contains("CEF")'
+                '#messageFormat .pf-v5-c-toggle-group__item .pf-v5-c-toggle-group__button.pf-m-selected:contains("CEF")'
             );
 
             getHelperElementByLabel('Integration name').contains('Integration name is required');
@@ -622,10 +622,10 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Key').type('vehicle');
             getInputByLabel('Value').type('vanagon').blur();
             cy.get(
-                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button:contains("CEF (legacy field order)")'
+                '#messageFormat .pf-v5-c-toggle-group__item .pf-v5-c-toggle-group__button:contains("CEF (legacy field order)")'
             ).click();
             cy.get(
-                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button:contains("CEF (legacy field order)")'
+                '#messageFormat .pf-v5-c-toggle-group__item .pf-v5-c-toggle-group__button:contains("CEF (legacy field order)")'
             ).should('have.class', 'pf-m-selected');
 
             testIntegrationInFormWithoutStoredCredentials(

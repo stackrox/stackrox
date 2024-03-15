@@ -46,7 +46,7 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                                 >
                                     <DescriptionList
                                         isCompact
-                                        className="pf-u-background-color-200 pf-u-p-md"
+                                        className="pf-v5-u-background-color-200 pf-v5-u-p-md"
                                     >
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Source</DescriptionListTerm>

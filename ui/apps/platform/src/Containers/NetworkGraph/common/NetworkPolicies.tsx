@@ -99,7 +99,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 isInline
                 variant={AlertVariant.danger}
                 title={getAxiosErrorMessage(error)}
-                className="pf-u-mb-lg"
+                className="pf-v5-u-mb-lg"
             />
         );
     }
@@ -108,7 +108,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
 
     if (networkPolicyErrors.length > 0) {
         policyErrorBanner = (
-            <AlertGroup className="pf-u-mb-lg">
+            <AlertGroup className="pf-v5-u-mb-lg">
                 {networkPolicyErrors.map((networkPolicyError) => (
                     <Alert
                         isInline
@@ -136,7 +136,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     }
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             {policyErrorBanner}
             <Stack hasGutter>
                 <StackItem>
@@ -166,7 +166,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 </StackItem>
                 {selectedNetworkPolicy && (
                     <StackItem>
-                        <div className="pf-u-h-100">
+                        <div className="pf-v5-u-h-100">
                             <CodeEditor
                                 isDarkTheme={customDarkMode}
                                 customControls={

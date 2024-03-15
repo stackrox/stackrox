@@ -35,7 +35,7 @@ function PendingApprovalPopover({ vulnRequestId }: PendingApprovalPopoverProps):
             />
             <button type="button" ref={popoverRef}>
                 <InfoCircleIcon
-                    className="pf-u-info-color-100"
+                    className="pf-v5-u-info-color-100"
                     aria-label="Pending approval icon"
                 />
             </button>

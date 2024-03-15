@@ -37,7 +37,7 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
             <Flex
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsXs' }}
-                className="pf-u-w-50"
+                className="pf-v5-u-w-50"
             >
                 <Skeleton screenreaderText="Loading CVE name" fontSize="2xl" />
                 <Skeleton screenreaderText="Loading CVE metadata" height="100px" />
@@ -50,7 +50,7 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-            <Title headingLevel="h1" className="pf-u-mb-sm">
+            <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                 {data.cve}
             </Title>
             {data.firstDiscoveredInSystem && (

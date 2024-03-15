@@ -82,7 +82,7 @@ describe('Vulnerabilities Exception Configuration', () => {
         cy.get(selectors.indefiniteOptionEnabledSwitch).check({ force: true });
 
         cy.get(selectors.saveButton).click();
-        cy.get('.pf-c-alert:contains("The configuration was updated successfully")');
+        cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
 
         // Refresh the page to make sure options are persisted
         visitExceptionConfig('vulnerabilities');
@@ -114,7 +114,7 @@ describe('Vulnerabilities Exception Configuration', () => {
         cy.get(selectors.indefiniteOptionEnabledSwitch).check({ force: true });
 
         cy.get(selectors.saveButton).click();
-        cy.get('.pf-c-alert:contains("The configuration was updated successfully")');
+        cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
 
         // Visit the Workload CVE page, open a deferral modal, and verify that the specified options are available
         visitWorkloadCveOverview();
@@ -141,7 +141,7 @@ describe('Vulnerabilities Exception Configuration', () => {
         cy.get(selectors.indefiniteOptionEnabledSwitch).uncheck({ force: true });
 
         cy.get(selectors.saveButton).click();
-        cy.get('.pf-c-alert:contains("The configuration was updated successfully")');
+        cy.get('.pf-v5-c-alert:contains("The configuration was updated successfully")');
 
         // Revisit Workload CVEs and verify that the updated options are available
         visitWorkloadCveOverview();

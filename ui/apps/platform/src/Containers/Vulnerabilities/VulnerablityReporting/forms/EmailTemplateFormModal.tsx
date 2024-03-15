@@ -126,7 +126,7 @@ function EmailTemplateFormModal({
         >
             <Tabs defaultActiveKey={0} role="region">
                 <Tab eventKey={0} title={<TabTitleText>Edit</TabTitleText>}>
-                    <Form className="pf-u-py-lg pf-u-px-lg" onSubmit={handleSubmit}>
+                    <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" onSubmit={handleSubmit}>
                         <FormGroup label="Email subject" fieldId="emailSubject">
                             <FormHelperText>
                                 <HelperText>
@@ -150,7 +150,7 @@ function EmailTemplateFormModal({
                                     <TextContent>
                                         <Text
                                             component={TextVariants.p}
-                                            className="pf-u-font-size-sm"
+                                            className="pf-v5-u-font-size-sm"
                                         >
                                             {values.emailSubject.length} / {maxEmailSubjectLength}{' '}
                                             characters
@@ -159,7 +159,7 @@ function EmailTemplateFormModal({
                                 </FlexItem>
                                 <FlexItem>
                                     <Button
-                                        className="pf-u-mt-sm"
+                                        className="pf-v5-u-mt-sm"
                                         variant="link"
                                         isInline
                                         size="sm"
@@ -195,7 +195,7 @@ function EmailTemplateFormModal({
                                     <TextContent>
                                         <Text
                                             component={TextVariants.p}
-                                            className="pf-u-font-size-sm"
+                                            className="pf-v5-u-font-size-sm"
                                         >
                                             {values.emailBody.length} / {maxEmailBodyLength}{' '}
                                             characters
@@ -204,7 +204,7 @@ function EmailTemplateFormModal({
                                 </FlexItem>
                                 <FlexItem>
                                     <Button
-                                        className="pf-u-mt-sm"
+                                        className="pf-v5-u-mt-sm"
                                         variant="link"
                                         isInline
                                         size="sm"

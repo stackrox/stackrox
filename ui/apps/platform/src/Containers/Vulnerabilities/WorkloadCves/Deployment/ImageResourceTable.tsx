@@ -61,7 +61,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                     <Tbody
                         key={id}
                         style={{
-                            borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                            borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                         }}
                     >
                         <Tr>

@@ -45,8 +45,8 @@ const fieldIdPrefix = 'compliance-levels-by-standard';
 
 function ComplianceScanEmptyState() {
     return (
-        <EmptyState className="pf-u-h-100" variant={EmptyStateVariant.xs}>
-            <EmptyStateHeader titleText="No Standard results available." icon={<EmptyStateIcon className="pf-u-font-size-xl" icon={SyncIcon} />} headingLevel="h3" />
+        <EmptyState className="pf-v5-u-h-100" variant={EmptyStateVariant.xs}>
+            <EmptyStateHeader titleText="No Standard results available." icon={<EmptyStateIcon className="pf-v5-u-font-size-xl" icon={SyncIcon} />} headingLevel="h3" />
             <EmptyStateBody>Run a scan on the Compliance page.</EmptyStateBody><EmptyStateFooter>
             <Button component={LinkShim} href={complianceBasePath}>
                 Go to compliance

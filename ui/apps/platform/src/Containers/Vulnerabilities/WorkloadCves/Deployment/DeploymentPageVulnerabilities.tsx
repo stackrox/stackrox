@@ -190,18 +190,18 @@ function DeploymentPageVulnerabilities({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
+            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>
                     Review and triage vulnerability data scanned for images within this deployment
                 </Text>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
-                <div className="pf-u-px-sm pf-u-background-color-100">
+                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     <WorkloadCveFilterToolbar
                         autocompleteSearchContext={{
                             'Deployment ID': deploymentId,
@@ -210,8 +210,8 @@ function DeploymentPageVulnerabilities({
                         onFilterChange={() => setPage(1)}
                     />
                 </div>
-                <div className="pf-u-flex-grow-1 pf-u-background-color-100">
-                    <div className="pf-u-px-lg pf-u-pb-lg">
+                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
+                    <div className="pf-v5-u-px-lg pf-v5-u-pb-lg">
                         {summaryRequest.error && (
                             <Alert
                                 title="There was an error loading the summary data for this deployment"
@@ -251,8 +251,8 @@ function DeploymentPageVulnerabilities({
                         )}
                     </div>
                     <Divider />
-                    <div className="pf-u-p-lg">
-                        <Split className="pf-u-pb-lg pf-u-align-items-baseline">
+                    <div className="pf-v5-u-p-lg">
+                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -286,7 +286,7 @@ function DeploymentPageVulnerabilities({
                         )}
                         {vulnerabilityRequest.loading && !vulnerabilityData && (
                             <Bullseye>
-                                <Spinner  />
+                                <Spinner />
                             </Bullseye>
                         )}
                         {vulnerabilityData && vulnerabilityData.deployment && (

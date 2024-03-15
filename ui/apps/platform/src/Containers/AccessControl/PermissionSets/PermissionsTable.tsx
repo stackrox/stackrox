@@ -41,20 +41,20 @@ function PermissionsTable({
                 <Tr>
                     <Th width={20}>
                         Resource
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {resourceToAccessEntries.length}
                         </Badge>
                     </Th>
                     <Th width={40}>Description</Th>
                     <Th width={10}>
                         Read
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {getReadAccessCount(resourceToAccess)}
                         </Badge>
                     </Th>
                     <Th width={10}>
                         Write
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {getWriteAccessCount(resourceToAccess)}
                         </Badge>
                     </Th>
@@ -72,7 +72,7 @@ function PermissionsTable({
                         }
                     >
                         <Td dataLabel="Resource">
-                            <p className="pf-u-font-weight-bold">{resource}</p>
+                            <p className="pf-v5-u-font-weight-bold">{resource}</p>
                             <p>
                                 {resourceSubstitutions[resource] && (
                                     <>Replaces {resourceSubstitutions[resource].join(', ')}</>

@@ -16,12 +16,12 @@ function EntityName({ entity, entityType }) {
         </Link>
     ) : (
         <Flex direction={{ default: 'column' }}>
-            <FlexItem className="pf-u-mb-0">
+            <FlexItem className="pf-v5-u-mb-0">
                 <Link to={`${vulnManagementPath}/deployment/${entity.id as string}`}>
                     {entity.name}
                 </Link>
             </FlexItem>
-            <FlexItem className="pf-u-color-400 pf-u-font-size-xs">
+            <FlexItem className="pf-v5-u-color-400 pf-v5-u-font-size-xs">
                 {`in "${entity.clusterName as string}/${entity.namespace as string}"`}
             </FlexItem>
         </Flex>

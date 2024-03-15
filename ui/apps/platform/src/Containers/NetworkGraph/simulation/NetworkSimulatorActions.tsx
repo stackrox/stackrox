@@ -69,7 +69,7 @@ function NetworkSimulatorActions({
     }
 
     return (
-        <Split hasGutter className="pf-u-p-md">
+        <Split hasGutter className="pf-v5-u-p-md">
             <SplitItem>
                 <UploadYAMLButton onFileInputChange={onFileInputChange} />
             </SplitItem>

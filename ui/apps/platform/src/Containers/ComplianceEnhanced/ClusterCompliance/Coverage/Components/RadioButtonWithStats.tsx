@@ -48,7 +48,7 @@ function RadioButtonWithStats({ scanStats, isSelected, onSelected }: RadioButton
                 isCompact
                 selectableInputAriaLabel={`results for scan: ${scanName}`} tabIndex={0}
             >
-                <CardTitle className="pf-u-p-sm pf-u-pb-0">
+                <CardTitle className="pf-v5-u-p-sm pf-v5-u-pb-0">
                     <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
                         <FlexItem>
                             <Radio
@@ -65,7 +65,7 @@ function RadioButtonWithStats({ scanStats, isSelected, onSelected }: RadioButton
                     <LabelGroup aria-label={`check results for ${scanName}`}>
                         <Label
                             aria-label={`number of passing checks: ${passCount}`}
-                            className="pf-u-mr-xs"
+                            className="pf-v5-u-mr-xs"
                             icon={<CheckCircleIcon />}
                             color="green"
                         >
@@ -73,7 +73,7 @@ function RadioButtonWithStats({ scanStats, isSelected, onSelected }: RadioButton
                         </Label>
                         <Label
                             aria-label={`number of failing checks: ${failCount}`}
-                            className="pf-u-mr-xs"
+                            className="pf-v5-u-mr-xs"
                             icon={<ExclamationCircleIcon />}
                             color="red"
                         >

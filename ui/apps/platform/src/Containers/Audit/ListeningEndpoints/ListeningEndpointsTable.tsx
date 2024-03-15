@@ -127,14 +127,14 @@ function ListeningEndpointsTable({
                         </Tr>
                         <Tr isExpanded={isExpanded}>
                             <Td colSpan={5}>
-                                <Card className="pf-u-m-md" isFlat>
+                                <Card className="pf-v5-u-m-md" isFlat>
                                     {count > 0 ? (
                                         <EmbeddedTable
                                             deploymentId={id}
                                             listeningEndpoints={listeningEndpoints}
                                         />
                                     ) : (
-                                        <Text className="pf-u-p-md">
+                                        <Text className="pf-v5-u-p-md">
                                             This deployment does not have any reported listening
                                             endpoints
                                         </Text>

@@ -116,7 +116,7 @@ h6 {
 
 .toast-selector {
     @apply text-base !important;
-    font-family: var(--pf-global--FontFamily--sans-serif);
+    font-family: var(--pf-v5-global--FontFamily--sans-serif);
 }
 
 .pill {
