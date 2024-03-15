@@ -39,14 +39,15 @@ func (u *upgradeController) makeProcessActive(cluster *storage.Cluster, processS
 func (u *upgradeController) maybeTimeoutUpgrade(processID string) error {
 	currState := u.active.status.GetProgress().GetUpgradeState()
 	var relevantGoTime time.Time
-	if currState == storage.UpgradeProgress_UPGRADE_INITIALIZING &&
-		u.active != nil &&
-		u.active.status != nil &&
-		u.active.status.GetInitiatedAt() != nil {
+	if u == nil {
+		return errors.Errorf("got no relevant timestamp for nil upgrade controller")
+	}
+	if u.active == nil || u.active.status == nil {
+		return errors.Errorf("got no relevant timestamp for upgrade controller with status: %+v", u.upgradeStatus)
+	}
+	if currState == storage.UpgradeProgress_UPGRADE_INITIALIZING && u.active.status.GetInitiatedAt() != nil {
 		relevantGoTime = protoconv.ConvertTimestampToTimeOrNow(u.active.status.GetInitiatedAt())
-	} else if u.active != nil &&
-		u.active.status != nil &&
-		u.active.status.GetProgress().GetSince() != nil {
+	} else if u.active.status.GetProgress().GetSince() != nil {
 		relevantGoTime = protoconv.ConvertTimestampToTimeOrNow(u.active.status.GetProgress().GetSince())
 	} else {
 		// This should never happen -- it violates one of our invariants.

@@ -329,11 +329,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")
 	}
-	if newSettings.GetTimestamp() != nil {
-		if updateTime, err := protocompat.ConvertTimestampToTimeOrError(newSettings.GetTimestamp()); err == nil {
-			m.lastSettingsUpdate = &updateTime
-		}
-	}
+	m.lastSettingsUpdate = protocompat.ConvertTimestampToTimeOrNil(newSettings.GetTimestamp())
 
 	enforceablePolicies := 0
 	for _, policy := range allRuntimePolicySet.GetCompiledPolicies() {

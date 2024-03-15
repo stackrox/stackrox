@@ -44,10 +44,6 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 		return nil, err
 	}
 
-	lastSeenTimestamp, err := protocompat.ConvertTimeToTimestampOrError(networkFlow.LastSeenTimestamp)
-	if err != nil {
-		return nil, err
-	}
 	return &storage.Alert_Violation{
 		Message: messageBuilder.String(),
 		MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
@@ -69,7 +65,7 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 			},
 		},
 		Type: storage.Alert_Violation_NETWORK_FLOW,
-		Time: lastSeenTimestamp,
+		Time: protocompat.ConvertTimeToTimestampOrNil(&networkFlow.LastSeenTimestamp),
 	}, nil
 }
 

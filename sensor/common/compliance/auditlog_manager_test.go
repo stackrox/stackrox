@@ -310,9 +310,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	for node := 0; node < 2; node++ {
 		for i := 0; i < 2; i++ {
 			nodeName := fmt.Sprintf("node-%d", node)
-			timestamp := startTime.Add(time.Duration(i*10) * time.Minute)
-			msg := s.getMsgFromCompliance(nodeName, timestamp)
-			state := s.getAuditLogFileState(timestamp, msg.GetAuditEvents().Events[0].Id)
+			msgTime := startTime.Add(time.Duration(i*10) * time.Minute)
+			msg := s.getMsgFromCompliance(nodeName, msgTime)
+			state := s.getAuditLogFileState(msgTime, msg.GetAuditEvents().Events[0].Id)
 			expectedFileStates[nodeName] = state
 
 			manager.AuditMessagesChan() <- msg

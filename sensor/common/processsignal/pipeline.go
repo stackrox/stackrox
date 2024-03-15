@@ -81,12 +81,7 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 	indicator.PodId = cachedContainer.PodID
 	indicator.PodUid = cachedContainer.PodUID
 	indicator.Namespace = cachedContainer.Namespace
-	if cachedContainer.StartTime != nil {
-		startTimestamp, err := protocompat.ConvertTimeToTimestampOrError(*cachedContainer.StartTime)
-		if err == nil {
-			indicator.ContainerStartTime = startTimestamp
-		}
-	}
+	indicator.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(cachedContainer.StartTime)
 	indicator.ImageId = cachedContainer.ImageID
 }
 
