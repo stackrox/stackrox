@@ -91,6 +91,12 @@ setup_file() {
     fi
 
     setup_default_TLS_certs
+
+    # Configure a timeout for a single test. After 30m of runtime a test will be marked as failed
+    # (and we will hopefully receive helpful logs for analysing the situation).
+    # Without a timeout it might happen that the pod running the tests is simply killed and we won't
+    # have any logs for investigation the situation.
+    export BATS_TEST_TIMEOUT=1800 # Seconds
 }
 
 test_case_no=0
