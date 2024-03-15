@@ -269,6 +269,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			// impact on image scan data.
 			fetchOpt = enricher.ForceRefetchSignaturesOnly
 			imgExists = true
+			updateImageFromRequest(img, request.GetImage().GetName())
 		}
 	}
 
@@ -280,8 +281,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			fetchOpt = enricher.ForceRefetch
 		}
 		img = types.ToImage(request.GetImage())
-	} else {
-		updateImageFromRequest(img, request.GetImage().GetName())
 	}
 
 	if err := s.enrichImage(ctx, img, fetchOpt, request.GetSource()); err != nil && imgExists {

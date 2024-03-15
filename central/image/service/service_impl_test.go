@@ -149,28 +149,18 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 }
 
 func TestUpdatingImageFromRequest(t *testing.T) {
-	imgAName, _, err := utils.GenerateImageNameFromString("docker.io/library/nginx:latest")
-	if err != nil {
-		t.Error(err)
+	createImgName := func(name string) *storage.ImageName {
+		imgName, _, err := utils.GenerateImageNameFromString(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return imgName
 	}
 
-	// different registry.
-	imgBName, _, err := utils.GenerateImageNameFromString("example.com/library/nginx:latest")
-	if err != nil {
-		t.Error(err)
-	}
-
-	// different remote.
-	imgCName, _, err := utils.GenerateImageNameFromString("docker.io/different/nginx:latest")
-	if err != nil {
-		t.Error(err)
-	}
-
-	// different registry and remote.
-	imgDName, _, err := utils.GenerateImageNameFromString("example.com/different/nginx:latest")
-	if err != nil {
-		t.Error(err)
-	}
+	imgAName := createImgName("docker.io/library/nginx:latest")
+	imgBName := createImgName("example.com/library/nginx:latest")   // diff registry
+	imgCName := createImgName("docker.io/different/nginx:latest")   // diff remote
+	imgDName := createImgName("example.com/different/nginx:latest") // diff registry and remote
 
 	imgA := &storage.Image{Name: imgAName}
 	imgAWithMeta := &storage.Image{Name: imgAName, Metadata: &storage.ImageMetadata{}}
