@@ -21,6 +21,7 @@ message ComplianceOperatorInfo {
 
   // Collection of errors that occurred while trying to obtain compliance health info.
   string status_error = 5;
+  bool is_installed = 6;
 }
 
 message EnableComplianceRequest {
