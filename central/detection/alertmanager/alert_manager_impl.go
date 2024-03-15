@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
@@ -336,7 +335,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
 			mergedAlert := mergeAlerts(matchingOld, alert)
-			if mergedAlert != matchingOld && !proto.Equal(mergedAlert, matchingOld) {
+			if mergedAlert != matchingOld && !protocompat.Equal(mergedAlert, matchingOld) {
 				updatedAlerts = append(updatedAlerts, mergedAlert)
 			}
 			continue

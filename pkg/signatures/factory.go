@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
@@ -160,7 +160,7 @@ func fetchAndAppendSignatures(ctx context.Context, fetcher SignatureFetcher, ima
 
 func containsSignature(sig *storage.Signature, sigs []*storage.Signature) bool {
 	for _, s := range sigs {
-		if proto.Equal(sig, s) {
+		if protocompat.Equal(sig, s) {
 			return true
 		}
 	}

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
@@ -40,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -952,7 +952,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		cluster.HelmConfig = clusterConfig.Clone()
 	}
 
-	if !proto.Equal(currentCluster, cluster) {
+	if !protocompat.Equal(currentCluster, cluster) {
 		// Cluster is dirty and needs to be updated in the DB.
 		if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 			return nil, err

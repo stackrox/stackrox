@@ -1,14 +1,13 @@
 package protoutils
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // SliceContains returns whether the given slice of proto objects contains the given proto object.
 func SliceContains[T protocompat.Message](msg T, slice []T) bool {
 	for _, elem := range slice {
-		if proto.Equal(elem, msg) {
+		if protocompat.Equal(elem, msg) {
 			return true
 		}
 	}
@@ -22,7 +21,7 @@ func SlicesEqual[T protocompat.Message](first, second []T) bool {
 	}
 	for i, firstElem := range first {
 		secondElem := second[i]
-		if !proto.Equal(firstElem, secondElem) {
+		if !protocompat.Equal(firstElem, secondElem) {
 			return false
 		}
 	}

@@ -3,7 +3,6 @@ package m80tom81
 import (
 	"embed"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
@@ -60,7 +59,7 @@ func rmDemoPolicies(db *bolt.DB) error {
 				return errors.Wrapf(err, "unmarshaling policy with ID %q", policyToRm.GetId())
 			}
 
-			if !proto.Equal(storedPolicy, policyToRm) {
+			if !protocompat.Equal(storedPolicy, policyToRm) {
 				return nil
 			}
 
