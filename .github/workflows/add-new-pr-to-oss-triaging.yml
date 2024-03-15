@@ -12,7 +12,7 @@ jobs:
     name: Add external label to pull request if outside StackRox
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       BASE_REPO: ${{ github.repository }}
       HEAD_REPO: ${{ github.event.pull_request.head.user.login }}/${{ github.event.pull_request.head.repo.name }}
     outputs:

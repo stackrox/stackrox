@@ -1,6 +1,6 @@
 name: Label pull requests based on changed files
 on:
-  pull_request:
+  pull_request_target:
     types:
     - ready_for_review
     - opened
@@ -13,5 +13,5 @@ jobs:
     steps:
     - uses: actions/labeler@v5
       with:
-        repo-token: "${{ github.token }}"
+        repo-token: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
         sync-labels: False
