@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/common"
 	searchMocks "github.com/stackrox/rox/central/cve/node/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/node/datastore/store/mocks"
@@ -130,7 +129,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#"}, []string{"CVE-GHI#"})
 
 	start := protocompat.TimestampNow()
-	duration := types.DurationProto(10 * time.Minute)
+	duration := protocompat.DurationProto(10 * time.Minute)
 
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)

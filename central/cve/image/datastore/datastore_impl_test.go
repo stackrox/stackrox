@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/common"
 	searchMocks "github.com/stackrox/rox/central/cve/image/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/store/mocks"
@@ -126,7 +125,7 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	suite.verifySuppressionStateImage(img, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
 
 	start := protocompat.TimestampNow()
-	duration := types.DurationProto(10 * time.Minute)
+	duration := protocompat.DurationProto(10 * time.Minute)
 
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)

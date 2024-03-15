@@ -38,6 +38,7 @@ var (
 		"github.com/gogo/protobuf/types": {
 			"Compare":            "CompareTimestamps",
 			"DurationFromProto":  "DurationFromProto",
+			"DurationProto":      "DurationProto",
 			"TimestampFromProto": "ConvertTimestampToTimeOrError",
 			"TimestampNow":       "TimestampNow",
 			"TimestampProto":     "ConvertTimeToTimestampOrError",

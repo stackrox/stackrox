@@ -967,7 +967,7 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 			ctx := c.ctx
 			snoozeStart := protocompat.TimestampNow()
 			snoozeStart.Nanos = 0
-			snoozeDuration := types.DurationProto(10 * time.Minute)
+			snoozeDuration := protocompat.DurationProto(10 * time.Minute)
 
 			err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
 			if c.visibleCVE[targetCVE] {
