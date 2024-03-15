@@ -5,6 +5,9 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Modal,
     Tab,
     TabTitleText,
@@ -124,12 +127,14 @@ function EmailTemplateFormModal({
             <Tabs defaultActiveKey={0} role="region">
                 <Tab eventKey={0} title={<TabTitleText>Edit</TabTitleText>}>
                     <Form className="pf-u-py-lg pf-u-px-lg" onSubmit={handleSubmit}>
-                        <FormGroup
-                            label="Email subject"
-                            fieldId="emailSubject"
-                            validated={emailSubjectValidated}
-                            helperTextInvalid={errors.emailSubject}
-                        >
+                        <FormGroup label="Email subject" fieldId="emailSubject">
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={emailSubjectValidated}>
+                                        {errors.emailSubject}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 id="emailSubject"
                                 type="text"
@@ -166,12 +171,14 @@ function EmailTemplateFormModal({
                                 </FlexItem>
                             </Flex>
                         </FormGroup>
-                        <FormGroup
-                            label="Email body"
-                            fieldId="emailBody"
-                            validated={emailBodyValidated}
-                            helperTextInvalid={errors.emailBody}
-                        >
+                        <FormGroup label="Email body" fieldId="emailBody">
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={emailBodyValidated}>
+                                        {errors.emailBody}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextArea
                                 id="emailBody"
                                 type="text"

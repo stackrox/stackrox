@@ -7,6 +7,7 @@ import {
     UnknownIcon,
 } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import { Icon } from '@patternfly/react-core';
 
 import {
     CRITICAL_SEVERITY_COLOR,
@@ -23,27 +24,37 @@ import { PolicySeverity } from 'types/policy.proto';
 // For example, colors={count === 0 ? noViolationsColor: undefined} prop.
 
 export const CriticalSeverityIcon = (props) => (
-    <CriticalRiskIcon {...props} color={props.color ?? CRITICAL_SEVERITY_COLOR} />
+    <Icon color={props.color ?? CRITICAL_SEVERITY_COLOR}>
+        <CriticalRiskIcon {...props} />
+    </Icon>
 );
 
 export const ImportantSeverityIcon = (props) => (
-    <AngleDoubleUpIcon {...props} color={props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR} />
+    <Icon color={props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR}>
+        <AngleDoubleUpIcon {...props} />
+    </Icon>
 );
 
 export const HighSeverityIcon = ImportantSeverityIcon; // High is for policy severity
 
 export const ModerateSeverityIcon = (props) => (
-    <EqualsIcon {...props} color={props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR} />
+    <Icon color={props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR}>
+        <EqualsIcon {...props} />
+    </Icon>
 );
 
 export const MediumSeverityIcon = ModerateSeverityIcon; // Medium is for policy severity
 
 export const LowSeverityIcon = (props) => (
-    <AngleDoubleDownIcon {...props} color={props.color ?? LOW_SEVERITY_COLOR} />
+    <Icon color={props.color ?? LOW_SEVERITY_COLOR}>
+        <AngleDoubleDownIcon {...props} />
+    </Icon>
 );
 
 export const UnknownSeverityIcon = (props) => (
-    <UnknownIcon {...props} color={props.color ?? UNKNOWN_SEVERITY_COLOR} />
+    <Icon color={props.color ?? UNKNOWN_SEVERITY_COLOR}>
+        <UnknownIcon {...props} />
+    </Icon>
 );
 
 const SeverityIcons: Record<

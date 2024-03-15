@@ -1,15 +1,20 @@
 import React, { ReactElement } from 'react';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import { Icon } from '@patternfly/react-core';
 
 // TODO import the following function components:
 
 export const DangerIcon = (props: SVGIconProps) => (
-    <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" {...props} />
+    <Icon color="var(--pf-global--danger-color--100)">
+        <ExclamationCircleIcon {...props} />
+    </Icon>
 );
 
 export const WarningIcon = (props: SVGIconProps) => (
-    <ExclamationTriangleIcon color="var(--pf-global--warning-color--100)" {...props} />
+    <Icon color="var(--pf-global--warning-color--100)">
+        <ExclamationTriangleIcon {...props} />
+    </Icon>
 );
 
 type IconType = 'danger' | 'warning';

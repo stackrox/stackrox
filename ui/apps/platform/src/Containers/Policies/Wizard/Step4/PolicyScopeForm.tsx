@@ -1,20 +1,19 @@
 import React from 'react';
 import { useFormikContext } from 'formik';
 import {
-	Flex,
-	FlexItem,
-	Title,
-	Button,
-	Divider,
-	Grid,
-	GridItem,
-	FormGroup
+    Flex,
+    FlexItem,
+    Title,
+    Button,
+    Divider,
+    Grid,
+    GridItem,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectVariant,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectVariant, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { ClientPolicy } from 'types/policy.proto';
 import { ListImage } from 'types/image.proto';
@@ -188,8 +187,15 @@ function PolicyScopeForm() {
                     <FormGroup
                         label="Exclude images (Build lifecycle only)"
                         fieldId="exclude-images"
-                        helperText="Select all images from the list for which you don't want to trigger a violation for the policy."
                     >
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Select all images from the list for which you don't want to
+                                    trigger a violation for the policy.
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <Select
                             onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
                             isOpen={isExcludeImagesOpen}

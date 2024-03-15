@@ -1,5 +1,15 @@
 import React, { ReactElement } from 'react';
-import { Flex, TextInput, FormGroup, Radio, TextArea, Form } from '@patternfly/react-core';
+import {
+    Flex,
+    TextInput,
+    FormGroup,
+    Radio,
+    TextArea,
+    Form,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+} from '@patternfly/react-core';
 import { Field, useFormikContext } from 'formik';
 
 import PolicyCategoriesSelectField from './PolicyCategoriesSelectField';
@@ -14,12 +24,14 @@ function PolicyMetadataFormSection(): ReactElement {
         <Form>
             <Field name="name">
                 {({ field }) => (
-                    <FormGroup
-                        helperText="Provide a descriptive and unique policy name"
-                        fieldId="policy-name"
-                        label="Name"
-                        isRequired
-                    >
+                    <FormGroup fieldId="policy-name" label="Name" isRequired>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Provide a descriptive and unique policy name
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <TextInput
                             id={field.name}
                             name={field.name}
@@ -30,12 +42,12 @@ function PolicyMetadataFormSection(): ReactElement {
                     </FormGroup>
                 )}
             </Field>
-            <FormGroup
-                helperText="Select a severity level for this policy"
-                fieldId="policy-severity"
-                label="Severity"
-                isRequired
-            >
+            <FormGroup fieldId="policy-severity" label="Severity" isRequired>
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem>Select a severity level for this policy</HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
                 <Flex direction={{ default: 'row' }}>
                     <Field name="severity" type="radio" value="LOW_SEVERITY">
                         {({ field }) => (
@@ -90,11 +102,12 @@ function PolicyMetadataFormSection(): ReactElement {
             <PolicyCategoriesSelectField />
             <Field name="description">
                 {({ field }) => (
-                    <FormGroup
-                        helperText="Enter details about the policy"
-                        fieldId="policy-description"
-                        label="Description"
-                    >
+                    <FormGroup fieldId="policy-description" label="Description">
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>Enter details about the policy</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <TextArea
                             id={field.name}
                             name={field.name}
@@ -106,11 +119,14 @@ function PolicyMetadataFormSection(): ReactElement {
             </Field>
             <Field name="rationale">
                 {({ field }) => (
-                    <FormGroup
-                        helperText="Enter an explanation about why this policy exists"
-                        fieldId="policy-rationale"
-                        label="Rationale"
-                    >
+                    <FormGroup fieldId="policy-rationale" label="Rationale">
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Enter an explanation about why this policy exists
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <TextArea
                             id={field.name}
                             name={field.name}
@@ -122,11 +138,14 @@ function PolicyMetadataFormSection(): ReactElement {
             </Field>
             <Field name="remediation">
                 {({ field }) => (
-                    <FormGroup
-                        helperText="Enter steps to resolve the violations of this policy"
-                        fieldId="policy-guidance"
-                        label="Guidance"
-                    >
+                    <FormGroup fieldId="policy-guidance" label="Guidance">
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Enter steps to resolve the violations of this policy
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                         <TextArea
                             id={field.name}
                             name={field.name}
