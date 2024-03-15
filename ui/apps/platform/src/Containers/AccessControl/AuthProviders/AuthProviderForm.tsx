@@ -6,27 +6,28 @@ import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider, FieldArray } from 'formik';
 import * as yup from 'yup';
 import {
-	Alert,
-	Button,
-	Flex,
-	FlexItem,
-	Form,
-	FormGroup,
-	FormSection,
-	Grid,
-	GridItem,
-	TextInput,
-	Title,
-	Toolbar,
-	ToolbarContent,
-	ToolbarGroup,
-	ToolbarItem,
-	Tooltip,
-	ValidatedOptions
+    Alert,
+    Button,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
+    FormHelperText,
+    FormSection,
+    Grid,
+    GridItem,
+    HelperText,
+    HelperTextItem,
+    TextInput,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
+    Tooltip,
+    ValidatedOptions,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
@@ -283,6 +284,7 @@ function AuthProviderForm({
     const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
     const isDisabled = isViewing || values.active || getIsAuthProviderImmutable(values);
+    const nameValidated = errors.name && touched.name ? ValidatedOptions.error : 'default';
 
     return (
         <Form>
@@ -316,7 +318,11 @@ function AuthProviderForm({
                                         </Button>
                                     </ToolbarItem>
                                     <ToolbarItem>
-                                        <Button variant="tertiary" onClick={onClickCancel} size="sm">
+                                        <Button
+                                            variant="tertiary"
+                                            onClick={onClickCancel}
+                                            size="sm"
+                                        >
                                             Cancel
                                         </Button>
                                     </ToolbarItem>
@@ -413,15 +419,14 @@ function AuthProviderForm({
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
-                            <FormGroup
-                                label="Name"
-                                fieldId="name"
-                                isRequired
-                                helperTextInvalid={errors.name || ''}
-                                validated={
-                                    errors.name && touched.name ? ValidatedOptions.error : 'default'
-                                }
-                            >
+                            <FormGroup label="Name" fieldId="name" isRequired>
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameValidated}>
+                                            {errors.name || ''}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                                 <TextInput
                                     type="text"
                                     id="name"
@@ -543,7 +548,9 @@ function AuthProviderForm({
                                                                 type="text"
                                                                 id={`requiredAttributes[${index}].attributeKey`}
                                                                 value={attribute.attributeKey}
-                                                                onChange={(event, _value) => onChange(_value, event)}
+                                                                onChange={(event, _value) =>
+                                                                    onChange(_value, event)
+                                                                }
                                                                 isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
@@ -555,7 +562,9 @@ function AuthProviderForm({
                                                                 type="text"
                                                                 id={`requiredAttributes[${index}].attributeValue`}
                                                                 value={attribute.attributeValue}
-                                                                onChange={(event, _value) => onChange(_value, event)}
+                                                                onChange={(event, _value) =>
+                                                                    onChange(_value, event)
+                                                                }
                                                                 isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
@@ -657,7 +666,9 @@ function AuthProviderForm({
                                                             type="text"
                                                             id={`claimMappings[${index}][0]`}
                                                             value={mapping[0]}
-                                                            onChange={(event, _value) => onChange(_value, event)}
+                                                            onChange={(event, _value) =>
+                                                                onChange(_value, event)
+                                                            }
                                                             isDisabled={isDisabled}
                                                         />
                                                     </FormGroup>
@@ -669,7 +680,9 @@ function AuthProviderForm({
                                                             type="text"
                                                             id={`claimMappings[${index}][1]`}
                                                             value={mapping[1]}
-                                                            onChange={(event, _value) => onChange(_value, event)}
+                                                            onChange={(event, _value) =>
+                                                                onChange(_value, event)
+                                                            }
                                                             isDisabled={isDisabled}
                                                         />
                                                     </FormGroup>

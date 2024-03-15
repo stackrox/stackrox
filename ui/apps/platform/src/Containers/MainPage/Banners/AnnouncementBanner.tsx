@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { AlertVariant, Banner, Button } from '@patternfly/react-core';
+import { Banner, Button } from '@patternfly/react-core';
 
 import { fetchDatabaseStatus } from 'services/DatabaseService';
 
@@ -36,7 +36,7 @@ function AnnouncementBanner(): ReactElement | null {
         return (
             <Banner
                 className="pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
-                variant={AlertVariant.info}
+                variant={'blue'}
                 style={{ whiteSpace: 'normal' }}
             >
                 <span className="pf-u-text-align-center">

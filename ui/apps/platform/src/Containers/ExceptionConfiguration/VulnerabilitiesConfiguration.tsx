@@ -10,8 +10,11 @@ import {
     Form,
     FormGroup,
     FormGroupProps,
+    FormHelperText,
     Grid,
     GridItem,
+    HelperText,
+    HelperTextItem,
     PageSection,
     Split,
     SplitItem,
@@ -56,7 +59,12 @@ function NumericSetting({
     return (
         <>
             <GridItem span={8} md={4} xl={3}>
-                <FormGroup validated={validated} helperTextInvalid={helperTextInvalid}>
+                <FormGroup>
+                    <FormHelperText>
+                        <HelperText>
+                            <HelperTextItem variant={validated}>{helperTextInvalid}</HelperTextItem>
+                        </HelperText>
+                    </FormHelperText>
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
                             id={`${fieldId}.numDays`}

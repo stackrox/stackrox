@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Spinner } from '@patternfly/react-core';
+import { Icon, Spinner } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
     ExclamationCircleIcon,
@@ -8,15 +8,31 @@ import {
 } from '@patternfly/react-icons';
 
 // Icon to render while fetching initial request.
-export const SpinnerIcon = <Spinner  size="sm" />;
+export const SpinnerIcon = (
+    <Icon size="sm">
+        <Spinner />
+    </Icon>
+);
 
 // Icon to render if request fails.
 export const ErrorIcon = <MinusIcon />;
 
 // Icons to render for health after request succeeds.
-export const DangerIcon = <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />;
-export const SuccessIcon = <CheckCircleIcon color="var(--pf-global--success-color--100)" />;
-export const WarningIcon = <ExclamationTriangleIcon color="var(--pf-global--warning-color--100)" />;
+export const DangerIcon = (
+    <Icon color="var(--pf-global--danger-color--100)">
+        <ExclamationCircleIcon />
+    </Icon>
+);
+export const SuccessIcon = (
+    <Icon color="var(--pf-global--success-color--100)">
+        <CheckCircleIcon />
+    </Icon>
+);
+export const WarningIcon = (
+    <Icon color="var(--pf-global--warning-color--100)">
+        <ExclamationTriangleIcon />
+    </Icon>
+);
 
 export type HealthVariant = 'danger' | 'warning' | 'success';
 
