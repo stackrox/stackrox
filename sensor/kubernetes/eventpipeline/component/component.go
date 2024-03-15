@@ -22,7 +22,7 @@ type PipelineComponent interface {
 // RBAC resources bound to sa-A change (created, updated or deleted), deployment-A has to be reprocessed. This is required
 // because the storage.Deployment object contains properties that are based off RBAC resources. They also need reprocessing,
 // because the state of violations might change. Rather than reprocessing every deployment every minute, the Resolver component
-// will look at any DeploymentReference entries that handlers might have added, and enqueue those deployment for reprocessing.
+// will look at any DeploymentReference entries that handlers might have added, and enqueue those deployments for reprocessing.
 //
 //go:generate mockgen-wrapper
 type Resolver interface {
