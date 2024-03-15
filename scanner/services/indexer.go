@@ -162,6 +162,10 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 	return &v4.HasIndexReportResponse{Exists: exists}, nil
 }
 
+func (s *indexerService) DeleteIndexReports(ctx context.Context, req *v4.DeleteIndexReportsRequest) (*v4.DeleteIndexReportsResponse, error) {
+	return nil, nil
+}
+
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 	v4.RegisterIndexerServer(grpcServer, s)

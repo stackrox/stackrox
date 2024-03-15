@@ -43,6 +43,15 @@ message GetOrCreateIndexReportRequest {
   }
 }
 
+message DeleteIndexReportsRequest {
+  repeated string hash_ids = 1;
+}
+
+message DeleteIndexReportsResponse {
+  // TODO
+  bool success = 1;
+}
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
   // CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -58,4 +67,7 @@ service Indexer {
 
   // HasIndexReport checks if an index report for the specified resource exists.
   rpc HasIndexReport(HasIndexReportRequest) returns (HasIndexReportResponse);
+
+  // DeleteIndexReports deletes the index reports associated with the given hash IDs, if they exist.
+  rpc DeleteIndexReports(DeleteIndexReportsRequest) returns (DeleteIndexReportsResponse);
 }

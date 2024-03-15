@@ -356,6 +356,22 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 	return i.libIndex.IndexReport(ctx, manifestDigest)
 }
 
+func (i *localIndexer) DeleteIndexReports(ctx context.Context, hashIDs []string) ([]claircore.Digest, error) {
+	digests := make([]claircore.Digest, 0, len(hashIDs))
+	for _, hashID := range hashIDs {
+		manifestDigest, err := createManifestDigest(hashID)
+		if err != nil {
+			// TODO: log we were unable to convert ID.
+			continue
+		}
+		digests = append(digests, manifestDigest)
+	}
+	if len(digests) == 0 {
+		return nil, errors.New("bad")
+	}
+	return i.libIndex.DeleteManifests(ctx, digests...)
+}
+
 // createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
 func createManifestDigest(hashID string) (claircore.Digest, error) {
 	hashIDSum := sha512.Sum512([]byte(hashID))
