@@ -29,7 +29,7 @@ import (
 // For an explanation what each property means, check the documentation for component.ResourceEvent.
 //
 // This component introduces a new type of component to sensor:
-// - The event pipeline is a sensor component. I.e. it can send messages to the gRPC stream via the .ResponseC function.
+// - The event pipeline is a sensor component. That means, it can send messages to the gRPC stream via the .ResponseC function.
 // - Pipeline components are sub-components inside the event pipeline that process a kubernetes event from start to finish (listener, resolver and output are all pipeline components)
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
