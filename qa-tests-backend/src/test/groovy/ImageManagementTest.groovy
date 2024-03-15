@@ -234,15 +234,12 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify risk is properly being attributed to scanned images"() {
         when:
         "Scan an image and then grab the image data"
-        ImageService.scanImage(
-            "quay.io/rhacs-eng/qa-multi-arch-nginx@" +
-            "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+        ImageService.scanImage(TEST_IMAGE)
 
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(
-                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+            def image = ImageService.getImage(IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
     }
@@ -256,8 +253,7 @@ class ImageManagementTest extends BaseSpecification {
                 .setName("risk-image")
                 .setNamespace(TEST_NAMESPACE)
                 .setReplicas(1)
-                .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx" +
-                    "@sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+                .setImage(TEST_IMAGE)
                 .setCommand(["sleep", "60000"])
                 .setSkipReplicaWait(false)
 
@@ -266,8 +262,7 @@ class ImageManagementTest extends BaseSpecification {
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(
-                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+            def image = ImageService.getImage(IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
 
