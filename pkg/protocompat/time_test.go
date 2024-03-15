@@ -54,6 +54,38 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
 }
 
+func TestConvertTimestampToTimeOrNil(t *testing.T) {
+	seconds := int64(2345678901)
+	nanos := int32(123456789)
+
+	var protoTS1 *types.Timestamp
+	protoTS2 := &types.Timestamp{
+		Seconds: seconds,
+		Nanos:   nanos,
+	}
+
+	goTS1 := ConvertTimestampToTimeOrNil(protoTS1)
+	assert.Nil(t, goTS1)
+
+	expectedTimeTS2 := time.Unix(seconds, int64(nanos))
+
+	goTS2 := ConvertTimestampToTimeOrNil(protoTS2)
+	assert.Equal(t, expectedTimeTS2.Local(), goTS2.Local())
+}
+
+func TestConvertTimeToTimestampOrNil(t *testing.T) {
+	var timeNil *time.Time
+	protoTSNil := ConvertTimeToTimestampOrNil(timeNil)
+	assert.Nil(t, protoTSNil)
+
+	seconds1 := int64(2345678901)
+	nanos1 := int32(123456789)
+	time1 := time.Unix(seconds1, int64(nanos1))
+
+	protoTS1 := ConvertTimeToTimestampOrNil(&time1)
+	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+}
+
 func TestGetProtoTimestampFromSeconds(t *testing.T) {
 	seconds1 := int64(1234567890)
 	seconds2 := int64(23456789012)
