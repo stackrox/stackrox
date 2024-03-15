@@ -1812,8 +1812,8 @@ github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e h1:hLHHK1pGLpRvE
 github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e/go.mod h1:Kh55SAWnjckS96TBSrXI99KrEKH4iB0OJby3N8GRJO4=
 github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df h1:759L43a+41f3z+4+LpUHI5C6KdGWrfR0vHSpDyyA1yw=
 github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df/go.mod h1:Wf7knwG0MPoWIMMBgFlEaSUDaKskp0dCfrlJRJXbBi8=
-github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179 h1:5wzvROh+LGgeIeOpMuEpIkRIALDFU/ltFB8cY3916c4=
-github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
+github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d h1:aLCTq23tpBhbmrLa/3+21rESx7VXgkrjIKJpbhcrvVk=
+github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
 github.com/stackrox/scanner v0.0.0-20240110222630-351caa1e0024 h1:g0Taj+vFHCzrFsLFLnm+5eaUdLFhzthcBqPBTSCGIUY=
 github.com/stackrox/scanner v0.0.0-20240110222630-351caa1e0024/go.mod h1:HziPXIAPcO7GcxEI9Cc8iB80dxyoleexmdp17r0v7hc=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
