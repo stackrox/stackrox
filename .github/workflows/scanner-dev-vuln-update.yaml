@@ -39,8 +39,11 @@ jobs:
 
         make -C scanner bin/updater
         go clean -cache -modcache
-        ./scanner/bin/updater -output-dir=dev
-        gsutil cp -r "dev" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
+        ./scanner/bin/updater -output-dir=vulns
+
+        # Upload development tags for upstream (dev) and downstream (1.0.0).
+        gsutil cp "vulns/vulns.json.zst" "gs://definitions.stackrox.io/v4/vulnerability-bundles/dev"
+        gsutil cp "vulns/vulns.json.zst" "gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0"
 
   send-notification:
     needs:
