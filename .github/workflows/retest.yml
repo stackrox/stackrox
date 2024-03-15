@@ -1,6 +1,6 @@
 name: Comment on finished suite
 on:
-  check_suite:
+  check_run:
     types: [completed]
 
 jobs:
