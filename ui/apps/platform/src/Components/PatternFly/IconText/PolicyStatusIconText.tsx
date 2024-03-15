@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { Icon } from '@patternfly/react-core';
 
 import IconText from './IconText';
 
@@ -10,9 +11,13 @@ export type PolicyStatusIconTextProps = {
 
 function PolicyStatusIconText({ isPass, isTextOnly }: PolicyStatusIconTextProps): ReactElement {
     const icon = isPass ? (
-        <CheckCircleIcon color="var(--pf-global--success-color--100)" />
+        <Icon color="var(--pf-global--success-color--100)">
+            <CheckCircleIcon />
+        </Icon>
     ) : (
-        <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />
+        <Icon color="var(--pf-global--danger-color--100)">
+            <ExclamationCircleIcon />
+        </Icon>
     );
     const text = isPass ? 'Pass' : 'Fail';
 

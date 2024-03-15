@@ -3,6 +3,7 @@ import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/reac
 import { Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
+import { Icon } from '@patternfly/react-core';
 
 type TheadClustersHealthProps = {
     dataLabelHealthy?: string;
@@ -60,7 +61,11 @@ export function TdUnhealthy({ count, dataLabel }: TdStatusWithDataLabelProps): R
         <Td className="pf-u-text-align-right" dataLabel={dataLabel || 'Unhealthy'}>
             {count !== 0 ? (
                 <IconText
-                    icon={<ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />}
+                    icon={
+                        <Icon color="var(--pf-global--danger-color--100)">
+                            <ExclamationCircleIcon />
+                        </Icon>
+                    }
                     text={String(count)}
                 />
             ) : (
@@ -75,7 +80,11 @@ export function TdDegraded({ count, dataLabel }: TdStatusWithDataLabelProps): Re
         <Td className="pf-u-text-align-right" dataLabel={dataLabel || 'Degraded'}>
             {count !== 0 ? (
                 <IconText
-                    icon={<ExclamationTriangleIcon color="var(--pf-global--warning-color--100)" />}
+                    icon={
+                        <Icon color="var(--pf-global--warning-color--100)">
+                            <ExclamationTriangleIcon />
+                        </Icon>
+                    }
                     text={String(count)}
                 />
             ) : (

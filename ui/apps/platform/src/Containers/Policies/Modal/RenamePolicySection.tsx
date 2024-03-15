@@ -1,5 +1,12 @@
 import React from 'react';
-import { FormGroup, Radio, TextInput } from '@patternfly/react-core';
+import {
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Radio,
+    TextInput,
+} from '@patternfly/react-core';
 import { Field } from 'formik';
 
 type RenamePolicySectionProps = {
@@ -28,12 +35,14 @@ const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionPro
                     const validated =
                         form.touched.newName && form.errors.newName ? 'error' : 'default';
                     return (
-                        <FormGroup
-                            helperTextInvalid={form.errors.newName}
-                            fieldId="policy-rename"
-                            validated={validated}
-                            className="pf-u-pt-sm"
-                        >
+                        <FormGroup fieldId="policy-rename" className="pf-u-pt-sm">
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={validated}>
+                                        {form.errors.newName}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 name={field.name}
                                 value={field.value}

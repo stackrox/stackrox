@@ -3,6 +3,10 @@ import {
     Button,
     Divider,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Icon,
     Label,
     TextInput,
     ValidatedOptions,
@@ -147,9 +151,14 @@ function ByLabelSelector({
                                         <FormGroup
                                             className="rule-selector-name-value-input"
                                             fieldId={inputId}
-                                            helperTextInvalid={errorMessage}
-                                            validated={inputValidated}
                                         >
+                                            <FormHelperText>
+                                                <HelperText>
+                                                    <HelperTextItem variant={inputValidated}>
+                                                        {errorMessage}
+                                                    </HelperTextItem>
+                                                </HelperText>
+                                            </FormHelperText>
                                             <TextInput
                                                 id={inputId}
                                                 aria-label={ariaLabel}
@@ -175,10 +184,9 @@ function ByLabelSelector({
                                                 variant="plain"
                                                 onClick={() => onDeleteValue(ruleIndex, valueIndex)}
                                             >
-                                                <TrashIcon
-                                                    style={{ cursor: 'pointer' }}
-                                                    color="var(--pf-global--Color--dark-200)"
-                                                />
+                                                <Icon color="var(--pf-global--Color--dark-200)">
+                                                    <TrashIcon style={{ cursor: 'pointer' }} />
+                                                </Icon>
                                             </Button>
                                         )}
                                     </div>

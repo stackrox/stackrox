@@ -1,5 +1,5 @@
 import React, { ReactElement, useRef, useState } from 'react';
-import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import {
     CheckCircleIcon,
     MinusCircleIcon,
@@ -96,7 +96,9 @@ function RequirementRow({
                                             isDisabled={values.length === 1}
                                             onClick={() => handleValueDelete(indexValue)}
                                         >
-                                            <MinusCircleIcon color="var(--pf-global--danger-color--100)" />
+                                            <Icon color="var(--pf-global--danger-color--100)">
+                                                <MinusCircleIcon />
+                                            </Icon>
                                         </Button>
                                     </Tooltip>
                                 )}
@@ -127,7 +129,9 @@ function RequirementRow({
                                             isDisabled={isDisabledAddValue}
                                             onClick={onAddValue}
                                         >
-                                            <PlusCircleIcon color="var(--pf-global--primary-color--100)" />
+                                            <Icon color="var(--pf-global--primary-color--100)">
+                                                <PlusCircleIcon />
+                                            </Icon>
                                         </Button>
                                     </Tooltip>
                                 )}
@@ -158,7 +162,9 @@ function RequirementRow({
                                     isDisabled={values.length === 0 || valueInput.length !== 0}
                                     onClick={handleRequirementOK}
                                 >
-                                    <CheckCircleIcon color="var(--pf-global--primary-color--100)" />
+                                    <Icon color="var(--pf-global--primary-color--100)">
+                                        <CheckCircleIcon />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                             <Tooltip key="Cancel" content="Cancel">
@@ -168,7 +174,9 @@ function RequirementRow({
                                     className="pf-m-smallest"
                                     onClick={handleRequirementCancel}
                                 >
-                                    <TimesCircleIcon color="var(--pf-global--color--100)" />
+                                    <Icon color="var(--pf-global--color--100)">
+                                        <TimesCircleIcon />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                         </>
@@ -183,7 +191,9 @@ function RequirementRow({
                                         isDisabled={activity === 'DISABLED'}
                                         onClick={handleRequirementEdit}
                                     >
-                                        <PencilAltIcon color="var(--pf-global--primary-color--100)" />
+                                        <Icon color="var(--pf-global--primary-color--100)">
+                                            <PencilAltIcon />
+                                        </Icon>
                                     </Button>
                                 </Tooltip>
                             )}
@@ -195,7 +205,9 @@ function RequirementRow({
                                     isDisabled={activity === 'DISABLED'}
                                     onClick={handleRequirementDelete}
                                 >
-                                    <MinusCircleIcon color="var(--pf-global--danger-color--100)" />
+                                    <Icon color="var(--pf-global--danger-color--100)">
+                                        <MinusCircleIcon />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                         </>

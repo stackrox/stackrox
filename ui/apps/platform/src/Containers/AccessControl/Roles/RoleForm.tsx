@@ -7,6 +7,9 @@ import {
     Button,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Label,
     TextInput,
     Title,
@@ -145,14 +148,14 @@ function RoleForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup
-                label="Name"
-                fieldId="name"
-                isRequired
-                validated={nameValidatedState}
-                helperTextInvalid={nameErrorMessage}
-                className="pf-m-horizontal"
-            >
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
                 <TextInput
                     type="text"
                     id="name"

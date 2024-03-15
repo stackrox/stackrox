@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Tooltip, Truncate } from '@patternfly/react-core';
+import { Flex, Icon, Tooltip, Truncate } from '@patternfly/react-core';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 
 import { SourceType } from '../Tables/table.utils';
@@ -15,7 +15,9 @@ function ComponentLocation({ location, source }: ComponentLocationProps) {
             <Truncate content={location || 'N/A'} position="middle" />
             {source === 'OS' && location === '' && (
                 <Tooltip content="Location is unavailable for operating system packages">
-                    <InfoCircleIcon color="var(--pf-global--info-color--100)" />
+                    <Icon color="var(--pf-global--info-color--100)">
+                        <InfoCircleIcon />
+                    </Icon>
                 </Tooltip>
             )}
         </Flex>

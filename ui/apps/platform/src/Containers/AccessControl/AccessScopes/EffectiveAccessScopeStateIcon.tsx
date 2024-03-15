@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Tooltip } from '@patternfly/react-core';
+import { Icon, Tooltip } from '@patternfly/react-core';
 import {
     BanIcon,
     CheckIcon,
@@ -18,7 +18,11 @@ const unknownColor = 'var(--pf-global--warning-color--100)';
  * Tooltip has key prop to replace the previous tooltip if status changes.
  */
 
-const notAllowedIcon = <BanIcon color={notAllowedColor} />;
+const notAllowedIcon = (
+    <Icon color={notAllowedColor}>
+        <BanIcon />;
+    </Icon>
+);
 const notAllowedCluster = (
     <Tooltip
         key="notAllowedCluster"
@@ -40,7 +44,11 @@ const notAllowedNamespace = (
     </Tooltip>
 );
 
-const allowedIcon = <CheckIcon color={allowedColor} />;
+const allowedIcon = (
+    <Icon color={allowedColor}>
+        <CheckIcon />
+    </Icon>
+);
 const allowedCluster = (
     <Tooltip
         key="allowedCluster"
@@ -55,7 +63,9 @@ const allowedCluster = (
     >
         <span>
             {allowedIcon}
-            <LongArrowAltDownIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
+            <Icon color={allowedColor}>
+                <LongArrowAltDownIcon style={{ transform: 'rotate(-45deg)' }} />
+            </Icon>
         </span>
     </Tooltip>
 );
@@ -79,14 +89,18 @@ const partialCluster = (
     >
         <span>
             {allowedIcon}
-            <LongArrowAltUpIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
+            <Icon color={allowedColor}>
+                <LongArrowAltUpIcon style={{ transform: 'rotate(-45deg)' }} />
+            </Icon>
         </span>
     </Tooltip>
 );
 
 const unknownState = (
     <Tooltip key="unknownState" content="Unknown">
-        <ExclamationTriangleIcon color={unknownColor} />
+        <Icon color={unknownColor}>
+            <ExclamationTriangleIcon />
+        </Icon>
     </Tooltip>
 );
 

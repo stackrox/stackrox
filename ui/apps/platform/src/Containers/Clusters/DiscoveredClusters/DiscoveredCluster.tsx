@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import { CheckCircleIcon, SecurityIcon, UnknownIcon } from '@patternfly/react-icons';
+import { Icon } from '@patternfly/react-core';
 
 import {
     DiscoveredClusterProviderType,
@@ -24,8 +25,16 @@ export function getProviderRegionText(providerType: DiscoveredClusterProviderTyp
 // status
 
 const iconMap: Record<DiscoveredClusterStatus, ReactElement> = {
-    STATUS_SECURED: <CheckCircleIcon color="var(--pf-global--success-color--100)" />,
-    STATUS_UNSECURED: <SecurityIcon color="var(--pf-global--danger-color--100)" />,
+    STATUS_SECURED: (
+        <Icon color="var(--pf-global--success-color--100)">
+            <CheckCircleIcon />
+        </Icon>
+    ),
+    STATUS_UNSECURED: (
+        <Icon color="var(--pf-global--danger-color--100)">
+            <SecurityIcon />
+        </Icon>
+    ),
     STATUS_UNSPECIFIED: <UnknownIcon />,
 };
 
