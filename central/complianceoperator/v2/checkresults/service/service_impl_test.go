@@ -694,7 +694,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
 				ProfileName: "",
 				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			},
-			expectedErr: errors.Wrapf(errox.InvalidArgs, "Profile name is required"),
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
 			setMocks: func() {
 			},
 		},
