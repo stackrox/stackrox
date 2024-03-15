@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/common"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/tecbot/gorocksdb"
 )
 
 type flowStoreImpl struct {

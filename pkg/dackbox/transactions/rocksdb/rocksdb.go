@@ -1,10 +1,10 @@
 package rocksdb
 
 import (
+	"github.com/DataDog/gorocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
-	"github.com/tecbot/gorocksdb"
 )
 
 type rocksDBWrapper struct {

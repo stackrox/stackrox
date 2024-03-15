@@ -3,6 +3,7 @@ package m70tom71
 import (
 	"testing"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestDisableAuditLogCollectionMigration(t *testing.T) {

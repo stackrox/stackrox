@@ -1,6 +1,6 @@
 package generic
 
-import "github.com/tecbot/gorocksdb"
+import "github.com/DataDog/gorocksdb"
 
 // DefaultReadOptions define the default read options to be used for RocksDB
 func DefaultReadOptions() *gorocksdb.ReadOptions {

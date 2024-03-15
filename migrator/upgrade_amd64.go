@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/compact"
@@ -22,7 +23,6 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/tecbot/gorocksdb"
 	"go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )

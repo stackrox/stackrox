@@ -1,12 +1,12 @@
 package m64to65
 
 import (
+	"github.com/DataDog/gorocksdb"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/tecbot/gorocksdb"
 )
 
 var (

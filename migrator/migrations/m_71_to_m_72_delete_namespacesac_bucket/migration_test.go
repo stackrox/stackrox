@@ -3,10 +3,10 @@ package m71tom72
 import (
 	"testing"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestMigration(t *testing.T) {

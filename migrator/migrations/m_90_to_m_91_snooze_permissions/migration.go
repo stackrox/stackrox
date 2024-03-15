@@ -1,12 +1,12 @@
 package m90tom91
 
 import (
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/tecbot/gorocksdb"
 )
 
 const (

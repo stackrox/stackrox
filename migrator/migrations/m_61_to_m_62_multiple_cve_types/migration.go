@@ -1,6 +1,7 @@
 package m61tom62
 
 import (
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -8,7 +9,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/protocompat"
 	rocksdb "github.com/stackrox/rox/pkg/rocksdb/crud"
-	"github.com/tecbot/gorocksdb"
 )
 
 const (

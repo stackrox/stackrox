@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dbhelper"
@@ -14,7 +15,6 @@ import (
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/tecbot/gorocksdb"
 )
 
 var (

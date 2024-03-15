@@ -6,12 +6,12 @@ import (
 	"io"
 	"os"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	pkgTar "github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/tecbot/gorocksdb"
 )
 
 const (

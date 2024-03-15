@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
 

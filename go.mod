@@ -10,6 +10,7 @@ require (
 	cloud.google.com/go/storage v1.37.0
 	github.com/BurntSushi/toml v1.3.2
 	github.com/ComplianceAsCode/compliance-operator v1.4.0
+	github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
@@ -110,7 +111,6 @@ require (
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240110222630-351caa1e0024
 	github.com/stretchr/testify v1.8.4
-	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.17.1
 	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/travelaudience/go-promhttp v1.0.1
@@ -456,7 +456,6 @@ replace (
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
-	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20230918235618-2bd149903d0e
 )
 

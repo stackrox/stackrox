@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/tecbot/gorocksdb"
 )
 
 func main() {

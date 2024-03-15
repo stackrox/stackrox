@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/tecbot/gorocksdb"
 )
 
 func main() {

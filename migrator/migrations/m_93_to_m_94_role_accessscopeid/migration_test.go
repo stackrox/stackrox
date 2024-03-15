@@ -3,6 +3,7 @@ package m93tom94
 import (
 	"testing"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestMigration(t *testing.T) {

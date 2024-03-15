@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestSynchronousCloseBaseCase(t *testing.T) {

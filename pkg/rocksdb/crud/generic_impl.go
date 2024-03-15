@@ -1,11 +1,11 @@
 package generic
 
 import (
+	"github.com/DataDog/gorocksdb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/tecbot/gorocksdb"
 )
 
 var (

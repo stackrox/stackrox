@@ -3,6 +3,7 @@ package m106to107
 import (
 	"strings"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
 

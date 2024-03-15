@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/tecbot/gorocksdb"
 	"go.uber.org/atomic"
 )
 
 // Make sure we link against the liblz4 compression library, as this is the compression algorithm
 // we want to use.
-// Note: older versions of github.com/tecbot/gorocksdb already add this to LDFLAGS, but more recent
+// Note: older versions of github.com/DataDog/gorocksdb already add this to LDFLAGS, but more recent
 // ones do not.
 
 // #cgo LDFLAGS: -llz4

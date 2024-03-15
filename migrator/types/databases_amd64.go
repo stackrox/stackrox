@@ -5,9 +5,9 @@ package types
 import (
 	"context"
 
+	"github.com/DataDog/gorocksdb"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
