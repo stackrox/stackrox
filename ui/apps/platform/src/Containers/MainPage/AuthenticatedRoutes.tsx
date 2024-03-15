@@ -32,7 +32,7 @@ function AuthenticatedRoutes(): ReactElement {
                 <Redirect
                     to={{
                         pathname: '/login',
-                        state: { from: location.pathname },
+                        state: { from: `${location.pathname}${location.search}` },
                     }}
                 />
             );
