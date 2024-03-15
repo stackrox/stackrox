@@ -305,9 +305,9 @@ metadata:
     {{- include "srox.labels" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
     auto-upgrade.stackrox.io/component: sensor
   annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/resource-policy": "keep"
-    {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
+    {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name" $annotations) | nindent 4 }}
 stringData:
   cluster-name: |
     {{- ._rox.clusterName | nindent 4 }}
