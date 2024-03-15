@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/images/utils"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
@@ -145,4 +146,78 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 		})
 	}
 
+}
+
+func TestUpdatingImageFromRequest(t *testing.T) {
+	imgAName, _, err := utils.GenerateImageNameFromString("docker.io/library/nginx:latest")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// different registry.
+	imgBName, _, err := utils.GenerateImageNameFromString("example.com/library/nginx:latest")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// different remote.
+	imgCName, _, err := utils.GenerateImageNameFromString("docker.io/different/nginx:latest")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// different registry and remote.
+	imgDName, _, err := utils.GenerateImageNameFromString("example.com/different/nginx:latest")
+	if err != nil {
+		t.Error(err)
+	}
+
+	imgA := &storage.Image{Name: imgAName}
+	imgAWithMeta := &storage.Image{Name: imgAName, Metadata: &storage.ImageMetadata{}}
+
+	tcs := []struct {
+		name         string
+		existingImg  *storage.Image
+		reqImgName   *storage.ImageName
+		expectedName *storage.ImageName
+		feature      bool
+	}{
+		{
+			"feature disabled do not update name",
+			imgA, imgBName, imgAName, false,
+		},
+		{
+			"metadata exists do not update name",
+			imgAWithMeta, imgBName, imgAName, true,
+		},
+		{
+			"images are the same do not update name",
+			imgA, imgAName, imgAName, true,
+		},
+		{
+			"registry differs update name",
+			imgA, imgBName, imgBName, true,
+		},
+		{
+			"remote differs update name",
+			imgA, imgCName, imgCName, true,
+		},
+		{
+			"registry and remote differs update name",
+			imgA, imgDName, imgDName, true,
+		},
+		{
+			"image name nil do not update name",
+			imgA, nil, imgAName, true,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			pkgTestUtils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, tc.feature)
+
+			clone := tc.existingImg.Clone()
+			updateImageFromRequest(clone, tc.reqImgName)
+			assert.Equal(t, tc.expectedName, clone.Name)
+		})
+	}
 }

@@ -280,9 +280,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			fetchOpt = enricher.ForceRefetch
 		}
 		img = types.ToImage(request.GetImage())
+	} else {
+		updateImageFromRequest(img, request.GetImage().GetName())
 	}
-
-	updateImageFromRequest(img, request.GetImage().GetName())
 
 	if err := s.enrichImage(ctx, img, fetchOpt, request.GetSource()); err != nil && imgExists {
 		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
@@ -301,7 +301,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 // updateImageFromRequest will update the name of existing image with the one from the request
 // if the names differ and the metadata for the existing image was unable to be pulled previously.
 func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.ImageName) {
-	if !features.UnqualifiedSearchRegistries.Enabled() {
+	if !features.UnqualifiedSearchRegistries.Enabled() || reqImgName == nil {
 		// The need for this behavior is associated with the use of unqualified search
 		// registries or short name aliases (currently), if the feature is disabled
 		// do not modify the name.
