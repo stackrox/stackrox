@@ -12,6 +12,13 @@ ifeq ($(TAG),)
 	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
 endif
 
+# Set expiration on Quay.io for non-release tags.
+ifeq ($(findstring x,$(TAG)),x)
+QUAY_TAG_EXPIRATION=13w
+else
+QUAY_TAG_EXPIRATION=never
+endif
+
 HOST_OS := linux
 ifeq ($(shell uname -s),Darwin)
 	HOST_OS := darwin
@@ -28,6 +35,10 @@ GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
+
+DOCKERBUILD_ARGS = --build-arg LABEL_VERSION=$(TAG) \
+                   --build-arg LABEL_RELEASE=$(TAG) \
+                   --build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION)
 
 DB_DOCKERBUILD_ARGS =
 ifeq ($(GOARCH),s390x)
@@ -147,7 +158,10 @@ image-scanner: image/scanner/bin/scanner \
                $(image-scripts-t) \
                $(if $(CI),ossls-notice-no-download,ossls-notice)
 	@echo "+ $@"
-	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
+	$(DOCKERBUILD) \
+        -t stackrox/$(image-prefix):$(TAG) \
+        $(DOCKERBUILD_ARGS) \
+        -f image/scanner/Dockerfile image/scanner
 
 $(image-db-init-d):
 	mkdir -p $@
@@ -173,7 +187,11 @@ endif
 .PHONY: image-db
 image-db: $(image-db-init-t)
 	@echo "+ $@"
-	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
+	$(DOCKERBUILD) \
+        -t stackrox/$(image-prefix)-db:$(TAG) \
+        $(DOCKERBUILD_ARGS) \
+        $(DB_DOCKERBUILD_ARGS) \
+        -f image/db/Dockerfile image/db
 
 ###########
 ## Tools ##
