@@ -92,10 +92,6 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 	return handlerFuncs, totalSizeUncompressed, nil
 }
 
-func (m *manager) finalOutputDir() string {
-	return filepath.Join(m.outputRoot, ".restore")
-}
-
 func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (concurrency.ErrorWaitable, error) {
 	log.Infof("Attempting to launch restore process %s", id)
 
@@ -123,7 +119,6 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	}
 
 	// Create the paths for the restore directory
-	finalOutputDir := m.finalOutputDir()
 	tempOutputDir := filepath.Join(m.outputRoot, fmt.Sprintf(".restore-%s", process.Metadata().GetId()))
 
 	m.activeProcessMutex.Lock()
@@ -133,7 +128,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		return nil, errors.New("an active restore process currently exists; cancel it before initiating a new restore process")
 	}
 
-	attemptDone, err := process.Launch(tempOutputDir, finalOutputDir)
+	attemptDone, err := process.Launch(tempOutputDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not launch restore process")
 	}
