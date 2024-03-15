@@ -385,25 +385,26 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 // and short name aliases, for more details refer to:
 // https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md
 //
-// A workload's spec may refer to a different registry than what the runtime pulls,
-// therefore the image name must be updated in order for downstream processes (like
-// scanning) to complete.
+// The image in a workload's spec may differ from what the container runtime pulls,
+// therefore the image name must be updated to accurately reflect the pulled image
+// to give downstream processes (like scanning) a better chance at completing.
 func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName *storage.ImageName, updDigest bool) {
 	if !features.UnqualifiedSearchRegistries.Enabled() || image.GetName() == nil || newerImageName == nil {
 		return
 	}
 
-	origImgFullName := image.GetName().GetFullName()
-	if newerImageName.Registry != image.Name.Registry || newerImageName.Remote != image.Name.Remote {
-		image.Name.Registry = newerImageName.GetRegistry()
-		image.Name.Remote = newerImageName.GetRemote()
+	imageName := image.GetName()
+	origFullName := imageName.GetFullName()
+	if imageName.GetRegistry() != newerImageName.GetRegistry() || imageName.GetRemote() != newerImageName.GetRemote() {
+		imageName.Registry = newerImageName.GetRegistry()
+		imageName.Remote = newerImageName.GetRemote()
 
 		if updDigest {
-			imageUtils.NormalizeImageFullName(image.GetName(), image.GetId())
+			imageUtils.NormalizeImageFullName(imageName, image.GetId())
 		} else {
-			imageUtils.NormalizeImageFullNameNoSha(image.GetName())
+			imageUtils.NormalizeImageFullNameNoSha(imageName)
 		}
-		log.Debugf("Updated image name from %q to %q", origImgFullName, image.GetName().GetFullName())
+		log.Debugf("Updated image name from %q to %q", origFullName, imageName.GetFullName())
 	}
 }
 

@@ -257,10 +257,16 @@ func TestNormalizeImageFullName(t *testing.T) {
 			"docker.io/library/nginx@sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		},
 		{
-			"tag and digest",
+			"tag and digest (latest tag)",
 			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: "latest"},
 			"sha256:0000000000000000000000000000000000000000000000000000000000000000",
 			"docker.io/library/nginx:latest@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"tag and digest (specific tag)",
+			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: "v1.2.3"},
+			"sha256:0000000000000000000000000000000000000000000000000000000000000000",
+			"docker.io/library/nginx:v1.2.3@sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		},
 		{
 			"no tag or digest (malformed) do not modify fullname",

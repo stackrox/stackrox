@@ -6,10 +6,12 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -379,6 +381,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 }
 
 func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, true)
 	type wrapContainer struct {
 		image string
 	}
