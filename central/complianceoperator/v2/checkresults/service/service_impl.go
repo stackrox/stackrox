@@ -110,7 +110,7 @@ func (s *serviceImpl) GetComplianceProfileScanStats(ctx context.Context, query *
 
 	scanResults, err := s.complianceResultsDS.ComplianceProfileResultStats(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %v", query)
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", query)
 	}
 
 	return &v2.ListComplianceProfileScanStatsResponse{

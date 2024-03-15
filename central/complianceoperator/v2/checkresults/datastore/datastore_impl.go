@@ -31,7 +31,9 @@ type datastoreImpl struct {
 	searcher checkResultSearch.Searcher
 }
 
-// UpsertResult adds the result to the database
+// UpsertResult adds the result to the database  If enabling the use of this
+// method from a service, the creation of the `ScanRefID` must be accounted for.  In reality this
+// method should only be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
