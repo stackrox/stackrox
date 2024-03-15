@@ -227,7 +227,7 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 }
 
 func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types.Timestamp, error) {
-	d, err := types.DurationFromProto(duration)
+	d, err := protocompat.DurationFromProto(duration)
 	if err != nil || d == 0 {
 		return nil, err
 	}
