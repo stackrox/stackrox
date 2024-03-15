@@ -54,8 +54,9 @@ const (
 
 // ComplianceIntegrations holds the Gorm model for Postgres table `compliance_integrations`.
 type ComplianceIntegrations struct {
-	ID         string `gorm:"column:id;type:uuid;primaryKey"`
-	Version    string `gorm:"column:version;type:varchar"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator;index:complianceintegrations_sac_filter,type:hash"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID                string `gorm:"column:id;type:uuid;primaryKey"`
+	Version           string `gorm:"column:version;type:varchar"`
+	ClusterID         string `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator;index:complianceintegrations_sac_filter,type:hash"`
+	OperatorInstalled bool   `gorm:"column:operatorinstalled;type:bool"`
+	Serialized        []byte `gorm:"column:serialized;type:bytea"`
 }

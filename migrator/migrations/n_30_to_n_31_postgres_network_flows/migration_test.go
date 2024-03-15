@@ -73,10 +73,10 @@ func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*stor
 	s.NoError(err)
 	s.Len(fetched, len(flows))
 	sort.SliceStable(fetched, func(i, j int) bool {
-		return fetched[i].LastSeenTimestamp.Compare(fetched[j].LastSeenTimestamp) < 0
+		return protocompat.CompareTimestamps(fetched[i].LastSeenTimestamp, fetched[j].LastSeenTimestamp) < 0
 	})
 	sort.SliceStable(flows, func(i, j int) bool {
-		return flows[i].LastSeenTimestamp.Compare(flows[j].LastSeenTimestamp) < 0
+		return protocompat.CompareTimestamps(flows[i].LastSeenTimestamp, flows[j].LastSeenTimestamp) < 0
 	})
 	for i, flow := range flows {
 		// Postgres Datetime columns only have microsecond granularity for timestamps.

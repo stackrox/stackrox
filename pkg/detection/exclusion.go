@@ -72,5 +72,5 @@ func exclusionIsExpired(exclusion *storage.Exclusion) bool {
 	if exclusion.GetExpiration() == nil {
 		return false
 	}
-	return exclusion.GetExpiration().Compare(protocompat.TimestampNow()) < 0
+	return protocompat.CompareTimestamps(exclusion.GetExpiration(), protocompat.TimestampNow()) < 0
 }

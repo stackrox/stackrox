@@ -14,7 +14,7 @@ var (
 
 // SuppressCVEReqToVulnReq builds a `storage.VulnerabilityRequest` (added in v2 CVE deferral workflow) from `v1.SuppressCVERequest` (legacy CVE deferral workflow).
 func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Timestamp) *storage.VulnerabilityRequest {
-	d, err := types.DurationFromProto(request.GetDuration())
+	d, err := protocompat.DurationFromProto(request.GetDuration())
 	if err != nil {
 		log.Errorf("could not create vulnerability request for CVE(s) %v", request.GetCves())
 		return nil

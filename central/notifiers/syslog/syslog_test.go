@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/notifiers/syslog/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	metadataGetterMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -35,7 +34,6 @@ func (s *SyslogNotifierTestSuite) SetupTest() {
 
 	s.mockSender = mocks.NewMocksyslogSender(s.mockCtrl)
 	s.mockMetadataGetter = metadataGetterMocks.NewMockMetadataGetter(s.mockCtrl)
-	s.T().Setenv(features.SyslogNamespaceLabels.EnvVar(), "true")
 }
 
 func (s *SyslogNotifierTestSuite) TearDownTest() {
@@ -90,11 +88,6 @@ func makeNotifierExtrafields(keyVals []*storage.KeyValuePair) *storage.Notifier 
 }
 
 func (s *SyslogNotifierTestSuite) setupMockMetadataGetterForAlert(alert *storage.Alert) {
-	if !features.SyslogNamespaceLabels.Enabled() {
-		// No calls to GetNamespaceLabels expected if ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG is disabled
-		return
-	}
-
 	s.mockMetadataGetter.EXPECT().GetNamespaceLabels(gomock.Any(), alert).Return(map[string]string{
 		"x":                           "y",
 		"abc":                         "xyz",

@@ -503,7 +503,7 @@ func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {
-		return values[i].GetCloseTimestamp().Compare(values[j].GetCloseTimestamp()) == -1
+		return protocompat.CompareTimestamps(values[i].GetCloseTimestamp(), values[j].GetCloseTimestamp()) == -1
 	})
 }
 

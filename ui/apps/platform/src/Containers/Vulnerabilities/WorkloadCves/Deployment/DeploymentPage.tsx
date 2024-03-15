@@ -28,6 +28,7 @@ import DeploymentPageHeader, {
 import { detailsTabValues } from '../../types';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
+import DeploymentPageDetails from './DeploymentPageDetails';
 
 const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
     vulnerabilityState: 'OBSERVED',
@@ -120,6 +121,13 @@ function DeploymentPage() {
                                     deploymentId={deploymentId}
                                     pagination={pagination}
                                 />
+                            </Tab>
+                            <Tab
+                                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                                eventKey="Details"
+                                title={<TabTitleText>Details</TabTitleText>}
+                            >
+                                <DeploymentPageDetails deploymentId={deploymentId} />
                             </Tab>
                             <Tab
                                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

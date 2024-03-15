@@ -24,12 +24,13 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *storage.Com
 	}
 
 	return &v2.ComplianceIntegration{
-		Id:           integration.GetId(),
-		Version:      integration.GetVersion(),
-		ClusterId:    integration.GetClusterId(),
-		ClusterName:  clusterName,
-		Namespace:    integration.GetComplianceNamespace(),
-		StatusErrors: integration.GetStatusErrors(),
+		Id:                integration.GetId(),
+		Version:           integration.GetVersion(),
+		ClusterId:         integration.GetClusterId(),
+		ClusterName:       clusterName,
+		Namespace:         integration.GetComplianceNamespace(),
+		StatusErrors:      integration.GetStatusErrors(),
+		OperatorInstalled: integration.GetOperatorInstalled(),
 	}, clusterFound, nil
 }
 

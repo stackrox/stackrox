@@ -459,14 +459,14 @@ func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, 
 
 	metadataUpdated := false
 	scanUpdated := false
-	if oldImage.GetMetadata().GetV1().GetCreated().Compare(image.GetMetadata().GetV1().GetCreated()) > 0 {
+	if protocompat.CompareTimestamps(oldImage.GetMetadata().GetV1().GetCreated(), image.GetMetadata().GetV1().GetCreated()) > 0 {
 		image.Metadata = oldImage.GetMetadata()
 	} else {
 		metadataUpdated = true
 	}
 
 	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldImage.GetScan().GetScanTime().Compare(image.GetScan().GetScanTime()) > 0 {
+	if protocompat.CompareTimestamps(oldImage.GetScan().GetScanTime(), image.GetScan().GetScanTime()) > 0 {
 		image.Scan = oldImage.Scan
 	} else {
 		scanUpdated = true

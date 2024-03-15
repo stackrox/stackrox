@@ -32,9 +32,13 @@ var (
 		"github.com/gogo/protobuf/proto": {
 			"Marshal":           "Marshal",
 			"MarshalTextString": "MarshalTextString",
+			"Equal":             "Equal",
 			"Unmarshal":         "Unmarshal",
 		},
 		"github.com/gogo/protobuf/types": {
+			"Compare":            "CompareTimestamps",
+			"DurationFromProto":  "DurationFromProto",
+			"DurationProto":      "DurationProto",
 			"TimestampFromProto": "ConvertTimestampToTimeOrError",
 			"TimestampNow":       "TimestampNow",
 			"TimestampProto":     "ConvertTimeToTimestampOrError",

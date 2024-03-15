@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
+	"github.com/stackrox/pkcs7"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 )

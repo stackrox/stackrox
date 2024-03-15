@@ -144,7 +144,6 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
     ci_export ROX_VULN_MGMT_NODE_PLATFORM_CVES "${ROX_VULN_MGMT_NODE_PLATFORM_CVES:-true}"
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
-    ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_MOVE_INIT_BUNDLES_UI "${ROX_MOVE_INIT_BUNDLES_UI:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -1057,18 +1056,6 @@ _record_build_info() {
     fi
 
     update_job_record "build" "${build_info}"
-}
-
-# TODO(ROX-22872): remove
-restore_56_1_backup() {
-    info "Restoring a 56.1 backup"
-
-    require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
-
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-        central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
 
 restore_4_1_postgres_backup() {

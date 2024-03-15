@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -129,7 +130,7 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 			}
 
 			sort.SliceStable(instances, func(i, j int) bool {
-				return instances[i].GetStarted().Compare(instances[j].GetStarted()) < 0
+				return protocompat.CompareTimestamps(instances[i].GetStarted(), instances[j].GetStarted()) < 0
 			})
 
 			startTime, ok := convertTimestamp(instances[0].GetContainerName(), "container instance", instances[0].GetStarted())
