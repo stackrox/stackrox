@@ -202,6 +202,8 @@ helm_upgrade_to_last_postgres() {
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
 
+    make cli
+
     # Get opensource charts and convert to development_build to support release builds
     if is_CI; then
         bin/"${TEST_HOST_PLATFORM}"/roxctl version
