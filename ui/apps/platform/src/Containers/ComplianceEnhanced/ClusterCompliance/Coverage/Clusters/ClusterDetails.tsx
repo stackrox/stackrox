@@ -95,7 +95,7 @@ function ClusterDetails() {
     return (
         <>
             <PageTitle title="Compliance Cluster Details" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={`${complianceEnhancedCoveragePath}?tableView=Clusters`}>
                         Clusters

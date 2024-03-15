@@ -47,7 +47,7 @@ function ContainerVolumeInfo({ volumes }: ContainerVolumeInfoProps) {
                                     <DescriptionList
                                         columnModifier={{ default: '2Col' }}
                                         isCompact
-                                        className="pf-u-background-color-200 pf-u-p-md"
+                                        className="pf-v5-u-background-color-200 pf-v5-u-p-md"
                                     >
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Source</DescriptionListTerm>

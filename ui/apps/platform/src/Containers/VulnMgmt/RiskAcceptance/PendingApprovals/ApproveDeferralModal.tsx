@@ -106,11 +106,11 @@ function ApproveDeferralModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 Deferrals of CVEs can have cascading effects. For example, a deferral of a CVE at a
                 component level can impact findings for any deployment of image using it.
             </div>
-            <div className="pf-u-pb-md pf-u-danger-color-200">
+            <div className="pf-v5-u-pb-md pf-v5-u-danger-color-200">
                 This active will impact {numImpactedDeployments} deployments and {numImpactedImages}{' '}
                 images
             </div>

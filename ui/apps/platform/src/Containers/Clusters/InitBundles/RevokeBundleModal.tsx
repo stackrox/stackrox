@@ -129,7 +129,7 @@ function RevokeBundleModal({ initBundle, onCloseModal }: RevokeBundleModalProps)
                                     In clusters that depend on this bundle, secured cluster services
                                     like Sensor will lose connectivity to Central.
                                 </p>
-                                <p className="pf-u-mt-md">
+                                <p className="pf-v5-u-mt-md">
                                     We recommend that you <strong>replace</strong> this bundle in
                                     the following secured clusters <strong>before</strong> you
                                     revoke it.

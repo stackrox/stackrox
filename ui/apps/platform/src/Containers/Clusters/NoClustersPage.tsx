@@ -169,7 +169,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 View installation methods
                             </Button>
                         )}
-                        <Flex direction={{ default: 'column' }} className="pf-u-mt-xl">
+                        <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-xl">
                             <Link
                                 to={`${clustersBasePath}/new`}
                                 onClick={() => {
@@ -182,7 +182,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 Legacy installation method
                             </Link>
                             {initBundlesCount !== 0 && (
-                                <Text component="p" className="pf-u-w-50vw">
+                                <Text component="p" className="pf-v5-u-w-50vw">
                                     If you misplaced your init bundle, we recommend locating the
                                     previously downloaded YAML on your device first by the name of
                                     the{' '}

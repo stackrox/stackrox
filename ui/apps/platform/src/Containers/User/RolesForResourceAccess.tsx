@@ -6,12 +6,12 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { userBasePath } from 'routePaths';
 
 const forbiddenIcon = (
-    <Icon color="var(--pf-global--danger-color--100)" size="sm">
+    <Icon color="var(--pf-v5-global--danger-color--100)" size="sm">
         <TimesIcon aria-label="forbidden" />
     </Icon>
 );
 const permittedIcon = (
-    <Icon color="var(--pf-global--success-color--100)" size="sm">
+    <Icon color="var(--pf-v5-global--success-color--100)" size="sm">
         <CheckIcon aria-label="permitted" />
     </Icon>
 );
@@ -27,7 +27,7 @@ function RolesForResourceAccess({ roleNames }: RolesForResourceAccessProps): Rea
         return (
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {forbiddenIcon}
-                <span className="pf-u-text-nowrap">No roles</span>
+                <span className="pf-v5-u-text-nowrap">No roles</span>
             </Flex>
         );
     }

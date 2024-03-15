@@ -18,7 +18,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
         return errors && errors.length && errors[0] !== ''
             ? {
                   icon: (
-                      <Icon color="var(--pf-global--danger-color--100)">
+                      <Icon color="var(--pf-v5-global--danger-color--100)">
                           <ExclamationCircleIcon />
                       </Icon>
                   ),
@@ -26,7 +26,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
               }
             : {
                   icon: (
-                      <Icon color="var(--pf-global--success-color--100)">
+                      <Icon color="var(--pf-v5-global--success-color--100)">
                           <CheckCircleIcon />
                       </Icon>
                   ),
@@ -44,7 +44,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             headerContent={<div>{errors.length === 1 ? 'Error' : 'Errors'}</div>}
             bodyContent={<div>{errors.join(', ')}</div>}
         >
-            <Button variant="link" className="pf-u-p-0">
+            <Button variant="link" className="pf-v5-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />
             </Button>
         </Popover>

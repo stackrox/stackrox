@@ -42,7 +42,7 @@ function ClusterSelector({
     const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => (
         <SelectOption key={cluster.id} value={cluster.name}>
             <span>
-                <ClusterIcon className="pf-u-mr-xs" /> {cluster.name}
+                <ClusterIcon className="pf-v5-u-mr-xs" /> {cluster.name}
             </span>
         </SelectOption>
     ));
@@ -53,7 +53,7 @@ function ClusterSelector({
             isPlain
             placeholderText={
                 <span>
-                    <ClusterIcon className="pf-u-mr-xs" />{' '}
+                    <ClusterIcon className="pf-v5-u-mr-xs" />{' '}
                     <span style={{ position: 'relative', top: '1px' }}>Cluster</span>
                 </span>
             }

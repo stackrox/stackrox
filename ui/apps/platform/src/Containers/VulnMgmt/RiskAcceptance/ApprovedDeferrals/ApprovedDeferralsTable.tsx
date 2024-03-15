@@ -237,7 +237,7 @@ function ApprovedDeferralsTable({
                                         />
                                     </Td>
                                     <Td dataLabel="Requestor">{row.requestor.name}</Td>
-                                    <Td className="pf-u-text-align-right">
+                                    <Td className="pf-v5-u-text-align-right">
                                         <ApprovedDeferralActionsColumn
                                             row={row}
                                             setRequestsToBeAssessed={setRequestsToBeAssessed}

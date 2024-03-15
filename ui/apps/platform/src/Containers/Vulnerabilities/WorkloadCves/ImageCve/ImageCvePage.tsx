@@ -340,7 +340,7 @@ function ImageCvePage() {
             <PageTitle
                 title={`Workload CVEs - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (
@@ -366,14 +366,14 @@ function ImageCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
+            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
                 <VulnerabilityStateTabs
                     titleOverrides={{ observed: 'Workloads' }}
                     isBox
                     onChange={() => setPage(1)}
                 />
-                <div className="pf-u-background-color-100">
-                    <div className="pf-u-px-sm">
+                <div className="pf-v5-u-background-color-100">
+                    <div className="pf-v5-u-px-sm">
                         <WorkloadCveFilterToolbar
                             searchOptions={searchOptions}
                             autocompleteSearchContext={{
@@ -382,7 +382,7 @@ function ImageCvePage() {
                             onFilterChange={() => setPage(1)}
                         />
                     </div>
-                    <div className="pf-u-px-lg pf-u-pb-lg">
+                    <div className="pf-v5-u-px-lg pf-v5-u-pb-lg">
                         {summaryRequest.error && (
                             <Alert
                                 title="There was an error loading the summary data for this CVE"
@@ -402,14 +402,14 @@ function ImageCvePage() {
                             <Grid hasGutter>
                                 <GridItem sm={12} md={6} xl2={4}>
                                     <AffectedImages
-                                        className="pf-u-h-100"
+                                        className="pf-v5-u-h-100"
                                         affectedImageCount={severitySummary.affectedImageCount}
                                         totalImagesCount={summaryRequest.data.totalImageCount}
                                     />
                                 </GridItem>
                                 <GridItem sm={12} md={6} xl2={4}>
                                     <BySeveritySummaryCard
-                                        className="pf-u-h-100"
+                                        className="pf-v5-u-h-100"
                                         title="Images by severity"
                                         severityCounts={
                                             severitySummary.affectedImageCountBySeverity
@@ -422,8 +422,8 @@ function ImageCvePage() {
                     </div>
                 </div>
                 <Divider />
-                <div className="pf-u-background-color-100 pf-u-flex-grow-1">
-                    <Split className="pf-u-px-lg pf-u-py-md pf-u-align-items-baseline">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1">
+                    <Split className="pf-v5-u-px-lg pf-v5-u-py-md pf-v5-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
@@ -461,13 +461,13 @@ function ImageCvePage() {
                         <>
                             {tableLoading && !tableDataAvailable && (
                                 <Bullseye>
-                                    <Spinner  />
+                                    <Spinner />
                                 </Bullseye>
                             )}
                             {tableDataAvailable && (
                                 <>
                                     <Divider />
-                                    <div className="pf-u-px-lg workload-cves-table-container">
+                                    <div className="pf-v5-u-px-lg workload-cves-table-container">
                                         {entityTab === 'Image' && (
                                             <AffectedImagesTable
                                                 images={imageData?.images ?? []}

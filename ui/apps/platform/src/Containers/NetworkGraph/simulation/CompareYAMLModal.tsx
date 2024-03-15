@@ -30,16 +30,16 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
             ]}
         >
             <Flex
-                className="pf-u-mt-md"
+                className="pf-v5-u-mt-md"
                 direction={{ default: 'column', md: 'row' }}
                 flexWrap={{ default: 'nowrap' }}
             >
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
-                    <Text className="pf-u-font-weight-bold">Existing network policies</Text>
+                    <Text className="pf-v5-u-font-weight-bold">Existing network policies</Text>
                     <NetworkPoliciesYAML yaml={current} height="400px" />
                 </Flex>
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
-                    <Text className="pf-u-font-weight-bold">Generated network policies</Text>
+                    <Text className="pf-v5-u-font-weight-bold">Generated network policies</Text>
                     <NetworkPoliciesYAML yaml={generated} height="400px" />
                 </Flex>
             </Flex>

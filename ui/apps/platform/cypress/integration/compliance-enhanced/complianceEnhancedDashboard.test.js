@@ -31,8 +31,8 @@ describe.skip('Compliance Dashboard', () => {
 
         cy.title().should('match', getRegExpForTitleWithBranding('Compliance Status Dashboard'));
 
-        cy.get('.pf-c-card__header:contains("Compliance by cluster")');
-        cy.get('.pf-c-card__header:contains("Compliance by profile")');
+        cy.get('.pf-v5-c-card__header:contains("Compliance by cluster")');
+        cy.get('.pf-v5-c-card__header:contains("Compliance by profile")');
 
         cy.get('th[scope="col"]:contains("Scan")');
         cy.get('th[scope="col"]:contains("Clusters")');

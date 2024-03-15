@@ -11,7 +11,7 @@ function ComplianceDashboardPage() {
         <>
             <PageTitle title="Compliance Status Dashboard" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-pl-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-pl-lg">
                     <FlexItem>
                         <Title headingLevel="h1">Compliance</Title>
                     </FlexItem>

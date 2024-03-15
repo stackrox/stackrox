@@ -288,7 +288,7 @@ function AuthProviderForm({
 
     return (
         <Form>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">{formTitle}</Title>
@@ -416,7 +416,7 @@ function AuthProviderForm({
                 />
             )}
             <FormikProvider value={formik}>
-                <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
+                <FormSection title="Configuration" titleElement="h3" className="pf-v5-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
                             <FormGroup label="Name" fieldId="name" isRequired>
@@ -478,7 +478,7 @@ function AuthProviderForm({
                     titleElement="h3"
                 >
                     <FormGroup
-                        className="pf-u-w-100 pf-u-w-75-on-md pf-u-w-50-on-lg"
+                        className="pf-v5-u-w-100 pf-v5-u-w-75-on-md pf-v5-u-w-50-on-lg"
                         label="Minimum access role"
                         fieldId="minimumAccessRole"
                         isRequired
@@ -613,7 +613,7 @@ function AuthProviderForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
@@ -729,7 +729,7 @@ function AuthProviderForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() => arrayHelpers.push(['', ''])}
                                                     >
@@ -743,7 +743,7 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
+                    <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
                             groups={values.groups}

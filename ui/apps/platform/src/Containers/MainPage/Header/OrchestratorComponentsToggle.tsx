@@ -20,7 +20,7 @@ const OrchestratorComponentsToggle = (): ReactElement => {
         location.reload(); // TODO instead pages could re-render on change to Redux store.
     }
 
-    // TODO: update wrapper classes to PatternFly, like  `pf-u-background-color-100
+    // TODO: update wrapper classes to PatternFly, like  `pf-v5-u-background-color-100
     return (
         <div className="flex justify-center items-center pr-3 relative" style={{ top: '2px' }}>
             <Switch

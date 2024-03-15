@@ -96,10 +96,10 @@ function LabelSelectorCards({
     return (
         <ul>
             {labelSelectors.map((labelSelector, indexLabelSelector) => (
-                <li key={indexLabelSelector} className="pf-u-pt-md">
+                <li key={indexLabelSelector} className="pf-v5-u-pt-md">
                     {indexLabelSelector !== 0 && (
-                        <div className="pf-u-mb-md pf-u-text-align-center">
-                            <Label variant="outline" className="pf-u-px-md">
+                        <div className="pf-v5-u-mb-md pf-v5-u-text-align-center">
+                            <Label variant="outline" className="pf-v5-u-px-md">
                                 or
                             </Label>
                         </div>

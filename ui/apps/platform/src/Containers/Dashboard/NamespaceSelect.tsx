@@ -45,7 +45,7 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
         <SelectOption key={selectAll.toString()} value={selectAll}>
             <span>All namespaces</span>
         </SelectOption>,
-        <Divider key="namespace-select-option-divider" className="pf-u-mb-0" component="div" />,
+        <Divider key="namespace-select-option-divider" className="pf-v5-u-mb-0" component="div" />,
         ...clustersToShow.map(({ name: clusterName, namespaces }) => (
             <SelectGroup key={clusterName} label={clusterName}>
                 {namespaces.map(({ metadata: { id, name } }) => (

@@ -270,7 +270,7 @@ function DeferredCVEsTable({
                                                   .join(',')
                                             : 'N/A'}
                                     </Td>
-                                    <Td className="pf-u-text-align-right">
+                                    <Td className="pf-v5-u-text-align-right">
                                         <DeferredCVEActionsColumn
                                             row={row}
                                             setVulnsToBeAssessed={setVulnsToBeAssessed}

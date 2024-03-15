@@ -110,7 +110,7 @@ function NotifierSelection({
     return (
         <>
             <FormLabelGroup
-                className="pf-u-mb-md"
+                className="pf-v5-u-mb-md"
                 isRequired
                 label="Email notifier"
                 fieldId={`${prefixId}.notifier`}
@@ -162,7 +162,7 @@ function NotifierSelection({
             </FormLabelGroup>
             {selectedNotifier && (
                 <Button
-                    className="pf-u-mt-sm"
+                    className="pf-v5-u-mt-sm"
                     variant="link"
                     isInline
                     size="sm"

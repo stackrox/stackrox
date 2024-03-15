@@ -160,7 +160,7 @@ function ClusterDetailsTable({
                 <Tr key={checkName}>
                     <Td modifier="truncate">
                         <Text>{checkName}</Text>
-                        <Text component={TextVariants.small} className="pf-u-color-200">
+                        <Text component={TextVariants.small} className="pf-v5-u-color-200">
                             {rationale}
                         </Text>
                     </Td>
@@ -242,12 +242,12 @@ function ClusterDetailsTable({
 
     return (
         <>
-            <Title headingLevel="h2" className="pf-u-px-md">
+            <Title headingLevel="h2" className="pf-v5-u-px-md">
                 {scanName}
             </Title>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
+                    <ToolbarItem variant="search-filter" className="pf-v5-u-flex-grow-1">
                         <SearchInput
                             aria-label="Filter results by check"
                             placeholder="Filter results by check"

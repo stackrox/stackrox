@@ -171,7 +171,7 @@ function AuthProviders(): ReactElement {
                         actionComponent={
                             hasWriteAccessForPage && (
                                 <Dropdown
-                                    className="auth-provider-dropdown pf-u-ml-md"
+                                    className="auth-provider-dropdown pf-v5-u-ml-md"
                                     onSelect={onClickCreate}
                                     position={DropdownPosition.right}
                                     toggle={

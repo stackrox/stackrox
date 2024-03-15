@@ -93,12 +93,12 @@ function PolicyScopeCard({
             <CardHeader actions={{ actions: <><Divider orientation={{ default: 'vertical' }} component="div" />
                     <Button
                         variant="plain"
-                        className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                        className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                         onClick={onDelete}
                     >
                         <TrashIcon />
-                    </Button></>, hasNoOffset: true, className: undefined}}  className="pf-u-p-0">
-                <CardTitle className="pf-u-pl-lg">{type} scope</CardTitle>
+                    </Button></>, hasNoOffset: true, className: undefined}}  className="pf-v5-u-p-0">
+                <CardTitle className="pf-v5-u-pl-lg">{type} scope</CardTitle>
                 
             </CardHeader>
             <Divider component="div" />

@@ -25,7 +25,7 @@ function ContainerImage({ image }: ContainerImageProps): ReactElement {
         const NameComponent = (
             <div>
                 {image.name.fullName}
-                <span className="pf-u-pl-sm">({unavailableText})</span>
+                <span className="pf-v5-u-pl-sm">({unavailableText})</span>
             </div>
         );
         return <DescriptionListItem term="Image name" desc={NameComponent} />;

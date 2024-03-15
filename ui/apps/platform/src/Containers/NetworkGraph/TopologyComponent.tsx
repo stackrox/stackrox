@@ -283,7 +283,7 @@ const TopologyComponent = ({
                     />
                 </>
             ) : (
-                <div className="pf-u-h-100 pf-u-w-100 pf-u-background-color-100">
+                <div className="pf-v5-u-h-100 pf-v5-u-w-100 pf-v5-u-background-color-100">
                     <EmptyUnscopedState />
                 </div>
             )}

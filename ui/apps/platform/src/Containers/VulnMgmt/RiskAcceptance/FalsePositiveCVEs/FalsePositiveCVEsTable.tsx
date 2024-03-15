@@ -249,7 +249,7 @@ function FalsePositiveCVEsTable({
                                             .map((user) => user.name)
                                             .join(',')}
                                     </Td>
-                                    <Td className="pf-u-text-align-right">
+                                    <Td className="pf-v5-u-text-align-right">
                                         <FalsePositiveCVEActionsColumn
                                             row={row}
                                             setVulnsToBeAssessed={setVulnsToBeAssessed}

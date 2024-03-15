@@ -371,7 +371,7 @@ const SystemConfigForm = ({
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
-                        <Split hasGutter className="pf-u-align-items-center">
+                        <Split hasGutter className="pf-v5-u-align-items-center">
                             <SplitItem isFilled>
                                 <TextInput
                                     isRequired
@@ -737,7 +737,7 @@ const SystemConfigForm = ({
                             </CardHeader>
                             <Divider component="div" />
                             <CardBody>
-                                <p className="pf-u-mb-sm">
+                                <p className="pf-v5-u-mb-sm">
                                     Online telemetry data collection allows Red Hat to use
                                     anonymized information to enhance your user experience. Consult
                                     the documentation to see what is collected, and for information

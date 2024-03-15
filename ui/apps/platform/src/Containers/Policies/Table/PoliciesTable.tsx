@@ -190,7 +190,7 @@ function PoliciesTable({
                     <ToolbarContent>
                         <ToolbarItem
                             variant="search-filter"
-                            className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
+                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <SearchFilterInput
                                 className="w-full theme-light pf-search-shim"
@@ -403,7 +403,7 @@ function PoliciesTable({
                             <Tbody
                                 key={id}
                                 style={{
-                                    borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                                 }}
                                 isExpanded={isExpanded}
                             >
@@ -447,7 +447,7 @@ function PoliciesTable({
                                                     (notifierCountWithLabelString) => (
                                                         <div
                                                             key={notifierCountWithLabelString}
-                                                            className="pf-u-text-nowrap"
+                                                            className="pf-v5-u-text-nowrap"
                                                         >
                                                             {notifierCountWithLabelString}
                                                         </div>

@@ -21,7 +21,7 @@ function UploadYAMLButton({ onFileInputChange }: UploadYAMLButtonProps) {
             >
                 Upload YAML
             </Button>
-            <div className="pf-u-hidden">
+            <div className="pf-v5-u-hidden">
                 <FileUpload
                     id="upload-network-policy"
                     filenamePlaceholder="Drag and drop a YAML or upload one"

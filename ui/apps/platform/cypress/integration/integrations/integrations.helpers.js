@@ -228,7 +228,7 @@ export function visitIntegrationsDashboard(staticResponseMap) {
     visit(basePath, routeMatcherMapForIntegrationsDashboard, staticResponseMap);
 
     cy.get(`h1:contains("${integrationsTitle}")`);
-    cy.get(`.pf-c-nav__link.pf-m-current:contains("${integrationsTitle}")`);
+    cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("${integrationsTitle}")`);
 }
 
 /**
@@ -305,7 +305,7 @@ export function clickIntegrationTileOnDashboard(integrationSource, integrationTy
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
 
     cy.get(`h2:contains("${integrationSourceTitle}")`);
-    cy.get(`a .pf-c-card__title:contains("${integrationTitle}")`).click();
+    cy.get(`a .pf-v5-c-card__title:contains("${integrationTitle}")`).click();
 }
 
 // interact in table

@@ -91,23 +91,23 @@ function PolicyGroupCard({
                                 <Divider orientation={{ default: 'vertical' }} component="div" />
                                 <Button
                                     variant="plain"
-                                    className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                                    className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                     onClick={onDeleteGroup}
                                     data-testid="delete-policy-criteria-btn"
                                 >
                                     <TrashIcon />
                                 </Button>
                             </>
-                        )}</>, hasNoOffset: true, className: "policy-group-card"}}  className="pf-u-p-0">
-                    <CardTitle className="pf-u-pl-md">
+                        )}</>, hasNoOffset: true, className: "policy-group-card"}}  className="pf-v5-u-p-0">
+                    <CardTitle className="pf-v5-u-pl-md">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-u-py-sm pf-u-text-wrap-on-sm"
+                            className="pf-v5-u-py-sm pf-v5-u-text-wrap-on-sm"
                         >
                             <Stack>
                                 <StackItem>{descriptor.shortName}</StackItem>
                                 {headerLongText && headerLongText !== descriptor.shortName && (
-                                    <StackItem className="pf-u-font-weight-normal">
+                                    <StackItem className="pf-v5-u-font-weight-normal">
                                         {headerLongText}:
                                     </StackItem>
                                 )}
@@ -155,7 +155,7 @@ function PolicyGroupCard({
                             <Flex
                                 direction={{ default: 'column' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
-                                className="pf-u-pt-sm"
+                                className="pf-v5-u-pt-sm"
                             >
                                 <Button
                                     onClick={handleAddValue}
@@ -171,7 +171,7 @@ function PolicyGroupCard({
             {(policyGroups.length - 1 !== groupIndex || !readOnly) && (
                 <Flex
                     direction={{ default: 'row' }}
-                    className="pf-u-my-sm"
+                    className="pf-v5-u-my-sm"
                     justifyContent={{ default: 'justifyContentCenter' }}
                 >
                     — and —

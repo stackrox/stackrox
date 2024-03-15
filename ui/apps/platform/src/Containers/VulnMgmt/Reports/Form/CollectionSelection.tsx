@@ -120,7 +120,7 @@ function CollectionSelection({
             <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
                 <FlexItem>
                     <FormLabelGroup
-                        className="pf-u-mb-md"
+                        className="pf-v5-u-mb-md"
                         isRequired
                         label="Configure report scope"
                         fieldId="scopeId"
@@ -163,7 +163,7 @@ function CollectionSelection({
                 {allowCreate && (
                     <FlexItem>
                         <Button
-                            className="pf-u-mb-md"
+                            className="pf-v5-u-mb-md"
                             variant={ButtonVariant.secondary}
                             onClick={onToggleCollectionModal}
                         >

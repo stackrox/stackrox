@@ -15,7 +15,7 @@ function ComponentLocation({ location, source }: ComponentLocationProps) {
             <Truncate content={location || 'N/A'} position="middle" />
             {source === 'OS' && location === '' && (
                 <Tooltip content="Location is unavailable for operating system packages">
-                    <Icon color="var(--pf-global--info-color--100)">
+                    <Icon color="var(--pf-v5-global--info-color--100)">
                         <InfoCircleIcon />
                     </Icon>
                 </Tooltip>

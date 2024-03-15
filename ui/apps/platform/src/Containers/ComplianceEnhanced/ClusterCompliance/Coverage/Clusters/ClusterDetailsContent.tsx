@@ -36,7 +36,7 @@ function ClusterDetailsContent({ scanRecords, clusterId }: ClusterDetailsContent
     return (
         <Flex
             direction={{ default: 'column' }}
-            className="pf-u-background-color-100 pf-u-p-lg"
+            className="pf-v5-u-background-color-100 pf-v5-u-p-lg"
             spaceItems={{ default: 'spaceItemsLg' }}
             flexWrap={{ default: 'nowrap' }}
         >
