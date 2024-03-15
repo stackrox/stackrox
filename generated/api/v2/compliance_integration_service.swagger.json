@@ -243,9 +243,12 @@
             "type": "string"
           },
           "description": "Collection of errors that occurred while trying to obtain compliance operator health info."
+        },
+        "operatorInstalled": {
+          "type": "boolean"
         }
       },
-      "title": "Next Tag: 7"
+      "title": "Next Tag: 8"
     },
     "v2CountComplianceIntegrationsResponse": {
       "type": "object",

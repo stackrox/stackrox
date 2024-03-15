@@ -45,6 +45,7 @@ type expectedInfo struct {
 	namespace      string
 	desired, ready int32
 	error          string
+	isInstalled    bool
 }
 
 func (s *UpdaterTestSuite) SetupSuite() {
@@ -83,7 +84,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 
@@ -98,7 +99,7 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 
@@ -119,7 +120,7 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 
@@ -337,6 +338,7 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 		Version:     expected.version,
 		Namespace:   expected.namespace,
 		StatusError: expected.error,
+		IsInstalled: actual.IsInstalled,
 	}
 
 	if expected.desired > 0 {
