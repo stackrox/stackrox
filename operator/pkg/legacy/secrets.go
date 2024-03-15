@@ -111,9 +111,9 @@ func (i *injector) enrich(ctx context.Context, vals chartutil.Values, key string
 		return nil, err
 	}
 
-	for _, name := range existingSecretNames {
-		if slices.Contains(secretNames, name) {
-			secretNamesToAdd = append(secretNamesToAdd, name)
+	for _, existingName := range existingSecretNames {
+		if slices.Contains(secretNames, existingName) {
+			secretNamesToAdd = append(secretNamesToAdd, existingName)
 		}
 	}
 

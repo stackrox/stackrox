@@ -53,7 +53,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 	passwordSecret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: passwordSecretName}
 	// using APIReader for uncached access because the operator might not own this secret
-	// thus we can't guarantee that labels are set propperly for it to be in the cache
+	// thus we can't guarantee that labels are set properly for it to be in the cache
 	if err := r.APIReader().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
 	}

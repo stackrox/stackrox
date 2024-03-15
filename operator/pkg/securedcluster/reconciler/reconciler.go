@@ -29,7 +29,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
 			utils.CreateAndDeleteOnlyPredicate{}),
-		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(nil, nil)),
+		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension()),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),

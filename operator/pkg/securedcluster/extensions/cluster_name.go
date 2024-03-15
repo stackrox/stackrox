@@ -12,8 +12,8 @@ import (
 
 // CheckClusterNameExtension is an extension that ensures the spec.clusterName and status.clusterName fields are
 // in sync.
-func CheckClusterNameExtension(client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(checkClusterName, client, apiReader)
+func CheckClusterNameExtension() extensions.ReconcileExtension {
+	return wrapExtension(checkClusterName, nil, nil)
 }
 
 func checkClusterName(_ context.Context, sc *platform.SecuredCluster, _ ctrlClient.Client, _ ctrlClient.Reader, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {

@@ -63,7 +63,7 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret(ct
 	passwordSecret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: r.passwordSecretName}
 	// using APIReader for uncached access because the operator might not own this secret
-	// thus we can't guarantee that labels are set propperly for it to be in the cache
+	// thus we can't guarantee that labels are set properly for it to be in the cache
 	if err := r.APIReader().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve admin password secret %q", r.passwordSecretName)
 	}
