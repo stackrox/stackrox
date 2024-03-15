@@ -1,0 +1,20 @@
+name: Comment on finished suite
+on:
+  check_suite:
+    types: [completed]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body: |
+            ```
+            '${{ toJSON(github) }}'
+            ```
+          reactions: '+1'
