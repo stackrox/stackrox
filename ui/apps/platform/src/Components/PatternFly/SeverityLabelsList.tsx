@@ -19,7 +19,7 @@ function SeverityLabelsList({ severities }: SeverityLabelsListProps): ReactEleme
     if (severities?.length > 0) {
         const severityLabels = severities.map((fixValue) => (
             <Label
-                className="pf-u-mr-sm"
+                className="pf-v5-u-mr-sm"
                 color={vulnerabilitySeverityLabelColors[fixValue]}
                 isCompact
             >

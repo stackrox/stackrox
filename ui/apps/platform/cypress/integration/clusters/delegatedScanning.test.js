@@ -29,13 +29,13 @@ describe('Delegated Image Scanning', () => {
         // make sure the static page loads
         cy.get('h1:contains("Delegated Image Scanning")');
 
-        cy.get('.pf-c-breadcrumb__item a:contains("Clusters")').should(
+        cy.get('.pf-v5-c-breadcrumb__item a:contains("Clusters")').should(
             'have.attr',
             'href',
             '/main/clusters'
         );
 
-        cy.get('.pf-c-breadcrumb__item:contains("Delegated Image Scanning")');
+        cy.get('.pf-v5-c-breadcrumb__item:contains("Delegated Image Scanning")');
 
         // check the initial state of the delegate config
         getInputByLabel('None').should('be.checked');
@@ -59,12 +59,12 @@ describe('Delegated Image Scanning', () => {
 
         // choose the first cluster in the list as the default
         cy.get('.cluster-select').click();
-        cy.get('.cluster-select .pf-c-select__menu .pf-c-select__menu-item').then(
+        cy.get('.cluster-select .pf-v5-c-select__menu .pf-v5-c-select__menu-item').then(
             ($clusterNames) => {
                 expect($clusterNames.length).to.be.gte(0);
             }
         );
-        cy.get('.cluster-select .pf-c-select__menu .pf-c-select__menu-item')
+        cy.get('.cluster-select .pf-v5-c-select__menu .pf-v5-c-select__menu-item')
             .last()
             .then(($lastCluster) => {
                 const lastClusterName = $lastCluster.text();
@@ -78,7 +78,7 @@ describe('Delegated Image Scanning', () => {
                 saveDelegatedRegistryConfig();
 
                 cy.get(
-                    '.pf-c-alert.pf-m-success .pf-c-alert__title:contains("Delegated scanning configuration saved successfully")'
+                    '.pf-v5-c-alert.pf-m-success .pf-v5-c-alert__title:contains("Delegated scanning configuration saved successfully")'
                 );
             });
     });

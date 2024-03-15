@@ -115,17 +115,17 @@ export const styleUninitialized = {
 
 export const styleHealthy = {
     Icon: CheckCircleIcon,
-    fgColor: 'pf-u-success-color-100',
+    fgColor: 'pf-v5-u-success-color-100',
 };
 
 export const styleDegraded = {
     Icon: ExclamationTriangleIcon,
-    fgColor: 'pf-u-warning-color-100',
+    fgColor: 'pf-v5-u-warning-color-100',
 };
 
 export const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
-    fgColor: 'pf-u-danger-color-100',
+    fgColor: 'pf-v5-u-danger-color-100',
 };
 
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
@@ -163,11 +163,11 @@ export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {
         Icon: InProgressIcon,
-        fgColor: 'pf-u-primary-color-100',
+        fgColor: 'pf-v5-u-primary-color-100',
     },
     download: {
         Icon: DownloadCloud,
-        fgColor: 'pf-u-link-color',
+        fgColor: 'pf-v5-u-link-color',
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,

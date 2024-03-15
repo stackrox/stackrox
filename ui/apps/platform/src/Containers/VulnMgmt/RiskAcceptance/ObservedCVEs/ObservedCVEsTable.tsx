@@ -295,7 +295,7 @@ function ObservedCVEsTable({
                                         <DateTimeFormat time={row.discoveredAtImage} />
                                     </Td>
                                     <Td
-                                        className="pf-u-text-align-right"
+                                        className="pf-v5-u-text-align-right"
                                         actions={{
                                             items: actions,
                                         }}

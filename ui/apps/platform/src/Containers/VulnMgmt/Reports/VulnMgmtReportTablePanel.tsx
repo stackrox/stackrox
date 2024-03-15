@@ -317,7 +317,7 @@ function ReportingTablePanel({
 
                                 actionItems.push({
                                     title: (
-                                        <div className="pf-u-danger-color-100">Delete report</div>
+                                        <div className="pf-v5-u-danger-color-100">Delete report</div>
                                     ),
                                     onClick: () => onClickDelete([report.id]),
                                 });

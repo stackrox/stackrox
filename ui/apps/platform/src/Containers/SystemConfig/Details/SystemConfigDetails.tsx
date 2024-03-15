@@ -23,7 +23,7 @@ function SystemConfigDetails({
     return (
         <>
             <PageSection data-testid="data-retention-config">
-                <Title headingLevel="h2" className="pf-u-mb-md">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Private data retention configuration
                 </Title>
                 <PrivateConfigDataRetentionDetails
@@ -32,7 +32,7 @@ function SystemConfigDetails({
                 />
             </PageSection>
             <PageSection>
-                <Title headingLevel="h2" className="pf-u-mb-md">
+                <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Public configuration
                 </Title>
                 <Grid hasGutter>

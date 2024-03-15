@@ -43,7 +43,7 @@ function DelegatedRegistriesList({
     updateRegistriesOrder,
 }: DelegatedRegistriesListProps) {
     return (
-        <Card className="pf-u-mb-lg">
+        <Card className="pf-v5-u-mb-lg">
             {registries.length > 0 ? (
                 <>
                     <DelegatedRegistriesTable
@@ -66,7 +66,7 @@ function DelegatedRegistriesList({
                     </CardFooter>
                 </>
             ) : (
-                <Bullseye className="pf-u-flex-grow-1">
+                <Bullseye className="pf-v5-u-flex-grow-1">
                     <EmptyState>
                         <EmptyStateHeader titleText="No registries specified." headingLevel="h2" />
                         <EmptyStateBody>

@@ -132,7 +132,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             <SelectOption value={runStates.FAILURE}>Error</SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
-                    <ToolbarItem className="pf-u-flex-grow-1">
+                    <ToolbarItem className="pf-v5-u-flex-grow-1">
                         <Switch
                             id="view-only-my-jobs"
                             label="View only my jobs"
@@ -162,19 +162,19 @@ function ReportJobs({ reportId }: RunHistoryProps) {
             </Toolbar>
             <Divider component="div" />
             {error && (
-                <Bullseye className="pf-u-background-color-100">
+                <Bullseye className="pf-v5-u-background-color-100">
                     <EmptyStateTemplate
                         title="Error loading report jobs"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-u-danger-color-100"
+                        iconClassName="pf-v5-u-danger-color-100"
                     >
                         {error}
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
             {isLoading && !reportSnapshots && (
-                <Bullseye className="pf-u-background-color-100 pf-u-p-lg">
+                <Bullseye className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
@@ -269,7 +269,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-u-danger-color-100">Delete download</span>
+                                    <span className="pf-v5-u-danger-color-100">Delete download</span>
                                 ),
                                 onClick: (event) => {
                                     event.preventDefault();
@@ -315,7 +315,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={5}>
                                         <ExpandableRowContent>
-                                            <Card className="pf-u-m-md pf-u-p-md" isFlat>
+                                            <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
                                                 <Flex>
                                                     <FlexItem>
                                                         <JobDetails
@@ -324,7 +324,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-u-my-md"
+                                                        className="pf-v5-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <ReportParametersDetails
@@ -333,7 +333,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-u-my-md"
+                                                        className="pf-v5-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <DeliveryDestinationsDetails
@@ -342,7 +342,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-u-my-md"
+                                                        className="pf-v5-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <ScheduleDetails formValues={formValues} />
@@ -370,7 +370,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             isInline
                             variant={AlertVariant.danger}
                             title={deleteDownloadError}
-                            className="pf-u-mb-sm"
+                            className="pf-v5-u-mb-sm"
                         />
                     )}
                 </AlertGroup>

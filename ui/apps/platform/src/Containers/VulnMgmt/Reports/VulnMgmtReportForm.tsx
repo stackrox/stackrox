@@ -399,10 +399,10 @@ function VulnMgmtReportForm({
                         </GridItem>
                         <GridItem span={4}>
                             <div>
-                                <Title headingLevel="h2" className="pf-u-mb-xs">
+                                <Title headingLevel="h2" className="pf-v5-u-mb-xs">
                                     Notification method and distribution
                                 </Title>
-                                <Text component={TextVariants.p} className="pf-u-mb-md">
+                                <Text component={TextVariants.p} className="pf-v5-u-mb-md">
                                     Schedule reports across the organization by defining a
                                     notification method and distribution list for the report
                                 </Text>

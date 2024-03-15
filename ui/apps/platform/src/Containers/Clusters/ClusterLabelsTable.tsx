@@ -87,7 +87,7 @@ function ClusterLabelsTable({
                         style={{
                             backgroundColor:
                                 key === keyInput
-                                    ? 'var(--pf-global--warning-color--100)'
+                                    ? 'var(--pf-v5-global--warning-color--100)'
                                     : 'transparent',
                         }}
                     >
@@ -106,7 +106,7 @@ function ClusterLabelsTable({
                                         style={{ padding: 0 }}
                                         onClick={() => onDeleteLabel(key)}
                                     >
-                                        <TimesCircleIcon color="var(--pf-global--danger-color--100)" />
+                                        <TimesCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                                     </Button>
                                 </Tooltip>
                             </Td>
@@ -124,12 +124,12 @@ function ClusterLabelsTable({
                                 ref={refKeyInput}
                             />
                             {validatedKey === ValidatedOptions.error && (
-                                <p className="pf-u-font-size-sm pf-u-danger-color-100">
+                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
                                     Invalid label key
                                 </p>
                             )}
                             {validatedKey === ValidatedOptions.warning && (
-                                <p className="pf-u-font-size-sm pf-u-warning-color-100">
+                                <p className="pf-v5-u-font-size-sm pf-v5-u-warning-color-100">
                                     You will replace an existing label which has the same key
                                 </p>
                             )}
@@ -143,7 +143,7 @@ function ClusterLabelsTable({
                                 onKeyPress={onKeyPressValue}
                             />
                             {validatedValue === ValidatedOptions.error && (
-                                <p className="pf-u-font-size-sm pf-u-danger-color-100">
+                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
                                     {valueInput.length === 0
                                         ? 'Label value is required'
                                         : 'Invalid label value'}
@@ -162,8 +162,8 @@ function ClusterLabelsTable({
                                     <Icon
                                         color={
                                             isReplace
-                                                ? 'var(--pf-global--warning-color--100)'
-                                                : 'var(--pf-global--success-color--100)'
+                                                ? 'var(--pf-v5-global--warning-color--100)'
+                                                : 'var(--pf-v5-global--success-color--100)'
                                         }
                                     >
                                         <PlusCircleIcon />

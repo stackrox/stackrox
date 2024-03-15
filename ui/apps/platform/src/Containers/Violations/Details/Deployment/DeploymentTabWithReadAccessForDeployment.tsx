@@ -66,7 +66,7 @@ function DeploymentTabWithReadAccessForDeployment({
                                               <React.Fragment key={i}>
                                                   <Title
                                                       headingLevel="h4"
-                                                      className="pf-u-mb-md"
+                                                      className="pf-v5-u-mb-md"
                                                   >{`ports[${i}]`}</Title>
                                                   <PortDescriptionList port={port} />
                                               </React.Fragment>
@@ -91,7 +91,7 @@ function DeploymentTabWithReadAccessForDeployment({
                                           <React.Fragment key={container.id}>
                                               <Title
                                                   headingLevel="h4"
-                                                  className="pf-u-mb-md"
+                                                  className="pf-v5-u-mb-md"
                                               >{`containers[${i}]`}</Title>
                                               <ContainerConfiguration
                                                   key={container.id}

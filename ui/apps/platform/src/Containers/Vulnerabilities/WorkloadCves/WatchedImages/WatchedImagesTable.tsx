@@ -38,7 +38,7 @@ function WatchedImagesTable({
                     variant="compact"
                     style={
                         {
-                            '--pf-c-table--m-compact--cell--first-last-child--PaddingLeft': '0',
+                            '--pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft': '0',
                         } as CSSProperties
                     }
                 >
@@ -54,13 +54,13 @@ function WatchedImagesTable({
                                 <Td dataLabel="Image">{name}</Td>
                                 <Td
                                     dataLabel="Remove watched image"
-                                    className="pf-u-text-align-right"
+                                    className="pf-v5-u-text-align-right"
                                 >
                                     <Button
                                         variant="link"
                                         isInline
                                         icon={
-                                            <Icon color="var(--pf-global--Color--200)">
+                                            <Icon color="var(--pf-v5-global--Color--200)">
                                                 <MinusCircleIcon />
                                             </Icon>
                                         }

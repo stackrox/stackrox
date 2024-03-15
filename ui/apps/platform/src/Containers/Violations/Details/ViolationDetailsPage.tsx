@@ -96,7 +96,7 @@ function ViolationDetailsPage(): ReactElement {
                     mountOnEnter
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    className="pf-u-background-color-100 pf-u-pl-lg"
+                    className="pf-v5-u-background-color-100 pf-v5-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
                         <PageSection variant="default">
@@ -132,10 +132,10 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
-                                <Title headingLevel="h3" className="pf-u-mb-md">
+                                <Title headingLevel="h3" className="pf-v5-u-mb-md">
                                     Policy overview
                                 </Title>
-                                <Divider component="div" className="pf-u-pb-md" />
+                                <Divider component="div" className="pf-v5-u-pb-md" />
                                 <PolicyDetailContent
                                     policy={getClientWizardPolicy(policy) as unknown as Policy}
                                 />

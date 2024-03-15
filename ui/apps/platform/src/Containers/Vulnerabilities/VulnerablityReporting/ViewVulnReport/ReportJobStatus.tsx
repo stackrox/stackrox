@@ -41,7 +41,7 @@ function ReportJobStatus({
         statusIcon = <PendingIcon title="Report run is waiting" />;
         statusText = <p>Waiting</p>;
     } else if (reportStatus.runState === 'FAILURE') {
-        statusColorClass = 'pf-u-danger-color-100';
+        statusColorClass = 'pf-v5-u-danger-color-100';
         statusIcon = (
             <Tooltip content={reportStatus?.errorMsg || genericMsg}>
                 <ExclamationCircleIcon title="Report run was unsuccessful" />
@@ -49,7 +49,7 @@ function ReportJobStatus({
         );
         statusText = <p>Error</p>;
     } else if (isDownload && isDownloadAvailable && areDownloadActionsDisabled) {
-        statusColorClass = 'pf-u-disabled-color-100';
+        statusColorClass = 'pf-v5-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
             <Flex
@@ -75,7 +75,7 @@ function ReportJobStatus({
             </Flex>
         );
     } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
-        statusColorClass = 'pf-u-primary-color-100';
+        statusColorClass = 'pf-v5-u-primary-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
             <Button variant="link" isInline className={statusColorClass} onClick={onDownload}>
@@ -83,7 +83,7 @@ function ReportJobStatus({
             </Button>
         );
     } else if (isDownload && !isDownloadAvailable) {
-        statusColorClass = 'pf-u-disabled-color-100';
+        statusColorClass = 'pf-v5-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was deleted" />;
         statusText = (
             <Flex
@@ -108,11 +108,11 @@ function ReportJobStatus({
             </Flex>
         );
     } else if (reportStatus.runState === 'DELIVERED') {
-        statusColorClass = 'pf-u-success-color-100';
+        statusColorClass = 'pf-v5-u-success-color-100';
         statusIcon = <CheckCircleIcon title="Report was successfully sent" />;
-        statusText = <p className="pf-u-success-color-100">Successfully sent</p>;
+        statusText = <p className="pf-v5-u-success-color-100">Successfully sent</p>;
     } else {
-        statusColorClass = 'pf-u-warning-color-100';
+        statusColorClass = 'pf-v5-u-warning-color-100';
         statusIcon = (
             <Tooltip content="Please contact support for more help.">
                 <ExclamationTriangleIcon title="Report run status is unknown" />

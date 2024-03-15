@@ -82,7 +82,7 @@ function NotifierSelection({
             <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
                 <FlexItem>
                     <FormLabelGroup
-                        className="pf-u-mb-md"
+                        className="pf-v5-u-mb-md"
                         isRequired
                         label="Notifier"
                         fieldId="emailConfig.notifierId"
@@ -107,7 +107,7 @@ function NotifierSelection({
                 {allowCreate && (
                     <FlexItem>
                         <Button
-                            className="pf-u-mb-md"
+                            className="pf-v5-u-mb-md"
                             variant={ButtonVariant.secondary}
                             onClick={onToggleEmailNotifierModal}
                         >

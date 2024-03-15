@@ -365,7 +365,7 @@ function JiraIntegrationForm({
                                                                 <TextInput
                                                                     isRequired
                                                                     tabIndex={-1}
-                                                                    className="pf-u-background-color-200"
+                                                                    className="pf-v5-u-background-color-200"
                                                                     
                                                                     type="text"
                                                                     id={`notifier.jira.priorityMappings[${index}].severity`}

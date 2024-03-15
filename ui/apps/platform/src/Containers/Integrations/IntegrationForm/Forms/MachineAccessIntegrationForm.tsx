@@ -189,7 +189,7 @@ function MachineAccessIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="mappings"
                                 render={(arrayHelpers) => (
@@ -246,7 +246,7 @@ function MachineAccessIntegrationForm({
                                                                         <Button
                                                                             type="button"
                                                                             aria-label="More info for name field"
-                                                                            className="pf-c-form__group-label-help"
+                                                                            className="pf-v5-c-form__group-label-help"
                                                                             style={{
                                                                                 backgroundColor:
                                                                                     'transparent',
@@ -351,7 +351,7 @@ function MachineAccessIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

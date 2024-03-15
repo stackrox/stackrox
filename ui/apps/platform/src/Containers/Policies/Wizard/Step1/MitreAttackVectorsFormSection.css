@@ -9,16 +9,16 @@
  * Cause id select and delete button grow to available width, 
  * limited by preceding rule, regardless of description width.
  */
-#mitre-attack-vectors-form-section .pf-c-tree-view__node-container,
-#mitre-attack-vectors-form-section .pf-c-tree-view__node-content {
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__node-container,
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__node-content {
     flex-grow: 1;
 }
 
 /*
  * Right align non-selected id same as selected id which has check mark at the right.
  */
-#mitre-attack-vectors-form-section .pf-c-select {
-    --pf-c-select__menu-item--PaddingRight: var(--pf-global--spacer--2xl); /* instead of md */
+#mitre-attack-vectors-form-section .pf-v5-c-select {
+    --pf-v5-c-select__menu-item--PaddingRight: var(--pf-v5-global--spacer--2xl); /* instead of md */
 }
 
 /*
@@ -26,12 +26,12 @@
  * Right align delete button within available width.
  */
 
-#mitre-attack-vectors-form-section .pf-c-tree-view__node {
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__node {
     padding-left: 0;
     padding-right: 0;
 }
 
-#mitre-attack-vectors-form-section .pf-c-tree-view__node-container {
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__node-container {
     padding-left: 0;
     padding-right: 0;
 }
@@ -40,12 +40,12 @@
  * Restore padding for techniques for indent under tactic.
  */
 
-#mitre-attack-vectors-form-section .pf-c-tree-view__list-item .pf-c-tree-view__list-item .pf-c-tree-view__node {
-    padding-left: var(--pf-c-tree-view__node--PaddingLeft);
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__node {
+    padding-left: var(--pf-v5-c-tree-view__node--PaddingLeft);
 }
 
-#mitre-attack-vectors-form-section .pf-c-tree-view__list-item .pf-c-tree-view__list-item .pf-c-tree-view__node-container {
-    padding-left: var(--pf-c-tree-view--m-compact__node-container--nested--PaddingLeft);
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__node-container {
+    padding-left: var(--pf-v5-c-tree-view--m-compact__node-container--nested--PaddingLeft);
 }
 
 /*
@@ -53,7 +53,7 @@
  * Right align id select for add with edge of id select for replace (which has delete button at the right).
  */
 #mitre-attack-vectors-form-section p,
-#mitre-attack-vectors-form-section .pf-c-tree-view__list-item:last-child .pf-c-tree-view__node-container {
+#mitre-attack-vectors-form-section .pf-v5-c-tree-view__list-item:last-child .pf-v5-c-tree-view__node-container {
     padding-right: 64px;
 }
 
@@ -61,7 +61,7 @@
  * Align placeholder text or selected option text at left instead of center.
  * Provide full width for selected option.
  */
-#mitre-attack-vectors-form-section .pf-c-select__toggle-text {
+#mitre-attack-vectors-form-section .pf-v5-c-select__toggle-text {
     text-align: left;
     width: 100%;
 }
@@ -69,7 +69,7 @@
 /*
  * Reduce padding above subtechniques to give the impression of a group under the preceding technique.
  */
-#mitre-attack-vectors-form-section .pf-c-select__menu-item.mitre-subtechnique-option {
+#mitre-attack-vectors-form-section .pf-v5-c-select__menu-item.mitre-subtechnique-option {
     padding-top: 0;
 }
 

@@ -87,7 +87,7 @@ function NamespaceSelector({
                     >
                         <span>
                             <NamespaceIcon />
-                            <span className="pf-u-mx-xs" data-testid="namespace-name">
+                            <span className="pf-v5-u-mx-xs" data-testid="namespace-name">
                                 {namespace.name}
                             </span>
                         </span>
@@ -127,7 +127,7 @@ function NamespaceSelector({
 
     const namespaceSelectMenu = (
         <Menu onSelect={onNamespaceSelect} selected={selectedNamespaces} isScrollable>
-            <MenuSearch><MenuSearchInput className="pf-u-p-md">
+            <MenuSearch><MenuSearchInput className="pf-v5-u-p-md">
                 <SearchInput
                     value={input}
                     aria-label="Filter namespaces"
@@ -136,7 +136,7 @@ function NamespaceSelector({
                     onChange={(_event, value) => handleTextInputChange(value)}
                 />
             </MenuSearchInput></MenuSearch>
-            <Divider className="pf-u-m-0" />
+            <Divider className="pf-v5-u-m-0" />
             <MenuContent>
                 <MenuList>
                     {filteredDeploymentSelectMenuItems.length === 0 && (

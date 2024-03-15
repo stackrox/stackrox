@@ -103,7 +103,7 @@ function ByNameSelector({
                     const inputAriaLabel = `Select value ${index + 1} of ${
                         scopedResourceSelector.rule.values.length
                     } for the ${lowerCaseEntity} name`;
-                    const inputClassName = 'pf-u-flex-grow-1 pf-u-w-auto';
+                    const inputClassName = 'pf-v5-u-flex-grow-1 pf-v5-u-w-auto';
                     const inputOnChange = onChangeValue(scopedResourceSelector, index);
                     const errorMessage = parseInlineRuleError(validationErrors, index);
                     const inputValidated = errorMessage
@@ -155,9 +155,9 @@ function ByNameSelector({
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}
                                 >
-                                    <Icon color="var(--pf-global--Color--dark-200)">
+                                    <Icon color="var(--pf-v5-global--Color--dark-200)">
                                         <TrashIcon
-                                            className="pf-u-flex-shrink-1"
+                                            className="pf-v5-u-flex-shrink-1"
                                             style={{ cursor: 'pointer' }}
                                         />
                                     </Icon>

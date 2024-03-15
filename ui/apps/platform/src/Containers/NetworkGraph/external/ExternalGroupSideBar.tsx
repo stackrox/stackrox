@@ -74,17 +74,17 @@ function ExternalGroupSideBar({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
+                            <Text component={TextVariants.h2} className="pf-v5-u-font-size-xl">
                                 {externalGroupNode?.label}
                             </Text>
                         </TextContent>
                         <TextContent>
                             <Text
                                 component={TextVariants.h3}
-                                className="pf-u-font-size-sm pf-u-color-200"
+                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
                             >
                                 Connected entities outside your cluster
                             </Text>
@@ -94,7 +94,7 @@ function ExternalGroupSideBar({
             </StackItem>
             <Divider component="hr" />
             <StackItem isFilled style={{ overflow: 'auto' }}>
-                <Stack className="pf-u-p-md">
+                <Stack className="pf-v5-u-p-md">
                     <StackItem>
                         <Flex>
                             <FlexItem flex={{ default: 'flex_1' }}>
@@ -105,10 +105,10 @@ function ExternalGroupSideBar({
                             </FlexItem>
                         </Flex>
                     </StackItem>
-                    <Divider component="hr" className="pf-u-py-md" />
-                    <StackItem className="pf-u-pb-md">
-                        <Toolbar className="pf-u-p-0">
-                            <ToolbarContent className="pf-u-px-0">
+                    <Divider component="hr" className="pf-v5-u-py-md" />
+                    <StackItem className="pf-v5-u-pb-md">
+                        <Toolbar className="pf-v5-u-p-0">
+                            <ToolbarContent className="pf-v5-u-px-0">
                                 <ToolbarItem>
                                     <TextContent>
                                         <Text component={TextVariants.h3}>

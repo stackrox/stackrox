@@ -58,7 +58,7 @@ function NetworkPoliciesYAML({
     );
 
     return (
-        <div className="network-policies-yaml pf-u-h-100">
+        <div className="network-policies-yaml pf-v5-u-h-100">
             <CodeEditor
                 isDarkTheme={customDarkMode}
                 customControls={[

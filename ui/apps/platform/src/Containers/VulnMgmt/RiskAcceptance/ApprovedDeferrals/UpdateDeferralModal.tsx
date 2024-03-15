@@ -94,7 +94,7 @@ function UpdateDeferralFormModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 The deferral request updates will require another approval by your security lead.
             </div>
             <Form>

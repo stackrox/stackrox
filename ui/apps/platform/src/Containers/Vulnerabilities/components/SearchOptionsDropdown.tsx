@@ -33,7 +33,7 @@ function SearchOptionsDropdown({
             onSelect={onSearchOptionSelect}
             selections={searchOption.value}
             isOpen={isOpen}
-            className="pf-u-flex-basis-0"
+            className="pf-v5-u-flex-basis-0"
         >
             {children}
         </Select>

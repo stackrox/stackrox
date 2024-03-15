@@ -67,12 +67,12 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
+            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>Navigate to resources associated with this image</Text>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
                 {error && (
@@ -93,12 +93,12 @@ function ImagePageResources({ imageId, pagination }: ImagePageResourcesProps) {
                         isExpanded={deploymentTableToggle.isOpen}
                         style={
                             {
-                                '--pf-c-expandable-section__content--MarginTop':
-                                    'var(--pf-global--spacer--xs)',
+                                '--pf-v5-c-expandable-section__content--MarginTop':
+                                    'var(--pf-v5-global--spacer--xs)',
                             } as CSSProperties
                         }
                     >
-                        <div className="pf-u-background-color-100 pf-u-pt-sm">
+                        <div className="pf-v5-u-background-color-100 pf-v5-u-pt-sm">
                             <Pagination
                                 itemCount={deploymentCount}
                                 page={page}

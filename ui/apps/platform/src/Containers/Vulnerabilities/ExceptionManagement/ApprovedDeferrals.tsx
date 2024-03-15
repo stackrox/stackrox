@@ -138,7 +138,7 @@ function ApprovedDeferrals() {
                             isCompact
                         />
                     </ToolbarItem>
-                    <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {

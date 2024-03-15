@@ -30,7 +30,7 @@ function ClusterInitBundleResponseDetails({
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
             <FlexItem>
-                <TextContent className="pf-u-mb-md">
+                <TextContent className="pf-v5-u-mb-md">
                     Please copy the generated cluster init bundle YAML file and store it safely. You
                     will not be able to access it again after you close this window.
                 </TextContent>
@@ -45,7 +45,7 @@ function ClusterInitBundleResponseDetails({
                 </Button>
             </FlexItem>
             <FlexItem>
-                <TextContent className="pf-u-mb-md">
+                <TextContent className="pf-v5-u-mb-md">
                     Use the following file if you do not want your secrets to be managed by Helm.
                     Most users should use the Helm values file above instead.
                 </TextContent>

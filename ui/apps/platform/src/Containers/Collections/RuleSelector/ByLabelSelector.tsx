@@ -162,7 +162,7 @@ function ByLabelSelector({
                                             <TextInput
                                                 id={inputId}
                                                 aria-label={ariaLabel}
-                                                className="pf-u-flex-grow-1 pf-u-w-auto"
+                                                className="pf-v5-u-flex-grow-1 pf-v5-u-w-auto"
                                                 onChange={(_event, val) =>
                                                     onChangeLabelValue(
                                                         scopedResourceSelector,
@@ -184,7 +184,7 @@ function ByLabelSelector({
                                                 variant="plain"
                                                 onClick={() => onDeleteValue(ruleIndex, valueIndex)}
                                             >
-                                                <Icon color="var(--pf-global--Color--dark-200)">
+                                                <Icon color="var(--pf-v5-global--Color--dark-200)">
                                                     <TrashIcon style={{ cursor: 'pointer' }} />
                                                 </Icon>
                                             </Button>
@@ -209,11 +209,11 @@ function ByLabelSelector({
                 );
             })}
             {!isDisabled && (
-                <div className="pf-u-pt-md">
-                    <Divider component="div" className="pf-u-pb-md" />
+                <div className="pf-v5-u-pt-md">
+                    <Divider component="div" className="pf-v5-u-pb-md" />
                     <Button
                         aria-label={`Add ${lowerCaseEntity} label rule`}
-                        className="pf-u-p-0"
+                        className="pf-v5-u-p-0"
                         variant="link"
                         onClick={onAddLabelRule}
                     >

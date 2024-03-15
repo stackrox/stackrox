@@ -107,7 +107,7 @@ function DeleteClusterInitBundleConfirmationModal({
             ]}
         >
             <div>
-                <div className="pf-u-mb-md">
+                <div className="pf-v5-u-mb-md">
                     Bundle name: <strong>{bundleName}</strong>
                 </div>
                 {impactedClusters.length === 0 ? (
@@ -128,15 +128,15 @@ function DeleteClusterInitBundleConfirmationModal({
                                     In clusters that depend on this bundle, security deployments
                                     like Sensor will lose connectivity to Central.
                                 </p>
-                                <p className="pf-u-mt-md">
+                                <p className="pf-v5-u-mt-md">
                                     We recommend that you <strong>replace</strong> this bundle in
                                     dependent clusters <strong>before</strong> you delete it.
                                 </p>
                             </Alert>
                         )}
-                        <h2 className="pf-u-mt-md">
+                        <h2 className="pf-v5-u-mt-md">
                             <strong>Dependent clusters</strong>
-                            <Badge className="pf-u-ml-md" isRead>
+                            <Badge className="pf-v5-u-ml-md" isRead>
                                 {impactedClusters.length}
                             </Badge>
                         </h2>

@@ -91,7 +91,7 @@ function AdvancedFlowsFilter({
             </SelectGroup>
             <SelectGroup label="Ports">
                 <Select
-                    className="pf-u-px-md"
+                    className="pf-v5-u-px-md"
                     variant={SelectVariant.typeaheadMulti}
                     toggleAriaLabel="Select ports"
                     onToggle={onTogglePortsSelect}
