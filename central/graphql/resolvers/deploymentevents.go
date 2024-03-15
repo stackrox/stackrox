@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -252,8 +253,9 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 			}
 		}
 
-		timestamp, ok := convertTimestamp(indicator.GetSignal().GetName(), "indicator", indicator.GetSignal().GetTime())
-		if !ok {
+		timestamp, err := protocompat.ConvertTimestampToTimeOrError(indicator.GetSignal().GetTime())
+		if err != nil {
+			logTimestampConversionError(indicator.GetSignal().GetName(), "indicator", err)
 			continue
 		}
 		// -1 indicates we do not have parent UID information (either no parent exists or we do not know its UID).
@@ -366,8 +368,9 @@ func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v
 
 	policyViolationEvents := make([]*PolicyViolationEventResolver, 0, len(alerts))
 	for _, alert := range alerts {
-		timestamp, ok := convertTimestamp(alert.GetPolicy().GetName(), "alert", alert.GetTime())
-		if !ok {
+		timestamp, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
+		if err != nil {
+			logTimestampConversionError(alert.GetPolicy().GetName(), "alert", err)
 			continue
 		}
 		policy := alert.GetPolicy()

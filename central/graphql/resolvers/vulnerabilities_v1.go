@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter/utils"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -37,7 +37,7 @@ func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulne
 type EmbeddedVulnerabilityResolver struct {
 	ctx         context.Context
 	root        *Resolver
-	lastScanned *protoTypes.Timestamp
+	lastScanned *time.Time
 	data        *storage.EmbeddedVulnerability
 }
 
@@ -48,12 +48,12 @@ func (evr *EmbeddedVulnerabilityResolver) Suppressed(_ context.Context) bool {
 
 // SuppressActivation returns the time when the CVE was suppressed
 func (evr *EmbeddedVulnerabilityResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.data.GetSuppressActivation())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.GetSuppressActivation())
 }
 
 // SuppressExpiry returns the time when the CVE suppression expires
 func (evr *EmbeddedVulnerabilityResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.data.GetSuppressExpiry())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.GetSuppressExpiry())
 }
 
 // Vectors returns either the CVSSV2 or CVSSV3 data.
@@ -114,17 +114,23 @@ func (evr *EmbeddedVulnerabilityResolver) IsFixable(_ context.Context, _ RawQuer
 
 // LastScanned is the last time the vulnerability was scanned in an image.
 func (evr *EmbeddedVulnerabilityResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.lastScanned)
+	if evr.lastScanned == nil {
+		return nil, nil
+	}
+	return &graphql.Time{Time: *evr.lastScanned}, nil
 }
 
 // CreatedAt is the firsts time the vulnerability was scanned in an image. Unavailable in an image context.
 func (evr *EmbeddedVulnerabilityResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.lastScanned)
+	if evr.lastScanned == nil {
+		return nil, nil
+	}
+	return &graphql.Time{Time: *evr.lastScanned}, nil
 }
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
 func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
-	return timestamp(evr.data.FirstImageOccurrence)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.FirstImageOccurrence)
 }
 
 // VulnerabilityType returns the type of vulnerability
@@ -397,12 +403,12 @@ func (evr *EmbeddedVulnerabilityResolver) Severity(_ context.Context) string {
 
 // PublishedOn is the time the vulnerability was published (ref: NVD).
 func (evr *EmbeddedVulnerabilityResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.data.GetPublishedOn())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.GetPublishedOn())
 }
 
 // LastModified is the time the vulnerability was last modified (ref: NVD).
 func (evr *EmbeddedVulnerabilityResolver) LastModified(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.data.GetLastModified())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.GetLastModified())
 }
 
 // ImpactScore returns the impact score of the vulnerability.
