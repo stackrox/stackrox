@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -221,7 +220,7 @@ func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
 				return
 			}
 			if f.Verbose {
-				log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+				log.Infof("%s Event: %s", msg.Action, msg.ObjectType)
 			}
 			if err := f.createEvent(msg, ch); err != nil {
 				errorCh <- errors.Wrapf(err, "cannot create event for %s", msg.ObjectType)
