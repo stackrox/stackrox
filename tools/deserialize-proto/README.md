@@ -1,6 +1,6 @@
 # deserialize-proto
 
-Internal too to deserialize central database objects for debugging purposes. 
+Internal tool to deserialize central database objects for debugging purposes. 
 
 ## Usage
 
