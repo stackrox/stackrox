@@ -153,7 +153,7 @@ function ClusterSelection({
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Clusters</Title>
                     </FlexItem>
@@ -161,7 +161,7 @@ function ClusterSelection({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg" ref={alertRef}>
+            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
                 {formikTouched.clusters && formikValues.clusters.length === 0 && (
                     <Alert
                         title="At least one cluster is required to proceed"

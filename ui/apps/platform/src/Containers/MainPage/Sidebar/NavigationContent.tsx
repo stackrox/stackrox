@@ -9,7 +9,7 @@ const badgeMap: Record<string, ReactElement> = {
             isCompact
             style={
                 {
-                    '--pf-c-label--BackgroundColor': 'var(--pf-global--disabled-color--200)',
+                    '--pf-v5-c-label--BackgroundColor': 'var(--pf-v5-global--disabled-color--200)',
                 } as CSSProperties
             }
         >

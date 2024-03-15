@@ -121,7 +121,7 @@ function PermissionSetForm({
 
     return (
         <Form id="permission-set-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
@@ -195,7 +195,7 @@ function PermissionSetForm({
                     </p>
                     <p>
                         <strong>{defaultMinimalReadAccessResources.join(', ')}</strong>
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {defaultMinimalReadAccessResources.length}
                         </Badge>
                     </p>

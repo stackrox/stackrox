@@ -221,7 +221,7 @@ function DeploymentVulnerabilitiesTable({
                                 <ExpandableRowContent>
                                     {summary && images.length > 0 ? (
                                         <>
-                                            <p className="pf-u-mb-md">{summary}</p>
+                                            <p className="pf-v5-u-mb-md">{summary}</p>
                                             <DeploymentComponentVulnerabilitiesTable
                                                 images={images}
                                                 cve={cve}

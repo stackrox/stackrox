@@ -79,7 +79,7 @@ function ViewScanConfigDetail({
     return (
         <>
             <PageTitle title="Compliance Scan Schedule Details" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedScanConfigsPath}>
                         Scan schedules
@@ -95,7 +95,7 @@ function ViewScanConfigDetail({
                     <>
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-u-py-lg pf-u-px-lg"
+                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
                         >
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
@@ -135,7 +135,7 @@ function ViewScanConfigDetail({
                             <Alert
                                 title={alertObj.title}
                                 variant={alertObj.type}
-                                className="pf-u-mb-lg pf-u-mx-lg"
+                                className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
                                 component="h2"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >

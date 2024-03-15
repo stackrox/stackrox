@@ -27,7 +27,7 @@ const NotFoundMessage = ({
     const isButtonVisible = actionText && onClick;
     const isLinkVisible = actionText && url;
     return (
-        <Bullseye className="pf-u-flex-grow-1">
+        <Bullseye className="pf-v5-u-flex-grow-1">
             <EmptyState>
                 <EmptyStateHeader titleText={<>{title}</>} headingLevel="h1" /><EmptyStateFooter>
                 {message && <EmptyStateBody>{message}</EmptyStateBody>}

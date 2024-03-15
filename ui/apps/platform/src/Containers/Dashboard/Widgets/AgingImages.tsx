@@ -230,7 +230,7 @@ function AgingImages() {
                                                     aria-label="Toggle image time range"
                                                     id={`${fieldIdPrefix}-time-range-${index}`}
                                                     name={`${fieldIdPrefix}-time-range-${index}`}
-                                                    className="pf-u-mb-sm pf-u-display-flex pf-u-align-items-center"
+                                                    className="pf-v5-u-mb-sm pf-v5-u-display-flex pf-v5-u-align-items-center"
                                                     isChecked={timeRanges[index].enabled}
                                                     onChange={() =>
                                                         dispatch({ type: 'toggle', index })

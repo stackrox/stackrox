@@ -100,7 +100,7 @@ describe('Administration Events table', () => {
         visitAdministrationEventFromTableRow(0, staticResponseMapForEvent);
 
         interactAndWaitForAdministrationEvents(() => {
-            cy.get('a.pf-c-breadcrumb__link:contains("Administration events")').click();
+            cy.get('a.pf-v5-c-breadcrumb__link:contains("Administration events")').click();
         }, staticResponseMapForEvents);
     });
 

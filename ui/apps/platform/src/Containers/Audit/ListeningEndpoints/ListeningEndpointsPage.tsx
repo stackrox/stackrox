@@ -145,14 +145,14 @@ function ListeningEndpointsPage() {
             <PageSection
                 id="listening-endpoints-page"
                 isFilled
-                className="pf-u-display-flex pf-u-flex-direction-column"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
             >
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup className="pf-u-flex-grow-1">
+                        <ToolbarGroup className="pf-v5-u-flex-grow-1">
                             <ToolbarItem
                                 variant="search-filter"
-                                className="pf-u-display-flex pf-u-flex-grow-1"
+                                className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
                             >
                                 <Select
                                     variant="single"
@@ -162,7 +162,7 @@ function ListeningEndpointsPage() {
                                     onSelect={onEntitySelect}
                                     selections={entity}
                                     isOpen={entityToggle.isOpen}
-                                    className="pf-u-flex-basis-0"
+                                    className="pf-v5-u-flex-basis-0"
                                 >
                                     <SelectOption key="Deployment" value="Deployment">
                                         Deployment
@@ -190,7 +190,7 @@ function ListeningEndpointsPage() {
                                     onTypeaheadInputChanged={(val: string) => {
                                         updateSearchValue(val);
                                     }}
-                                    className="pf-u-flex-grow-1"
+                                    className="pf-v5-u-flex-grow-1"
                                 >
                                     {autoCompleteData?.searchAutocomplete?.map((value) => (
                                         <SelectOption key={value} value={value} />
@@ -215,7 +215,7 @@ function ListeningEndpointsPage() {
                             </ToolbarItem>
                         </ToolbarGroup>
 
-                        <ToolbarGroup className="pf-u-w-100">
+                        <ToolbarGroup className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 filterChipGroupDescriptors={[
                                     { displayName: 'Deployment', searchFilterName: 'Deployment' },
@@ -226,14 +226,14 @@ function ListeningEndpointsPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <div className="pf-u-background-color-100">
+                <div className="pf-v5-u-background-color-100">
                     {error && (
                         <Bullseye>
                             <EmptyStateTemplate
                                 title="Error loading deployments with listening endpoints"
                                 headingLevel="h2"
                                 icon={ExclamationCircleIcon}
-                                iconClassName="pf-u-danger-color-100"
+                                iconClassName="pf-v5-u-danger-color-100"
                             >
                                 {getAxiosErrorMessage(error.message)}
                             </EmptyStateTemplate>

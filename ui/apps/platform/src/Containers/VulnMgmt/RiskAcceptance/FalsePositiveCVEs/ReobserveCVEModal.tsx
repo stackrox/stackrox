@@ -95,7 +95,7 @@ function ReobserveCVEModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 Reobserving a false positive will return the CVE into the vulnerability management
                 workflow.
             </div>

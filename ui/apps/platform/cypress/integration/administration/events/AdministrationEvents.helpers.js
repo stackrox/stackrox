@@ -79,13 +79,13 @@ export function getDescriptionListTermSelector(term) {
 }
 
 function getToggleSelector(label) {
-    return `button.pf-c-select__toggle[aria-label="${label}"]`;
+    return `button.pf-v5-c-select__toggle[aria-label="${label}"]`;
 }
 
 export function selectFilter(label, item) {
     const toggleSelector = getToggleSelector(label);
     cy.get(toggleSelector).click();
     cy.get(
-        `${toggleSelector} + ul.pf-c-select__menu button.pf-c-select__menu-item:contains("${item}")`
+        `${toggleSelector} + ul.pf-v5-c-select__menu button.pf-v5-c-select__menu-item:contains("${item}")`
     ).click();
 }

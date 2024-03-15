@@ -179,7 +179,7 @@ function IntegrationsTable({
                                     },
                                     {
                                         title: (
-                                            <div className="pf-u-danger-color-100">
+                                            <div className="pf-v5-u-danger-color-100">
                                                 Delete Integration
                                             </div>
                                         ),
@@ -243,7 +243,7 @@ function IntegrationsTable({
                                                     !permissions[source].write ||
                                                     !isUserResource(integration.traits),
                                             }}
-                                            className="pf-u-text-align-right"
+                                            className="pf-v5-u-text-align-right"
                                         />
                                     </Tr>
                                 );

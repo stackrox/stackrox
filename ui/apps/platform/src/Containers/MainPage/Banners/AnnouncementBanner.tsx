@@ -35,16 +35,16 @@ function AnnouncementBanner(): ReactElement | null {
     if (isDisplayed && databaseType !== 'PostgresDB') {
         return (
             <Banner
-                className="pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
+                className="pf-v5-u-display-flex pf-v5-u-justify-content-center pf-v5-u-align-items-center"
                 variant={'blue'}
                 style={{ whiteSpace: 'normal' }}
             >
-                <span className="pf-u-text-align-center">
+                <span className="pf-v5-u-text-align-center">
                     Red Hat Advanced Cluster Security plans to change its database to PostgreSQL in
                     an upcoming major release. This change will require you to back up your database
                     before upgrading.
                 </span>
-                <Button className="pf-u-ml-md" onClick={handleDismissClick} variant="link" isInline>
+                <Button className="pf-v5-u-ml-md" onClick={handleDismissClick} variant="link" isInline>
                     dismiss
                 </Button>
             </Banner>

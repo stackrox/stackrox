@@ -66,7 +66,7 @@ function CollectionsFormPage({
     pageAction,
 }: CollectionsFormPageProps) {
     const history = useHistory();
-    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-global--breakpoint--xl
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
 
     const { analyticsTrack } = useAnalytics();
@@ -163,7 +163,7 @@ function CollectionsFormPage({
                         </Button>
                         {collectionErrorId === id ? (
                             <Tooltip content="This collection forms a loop with its parent and cannot be attached">
-                                <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />
+                                <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                             </Tooltip>
                         ) : null}
                     </Flex>
@@ -181,7 +181,7 @@ function CollectionsFormPage({
     if (error) {
         content = (
             <>
-                <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
+                <Breadcrumb className="pf-v5-u-my-xs pf-v5-u-px-lg pf-v5-u-py-md">
                     <BreadcrumbItemLink to={collectionsBasePath}>Collections</BreadcrumbItemLink>
                 </Breadcrumb>
                 <Divider component="div" />
@@ -231,7 +231,7 @@ function CollectionsFormPage({
                 getCollectionTableCells={getCollectionTableCells}
                 headerContent={
                     <>
-                        <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
+                        <Breadcrumb className="pf-v5-u-my-xs pf-v5-u-px-lg pf-v5-u-py-md">
                             <BreadcrumbItemLink to={collectionsBasePath}>
                                 Collections
                             </BreadcrumbItemLink>
@@ -239,11 +239,11 @@ function CollectionsFormPage({
                         </Breadcrumb>
                         <Divider component="div" />
                         <Flex
-                            className="pf-u-p-lg"
+                            className="pf-v5-u-p-lg"
                             direction={{ default: 'column', md: 'row' }}
                             alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
                         >
-                            <Title className="pf-u-flex-grow-1" headingLevel="h1">
+                            <Title className="pf-v5-u-flex-grow-1" headingLevel="h1">
                                 {pageName}
                             </Title>
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
@@ -293,7 +293,7 @@ function CollectionsFormPage({
                                             ]}
                                         />
                                         <Divider
-                                            className="pf-u-px-xs"
+                                            className="pf-v5-u-px-xs"
                                             orientation={{ default: 'vertical' }}
                                         />
                                     </>
@@ -313,7 +313,7 @@ function CollectionsFormPage({
                         <div ref={configErrorAlertElem}>
                             {configError && (
                                 <Alert
-                                    className="pf-u-m-md"
+                                    className="pf-v5-u-m-md"
                                     title={configError.message}
                                     variant="danger"
                                     isInline
@@ -332,7 +332,7 @@ function CollectionsFormPage({
     }
 
     return (
-        <PageSection className="pf-u-h-100" padding={{ default: 'noPadding' }}>
+        <PageSection className="pf-v5-u-h-100" padding={{ default: 'noPadding' }}>
             <PageTitle title={getPageTitle(pageAction, data)} />
             {content}
             {modalCollectionId && (

@@ -5,7 +5,7 @@ import AccessControlHeading from './AccessControlHeading';
 
 // Separate list from the title with same margin-top as second list item from the first.
 const styleList = {
-    marginTop: 'var(--pf-c-list--li--MarginTop)',
+    marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
 } as CSSProperties;
 
 function AccessControlRouteNotFound(): ReactElement {

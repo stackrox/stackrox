@@ -32,13 +32,13 @@ function RequestCommentsModal({
                 {comments.map((comment) => {
                     return (
                         <FlexItem spacer={{ default: 'spacerLg' }}>
-                            <Hint className="pf-u-p-md">
-                                <HintTitle className="pf-u-font-size-sm pf-u-font-weight-bold">
+                            <Hint className="pf-v5-u-p-md">
+                                <HintTitle className="pf-v5-u-font-size-sm pf-v5-u-font-weight-bold">
                                     {/* @TODO: Show a more descriptive text other than just the commenter's name */}
                                     {comment.user.name}
                                 </HintTitle>
-                                <HintBody className="pf-u-font-size-sm">{comment.message}</HintBody>
-                                <HintFooter className="pf-u-font-size-xs">
+                                <HintBody className="pf-v5-u-font-size-sm">{comment.message}</HintBody>
+                                <HintFooter className="pf-v5-u-font-size-xs">
                                     {getDateTime(comment.createdAt)}
                                 </HintFooter>
                             </Hint>

@@ -250,7 +250,7 @@ function SyslogIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="syslog.extraFields"
                                 render={(arrayHelpers) => (
@@ -333,7 +333,7 @@ function SyslogIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

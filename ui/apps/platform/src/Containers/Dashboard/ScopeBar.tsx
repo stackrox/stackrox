@@ -81,8 +81,8 @@ function ScopeBar() {
     }
 
     return (
-        <Toolbar className="pf-u-p-0">
-            <ToolbarContent className="pf-u-p-0">
+        <Toolbar className="pf-v5-u-p-0">
+            <ToolbarContent className="pf-v5-u-p-0">
                 <ToolbarItem>
                     <div>Resources:</div>
                 </ToolbarItem>

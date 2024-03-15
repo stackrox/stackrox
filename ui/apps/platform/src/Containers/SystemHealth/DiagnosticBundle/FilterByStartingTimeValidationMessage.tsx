@@ -15,22 +15,22 @@ type Style = {
 
 const styleDefault: Style = {
     Icon: InfoCircleIcon,
-    fgColor: 'pf-u-info-color-100',
+    fgColor: 'pf-v5-u-info-color-100',
 };
 
 const styleValid: Style = {
     Icon: CheckIcon,
-    fgColor: 'pf-u-success-color-100',
+    fgColor: 'pf-v5-u-success-color-100',
 };
 
 const styleFuture: Style = {
     Icon: BanIcon,
-    fgColor: 'pf-u-danger-color-100', // alert because it time is complete and incorrect
+    fgColor: 'pf-v5-u-danger-color-100', // alert because it time is complete and incorrect
 };
 
 const styleInvalid: Style = {
     Icon: ExclamationTriangleIcon,
-    fgColor: 'pf-u-warning-color-100', // warning because time might be incomplete
+    fgColor: 'pf-v5-u-warning-color-100', // warning because time might be incomplete
 };
 
 type FilterByStartingTimeValidationMessageProps = {

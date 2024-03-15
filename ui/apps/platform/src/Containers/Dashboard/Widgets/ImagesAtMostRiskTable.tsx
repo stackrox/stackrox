@@ -68,18 +68,18 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
         <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th width={35} className="pf-u-pl-0">
+                    <Th width={35} className="pf-v5-u-pl-0">
                         {columnNames.imageName}
                     </Th>
-                    <Th className="pf-u-text-align-center-on-md">{columnNames.riskPriority}</Th>
+                    <Th className="pf-v5-u-text-align-center-on-md">{columnNames.riskPriority}</Th>
                     <Th>{columnNames.criticalCves}</Th>
-                    <Th className="pf-u-pr-0">{columnNames.importantCves}</Th>
+                    <Th className="pf-v5-u-pr-0">{columnNames.importantCves}</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {images.map(({ id, name, priority, imageVulnerabilityCounter }) => (
                     <Tr key={id}>
-                        <Td className="pf-u-pl-0" dataLabel={columnNames.imageName}>
+                        <Td className="pf-v5-u-pl-0" dataLabel={columnNames.imageName}>
                             <Link
                                 to={linkToImage(id)}
                                 scroll={(el: HTMLElement) =>
@@ -99,14 +99,14 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                             </Link>
                         </Td>
                         <Td
-                            className="pf-u-text-align-center-on-md"
+                            className="pf-v5-u-text-align-center-on-md"
                             dataLabel={columnNames.riskPriority}
                         >
                             {priority}
                         </Td>
                         <Td dataLabel={columnNames.criticalCves}>
                             <CriticalSeverityIcon
-                                className="pf-u-display-inline pf-u-mr-xs"
+                                className="pf-v5-u-display-inline pf-v5-u-mr-xs"
                                 color={
                                     countCritical(imageVulnerabilityCounter, cveStatusOption) === 0
                                         ? noViolationsColor
@@ -119,9 +119,9 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                                     : `${imageVulnerabilityCounter.critical.total} CVEs`}
                             </span>
                         </Td>
-                        <Td className="pf-u-pr-0" dataLabel={columnNames.importantCves}>
+                        <Td className="pf-v5-u-pr-0" dataLabel={columnNames.importantCves}>
                             <ImportantSeverityIcon
-                                className="pf-u-display-inline pf-u-mr-xs"
+                                className="pf-v5-u-display-inline pf-v5-u-mr-xs"
                                 color={
                                     countImportant(imageVulnerabilityCounter, cveStatusOption) === 0
                                         ? noViolationsColor

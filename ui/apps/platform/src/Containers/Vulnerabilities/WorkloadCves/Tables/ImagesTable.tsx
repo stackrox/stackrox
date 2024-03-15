@@ -147,7 +147,7 @@ function ImagesTable({
                         <Tbody
                             key={id}
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                         >
                             <Tr>
@@ -159,7 +159,7 @@ function ImagesTable({
                                                     isCompact
                                                     variant="outline"
                                                     color="grey"
-                                                    className="pf-u-mt-xs"
+                                                    className="pf-v5-u-mt-xs"
                                                     icon={<EyeIcon />}
                                                 >
                                                     Watched image

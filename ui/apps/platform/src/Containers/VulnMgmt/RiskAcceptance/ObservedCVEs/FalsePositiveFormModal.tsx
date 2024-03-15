@@ -115,7 +115,7 @@ function FalsePositiveFormModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 CVEs will be marked as false positive and removed from the vulnerability management
                 workflow
             </div>

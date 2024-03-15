@@ -84,7 +84,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
 
     function scrollToTop() {
         // wizard does not by default scroll to top of body when navigating to a step
-        document.getElementsByClassName('pf-c-wizard__main')[0].scrollTop = 0;
+        document.getElementsByClassName('pf-v5-c-wizard__main')[0].scrollTop = 0;
     }
 
     function onBack(newStep): void {
@@ -137,13 +137,13 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
 
     return (
         <>
-            <PageSection variant="light" isFilled id="policy-page" className="pf-u-pb-0">
-                <Breadcrumb className="pf-u-mb-md">
+            <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
+                <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
                 </Breadcrumb>
                 <Title headingLevel="h1">{policy?.name || 'Create policy'}</Title>
-                <div className="pf-u-mb-md pf-u-mt-sm">
+                <div className="pf-v5-u-mb-md pf-v5-u-mt-sm">
                     Design custom security policies for your environment
                 </div>
                 <Divider component="div" />
@@ -153,7 +153,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 isFilled
                 hasOverflowScroll
                 padding={{ default: 'noPadding' }}
-                className="pf-u-h-100"
+                className="pf-v5-u-h-100"
             >
                 <FormikProvider value={formik}>
                     <Wizard

@@ -79,7 +79,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
             <Button
                 variant="tertiary"
                 onClick={handleModalToggle}
-                icon={<Globe className="pf-u-mr-sm" />}
+                icon={<Globe className="pf-v5-u-mr-sm" />}
                 countOptions={{
                     isRead: true,
                     count: totalFilters,

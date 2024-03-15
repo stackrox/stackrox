@@ -386,7 +386,7 @@ function ClustersTablePanel({
     return (
         <>
             <PageSection variant="light" component="div">
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
                         <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
@@ -441,13 +441,13 @@ function ClustersTablePanel({
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <ToolbarGroup
                             variant="filter-group"
-                            className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
+                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
-                            <ToolbarItem variant="search-filter" className="pf-u-w-100">
+                            <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
                                 <SearchFilterInput
                                     className="w-full"
                                     searchFilter={searchFilter}

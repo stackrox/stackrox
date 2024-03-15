@@ -3,15 +3,15 @@
 }
 
 .policy-section-card-header {
-    border-bottom: 1px solid var(--pf-global--BorderColor--100);
+    border-bottom: 1px solid var(--pf-v5-global--BorderColor--100);
 }
 
 .policy-section-card-body {
     overflow: auto;
-    padding-top: var(--pf-global--spacer--md);
+    padding-top: var(--pf-v5-global--spacer--md);
 }
 
-#policy-sections article.pf-c-card.policy-section-card {
+#policy-sections article.pf-v5-c-card.policy-section-card {
     width: 100%;
 }
 
@@ -24,7 +24,7 @@
     }
 
     .policy-section-card-header {
-        background-color: var(--pf-global--BackgroundColor--100);
+        background-color: var(--pf-v5-global--BackgroundColor--100);
         position: sticky;
         top: 0;
         z-index: 101;

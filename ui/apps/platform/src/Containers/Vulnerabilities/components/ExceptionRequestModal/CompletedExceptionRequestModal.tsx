@@ -105,7 +105,7 @@ function CompletedExceptionRequestModal({
                 <ClipboardCopy isReadOnly hoverTip="Copy" clickTip="Copied">
                     {exceptionRequestURL}
                 </ClipboardCopy>
-                <DescriptionList columnModifier={{ default: '2Col' }} className="pf-u-pt-md">
+                <DescriptionList columnModifier={{ default: '2Col' }} className="pf-v5-u-pt-md">
                     <DescriptionListGroup>
                         <DescriptionListTerm>Requested action</DescriptionListTerm>
                         <DescriptionListDescription>{requestedAction}</DescriptionListDescription>

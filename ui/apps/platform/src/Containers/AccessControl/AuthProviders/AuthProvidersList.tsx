@@ -15,7 +15,7 @@ import { getOriginLabel } from '../traits';
 // TODO import from where?
 const unselectedRowStyle = {};
 const selectedRowStyle = {
-    borderLeft: '3px solid var(--pf-global--primary-color--100)',
+    borderLeft: '3px solid var(--pf-v5-global--primary-color--100)',
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
@@ -117,7 +117,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                             },
                                         ],
                                     }}
-                                    className="pf-u-text-align-right"
+                                    className="pf-v5-u-text-align-right"
                                 />
                             </Tr>
                         );

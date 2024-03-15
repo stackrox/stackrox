@@ -46,7 +46,7 @@ function DelegatedScanningSettings({
         clusters.find((cluster) => selectedClusterId === cluster.id)?.name ?? 'None';
 
     return (
-        <Card className="pf-u-mb-lg">
+        <Card className="pf-v5-u-mb-lg">
             <CardBody>
                 <FormLabelGroup
                     label="Select default cluster to delegate to"

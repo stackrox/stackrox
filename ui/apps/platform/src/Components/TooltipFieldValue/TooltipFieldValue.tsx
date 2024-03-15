@@ -6,13 +6,13 @@ import { Icon } from '@patternfly/react-core';
 // TODO import the following function components:
 
 export const DangerIcon = (props: SVGIconProps) => (
-    <Icon color="var(--pf-global--danger-color--100)">
+    <Icon color="var(--pf-v5-global--danger-color--100)">
         <ExclamationCircleIcon {...props} />
     </Icon>
 );
 
 export const WarningIcon = (props: SVGIconProps) => (
-    <Icon color="var(--pf-global--warning-color--100)">
+    <Icon color="var(--pf-v5-global--warning-color--100)">
         <ExclamationTriangleIcon {...props} />
     </Icon>
 );
@@ -20,7 +20,7 @@ export const WarningIcon = (props: SVGIconProps) => (
 type IconType = 'danger' | 'warning';
 
 function getIcon(type?: IconType): ReactElement | null {
-    const className = 'pf-u-display-inline pf-u-ml-sm';
+    const className = 'pf-v5-u-display-inline pf-v5-u-ml-sm';
 
     switch (type) {
         case 'danger':

@@ -63,7 +63,7 @@ function DeploymentPage() {
     return (
         <>
             <PageTitle title={`Workload CVEs - Deployment ${deploymentName ?? ''}`} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
                         Deployments
@@ -98,7 +98,7 @@ function DeploymentPage() {
                         <DeploymentPageHeader data={metadataRequest.data?.deployment} />
                     </PageSection>
                     <PageSection
-                        className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                         padding={{ default: 'noPadding' }}
                     >
                         <Tabs
@@ -108,12 +108,12 @@ function DeploymentPage() {
                                 pagination.setPage(1);
                             }}
                             component={TabsComponent.nav}
-                            className="pf-u-pl-md pf-u-background-color-100"
+                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                             mountOnEnter
                             unmountOnExit
                         >
                             <Tab
-                                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
@@ -123,14 +123,14 @@ function DeploymentPage() {
                                 />
                             </Tab>
                             <Tab
-                                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                                 eventKey="Details"
                                 title={<TabTitleText>Details</TabTitleText>}
                             >
                                 <DeploymentPageDetails deploymentId={deploymentId} />
                             </Tab>
                             <Tab
-                                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                                 eventKey="Resources"
                                 title={<TabTitleText>Resources</TabTitleText>}
                             >

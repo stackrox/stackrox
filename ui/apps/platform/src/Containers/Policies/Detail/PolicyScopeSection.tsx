@@ -21,7 +21,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
         <>
             {scope?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                    <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                         Scope inclusions
                     </Title>
                     <Grid hasGutter md={12} xl={6}>
@@ -43,7 +43,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
             )}
             {excludedDeploymentScopes?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                    <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                         Scope exclusions
                     </Title>
                     <Grid hasGutter md={12} xl={6}>
@@ -65,7 +65,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
             )}
             {excludedImageNames?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                    <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                         Image exclusions
                     </Title>
                     <List isPlain>
