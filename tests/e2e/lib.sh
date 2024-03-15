@@ -1058,18 +1058,6 @@ _record_build_info() {
     update_job_record "build" "${build_info}"
 }
 
-# TODO(ROX-22872): remove
-restore_56_1_backup() {
-    info "Restoring a 56.1 backup"
-
-    require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
-
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-        central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
-}
-
 restore_4_1_postgres_backup() {
     info "Restoring a 4.1 postgres backup"
 
