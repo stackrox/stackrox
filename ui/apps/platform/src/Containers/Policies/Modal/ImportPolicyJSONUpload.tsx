@@ -61,7 +61,7 @@ function ImportPolicyJSONUpload({
                 <FileUpload
                     id="policies-json-import"
                     type="text"
-                    className="pf-u-mt-md"
+                    className="pf-v5-u-mt-md"
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
@@ -75,7 +75,7 @@ function ImportPolicyJSONUpload({
                     }}
                 />
                 {policies?.length > 0 && fileContent !== '' && (
-                    <Flex direction={{ default: 'column' }} className="pf-u-mt-md">
+                    <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-md">
                         <FlexItem>
                             <Title headingLevel="h3">
                                 The following {`${pluralize('policy', policies.length)}`} will be
@@ -84,7 +84,7 @@ function ImportPolicyJSONUpload({
                         </FlexItem>
                         <FlexItem data-testid="policies-to-import">
                             {policies.map(({ id, name }, idx) => (
-                                <div key={id} className={idx === 0 ? '' : 'pf-u-pt-sm'}>
+                                <div key={id} className={idx === 0 ? '' : 'pf-v5-u-pt-sm'}>
                                     {name}
                                 </div>
                             ))}

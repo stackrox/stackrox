@@ -26,14 +26,14 @@ function DetailedTooltipContent({
 
     const styleConstant = {
         overflow: 'scroll',
-        '--pf-u-max-height--MaxHeight': '75vh',
+        '--pf-v5-u-max-height--MaxHeight': '75vh',
     } as CSSProperties;
 
     return (
-        <div className={`pf-u-max-height ${extraClassName}`} style={styleConstant}>
+        <div className={`pf-v5-u-max-height ${extraClassName}`} style={styleConstant}>
             <div>
                 <Text
-                    className="pf-u-font-weight-bold"
+                    className="pf-v5-u-font-weight-bold"
                     component={TextVariants.h3}
                     data-testid="tooltip-title"
                 >

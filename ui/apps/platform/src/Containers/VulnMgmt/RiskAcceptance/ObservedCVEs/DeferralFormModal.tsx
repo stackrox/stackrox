@@ -135,7 +135,7 @@ function DeferralFormModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 CVEs will be marked as deferred after approval by your security lead.
             </div>
             <Form>

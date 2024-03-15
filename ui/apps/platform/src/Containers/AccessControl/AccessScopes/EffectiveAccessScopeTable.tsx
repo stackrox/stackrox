@@ -179,7 +179,7 @@ function EffectiveAccessScopeTable({
                 <TreeRowWrapper
                     key={namespaceId}
                     row={{ props: namespaceProps }}
-                    className="pf-u-background-color-200"
+                    className="pf-v5-u-background-color-200"
                 >
                     <Td
                         dataLabel="Namespace name"
@@ -250,12 +250,12 @@ function EffectiveAccessScopeTable({
 
     return (
         <>
-            <Flex className="pf-u-pt-sm pf-u-pb-sm pf-u-pl-lg">
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
+            <Flex className="pf-v5-u-pt-sm pf-v5-u-pb-sm pf-v5-u-pl-lg">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
                     <FlexItem>
                         <label
                             htmlFor="Cluster_filter"
-                            className="pf-u-font-size-sm pf-u-text-nowrap"
+                            className="pf-v5-u-font-size-sm pf-v5-u-text-nowrap"
                         >
                             Cluster filter:
                         </label>
@@ -272,11 +272,11 @@ function EffectiveAccessScopeTable({
                         <Badge isRead>{`${clusterFilterCount} / ${clusters.length}`}</Badge>
                     </FlexItem>
                 </Flex>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
                     <FlexItem>
                         <label
                             htmlFor="Namespace_filter"
-                            className="pf-u-font-size-sm pf-u-text-nowrap"
+                            className="pf-v5-u-font-size-sm pf-v5-u-text-nowrap"
                         >
                             Namespace filter:
                         </label>
@@ -301,7 +301,7 @@ function EffectiveAccessScopeTable({
                             <Th width={40}>Cluster name</Th>
                             <Th
                                 modifier="fitContent"
-                                className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
+                                className={counterComputing === 0 ? '' : '--pf-v5-global--Color--200'}
                             >
                                 Allowed
                             </Th>

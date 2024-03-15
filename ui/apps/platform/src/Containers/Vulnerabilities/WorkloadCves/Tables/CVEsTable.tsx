@@ -211,7 +211,7 @@ function CVEsTable({
                         <Tbody
                             key={cve}
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                             isExpanded={isExpanded}
                         >
@@ -277,7 +277,7 @@ function CVEsTable({
                                     />
                                 )}
                                 {createTableActions && (
-                                    <Td className="pf-u-px-0">
+                                    <Td className="pf-v5-u-px-0">
                                         <ActionsColumn
                                             menuAppendTo={() => document.body}
                                             items={createTableActions({

@@ -15,22 +15,22 @@ import { CheckCircleIcon } from '@patternfly/react-icons';
 function AddClusterPrompt() {
     return (
         <EmptyState>
-            <EmptyStateHeader icon={<EmptyStateIcon icon={CheckCircleIcon} color="var(--pf-global--success-color--100)" />} /><EmptyStateFooter><p className="pf-u-font-weight-normal">
+            <EmptyStateHeader icon={<EmptyStateIcon icon={CheckCircleIcon} color="var(--pf-v5-global--success-color--100)" />} /><EmptyStateFooter><p className="pf-v5-u-font-weight-normal">
                 You have successfully deployed a Red Hat Advanced Cluster Security platform. Now you
                 can configure the clusters you want to secure.
             </p>
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}
                 justifyContent={{ default: 'justifyContentCenter' }}
-                className="pf-u-text-align-center"
+                className="pf-v5-u-text-align-center"
                 direction={{ default: 'column' }}
             >
-                <FlexItem className="pf-u-w-66 pf-u-pt-xl">
-                    <TextContent className="pf-u-mb-md">
-                        <Text component={TextVariants.h2} className="pf-u-font-size-2xl">
+                <FlexItem className="pf-v5-u-w-66 pf-v5-u-pt-xl">
+                    <TextContent className="pf-v5-u-mb-md">
+                        <Text component={TextVariants.h2} className="pf-v5-u-font-size-2xl">
                             Configure the clusters you want to secure.
                         </Text>
-                        <Text component={TextVariants.p} className="pf-u-font-weight-normal">
+                        <Text component={TextVariants.p} className="pf-v5-u-font-weight-normal">
                             Follow the instructions to add secured clusters for Central to monitor.
                             <br />
                             Upon successful installation, secured clusters are listed here.

@@ -10,9 +10,9 @@ import {
 
 import { EffectiveAccessScopeState } from 'services/AccessScopesService';
 
-const notAllowedColor = 'var(--pf-global--danger-color--100)';
-const allowedColor = 'var(--pf-global--success-color--100)';
-const unknownColor = 'var(--pf-global--warning-color--100)';
+const notAllowedColor = 'var(--pf-v5-global--danger-color--100)';
+const allowedColor = 'var(--pf-v5-global--success-color--100)';
+const unknownColor = 'var(--pf-v5-global--warning-color--100)';
 
 /*
  * Tooltip has key prop to replace the previous tooltip if status changes.

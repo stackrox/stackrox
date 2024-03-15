@@ -189,12 +189,12 @@ function ViolationsTablePanel({
                 ))}
             </AlertGroup>
             <Flex
-                className="pf-u-pb-md"
+                className="pf-v5-u-pb-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
                 fullWidth={{ default: 'fullWidth' }}
             >
                 <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Title headingLevel="h2" className="pf-u-color-100">
+                    <Title headingLevel="h2" className="pf-v5-u-color-100">
                         {pluralize(violationsCount, 'result')} found
                     </Title>
                 </FlexItem>

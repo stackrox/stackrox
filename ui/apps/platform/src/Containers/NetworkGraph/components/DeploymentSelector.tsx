@@ -58,7 +58,7 @@ function DeploymentSelector({
                     >
                         <span>
                             <DeploymentIcon />
-                            <span className="pf-u-mx-xs" data-testid="deployment-name">
+                            <span className="pf-v5-u-mx-xs" data-testid="deployment-name">
                                 {deployment.name}
                             </span>
                         </span>
@@ -99,7 +99,7 @@ function DeploymentSelector({
 
     const deploymentSelectMenu = (
         <Menu onSelect={onDeploymentSelect} selected={selectedDeployments} isScrollable>
-            <MenuSearch><MenuSearchInput className="pf-u-p-md">
+            <MenuSearch><MenuSearchInput className="pf-v5-u-p-md">
                 <SearchInput
                     value={input}
                     aria-label="Filter deployments"
@@ -108,7 +108,7 @@ function DeploymentSelector({
                     onChange={(_event, value) => handleTextInputChange(value)}
                 />
             </MenuSearchInput></MenuSearch>
-            <Divider className="pf-u-m-0" />
+            <Divider className="pf-v5-u-m-0" />
             <MenuContent>
                 <MenuList>
                     {filteredDeploymentSelectMenuItems.length === 0 && (

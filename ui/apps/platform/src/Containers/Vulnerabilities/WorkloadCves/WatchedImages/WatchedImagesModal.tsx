@@ -147,11 +147,11 @@ function WatchedImagesModal({
                         </Title>
                         <WatchedImagesTable
                             aria-labelledby="current-watched-images-list"
-                            className="pf-u-max-height"
+                            className="pf-v5-u-max-height"
                             style={
                                 {
                                     overflowY: 'auto',
-                                    '--pf-u-max-height--MaxHeight': '280px',
+                                    '--pf-v5-u-max-height--MaxHeight': '280px',
                                 } as CSSProperties
                             }
                             watchedImages={watchedImages}

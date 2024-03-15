@@ -24,7 +24,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
             <Flex
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
-                className="pf-u-p-lg"
+                className="pf-v5-u-p-lg"
             >
                 <Title headingLevel="h2">Policy details</Title>
                 <div>Describe general information about your policy.</div>
@@ -37,7 +37,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                     fullWidth={{ default: 'fullWidth' }}
                 >
                     <FlexItem
-                        className="pf-u-p-lg"
+                        className="pf-v5-u-p-lg"
                         grow={{ default: 'grow' }}
                         flex={{ default: 'flex_1' }}
                     >
@@ -52,7 +52,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                 <Flex
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsSm' }}
-                    className="pf-u-p-lg pf-u-pb-0"
+                    className="pf-v5-u-p-lg pf-v5-u-pb-0"
                 >
                     <Title headingLevel="h2">MITRE ATT&amp;CK</Title>
                     <div>
@@ -69,7 +69,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                                 isInline
                                 title="Editing MITRE ATT&CK is disabled for system default policies"
                                 component="h3"
-                                className="pf-u-mt-sm"
+                                className="pf-v5-u-mt-sm"
                             >
                                 If you need to edit MITRE ATT&CK, clone this policy or create a new
                                 policy.

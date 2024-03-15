@@ -296,7 +296,7 @@ function GenericWebhookIntegrationForm({
                                 }
                             />
                         </FormLabelGroup>
-                        <FormSection title="Headers" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Headers" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="notifier.generic.headers"
                                 render={(arrayHelpers) => (
@@ -378,7 +378,7 @@ function GenericWebhookIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
@@ -396,7 +396,7 @@ function GenericWebhookIntegrationForm({
                                 )}
                             />
                         </FormSection>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-u-mt-0">
+                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="notifier.generic.extraFields"
                                 render={(arrayHelpers) => (
@@ -479,7 +479,7 @@ function GenericWebhookIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({

@@ -62,14 +62,14 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-u-py-lg pf-u-px-lg">
+            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
                 <FormLabelGroup
                     label="Report name"
                     isRequired
@@ -118,7 +118,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                     >
                         <SelectOption value="CRITICAL_VULNERABILITY_SEVERITY">
                             <Flex
-                                className="pf-u-mx-sm"
+                                className="pf-v5-u-mx-sm"
                                 spaceItems={{ default: 'spaceItemsSm' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
                             >
@@ -127,7 +127,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         </SelectOption>
                         <SelectOption value="IMPORTANT_VULNERABILITY_SEVERITY">
                             <Flex
-                                className="pf-u-mx-sm"
+                                className="pf-v5-u-mx-sm"
                                 spaceItems={{ default: 'spaceItemsSm' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
                             >
@@ -136,7 +136,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         </SelectOption>
                         <SelectOption value="MODERATE_VULNERABILITY_SEVERITY">
                             <Flex
-                                className="pf-u-mx-sm"
+                                className="pf-v5-u-mx-sm"
                                 spaceItems={{ default: 'spaceItemsSm' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
                             >
@@ -145,7 +145,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         </SelectOption>
                         <SelectOption value="LOW_VULNERABILITY_SEVERITY">
                             <Flex
-                                className="pf-u-mx-sm"
+                                className="pf-v5-u-mx-sm"
                                 spaceItems={{ default: 'spaceItemsSm' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
                             >

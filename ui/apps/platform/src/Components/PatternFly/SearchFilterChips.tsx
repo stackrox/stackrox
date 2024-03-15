@@ -70,7 +70,7 @@ function SearchFilterChips({
                     return null;
                 }
                 return (
-                    <FlexItem key={searchFilterName} className="pf-u-pt-xs">
+                    <FlexItem key={searchFilterName} className="pf-v5-u-pt-xs">
                         <ChipGroup
                             categoryName={displayName}
                             isClosable

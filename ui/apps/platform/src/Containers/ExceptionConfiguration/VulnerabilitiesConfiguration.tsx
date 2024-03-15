@@ -106,10 +106,10 @@ function BooleanSetting({
 }) {
     return (
         <>
-            <GridItem className="pf-u-py-xs" span={8} md={4} xl={3}>
+            <GridItem className="pf-v5-u-py-xs" span={8} md={4} xl={3}>
                 <p>{label}</p>
             </GridItem>
-            <GridItem className="pf-u-py-xs" span={4} md={8} xl={9}>
+            <GridItem className="pf-v5-u-py-xs" span={4} md={8} xl={9}>
                 <FormGroup>
                     <Switch
                         id={fieldId}
@@ -242,8 +242,8 @@ function VulnerabilitiesConfiguration({
 
     return (
         <>
-            <div className="pf-u-py-md pf-u-px-md pf-u-px-lg-on-xl">
-                <Split className="pf-u-align-items-center">
+            <div className="pf-v5-u-py-md pf-v5-u-px-md pf-v5-u-px-lg-on-xl">
+                <Split className="pf-v5-u-align-items-center">
                     <SplitItem isFilled>
                         <Text>Configure exception behavior for vulnerabilities</Text>
                     </SplitItem>
@@ -264,7 +264,7 @@ function VulnerabilitiesConfiguration({
             <Divider component="div" />
             <PageSection variant="light" component="div">
                 <Title headingLevel="h2">Configure exception times</Title>
-                <Form className="pf-u-py-lg">
+                <Form className="pf-v5-u-py-lg">
                     <Grid hasGutter>
                         {dayOptions.map(({ numDays, enabled }, index) => {
                             const fieldIdPrefix = `expiryOptions.dayOptions[${index}]`;

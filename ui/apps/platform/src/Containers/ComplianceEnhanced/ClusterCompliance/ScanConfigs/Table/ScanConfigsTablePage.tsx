@@ -293,7 +293,7 @@ function ScanConfigsTablePage({
                                             isInline
                                             variant="danger"
                                             title="Failed to delete"
-                                            className="pf-u-mb-sm"
+                                            className="pf-v5-u-mb-sm"
                                         >
                                             {deleteError.toString()}
                                         </Alert>

@@ -78,7 +78,7 @@ function ImportPolicyJSONError({
                                 : 'Policy errors causing import failure'
                         }
                         variant="danger"
-                        className="pf-u-mt-md"
+                        className="pf-v5-u-mt-md"
                         isInline
                     >
                         <ul>

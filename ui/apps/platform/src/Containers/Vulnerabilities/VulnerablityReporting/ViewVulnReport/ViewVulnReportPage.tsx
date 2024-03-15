@@ -174,7 +174,7 @@ function ViewVulnReportPage() {
             </AlertGroup>
             {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageTitle title="View vulnerability report" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
@@ -184,7 +184,7 @@ function ViewVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'row' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'row' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">{reportConfiguration.name}</Title>
                     </FlexItem>
@@ -251,7 +251,7 @@ function ViewVulnReportPage() {
                                     <DropdownSeparator key="Separator" />,
                                     <DropdownItem
                                         key="Delete report"
-                                        className="pf-u-danger-color-100"
+                                        className="pf-v5-u-danger-color-100"
                                         component="button"
                                         onClick={() => {
                                             openDeleteModal([reportConfiguration.id]);
@@ -269,7 +269,7 @@ function ViewVulnReportPage() {
             <Divider component="div" />
             <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
                 <Tabs
-                    className="pf-u-background-color-100"
+                    className="pf-v5-u-background-color-100"
                     defaultActiveKey={0}
                     aria-label="Report details tabs"
                     role="region"
@@ -282,12 +282,12 @@ function ViewVulnReportPage() {
                         <PageSection
                             variant="light"
                             padding={{ default: 'noPadding' }}
-                            className="pf-u-py-lg pf-u-px-lg"
+                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
                         >
                             <ReportParametersDetails formValues={reportFormValues} />
-                            <Divider component="div" className="pf-u-py-md" />
+                            <Divider component="div" className="pf-v5-u-py-md" />
                             <DeliveryDestinationsDetails formValues={reportFormValues} />
-                            <Divider component="div" className="pf-u-py-md" />
+                            <Divider component="div" className="pf-v5-u-py-md" />
                             <ScheduleDetails formValues={reportFormValues} />
                         </PageSection>
                     </Tab>
@@ -327,7 +327,7 @@ function ViewVulnReportPage() {
                     >
                         <PageSection
                             padding={{ default: 'noPadding' }}
-                            className="pf-u-py-lg pf-u-px-lg"
+                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
                         >
                             <ReportJobs reportId={reportId} />
                         </PageSection>
@@ -348,7 +348,7 @@ function ViewVulnReportPage() {
                                 isInline
                                 variant={AlertVariant.danger}
                                 title={`Failed to delete "${reportConfiguration.name}"`}
-                                className="pf-u-mb-sm"
+                                className="pf-v5-u-mb-sm"
                             >
                                 {deleteResult.error}
                             </Alert>

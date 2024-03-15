@@ -191,7 +191,7 @@ function InitBundleForm(): ReactElement {
                                 onSelect={(_event, value) => onSelectInstallation(value)}
                                 selections={values.installation}
                                 isOpen={isOpen}
-                                // className="pf-u-flex-basis-0"
+                                // className="pf-v5-u-flex-basis-0"
                             >
                                 {Object.entries(installationOptions)
                                     .filter(

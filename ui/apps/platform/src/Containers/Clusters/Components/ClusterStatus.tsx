@@ -63,19 +63,19 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
                                     position={PopoverPosition.top}
                                     enableFlip
                                     headerContent={
-                                        <span className="pf-u-danger-color-100">
+                                        <span className="pf-v5-u-danger-color-100">
                                             Unhealthy Collector
                                         </span>
                                     }
                                     headerIcon={
-                                        <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                                        <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
                                     }
                                     bodyContent={bodyContent}
                                 >
                                     <Button
                                         aria-label="Show troubleshooting info"
                                         variant="link"
-                                        className="pf-u-mr-sm"
+                                        className="pf-v5-u-mr-sm"
                                         isInline
                                     >
                                         <span>{healthStatusLabels[overallHealthStatus]}</span>

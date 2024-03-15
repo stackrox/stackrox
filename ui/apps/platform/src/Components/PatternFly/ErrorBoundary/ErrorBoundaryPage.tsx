@@ -42,7 +42,7 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                 <EmptyState>
                     <EmptyStateHeader icon={<EmptyStateIcon
                         icon={ExclamationCircleIcon}
-                        color="var(--pf-global--danger-color--200)"
+                        color="var(--pf-v5-global--danger-color--200)"
                     />} /><EmptyStateFooter><Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}

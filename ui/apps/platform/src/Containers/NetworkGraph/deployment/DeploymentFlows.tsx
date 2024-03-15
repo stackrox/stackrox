@@ -143,13 +143,13 @@ function DeploymentFlows({
     }
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             {(networkFlowsError || modifyError) && (
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
                     title={networkFlowsError || modifyError}
-                    className="pf-u-mb-sm"
+                    className="pf-v5-u-mb-sm"
                 />
             )}
             <Stack>
@@ -170,10 +170,10 @@ function DeploymentFlows({
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" className="pf-u-py-md" />
+                <Divider component="hr" className="pf-v5-u-py-md" />
                 <StackItem>
-                    <Toolbar className="pf-u-p-0">
-                        <ToolbarContent className="pf-u-px-0">
+                    <Toolbar className="pf-v5-u-p-0">
+                        <ToolbarContent className="pf-v5-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                             </ToolbarItem>

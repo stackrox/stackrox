@@ -120,7 +120,7 @@ function AccessScopeFormWrapper({
 
     return (
         <>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
@@ -160,7 +160,7 @@ function AccessScopeFormWrapper({
                 // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <ToolbarGroup variant="button-group">
                             <ToolbarItem>

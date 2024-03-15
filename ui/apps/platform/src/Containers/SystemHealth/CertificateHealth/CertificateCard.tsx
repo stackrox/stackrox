@@ -97,7 +97,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
     return (
         <Card isCompact>
             <CardHeader>
-                <Flex className="pf-u-flex-grow-1">
+                <Flex className="pf-v5-u-flex-grow-1">
                     <FlexItem>{icon}</FlexItem>
                     <FlexItem>
                         <CardTitle component="h2">{title}</CardTitle>
@@ -159,7 +159,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                         isInline
                         variant="warning"
                         title={errorMessageFetching}
-                        className="pf-u-mt-md"
+                        className="pf-v5-u-mt-md"
                     />
                 )}
                 {errorMessageDownloading && (
@@ -167,7 +167,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                         isInline
                         variant="danger"
                         title={errorMessageDownloading}
-                        className="pf-u-mt-md"
+                        className="pf-v5-u-mt-md"
                     />
                 )}
             </CardBody>

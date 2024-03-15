@@ -73,9 +73,9 @@ function getBaselineSimulatedRowStyle(
 ): React.CSSProperties {
     let customStyle: React.CSSProperties;
     if (baselineSimulationDiffState === 'ADDED') {
-        customStyle = { backgroundColor: 'var(--pf-global--palette--green-50)' };
+        customStyle = { backgroundColor: 'var(--pf-v5-global--palette--green-50)' };
     } else if (baselineSimulationDiffState === 'REMOVED') {
-        customStyle = { backgroundColor: 'var(--pf-global--palette--red-50)' };
+        customStyle = { backgroundColor: 'var(--pf-v5-global--palette--red-50)' };
     } else {
         customStyle = {};
     }
@@ -119,13 +119,13 @@ function AnomalousIcon({ type }: { type: FlowEntityType }) {
     if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
         return (
             <Tooltip content={<div>Anomalous external flow</div>}>
-                <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
             </Tooltip>
         );
     }
     return (
         <Tooltip content={<div>Anomalous internal flow</div>}>
-            <ExclamationTriangleIcon className="pf-u-warning-color-100" />
+            <ExclamationTriangleIcon className="pf-v5-u-warning-color-100" />
         </Tooltip>
     );
 }
@@ -261,7 +261,7 @@ function FlowsTable({
                                         <Tooltip content={<div>Baseline added</div>}>
                                             <PlusIcon
                                                 size="sm"
-                                                className="pf-u-success-color-200"
+                                                className="pf-v5-u-success-color-200"
                                             />
                                         </Tooltip>
                                     )}
@@ -269,7 +269,7 @@ function FlowsTable({
                                         <Tooltip content={<div>Baseline removed</div>}>
                                             <MinusIcon
                                                 size="sm"
-                                                className="pf-u-danger-color-200"
+                                                className="pf-v5-u-danger-color-200"
                                             />
                                         </Tooltip>
                                     )}
