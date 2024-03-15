@@ -71,6 +71,12 @@ func TestConvertTimestampToTimeOrNil(t *testing.T) {
 
 	goTS2 := ConvertTimestampToTimeOrNil(protoTS2)
 	assert.Equal(t, expectedTimeTS2.Local(), goTS2.Local())
+
+	protoTSInvalid := &types.Timestamp{
+		Seconds: -62135683200,
+	}
+	goTSInvalid := ConvertTimestampToTimeOrNil(protoTSInvalid)
+	assert.Nil(t, goTSInvalid)
 }
 
 func TestConvertTimeToTimestampOrNil(t *testing.T) {
@@ -84,6 +90,10 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 
 	protoTS1 := ConvertTimeToTimestampOrNil(&time1)
 	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+
+	timeInvalid := time.Date(0, 12, 25, 23, 59, 59, 0, time.UTC)
+	protoTSInvalid := ConvertTimeToTimestampOrNil(&timeInvalid)
+	assert.Nil(t, protoTSInvalid)
 }
 
 func TestGetProtoTimestampFromSeconds(t *testing.T) {
