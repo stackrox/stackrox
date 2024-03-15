@@ -1,6 +1,6 @@
 import React, { CSSProperties } from 'react';
 import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
-import { Bullseye, Button } from '@patternfly/react-core';
+import { Bullseye, Button, Icon } from '@patternfly/react-core';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 
 import { WatchedImage } from 'types/image.proto';
@@ -60,7 +60,9 @@ function WatchedImagesTable({
                                         variant="link"
                                         isInline
                                         icon={
-                                            <MinusCircleIcon color="var(--pf-global--Color--200)" />
+                                            <Icon color="var(--pf-global--Color--200)">
+                                                <MinusCircleIcon />
+                                            </Icon>
                                         }
                                         onClick={() => unwatchImage(name)}
                                         disabled={isUnwatchInProgress}

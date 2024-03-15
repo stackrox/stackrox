@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useRef, useState } from 'react';
-import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { ArrowCircleDownIcon, TimesCircleIcon } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';
 
@@ -76,10 +76,9 @@ function RequirementRowAddKey({
                                 isDisabled={isDisabledOK}
                                 onClick={onClickRequirementKeyOK}
                             >
-                                <ArrowCircleDownIcon
-                                    color="var(--pf-global--primary-color--100)"
-                                    style={{ transform: 'rotate(-90deg)' }}
-                                />
+                                <Icon color="var(--pf-global--primary-color--100)">
+                                    <ArrowCircleDownIcon style={{ transform: 'rotate(-90deg)' }} />
+                                </Icon>
                             </Button>
                         </Tooltip>
                     </span>
@@ -98,7 +97,9 @@ function RequirementRowAddKey({
                         className="pf-m-smallest"
                         onClick={handleRequirementKeyCancel}
                     >
-                        <TimesCircleIcon color="var(--pf-global--color--100)" />
+                        <Icon color="var(--pf-global--color--100)">
+                            <TimesCircleIcon />
+                        </Icon>
                     </Button>
                 </Tooltip>
             </Td>

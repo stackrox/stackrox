@@ -1,10 +1,14 @@
 import React from 'react';
-import { Label, Tooltip } from '@patternfly/react-core';
+import { Icon, Label, Tooltip } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 export function DynamicIcon(props: SVGIconProps) {
-    return <FilterIcon color="var(--pf-global--palette--blue-300)" {...props} />;
+    return (
+        <Icon color="var(--pf-global--palette--blue-300)">
+            <FilterIcon {...props} />
+        </Icon>
+    );
 }
 
 export function DynamicColumnIcon() {

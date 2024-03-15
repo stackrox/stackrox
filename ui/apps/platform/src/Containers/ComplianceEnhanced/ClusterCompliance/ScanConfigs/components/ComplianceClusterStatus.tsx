@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Button, Popover } from '@patternfly/react-core';
+import { Button, Icon, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
@@ -17,11 +17,19 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
     function getClusterStatusObject(errors: string[]): ClusterStatusObject {
         return errors && errors.length && errors[0] !== ''
             ? {
-                  icon: <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />,
+                  icon: (
+                      <Icon color="var(--pf-global--danger-color--100)">
+                          <ExclamationCircleIcon />
+                      </Icon>
+                  ),
                   statusText: 'Unhealthy',
               }
             : {
-                  icon: <CheckCircleIcon color="var(--pf-global--success-color--100)" />,
+                  icon: (
+                      <Icon color="var(--pf-global--success-color--100)">
+                          <CheckCircleIcon />
+                      </Icon>
+                  ),
                   statusText: 'Healthy',
               };
     }

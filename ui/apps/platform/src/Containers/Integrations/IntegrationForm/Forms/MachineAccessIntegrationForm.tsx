@@ -1,21 +1,22 @@
 import * as yup from 'yup';
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
-	Alert,
-	AlertVariant,
-	Button,
-	Flex,
-	FlexItem,
-	Form,
-	FormGroup,
-	FormSection,
-	PageSection,
-	Popover,
-	TextInput
+    Alert,
+    AlertVariant,
+    Button,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
+    FormHelperText,
+    FormSection,
+    HelperText,
+    HelperTextItem,
+    PageSection,
+    Popover,
+    TextInput,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
@@ -172,8 +173,12 @@ function MachineAccessIntegrationForm({
                             fieldId="tokenExpirationDuration"
                             touched={touched}
                             errors={errors}
-                            helperText="For example, 3h20m20s"
                         >
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>For example, 3h20m20s</HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 isRequired
                                 type="text"
@@ -208,7 +213,9 @@ function MachineAccessIntegrationForm({
                                                                 value={
                                                                     values.mappings[`${index}`].key
                                                                 }
-                                                                onChange={(event, value) => onChange(value, event)}
+                                                                onChange={(event, value) =>
+                                                                    onChange(value, event)
+                                                                }
                                                                 onBlur={handleBlur}
                                                                 isDisabled={!isEditable}
                                                             />
@@ -267,7 +274,9 @@ function MachineAccessIntegrationForm({
                                                                     values.mappings[`${index}`]
                                                                         .valueExpression
                                                                 }
-                                                                onChange={(event, value) => onChange(value, event)}
+                                                                onChange={(event, value) =>
+                                                                    onChange(value, event)
+                                                                }
                                                                 onBlur={handleBlur}
                                                                 isDisabled={!isEditable}
                                                             />
@@ -284,15 +293,20 @@ function MachineAccessIntegrationForm({
                                                         <FormGroup
                                                             label="Role"
                                                             fieldId={`mappings[${index}].role`}
-                                                            helperTextInvalid={
-                                                                errors[index]?.role || ''
-                                                            }
-                                                            validated={
-                                                                errors[index]?.role
-                                                                    ? 'error'
-                                                                    : 'default'
-                                                            }
                                                         >
+                                                            <FormHelperText>
+                                                                <HelperText>
+                                                                    <HelperTextItem
+                                                                        variant={
+                                                                            errors[index]?.role
+                                                                                ? 'error'
+                                                                                : 'default'
+                                                                        }
+                                                                    >
+                                                                        {errors[index]?.role || ''}
+                                                                    </HelperTextItem>
+                                                                </HelperText>
+                                                            </FormHelperText>
                                                             <SelectSingle
                                                                 id={`mappings[${index}].role`}
                                                                 value={

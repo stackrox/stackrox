@@ -1,13 +1,15 @@
 import React from 'react';
 import {
-	Button,
-	FormGroup,
-	TextInput,
-	ValidatedOptions
+    Button,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Icon,
+    TextInput,
+    ValidatedOptions,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -124,9 +126,14 @@ function ByNameSelector({
                                 <FormGroup
                                     className="rule-selector-name-value-input"
                                     fieldId={inputId}
-                                    helperTextInvalid={errorMessage}
-                                    validated={inputValidated}
                                 >
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem variant={inputValidated}>
+                                                {errorMessage}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                     <TextInput
                                         id={inputId}
                                         aria-label={inputAriaLabel}
@@ -148,11 +155,12 @@ function ByNameSelector({
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}
                                 >
-                                    <TrashIcon
-                                        className="pf-u-flex-shrink-1"
-                                        style={{ cursor: 'pointer' }}
-                                        color="var(--pf-global--Color--dark-200)"
-                                    />
+                                    <Icon color="var(--pf-global--Color--dark-200)">
+                                        <TrashIcon
+                                            className="pf-u-flex-shrink-1"
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                    </Icon>
                                 </Button>
                             )}
                         </div>

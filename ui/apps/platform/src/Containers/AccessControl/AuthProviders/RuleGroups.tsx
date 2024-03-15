@@ -2,16 +2,17 @@
 import React, { ReactElement } from 'react';
 import { FieldArray } from 'formik';
 import {
-	Button,
-	Flex,
-	FlexItem,
-	FormGroup,
-	TextInput,
-	Tooltip
+    Button,
+    Flex,
+    FlexItem,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    TextInput,
+    Tooltip,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import { Group } from 'services/AuthService';
@@ -93,18 +94,25 @@ function RuleGroups({
                                     <FormGroup
                                         label="Origin"
                                         fieldId={`groups[${index}].props.traits.origin`}
-                                        validated="default"
                                     >
                                         {getOriginLabel(group?.props?.traits)}
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
-                                    <FormGroup
-                                        label="Key"
-                                        fieldId={`groups[${index}].props.key`}
-                                        helperTextInvalid={errors[index]?.props?.key ?? ''}
-                                        validated={errors[index]?.props?.key ? 'error' : 'default'}
-                                    >
+                                    <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.key
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.key ?? ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                         <SelectSingle
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key ?? ''}
@@ -125,11 +133,20 @@ function RuleGroups({
                                     <FormGroup
                                         label="Value"
                                         fieldId={`groups[${index}].props.value`}
-                                        helperTextInvalid={errors[index]?.props?.value || ''}
-                                        validated={
-                                            errors[index]?.props?.value ? 'error' : 'default'
-                                        }
                                     >
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.value
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.value || ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                         <TextInput
                                             type="text"
                                             id={`groups[${index}].props.value`}
@@ -143,12 +160,20 @@ function RuleGroups({
                                     <ArrowRightIcon style={{ transform: 'translate(0, 42px)' }} />
                                 </FlexItem>
                                 <FlexItem>
-                                    <FormGroup
-                                        label="Role"
-                                        fieldId={`groups[${index}].roleName`}
-                                        helperTextInvalid={errors[index]?.roleName || ''}
-                                        validated={errors[index]?.roleName ? 'error' : 'default'}
-                                    >
+                                    <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.roleName
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.roleName || ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                         <SelectSingle
                                             id={`groups[${index}].roleName`}
                                             value={groups[`${index}`].roleName}

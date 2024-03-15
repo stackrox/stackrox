@@ -1,15 +1,19 @@
 import React, { ReactElement } from 'react';
-import { Button, ButtonVariant, Flex } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, Icon } from '@patternfly/react-core';
 import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { userBasePath } from 'routePaths';
 
 const forbiddenIcon = (
-    <TimesIcon aria-label="forbidden" color="var(--pf-global--danger-color--100)" size="sm" />
+    <Icon color="var(--pf-global--danger-color--100)" size="sm">
+        <TimesIcon aria-label="forbidden" />
+    </Icon>
 );
 const permittedIcon = (
-    <CheckIcon aria-label="permitted" color="var(--pf-global--success-color--100)" size="sm" />
+    <Icon color="var(--pf-global--success-color--100)" size="sm">
+        <CheckIcon aria-label="permitted" />
+    </Icon>
 );
 
 const getUserRolePath = (roleName: string) => `${userBasePath}/roles/${roleName}`;

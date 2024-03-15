@@ -9,6 +9,9 @@ import {
     Form,
     FormGroup,
     ActionGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
 } from '@patternfly/react-core';
 
 import { PolicyCategory } from 'types/policy.proto';
@@ -81,8 +84,14 @@ function PolicyCategorySidePanel({
                                 fieldId="policy-category-name"
                                 label="Category name"
                                 isRequired
-                                helperText="Provide a descriptive and unique category name."
                             >
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem>
+                                            Provide a descriptive and unique category name.
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                                 <TextInput
                                     id="name"
                                     type="text"
