@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package central;
+
+import "storage/runtime_filters.proto";
+
+option go_package = "central";
+
+message RuntimeFiltersUpdate {
+  repeated storage.RuntimeFilter filters = 1;
+}

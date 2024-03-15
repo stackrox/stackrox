@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "storage/runtime_filters.proto";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message GetRuntimeFiltersRequest {
+  string cluster_name = 1;
+}
+
+message GetRuntimeFiltersResponse {
+  repeated storage.RuntimeFilter filters = 1;
+}
+
+message PostRuntimeFilterRequest {
+  string cluster_name = 1;
+  storage.RuntimeFilter filter = 2;
+}
+
+message DeleteRuntimeFilterRequest {
+  string id = 1;
+}
+
+message PutRuntimeFilterRequest {
+  string id = 1;
+  string cluster_name = 2;
+  storage.RuntimeFilter filter = 3;
+}
+
+service RuntimeFiltersService {
+  rpc GetRuntimeFilters(GetRuntimeFiltersRequest) returns (GetRuntimeFiltersResponse) {
+    option (google.api.http) = {
+      get: "/v1/runtime_filters/{cluster_name}"
+    };
+  }
+
+  rpc PostRuntimeFilter(PostRuntimeFilterRequest) returns (v1.Empty) {
+    option (google.api.http) = {
+      post: "/v1/runtime_filters"
+      body: "*"
+    };
+  }
+
+  rpc DeleteRuntimeFilter(DeleteRuntimeFilterRequest) returns (v1.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/runtime_filters/{id}",
+    };
+  }
+
+  rpc PutRuntimeFilter(PutRuntimeFilterRequest) returns (v1.Empty) {
+    option (google.api.http) = {
+      put: "/v1/runtime_filters/{id}"
+      body: "*"
+    };
+  }
+}
