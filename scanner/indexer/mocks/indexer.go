@@ -94,6 +94,26 @@ func (mr *MockIndexerMockRecorder) Close(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIndexer)(nil).Close), arg0)
 }
 
+// DeleteIndexReports mocks base method.
+func (m *MockIndexer) DeleteIndexReports(arg0 context.Context, arg1 ...string) ([]claircore.Digest, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteIndexReports", varargs...)
+	ret0, _ := ret[0].([]claircore.Digest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteIndexReports indicates an expected call of DeleteIndexReports.
+func (mr *MockIndexerMockRecorder) DeleteIndexReports(arg0 any, arg1 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteIndexReports", reflect.TypeOf((*MockIndexer)(nil).DeleteIndexReports), varargs...)
+}
+
 // GetIndexReport mocks base method.
 func (m *MockIndexer) GetIndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()

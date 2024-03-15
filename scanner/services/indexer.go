@@ -162,6 +162,17 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 	return &v4.HasIndexReportResponse{Exists: exists}, nil
 }
 
+func (s *indexerService) DeleteIndexReports(ctx context.Context, req *v4.DeleteIndexReportsRequest) (*v4.DeleteIndexReportsResponse, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer.DeleteIndexReports")
+	hashIds := req.GetHashIds()
+	if len(hashIds) == 0 {
+		zlog.Info(ctx).Msg("no hash IDs provided: nothing to delete")
+		return &v4.DeleteIndexReportsResponse{Success: true}, nil
+	}
+
+	s.indexer.DeleteIndexReports(ctx, req.GetHashIds()...)
+}
+
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 	v4.RegisterIndexerServer(grpcServer, s)

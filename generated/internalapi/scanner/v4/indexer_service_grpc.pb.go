@@ -27,6 +27,7 @@ const (
 	Indexer_GetIndexReport_FullMethodName         = "/scanner.v4.Indexer/GetIndexReport"
 	Indexer_GetOrCreateIndexReport_FullMethodName = "/scanner.v4.Indexer/GetOrCreateIndexReport"
 	Indexer_HasIndexReport_FullMethodName         = "/scanner.v4.Indexer/HasIndexReport"
+	Indexer_DeleteIndexReports_FullMethodName     = "/scanner.v4.Indexer/DeleteIndexReports"
 )
 
 // IndexerClient is the client API for Indexer service.
@@ -43,6 +44,8 @@ type IndexerClient interface {
 	GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error)
+	// DeleteIndexReports deletes the index reports associated with the given hash IDs, if they exist.
+	DeleteIndexReports(ctx context.Context, in *DeleteIndexReportsRequest, opts ...grpc.CallOption) (*DeleteIndexReportsResponse, error)
 }
 
 type indexerClient struct {
@@ -89,6 +92,15 @@ func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRe
 	return out, nil
 }
 
+func (c *indexerClient) DeleteIndexReports(ctx context.Context, in *DeleteIndexReportsRequest, opts ...grpc.CallOption) (*DeleteIndexReportsResponse, error) {
+	out := new(DeleteIndexReportsResponse)
+	err := c.cc.Invoke(ctx, Indexer_DeleteIndexReports_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IndexerServer is the server API for Indexer service.
 // All implementations should embed UnimplementedIndexerServer
 // for forward compatibility
@@ -103,6 +115,8 @@ type IndexerServer interface {
 	GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
+	// DeleteIndexReports deletes the index reports associated with the given hash IDs, if they exist.
+	DeleteIndexReports(context.Context, *DeleteIndexReportsRequest) (*DeleteIndexReportsResponse, error)
 }
 
 // UnimplementedIndexerServer should be embedded to have forward compatible implementations.
@@ -120,6 +134,9 @@ func (UnimplementedIndexerServer) GetOrCreateIndexReport(context.Context, *GetOr
 }
 func (UnimplementedIndexerServer) HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
+}
+func (UnimplementedIndexerServer) DeleteIndexReports(context.Context, *DeleteIndexReportsRequest) (*DeleteIndexReportsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIndexReports not implemented")
 }
 
 // UnsafeIndexerServer may be embedded to opt out of forward compatibility for this service.
@@ -205,6 +222,24 @@ func _Indexer_HasIndexReport_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_DeleteIndexReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteIndexReportsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).DeleteIndexReports(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Indexer_DeleteIndexReports_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).DeleteIndexReports(ctx, req.(*DeleteIndexReportsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Indexer_ServiceDesc is the grpc.ServiceDesc for Indexer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -227,6 +262,10 @@ var Indexer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HasIndexReport",
 			Handler:    _Indexer_HasIndexReport_Handler,
+		},
+		{
+			MethodName: "DeleteIndexReports",
+			Handler:    _Indexer_DeleteIndexReports_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
