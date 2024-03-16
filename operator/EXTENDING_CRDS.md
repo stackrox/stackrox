@@ -122,3 +122,19 @@ Some data types are discouraged, in particular:
 * Nullability: See [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting-and-nullable).
 * Late initialization: See [API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization).
 * Labels, Selector and Annotations: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#label-selector-and-annotation-conventions).
+
+## Crd-schema-checker
+
+Crd-schema-checker is a tool for finding breaking changes and violations of best practices in CRDs. It can be found [here](https://github.com/openshift/crd-schema-checker)
+
+Crd-schema-checker cannot find all types of breaking changes and violations of best practices. A passing grade from crd-schma-checker does not mean that there are no breaking changes or violations of best practices. 
+
+Crd-schema-checker can be run on one CRD, to check for violations of best practices, or it can be run on two CRDs to find breaking changes and violations of best practices introduced into the new CRD.
+
+When running crd-schema-checker on ACS CRDs, many violations of best practices are reported. These include use of booleans and maps. Most if not all of these violations cannot be fixed without introducing breaking changes.
+
+The following shows how to run crd-schema-checker.
+
+```
+crd-schema-checker check-manifests [--existing-crd-filename=] --new-crd-filename=
+```
