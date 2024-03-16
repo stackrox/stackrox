@@ -35,13 +35,24 @@ jobs:
 
     - name: Build crd-schema-checker
       run: |
-       make -C .crd-schema-checker
+        make -C .crd-schema-checker
 
-    - name: Checkout old stackrox/stackrox
+    - name: Get previous release branch
+      id: get_previous_release_branch
+      outputs:
+        release_branch: ${{ steps.get_previous_release_branch.outputs.release_branch }}
+      run: |
+        version="$(make tag)"
+        version_number="${version%%.x*}"
+        release_branch=release-"${version_number}"
+        echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout previous release branch
+      needs: [get_previous_release_branch]
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: release-4.3
+        ref: ${{ needs.get_previous_release_branch.outputs.release_branch }}
         path: .old-stackrox
 
     - name: Run crd-schema-checker
