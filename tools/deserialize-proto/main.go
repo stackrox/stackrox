@@ -3,22 +3,20 @@ package main
 import (
 	"bufio"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
+	_ "github.com/stackrox/rox/generated/storage"
 )
 
 var protobufType *string = flag.String("type", "", "name of protobuf, e.g., storage.Alert")
-
-func unmarshalProto[T proto.Unmarshaler](t T, b []byte) error {
-	return t.Unmarshal(b)
-}
 
 func main() {
 	flag.Parse()
@@ -27,10 +25,11 @@ func main() {
 		log.Fatal("must provide --type")
 	}
 
-	messageType, ok := typeRegistry[*protobufType]
-	if !ok {
-		log.Fatalf("%s is an invalid storage type", *protobufType)
+	mt := proto.MessageType(*protobufType)
+	if mt == nil {
+		log.Fatalf("type %s could not be resolved to a protobuf message type", *protobufType)
 	}
+	msg := reflect.New(mt.Elem()).Interface().(proto.Message)
 
 	var text string
 
@@ -55,16 +54,14 @@ func main() {
 				text, err)
 		}
 
-		message := messageType
-		if err := unmarshalProto(message, b); err != nil {
+		if err := proto.Unmarshal(b, msg); err != nil {
 			log.Fatalf("error unmarshaling proto, text = %s, err = %v", text, err)
 		}
 
-		pjson, err := json.MarshalIndent(message, "", "  ")
-		if err != nil {
-			log.Fatalf("error while prettifying, message = %s, err = %v", message, err)
+		m := jsonpb.Marshaler{Indent: "  "}
+		if err := m.Marshal(os.Stdout, msg); err != nil {
+			log.Fatalf("error while prettifying, message = %+v, err = %v", msg, err)
 		}
-		fmt.Println(string(pjson))
 	}
 
 	if err := reader.Err(); err != nil {
