@@ -127,7 +127,7 @@ Some data types are discouraged, in particular:
 
 Crd-schema-checker is a tool for finding breaking changes and violations of best practices in CRDs. It can be found [here](https://github.com/openshift/crd-schema-checker)
 
-Crd-schema-checker cannot find all types of breaking changes and violations of best practices. A passing grade from crd-schma-checker does not mean that there are no breaking changes or violations of best practices. 
+Crd-schema-checker has limitations. It cannot find all types of breaking changes and violations of best practices. A passing grade from crd-schma-checker does not mean that there are no breaking changes or violations of best practices. For example crd-schema-checker cannot find the breaking change caused by the removal of an enum. However, it can find the breaking change caused by the removal of a field.
 
 Crd-schema-checker can be run on one CRD, to check for violations of best practices, or it can be run on two CRDs to find breaking changes and violations of best practices introduced into the new CRD.
 
