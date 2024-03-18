@@ -1,6 +1,0 @@
-{
-  "id": "9a91b4de-d52e-4d4d-a65e-1e785c3501b1",
-  "name": "Docker CIS 4.7: Alert on Update Instruction",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}
