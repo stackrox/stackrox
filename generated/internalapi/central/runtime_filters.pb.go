@@ -24,7 +24,8 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type RuntimeFiltersUpdate struct {
-	Filters              []*storage.RuntimeFilter `protobuf:"bytes,1,rep,name=filters,proto3" json:"filters,omitempty"`
+	ClusterName          string                   `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Filters              []*storage.RuntimeFilter `protobuf:"bytes,2,rep,name=filters,proto3" json:"filters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
@@ -63,6 +64,13 @@ func (m *RuntimeFiltersUpdate) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RuntimeFiltersUpdate proto.InternalMessageInfo
 
+func (m *RuntimeFiltersUpdate) GetClusterName() string {
+	if m != nil {
+		return m.ClusterName
+	}
+	return ""
+}
+
 func (m *RuntimeFiltersUpdate) GetFilters() []*storage.RuntimeFilter {
 	if m != nil {
 		return m.Filters
@@ -89,8 +97,69 @@ func (m *RuntimeFiltersUpdate) Clone() *RuntimeFiltersUpdate {
 	return cloned
 }
 
+type RuntimeFiltersRequest struct {
+	ClusterName          string   `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RuntimeFiltersRequest) Reset()         { *m = RuntimeFiltersRequest{} }
+func (m *RuntimeFiltersRequest) String() string { return proto.CompactTextString(m) }
+func (*RuntimeFiltersRequest) ProtoMessage()    {}
+func (*RuntimeFiltersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_60380825dcd8b5eb, []int{1}
+}
+func (m *RuntimeFiltersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RuntimeFiltersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RuntimeFiltersRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RuntimeFiltersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RuntimeFiltersRequest.Merge(m, src)
+}
+func (m *RuntimeFiltersRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RuntimeFiltersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RuntimeFiltersRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RuntimeFiltersRequest proto.InternalMessageInfo
+
+func (m *RuntimeFiltersRequest) GetClusterName() string {
+	if m != nil {
+		return m.ClusterName
+	}
+	return ""
+}
+
+func (m *RuntimeFiltersRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *RuntimeFiltersRequest) Clone() *RuntimeFiltersRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(RuntimeFiltersRequest)
+	*cloned = *m
+
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*RuntimeFiltersUpdate)(nil), "central.RuntimeFiltersUpdate")
+	proto.RegisterType((*RuntimeFiltersRequest)(nil), "central.RuntimeFiltersRequest")
 }
 
 func init() {
@@ -98,17 +167,20 @@ func init() {
 }
 
 var fileDescriptor_60380825dcd8b5eb = []byte{
-	// 149 bytes of a gzipped FileDescriptorProto
+	// 195 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0xcc, 0xcc, 0x2b, 0x49,
 	0x2d, 0xca, 0x4b, 0xcc, 0x49, 0x2c, 0xc8, 0xd4, 0x4f, 0x4e, 0xcd, 0x2b, 0x29, 0x4a, 0xcc, 0xd1,
 	0x2f, 0x2a, 0xcd, 0x2b, 0xc9, 0xcc, 0x4d, 0x8d, 0x4f, 0xcb, 0xcc, 0x29, 0x49, 0x2d, 0x2a, 0xd6,
 	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x87, 0x4a, 0x4b, 0xc9, 0x16, 0x97, 0xe4, 0x17, 0x25,
-	0xa6, 0xa7, 0x62, 0x57, 0xa7, 0xe4, 0xc1, 0x25, 0x12, 0x04, 0x91, 0x70, 0x83, 0x88, 0x87, 0x16,
-	0xa4, 0x24, 0x96, 0xa4, 0x0a, 0x19, 0x70, 0xb1, 0x43, 0x15, 0x4a, 0x30, 0x2a, 0x30, 0x6b, 0x70,
-	0x1b, 0x89, 0xe9, 0x41, 0x0d, 0xd2, 0x43, 0x51, 0x1f, 0x04, 0x53, 0xe6, 0x24, 0x79, 0xe2, 0x91,
-	0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0xce, 0x78, 0x2c, 0xc7, 0x10, 0x05,
-	0x73, 0x43, 0x12, 0x1b, 0xd8, 0x2e, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0xf9, 0xf1, 0xde,
-	0xdc, 0xc0, 0x00, 0x00, 0x00,
+	0xa6, 0xa7, 0x62, 0x57, 0xa7, 0x94, 0xcd, 0x25, 0x12, 0x04, 0x91, 0x70, 0x83, 0x88, 0x87, 0x16,
+	0xa4, 0x24, 0x96, 0xa4, 0x0a, 0x29, 0x72, 0xf1, 0x24, 0xe7, 0x94, 0x16, 0x97, 0xa4, 0x16, 0xc5,
+	0xe7, 0x25, 0xe6, 0xa6, 0x4a, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x71, 0x43, 0xc5, 0xfc, 0x12,
+	0x73, 0x53, 0x85, 0x0c, 0xb8, 0xd8, 0xa1, 0x66, 0x49, 0x30, 0x29, 0x30, 0x6b, 0x70, 0x1b, 0x89,
+	0xe9, 0x41, 0xed, 0xd2, 0x43, 0x31, 0x32, 0x08, 0xa6, 0x4c, 0xc9, 0x8a, 0x4b, 0x14, 0xd5, 0xb2,
+	0xa0, 0xd4, 0xc2, 0xd2, 0xd4, 0xe2, 0x12, 0x22, 0x6c, 0x73, 0x92, 0x3c, 0xf1, 0x48, 0x8e, 0xf1,
+	0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x67, 0x3c, 0x96, 0x63, 0x88, 0x82, 0x79, 0x31,
+	0x89, 0x0d, 0xec, 0x15, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x60, 0x0a, 0xff, 0x73, 0x1f,
+	0x01, 0x00, 0x00,
 }
 
 func (m *RuntimeFiltersUpdate) Marshal() (dAtA []byte, err error) {
@@ -146,8 +218,49 @@ func (m *RuntimeFiltersUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintRuntimeFilters(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0xa
+			dAtA[i] = 0x12
 		}
+	}
+	if len(m.ClusterName) > 0 {
+		i -= len(m.ClusterName)
+		copy(dAtA[i:], m.ClusterName)
+		i = encodeVarintRuntimeFilters(dAtA, i, uint64(len(m.ClusterName)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RuntimeFiltersRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RuntimeFiltersRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RuntimeFiltersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterName) > 0 {
+		i -= len(m.ClusterName)
+		copy(dAtA[i:], m.ClusterName)
+		i = encodeVarintRuntimeFilters(dAtA, i, uint64(len(m.ClusterName)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -169,11 +282,31 @@ func (m *RuntimeFiltersUpdate) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.ClusterName)
+	if l > 0 {
+		n += 1 + l + sovRuntimeFilters(uint64(l))
+	}
 	if len(m.Filters) > 0 {
 		for _, e := range m.Filters {
 			l = e.Size()
 			n += 1 + l + sovRuntimeFilters(uint64(l))
 		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *RuntimeFiltersRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ClusterName)
+	if l > 0 {
+		n += 1 + l + sovRuntimeFilters(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -218,6 +351,38 @@ func (m *RuntimeFiltersUpdate) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntimeFilters
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRuntimeFilters
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntimeFilters
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Filters", wireType)
 			}
 			var msglen int
@@ -249,6 +414,89 @@ func (m *RuntimeFiltersUpdate) Unmarshal(dAtA []byte) error {
 			if err := m.Filters[len(m.Filters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRuntimeFilters(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRuntimeFilters
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RuntimeFiltersRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRuntimeFilters
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RuntimeFiltersRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RuntimeFiltersRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRuntimeFilters
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRuntimeFilters
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRuntimeFilters
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

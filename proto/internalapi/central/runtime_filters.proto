@@ -7,5 +7,10 @@ import "storage/runtime_filters.proto";
 option go_package = "central";
 
 message RuntimeFiltersUpdate {
-  repeated storage.RuntimeFilter filters = 1;
+  string cluster_name = 1;
+  repeated storage.RuntimeFilter filters = 2;
+}
+
+message RuntimeFiltersRequest {
+  string cluster_name = 1;
 }

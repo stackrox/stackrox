@@ -46,6 +46,7 @@ message MsgFromSensor {
     ComplianceOperatorInfo compliance_operator_info = 16;
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
+    RuntimeFiltersRequest runtime_filters_request = 19;
   }
 }
 
