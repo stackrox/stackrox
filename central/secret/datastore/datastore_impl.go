@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -50,10 +50,10 @@ func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
 	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
-		return d.storage.Count(ctx)
+		return d.storage.Count(ctx, pkgSearch.EmptyQuery())
 	}
 
-	return d.Count(ctx, searchPkg.EmptyQuery())
+	return d.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secret) error {
@@ -76,7 +76,7 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 	return d.storage.Delete(ctx, id)
 }
 
-func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return d.searcher.Search(ctx, q)
 }
 

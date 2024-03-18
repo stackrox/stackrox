@@ -1,7 +1,5 @@
 import static util.Helpers.withRetry
 
-import java.util.concurrent.TimeUnit
-
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.storage.ClusterOuterClass
@@ -37,8 +35,6 @@ import util.SplunkUtil
 import util.SyslogServer
 
 import org.junit.Assume
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -57,10 +53,6 @@ class IntegrationsTest extends BaseSpecification {
     private static final CA_CERT = Env.mustGetInCI("GENERIC_WEBHOOK_SERVER_CA_CONTENTS")
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
-
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -508,7 +500,7 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        assert ExternalBackupService.testExternalBackup(backup)
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
 
         where:
         "configurations are:"
@@ -522,9 +514,32 @@ class IntegrationsTest extends BaseSpecification {
         "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
                 ""                                                   | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
-        "GCS"                 | Env.mustGetGCSBucketName()   | Env.mustGetGCSBucketRegion()   |
+        "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
                 "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
                 Env.mustGetGCPAccessKey()
+    }
+
+    @Unroll
+    @Tag("Integration")
+    def "Verify GCS Integration: #integrationName"() {
+        setup:
+        Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
+
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getGCSIntegrationConfig(integrationName, useWorkloadId)
+
+        then:
+        "verify test integration"
+        // Test integration for GCS performs test backup (and rollback).
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        where:
+        "configurations are:"
+
+        integrationName                | bucket                     | useWorkloadId
+        "GCS with service account key" | Env.mustGetGCSBucketName() | false
+        "GCS with workload identity"   | Env.mustGetGCSBucketName() | true
     }
 
     @Unroll
@@ -666,10 +681,10 @@ class IntegrationsTest extends BaseSpecification {
         new ClairScannerIntegration()    | [:]                | "default config"
         new QuayImageIntegration()       | [:]                | "default config"
         new GoogleArtifactRegistry()     | [:]                | "default config"
-        new GoogleArtifactRegistry()     | [project: "acs-san-stackroxci", wifEnabled: true]
+        new GoogleArtifactRegistry()     | [wifEnabled: true]
                                                               | "requires workload identity"
         new GCRImageIntegration()        | [:]                | "default config"
-        new GCRImageIntegration()        | [project: "acs-san-stackroxci", includeScanner: false, wifEnabled: true]
+        new GCRImageIntegration()        | [includeScanner: false, wifEnabled: true]
                                                               | "requires workload identity"
         new AzureRegistryIntegration()   | [:]                | "default config"
         new ECRRegistryIntegration()     | [:]                | "default config"
@@ -752,7 +767,7 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
-        new GCRImageIntegration() | { [serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),]
+        new GCRImageIntegration() | { [serviceAccount: Env.mustGetGCRNoAccessServiceAccount(),]
         }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
         new GCRImageIntegration() | { [project: "not-a-project",]
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"

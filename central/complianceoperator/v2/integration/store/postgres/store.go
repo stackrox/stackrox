@@ -19,6 +19,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
 )
@@ -44,8 +45,9 @@ type Store interface {
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
@@ -114,10 +116,11 @@ func insertIntoComplianceIntegrations(batch *pgx.Batch, obj *storage.ComplianceI
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetVersion(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
+		obj.GetOperatorInstalled(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, OperatorInstalled, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, OperatorInstalled = EXCLUDED.OperatorInstalled, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -138,6 +141,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 		"id",
 		"version",
 		"clusterid",
+		"operatorinstalled",
 		"serialized",
 	}
 
@@ -156,6 +160,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetVersion(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetOperatorInstalled(),
 			serialized,
 		})
 

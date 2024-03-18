@@ -10,7 +10,6 @@ import (
 	"path"
 	"path/filepath"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/probeupload"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -100,7 +100,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	if stat.IsDir() {
 		return nil
 	}
-	modTime, err := timestamp.TimestampProto(stat.ModTime())
+	modTime, err := protocompat.ConvertTimeToTimestampOrError(stat.ModTime())
 	if err != nil {
 		return errors.Wrapf(err, "invalid timestamp %v", stat.ModTime())
 	}
@@ -109,7 +109,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	blob := &storage.Blob{
 		Name:         blobName,
 		Length:       stat.Size(),
-		LastUpdated:  timestamp.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
 		ModifiedTime: modTime,
 	}
 	var dataReader io.ReadCloser = fd

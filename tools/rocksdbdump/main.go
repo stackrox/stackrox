@@ -11,11 +11,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/tecbot/gorocksdb"
@@ -43,7 +43,7 @@ func main() {
 	}
 }
 
-var bucketToProtoInterface = map[string]proto.Message{
+var bucketToProtoInterface = map[string]protocompat.Message{
 	"active_components":                    (*storage.ActiveComponent)(nil),
 	"alerts":                               (*storage.Alert)(nil),
 	"alerts_list":                          (*storage.ListAlert)(nil),
@@ -178,8 +178,8 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 		}
 		pbType := reflect.TypeOf(pbInterface)
 		value := reflect.New(pbType.Elem()).Interface()
-		pb, _ := value.(proto.Message)
-		err = proto.Unmarshal(it.Value().Data(), pb)
+		pb, _ := value.(protocompat.Message)
+		err = protocompat.Unmarshal(it.Value().Data(), pb)
 		if err != nil {
 			log.Printf("An object cannot be unmarshalled. Bucket: %s, possible ID: %s", bucketName, possibleObjectID)
 			log.Println(err)

@@ -67,6 +67,8 @@ func Command() *cobra.Command {
 		logger: cliEnvironment.Logger(),
 	})
 
+	_ = c.PersistentFlags().BoolP("help", "h", false, "Help")
+
 	c.AddCommand(
 		central.Command(cliEnvironment),
 		cluster.Command(cliEnvironment),

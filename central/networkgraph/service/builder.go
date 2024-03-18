@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/gogo/protobuf/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type flowGraphBuilder struct {
@@ -126,7 +126,7 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 
 		edgeProps.LastActiveTimestamp = flow.GetLastSeenTimestamp()
 		if edgeProps.LastActiveTimestamp == nil {
-			edgeProps.LastActiveTimestamp = types.TimestampNow()
+			edgeProps.LastActiveTimestamp = protocompat.TimestampNow()
 		}
 
 		tgtEdgeBundle.Properties = append(tgtEdgeBundle.Properties, edgeProps)

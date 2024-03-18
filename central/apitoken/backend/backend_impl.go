@@ -2,13 +2,18 @@ package backend
 
 import (
 	"context"
+	timePkg "time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type backendImpl struct {
@@ -25,8 +30,14 @@ func (c *backendImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest
 	return c.tokenStore.GetTokens(ctx, req)
 }
 
-func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string) (string, *storage.TokenMetadata, error) {
-	tokenInfo, err := c.issuer.Issue(ctx, tokens.RoxClaims{RoleNames: roleNames, Name: name})
+func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *types.Timestamp) (string, *storage.TokenMetadata, error) {
+	time, err := protocompat.ConvertTimestampToTimeOrError(expireAt)
+	if err == nil && expireAt != nil && time.Before(timePkg.Now()) {
+		return "", nil, errox.InvalidArgs.New("Expiration date cannot be in the past")
+	}
+	expirationClaim := utils.IfThenElse(err != nil || expireAt == nil, nil, &time)
+	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name, ExpireAt: expirationClaim}
+	tokenInfo, err := c.issuer.Issue(ctx, claims)
 	if err != nil {
 		return "", nil, err
 	}

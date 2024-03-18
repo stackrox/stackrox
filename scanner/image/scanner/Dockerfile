@@ -12,11 +12,18 @@ RUN /download-mappings.sh /mappings
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
-LABEL name="scanner" \
+ARG LABEL_VERSION
+ARG LABEL_RELEASE
+ARG QUAY_TAG_EXPIRATION
+
+LABEL name="scanner-v4" \
       vendor="StackRox" \
       maintainer="https://stackrox.io/" \
       summary="Static vulnerability scanner for the StackRox Security Platform" \
-      description="This image supports static vulnerability scanning for the StackRox Security Platform."
+      description="This image supports static vulnerability scanning for the StackRox Security Platform." \
+      version="${LABEL_VERSION}" \
+      release="${LABEL_RELEASE}" \
+      quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 

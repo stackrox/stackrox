@@ -19,8 +19,8 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
-import { getEntityPagePath } from '../searchUtils';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { getEntityPagePath } from '../../utils/searchUtils';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -28,11 +28,11 @@ import ImageComponentVulnerabilitiesTable, {
 } from './ImageComponentVulnerabilitiesTable';
 
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistanceTd from '../components/DatePhraseTd';
-import CvssTd from '../components/CvssTd';
+import DateDistance from '../../components/DateDistance';
+import CvssFormatted from '../../components/CvssFormatted';
 import { getAnyVulnerabilityIsFixable } from './table.utils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
+import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import TooltipTh from '../components/TooltipTh';
@@ -186,7 +186,7 @@ function ImageVulnerabilitiesTable({
                                     <VulnerabilityFixableIconText isFixable={isFixable} />
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVSS">
-                                    <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
+                                    <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                 </Td>
                                 <Td dataLabel="Affected components">
                                     {imageComponents.length === 1
@@ -194,7 +194,7 @@ function ImageVulnerabilitiesTable({
                                         : `${imageComponents.length} components`}
                                 </Td>
                                 <Td dataLabel="First discovered">
-                                    <DateDistanceTd date={discoveredAtImage} />
+                                    <DateDistance date={discoveredAtImage} />
                                 </Td>
                                 {showExceptionDetailsLink && (
                                     <ExceptionDetailsCell

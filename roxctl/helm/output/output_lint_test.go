@@ -60,7 +60,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 
 		// Group: Valid --image-defaults, no --rhacs
 		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: false},
 
@@ -72,7 +71,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},
 		{flavor: "dummy", rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true},
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: true, wantErr: true},
 	}
@@ -102,7 +100,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 func (s *HelmChartTestSuite) TestHelmLint() {
 	flavorsToTest := []string{
 		defaults.ImageFlavorNameDevelopmentBuild,
-		defaults.ImageFlavorNameStackRoxIORelease,
 		defaults.ImageFlavorNameRHACSRelease,
 		defaults.ImageFlavorNameOpenSource,
 	}

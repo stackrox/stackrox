@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(notifier, foundNotifier)
 
-	notifierCount, err := store.Count(ctx)
+	notifierCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, notifierCount)
-	notifierCount, err = store.Count(withNoAccessCtx)
+	notifierCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(notifierCount)
 
@@ -103,13 +104,13 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(notifiers, allNotifier)
 
-	notifierCount, err = store.Count(ctx)
+	notifierCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, notifierCount)
 
 	s.NoError(store.DeleteMany(ctx, notifierIDs))
 
-	notifierCount, err = store.Count(ctx)
+	notifierCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, notifierCount)
 }

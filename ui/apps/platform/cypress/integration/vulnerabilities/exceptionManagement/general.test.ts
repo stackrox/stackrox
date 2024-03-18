@@ -10,8 +10,9 @@ import {
     deferAndVisitRequestDetails,
     deniedRequestsPath,
     pendingRequestsPath,
-    visitExceptionManagement,
+    visitPendingRequestsTab,
 } from './ExceptionManagement.helpers';
+import { selectors } from './ExceptionManagement.selectors';
 
 describe('Exception Management', () => {
     withAuth();
@@ -96,7 +97,7 @@ describe('Exception Management', () => {
 
         cy.intercept({ method: 'POST', url: graphql('autocomplete') }).as('autocomplete');
 
-        visitExceptionManagement();
+        visitPendingRequestsTab();
 
         // Add a filter
         cy.get(`input[aria-label="${filterLabel}"]`).type(filterText);
@@ -110,19 +111,19 @@ describe('Exception Management', () => {
         cy.get('div[aria-label="applied search filters"]').should('exist');
 
         // switch to Approved deferrals tab
-        cy.get('button[role="tab"]:contains("Approved deferrals")').click();
+        cy.get(selectors.approvedDeferralsTab).click();
 
         // The filter should be applied
         cy.get('div[aria-label="applied search filters"]').should('exist');
 
         // switch to Approved false positives tab
-        cy.get('button[role="tab"]:contains("Approved false positives")').click();
+        cy.get(selectors.approvedFalsePositivesTab).click();
 
         // The filter should be applied
         cy.get('div[aria-label="applied search filters"]').should('exist');
 
         // switch to Denied requests tab
-        cy.get('button[role="tab"]:contains("Denied requests")').click();
+        cy.get(selectors.deniedRequestsTab).click();
 
         // The filter should be applied
         cy.get('div[aria-label="applied search filters"]').should('exist');

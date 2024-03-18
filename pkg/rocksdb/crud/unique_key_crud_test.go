@@ -3,15 +3,15 @@ package generic
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
 )
 
-func uniqueKeyFunc(msg proto.Message) []byte {
+func uniqueKeyFunc(msg protocompat.Message) []byte {
 	return []byte(msg.(*storage.Alert).GetDeployment().GetName())
 }
 
@@ -82,16 +82,16 @@ func (s *UniqueKeyCRUDTestSuite) TestUpsertMany() {
 	alert3 := getAlertWithDeploymentName("alert3", "dep1")
 
 	// Conflict between batch
-	s.Error(s.crud.UpsertMany([]proto.Message{alert1, alert2, alert3}))
+	s.Error(s.crud.UpsertMany([]protocompat.Message{alert1, alert2, alert3}))
 
 	// No conflicts
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1, alert2}))
 
 	// alert3 conflicts with existing alert1 in DB
-	s.Error(s.crud.UpsertMany([]proto.Message{alert3}))
+	s.Error(s.crud.UpsertMany([]protocompat.Message{alert3}))
 
 	s.NoError(s.crud.Delete(alert1.GetId()))
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert3}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert3}))
 }
 
 func (s *UniqueKeyCRUDTestSuite) TestUpsertWithID() {
@@ -131,14 +131,14 @@ func (s *UniqueKeyCRUDTestSuite) TestUpsertManyWithIDs() {
 	alert3 := getAlertWithDeploymentName("alert3", "dep1")
 
 	// Conflict between batch
-	s.Error(s.crud.UpsertManyWithIDs([]string{alert1.GetId(), alert2.GetId(), alert3.GetId()}, []proto.Message{alert1, alert2, alert3}))
+	s.Error(s.crud.UpsertManyWithIDs([]string{alert1.GetId(), alert2.GetId(), alert3.GetId()}, []protocompat.Message{alert1, alert2, alert3}))
 
 	// No conflicts
-	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1.GetId(), alert2.GetId()}, []proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1.GetId(), alert2.GetId()}, []protocompat.Message{alert1, alert2}))
 
 	// alert3 conflicts with existing alert1 in DB
-	s.Error(s.crud.UpsertManyWithIDs([]string{alert3.GetId()}, []proto.Message{alert3}))
+	s.Error(s.crud.UpsertManyWithIDs([]string{alert3.GetId()}, []protocompat.Message{alert3}))
 
 	s.NoError(s.crud.Delete(alert1.GetId()))
-	s.NoError(s.crud.UpsertManyWithIDs([]string{alert3.GetId()}, []proto.Message{alert3}))
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert3.GetId()}, []protocompat.Message{alert3}))
 }

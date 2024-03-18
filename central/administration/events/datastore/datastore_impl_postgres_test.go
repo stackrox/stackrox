@@ -51,8 +51,8 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 
 	s.postgresTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.postgresTest)
-	searcher := search.New(pgStore.NewIndexer(s.postgresTest.DB))
 	s.store = pgStore.New(s.postgresTest.DB)
+	searcher := search.New(s.store)
 	s.writer = writer.New(s.store)
 	s.datastore = newDataStore(searcher, s.store, s.writer)
 }

@@ -33,7 +33,9 @@ func (d *datastoreImpl) SearchProfiles(ctx context.Context, query *v1.Query) ([]
 	return d.store.GetByQuery(ctx, query)
 }
 
-// UpsertProfile adds the profile to the database
+// UpsertProfile adds the profile to the database.  If enabling the use of this
+// method from a service, the creation of the `ProfileRefID` must be accounted for.  In reality this
+// method should only be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertProfile(ctx context.Context, profile *storage.ComplianceOperatorProfileV2) error {
 	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).IsAllowed(sac.ClusterScopeKey(profile.GetClusterId())) {
 		return sac.ErrResourceAccessDenied
@@ -52,6 +54,16 @@ func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string,
 		AddExactMatches(search.ClusterID, clusterID).
 		AddDocIDs(uid).ProtoQuery())
 	return err
+}
+
+// DeleteProfilesByCluster deletes profiles of cluster with a specific id
+func (d *datastoreImpl) DeleteProfilesByCluster(ctx context.Context, clusterID string) error {
+	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	_, err := d.store.DeleteByQuery(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetProfilesByClusters gets the list of profiles for a given clusters

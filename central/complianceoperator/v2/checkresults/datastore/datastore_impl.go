@@ -2,10 +2,12 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -29,7 +31,9 @@ type datastoreImpl struct {
 	searcher checkResultSearch.Searcher
 }
 
-// UpsertResult adds the result to the database
+// UpsertResult adds the result to the database  If enabling the use of this
+// method from a service, the creation of the `ScanRefID` must be accounted for.  In reality this
+// method should only be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -65,6 +69,8 @@ func (d *datastoreImpl) GetComplianceCheckResult(ctx context.Context, compliance
 
 // ComplianceCheckResultStats retrieves the scan results stats specified by query for the scan configuration
 func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceCheckResultStats")
+
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
@@ -109,8 +115,48 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	return countResults, nil
 }
 
+// ComplianceProfileResultStats retrieves the profile results stats specified by query for the scan configuration
+func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByProfile, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
+
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return nil, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorProfileName).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorProfileName.String(),
+		},
+	}
+
+	if cloned.Pagination == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+	}
+	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+		{
+			Field: search.ComplianceOperatorProfileName.String(),
+		},
+	}
+
+	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return countResults, nil
+}
+
 // ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
 func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceClusterStats")
+
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {

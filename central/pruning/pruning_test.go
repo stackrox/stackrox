@@ -37,6 +37,7 @@ import (
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	plopDatastoreMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -244,7 +245,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 
 	images := imageDatastore.NewWithPostgres(
 		imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
-		imagePostgres.NewIndexer(s.pool),
 		mockRiskDatastore,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
@@ -281,11 +281,9 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
-	nodeIndexer := nodePostgres.NewIndexer(s.pool)
-
 	nodes := testNodeDatastore.NewWithPostgres(
 		nodeStore,
-		nodeSearch.NewV2(nodeStore, nodeIndexer),
+		nodeSearch.NewV2(nodeStore),
 		mockRiskDatastore,
 		ranking.NewRanker(),
 		ranking.NewRanker())
@@ -398,7 +396,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		connMgr,
 		notifierMock,
 		ranking.NewRanker(),
-		clusterPostgres.NewIndexer(s.pool),
 		networkBaselineMgr,
 		compliancePruner)
 	require.NoError(s.T(), err)
@@ -555,7 +552,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
 				nil, nil, nil, config, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -816,7 +813,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -942,7 +939,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1117,7 +1114,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
 				nil, nil, nil, config, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1274,10 +1271,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			processes := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 			db := pgtest.ForT(t)
+			processes := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
+			plopDS := plopDatastore.GetTestPostgresDataStore(t, db)
 			gci := &garbageCollectorImpl{
 				processes: processes,
+				plops:     plopDS,
 				postgres:  db.DB,
 			}
 
@@ -1439,8 +1438,10 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 		s.T().Run(c.name, func(t *testing.T) {
 			db := pgtest.ForT(t)
 			plopDBstore := plopStore.NewFullStore(db)
+			plopDS := plopDatastore.GetTestPostgresDataStore(t, db)
 			gci := &garbageCollectorImpl{
 				postgres: db,
+				plops:    plopDS,
 			}
 
 			// Populate some actual data so the query returns what needs deleted

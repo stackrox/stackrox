@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/globaldb"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -56,22 +55,16 @@ var (
 	onceforRunResults sync.Once
 )
 
-type metadataIndex interface {
-	Count(ctx context.Context, q *v1.Query) (int, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-}
-
 // NewStore returns a compliance store based on Postgres
 func NewStore(db postgres.DB) store.Store {
 	aggregatedDataCache, err := lru.New[aggCacheKey, aggCacheEntry](aggregatedResultsCacheSize)
 	utils.Must(err)
 	return &storeImpl{
-		domain:        domainStore.New(db),
-		metadata:      metadataStore.New(db),
-		metadataIndex: metadataStore.NewIndexer(db),
-		results:       resultsStore.New(db),
-		strings:       stringsStore.New(db),
-		config:        configStore.New(db),
+		domain:   domainStore.New(db),
+		metadata: metadataStore.New(db),
+		results:  resultsStore.New(db),
+		strings:  stringsStore.New(db),
+		config:   configStore.New(db),
 
 		aggregatedDataCache: aggregatedDataCache,
 	}
@@ -86,12 +79,11 @@ type aggCacheEntry struct {
 type aggCacheKey uint64
 
 type storeImpl struct {
-	domain        domainStore.Store
-	metadata      metadataStore.Store
-	metadataIndex metadataIndex
-	results       resultsStore.Store
-	strings       stringsStore.Store
-	config        configStore.Store
+	domain   domainStore.Store
+	metadata metadataStore.Store
+	results  resultsStore.Store
+	strings  stringsStore.Store
+	config   configStore.Store
 
 	aggregatedDataCache *lru.Cache[aggCacheKey, aggCacheEntry]
 }
@@ -272,7 +264,7 @@ func (s *storeImpl) getLatestRunMetadata(ctx context.Context, clusterID, standar
 				AddSortOption(search.NewSortOption(search.ComplianceRunFinishedTimestamp).Reversed(true)),
 		).
 		ProtoQuery()
-	metadataSearchResults, err := s.metadataIndex.Search(ctx, query)
+	metadataSearchResults, err := s.metadata.Search(ctx, query)
 	if err != nil {
 		return types.ComplianceRunsMetadata{}, err
 	}

@@ -1,10 +1,10 @@
 package resources
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
@@ -83,7 +83,7 @@ func buildNode(node *v1.Node) *storage.Node {
 		Taints:                  convertTaints(node.Spec.Taints),
 		Labels:                  node.GetLabels(),
 		Annotations:             node.GetAnnotations(),
-		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
+		JoinedAt:                protocompat.GetProtoTimestampFromSecondsAndNanos(creation.Seconds, creation.Nanos),
 		InternalIpAddresses:     internal,
 		ExternalIpAddresses:     external,
 		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion),
@@ -93,6 +93,6 @@ func buildNode(node *v1.Node) *storage.Node {
 		OsImage:                 node.Status.NodeInfo.OSImage,
 		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
 		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
-		K8SUpdated:              types.TimestampNow(),
+		K8SUpdated:              protocompat.TimestampNow(),
 	}
 }

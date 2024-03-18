@@ -3,11 +3,11 @@ package resources
 import (
 	"sort"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protocompat"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -131,7 +131,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	events := &component.ResourceEvent{
 		ForwardMessages:      []*central.SensorEvent{},
-		DetectorMessages:     []component.DetectorMessage{},
+		DetectorMessages:     []component.DeploytimeDetectionRequest{},
 		ReprocessDeployments: []string{},
 		DeploymentTiming:     nil,
 		DeploymentReferences: []component.DeploymentReference{},
@@ -191,7 +191,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 		// module to accept only deployment IDs rather than the entire deployment object. For more info on this
 		// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-		events.AddDeploymentForDetection(component.DetectorMessage{
+		events.AddDeploymentForDetection(component.DeploytimeDetectionRequest{
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
 		}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
@@ -244,7 +244,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 	if credentials == nil {
 		return nil
 	}
-	expiresAt, err := types.TimestampProto(credentials.ExpirestAt)
+	expiresAt, err := protocompat.ConvertTimeToTimestampOrError(credentials.ExpirestAt)
 	if err != nil {
 		log.Error("ignoring invalid registry credentials: failed to parse timestamp")
 		return nil
@@ -334,7 +334,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 		return event
 	}
 
-	started, err := types.TimestampProto(k8sPod.GetCreationTimestamp().Time)
+	started, err := protocompat.ConvertTimeToTimestampOrError(k8sPod.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Errorf("converting start time from Kubernetes (%v) to proto: %v", k8sPod.GetCreationTimestamp().Time, err)
 	}

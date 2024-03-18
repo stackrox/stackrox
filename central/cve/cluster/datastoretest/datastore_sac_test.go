@@ -13,6 +13,7 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -883,10 +884,10 @@ func addDurationToTimestamp(ts *types.Timestamp, duration *types.Duration) *type
 	if nanos >= nanosInSecond {
 		seconds += int64(nanos / nanosInSecond)
 	}
-	return &types.Timestamp{
-		Seconds: seconds,
-		Nanos:   int32(0),
-	}
+	return protocompat.GetProtoTimestampFromSecondsAndNanos(
+		seconds,
+		int32(0))
+
 }
 
 func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
@@ -964,9 +965,9 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 	for _, c := range getClusterCVESuppressUnsuppressTestCases(s.T(), validClusters[0], validClusters[1]) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
-			snoozeStart := types.TimestampNow()
+			snoozeStart := protocompat.TimestampNow()
 			snoozeStart.Nanos = 0
-			snoozeDuration := types.DurationProto(10 * time.Minute)
+			snoozeDuration := protocompat.DurationProto(10 * time.Minute)
 
 			err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
 			if c.visibleCVE[targetCVE] {

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
-	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +50,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 
 func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
 
 	tests := map[string]struct {
@@ -606,11 +606,11 @@ func Test_toProtoV4Contents(t *testing.T) {
 
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
-		nvdVulns          map[string]*nvdschema.CVEAPIJSON20CVEItem
+		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
 		"when nil then nil": {},
@@ -823,19 +823,25 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:      "foo",
+					Name:    "Name contains CVE-1234-567",
 					Issued:  now,
 					Updater: "unknown updater",
 				},
 			},
-			nvdVulns: map[string]*nvdschema.CVEAPIJSON20CVEItem{
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
 				"foo": {
-					ID: "CVE-1234-567",
-					Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
-						CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
-							{
-								CvssData: &nvdschema.CVSSV31{
-									Version:      "3.1",
-									VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+					"CVE-9999-999": {
+						ID: "CVE-9999-999",
+					},
+					"CVE-1234-567": {
+						ID: "CVE-1234-567",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+									},
 								},
 							},
 						},
@@ -846,6 +852,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				"foo": {
 					Id:     "foo",
 					Issued: protoNow,
+					Name:   "CVE-1234-567",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
@@ -858,19 +865,25 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:      "foo",
+					Name:    "Name contains CVE-1234-567",
 					Issued:  now,
 					Updater: "osv/sample-updater",
 				},
 			},
-			nvdVulns: map[string]*nvdschema.CVEAPIJSON20CVEItem{
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
 				"foo": {
-					ID: "CVE-1234-567",
-					Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
-						CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
-							{
-								CvssData: &nvdschema.CVSSV31{
-									Version:      "3.1",
-									VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+					"CVE-9999-999": {
+						ID: "CVE-9999-999",
+					},
+					"CVE-1234-567": {
+						ID: "CVE-1234-567",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+									},
 								},
 							},
 						},
@@ -880,6 +893,46 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Id:     "foo",
+					Issued: protoNow,
+					Name:   "CVE-1234-567",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+					},
+				},
+			},
+		},
+		"when using NVD and vuln name is not CVE then return first NVD scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Name:    "NOT-A-CVE",
+					Issued:  now,
+					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-1234-567": {
+						ID: "CVE-1234-567",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:     "foo",
+					Name:   "NOT-A-CVE",
 					Issued: protoNow,
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
@@ -923,6 +976,7 @@ func Test_vulnerabilityName(t *testing.T) {
 		name     string
 		links    string
 		expected string
+		updater  string
 	}{
 		"Alpine": {
 			name:     "CVE-2018-16840",
@@ -936,9 +990,17 @@ func Test_vulnerabilityName(t *testing.T) {
 			name:     "DSA-4591-1 cyrus-sasl2",
 			expected: "DSA-4591-1",
 		},
-		"RHEL": {
+		"RHEL/RHSA": {
 			name:     "RHSA-2023:0173: libxml2 security update (Moderate)",
 			expected: "RHSA-2023:0173",
+		},
+		"RHEL/RHBA": {
+			name:     "RHBA-2019:1992: cloud-init bug fix and enhancement update (Moderate)",
+			expected: "RHBA-2019:1992",
+		},
+		"RHEL/RHEA": {
+			name:     "RHEA-2019:3845: microcode_ctl bug fix and enhancement update (Important)",
+			expected: "RHEA-2019:3845",
 		},
 		"Ubuntu": {
 			name:     "CVE-2022-45061 on Ubuntu 22.04 LTS (jammy) - medium.",
@@ -957,22 +1019,41 @@ func Test_vulnerabilityName(t *testing.T) {
 			links:    "https://nvd.nist.gov/vuln/detail/CVE-2023-47248",
 			expected: "CVE-2023-47248",
 		},
-		"RHEL over CVE": {
+		"when rhel updater then RHEL over CVE": {
 			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 			expected: "RHSA-2023:1866",
+			updater:  "RHEL9-FOOBAR",
+		},
+		"when not rhel updater then CVE over RHEL": {
+			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+			expected: "CVE-2023-25761",
+			updater:  "not-rhel",
 		},
 		"ALAS over CVE": {
 			links:    "https://alas.aws.amazon.com/AL2023/ALAS-2023-356.html https://alas.aws.amazon.com/cve/html/CVE-2023-39189.html",
 			expected: "ALAS-2023-356",
+			updater:  "aws-foobar-",
 		},
 	}
 	for name, testcase := range testcases {
 		t.Run(name, func(t *testing.T) {
-			v := &claircore.Vulnerability{Name: testcase.name, Links: testcase.links}
+			v := &claircore.Vulnerability{
+				Name:    testcase.name,
+				Links:   testcase.links,
+				Updater: testcase.updater,
+			}
 			assert.Equal(t, testcase.expected, vulnerabilityName(v))
 		})
 	}
-
+	t.Run("when updater is osv/go then prefer GO over RHSA", func(t *testing.T) {
+		v := &claircore.Vulnerability{
+			Updater:     "osv/go",
+			Name:        "GO-2021-0072",
+			Description: "Uncontrolled resource allocation in github.com/docker/distribution",
+			Links:       "https://github.com/distribution/distribution/pull/2340 https://github.com/distribution/distribution/commit/91c507a39abfce14b5c8541cf284330e22208c0f https://access.redhat.com/errata/RHSA-2017:2603 http://lists.opensuse.org/opensuse-security-announce/2020-09/msg00047.html",
+		}
+		assert.Equal(t, "GO-2021-0072", vulnerabilityName(v))
+	})
 }
 
 func Test_versionID(t *testing.T) {

@@ -19,6 +19,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
 )
@@ -44,8 +45,9 @@ type Store interface {
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
@@ -118,12 +120,12 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		obj.GetStatus(),
 		obj.GetSeverity(),
 		pgutils.NilOrTime(obj.GetCreatedTime()),
-		obj.GetScanName(),
 		obj.GetScanConfigName(),
+		pgutils.NilOrUUID(obj.GetScanRefId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanName, ScanConfigName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanName = EXCLUDED.ScanName, ScanConfigName = EXCLUDED.ScanConfigName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanConfigName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanConfigName = EXCLUDED.ScanConfigName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -148,8 +150,8 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"status",
 		"severity",
 		"createdtime",
-		"scanname",
 		"scanconfigname",
+		"scanrefid",
 		"serialized",
 	}
 
@@ -172,8 +174,8 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetStatus(),
 			obj.GetSeverity(),
 			pgutils.NilOrTime(obj.GetCreatedTime()),
-			obj.GetScanName(),
 			obj.GetScanConfigName(),
+			pgutils.NilOrUUID(obj.GetScanRefId()),
 			serialized,
 		})
 

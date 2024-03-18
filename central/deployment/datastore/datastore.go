@@ -46,8 +46,8 @@ type DataStore interface {
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 }
 
-func newDataStore(storage store.Store, pool postgres.DB, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	searcher := search.NewV2(storage, pgStore.NewIndexer(pool))
+func newDataStore(storage store.Store, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+	searcher := search.NewV2(storage)
 	ds := newDatastoreImpl(storage, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	ds.initializeRanker()
@@ -56,5 +56,5 @@ func newDataStore(storage store.Store, pool postgres.DB, images imageDS.DataStor
 
 // New creates a deployment datastore using postgres.
 func New(pool postgres.DB, images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	return newDataStore(pgStore.NewFullStore(pool), pool, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	return newDataStore(pgStore.NewFullStore(pool), images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }

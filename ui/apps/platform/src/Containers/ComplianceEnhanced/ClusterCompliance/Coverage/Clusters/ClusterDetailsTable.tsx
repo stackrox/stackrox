@@ -18,7 +18,9 @@ import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import omit from 'lodash/omit';
 
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import IconText from 'Components/PatternFly/IconText/IconText';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -34,10 +36,6 @@ import { SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 import { addRegexPrefixToFilters, searchValueAsArray } from 'utils/searchUtils';
 
-// TODO: move to a shared location
-import TableErrorComponent from 'Containers/Vulnerabilities/WorkloadCves/components/TableErrorComponent';
-
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getClusterResultsStatusObject } from '../compliance.coverage.utils';
 import CheckStatusDropdown from '../Components/CheckStatusDropdown';
 import CheckStatusModal from '../Components/CheckStatusModal';

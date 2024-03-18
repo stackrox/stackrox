@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
-// New instantiates a Resolver component
+// New instantiates a Resolver component.
 func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int) component.Resolver {
 	return &resolverImpl{
 		outputQueue:   outputQueue,

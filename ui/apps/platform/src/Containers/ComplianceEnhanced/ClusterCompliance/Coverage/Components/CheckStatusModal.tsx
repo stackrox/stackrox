@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Button,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -12,7 +13,6 @@ import {
     ListItem,
     Modal,
     ModalVariant,
-    Text,
     Title,
     ToggleGroup,
     ToggleGroupItem,
@@ -47,7 +47,6 @@ function CheckStatusModal({ checkResult, isOpen, status, handleClose }: CheckSta
                     </Label>
                 </LabelGroup>
             )}
-            <Text>{rationale}</Text>
             <ToggleGroup aria-label="Toggle for check details modal view">
                 <ToggleGroupItem
                     text="Check details"
@@ -73,8 +72,19 @@ function CheckStatusModal({ checkResult, isOpen, status, handleClose }: CheckSta
                 tabIndex={0}
                 header={header}
                 aria-label="Check status details modal"
+                actions={[
+                    <Button key="cancel" variant="primary" onClick={handleClose}>
+                        Close
+                    </Button>,
+                ]}
             >
                 <DescriptionList>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Rationale</DescriptionListTerm>
+                        <DescriptionListDescription className="formatted-text">
+                            {rationale}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Description</DescriptionListTerm>
                         <DescriptionListDescription className="formatted-text">
@@ -82,7 +92,7 @@ function CheckStatusModal({ checkResult, isOpen, status, handleClose }: CheckSta
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Instruction</DescriptionListTerm>
+                        <DescriptionListTerm>Instructions</DescriptionListTerm>
                         <DescriptionListDescription className="formatted-text">
                             {instructions}
                         </DescriptionListDescription>

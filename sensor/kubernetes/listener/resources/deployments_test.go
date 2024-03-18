@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/awscredentials/mocks"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +44,7 @@ func Test_deploymentHandler_getImageIntegrationEvent(t *testing.T) {
 								Region:     "foo-bar-1",
 								RegistryId: "123456",
 								AuthorizationData: &storage.ECRConfig_AuthorizationData{
-									ExpiresAt: &types.Timestamp{},
+									ExpiresAt: protocompat.GetProtoTimestampZero(),
 									Username:  "fooz",
 									Password:  "barz",
 								},

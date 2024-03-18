@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -102,17 +103,17 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	s.NoError(err)
 
 	// time1 is the most recent, time6 is the least recent
-	time1, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
+	time1, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
-	time2, err := types.TimestampProto(time.Now().Add(-2 * time.Hour))
+	time2, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-2 * time.Hour))
 	s.NoError(err)
-	time3, err := types.TimestampProto(time.Now().Add(-3 * time.Hour))
+	time3, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-3 * time.Hour))
 	s.NoError(err)
-	time4, err := types.TimestampProto(time.Now().Add(-4 * time.Hour))
+	time4, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-4 * time.Hour))
 	s.NoError(err)
-	time5, err := types.TimestampProto(time.Now().Add(-5 * time.Hour))
+	time5, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Hour))
 	s.NoError(err)
-	time6, err := types.TimestampProto(time.Now().Add(-6 * time.Hour))
+	time6, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-6 * time.Hour))
 	s.NoError(err)
 
 	reportSnapshots := []*storage.ReportSnapshot{

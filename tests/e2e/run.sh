@@ -77,7 +77,7 @@ test_e2e() {
 
     # Give some time for previous tests to finish up
     wait_for_api
-    restore_56_1_backup
+    restore_4_1_postgres_backup
     wait_for_api
 
     info "E2E external backup tests"

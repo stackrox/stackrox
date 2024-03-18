@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/user.proto";
 
@@ -10,7 +9,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 message InitBundleMeta {
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string id = 1; // @gotags: sql:"pk"
   string name = 2;
   google.protobuf.Timestamp created_at = 3;
   User created_by = 4;

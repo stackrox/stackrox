@@ -13,11 +13,11 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
-	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -42,7 +42,7 @@ func (s *blobTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	s.datastore = NewDatastore(s.store, search.New(s.store, postgres.NewIndexer(s.testDB.DB)))
+	s.datastore = NewDatastore(s.store, search.New(s.store))
 }
 
 func (s *blobTestSuite) SetupTest() {
@@ -79,7 +79,7 @@ func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime *tim
 func (s *blobTestSuite) TestSearch() {
 	searchTime := protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z"))
 	blobs1 := s.createBlobs("/path1", 10, 2, searchTime)
-	blobs2 := s.createBlobs("/path2", 20, 3, timestamp.TimestampNow())
+	blobs2 := s.createBlobs("/path2", 20, 3, protocompat.TimestampNow())
 
 	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery(), []*storage.Blob{blobs2[0]}, nil)
 	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery(), blobs2, nil)

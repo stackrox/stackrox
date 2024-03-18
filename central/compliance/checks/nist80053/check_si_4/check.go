@@ -3,9 +3,9 @@ package checksi4
 import (
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -24,7 +24,7 @@ func checkClusterCheckedInInThePastHour(ctx framework.ComplianceContext) {
 		framework.Fail(ctx, neverCheckedInEvidence)
 		return
 	}
-	lastContactGoTime, err := types.TimestampFromProto(lastContact)
+	lastContactGoTime, err := protocompat.ConvertTimestampToTimeOrError(lastContact)
 	// This should basically never happen, but the best we can do here is to treat it as a non-existent
 	// timestamp.
 	if err != nil {

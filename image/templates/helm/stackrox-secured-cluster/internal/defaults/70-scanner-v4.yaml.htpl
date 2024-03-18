@@ -6,6 +6,7 @@ scannerV4:
     disable: false
     replicas: 2
     logLevel: INFO
+    metricsPort: 9090
     autoscaling:
       disable: false
       minReplicas: 2
@@ -96,6 +97,7 @@ scannerV4:
       limits:
         cpu: "2000m"
         memory: "4Gi"
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
 
 scannerV4DBPVCDefaults:
   claimName: "scanner-v4-db"

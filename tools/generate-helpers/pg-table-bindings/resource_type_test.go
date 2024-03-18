@@ -5,16 +5,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetResourceType(t *testing.T) {
 	for _, tc := range []struct {
 		resourceType      ResourceType
-		typ               proto.Message
+		typ               protocompat.Message
 		permissionChecker bool
 		joinTable         bool
 	}{

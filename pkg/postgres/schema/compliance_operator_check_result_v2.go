@@ -35,6 +35,7 @@ var (
 			"storage.Cluster":                               ClustersSchema,
 			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
+			"storage.ComplianceOperatorProfileV2":           ComplianceOperatorProfileV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -62,7 +63,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	Status         storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
 	Severity       storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	CreatedTime    *time.Time                                          `gorm:"column:createdtime;type:timestamp"`
-	ScanName       string                                              `gorm:"column:scanname;type:varchar"`
 	ScanConfigName string                                              `gorm:"column:scanconfigname;type:varchar"`
+	ScanRefID      string                                              `gorm:"column:scanrefid;type:uuid"`
 	Serialized     []byte                                              `gorm:"column:serialized;type:bytea"`
 }

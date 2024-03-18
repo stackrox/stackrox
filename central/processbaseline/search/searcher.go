@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,11 +18,11 @@ type Searcher interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(processBaselineStore store.Store, indexer index.Indexer) (Searcher, error) {
+// New returns a new instance of Searcher for the given storage.
+func New(processBaselineStore store.Store) (Searcher, error) {
 	ds := &searcherImpl{
 		storage:           processBaselineStore,
-		formattedSearcher: formatSearcher(indexer),
+		formattedSearcher: formatSearcher(processBaselineStore),
 	}
 
 	return ds, nil

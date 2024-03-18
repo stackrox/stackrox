@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/pod/datastore/internal/store"
-	podIndexer "github.com/stackrox/rox/central/pod/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -19,10 +18,10 @@ type Searcher interface {
 	SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, podIndexer podIndexer.Indexer) Searcher {
+// New returns a new instance of Searcher for the given storage.
+func New(storage store.Store) Searcher {
 	return &searcherImpl{
 		storage:  storage,
-		searcher: formatSearcher(podIndexer),
+		searcher: formatSearcher(storage),
 	}
 }

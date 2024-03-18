@@ -67,7 +67,7 @@ func (d *datastoreImpl) CountSignatureIntegrations(ctx context.Context) (int, er
 		return 0, err
 	}
 
-	return d.storage.Count(ctx)
+	return d.storage.Count(ctx, search.EmptyQuery())
 }
 
 func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {

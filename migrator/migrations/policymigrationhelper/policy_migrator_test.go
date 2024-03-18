@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -42,9 +42,9 @@ func (suite *policyMigratorTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func insertPolicyIntoBucket(bucket bolthelpers.BucketRef, id string, pb proto.Message) error {
+func insertPolicyIntoBucket(bucket bolthelpers.BucketRef, id string, pb protocompat.Message) error {
 	return bucket.Update(func(b *bolt.Bucket) error {
-		bytes, err := proto.Marshal(pb)
+		bytes, err := protocompat.Marshal(pb)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func comparePolicyWithDB(suite *policyMigratorTestSuite, bucket bolthelpers.Buck
 	var newPolicy storage.Policy
 	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.Id))
-		return proto.Unmarshal(v, &newPolicy)
+		return protocompat.Unmarshal(v, &newPolicy)
 	}))
 	suite.EqualValues(policy, &newPolicy)
 }

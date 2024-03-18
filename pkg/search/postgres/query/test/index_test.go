@@ -8,7 +8,6 @@ import (
 	"sort"
 	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -26,11 +25,8 @@ var (
 type SingleIndexSuite struct {
 	suite.Suite
 
-	pool    postgres.DB
-	store   pgStore.Store
-	indexer interface {
-		Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	}
+	pool  postgres.DB
+	store pgStore.Store
 }
 
 func TestSingleIndex(t *testing.T) {
@@ -49,7 +45,6 @@ func (s *SingleIndexSuite) SetupTest() {
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.store = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-	s.indexer = pgStore.NewIndexer(s.pool)
 }
 
 func (s *SingleIndexSuite) TearDownTest() {
@@ -93,12 +88,12 @@ func (s *SingleIndexSuite) TestDocIDs() {
 		s.Run(testCase.desc, func() {
 			so := search.NewSortOption(search.DocID)
 			q := search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so)).ProtoQuery()
-			results, err := s.indexer.Search(ctx, q)
+			results, err := s.store.Search(ctx, q)
 			s.Require().NoError(err)
 			s.Equal(testCase.docIDs, search.ResultsToIDs(results))
 
 			q = search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so.Reversed(true))).ProtoQuery()
-			results, err = s.indexer.Search(ctx, q)
+			results, err = s.store.Search(ctx, q)
 			s.Require().NoError(err)
 
 			sort.Sort(sort.Reverse(sort.StringSlice(testCase.docIDs)))
@@ -164,7 +159,7 @@ func (s *SingleIndexSuite) TestSearchAfter() {
 	} {
 		s.Run(testCase.desc, func() {
 			q := search.NewQueryBuilder().WithPagination(testCase.pagination).ProtoQuery()
-			results, err := s.indexer.Search(ctx, q)
+			results, err := s.store.Search(ctx, q)
 			s.Equal(testCase.valid, err == nil)
 			s.Equal(testCase.results, search.ResultsToIDs(results))
 		})
@@ -312,7 +307,7 @@ func (s *SingleIndexSuite) TestAutocomplete() {
 			} else {
 				qb.AddStringsHighlighted(testCase.field, testCase.queryString)
 			}
-			results, err := s.indexer.Search(ctx, qb.ProtoQuery())
+			results, err := s.store.Search(ctx, qb.ProtoQuery())
 			s.NoError(err)
 			if len(testCase.results) > 0 {
 				s.Require().Len(results, 1)

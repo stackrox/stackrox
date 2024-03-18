@@ -8,11 +8,13 @@ import KeepBothSection from './KeepBothSection';
 type DuplicatePolicyFormProps = {
     updateResolution: (name: string, value: string) => void;
     showKeepBothPolicies: boolean;
+    allowOverwriteOption: boolean;
 };
 
 function DuplicatePolicyForm({
     updateResolution,
     showKeepBothPolicies,
+    allowOverwriteOption,
 }: DuplicatePolicyFormProps): ReactElement {
     // this creates a partially applied function to update the radio button value,
     //   and then notified the parent
@@ -42,18 +44,20 @@ function DuplicatePolicyForm({
                 <RenamePolicySection changeRadio={changeRadio} changeText={changeText} />
             )}
             {showKeepBothPolicies && <KeepBothSection changeRadio={changeRadio} />}
-            <Field name="resolution">
-                {({ field }) => (
-                    <Radio
-                        name={field.name}
-                        value="overwrite"
-                        label="Overwrite existing policy"
-                        id="policy-overwrite-radio-1"
-                        isChecked={field.value === 'overwrite'}
-                        onChange={changeRadio(field.onChange, field.name, 'overwrite')}
-                    />
-                )}
-            </Field>
+            {allowOverwriteOption && (
+                <Field name="resolution">
+                    {({ field }) => (
+                        <Radio
+                            name={field.name}
+                            value="overwrite"
+                            label="Overwrite existing policy"
+                            id="policy-overwrite-radio-1"
+                            isChecked={field.value === 'overwrite'}
+                            onChange={changeRadio(field.onChange, field.name, 'overwrite')}
+                        />
+                    )}
+                </Field>
+            )}
         </Form>
     );
 }

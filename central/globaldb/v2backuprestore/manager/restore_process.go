@@ -4,12 +4,9 @@ import (
 	"context"
 	"hash/crc32"
 	"io"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -98,7 +96,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 	metadata := &v1.DBRestoreProcessMetadata{
 		Id:        id,
 		Header:    header,
-		StartTime: types.TimestampNow(),
+		StartTime: protocompat.TimestampNow(),
 	}
 
 	if identity := authn.IdentityFromContextOrNil(ctx); identity != nil {
@@ -132,7 +130,7 @@ func (p *restoreProcess) Metadata() *v1.DBRestoreProcessMetadata {
 	return p.metadata
 }
 
-func (p *restoreProcess) Launch(tempOutputDir, finalDir string) (concurrency.ErrorWaitable, error) {
+func (p *restoreProcess) Launch(tempOutputDir string) (concurrency.ErrorWaitable, error) {
 	if p.started.TestAndSet(true) {
 		return nil, errors.New("restore process has already been started")
 	}
@@ -140,11 +138,11 @@ func (p *restoreProcess) Launch(tempOutputDir, finalDir string) (concurrency.Err
 	p.currentAttemptSig.Reset()
 	currAttemptDone := p.currentAttemptSig.Snapshot()
 
-	go p.run(tempOutputDir, finalDir)
+	go p.run(tempOutputDir)
 	return currAttemptDone, nil
 }
 
-func (p *restoreProcess) run(tempOutputDir, finalDir string) {
+func (p *restoreProcess) run(tempOutputDir string) {
 	defer utils.IgnoreError(p.data.Close)
 	defer p.cancelSig.Signal()
 
@@ -154,19 +152,12 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 
 	go p.resumeCtrl()
 
-	err := p.doRun(ctx, tempOutputDir, finalDir)
+	err := p.doRun(ctx, tempOutputDir)
 	p.currentAttemptSig.SignalWithError(err)
 	p.completionSig.SignalWithError(err)
 }
 
-func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {
-	// If processing a postgres bundle, do not create the restore directories
-	if !p.postgresBundle {
-		if err := os.MkdirAll(tempOutputDir, 0700); err != nil {
-			return errors.Wrapf(err, "could not create temporary output directory %s", tempOutputDir)
-		}
-	}
-
+func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir string) error {
 	// store if Postgres bundle here
 	restoreCtx := newRestoreProcessContext(ctx, tempOutputDir, p.postgresBundle)
 
@@ -174,18 +165,7 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 		return err
 	}
 
-	if err := restoreCtx.waitForAsyncChecks(); err != nil {
-		return err
-	}
-
-	// If processing a postgres bundle, do not update the restore symlink
-	if !p.postgresBundle {
-		if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
-			return errors.Wrapf(err, "failed to atomically create a symbolic link to restore directory %s", tempOutputDir)
-		}
-	}
-
-	return nil
+	return restoreCtx.waitForAsyncChecks()
 }
 
 func (p *restoreProcess) Cancel() {

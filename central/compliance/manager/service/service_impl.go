@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -61,7 +62,7 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 		return nil, err
 	}
 	sort.Slice(runs, func(i, j int) bool {
-		return runs[i].StartTime.Compare(runs[j].StartTime) < 0
+		return protocompat.CompareTimestamps(runs[i].StartTime, runs[j].StartTime) < 0
 	})
 
 	return &v1.GetRecentComplianceRunsResponse{

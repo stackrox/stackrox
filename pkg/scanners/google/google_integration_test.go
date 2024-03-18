@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const project = "ultra-current-825"
+const project = "acs-san-stackroxci"
 
 func TestGoogle(t *testing.T) {
 	serviceAccount := os.Getenv("SERVICE_ACCOUNT")
@@ -34,16 +34,16 @@ func TestGoogle(t *testing.T) {
 
 	_, creator := google.Creator()
 
-	registry, err := creator(integration, nil)
+	registry, err := creator(integration)
 	require.NoError(t, err)
 
 	scanner, err := newScanner(integration)
 	require.NoError(t, err)
 
 	var images = []string{
-		"us.gcr.io/ultra-current-825/music-nginx:latest",
-		"us.gcr.io/ultra-current-825/nginx:slim",
-		"us.gcr.io/ultra-current-825/ubuntu:latest",
+		"us.gcr.io/acs-san-stackroxci/music-nginx:latest",
+		"us.gcr.io/acs-san-stackroxci/nginx:slim",
+		"us.gcr.io/acs-san-stackroxci/ubuntu:latest",
 	}
 
 	for _, i := range images {

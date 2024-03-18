@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -101,7 +102,7 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 
 func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error) {
 	if stringutils.AllEmpty(clusterID, namespace) {
-		return ds.storage.Count(ctx)
+		return ds.storage.Count(ctx, search.EmptyQuery())
 	}
 	return ds.searcher.Count(ctx, getQuery(clusterID, namespace))
 }
@@ -160,7 +161,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *stora
 		return err
 	}
 	if exists {
-		if undoRecord.GetApplyTimestamp().Compare(previousUndo.GetApplyTimestamp()) < 0 {
+		if protocompat.CompareTimestamps(undoRecord.GetApplyTimestamp(), previousUndo.GetApplyTimestamp()) < 0 {
 			return fmt.Errorf("apply timestamp of record to store (%v) is older than that of existing record (%v)",
 				protoconv.ConvertTimestampToTimeOrDefault(undoRecord.GetApplyTimestamp(), time.Time{}),
 				protoconv.ConvertTimestampToTimeOrDefault(previousUndo.GetApplyTimestamp(), time.Time{}))

@@ -14,6 +14,7 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -103,6 +104,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "central-tls",
 			Namespace: testutils.TestNamespace,
+			Labels:    commonLabels.DefaultLabels(),
 		},
 		Data: centralFileMapWithInvalidLeaf,
 	}
@@ -117,6 +119,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "central-tls",
 			Namespace: testutils.TestNamespace,
+			Labels:    commonLabels.DefaultLabels(),
 		},
 		Data: centralFileMapWithMissingCAKey,
 	}

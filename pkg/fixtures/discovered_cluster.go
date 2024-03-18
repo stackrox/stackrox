@@ -3,9 +3,9 @@ package fixtures
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // GetDiscoveredCluster returns a mock discovered cluster.
@@ -16,7 +16,7 @@ func GetDiscoveredCluster() *discoveredclusters.DiscoveredCluster {
 		Type:              storage.ClusterMetadata_GKE,
 		ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
 		Region:            "us-east-1",
-		FirstDiscoveredAt: types.TimestampNow(),
+		FirstDiscoveredAt: protocompat.TimestampNow(),
 		Status:            storage.DiscoveredCluster_STATUS_SECURED,
 		CloudSourceID:     "fb28231c-54d1-41e1-9551-ede4c0e15c6c",
 	}

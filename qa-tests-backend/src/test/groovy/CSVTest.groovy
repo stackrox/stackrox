@@ -18,10 +18,9 @@ import spock.lang.Unroll
 
 @Unroll
 @Tag("BAT")
-@Tag("PZ")
+//ROX-20525 Disable test for ppc64le and s390x until Fix is availble
+//@Tag("PZ")
 class CSVTest extends BaseSpecification {
-
-    private static final IMAGE_SHA = "sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
 
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
@@ -151,7 +150,7 @@ class CSVTest extends BaseSpecification {
 
     private static final Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
-            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
+            .setImage(TEST_IMAGE)
             .addLabel("app", "test")
 
     def setupSpec() {

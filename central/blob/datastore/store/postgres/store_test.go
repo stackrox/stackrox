@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *BlobsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(blob, foundBlob)
 
-	blobCount, err := store.Count(ctx)
+	blobCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, blobCount)
-	blobCount, err = store.Count(withNoAccessCtx)
+	blobCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(blobCount)
 
@@ -100,13 +101,13 @@ func (s *BlobsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, blobs))
 
-	blobCount, err = store.Count(ctx)
+	blobCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, blobCount)
 
 	s.NoError(store.DeleteMany(ctx, blobIDs))
 
-	blobCount, err = store.Count(ctx)
+	blobCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, blobCount)
 }

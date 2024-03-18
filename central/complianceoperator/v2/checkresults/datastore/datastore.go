@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
-	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,6 +31,9 @@ type DataStore interface {
 	// ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
 	ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error)
 
+	// ComplianceProfileResultStats retrieves the profile results stats specified by query for the scan configuration
+	ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByProfile, error)
+
 	// ComplianceClusterStatsCount retrieves the distinct scan result counts specified by query for the clusters
 	ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error)
 
@@ -51,9 +53,8 @@ func New(store store.Store, db postgres.DB, searcher search.Searcher) DataStore 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := store.New(pool)
-	indexer := checkResultsStorage.NewIndexer(pool)
-	searcher := checkresultsSearch.New(store, indexer)
+	searcher := checkresultsSearch.New(store)
 	return New(store, pool, searcher)
 }

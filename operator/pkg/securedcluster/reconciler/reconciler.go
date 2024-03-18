@@ -29,15 +29,15 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
 			utils.CreateAndDeleteOnlyPredicate{}),
-		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension(nil)),
-		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
+		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension()),
+		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
-		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 	}
 
 	if features.ScannerV4Support.Enabled() {
-		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient())))
+		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())))
 	}
 
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
@@ -47,8 +47,11 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
+	// Using uncached UncachedClient since this is reading secrets not
+	// owned by the operator so we can't guarantee labels for cache
+	// are set properly.
 	pullSecretRefInjector := legacy.NewImagePullSecretReferenceInjector(
-		mgr.GetClient(), "imagePullSecrets",
+		mgr.GetAPIReader(), "imagePullSecrets",
 		"secured-cluster-services-main", "stackrox", "stackrox-scanner", "stackrox-scanner-v4")
 	pullSecretRefInjector = pullSecretRefInjector.WithExtraImagePullSecrets(
 		"mainImagePullSecrets", "secured-cluster-services-main", "stackrox")
@@ -59,7 +62,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		mgr, platform.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
 		translation.WithEnrichment(
-			scTranslation.New(mgr.GetClient()),
+			scTranslation.New(mgr.GetClient(), mgr.GetAPIReader()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			pullSecretRefInjector,
 		),

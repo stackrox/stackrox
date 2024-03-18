@@ -1,13 +1,15 @@
 import React, { ReactElement } from 'react';
 import {
-    TextInput,
-    PageSection,
-    Form,
+    DatePicker,
     DescriptionList,
-    DescriptionListTerm,
-    DescriptionListGroup,
     DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Form,
+    PageSection,
     SelectOption,
+    TextInput,
+    yyyyMMddFormat,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
@@ -29,6 +31,7 @@ import useAllowedRoles from './useFetchRoles';
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
+    expiration?: string;
 };
 
 export type ApiTokenIntegrationFormProps = {
@@ -43,6 +46,14 @@ export const validationSchema = yup.object().shape({
         .of(yup.string().trim())
         .min(1, 'Must have a role selected')
         .required('A role is required'),
+    expiration: yup
+        .string()
+        .test('Future date test', 'Expiration date should not be in the past', (value) => {
+            if (!value) {
+                return true;
+            }
+            return new Date(value) > new Date();
+        }),
 });
 
 export const defaultValues: ApiTokenIntegrationFormValues = {
@@ -175,6 +186,33 @@ function ApiTokenIntegrationForm({
                                 })}
                             </SelectSingle>
                         </FormLabelGroup>
+                        {isEditable && !isGenerated && (
+                            <FormLabelGroup
+                                label="Expiration date"
+                                fieldId="expiration"
+                                touched={touched}
+                                helperText="when left unset, the value defaults to 1 year from the generation date"
+                                errors={errors}
+                            >
+                                <DatePicker
+                                    id="expiration"
+                                    inputProps={{ id: 'expiration' }}
+                                    onBlur={handleBlur}
+                                    value={
+                                        values.expiration
+                                            ? yyyyMMddFormat(new Date(values.expiration))
+                                            : ''
+                                    }
+                                    onChange={(event, value, date) => {
+                                        if (date) {
+                                            setFieldValue('expiration', date.toISOString());
+                                        } else {
+                                            setFieldValue('expiration', undefined);
+                                        }
+                                    }}
+                                />
+                            </FormLabelGroup>
+                        )}
                     </Form>
                 )}
             </PageSection>

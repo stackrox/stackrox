@@ -76,8 +76,9 @@ type Store interface {
     DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
 {{- end }}
 
-    Count(ctx context.Context) (int, error)
+    Count(ctx context.Context, q *v1.Query) (int, error)
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
+    Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
     Get(ctx context.Context, {{template "paramList" $pks}}) (*storeType, bool, error)
 {{- if .SearchCategory }}

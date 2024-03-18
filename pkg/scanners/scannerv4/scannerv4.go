@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
@@ -39,7 +39,7 @@ var (
 
 	// zeroProtoTimestampFromTime represents the zero value of a proto
 	// timestamp when initialized from the zero time.
-	zeroProtoTimestampFromTime, _ = protoTypes.TimestampProto(time.Time{})
+	zeroProtoTimestampFromTime, _ = protocompat.ConvertTimeToTimestampOrError(time.Time{})
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -156,7 +156,7 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	}
 
 	lastTms := metadata.GetLastVulnerabilityUpdate()
-	if lastTms == nil || lastTms.Equal(protoTypes.Timestamp{}) || lastTms.Equal(zeroProtoTimestampFromTime) {
+	if lastTms == nil || lastTms.Equal(protocompat.GetProtoTimestampZero()) || lastTms.Equal(zeroProtoTimestampFromTime) {
 		return nil, errors.New("no timestamp available")
 	}
 

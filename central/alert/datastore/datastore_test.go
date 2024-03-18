@@ -114,7 +114,7 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 	s.Equal(errFake, err)
 }
 
-func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
+func (s *alertDataStoreTestSuite) TestAddAlertWhenUpsertFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 

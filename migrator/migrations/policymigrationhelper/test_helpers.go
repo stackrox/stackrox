@@ -9,10 +9,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ import (
 
 func insertPolicy(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) {
 	require.NoError(t, bucket.Update(func(b *bolt.Bucket) error {
-		policyBytes, err := proto.Marshal(policy)
+		policyBytes, err := protocompat.Marshal(policy)
 		if err != nil {
 			return err
 		}
@@ -35,7 +35,7 @@ func getAndNormalizePolicies(t *testing.T, bucket bolthelpers.BucketRef, policy 
 	normalizedFromDB = &storage.Policy{}
 	assert.NoError(t, bucket.View(func(b *bolt.Bucket) error {
 		v := b.Get([]byte(policy.GetId()))
-		return proto.Unmarshal(v, normalizedFromDB)
+		return protocompat.Unmarshal(v, normalizedFromDB)
 	}))
 
 	normalizedExpected = policy.Clone()

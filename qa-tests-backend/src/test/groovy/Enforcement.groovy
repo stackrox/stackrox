@@ -263,7 +263,6 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Tag("BAT")
     @Tag("Integration")
     @Tag("PolicyEnforcement")
     def "Test Kill Enforcement - Integration"() {

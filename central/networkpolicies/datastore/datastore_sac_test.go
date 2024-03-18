@@ -53,7 +53,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 	gormDB := pgtest.OpenGormDB(s.T(), src)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-	searcher = search.New(pgdbStore.NewIndexer(s.pool))
+	searcher = search.New(s.storage)
 
 	mockCtrl := gomock.NewController(s.T())
 	undomock := undostoremock.NewMockUndoStore(mockCtrl)

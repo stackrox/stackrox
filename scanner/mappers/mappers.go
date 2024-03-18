@@ -13,11 +13,11 @@ import (
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/facebookincubator/nvdtools/cvss3"
-	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
@@ -32,10 +32,24 @@ var (
 		claircore.High:       v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 	}
-	// vulnNamePatterns is a prioritized list of regexes to match against
-	// vulnerability information to extract their ID.
+
+	// Updater patterns are used to determine the security updater the
+	// vulnerability was detected.
+
+	osvUpdaterPattern  = regexp.MustCompile(`^osv/.*`)
+	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
+	awsUpdaterPattern  = regexp.MustCompile(`^aws-`)
+
+	// Name patterns are regexes to match against vulnerability fields to
+	// extract their name according to their updater.
+
+	awsVulnNamePattern  = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
+
+	// vulnNamePatterns is a default prioritized list of regexes to match
+	// vulnerability names.
 	vulnNamePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`((RHSA|RHBA|RHEA)-\d{4}:\d+)|(ALAS\d*-\d{4}-\d+)`),
+		// A CVE.
 		regexp.MustCompile(`CVE-\d{4}-\d+`),
 		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
 		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
@@ -279,11 +293,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 	return pkgVulns
 }
 
-func toProtoV4VulnerabilitiesMap(
-	ctx context.Context,
-	vulns map[string]*claircore.Vulnerability,
-	nvdVulns map[string]*nvdschema.CVEAPIJSON20CVEItem,
-) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -292,7 +302,7 @@ func toProtoV4VulnerabilitiesMap(
 		if v == nil {
 			continue
 		}
-		issued, err := types.TimestampProto(v.Issued)
+		issued, err := protocompat.ConvertTimeToTimestampOrError(v.Issued)
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +319,22 @@ func toProtoV4VulnerabilitiesMap(
 			repoID = v.Repo.ID
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		sev, err := severityAndScores(ctx, v, nvdVulns)
+		name := vulnerabilityName(v)
+		// Find the related NVD vuln for this vulnerability name, let it be empty if no
+		// NVD vuln for that name was found.
+		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
+		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
+			if v, ok := nvdCVEs[name]; ok {
+				nvdVuln = *v
+			} else {
+				// Pick the first one as a fallback.
+				for _, v := range nvdCVEs {
+					nvdVuln = *v
+					break
+				}
+			}
+		}
+		sev, err := severityAndScores(ctx, v, &nvdVuln)
 		if err != nil {
 			zlog.Warn(ctx).
 				Err(err).
@@ -341,10 +366,8 @@ func toProtoV4VulnerabilitiesMap(
 		description := v.Description
 		if description == "" {
 			// No description provided, so fall back to NVD.
-			if v, ok := nvdVulns[v.ID]; ok {
-				if len(v.Descriptions) > 0 {
-					description = v.Descriptions[0].Value
-				}
+			if len(nvdVuln.Descriptions) > 0 {
+				description = nvdVuln.Descriptions[0].Value
 			}
 		}
 		if vulnerabilities == nil {
@@ -352,7 +375,7 @@ func toProtoV4VulnerabilitiesMap(
 		}
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
-			Name:               vulnerabilityName(v),
+			Name:               name,
 			Description:        description,
 			Issued:             issued,
 			Link:               v.Links,
@@ -531,7 +554,7 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
 // returns a map of CVEs.
-func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
+func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
 	enrichmentsList := enrichments[nvd.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
@@ -545,12 +568,19 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]*n
 	if len(items) == 0 {
 		return nil, nil
 	}
-	ret := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
-	for id, list := range items {
-		// There is no criteria for selecting more than one enrichment record, assume the
-		// first is the right one.
-		i := list[0]
-		ret[id] = &i
+	// Returns a map of maps keyed by CVE ID due to enrichment matching on multiple
+	// vulnerability fields, potentially including unrelated records--we assume the
+	// caller will know how to filter what is relevant.
+	ret := make(map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem)
+	for ccVulnID, list := range items {
+		if len(list) > 0 {
+			m := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
+			for idx := range list {
+				vulnData := list[idx]
+				m[vulnData.ID] = &vulnData
+			}
+			ret[ccVulnID] = m
+		}
 	}
 	return ret, nil
 }
@@ -582,15 +612,10 @@ type severityValues struct {
 	v3Score  float32
 }
 
-var (
-	osvUpdaterPattern  = regexp.MustCompile(`^osv/.*`)
-	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
-)
-
 // severityAndScores returns the severity and scores information out of a
 // ClairCore vulnerability. The returned information is dependent on the
 // underlying updater.
-func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVulns map[string]*nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
+func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "mappers/severityAndScores",
 		"updater", vuln.Updater,
@@ -614,7 +639,7 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 	}
 
 	// Default/fallback is NVD.
-	return nvdSeverityAndScores(vuln, nvdVulns)
+	return nvdSeverityAndScores(vuln, nvdVuln)
 }
 
 func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error) {
@@ -693,14 +718,9 @@ func cvssVector(cvssVector string) (severityValues, error) {
 	return values, nil
 }
 
-func nvdSeverityAndScores(vuln *claircore.Vulnerability, nvdVulns map[string]*nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
+func nvdSeverityAndScores(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
 	values := severityValues{
 		severity: vuln.Severity,
-	}
-
-	v, ok := nvdVulns[vuln.ID]
-	if !ok {
-		return values, errors.New("cannot find NVD data")
 	}
 
 	// Sanity check the NVD data.
@@ -735,15 +755,36 @@ func nvdSeverityAndScores(vuln *claircore.Vulnerability, nvdVulns map[string]*nv
 // in the vulnerability details. It works by matching data against well-known
 // name patterns, and defaults to the original name if nothing is found.
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
-	for _, p := range vulnNamePatterns {
-		v := p.FindString(vuln.Name)
-		if v != "" {
+	// Attempt per-updater patterns.
+	switch {
+	case rhelUpdaterPattern.MatchString(vuln.Updater):
+		if v, ok := findName(vuln, rhelVulnNamePattern); ok {
 			return v
 		}
-		v = p.FindString(vuln.Links)
-		if v != "" {
+	case awsUpdaterPattern.MatchString(vuln.Updater):
+		if v, ok := findName(vuln, awsVulnNamePattern); ok {
+			return v
+		}
+	}
+	// Default patterns.
+	for _, p := range vulnNamePatterns {
+		if v, ok := findName(vuln, p); ok {
 			return v
 		}
 	}
 	return vuln.Name
+}
+
+// findName searches for a vulnerability name using the specified regex in
+// pre-determined fields of the vulnerability, returning the name if found.
+func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
+	v := p.FindString(vuln.Name)
+	if v != "" {
+		return v, true
+	}
+	v = p.FindString(vuln.Links)
+	if v != "" {
+		return v, true
+	}
+	return "", false
 }

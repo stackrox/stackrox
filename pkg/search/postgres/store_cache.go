@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -12,6 +11,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -225,8 +225,15 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 	return c.isReadAllowed(ctx, obj), nil
 }
 
-// Count returns the number of objects in the store.
-func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
+// Count returns the number of objects in the store matching the query.
+func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
+	if q == nil || protocompat.Equal(q, search.EmptyQuery()) {
+		return c.countFromCache(ctx)
+	}
+	return c.underlyingStore.Count(ctx, q)
+}
+
+func (c *cachedStore[T, PT]) countFromCache(ctx context.Context) (int, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Count)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -239,6 +246,11 @@ func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// Search searches for objects matching the query.
+func (c *cachedStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return c.underlyingStore.Search(ctx, q)
 }
 
 // Get returns the object, if it exists from the store.
@@ -283,7 +295,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error {
-	if q == nil || proto.Equal(q, search.EmptyQuery()) {
+	if q == nil || protocompat.Equal(q, search.EmptyQuery()) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)

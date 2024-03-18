@@ -303,6 +303,7 @@ func main() {
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
 
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
@@ -343,14 +344,14 @@ func main() {
 			Reader:  trReader,
 			Verbose: localConfig.Verbose,
 		}
-		min, errCh := fm.CreateEvents(ctx)
+		min, doneSignal := fm.CreateEvents(ctx)
 		select {
-		case err := <-errCh:
-			if err != nil {
+		case <-doneSignal.Done():
+			if err := doneSignal.Err(); err != nil {
 				cancelFunc()
 				log.Fatalln(err)
 			}
-			// If the errCh is closed but err == nil we know we are done creating resources,
+			// If the errSignal is triggered but err == nil we know we are done creating resources,
 			// but we did not reach the minimum resources to start sensor
 			log.Fatalln(errors.New("the minimum resources to start sensor were not created"))
 		case <-min.WaitC():
@@ -358,9 +359,14 @@ func main() {
 		}
 		// in case there are errors after we received the minimum resources signal
 		go func() {
-			for e := range errCh {
-				cancelFunc()
-				log.Fatalln(e)
+			select {
+			case <-doneSignal.Done():
+				if err := doneSignal.Err(); err != nil {
+					cancelFunc()
+					log.Fatalln(err)
+				}
+			case <-ctx.Done():
+				break
 			}
 		}()
 	}

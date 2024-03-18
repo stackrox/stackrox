@@ -44,7 +44,7 @@ func NewForTestOnly(t *testing.T, db postgres.DB) (DataStore, error) {
 	testutils.MustBeInTest(t)
 
 	storage := pgStore.New(db)
-	searcher := search.NewV2(storage, pgStore.NewIndexer(db))
+	searcher := search.NewV2(storage)
 	ds := &datastoreImpl{
 		storage:  storage,
 		searcher: searcher,

@@ -5,12 +5,11 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -20,11 +19,11 @@ const (
 	roleHealthIDNS = "role-config-health"
 )
 
-// HealthStatusForProtoMessage returns a storage.DeclarativeConfigHealth for the given proto.Message.
+// HealthStatusForProtoMessage returns a storage.DeclarativeConfigHealth for the given protocompat.Message.
 // The health will be marked as unhealthy if err != nil, and healthy if err == nil.
 // Note: Handler can be left empty. In this case, the name of the health will be updated to not include the
 // handler name.
-func HealthStatusForProtoMessage(message proto.Message, handler string, err error, idExtractor types.IDExtractor,
+func HealthStatusForProtoMessage(message protocompat.Message, handler string, err error, idExtractor types.IDExtractor,
 	nameExtractor types.NameExtractor) *storage.DeclarativeConfigHealth {
 	messageID := idExtractor(message)
 	messageName := resourceNameFromProtoMessage(message, nameExtractor, idExtractor)
@@ -55,7 +54,7 @@ func HealthStatusForProtoMessage(message proto.Message, handler string, err erro
 		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
 			storage.DeclarativeConfigHealth_HEALTHY),
 		ErrorMessage:  errMsg,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protocompat.TimestampNow(),
 	}
 }
 
@@ -75,19 +74,19 @@ func HealthStatusForHandler(handlerID string, err error) *storage.DeclarativeCon
 		Status: utils.IfThenElse(err != nil, storage.DeclarativeConfigHealth_UNHEALTHY,
 			storage.DeclarativeConfigHealth_HEALTHY),
 		ErrorMessage:  errMsg,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protocompat.TimestampNow(),
 	}
 }
 
 // resourceNameFromProtoMessage will return the resource name to use within a storage.DeclarativeConfigHealth.
-// This will take the name deduced from proto.Message, which will either be the name or if no name is given its ID.
-func resourceNameFromProtoMessage(message proto.Message, nameExtractor types.NameExtractor,
+// This will take the name deduced from protocompat.Message, which will either be the name or if no name is given its ID.
+func resourceNameFromProtoMessage(message protocompat.Message, nameExtractor types.NameExtractor,
 	idExtractor types.IDExtractor) string {
 	messageName := stringutils.FirstNonEmpty(nameExtractor(message), idExtractor(message))
 	return messageName
 }
 
-func resourceTypeFromProtoMessage(message proto.Message) storage.DeclarativeConfigHealth_ResourceType {
+func resourceTypeFromProtoMessage(message protocompat.Message) storage.DeclarativeConfigHealth_ResourceType {
 	switch reflect.TypeOf(message) {
 	case types.AuthProviderType:
 		return storage.DeclarativeConfigHealth_AUTH_PROVIDER

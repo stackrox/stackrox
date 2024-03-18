@@ -6,11 +6,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
-// DeploymentReference generates a list of deployment IDs that need to be updated given the deployment store.
-type DeploymentReference func(store store.DeploymentStore) []string
+// DeploymentResolution is a function type that generates a list of deployment IDs given the deployment store.
+type DeploymentResolution func(store store.DeploymentStore) []string
 
 // ResolveDeploymentIds is an identify function that simply returns a list of deployment ids passed
-func ResolveDeploymentIds(ids ...string) DeploymentReference {
+func ResolveDeploymentIds(ids ...string) DeploymentResolution {
 	return func(_ store.DeploymentStore) []string {
 		return ids
 	}
@@ -22,7 +22,7 @@ type NamespaceServiceAccount struct {
 }
 
 // ResolveDeploymentsByMultipleServiceAccounts returns a list of deployment IDs given a list of ServiceAccounts
-func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServiceAccount) DeploymentReference {
+func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServiceAccount) DeploymentResolution {
 	return func(store store.DeploymentStore) []string {
 		var allIds []string
 		for _, sa := range serviceAccounts {
@@ -33,14 +33,14 @@ func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServ
 }
 
 // ResolveDeploymentLabels returns a function that returns a list of deployment ids based on namespace and labels
-func ResolveDeploymentLabels(namespace string, sel selector.Selector) DeploymentReference {
+func ResolveDeploymentLabels(namespace string, sel selector.Selector) DeploymentResolution {
 	return func(store store.DeploymentStore) []string {
 		return store.FindDeploymentIDsByLabels(namespace, sel)
 	}
 }
 
 // ResolveAllDeployments returns a function that generates a list of a all deployment ids in the system
-func ResolveAllDeployments() DeploymentReference {
+func ResolveAllDeployments() DeploymentResolution {
 	return func(store store.DeploymentStore) []string {
 		allDeployments := store.GetAll()
 		ids := make([]string, len(allDeployments))
@@ -52,7 +52,7 @@ func ResolveAllDeployments() DeploymentReference {
 }
 
 // ResolveDeploymentsByImages returns a function that returns a list of deployment ids based on a slice of images
-func ResolveDeploymentsByImages(images ...*storage.Image) DeploymentReference {
+func ResolveDeploymentsByImages(images ...*storage.Image) DeploymentResolution {
 	return func(store store.DeploymentStore) []string {
 		return store.FindDeploymentIDsByImages(images)
 	}

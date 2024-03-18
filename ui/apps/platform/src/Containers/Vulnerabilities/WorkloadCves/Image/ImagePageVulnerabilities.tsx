@@ -28,13 +28,14 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
-import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
+} from '../../searchOptions';
+import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
     resourceCountByCveSeverityAndStatusFragment,
@@ -43,23 +44,23 @@ import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     imageVulnerabilitiesFragment,
 } from '../Tables/ImageVulnerabilitiesTable';
-import { DynamicTableLabel } from '../components/DynamicIcon';
+import { DynamicTableLabel } from '../../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
-    parseQuerySearchFilter,
-} from '../searchUtils';
+    parseWorkloadQuerySearchFilter,
+} from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
-} from '../components/ExceptionRequestModal/ExceptionRequestModal';
-import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
-import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
+} from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
+import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -114,7 +115,7 @@ function ImagePageVulnerabilities({
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
@@ -332,7 +333,7 @@ function ImagePageVulnerabilities({
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
-                    <WorkloadTableToolbar
+                    <WorkloadCveFilterToolbar
                         searchOptions={searchOptions}
                         autocompleteSearchContext={{
                             'Image SHA': imageId,

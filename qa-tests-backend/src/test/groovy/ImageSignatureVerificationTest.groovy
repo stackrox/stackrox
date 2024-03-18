@@ -1,6 +1,8 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
+import static util.Helpers.withRetry
 
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -8,6 +10,7 @@ import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyV
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 
 import objects.Deployment
+import services.ImageService
 import services.PolicyService
 import services.SignatureIntegrationService
 
@@ -72,12 +75,33 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 -----END PUBLIC KEY-----""",
     ]
 
+    static final private String DISTROLESS_IMAGE_DIGEST =
+            "sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766"
+    static final private String TEKTON_IMAGE_DIGEST =
+            "sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6"
+    static final private String UNVERIFIABLE_IMAGE_DIGEST =
+            "sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7"
+    static final private String WITHOUT_SIGNATURE_IMAGE_DIGEST =
+            "sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
+    static final private String SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST =
+            "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534"
+    static final private String SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST =
+            "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534"
+
+    static final private List<String> IMAGE_DIGESTS = [
+            DISTROLESS_IMAGE_DIGEST,
+            TEKTON_IMAGE_DIGEST,
+            UNVERIFIABLE_IMAGE_DIGEST,
+            WITHOUT_SIGNATURE_IMAGE_DIGEST,
+            SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST,
+            SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST,
+    ]
+
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
     static final private Deployment DISTROLESS_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-distroless")
             // quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@" +
-                    "sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766")
+            .setImage("quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@" + DISTROLESS_IMAGE_DIGEST)
             .addLabel("app", "image-with-signature-distroless-test")
             .setCommand(["sleep", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -86,8 +110,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-tekton")
             // quay.io/rhacs-eng/qa-signatures:tekton-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:tekton-multiarch@" +
-                    "sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6")
+            .setImage("quay.io/rhacs-eng/qa-signatures:tekton-multiarch@" + TEKTON_IMAGE_DIGEST)
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -96,8 +119,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
             .setName("with-signature-unverifiable")
             // quay.io/rhacs-eng/qa-signatures:centos9-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:centos9-multiarch"+
-                  "@sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7")
+            .setImage("quay.io/rhacs-eng/qa-signatures:centos9-multiarch@" + UNVERIFIABLE_IMAGE_DIGEST)
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -106,8 +128,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment WITHOUT_SIGNATURE_DEPLOYMENT = new Deployment()
             .setName("without-signature")
             // quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8
-            .setImage("quay.io/rhacs-eng/qa-multi-arch@" +
-                    "sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch@" + WITHOUT_SIGNATURE_IMAGE_DIGEST)
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -116,8 +137,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment SAME_DIGEST_NO_SIGNATURE = new Deployment()
             .setName("same-digest-without-signature")
             // quay.io/rhacs-eng/qa--multi-arch:enforcement
-            .setImage("quay.io/rhacs-eng/qa-multi-arch@" +
-                    "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch@" + SAME_DIGEST_NO_SIGNATURE_IMAGE_DIGEST)
             .addLabel("app", "image-same-digest-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -126,8 +146,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
             .setName("same-digest-with-signature")
             // quay.io/rhacs-eng/qa-signatures:nginx-multiarch
-            .setImage("quay.io/rhacs-eng/qa-signatures:nginx-multiarch@" +
-                    "sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534")
+            .setImage("quay.io/rhacs-eng/qa-signatures:nginx-multiarch@" + SAME_DIGEST_WITH_SIGNATURE_IMAGE_DIGEST)
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -226,6 +245,19 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             assert policyID
             CREATED_POLICY_IDS.add(policyID)
         }
+
+        // Reassessing policies will trigger a re-enrichment of images.
+        PolicyService.reassessPolicies()
+
+        // Wait until we received metadata from all images we want to test. This will ensure that enrichment
+        // has finalized.
+        withRetry(90, 2) {
+            for (digest in IMAGE_DIGESTS) {
+                ImageOuterClass.Image image = ImageService.getImage(digest, false)
+                assert image
+                assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+            }
+        }
     }
 
     def cleanupSpec() {
@@ -241,12 +273,6 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
 
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
         orchestrator.waitForNamespaceDeletion(SIGNATURE_TESTING_NAMESPACE)
-    }
-
-    def setup() {
-        // Reassessing policies will trigger a re-enrichment of images, ensuring we cover potential timeouts occurred
-        // during enriching images.
-        PolicyService.reassessPolicies()
     }
 
     @Unroll

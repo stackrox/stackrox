@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(policyCategory, foundPolicyCategory)
 
-	policyCategoryCount, err := store.Count(ctx)
+	policyCategoryCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, policyCategoryCount)
-	policyCategoryCount, err = store.Count(withNoAccessCtx)
+	policyCategoryCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(policyCategoryCount)
 
@@ -103,13 +104,13 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(policyCategorys, allPolicyCategory)
 
-	policyCategoryCount, err = store.Count(ctx)
+	policyCategoryCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, policyCategoryCount)
 
 	s.NoError(store.DeleteMany(ctx, policyCategoryIDs))
 
-	policyCategoryCount, err = store.Count(ctx)
+	policyCategoryCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, policyCategoryCount)
 }

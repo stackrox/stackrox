@@ -40,11 +40,12 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 	updateTicker := time.NewTicker(updateInterval)
 	updateTicker.Stop()
 	return &updaterImpl{
-		client:         client,
-		updateInterval: updateInterval,
-		response:       make(chan *message.ExpiringMessage),
-		stopSig:        concurrency.NewSignal(),
-		updateTicker:   updateTicker,
+		client:               client,
+		updateInterval:       updateInterval,
+		response:             make(chan *message.ExpiringMessage),
+		stopSig:              concurrency.NewSignal(),
+		updateTicker:         updateTicker,
+		complianceOperatorNS: "openshift-compliance",
 	}
 }
 
@@ -132,30 +133,11 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 }
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	var err error
-	ns := u.complianceOperatorNS
-	if ns == "" {
-		ns, err = u.getComplianceOperatorNamespace()
-		if err != nil {
-			return &central.ComplianceOperatorInfo{
-				StatusError: err.Error(),
-			}
-		}
-	}
-
-	complianceOperatorDeployment, err := getComplianceOperatorDeployment(u.ctx(), u.client, ns)
-	if err != nil {
-		// Lookup all namespaces again to cover the case that compliance operator was moved to different complianceOperatorNS.
-		if kubeAPIErr.IsNotFound(err) {
-			ns, err = u.getComplianceOperatorNamespace()
-			if err == nil {
-				complianceOperatorDeployment, err = getComplianceOperatorDeployment(u.ctx(), u.client, ns)
-			}
-		}
-	}
+	complianceOperatorDeployment, err := u.searchComplianceOperatorDeployment()
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
+			IsInstalled: false,
 		}
 	}
 
@@ -175,7 +157,8 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
 			TotalReadyPods: complianceOperatorDeployment.Status.ReadyReplicas,
 		},
-		Version: version,
+		Version:     version,
+		IsInstalled: true,
 	}
 
 	// Check Sensor access to compliance.openshift.io resources
@@ -220,26 +203,36 @@ func checkWriteAccess(client kubernetes.Interface) error {
 	return nil
 }
 
-func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
+func (u *updaterImpl) searchComplianceOperatorDeployment() (*appsv1.Deployment, error) {
+	// Use cached namespace, if compliance operator deployment was not found search again in all namespaces.
+	complianceOperator, err := u.getComplianceOperatorDeployment(u.complianceOperatorNS)
+	if complianceOperator != nil {
+		return complianceOperator, err
+	}
+
 	// List all namespaces to begin the lookup for compliance operator.
 	namespaceList, err := u.client.CoreV1().Namespaces().List(u.ctx(), metav1.ListOptions{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	for _, namespace := range namespaceList.Items {
-		complianceOperator, err := getComplianceOperatorDeployment(u.ctx(), u.client, namespace.Name)
+		complianceOperator, err := u.getComplianceOperatorDeployment(namespace.GetName())
 		if err == nil {
-			return complianceOperator.GetNamespace(), nil
+			return complianceOperator, nil
 		}
 		// Until we check all namespaces, we cannot determine if compliance operator is installed or not.
 		if kubeAPIErr.IsNotFound(err) {
 			continue
 		}
-		return "", err
+		return nil, err
 	}
 
-	return "", errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
+	return nil, errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
+}
+
+func (u *updaterImpl) getComplianceOperatorDeployment(ns string) (*appsv1.Deployment, error) {
+	return u.client.AppsV1().Deployments(ns).Get(u.ctx(), complianceoperator.Name, metav1.GetOptions{})
 }
 
 func (u *updaterImpl) ctx() context.Context {
@@ -274,8 +267,4 @@ func checkRequiredComplianceCRDsExist(resourceList *metav1.APIResourceList) erro
 		}
 	}
 	return errorList.ToError()
-}
-
-func getComplianceOperatorDeployment(ctx context.Context, client kubernetes.Interface, namespace string) (*appsv1.Deployment, error) {
-	return client.AppsV1().Deployments(namespace).Get(ctx, complianceoperator.Name, metav1.GetOptions{})
 }

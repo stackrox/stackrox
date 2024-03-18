@@ -4,9 +4,10 @@ import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
     markFalsePositiveAndVisitRequestDetails,
-    visitExceptionManagement,
+    visitPendingRequestsTab,
+    approveRequest,
 } from './ExceptionManagement.helpers';
-import { approveRequest } from './approveRequestFlow.test';
+import { selectors } from './ExceptionManagement.selectors';
 
 const comment = 'Defer me';
 const expiry = 'When all CVEs are fixable';
@@ -87,9 +88,14 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('exist');
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
-        visitExceptionManagement();
-        cy.get('button[role="tab"]:contains("Approved deferrals")').click();
-        cy.get('table tbody tr').should('not.exist');
+        visitPendingRequestsTab();
+        cy.get(selectors.approvedDeferralsTab).click();
+        cy.get(
+            'table tbody div.pf-c-empty-state__content h2:contains("No approved deferral requests")'
+        ).should('exist');
+        cy.get(
+            'table tbody div.pf-c-empty-state__content div.pf-c-empty-state__body p:contains("There are currently no approved deferral requests. Feel free to review pending requests or return to your dashboard.")'
+        ).should('exist');
     });
 
     it('should not see a cancelled request in the approved false positives table', () => {
@@ -102,8 +108,13 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('exist');
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
-        visitExceptionManagement();
-        cy.get('button[role="tab"]:contains("Approved false positives")').click();
-        cy.get('table tbody tr').should('not.exist');
+        visitPendingRequestsTab();
+        cy.get(selectors.approvedFalsePositivesTab).click();
+        cy.get(
+            'table tbody div.pf-c-empty-state__content h2:contains("No approved false positive requests")'
+        ).should('exist');
+        cy.get(
+            'table tbody div.pf-c-empty-state__content div.pf-c-empty-state__body p:contains("There are currently no approved false positive requests. Feel free to review pending requests or return to your dashboard.")'
+        ).should('exist');
     });
 });

@@ -4,7 +4,6 @@ package v1;
 
 import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
-import "gogoproto/gogo.proto";
 import weak "google/api/annotations.proto";
 
 option go_package = "v1";
@@ -23,7 +22,7 @@ message CloudSource {
   Type type = 3;
 
   message Credentials {
-    string secret = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+    string secret = 1; // @gotags: scrub:"always"
   }
   Credentials credentials = 4;
 

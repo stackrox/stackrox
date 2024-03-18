@@ -17,7 +17,6 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 
 	cases := []defaults.ImageFlavor{
 		defaults.DevelopmentBuildImageFlavor(),
-		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
 		defaults.OpenSourceImageFlavor(),
 	}

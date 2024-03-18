@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -64,10 +65,10 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
 
-	testSingleKeyStructCount, err := store.Count(ctx)
+	testSingleKeyStructCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, testSingleKeyStructCount)
-	testSingleKeyStructCount, err = store.Count(withNoAccessCtx)
+	testSingleKeyStructCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(testSingleKeyStructCount)
 
@@ -103,13 +104,13 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.ElementsMatch(testSingleKeyStructs, allTestSingleKeyStruct)
 
-	testSingleKeyStructCount, err = store.Count(ctx)
+	testSingleKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testSingleKeyStructCount)
 
 	s.NoError(store.DeleteMany(ctx, testSingleKeyStructIDs))
 
-	testSingleKeyStructCount, err = store.Count(ctx)
+	testSingleKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, testSingleKeyStructCount)
 }

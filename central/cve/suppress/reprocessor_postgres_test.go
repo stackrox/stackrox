@@ -61,11 +61,10 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 	imagePG.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.imageDataStore = imageDS.NewWithPostgres(imagePG.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), imagePG.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.imageDataStore = imageDS.NewWithPostgres(imagePG.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	cveStore := cvePG.New(s.db)
-	cveIndexer := cvePG.NewIndexer(s.db)
-	cveDataStore := cveDS.New(cveStore, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
+	cveDataStore := cveDS.New(cveStore, cveSearcher.New(cveStore), concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 
 	s.reprocessorLoop = NewLoop(cveDataStore).(*cveUnsuppressLoopImpl)

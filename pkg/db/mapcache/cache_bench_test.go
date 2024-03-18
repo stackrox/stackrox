@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -40,10 +40,10 @@ func BenchmarkWalk(b *testing.B) {
 	require.NoError(b, err)
 	defer rocksdbtest.TearDownRocksDB(db)
 
-	keyFunc := func(msg proto.Message) []byte {
+	keyFunc := func(msg protocompat.Message) []byte {
 		return []byte(msg.(*storage.Cluster).GetId())
 	}
-	alloc := func() proto.Message {
+	alloc := func() protocompat.Message {
 		return &storage.Cluster{}
 	}
 
@@ -59,7 +59,7 @@ func BenchmarkWalk(b *testing.B) {
 	}
 
 	b.Run("walk", func(b *testing.B) {
-		err := crud.Walk(func(msg proto.Message) error {
+		err := crud.Walk(func(msg protocompat.Message) error {
 			return nil
 		})
 		require.NoError(b, err)

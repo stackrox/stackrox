@@ -1,17 +1,17 @@
 package proto
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/generic"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type messageCrudImpl struct {
 	genericCrud generic.Crud
-	keyFunc     func(message proto.Message) []byte
+	keyFunc     func(message protocompat.Message) []byte
 }
 
 // Read reads and returns a single proto message from bolt.
-func (crud *messageCrudImpl) Read(id string) (msg proto.Message, err error) {
+func (crud *messageCrudImpl) Read(id string) (msg protocompat.Message, err error) {
 	x, err := crud.genericCrud.Read([]byte(id))
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func (crud *messageCrudImpl) Read(id string) (msg proto.Message, err error) {
 	if x == nil {
 		return nil, nil
 	}
-	return x.(proto.Message), nil
+	return x.(protocompat.Message), nil
 }
 
 func idsToKeyPaths(ids []string) []generic.KeyPath {
@@ -31,27 +31,27 @@ func idsToKeyPaths(ids []string) []generic.KeyPath {
 }
 
 // ReadBatch reads and returns a list of proto messages for a list of ids in the same order.
-func (crud *messageCrudImpl) ReadBatch(ids []string) ([]proto.Message, []int, error) {
+func (crud *messageCrudImpl) ReadBatch(ids []string) ([]protocompat.Message, []int, error) {
 	results, missingIndices, err := crud.genericCrud.ReadBatch(idsToKeyPaths(ids)...)
 	if err != nil {
 		return nil, nil, err
 	}
-	msgResults := make([]proto.Message, len(results))
+	msgResults := make([]protocompat.Message, len(results))
 	for i, res := range results {
-		msgResults[i] = res.(proto.Message)
+		msgResults[i] = res.(protocompat.Message)
 	}
 	return msgResults, missingIndices, nil
 }
 
 // ReadAll returns all of the proto messages stored in the bucket.
-func (crud *messageCrudImpl) ReadAll() ([]proto.Message, error) {
+func (crud *messageCrudImpl) ReadAll() ([]protocompat.Message, error) {
 	results, err := crud.genericCrud.ReadAll(0)
 	if err != nil {
 		return nil, err
 	}
-	msgResults := make([]proto.Message, len(results))
+	msgResults := make([]protocompat.Message, len(results))
 	for i, res := range results {
-		msgResults[i] = res.Value.(proto.Message)
+		msgResults[i] = res.Value.(protocompat.Message)
 	}
 	return msgResults, nil
 }
@@ -62,13 +62,13 @@ func (crud *messageCrudImpl) Count() (int, error) {
 
 // Create creates a new entry in bolt for the input message.
 // Returns an error if an entry with a matching id exists.
-func (crud *messageCrudImpl) Create(msg proto.Message) error {
+func (crud *messageCrudImpl) Create(msg protocompat.Message) error {
 	return crud.genericCrud.Create(msg)
 }
 
 // Create creates new entries in bolt for the input messages.
 // Returns an error if any entry with a matching id already exists.
-func (crud *messageCrudImpl) CreateBatch(msgs []proto.Message) error {
+func (crud *messageCrudImpl) CreateBatch(msgs []protocompat.Message) error {
 	entries := make([]generic.Entry, len(msgs))
 	for i, msg := range msgs {
 		entries[i] = generic.Entry{Value: msg}
@@ -78,13 +78,13 @@ func (crud *messageCrudImpl) CreateBatch(msgs []proto.Message) error {
 
 // Update updates a new entry in bolt for the input message.
 // Returns an error an entry with the same id does not already exist.
-func (crud *messageCrudImpl) Update(msg proto.Message) (uint64, uint64, error) {
+func (crud *messageCrudImpl) Update(msg protocompat.Message) (uint64, uint64, error) {
 	return crud.genericCrud.Update(msg)
 }
 
 // Update updates the entries in bolt for the input messages.
 // Returns an error if any input message does not have an existing entry.
-func (crud *messageCrudImpl) UpdateBatch(msgs []proto.Message) (uint64, uint64, error) {
+func (crud *messageCrudImpl) UpdateBatch(msgs []protocompat.Message) (uint64, uint64, error) {
 	entries := make([]generic.Entry, len(msgs))
 	for i, msg := range msgs {
 		entries[i] = generic.Entry{Value: msg}
@@ -93,12 +93,12 @@ func (crud *messageCrudImpl) UpdateBatch(msgs []proto.Message) (uint64, uint64, 
 }
 
 // Upsert upserts the input message into bolt whether or not an entry with the same id already exists.
-func (crud *messageCrudImpl) Upsert(msg proto.Message) (uint64, uint64, error) {
+func (crud *messageCrudImpl) Upsert(msg protocompat.Message) (uint64, uint64, error) {
 	return crud.genericCrud.Upsert(msg)
 }
 
 // Upsert upserts the input messages into bolt whether or not entries with the same ids already exist.
-func (crud *messageCrudImpl) UpsertBatch(msgs []proto.Message) (uint64, uint64, error) {
+func (crud *messageCrudImpl) UpsertBatch(msgs []protocompat.Message) (uint64, uint64, error) {
 	entries := make([]generic.Entry, len(msgs))
 	for i, msg := range msgs {
 		entries[i] = generic.Entry{Value: msg}
@@ -116,6 +116,6 @@ func (crud *messageCrudImpl) DeleteBatch(ids []string) (uint64, uint64, error) {
 	return crud.genericCrud.DeleteBatch(idsToKeyPaths(ids)...)
 }
 
-func (crud *messageCrudImpl) KeyFunc(message proto.Message) []byte {
+func (crud *messageCrudImpl) KeyFunc(message protocompat.Message) []byte {
 	return crud.keyFunc(message)
 }

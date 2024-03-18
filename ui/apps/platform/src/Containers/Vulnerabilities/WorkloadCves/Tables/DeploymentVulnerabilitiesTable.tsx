@@ -17,8 +17,8 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { getEntityPagePath } from '../searchUtils';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { getEntityPagePath } from '../../utils/searchUtils';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
@@ -27,7 +27,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
-import DateDistanceTd from '../components/DatePhraseTd';
+import DateDistance from '../../components/DateDistance';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
@@ -212,7 +212,7 @@ function DeploymentVulnerabilitiesTable({
                             </Td>
                             <Td dataLabel="Affected components">{affectedComponentsText}</Td>
                             <Td modifier="nowrap" dataLabel="First discovered">
-                                <DateDistanceTd date={discoveredAtImage} />
+                                <DateDistance date={discoveredAtImage} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

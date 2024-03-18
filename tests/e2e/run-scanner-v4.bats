@@ -53,6 +53,9 @@ setup_file() {
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
     export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+      export ROX_OPENSHIFT_VERSION=4
+    fi
 
     # Prepare earlier Helm chart version.
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
@@ -88,6 +91,12 @@ setup_file() {
     fi
 
     setup_default_TLS_certs
+
+    # Configure a timeout for a single test. After 30m of runtime a test will be marked as failed
+    # (and we will hopefully receive helpful logs for analysing the situation).
+    # Without a timeout it might happen that the pod running the tests is simply killed and we won't
+    # have any logs for investigation the situation.
+    export BATS_TEST_TIMEOUT=1800 # Seconds
 }
 
 test_case_no=0
@@ -311,9 +320,6 @@ teardown_file() {
     export ROX_SCANNER_V4="false"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_HELM_DEPLOY="false"
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-      export ROX_OPENSHIFT_VERSION=4
-    fi
     export GENERATE_SCANNER_DEPLOYMENT_BUNDLE="true"
     local scanner_bundle="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/scanner-deploy"
 
@@ -667,6 +673,7 @@ _deploy_stackrox() {
     local sensor_namespace=${3:-stackrox}
 
     _deploy_central "${central_namespace}"
+    # shellcheck disable=SC2031
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" && "${HELM_REUSE_VALUES:-}" != "true" ]]; then
       # In case we are reusing existing Helm values we should not export new
       # central credentials into the environment.
@@ -699,6 +706,7 @@ _deploy_central() {
 
 patch_down_central() {
     local central_namespace="$1"
+    # shellcheck disable=SC2031
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" != "true" ]]; then
         patch_down_central_directly "${central_namespace}"
     fi
@@ -840,6 +848,7 @@ _deploy_sensor() {
 
 patch_down_sensor() {
     local sensor_namespace="$1"
+    # shellcheck disable=SC2031
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" != "true" ]]; then
         patch_down_sensor_directly "${sensor_namespace}"
     fi

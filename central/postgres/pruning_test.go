@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
@@ -17,11 +16,11 @@ import (
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	plopPostgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -128,7 +127,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 	err = clusterHealthStore.UpsertMany(s.ctx, healthStatuses)
 	s.Nil(err)
 
-	count, err := clusterHealthStore.Count(s.ctx)
+	count, err := clusterHealthStore.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(count, 3)
 	exists, err := clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
@@ -137,7 +136,7 @@ func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
 
 	PruneClusterHealthStatuses(s.ctx, s.testDB.DB)
 
-	count, err = clusterHealthStore.Count(s.ctx)
+	count, err = clusterHealthStore.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(count, 1)
 	exists, err = clusterHealthStore.Exists(s.ctx, fixtureconsts.Cluster2)
@@ -155,7 +154,7 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 	deploymentID := "2c507da1-b882-48cc-8143-b74e14c5cd4f"
 	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID}))
 
-	now := types.TimestampNow()
+	now := protocompat.TimestampNow()
 	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * orphanWindow))
 
 	cases := []struct {
@@ -289,13 +288,12 @@ func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
 
 func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
-		name                  string
-		initialProcesses      []*storage.ProcessIndicator
-		initialPlops          []*storage.ProcessListeningOnPortStorage
-		deployments           set.FrozenStringSet
-		pods                  set.FrozenStringSet
-		expectedDeletions     []string
-		expectedPlopDeletions []string
+		name              string
+		initialProcesses  []*storage.ProcessIndicator
+		initialPlops      []*storage.ProcessListeningOnPortStorage
+		deployments       set.FrozenStringSet
+		pods              set.FrozenStringSet
+		expectedDeletions []string
 	}{
 		{
 			name: "no deployments nor pods - remove all old indicators",
@@ -315,14 +313,6 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			deployments:       set.NewFrozenStringSet(),
 			pods:              set.NewFrozenStringSet(),
 			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
-			expectedPlopDeletions: []string{
-				fixtureconsts.PlopUID1,
-				fixtureconsts.PlopUID2,
-				fixtureconsts.PlopUID3,
-				fixtureconsts.PlopUID4,
-				fixtureconsts.PlopUID5,
-				fixtureconsts.PlopUID6,
-			},
 		},
 		{
 			name: "no deployments nor pods - remove no new orphaned indicators",
@@ -336,10 +326,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:           set.NewFrozenStringSet(),
-			pods:                  set.NewFrozenStringSet(),
-			expectedDeletions:     nil,
-			expectedPlopDeletions: nil,
+			deployments:       set.NewFrozenStringSet(),
+			pods:              set.NewFrozenStringSet(),
+			expectedDeletions: nil,
 		},
 		{
 			name: "all pods separate deployments - remove no indicators",
@@ -353,10 +342,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedDeletions:     nil,
-			expectedPlopDeletions: nil,
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions: nil,
 		},
 		{
 			name: "all pods same deployment - remove no indicators",
@@ -365,10 +353,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
 			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedDeletions:     nil,
-			expectedPlopDeletions: nil,
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions: nil,
 		},
 		{
 			name: "some pods separate deployments - remove some indicators",
@@ -382,10 +369,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment3),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
-			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1},
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
 		},
 		{
 			name: "some pods same deployment - remove some indicators",
@@ -399,10 +385,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
-			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1},
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
 		},
 	}
 	for _, c := range cases {
@@ -430,22 +415,11 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses), countFromDB)
 
-			plopStore := plopPostgresStore.NewFullStore(s.testDB.DB)
-			err = plopStore.UpsertMany(s.ctx, c.initialPlops)
-			s.NoError(err)
-			plopCount, err := plopStore.Count(s.ctx)
-			s.NoError(err)
-			s.Equal(len(c.initialPlops), plopCount)
-
 			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
 
 			countFromDB, err = processDatastore.Count(s.ctx, nil)
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
-
-			plopCount, err = plopStore.Count(s.ctx)
-			s.NoError(err)
-			s.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 
 			// Cleanup
 			var cleanupIDs []string
@@ -454,119 +428,6 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			}
 			s.NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
 
-			for _, deploymentID := range c.deployments.AsSlice() {
-				s.NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
-			}
-
-			for _, podID := range c.pods.AsSlice() {
-				s.NoError(podDS.RemovePod(s.ctx, podID))
-			}
-
-		})
-	}
-}
-
-func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
-	cases := []struct {
-		name                  string
-		initialPlops          []*storage.ProcessListeningOnPortStorage
-		deployments           set.FrozenStringSet
-		pods                  set.FrozenStringSet
-		expectedPlopDeletions []string
-	}{
-		{
-			name: "no deployments nor pods - remove plops since there are no pods",
-			initialPlops: []*storage.ProcessListeningOnPortStorage{
-				fixtures.GetPlopStorage1(),
-				fixtures.GetPlopStorage2(),
-				fixtures.GetPlopStorage3(),
-				fixtures.GetPlopStorage4(),
-				fixtures.GetPlopStorage5(),
-				fixtures.GetPlopStorage6(),
-			},
-			deployments:           set.NewFrozenStringSet(),
-			pods:                  set.NewFrozenStringSet(),
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3, fixtureconsts.PlopUID4, fixtureconsts.PlopUID5, fixtureconsts.PlopUID6},
-		},
-		{
-			name: "deployments one missing pod - remove plops with PodUid with no matching pod even though there are deployments",
-			initialPlops: []*storage.ProcessListeningOnPortStorage{
-				fixtures.GetPlopStorage1(),
-				fixtures.GetPlopStorage2(),
-				fixtures.GetPlopStorage3(),
-				fixtures.GetPlopStorage4(),
-				fixtures.GetPlopStorage5(),
-				fixtures.GetPlopStorage6(),
-			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2),
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID6},
-		},
-		{
-			name: "one missing deployments no missing pods - remove plops with no matching deployments even though there are matching pods",
-			initialPlops: []*storage.ProcessListeningOnPortStorage{
-				fixtures.GetPlopStorage1(),
-				fixtures.GetPlopStorage2(),
-				fixtures.GetPlopStorage3(),
-				fixtures.GetPlopStorage4(),
-				fixtures.GetPlopStorage5(),
-				fixtures.GetPlopStorage6(),
-			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment5, fixtureconsts.Deployment3),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID4},
-		},
-		{
-			name: "no missing deployments or pods but plops are expired - remove all expired plops",
-			initialPlops: []*storage.ProcessListeningOnPortStorage{
-				fixtures.GetPlopStorage4(),
-				fixtures.GetPlopStorageExpired1(),
-				fixtures.GetPlopStorageExpired2(),
-				fixtures.GetPlopStorageExpired3(),
-			},
-			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
-			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID7, fixtureconsts.PlopUID8, fixtureconsts.PlopUID9},
-		},
-	}
-	for _, c := range cases {
-		s.T().Run(c.name, func(t *testing.T) {
-			s.testDB.Teardown(s.T())
-			s.testDB = pgtest.ForT(s.T())
-			// Add deployments if necessary
-			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
-				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
-			}
-
-			podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
-			for _, podID := range c.pods.AsSlice() {
-				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
-				s.Nil(err)
-			}
-
-			plopStore := plopPostgresStore.NewFullStore(s.testDB.DB)
-			err = plopStore.UpsertMany(s.ctx, c.initialPlops)
-			s.NoError(err)
-			plopCount, err := plopStore.Count(s.ctx)
-			s.NoError(err)
-			s.Equal(len(c.initialPlops), plopCount)
-
-			PruneOrphanedPLOPs(s.ctx, s.testDB.DB, orphanWindow)
-
-			plopCount, err = plopStore.Count(s.ctx)
-			s.NoError(err)
-			s.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
-
-			ids, err := plopStore.GetIDs(s.ctx)
-			s.NoError(err)
-			for id := range ids {
-				s.NotContains(c.expectedPlopDeletions, id)
-			}
-
-			// Cleanup
 			for _, deploymentID := range c.deployments.AsSlice() {
 				s.NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
 			}

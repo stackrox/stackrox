@@ -6,13 +6,13 @@ import { Flex, Label } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { EyeIcon } from '@patternfly/react-icons';
-import ImageNameTd from '../components/ImageNameTd';
-import SeverityCountLabels from '../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import ImageNameLink from '../components/ImageNameLink';
+import SeverityCountLabels from '../../components/SeverityCountLabels';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistanceTd from '../components/DatePhraseTd';
+import DateDistance from '../../components/DateDistance';
 import TooltipTh from '../components/TooltipTh';
-import { VulnerabilitySeverityLabel, WatchStatus } from '../types';
+import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningErrorLabel from '../components/ImageScanningErrorLabelLayout';
 
 export const imageListQuery = gql`
@@ -153,7 +153,7 @@ function ImagesTable({
                             <Tr>
                                 <Td dataLabel="Image">
                                     {name ? (
-                                        <ImageNameTd name={name} id={id}>
+                                        <ImageNameLink name={name} id={id}>
                                             {isWatchedImage && (
                                                 <Label
                                                     isCompact
@@ -171,7 +171,7 @@ function ImagesTable({
                                                     scanNotes={scanNotes}
                                                 />
                                             )}
-                                        </ImageNameTd>
+                                        </ImageNameLink>
                                     ) : (
                                         'Image name not available'
                                     )}
@@ -200,10 +200,10 @@ function ImagesTable({
                                     )}
                                 </Td>
                                 <Td>
-                                    <DateDistanceTd date={metadata?.v1?.created} asPhrase={false} />
+                                    <DateDistance date={metadata?.v1?.created} asPhrase={false} />
                                 </Td>
                                 <Td>
-                                    <DateDistanceTd date={scanTime} />
+                                    <DateDistance date={scanTime} />
                                 </Td>
                                 {hasWriteAccessForWatchedImage && (
                                     <Td isActionCell>

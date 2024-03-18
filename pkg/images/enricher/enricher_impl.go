@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,7 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -163,6 +164,8 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 		if updated {
 			e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+			// Errors for signature verification will be logged, so we can safely ignore them for the time being.
+			_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, image)
 
 			log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
 			return true, nil
@@ -205,12 +208,15 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	image.Metadata = existingImage.GetMetadata()
+	if existingImage.GetMetadata() != nil {
+		image.Metadata = existingImage.GetMetadata()
+	}
 	image.Notes = existingImage.GetNotes()
-	image.Names = utils.UniqueImageNames(existingImage.GetNames(), image.GetNames())
+	hasChangedNames := !protoutils.SlicesEqual(existingImage.GetNames(), image.GetNames())
+	image.Names = protoutils.SliceUnique(append(existingImage.GetNames(), image.GetNames()...))
 
 	e.useExistingSignature(image, existingImage, option)
-	e.useExistingSignatureVerificationData(image, existingImage, option)
+	e.useExistingSignatureVerificationData(image, existingImage, option, hasChangedNames)
 	return e.useExistingScan(image, existingImage, option)
 }
 
@@ -374,7 +380,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 					Name:          registry.Source().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: timestamp.TimestampNow(),
+					LastTimestamp: protocompat.TimestampNow(),
 					ErrorMessage:  err.Error(),
 				})
 			}
@@ -402,7 +408,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 				Name:          name,
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
-				LastTimestamp: timestamp.TimestampNow(),
+				LastTimestamp: protocompat.TimestampNow(),
 				ErrorMessage:  "",
 			})
 			return true, nil
@@ -491,7 +497,7 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 	if option == UseImageNamesRefetchCachedValues {
 		img.SignatureVerificationData = nil
 		img.Signature = nil
-		img.Names = utils.UniqueImageNames(existingImage.GetNames(), img.GetNames())
+		img.Names = protoutils.SliceUnique(append(existingImage.GetNames(), img.GetNames()...))
 		return img, false
 	}
 
@@ -523,9 +529,17 @@ func (e *enricherImpl) useExistingSignature(img *storage.Image, existingImg *sto
 	}
 }
 
-func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, existingImg *storage.Image, option FetchOption) {
+func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, existingImg *storage.Image,
+	option FetchOption, hasChangedNames bool) {
 	if option == ForceRefetchSignaturesOnly {
 		// When forced to refetch values, disregard existing ones.
+		img.SignatureVerificationData = nil
+		return
+	}
+
+	// In case the existing image and the current image have a divergence in names, we will disregard existing
+	// signature verification data, ensuring that we will always verify signatures, if any exist.
+	if hasChangedNames {
 		img.SignatureVerificationData = nil
 		return
 	}
@@ -577,7 +591,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 					Name:          scanner.DataSource().Name,
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: timestamp.TimestampNow(),
+					LastTimestamp: protocompat.TimestampNow(),
 					ErrorMessage:  err.Error(),
 				})
 			}
@@ -609,7 +623,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				Name:          scanner.DataSource().Name,
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
-				LastTimestamp: timestamp.TimestampNow(),
+				LastTimestamp: protocompat.TimestampNow(),
 				ErrorMessage:  "",
 			})
 			return result, nil
@@ -781,10 +795,12 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, nil
 	}
 
-	log.Debugf("Found signatures for image %q: %+v", imgName, fetchedSignatures)
+	uniqueFetchedSignatures := protoutils.SliceUnique(fetchedSignatures)
+
+	log.Debugf("Found signatures for image %q: %+v", imgName, uniqueFetchedSignatures)
 
 	img.Signature = &storage.ImageSignature{
-		Signatures: fetchedSignatures,
+		Signatures: uniqueFetchedSignatures,
 		Fetched:    protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 	return true, nil
@@ -795,7 +811,6 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 		return errox.InvalidArgs.CausedByf("no registry is indicated for image %q",
 			image.GetName().GetFullName())
 	}
-	// TODO(dhaus): Verify the image names here as well? Probably we should fail open here instead of not at all? At least 1 image has to have a registry set I suppose.
 	return nil
 }
 

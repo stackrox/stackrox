@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,11 +20,10 @@ var (
 // searcherImpl provides an intermediary implementation layer for RiskStorage.
 type searcherImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
-// SearchRawRisks retrieves Risks from the indexer and storage
+// SearchRawRisks retrieves Risks from the storage
 func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error) {
 	results, err := s.Search(ctx, q)
 	if err != nil {
@@ -49,7 +47,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return s.searcher.Count(ctx, q)
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+// Format the search functionality for default sorting.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	defaultSortedSearcher := paginated.WithDefaultSortOption(searcher, defaultSortOption)
 	return defaultSortedSearcher

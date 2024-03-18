@@ -31,6 +31,9 @@ type DataStore interface {
 
 	// DeleteSuite removes a suite from the database
 	DeleteSuite(ctx context.Context, id string) error
+
+	// DeleteSuitesByCLuster removes a suite from the database
+	DeleteSuitesByCluster(ctx context.Context, clusterID string) error
 }
 
 // New returns an instance of DataStore.
@@ -42,7 +45,7 @@ func New(complianceSuiteStorage pgStore.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store), nil
+	return New(store)
 }

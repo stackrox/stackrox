@@ -84,7 +84,7 @@ function roxcurl() {
   curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
-deploy_earlier_central() {
+deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
     make cli
@@ -98,7 +98,8 @@ deploy_earlier_central() {
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
-         --set central.db.enabled=false \
+         --set central.db.enabled=true \
+         --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
          --set central.image.tag="${EARLIER_TAG}" \
@@ -115,10 +116,10 @@ deploy_earlier_central() {
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
-restore_backup_test() {
-    info "Restoring a 56.1 backup into a newer central"
+restore_4_1_backup() {
+    info "Restoring a 4.1 backup into a newer central"
 
-    restore_56_1_backup
+    restore_4_1_postgres_backup
 }
 
 force_rollback() {
@@ -442,16 +443,6 @@ preamble() {
     else
         (cd "$(dirname "$REPO_FOR_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_TIME_TRAVEL")")
     fi
-
-    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
-        if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
-            if is_CI; then
-              info "Repo for time travel already exists! Will use it."
-            fi
-            (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
-        else
-            (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
-        fi
 
     if is_CI; then
         if ! command -v yq >/dev/null 2>&1; then

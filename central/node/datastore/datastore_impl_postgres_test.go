@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -28,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -75,17 +75,15 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
 	storage := pgStore.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
-	searcher := search.NewV2(storage, pgStore.NewIndexer(suite.db))
+	searcher := search.NewV2(storage)
 	suite.datastore = NewWithPostgres(storage, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
-	componentIndexer := nodeComponentPostgres.NewIndexer(suite.db)
-	componentSearcher := nodeComponentSearch.New(componentStorage, componentIndexer)
+	componentSearcher := nodeComponentSearch.New(componentStorage)
 	suite.componentDataStore = nodeComponentDS.New(componentStorage, componentSearcher, suite.mockRisk, ranking.NewRanker())
 
 	cveStorage := nodeCVEPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
-	cveIndexer := nodeCVEPostgres.NewIndexer(suite.db)
-	cveSearcher := nodeCVESearch.New(cveStorage, cveIndexer)
+	cveSearcher := nodeCVESearch.New(cveStorage)
 	cveDataStore, err := nodeCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
 	suite.NoError(err)
 	suite.nodeCVEDataStore = cveDataStore
@@ -467,7 +465,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(expectedNode, storedNode)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
-	testNode.Scan.ScanTime = types.TimestampNow()
+	testNode.Scan.ScanTime = protocompat.TimestampNow()
 	testNode.Scan.Components = testNode.Scan.Components[:len(testNode.Scan.Components)-1]
 	cveIDsSet := set.NewStringSet()
 	for _, component := range testNode.GetScan().GetComponents() {
@@ -529,7 +527,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 			{CveBaseInfo: &storage.CVEInfo{Cve: "cve"}},
 		}
 	}
-	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.ScanTime = protocompat.TimestampNow()
 
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
@@ -555,7 +553,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
 
 	// Verify that new scan with less components cleans up the old relations correctly.
-	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.ScanTime = protocompat.TimestampNow()
 	testNode2.Scan.Components = testNode2.Scan.Components[:len(testNode2.Scan.Components)-1]
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
@@ -577,7 +575,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
 
 	// Verify that new scan with no components and vulns cleans up the old relations correctly.
-	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.ScanTime = protocompat.TimestampNow()
 	testNode2.Scan.Components = nil
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
@@ -641,7 +639,7 @@ func getTestNodeForPostgres(id, name string) *storage.Node {
 		Name:      name,
 		ClusterId: id,
 		Scan: &storage.NodeScan{
-			ScanTime:        types.TimestampNow(),
+			ScanTime:        protocompat.TimestampNow(),
 			OperatingSystem: "ubuntu",
 			Components: []*storage.EmbeddedNodeScanComponent{
 				{

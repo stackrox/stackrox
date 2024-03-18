@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -60,7 +61,8 @@ type nodePartsAsSlice struct {
 
 // Store provides storage functionality for full nodes.
 type Store interface {
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Node, bool, error)
 	Upsert(ctx context.Context, obj *storage.Node) error
@@ -476,7 +478,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 		return true, nil
 	}
 	// We skip rewriting components and vulnerabilities if the node scan is older.
-	scanUpdated := oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) <= 0
+	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
 		node.Scan = oldNode.Scan
 		node.RiskScore = oldNode.GetRiskScore()
@@ -489,7 +491,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
-	iTime := protoTypes.TimestampNow()
+	iTime := protocompat.TimestampNow()
 
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
@@ -534,29 +536,29 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 }
 
 // Count returns the number of objects in the store
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
+func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Node")
 
 	return pgutils.Retry2(func() (int, error) {
-		return s.retryableCount(ctx)
+		return s.retryableCount(ctx, q)
 	})
 }
 
-func (s *storeImpl) retryableCount(ctx context.Context) (int, error) {
-	var sacQueryFilter *v1.Query
+func (s *storeImpl) retryableCount(ctx context.Context, q *v1.Query) (int, error) {
+	return pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
+}
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+// Search returns the result matching the query.
+func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Node")
 
-	if err != nil {
-		return 0, err
-	}
+	return pgutils.Retry2(func() ([]search.Result, error) {
+		return s.retryableSearch(ctx, q)
+	})
+}
 
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
+func (s *storeImpl) retryableSearch(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 }
 
 // Exists returns if the id exists in the store
@@ -569,24 +571,12 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error) {
-	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-	sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
-	return count == 1, err
+	if err != nil {
+		return false, err
+	}
+	return count == 1, nil
 }
 
 // Get returns the object, if it exists from the store

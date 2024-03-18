@@ -51,7 +51,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 		key := checkResultKey{
 			scanConfigName: result.GetScanConfigName(),
 			scanConfigID:   scanToScanID[result.GetScanConfigName()],
-			profileName:    "", // TODO(ROX-20334)
+			profileName:    "", // TODO(ROX-21647)
 			checkName:      result.GetCheckName(),
 		}
 		workingResult, found := resultsByScanCheck[key]
@@ -165,6 +165,48 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 				ClusterName: resultCount.ClusterName,
 			},
 			ClusterErrors: clusterErrors[resultCount.ClusterID],
+			CheckStats: []*v2.ComplianceCheckStatusCount{
+				{
+					Count:  int32(resultCount.FailCount),
+					Status: v2.ComplianceCheckStatus_FAIL,
+				},
+				{
+					Count:  int32(resultCount.InfoCount),
+					Status: v2.ComplianceCheckStatus_INFO,
+				},
+				{
+					Count:  int32(resultCount.PassCount),
+					Status: v2.ComplianceCheckStatus_PASS,
+				},
+				{
+					Count:  int32(resultCount.ErrorCount),
+					Status: v2.ComplianceCheckStatus_ERROR,
+				},
+				{
+					Count:  int32(resultCount.ManualCount),
+					Status: v2.ComplianceCheckStatus_MANUAL,
+				},
+				{
+					Count:  int32(resultCount.InconsistentCount),
+					Status: v2.ComplianceCheckStatus_INCONSISTENT,
+				},
+				{
+					Count:  int32(resultCount.NotApplicableCount),
+					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
+				},
+			},
+		})
+	}
+	return convertedResults
+}
+
+// ComplianceV2ProfileStats converts the counts to the v2 stats
+func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile) []*v2.ComplianceProfileScanStats {
+	var convertedResults []*v2.ComplianceProfileScanStats
+
+	for _, resultCount := range resultCounts {
+		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
+			ProfileName: resultCount.ProfileName,
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),

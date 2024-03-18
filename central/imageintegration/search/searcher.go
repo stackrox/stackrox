@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -18,10 +17,9 @@ type Searcher interface {
 	SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, indexer index.Indexer) Searcher {
+// New returns a new instance of Searcher for the given storage.
+func New(storage store.Store) Searcher {
 	return &searcherImpl{
-		storage:  storage,
-		searcher: indexer,
+		storage: storage,
 	}
 }

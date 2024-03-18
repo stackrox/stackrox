@@ -16,7 +16,7 @@ import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { getDateTime } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { Distro, sortCveDistroList } from '../sortUtils';
+import { Distro, sortCveDistroList } from '../../utils/sortUtils';
 
 export type ImageCveMetadata = {
     cve: string;

@@ -108,7 +108,39 @@ updates:
       prefix: chore
 
   - package-ecosystem: 'gomod'
-    directory: '/operator/tools/'
+    directory: '/operator/tools/controller-gen'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/operator/tools/envtest/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/operator/tools/kustomize/'
     schedule:
       interval: 'weekly'
       day: 'wednesday'
@@ -125,6 +157,38 @@ updates:
 
   - package-ecosystem: 'gomod'
     directory: '/operator/tools/kuttl/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/operator/tools/operator-sdk/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/operator/tools/yq/'
     schedule:
       interval: 'weekly'
       day: 'wednesday'

@@ -1,13 +1,13 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	rocksdbTxns "github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -73,7 +73,7 @@ func (rc *DackBox) NewTransaction() (*Transaction, error) {
 		graph:         remote,
 		modification:  modification,
 		dirtyPrefix:   rc.dirtyPrefix,
-		dirtyMap:      make(map[string]proto.Message),
+		dirtyMap:      make(map[string]protocompat.Message),
 		discard:       rc.discard,
 		commit:        rc.commit,
 	}, nil
@@ -161,7 +161,7 @@ func (rc *DackBox) discard(openedAt uint64, txn transactions.DBTransaction) {
 	go rc.discardAsync(openedAt, txn)
 }
 
-func (rc *DackBox) commit(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyMap map[string]proto.Message) error {
+func (rc *DackBox) commit(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyMap map[string]protocompat.Message) error {
 	rc.lock.Lock()
 	defer rc.lock.Unlock()
 

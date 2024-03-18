@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
-	timestamp "github.com/gogo/protobuf/types"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -71,7 +70,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = proto.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
 	s.Require().NoError(err)
 
 	// Verify that additional CAs were received
@@ -101,7 +100,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = proto.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
 	s.Require().NoError(err)
 
 	// Read root CA from response
@@ -188,7 +187,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	expected := &storage.SystemInfo{
 		BackupInfo: &storage.BackupInfo{
 			Status:          storage.OperationStatus_PASS,
-			BackupLastRunAt: timestamp.TimestampNow(),
+			BackupLastRunAt: protocompat.TimestampNow(),
 		},
 	}
 	err := srv.systemInfoStore.Upsert(ctx, expected)

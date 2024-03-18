@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
@@ -19,9 +20,7 @@ func parseTimestamp(value string) (*types.Timestamp, *time.Duration, error) {
 	if t, ok := parseTimeString(value); ok {
 		// Adjust for the timezone offset when comparing
 		seconds := t.Unix() - timeutil.TimeToOffset(t)
-		return &types.Timestamp{
-			Seconds: seconds,
-		}, nil, nil
+		return protocompat.GetProtoTimestampFromSeconds(seconds), nil, nil
 	}
 	if d, ok := parseDuration(value); ok {
 		return nil, &d, nil
@@ -33,23 +32,23 @@ func timestampComparator(cmp string) (func(instance, value *types.Timestamp) boo
 	switch cmp {
 	case LessThanOrEqualTo:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) >= 0
+			return protocompat.CompareTimestamps(value, instance) >= 0
 		}, nil
 	case GreaterThanOrEqualTo:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) <= 0
+			return protocompat.CompareTimestamps(value, instance) <= 0
 		}, nil
 	case LessThan:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) > 0
+			return protocompat.CompareTimestamps(value, instance) > 0
 		}, nil
 	case GreaterThan:
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) < 0
+			return protocompat.CompareTimestamps(value, instance) < 0
 		}, nil
 	case "":
 		return func(instance, value *types.Timestamp) bool {
-			return value.Compare(instance) == 0
+			return protocompat.CompareTimestamps(value, instance) == 0
 		}, nil
 	default:
 		return nil, fmt.Errorf("unrecognized comparator: %s", cmp)

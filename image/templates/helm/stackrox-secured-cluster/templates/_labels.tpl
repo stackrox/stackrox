@@ -1,18 +1,18 @@
 {{/*
-  srox._labels $labels $ $objType $objName $forPod
+  srox._labels $ $labels $extraLabels $objType $objName $forPod
 
   Writes all applicable [pod] labels (including default labels) for $objType/$objName
   into $labels. Pod labels are written iff $forPod is true.
-
-  This template receives the $ parameter as its second (not its first, as usual) parameter
-  such that it can be used easier in "srox.labels".
+  The dict $extraLabels can be used for specifying additional labels which
+  can be modified using `customize` entries before before they are added to $labels.
    */}}
 {{ define "srox._labels" }}
-{{ $labels := index . 0 }}
-{{ $ := index . 1  }}
-{{ $objType := index . 2 }}
-{{ $objName := index . 3 }}
-{{ $forPod := index . 4 }}
+{{ $ := index . 0  }}
+{{ $labels := index . 1 }}
+{{ $extraLabels := index . 2 }}
+{{ $objType := index . 3 }}
+{{ $objName := index . 4 }}
+{{ $forPod := index . 5 }}
 {{ $_ := set $labels "app.kubernetes.io/name" "stackrox" }}
 {{ $_ = set $labels "app.kubernetes.io/managed-by" $.Release.Service }}
 {{ $_ = set $labels "helm.sh/chart" (printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_")) }}
@@ -27,5 +27,5 @@
 {{ if $forPod }}
   {{ $metadataNames = append $metadataNames "podLabels" }}
 {{ end }}
-{{ include "srox._customizeMetadata" (list $ $labels $objType $objName $metadataNames) }}
+{{ include "srox._customizeMetadata" (list $ $labels $extraLabels $objType $objName $metadataNames) }}
 {{ end }}

@@ -24,11 +24,11 @@ spec:
         app: admission-control
         {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
-        {{- include "srox.podAnnotations" (list . "deployment" "admission-control") | nindent 8 }}
+        {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
         {{- if eq ._rox.env.openshift 4 }}
-        openshift.io/required-scc: restricted-v2
+          {{- $_ := set $annotations "openshift.io/required-scc" "restricted-v2" -}}
         {{- end }}
+        {{- include "srox.podAnnotations" (list . "deployment" "admission-control" $annotations) | nindent 8 }}
     spec:
       # Attempt to schedule these on master nodes
       {{- if ._rox.admissionControl.tolerations }}
@@ -41,6 +41,9 @@ spec:
       nodeSelector:
         {{- ._rox.admissionControl._nodeSelector | nindent 8 }}
       {{- end}}
+      {{- if ._rox.admissionControl.priorityClassName }}
+      priorityClassName: {{ ._rox.admissionControl.priorityClassName }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000

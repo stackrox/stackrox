@@ -24,30 +24,30 @@ import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-
 import NotFoundMessage from 'Components/NotFoundMessage';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
-import { DynamicTableLabel } from '../components/DynamicIcon';
-import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
-import TableErrorComponent from '../components/TableErrorComponent';
+} from '../../searchOptions';
+import { DynamicTableLabel } from '../../components/DynamicIcon';
+import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
     ResourceCountByCveSeverityAndStatus,
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import {
-    parseQuerySearchFilter,
+    parseWorkloadQuerySearchFilter,
     getHiddenSeverities,
     getHiddenStatuses,
     getVulnStateScopedQueryString,
     getStatusesForExceptionCount,
-} from '../searchUtils';
+} from '../../utils/searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
@@ -105,7 +105,7 @@ function DeploymentPageVulnerabilities({
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
 
     const { page, setPage, perPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
@@ -202,7 +202,7 @@ function DeploymentPageVulnerabilities({
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
-                    <WorkloadTableToolbar
+                    <WorkloadCveFilterToolbar
                         autocompleteSearchContext={{
                             'Deployment ID': deploymentId,
                         }}

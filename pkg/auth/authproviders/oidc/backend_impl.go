@@ -43,6 +43,10 @@ const (
 	userInfoExpiration = 5 * time.Minute
 )
 
+var (
+	errNonceVerificationFailed = errors.New("nonce verification failed for ID token")
+)
+
 type nonceVerificationSetting int
 
 const (
@@ -254,7 +258,7 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string,
 	}
 
 	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.GetNonce()) {
-		return nil, errox.InvalidArgs.New("invalid token")
+		return nil, errNonceVerificationFailed
 	}
 
 	return idToken, nil
@@ -565,6 +569,13 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 		var err error
 		authRespIDToken, err = p.processIDPResponseForImplicitFlowWithIDToken(ctx, responseData)
 		if err != nil {
+			// In case a nonce verification failure occurred, we are short-circuiting and returning.
+			// This is due to the fact that the access token verification _may_ be successful, since no nonce
+			// will be verified for it and re-using identity tokens for multiple requests shall not be allowed.
+			if errors.Is(err, errNonceVerificationFailed) {
+				log.Warnf("Received a nonce verification failure: %v", err)
+				return nil, errox.InvalidArgs.CausedBy(err)
+			}
 			combinedErr = multierror.Append(combinedErr, err)
 		}
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/metrics"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/safe"
 )
 
@@ -87,7 +87,7 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 		}
 	}
 	if matchCount == 0 {
-		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
+		return fmt.Errorf("no pipeline present to process message: %s", protocompat.MarshalTextString(msg))
 	}
 	s.deduper.MarkSuccessful(msg)
 	return nil

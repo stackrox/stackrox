@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -62,7 +61,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var clusterConfig storage.DynamicClusterConfig
-	if err := proto.Unmarshal(configData, &clusterConfig); err != nil {
+	if err := protocompat.Unmarshal(configData, &clusterConfig); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 
@@ -86,7 +85,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "parsing last update timestamp from file %s", timestampPath)
 	}
 
-	tsProto, err := types.TimestampProto(timestamp)
+	tsProto, err := protocompat.ConvertTimeToTimestampOrError(timestamp)
 	if err != nil {
 		return nil, errors.Wrapf(err, "timestamp in file %s is invalid", timestampPath)
 	}

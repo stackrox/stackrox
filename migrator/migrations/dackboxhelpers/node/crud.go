@@ -4,10 +4,10 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -33,11 +33,11 @@ var (
 )
 
 // KeyFunc returns the key for a node object
-func KeyFunc(msg proto.Message) []byte {
+func KeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(*storage.Node).GetId())
 	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
-func alloc() proto.Message {
+func alloc() protocompat.Message {
 	return &storage.Node{}
 }

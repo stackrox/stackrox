@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -58,7 +58,7 @@ func newNotifierUpdater(notifierDS notifierDataStore.DataStore, policyCleaner po
 	}
 }
 
-func (u *notifierUpdater) Upsert(ctx context.Context, m proto.Message) error {
+func (u *notifierUpdater) Upsert(ctx context.Context, m protocompat.Message) error {
 	notifierProto, ok := m.(*storage.Notifier)
 	if !ok {
 		return errox.InvariantViolation.Newf("wrong type passed to role updater: %T", notifierProto)

@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -119,7 +119,7 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-func (s *splunk) getSplunkEvent(msg proto.Message, sourceTypeKey string) (*wrapper.SplunkEvent, error) {
+func (s *splunk) getSplunkEvent(msg protocompat.Message, sourceTypeKey string) (*wrapper.SplunkEvent, error) {
 	e, err := protoutils.MarshalAny(msg)
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (s *splunk) AuditLoggingEnabled() bool {
 	return s.GetSplunk().GetAuditLoggingEnabled()
 }
 
-func (s *splunk) sendEvent(ctx context.Context, msg proto.Message, sourceTypeKey string) error {
+func (s *splunk) sendEvent(ctx context.Context, msg protocompat.Message, sourceTypeKey string) error {
 	splunkEvent, err := s.getSplunkEvent(msg, sourceTypeKey)
 	if err != nil {
 		return err

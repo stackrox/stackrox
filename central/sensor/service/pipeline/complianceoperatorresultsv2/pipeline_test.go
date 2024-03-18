@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -23,7 +24,7 @@ const (
 )
 
 var (
-	createdTime = types.TimestampNow()
+	createdTime = protocompat.TimestampNow()
 	id          = uuid.NewV4().String()
 	checkID     = uuid.NewV4().String()
 )
@@ -156,5 +157,6 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Rationale:      "test rationale",
 		ValuesUsed:     []string{"var1", "var2"},
 		Warnings:       []string{"warning1", "warning2"},
+		ScanRefId:      internaltov2storage.BuildScanRefID(clusterID, mockScanName),
 	}
 }

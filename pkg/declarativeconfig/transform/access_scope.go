@@ -3,11 +3,11 @@ package transform
 import (
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var _ Transformer = (*accessScopeTransform)(nil)
@@ -18,7 +18,7 @@ func newAccessScopeTransform() *accessScopeTransform {
 	return &accessScopeTransform{}
 }
 
-func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	scopeConfig, ok := configuration.(*declarativeconfig.AccessScope)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for access scope: %T", configuration)
@@ -37,7 +37,7 @@ func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configu
 		},
 	}
 
-	return map[reflect.Type][]proto.Message{
+	return map[reflect.Type][]protocompat.Message{
 		reflect.TypeOf((*storage.SimpleAccessScope)(nil)): {scopeProto},
 	}, nil
 }

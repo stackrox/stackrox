@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/detection"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -29,15 +29,15 @@ import (
 )
 
 var (
-	nowProcess        = getProcessIndicator(ptypes.TimestampNow())
+	nowProcess        = getProcessIndicator(protocompat.TimestampNow())
 	yesterdayProcess  = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour)))
 	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
 
 	firstKubeEventViolation  = getKubeEventViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondKubeEventViolation = getKubeEventViolation("2", ptypes.TimestampNow())
+	secondKubeEventViolation = getKubeEventViolation("2", protocompat.TimestampNow())
 
 	firstNetworkFlowViolation  = getNetworkFlowViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondNetworkFlowViolation = getNetworkFlowViolation("2", ptypes.TimestampNow())
+	secondNetworkFlowViolation = getNetworkFlowViolation("2", protocompat.TimestampNow())
 )
 
 func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Alert_Violation {
@@ -182,11 +182,11 @@ func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 1", func(q *v1.Query) bool {
-			return strings.Contains(proto.MarshalTextString(q), "Dep1")
+			return strings.Contains(protocompat.MarshalTextString(q), "Dep1")
 		})).Return([]*storage.Alert{resolvedAlerts[0]}, nil)
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 2", func(q *v1.Query) bool {
-			return strings.Contains(proto.MarshalTextString(q), "Dep2")
+			return strings.Contains(protocompat.MarshalTextString(q), "Dep2")
 		})).Return([]*storage.Alert{resolvedAlerts[1]}, nil)
 
 	// Only the first alert will get notified
@@ -844,19 +844,19 @@ func getAlerts() []*storage.Alert {
 			Id:     "alert1",
 			Policy: getPolicies()[0],
 			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[0]},
-			Time:   &ptypes.Timestamp{Seconds: 100},
+			Time:   protocompat.GetProtoTimestampFromSeconds(100),
 		},
 		{
 			Id:     "alert2",
 			Policy: getPolicies()[1],
 			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[1]},
-			Time:   &ptypes.Timestamp{Seconds: 200},
+			Time:   protocompat.GetProtoTimestampFromSeconds(200),
 		},
 		{
 			Id:     "alert3",
 			Policy: getPolicies()[2],
 			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[2]},
-			Time:   &ptypes.Timestamp{Seconds: 300},
+			Time:   protocompat.GetProtoTimestampFromSeconds(300),
 		},
 	}
 }
@@ -986,7 +986,7 @@ func getResourceAlerts() []*storage.Alert {
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[0]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
-			Time:           &ptypes.Timestamp{Seconds: 100},
+			Time:           protocompat.GetProtoTimestampFromSeconds(100),
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-1", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -994,7 +994,7 @@ func getResourceAlerts() []*storage.Alert {
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[1]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
-			Time:           &ptypes.Timestamp{Seconds: 200},
+			Time:           protocompat.GetProtoTimestampFromSeconds(200),
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-2", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -1002,7 +1002,7 @@ func getResourceAlerts() []*storage.Alert {
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[2]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
-			Time:           &ptypes.Timestamp{Seconds: 300},
+			Time:           protocompat.GetProtoTimestampFromSeconds(300),
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-3", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -1010,7 +1010,7 @@ func getResourceAlerts() []*storage.Alert {
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[3]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
-			Time:           &ptypes.Timestamp{Seconds: 400},
+			Time:           protocompat.GetProtoTimestampFromSeconds(400),
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-4", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 		{
@@ -1018,7 +1018,7 @@ func getResourceAlerts() []*storage.Alert {
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
 			Entity:         &storage.Alert_Resource_{Resource: getResources()[4]},
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
-			Time:           &ptypes.Timestamp{Seconds: 500},
+			Time:           protocompat.GetProtoTimestampFromSeconds(500),
 			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-5", Type: storage.Alert_Violation_K8S_EVENT}},
 		},
 	}

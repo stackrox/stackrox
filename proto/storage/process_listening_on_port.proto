@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 import "storage/process_indicator.proto";
@@ -47,26 +46,26 @@ message ProcessListeningOnPortStorage {
   // Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
   // bigint with a sequence. Unfortunately at the moment some bits of store
   // generator assume an id has to be a string.
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
 
-  uint32 port = 2 [(gogoproto.moretags) = 'search:"Port,store"'];
-  L4Protocol protocol = 3 [(gogoproto.moretags) = 'search:"Port Protocol,store"'];
-  google.protobuf.Timestamp close_timestamp = 4 [(gogoproto.moretags) = 'search:"Closed Time,hidden"'];
+  uint32 port = 2; // @gotags: search:"Port,store"
+  L4Protocol protocol = 3; // @gotags: search:"Port Protocol,store"
+  google.protobuf.Timestamp close_timestamp = 4; // @gotags: search:"Closed Time,hidden"
 
-  string process_indicator_id = 5 [(gogoproto.moretags) = 'search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"'];
+  string process_indicator_id = 5; // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
 
   // XXX: Make it a partial index on only active, not closed, PLOP
-  bool closed = 6 [(gogoproto.moretags) = 'search:"Closed,store" sql:"index=btree"'];
+  bool closed = 6; // @gotags: search:"Closed,store" sql:"index=btree"
 
   // ProcessIndicator will be not empty only for those cases when we were not
   // able to find references process in the database
   ProcessIndicatorUniqueKey process = 7;
 
-  string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
+  string deployment_id = 8; // @gotags: search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
 
-  string pod_uid = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"'];
+  string pod_uid = 9; // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
 
-  string cluster_id = 10 [(gogoproto.moretags) = 'search:"Cluster ID" sql:"type(uuid)"'];
+  string cluster_id = 10; // @gotags: search:"Cluster ID" sql:"type(uuid)"
 
-  string namespace = 11 [(gogoproto.moretags) = 'search:"Namespace"'];
+  string namespace = 11; // @gotags: search:"Namespace"
 }

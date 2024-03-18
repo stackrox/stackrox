@@ -26,15 +26,15 @@ type reconcileScannerDBPasswordConfig struct {
 }
 
 // ReconcileScannerDBPassword reconciles a scanner db password
-func ReconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client) error {
-	return reconcileScannerDBPassword(ctx, obj, client, reconcileScannerDBPasswordConfig{
+func ReconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client, direct ctrlClient.Reader) error {
+	return reconcileScannerDBPassword(ctx, obj, client, direct, reconcileScannerDBPasswordConfig{
 		PasswordResourceName: scannerDBPasswordResourceName,
 	})
 }
 
-func reconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client, config reconcileScannerDBPasswordConfig) error {
+func reconcileScannerDBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client, direct ctrlClient.Reader, config reconcileScannerDBPasswordConfig) error {
 	run := &reconcileScannerDBPasswordExtensionRun{
-		SecretReconciliator:  NewSecretReconciliator(client, obj),
+		SecretReconciliator:  NewSecretReconciliator(client, direct, obj),
 		obj:                  obj,
 		passwordResourceName: config.PasswordResourceName,
 	}

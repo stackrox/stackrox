@@ -1,8 +1,8 @@
 package crud
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type upserterImpl struct {
@@ -12,7 +12,7 @@ type upserterImpl struct {
 }
 
 // UpsertIn saves the input object and adds a reference to it from the input parentKey if one is passed in.
-func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *dackbox.Transaction) error {
+func (uc *upserterImpl) UpsertIn(parentKey []byte, msg protocompat.Message, dackTxn *dackbox.Transaction) error {
 	// Generate key.
 	key := uc.keyFunc(msg)
 
@@ -25,7 +25,7 @@ func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *d
 	}
 
 	// Marshal an upsert the base object.
-	toWrite, err := proto.Marshal(msg)
+	toWrite, err := protocompat.Marshal(msg)
 	if err != nil {
 		return err
 	}

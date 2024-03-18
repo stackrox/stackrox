@@ -6,16 +6,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	scanStorage "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -141,7 +142,7 @@ func (s *complianceScanDataStoreTestSuite) TestGetScansByCluster() {
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan2))
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(3, count)
 
@@ -210,17 +211,17 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan2))
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(3, count)
 
 	s.Require().Error(s.dataStore.UpsertScan(s.hasReadCtx, testScan3))
 
 	// Update an object
-	testScan3.LastExecutedTime = types.TimestampNow()
+	testScan3.LastExecutedTime = protocompat.TimestampNow()
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
 
-	count, err = s.storage.Count(s.hasReadCtx)
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(3, count)
 
@@ -228,6 +229,21 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	s.Require().NoError(err)
 	s.Require().True(found)
 	s.Require().Equal(testScan3.LastExecutedTime, retrievedObject.LastExecutedTime)
+}
+
+func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {
+	testScan1 := getTestScan("scan1", "profile-1", testconsts.Cluster1)
+	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan1))
+
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
+
+	s.Require().NoError(s.dataStore.DeleteScanByCluster(s.hasWriteCtx, testconsts.Cluster1))
+
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(0, count)
 }
 
 func (s *complianceScanDataStoreTestSuite) TestDeleteScan() {
@@ -245,7 +261,7 @@ func (s *complianceScanDataStoreTestSuite) TestDeleteScan() {
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
 
 	s.Require().NoError(s.dataStore.DeleteScan(s.hasWriteCtx, testScan1.GetId()))
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(2, count)
 
@@ -278,7 +294,7 @@ func getTestScan(scanName string, profileID string, clusterID string) *storage.C
 		ScanType:         0,
 		NodeSelector:     0,
 		Status:           nil,
-		CreatedTime:      types.TimestampNow(),
-		LastExecutedTime: types.TimestampNow(),
+		CreatedTime:      protocompat.TimestampNow(),
+		LastExecutedTime: protocompat.TimestampNow(),
 	}
 }

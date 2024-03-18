@@ -15,19 +15,20 @@ import { gql, useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import useURLStringUnion from 'hooks/useURLStringUnion';
-
 import NotFoundMessage from 'Components/NotFoundMessage';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
-import { getOverviewCvesPath } from '../searchUtils';
+
+import { getOverviewCvesPath } from '../utils/searchUtils';
 import DeploymentPageHeader, {
     DeploymentMetadata,
     deploymentMetadataFragment,
 } from './DeploymentPageHeader';
-import TableErrorComponent from '../components/TableErrorComponent';
-import { detailsTabValues } from '../types';
+import { detailsTabValues } from '../../types';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
+import DeploymentPageDetails from './DeploymentPageDetails';
 
 const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
     vulnerabilityState: 'OBSERVED',
@@ -120,6 +121,13 @@ function DeploymentPage() {
                                     deploymentId={deploymentId}
                                     pagination={pagination}
                                 />
+                            </Tab>
+                            <Tab
+                                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                                eventKey="Details"
+                                title={<TabTitleText>Details</TabTitleText>}
+                            >
+                                <DeploymentPageDetails deploymentId={deploymentId} />
                             </Tab>
                             <Tab
                                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

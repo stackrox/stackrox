@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
-	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,13 +38,13 @@ type DataStore interface {
 	SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error)
 }
 
-// New returns a new DataStore instance using the provided store and indexer
-func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
+// New returns a new DataStore instance using the provided store.
+func New(nsStore store.Store, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
 	return &datastoreImpl{
 		store:             nsStore,
 		deployments:       deploymentDataStore,
 		namespaceRanker:   namespaceRanker,
-		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
+		formattedSearcher: formatSearcherV2(nsStore, namespaceRanker),
 	}
 }
 

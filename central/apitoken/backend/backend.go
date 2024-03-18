@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,7 +15,7 @@ type Backend interface {
 	GetTokenOrNil(ctx context.Context, tokenID string) (*storage.TokenMetadata, error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
-	IssueRoleToken(ctx context.Context, name string, roleNames []string) (string, *storage.TokenMetadata, error)
+	IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *types.Timestamp) (string, *storage.TokenMetadata, error)
 	RevokeToken(ctx context.Context, tokenID string) (bool, error)
 }
 

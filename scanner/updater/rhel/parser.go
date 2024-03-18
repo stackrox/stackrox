@@ -52,7 +52,12 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		if u.shouldSkipDefType(defType) {
 			return vs, nil
 		}
-
+		// Go look for the vuln name in the references, fallback to
+		// title if not found.
+		name := def.Title
+		if len(def.References) > 0 {
+			name = def.References[0].RefID
+		}
 		for _, affected := range def.Advisory.AffectedCPEList {
 			// Work around having empty entries. This seems to be some issue
 			// with the tool used to produce the database but only seems to
@@ -68,7 +73,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 
 			v := &claircore.Vulnerability{
 				Updater:            u.Name(),
-				Name:               def.Title,
+				Name:               name,
 				Description:        def.Description,
 				Issued:             def.Advisory.Issued.Date,
 				Links:              ovalutil.Links(def),

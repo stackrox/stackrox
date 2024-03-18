@@ -16,10 +16,10 @@ var (
 
 // ReconcileScannerV4DBPasswordExtension returns an extension that takes care of creating the scanner-v4-db-password
 // secret ahead of time.
-func ReconcileScannerV4DBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileScannerV4DBPassword, client)
+func ReconcileScannerV4DBPasswordExtension(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileScannerV4DBPassword, client, direct)
 }
 
-func reconcileScannerV4DBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
-	return commonExtensions.ReconcileScannerV4DBPassword(ctx, c, client)
+func reconcileScannerV4DBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+	return commonExtensions.ReconcileScannerV4DBPassword(ctx, c, client, direct)
 }

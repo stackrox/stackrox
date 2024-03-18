@@ -20,8 +20,8 @@ import {
     getHighestCvssScore,
     getHighestVulnerabilitySeverity,
 } from './table.utils';
-import ImageNameTd from '../components/ImageNameTd';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import ImageNameLink from '../components/ImageNameLink';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -29,9 +29,9 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import EmptyTableResults from '../components/EmptyTableResults';
-import DateDistanceTd from '../components/DatePhraseTd';
-import CvssTd from '../components/CvssTd';
-import { WatchStatus } from '../types';
+import DateDistance from '../../components/DateDistance';
+import CvssFormatted from '../../components/CvssFormatted';
+import { WatchStatus } from '../../types';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export type ImageForCve = {
@@ -148,7 +148,7 @@ function AffectedImagesTable({
                                         cve={cve}
                                         vulnerabilityState={vulnerabilityState}
                                     >
-                                        <ImageNameTd name={name} id={id} />
+                                        <ImageNameLink name={name} id={id} />
                                     </PendingExceptionLabelLayout>
                                 ) : (
                                     'Image name not available'
@@ -158,7 +158,7 @@ function AffectedImagesTable({
                                 <VulnerabilitySeverityIconText severity={topSeverity} />
                             </Td>
                             <Td dataLabel="CVSS" modifier="nowrap">
-                                <CvssTd cvss={cvss} scoreVersion={scoreVersion} />
+                                <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
                             <Td dataLabel="CVE status" modifier="nowrap">
                                 <VulnerabilityFixableIconText isFixable={isFixable} />
@@ -170,7 +170,7 @@ function AffectedImagesTable({
                                     : `${imageComponents.length} components`}
                             </Td>
                             <Td dataLabel="First discovered">
-                                <DateDistanceTd date={scanTime} />
+                                <DateDistance date={scanTime} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

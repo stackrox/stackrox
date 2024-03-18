@@ -6,14 +6,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -208,6 +209,45 @@ var (
 			ClusterName:        "cluster2",
 		},
 	}
+
+	expectedProfileCounts = []*ResourceResultCountByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  5,
+			ProfileName:        "ocp4-cis-node",
+		},
+	}
+
+	expectedProfileCountsCluster2 = []*ResourceResultCountByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ProfileName:        "ocp4-cis-node",
+		},
+	}
+
+	expectedProfileCountsCluster2And3 = []*ResourceResultCountByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  4,
+			ProfileName:        "ocp4-cis-node",
+		},
+	}
 )
 
 func TestComplianceCheckResultDataStore(t *testing.T) {
@@ -255,9 +295,8 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = checkResultsStorage.New(s.db)
-	indexer := checkResultsStorage.NewIndexer(s.db)
 	configStorage := checkResultsStorage.New(s.db)
-	s.searcher = checkresultsSearch.New(configStorage, indexer)
+	s.searcher = checkresultsSearch.New(configStorage)
 	s.dataStore = New(s.storage, s.db, s.searcher)
 }
 
@@ -278,7 +317,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
@@ -304,7 +343,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
@@ -630,6 +669,55 @@ func (s *complianceCheckResultDataStoreTestSuite) TestGetComplianceCheckResult()
 	}
 }
 
+func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultStats() {
+	s.setupTestData()
+	testCases := []struct {
+		desc            string
+		query           *apiV1.Query
+		scopeKey        string
+		expectedResults []*ResourceResultCountByProfile
+	}{
+		{
+			desc:            "Empty query - Full access",
+			query:           search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileCounts,
+		},
+		{
+			desc:            "Empty query - Only cluster 2 access",
+			query:           search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedProfileCountsCluster2,
+		},
+		{
+			desc:            "Cluster 2 query - Only cluster 2 access",
+			query:           search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedProfileCountsCluster2,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Only cluster 2 access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedProfileCountsCluster2,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileCountsCluster2And3,
+		},
+	}
+
+	for _, tc := range testCases {
+		results, err := s.dataStore.ComplianceProfileResultStats(s.testContexts[tc.scopeKey], tc.query)
+		s.NoError(err)
+		s.Equal(tc.expectedResults, results)
+	}
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	// make sure we have nothing
 	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
@@ -648,22 +736,37 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name) values ($1, $2)", testconsts.Cluster3, "cluster3")
 	s.Require().NoError(err)
 
-	rec1 := getTestRec(testconsts.Cluster1)
-	rec2 := getTestRec(testconsts.Cluster2)
-	rec3 := getTestRec(testconsts.Cluster2)
-	rec4 := getTestRec(testconsts.Cluster2)
-	rec5 := getTestRec(testconsts.Cluster3)
-	rec6 := getTestRec2(testconsts.Cluster3)
+	recs := []*storage.ComplianceOperatorCheckResultV2{
+		getTestRec(testconsts.Cluster1),
+		getTestRec(testconsts.Cluster2),
+		getTestRec(testconsts.Cluster2),
+		getTestRec(testconsts.Cluster2),
+		getTestRec(testconsts.Cluster3),
+		getTestRec2(testconsts.Cluster3),
+	}
 
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec4))
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec5))
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec6))
+	profileCluster := map[string]string{
+		testconsts.Cluster1: internaltov2storage.BuildProfileRefID(testconsts.Cluster1, "ocp4-cis-node", "node"),
+		testconsts.Cluster2: internaltov2storage.BuildProfileRefID(testconsts.Cluster2, "ocp4-cis-node", "node"),
+		testconsts.Cluster3: internaltov2storage.BuildProfileRefID(testconsts.Cluster3, "ocp4-cis-node", "node"),
+	}
+
+	for k, v := range profileCluster {
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+		s.Require().NoError(err)
+	}
+
+	for _, rec := range recs {
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profileid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), rec.GetScanConfigName(), rec.GetScanName(), profileCluster[rec.GetClusterId()], rec.GetClusterId(), rec.GetScanRefId())
+		s.Require().NoError(err)
+	}
+
 }
 
 func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
+	scanName := uuid.NewV4().String()
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             uuid.NewV4().String(),
 		CheckId:        uuid.NewV4().String(),
@@ -675,13 +778,15 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Instructions:   "this is a test",
 		Labels:         nil,
 		Annotations:    nil,
-		CreatedTime:    types.TimestampNow(),
-		ScanName:       uuid.NewV4().String(),
+		CreatedTime:    protocompat.TimestampNow(),
+		ScanName:       scanName,
 		ScanConfigName: "scanConfig1",
+		ScanRefId:      internaltov2storage.BuildScanRefID(clusterID, scanName),
 	}
 }
 
 func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
+	scanName := uuid.NewV4().String()
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             uuid.NewV4().String(),
 		CheckId:        uuid.NewV4().String(),
@@ -693,8 +798,9 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Instructions:   "this is a test",
 		Labels:         nil,
 		Annotations:    nil,
-		CreatedTime:    types.TimestampNow(),
-		ScanName:       uuid.NewV4().String(),
+		CreatedTime:    protocompat.TimestampNow(),
+		ScanName:       scanName,
 		ScanConfigName: "scanConfig2",
+		ScanRefId:      internaltov2storage.BuildScanRefID(clusterID, scanName),
 	}
 }

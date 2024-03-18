@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +20,6 @@ var (
 // searcherImpl provides an intermediary implementation layer for secrets
 type searcherImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
@@ -54,7 +52,7 @@ func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*
 	return secrets, err
 }
 
-// SearchRawSecrets retrieves secrets from the indexer and storage
+// SearchRawSecrets retrieves secrets from the storage
 func (ds *searcherImpl) SearchRawSecrets(ctx context.Context, q *v1.Query) ([]*storage.Secret, error) {
 	return ds.searchSecrets(ctx, q)
 }
@@ -106,7 +104,7 @@ func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchRes
 	}
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+// Format the search functionality for SAC filtering (for sac) and pagination.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	defaultSortedSearcher := paginated.WithDefaultSortOption(searcher, defaultSortOption)
 	return defaultSortedSearcher

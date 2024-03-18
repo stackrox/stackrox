@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 const (
@@ -108,12 +109,7 @@ func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 		}
 		opts.SigVerifier = v
 		verifiedImageReferences, err := verifyImageSignatures(ctx, sigs, hash, image, opts)
-		if err == nil {
-			if len(verifiedImageReferences) == 0 {
-				log.Infof("no verified image references found, defaulting to default image name %q", image.GetName().GetFullName())
-				// Fallback to the default name of the image if the reference is empty.
-				verifiedImageReferences = []string{image.GetName().GetFullName()}
-			}
+		if err == nil && len(verifiedImageReferences) != 0 {
 			return storage.ImageSignatureVerificationResult_VERIFIED, verifiedImageReferences, nil
 		}
 		allVerifyErrs = multierror.Append(allVerifyErrs, err)
@@ -227,7 +223,8 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
 		"signature %q", image.GetNames(), signatureImageReference)
 	var verifiedImageReferences []string
-	for _, name := range image.GetNames() {
+	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
+	for _, name := range imageNames {
 		reference, err := dockerReferenceFromImageName(name)
 		if err != nil {
 			// Theoretically, all references should be parsable.

@@ -7,47 +7,46 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+
 import ImagesTable, { ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
-import TableErrorComponent from '../components/TableErrorComponent';
-import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
-import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
-import TableEntityToolbar from '../components/TableEntityToolbar';
+import {
+    getVulnStateScopedQueryString,
+    parseWorkloadQuerySearchFilter,
+} from '../../utils/searchUtils';
+import { VulnerabilitySeverityLabel } from '../../types';
+import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 
 export { imageListQuery } from '../Tables/ImagesTable';
 
 type ImagesTableContainerProps = {
-    defaultFilters: DefaultFilters;
-    countsData: EntityCounts;
+    filterToolbar: TableEntityToolbarProps['filterToolbar'];
+    entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
+    rowCount: number;
     vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
+    sort: ReturnType<typeof useURLSort>;
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImagesTableProps['onWatchImage'];
     onUnwatchImage: ImagesTableProps['onUnwatchImage'];
-    onEntityTabChange: (entityTab: EntityTab) => void;
 };
 
 function ImagesTableContainer({
-    defaultFilters,
-    countsData,
+    filterToolbar,
+    entityToggleGroup,
+    rowCount,
     vulnerabilityState,
     pagination,
+    sort,
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
-    onEntityTabChange,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage, setPage } = pagination;
-    const sort = useURLSort({
-        sortFields: defaultImageSortFields,
-        defaultSortOption: imagesDefaultSort,
-        onSort: () => setPage(1),
-    });
-    const { sortOption, getSortParams, setSortOption } = sort;
+    const { page, perPage } = pagination;
+    const { sortOption, getSortParams } = sort;
 
     const { error, loading, data, previousData } = useQuery(imageListQuery, {
         variables: {
@@ -64,13 +63,11 @@ function ImagesTableContainer({
     return (
         <>
             <TableEntityToolbar
-                defaultFilters={defaultFilters}
-                countsData={countsData}
-                setSortOption={setSortOption}
+                filterToolbar={filterToolbar}
+                entityToggleGroup={entityToggleGroup}
                 pagination={pagination}
-                tableRowCount={countsData.imageCount}
+                tableRowCount={rowCount}
                 isFiltered={isFiltered}
-                onEntityTabChange={onEntityTabChange}
             />
             <Divider component="div" />
             {loading && !tableData && (

@@ -14,9 +14,16 @@ metadata:
     capabilities: Seamless Upgrades
     categories: Security
     containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
-    createdAt: '1999-12-31T23:59:59Z'
+    createdAt: ''
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
+    features.operators.openshift.io/disconnected: 'true'
+    features.operators.openshift.io/fips-compliant: 'false'
+    features.operators.openshift.io/proxy-aware: 'true'
+    features.operators.openshift.io/tls-profiles: 'false'
+    features.operators.openshift.io/token-auth-aws: 'false'
+    features.operators.openshift.io/token-auth-azure: 'false'
+    features.operators.openshift.io/token-auth-gcp: 'false'
     operatorframework.io/suggested-namespace: rhacs-operator
     operators.openshift.io/infrastructure-features: '["disconnected", "proxy-aware"]'
     operators.openshift.io/valid-subscription: '["OpenShift Platform Plus", "Red Hat
@@ -1348,6 +1355,8 @@ spec:
                 - name: RELATED_IMAGE_COLLECTOR_FULL
                 - name: RELATED_IMAGE_ROXCTL
                 - name: RELATED_IMAGE_CENTRAL_DB
+                - name: RELATED_IMAGE_SCANNER_V4_DB
+                - name: RELATED_IMAGE_SCANNER_V4
                 - name: MEMORY_LIMIT_BYTES
                   valueFrom:
                     resourceFieldRef:

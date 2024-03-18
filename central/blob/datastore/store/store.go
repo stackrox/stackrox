@@ -12,6 +12,7 @@ import (
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,12 +23,14 @@ var (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
-	Delete(ctx context.Context, name string) error
 	GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
+	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
+	Delete(ctx context.Context, name string) error
 }
 
 type storeImpl struct {
@@ -49,6 +52,14 @@ func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
 		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 	}
 	return err
+}
+
+func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return s.store.Count(ctx, q)
+}
+
+func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return s.store.Search(ctx, q)
 }
 
 // Upsert adds a blob to the database

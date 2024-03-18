@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -89,6 +90,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store,
 	reportSnapshotDS snapshotDS.DataStore,
+	plops plopDataStore.DataStore,
 	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
@@ -111,6 +113,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		stopper:         concurrency.NewStopper(),
 		postgres:        globaldb.GetPostgres(),
 		reportSnapshot:  reportSnapshotDS,
+		plops:           plops,
 		blobStore:       blobStore,
 	}
 }
@@ -137,6 +140,7 @@ type garbageCollectorImpl struct {
 	logimbueStore   logimbueDataStore.Store
 	stopper         concurrency.Stopper
 	reportSnapshot  snapshotDS.DataStore
+	plops           plopDataStore.DataStore
 	blobStore       blobDatastore.Datastore
 }
 
@@ -365,6 +369,10 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses() {
+	g.plops.PruneOrphanedPLOPsByProcessIndicators(pruningCtx, orphanWindow)
+
+	log.Info("[PLOP pruning by processes] Pruning of orphaned PLOPs by processes complete")
+
 	postgres.PruneOrphanedProcessIndicators(pruningCtx, g.postgres, orphanWindow)
 	log.Info("[Process pruning] Pruning of orphaned processes complete")
 }
@@ -399,7 +407,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 			}
 		}
 
-		now := types.TimestampNow()
+		now := protocompat.TimestampNow()
 		for _, baselineKey := range baselineKeysToPrune {
 			baseline, exists, err := g.processbaseline.GetProcessBaseline(pruningCtx, baselineKey)
 			if err != nil {
@@ -430,10 +438,15 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 // removeOrphanedPLOPs: cleans up ProcessListeningOnPort objects that are expired
 // or have a PodUid and belong to a deployment or pod that does not exist.
 func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
-	prunedCount := postgres.PruneOrphanedPLOPs(pruningCtx, g.postgres, orphanWindow)
-
+	prunedCount := g.plops.PruneOrphanedPLOPs(pruningCtx, orphanWindow)
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
 		prunedCount)
+
+	prunedCount, err := g.plops.RemovePLOPsWithoutProcessIndicatorOrProcessInfo(pruningCtx)
+	if err != nil {
+		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
+	}
+	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
@@ -559,7 +572,7 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
 	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
-	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
+	cutOffTime, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
 	if err != nil {
 		log.Errorf("Failed to determine downloadable report retention %v", err)
 		return
@@ -580,7 +593,7 @@ func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfi
 	var toFree bool
 	for _, blob := range blobs {
 		if !toFree {
-			if remainingQuota > blob.GetLength() && blob.GetModifiedTime().Compare(cutOffTime) > 0 {
+			if remainingQuota > blob.GetLength() && protocompat.CompareTimestamps(blob.GetModifiedTime(), cutOffTime) > 0 {
 				remainingQuota = remainingQuota - blob.GetLength()
 				continue
 			}
@@ -615,7 +628,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}()
 
 	// Allow 24hrs grace period after the config changes
-	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
+	lastUpdateTime, err := protocompat.ConvertTimestampToTimeOrError(clusterRetention.GetLastUpdated())
 	if err != nil {
 		log.Error(err)
 		return
@@ -627,7 +640,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}
 
 	// Retention should start counting _after_ the config is created (which is basically when upgraded to 71)
-	configCreationTime, err := types.TimestampFromProto(clusterRetention.GetCreatedAt())
+	configCreationTime, err := protocompat.ConvertTimestampToTimeOrError(clusterRetention.GetCreatedAt())
 	if err != nil {
 		log.Error(err)
 		return

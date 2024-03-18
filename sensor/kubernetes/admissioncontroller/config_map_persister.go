@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -131,7 +131,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, nil
 	}
 
-	configBytes, err := proto.Marshal(clusterConfig)
+	configBytes, err := protocompat.Marshal(clusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, err
 	}
 
-	deployTimePoliciesBytes, err := proto.Marshal(enforcedDeployTimePolicies)
+	deployTimePoliciesBytes, err := protocompat.Marshal(enforcedDeployTimePolicies)
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding deploy-time policies")
 	}
@@ -149,7 +149,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, errors.Wrap(err, "compressing deploy-time policies")
 	}
 
-	runTimePoliciesBytes, err := proto.Marshal(runtimePolicies)
+	runTimePoliciesBytes, err := protocompat.Marshal(runtimePolicies)
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding run-time policies")
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -122,7 +123,7 @@ func (s *complianceRuleDataStoreTestSuite) TestUpsertRule() {
 			}
 		}
 
-		count, err := s.storage.Count(s.hasReadCtx)
+		count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 		s.Require().NoError(err)
 		s.Require().Equal(tc.expectedRecordIndex.Cardinality(), count)
 
@@ -131,6 +132,20 @@ func (s *complianceRuleDataStoreTestSuite) TestUpsertRule() {
 			s.Require().NoError(s.dataStore.DeleteRule(s.hasWriteCtx, rule.GetId()))
 		}
 	}
+}
+
+func (s *complianceRuleDataStoreTestSuite) TestDeleteRuleByCluster() {
+	rule := getTestRule(testconsts.Cluster1)
+	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, rule))
+
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
+	s.Require().NoError(s.dataStore.DeleteRulesByCluster(s.hasWriteCtx, testconsts.Cluster1))
+
+	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(0, count)
 }
 
 func (s *complianceRuleDataStoreTestSuite) TestDeleteRule() {
@@ -186,7 +201,7 @@ func (s *complianceRuleDataStoreTestSuite) TestDeleteRule() {
 			s.Require().NoError(s.dataStore.DeleteRule(tc.testContext, rule.GetId()))
 		}
 
-		count, err := s.storage.Count(s.hasReadCtx)
+		count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 		s.Require().NoError(err)
 		// If we could not delete the rules then they will remain.
 		s.Require().Equal(len(tc.rules)-tc.expectedRecordIndex.Cardinality(), count)
@@ -212,7 +227,7 @@ func (s *complianceRuleDataStoreTestSuite) TestGetRulesByCluster() {
 	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, testRule2))
 	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, testRule3))
 
-	count, err := s.storage.Count(s.hasReadCtx)
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(3, count)
 

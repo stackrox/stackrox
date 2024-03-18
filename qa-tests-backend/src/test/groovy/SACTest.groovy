@@ -38,7 +38,8 @@ import spock.lang.Unroll
 @Tag("BAT")
 @Tag("PZ")
 class SACTest extends BaseSpecification {
-    static final private String IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2"
+    static final private String IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2@$IMAGE_SHA"
+    static final private String IMAGE_SHA = "sha256:ad9a0ffaf09f6631f0f6a11f20a981e72a4b2a0c79a9b5429af1ee5709b7d69e"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
@@ -66,8 +67,10 @@ class SACTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [DEPLOYMENT_QA1, DEPLOYMENT_QA2,]
 
     static final private UNSTABLE_FLOWS = [
-            // monitoring doesn't keep a persistent outgoing connection, so we might or might not see this flow.
+            // monitoring and sensor doesn't keep a persistent outgoing connection,
+            // so we might or might not see this flow.
             "stackrox/monitoring -> INTERNET",
+            "stackrox/sensor -> INTERNET",
     ] as Set
 
     // Increase the timeout conditionally based on whether we are running race-detection builds or within OpenShift
@@ -598,12 +601,12 @@ class SACTest extends BaseSpecification {
         def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
         allAccessFlows.removeAll(UNSTABLE_FLOWS)
-        log.info "${allAccessFlows}"
+        log.info "allAccessFlows: ${allAccessFlows}"
 
         def allAccessFlowsWithoutNeighbors = allAccessFlows.findAll {
             it.matches("(stackrox/.*|INTERNET) -> (stackrox/.*|INTERNET)")
         }
-        log.info "${allAccessFlowsWithoutNeighbors}"
+        log.info "allAccessFlowsWithoutNeighbors: ${allAccessFlowsWithoutNeighbors}"
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token"
@@ -611,14 +614,14 @@ class SACTest extends BaseSpecification {
         def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
         sacFlows.removeAll(UNSTABLE_FLOWS)
-        log.info "${sacFlows}"
+        log.info "sacFlows: ${sacFlows}"
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token and no query"
         def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph()
         def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
         sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
-        log.info "${sacFlowsNoQuery}"
+        log.info "sacFlowsNoQuery: ${sacFlowsNoQuery}"
 
         then:
         "Query-restricted and non-restricted flows should be equal under SAC"

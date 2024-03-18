@@ -7,38 +7,38 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
-import TableErrorComponent from '../components/TableErrorComponent';
-import TableEntityToolbar from '../components/TableEntityToolbar';
-import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
-import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
-import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
+import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
+import {
+    getVulnStateScopedQueryString,
+    parseWorkloadQuerySearchFilter,
+} from '../../utils/searchUtils';
+import { VulnerabilitySeverityLabel } from '../../types';
 
 type DeploymentsTableContainerProps = {
-    defaultFilters: DefaultFilters;
-    countsData: EntityCounts;
+    filterToolbar: TableEntityToolbarProps['filterToolbar'];
+    entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
+    rowCount: number;
     vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
-    onEntityTabChange: (entityTab: EntityTab) => void;
+    sort: ReturnType<typeof useURLSort>;
 };
 
 function DeploymentsTableContainer({
-    defaultFilters,
-    countsData,
+    filterToolbar,
+    entityToggleGroup,
+    rowCount,
     vulnerabilityState,
     pagination,
-    onEntityTabChange,
+    sort,
 }: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage, setPage } = pagination;
-    const { sortOption, getSortParams, setSortOption } = useURLSort({
-        sortFields: defaultDeploymentSortFields,
-        defaultSortOption: deploymentsDefaultSort,
-        onSort: () => setPage(1),
-    });
+    const { page, perPage } = pagination;
+    const { sortOption, getSortParams } = sort;
 
     const { error, loading, data, previousData } = useQuery<{
         deployments: Deployment[];
@@ -57,13 +57,11 @@ function DeploymentsTableContainer({
     return (
         <>
             <TableEntityToolbar
-                defaultFilters={defaultFilters}
-                countsData={countsData}
-                setSortOption={setSortOption}
+                filterToolbar={filterToolbar}
+                entityToggleGroup={entityToggleGroup}
                 pagination={pagination}
-                tableRowCount={countsData.deploymentCount}
+                tableRowCount={rowCount}
                 isFiltered={isFiltered}
-                onEntityTabChange={onEntityTabChange}
             />
             <Divider component="div" />
             {loading && !tableData && (

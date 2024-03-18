@@ -24,10 +24,11 @@ spec:
         app: collector
         {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
       annotations:
-        {{- include "srox.podAnnotations" (list . "daemonset" "collector") | nindent 8 }}
+        {{- $annotations := dict -}}
         {{- if eq ._rox.env.openshift 4 }}
-        openshift.io/required-scc: privileged
+          {{- $_ := set $annotations "openshift.io/required-scc" "privileged" -}}
         {{- end }}
+        {{- include "srox.podAnnotations" (list . "daemonset" "collector" $annotations) | nindent 8 }}
     spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:
@@ -37,6 +38,9 @@ spec:
       nodeSelector:
         {{- ._rox.collector._nodeSelector | nindent 8 }}
       {{- end}}
+      {{- if ._rox.collector.priorityClassName }}
+      priorityClassName: {{ ._rox.collector.priorityClassName }}
+      {{- end }}
       serviceAccountName: collector
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}

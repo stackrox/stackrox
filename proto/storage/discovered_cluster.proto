@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/cluster.proto";
 
@@ -13,13 +12,13 @@ option java_package = "io.stackrox.proto.storage";
 //
 // Refer to v1.DiscoveredCluster for a more detailed doc.
 message DiscoveredCluster {
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
 
   message Metadata {
     string id = 1;
-    string name = 2 [(gogoproto.moretags) = 'search:"Cluster,hidden"'];
+    string name = 2; // @gotags: search:"Cluster,hidden"
 
-    ClusterMetadata.Type type = 3 [(gogoproto.moretags) = 'search:"Cluster Type,hidden"'];
+    ClusterMetadata.Type type = 3; // @gotags: search:"Cluster Type,hidden"
 
     enum ProviderType {
       PROVIDER_TYPE_UNSPECIFIED = 0;
@@ -30,7 +29,7 @@ message DiscoveredCluster {
     ProviderType provider_type = 4;
 
     string region = 5;
-    google.protobuf.Timestamp first_discovered_at = 6 [(gogoproto.moretags) = 'search:"Cluster Discovered Time,hidden"'];
+    google.protobuf.Timestamp first_discovered_at = 6; // @gotags: search:"Cluster Discovered Time,hidden"
   }
   Metadata metadata = 2;
 
@@ -39,9 +38,9 @@ message DiscoveredCluster {
     STATUS_SECURED = 1;
     STATUS_UNSECURED = 2;
   }
-  Status status = 3 [(gogoproto.moretags) = 'search:"Cluster Status,hidden"'];
+  Status status = 3; // @gotags: search:"Cluster Status,hidden"
 
-  string source_id = 4 [(gogoproto.moretags) = 'search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"'];
+  string source_id = 4; // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
 
-  google.protobuf.Timestamp last_updated_at = 5 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
+  google.protobuf.Timestamp last_updated_at = 5; // @gotags: search:"Last Updated,hidden"
 }

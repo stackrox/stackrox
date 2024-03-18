@@ -22,11 +22,16 @@ spec:
       - podSelector:
           matchLabels:
             app: admission-control
-{{ if ._rox.sensor.localImageScanning.enabled }}
+      {{- if ._rox.sensor.localImageScanning.enabled }}
       - podSelector:
           matchLabels:
             app: scanner
-{{ end }}
+      {{- if ._rox.scannerV4._indexerEnabled }}
+      - podSelector:
+          matchLabels:
+            app: scanner-v4-indexer
+     {{- end }}
+     {{- end }}
     ports:
     - port: 8443
       protocol: TCP

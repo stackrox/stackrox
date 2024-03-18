@@ -50,6 +50,7 @@ jobs:
     needs: define-scanner-job-matrix
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       # Supports two go binary builds:
       # default    - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
@@ -108,10 +109,10 @@ jobs:
     - build-and-push-scanner
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       # Supports two image builds:
       # default
       # prerelease
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
@@ -149,3 +150,12 @@ jobs:
         architectures="amd64,arm64,ppc64le,s390x"
 
         push_scanner_image_manifest_lists "$architectures"
+
+  run-e2e-tests:
+    name: Run standalone E2E test
+    # The test requires the DB init bundle.
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
+    needs:
+      - push-manifests
+    uses: ./.github/workflows/scanner-e2e-test.yaml
+    secrets: inherit

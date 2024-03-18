@@ -11,6 +11,8 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/matchers/registry"
+	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -25,26 +27,30 @@ import (
 )
 
 // matcherNames specifies the ClairCore matchers to use.
-func matcherNames() []string {
-	names := []string{
-		"alpine-matcher",
-		"aws-matcher",
-		"debian-matcher",
-		"gobin",
-		"java-maven",
-		"oracle",
-		"photon",
-		"python",
-		"rhel-container-matcher",
-		"rhel",
-		"ruby-gem",
-		"suse",
-		"ubuntu-matcher",
-	}
+var matcherNames = []string{
+	"alpine-matcher",
+	"aws-matcher",
+	"debian-matcher",
+	"gobin",
+	"java-maven",
+	"oracle",
+	"photon",
+	"python",
+	"rhel-container-matcher",
+	"rhel",
+	"ruby-gem",
+	"suse",
+	"ubuntu-matcher",
+}
+
+func init() {
 	if env.ScannerV4NodeJSSupport.BooleanSetting() {
-		names = append(names, "nodejs")
+		// ClairCore does not register the Node.js factory by default.
+		m := nodejs.Matcher{}
+		mf := driver.MatcherStatic(&m)
+		registry.Register(m.Name(), mf)
+		matcherNames = append(matcherNames, m.Name())
 	}
-	return names
 }
 
 // Matcher represents a vulnerability matcher.
@@ -110,10 +116,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	ccClient := &http.Client{
 		Transport: httputil.DenyTransport,
 	}
+
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:        store,
 		Locker:       locker,
-		MatcherNames: matcherNames(),
+		MatcherNames: matcherNames,
 		Enrichers: []driver.Enricher{
 			&nvd.Enricher{},
 			&fixedby.Enricher{},
@@ -159,31 +166,23 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
-	distroUpdater, err := distribution.New(ctx, store)
+	distroUpdater, err := distribution.New(ctx, store, vulnUpdater.Initialized)
 	if err != nil {
 		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
 	}
 
-	// Start the updaters asynchronously.
+	// Start the known-distributions updater.
 	go func() {
-		// Run the initial vuln update prior to starting the distribution updater.
-		zlog.Info(ctx).Msg("starting initial update")
-		if err := vulnUpdater.Update(ctx); err != nil {
-			zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
+		if err := distroUpdater.Start(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
 		}
-		zlog.Info(ctx).Msg("completed initial update")
+	}()
 
-		go func() {
-			if err := vulnUpdater.Start(); err != nil {
-				zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
-			}
-		}()
-
-		go func() {
-			if err := distroUpdater.Start(); err != nil {
-				zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
-			}
-		}()
+	// Start the vulnerability updater.
+	go func() {
+		if err := vulnUpdater.Start(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+		}
 	}()
 
 	success = true

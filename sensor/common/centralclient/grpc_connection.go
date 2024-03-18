@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -72,6 +73,12 @@ func (f *centralConnectionFactoryImpl) pingCentral() error {
 	return err
 }
 
+func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferences, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return f.httpClient.GetGRPCPreferences(ctx)
+}
+
 // getCentralTLSCerts only logs errors because this feature should not break
 // sensors start-up.
 func (f *centralConnectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
@@ -108,9 +115,15 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 		log.Info("Did not add central CA cert to gRPC connection")
 	}
 
-	// Use pkg/grpc configuration for MaxMsgSize on client connections as well. This will overwrite the 4MB threshold
-	// set by gRPC lib.
-	opts = append(opts, clientconn.MaxMsgReceiveSize(env.MaxMsgSizeSetting.IntegerSetting()))
+	var maxGRPCSize int
+	if p, err := f.getCentralGRPCPreferences(); err != nil {
+		maxGRPCSize = env.MaxMsgSizeSetting.IntegerSetting()
+		log.Warnf("Couldn't get gRPC preferences from central (%s). Using sensor env config (%d): %s", gRPCPreferences, maxGRPCSize, err)
+	} else {
+		maxGRPCSize = int(p.GetMaxGrpcReceiveSizeBytes())
+		log.Infof("Received max gRPC size from central: %d. Overwriting default sensor value of %d.", maxGRPCSize, env.MaxMsgSizeSetting.IntegerSetting())
+	}
+	opts = append(opts, clientconn.MaxMsgReceiveSize(maxGRPCSize))
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {

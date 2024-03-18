@@ -252,19 +252,27 @@ class Env {
     }
 
     static String mustGetGCSBucketName() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-gcs-test
-    }
-
-    static String mustGetGCSBucketRegion() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_REGION") // us-east-1
+        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
     }
 
     static String mustGetGCPAccessKeyID() {
-        return mustGet("GCP_ACCESS_KEY_ID")
+        return mustGet("GCP_ACCESS_KEY_ID_V2")
     }
 
     static String mustGetGCPAccessKey() {
-        return mustGet("GCP_SECRET_ACCESS_KEY")
+        return mustGet("GCP_SECRET_ACCESS_KEY_V2")
+    }
+
+    static String mustGetGCSServiceAccount() {
+        return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
+    }
+
+    static String mustGetGCRServiceAccount() {
+        return mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER_V2")
+    }
+
+    static String mustGetGCRNoAccessServiceAccount() {
+        return mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2")
     }
 
     static String mustGetPagerdutyToken() {
@@ -297,5 +305,9 @@ class Env {
 
     static String mustGetOcmOfflineToken() {
         return get("OCM_OFFLINE_TOKEN")
+    }
+
+    static String getTestTarget() {
+        return get("TEST_TARGET", "")
     }
 }

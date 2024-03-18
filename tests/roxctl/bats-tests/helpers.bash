@@ -251,13 +251,6 @@ image_reference_regex() {
     quay.io/stackrox-io)
       echo "quay\.io/stackrox-io/$component:$version"
       ;;
-    stackrox.io)
-      if [[ "$component" == "collector" ]]; then
-        echo "collector.stackrox\.io/$component:$version"
-      else
-        echo "stackrox\.io/$component:$version"
-      fi
-      ;;
     registry.redhat.io)
       echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel8:$version"
       ;;

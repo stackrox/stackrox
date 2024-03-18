@@ -365,12 +365,16 @@ registry_rw_login() {
 
     case "$registry" in
         quay.io/rhacs-eng)
-            retry 5 true \
-              docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            _login() {
+                docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            }
+            retry 5 true _login
             ;;
         quay.io/stackrox-io)
-            retry 5 true \
-              docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            _login() {
+                docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            }
+            retry 5 true _login
             ;;
         *)
             die "Unsupported registry login: $registry"
@@ -386,8 +390,10 @@ registry_ro_login() {
 
     case "$registry" in
         quay.io/rhacs-eng)
-            retry 5 true \
-              docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            _login() {
+                docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            }
+            retry 5 true _login
             ;;
         *)
             die "Unsupported registry login: $registry"
@@ -422,7 +428,8 @@ push_matching_collector_scanner_images() {
         if is_OPENSHIFT_CI; then
             oc_image_mirror "$1" "$2"
         else
-            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+            retry 5 true \
+                "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
         fi
     }
 
@@ -469,7 +476,9 @@ poll_for_system_test_images() {
     # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index" "main")
+            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index"
+                         "main" "central-db" "collector" "collector-slim"
+                         "scanner" "scanner-db" "scanner-v4" "scanner-v4-db")
             ;;
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
@@ -1193,7 +1202,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.16/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.17/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1210,11 +1219,7 @@ post_process_test_results() {
             -slack-output "${slack_attachments_file}" \
             "${extra_args[@]}"
 
-        info "Creating Big Query test records from ${csv_output}"
-        bq load \
-            --skip_leading_rows=1 \
-            --allow_quoted_newlines \
-            ci_metrics.stackrox_tests "${csv_output}"
+        save_test_metrics "${csv_output}"
     } || true
     set -u
 }
@@ -1729,6 +1734,13 @@ _EO_SUITE_HEADER_
         local description="${lines[0]}"
         local result="${lines[1]}"
         local details="${lines[2]}"
+
+        # XML escape description
+        description="${description//&/&amp;}"
+        description="${description//\"/&quot;}"
+        description="${description//\'/&#39;}"
+        description="${description//</&lt;}"
+        description="${description//>/&gt;}"
 
         cat << _EO_CASE_HEADER_ >> "${junit_file}"
         <testcase name="${description}" classname="${class}">

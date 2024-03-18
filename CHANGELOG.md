@@ -10,6 +10,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.4.0]
+
+
+
+### Added Features
 - Customer-provided PostgreSQL databases are now GA
 - ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to backup certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
 - The "Kubernetes Resource Name" policy criteria now supports regex values. Note: the value must be prefixed with "r/" to activate regex matching.
@@ -23,6 +35,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   workload identity federation and AWS via the Secure Token Service.
 - ROX-17382: An enhanced version of the ACS and Compliance Operator integration is now available under the heading "Compliance (2.0)". This feature is in Tech Preview.
 - ROX-20100: `Machine access configurations` have been added to provide short-lived access tokens for Central.
+- A new image scanner based on [ClairCore](https://github.com/quay/claircore), Scanner V4, is now available.
+  - It is disabled by default, but it is recommended for more accurate image scan results.
+- ROX-22505: It is now possible to set up authentication provider claim mappings via UI.
+- API token expiration date can be configured. If expiration date is not specified, API token will expire in 1 year.
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
@@ -59,6 +75,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The Helm setting `central.db.persistence.hostPath` for hostPath storage will be deprecated in 2 releases. It is recommended to switch to an alternative persistent storage.
 - Users running ACS version 3.74.x or earlier must stop at version 4.4.x before upgrading to 4.5 or later. In version 4.0.0, ACS switched the underlying datastore to PostgreSQL. On an upgrade, data would be automatically migrated to PostgresSQL from the previous store.
   In 4.5.0 this previous store will no longer be available, thus any existing data will not be migrated over if users jump from 3.74.x directly to 4.5.0. By stopping at any version from 4.0.0 to 4.4.x, users can ensure that the data will be properly migrated.
+- StackRox Scanner will no longer receive new features and will be in maintenance-mode. Development is now focused on the new Scanner V4.
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,

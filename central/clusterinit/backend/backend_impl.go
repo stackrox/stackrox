@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -66,7 +67,7 @@ func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error)
 	if sensorCert == nil {
 		return nil, errors.New("no sensor certificate in init bundle")
 	}
-	timestamp, err := types.TimestampProto(sensorCert.X509Cert.NotAfter)
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(sensorCert.X509Cert.NotAfter)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting expiry date to timestamp")
 	}
@@ -101,7 +102,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	meta := &storage.InitBundleMeta{
 		Id:        id.String(),
 		Name:      name,
-		CreatedAt: types.TimestampNow(),
+		CreatedAt: protocompat.TimestampNow(),
 		CreatedBy: user,
 		ExpiresAt: expiryDate,
 	}

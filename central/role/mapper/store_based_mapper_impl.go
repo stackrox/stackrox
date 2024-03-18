@@ -3,7 +3,6 @@ package mapper
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -44,7 +44,7 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 
 	if err := rm.users.Upsert(ctx, user); err != nil {
 		// Just log since we don't actually need the user information.
-		log.Errorf("unable to log user: %s: %v", proto.MarshalTextString(user), err)
+		log.Errorf("unable to log user: %s: %v", protocompat.MarshalTextString(user), err)
 	}
 }
 

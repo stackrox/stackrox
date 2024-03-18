@@ -15,8 +15,8 @@ import { gql } from '@apollo/client';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { VulnerabilityState } from 'types/cve.proto';
-import { getEntityPagePath } from '../searchUtils';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { getEntityPagePath } from '../../utils/searchUtils';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
@@ -24,9 +24,9 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
-import SeverityCountLabels from '../components/SeverityCountLabels';
-import DateDistanceTd from '../components/DatePhraseTd';
-import { VulnerabilitySeverityLabel } from '../types';
+import SeverityCountLabels from '../../components/SeverityCountLabels';
+import DateDistance from '../../components/DateDistance';
+import { VulnerabilitySeverityLabel } from '../../types';
 
 export type DeploymentForCve = {
     id: string;
@@ -161,7 +161,7 @@ function AffectedDeploymentsTable({
                             </Td>
 
                             <Td modifier="nowrap" dataLabel="First discovered">
-                                <DateDistanceTd date={created} />
+                                <DateDistance date={created} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

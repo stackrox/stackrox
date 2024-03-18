@@ -3,10 +3,10 @@ package mapcache
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db/mocks"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -19,7 +19,7 @@ var (
 	alert2ID = alert2.GetId()
 )
 
-func alertKeyFunc(msg proto.Message) []byte {
+func alertKeyFunc(msg protocompat.Message) []byte {
 	return []byte(msg.(*storage.Alert).GetId())
 }
 
@@ -97,7 +97,7 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	msgs, missingIndices, err := s.cache.GetMany([]string{alert1ID, alert2ID})
 	s.NoError(err)
 	s.Equal([]int{1}, missingIndices)
-	s.Equal([]proto.Message{alert1}, msgs)
+	s.Equal([]protocompat.Message{alert1}, msgs)
 
 	s.underlyingDB.EXPECT().Upsert(alert2)
 	s.NoError(s.cache.Upsert(alert2))
@@ -105,7 +105,7 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
 	s.NoError(err)
 	s.Nil(missingIndices)
-	s.Equal([]proto.Message{alert1, alert2}, msgs)
+	s.Equal([]protocompat.Message{alert1, alert2}, msgs)
 
 	s.underlyingDB.EXPECT().DeleteMany([]string{alert1ID})
 	s.NoError(s.cache.DeleteMany([]string{alert1ID}))
@@ -113,7 +113,7 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
 	s.NoError(err)
 	s.Equal([]int{0}, missingIndices)
-	s.Equal([]proto.Message{alert2}, msgs)
+	s.Equal([]protocompat.Message{alert2}, msgs)
 
 	s.underlyingDB.EXPECT().UpsertWithID(alert1ID, alert1)
 	s.NoError(s.cache.UpsertWithID(alert1ID, alert1))
@@ -121,24 +121,24 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
 	s.NoError(err)
 	s.Nil(missingIndices)
-	s.Equal([]proto.Message{alert1, alert2}, msgs)
+	s.Equal([]protocompat.Message{alert1, alert2}, msgs)
 
-	s.underlyingDB.EXPECT().UpsertMany([]proto.Message{alert1, alert2})
-	s.NoError(s.cache.UpsertMany([]proto.Message{alert1, alert2}))
+	s.underlyingDB.EXPECT().UpsertMany([]protocompat.Message{alert1, alert2})
+	s.NoError(s.cache.UpsertMany([]protocompat.Message{alert1, alert2}))
 
 	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
 	s.NoError(err)
 	s.Nil(missingIndices)
-	s.Equal([]proto.Message{alert1, alert2}, msgs)
+	s.Equal([]protocompat.Message{alert1, alert2}, msgs)
 
 	cloned1 := alert1.Clone()
 	cloned1.Policy.EnforcementActions = []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT}
 
-	s.underlyingDB.EXPECT().UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2})
-	s.NoError(s.cache.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2}))
+	s.underlyingDB.EXPECT().UpsertManyWithIDs([]string{alert1ID, alert2ID}, []protocompat.Message{cloned1, alert2})
+	s.NoError(s.cache.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []protocompat.Message{cloned1, alert2}))
 
 	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
 	s.NoError(err)
 	s.Nil(missingIndices)
-	s.Equal([]proto.Message{cloned1, alert2}, msgs)
+	s.Equal([]protocompat.Message{cloned1, alert2}, msgs)
 }

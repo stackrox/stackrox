@@ -200,7 +200,7 @@ function ObservedCVEsTable({
                         <Th sort={getSortParams('Severity')}>Severity</Th>
                         <Th sort={getSortParams('CVSS')}>CVSS score</Th>
                         <Th>Affected components</Th>
-                        <Th sort={getSortParams('Discovered')}>Discovered</Th>
+                        <Th sort={getSortParams('CVE Created Time')}>Discovered</Th>
                     </Tr>
                 </Thead>
                 <Tbody>

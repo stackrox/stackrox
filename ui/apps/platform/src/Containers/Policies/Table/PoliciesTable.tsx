@@ -25,11 +25,9 @@ import {
     ExpandableRowContent,
 } from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
-import orderBy from 'lodash/orderBy';
 import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
-import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
@@ -42,11 +40,11 @@ import EnableDisableNotificationModal, {
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
 import { AlertVariantType } from 'hooks/patternfly/useToasts';
+import { UseURLSortResult } from 'hooks/useURLSort';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
-import { SortDirection } from 'types/table';
-
+import { columns, defaultPolicyLabel, userPolicyLabel } from './PoliciesTable.utils';
 import {
     LabelAndNotifierIdsForType,
     formatLifecycleStages,
@@ -55,48 +53,6 @@ import {
 } from '../policies.utils';
 
 import './PoliciesTable.css';
-
-const columns = [
-    {
-        Header: 'Policy',
-        accessor: 'name',
-        sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
-        width: 30 as const,
-    },
-    {
-        Header: 'Status',
-        accessor: 'disabled',
-    },
-    {
-        Header: 'Origin',
-        accessor: 'isDefault',
-        sortMethod: (a: ListPolicy, b: ListPolicy) => sortPolicyOrigin(a.isDefault, b.isDefault),
-    },
-    {
-        Header: 'Notifiers',
-        accessor: 'notifiers',
-        sortMethod: (a: ListPolicy, b: ListPolicy) => sortValueByLength(a.notifiers, b.notifiers),
-    },
-    {
-        Header: 'Severity',
-        accessor: 'severity',
-        sortMethod: (a: ListPolicy, b: ListPolicy) => -sortSeverity(a.severity, b.severity),
-    },
-    {
-        Header: 'Lifecycle',
-        accessor: 'lifecycleStages',
-    },
-];
-
-const defaultPolicyLabel = 'System';
-const userPolicyLabel = 'User';
-
-function sortPolicyOrigin(a, b) {
-    const aOrigin = a ? defaultPolicyLabel : userPolicyLabel;
-    const bOrigin = b ? defaultPolicyLabel : userPolicyLabel;
-
-    return sortAsciiCaseInsensitive(aOrigin, bOrigin);
-}
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -110,6 +66,7 @@ type PoliciesTableProps = {
     disablePoliciesHandler: (ids) => void;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     onClickReassessPolicies: () => void;
+    getSortParams: UseURLSortResult['getSortParams'];
     searchFilter?: SearchFilter;
     searchOptions: string[];
 };
@@ -126,6 +83,7 @@ function PoliciesTable({
     disablePoliciesHandler,
     handleChangeSearchFilter,
     onClickReassessPolicies,
+    getSortParams,
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
@@ -140,14 +98,9 @@ function PoliciesTable({
 
     const [enableDisableType, setEnableDisableType] = useState<EnableDisableType | null>(null);
 
-    // index of the currently active column
-    const [activeSortIndex, setActiveSortIndex] = useState(0);
-    // sort direction of the currently active column
-    const [activeSortDirection, setActiveSortDirection] = useState<SortDirection>('asc');
     // Handle Bulk Actions dropdown state.
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     // For sorting data client side
-    const [rows, setRows] = useState<ListPolicy[]>([]);
 
     useEffect(() => {
         setLabelAndNotifierIdsForTypes(getLabelAndNotifierIdsForTypes(notifiers));
@@ -167,7 +120,7 @@ function PoliciesTable({
         hasSelections,
         onSelect,
         onSelectAll,
-        // onClearAll,
+        onClearAll,
         getSelectedIds,
     } = useTableSelection(policies);
 
@@ -177,11 +130,6 @@ function PoliciesTable({
 
     function onSelectActions() {
         setIsActionsOpen(false);
-    }
-
-    function onSort(e, index, direction) {
-        setActiveSortIndex(index);
-        setActiveSortDirection(direction);
     }
 
     function onEditPolicy(id: string) {
@@ -213,21 +161,6 @@ function PoliciesTable({
             numDeletable += 1;
         }
     });
-
-    // If we use server side page management, this becomes unnecessary
-    useEffect(() => {
-        const { sortMethod, accessor } = columns[activeSortIndex];
-        let sortedPolicies = [...policies];
-        if (sortMethod) {
-            sortedPolicies.sort(sortMethod);
-            if (activeSortDirection === 'desc') {
-                sortedPolicies.reverse();
-            }
-        } else {
-            sortedPolicies = orderBy(sortedPolicies, [accessor], [activeSortDirection]);
-        }
-        setRows(sortedPolicies);
-    }, [policies, activeSortIndex, activeSortDirection]);
 
     function onConfirmDeletePolicy() {
         setIsDeleting(true);
@@ -303,11 +236,7 @@ function PoliciesTable({
                                             >
                                                 {`Disable policies (${numEnabled})`}
                                             </DropdownItem>,
-                                            // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
-                                            // Export policies to JSON
-                                            // onClick={() => exportPoliciesHandler(selectedIds, onClearAll)}
-                                            // {`Export policies to JSON (${numSelected})`}
-                                            <DropdownSeparator key="Separator" />,
+                                            <DropdownSeparator key="Separator-1" />,
                                             <DropdownItem
                                                 key="Enable notification"
                                                 component="button"
@@ -325,6 +254,17 @@ function PoliciesTable({
                                                 }}
                                             >
                                                 Disable notification
+                                            </DropdownItem>,
+                                            <DropdownSeparator key="Separator-2" />,
+                                            <DropdownItem
+                                                key="Export policy"
+                                                component="button"
+                                                isDisabled={selectedPolicies.length === 0}
+                                                onClick={() =>
+                                                    exportPoliciesHandler(selectedIds, onClearAll)
+                                                }
+                                            >
+                                                {`Export policies (${selectedPolicies.length})`}
                                             </DropdownItem>,
                                             <DropdownSeparator key="Separator" />,
                                             <DropdownItem
@@ -357,9 +297,9 @@ function PoliciesTable({
                             <Pagination
                                 isCompact
                                 isDisabled
-                                itemCount={rows.length}
+                                itemCount={policies.length}
                                 page={1}
-                                perPage={rows.length}
+                                perPage={policies.length}
                             />
                         </ToolbarItem>
                     </ToolbarContent>
@@ -378,19 +318,24 @@ function PoliciesTable({
                                     isSelected: allRowsSelected,
                                 }}
                             />
-                            {columns.map(({ Header, width }, columnIndex) => {
-                                const sortParams = {
-                                    sort: {
-                                        sortBy: {
-                                            index: activeSortIndex,
-                                            direction: activeSortDirection,
-                                        },
-                                        onSort,
-                                        columnIndex,
-                                    },
-                                };
+                            {columns.map(({ Header, width }) => {
+                                // const sortParams = {
+                                //     sort: {
+                                //         sortBy: {
+                                //             index: activeSortIndex,
+                                //             direction: activeSortDirection,
+                                //         },
+                                //         onSort,
+                                //         columnIndex,
+                                //     },
+                                // };
                                 return (
-                                    <Th key={Header} modifier="wrap" width={width} {...sortParams}>
+                                    <Th
+                                        key={Header}
+                                        modifier="wrap"
+                                        width={width}
+                                        sort={getSortParams(Header)}
+                                    >
                                         {Header}
                                     </Th>
                                 );
@@ -398,7 +343,7 @@ function PoliciesTable({
                             <Td />
                         </Tr>
                     </Thead>
-                    {rows.map((policy) => {
+                    {policies.map((policy) => {
                         const {
                             description,
                             disabled,

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,19 +30,19 @@ func TestClient_GetAssets(t *testing.T) {
 
 	testCluster1FirstDiscoveredAt, err := time.Parse(timeFormat, "2023-11-28 08:00:00+0000")
 	require.NoError(t, err)
-	testCluster1FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster1FirstDiscoveredAt)
+	testCluster1FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster1FirstDiscoveredAt)
 	require.NoError(t, err)
 	testCluster2FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
 	require.NoError(t, err)
-	testCluster2FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster2FirstDiscoveredAt)
+	testCluster2FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster2FirstDiscoveredAt)
 	require.NoError(t, err)
 	testCluster3FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
 	require.NoError(t, err)
-	testCluster3FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster3FirstDiscoveredAt)
+	testCluster3FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster3FirstDiscoveredAt)
 	require.NoError(t, err)
 	testCluster4FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-09 08:00:00+0000")
 	require.NoError(t, err)
-	testCluster4FirstDiscoveredAtTS, err := gogoProto.TimestampProto(testCluster4FirstDiscoveredAt)
+	testCluster4FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster4FirstDiscoveredAt)
 	require.NoError(t, err)
 
 	expectedDiscoveredClusters := []*discoveredclusters.DiscoveredCluster{

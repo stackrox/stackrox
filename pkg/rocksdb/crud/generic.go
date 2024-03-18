@@ -1,24 +1,24 @@
 package generic
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/db"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // Deserializer is the function that takes in a []byte value and returns a proto message
-type Deserializer func(v []byte) (proto.Message, error)
+type Deserializer func(v []byte) (protocompat.Message, error)
 
 // AllocFunc returns an object of the type for the store
-type AllocFunc func() proto.Message
+type AllocFunc func() protocompat.Message
 
 // KeyFunc returns the key for the passed msg
-type KeyFunc func(msg proto.Message) []byte
+type KeyFunc func(msg protocompat.Message) []byte
 
 func deserializerFunc(alloc AllocFunc) Deserializer {
-	return func(v []byte) (proto.Message, error) {
+	return func(v []byte) (protocompat.Message, error) {
 		t := alloc()
-		if err := proto.Unmarshal(v, t); err != nil {
+		if err := protocompat.Unmarshal(v, t); err != nil {
 			return nil, err
 		}
 		return t, nil

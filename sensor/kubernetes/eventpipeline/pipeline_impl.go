@@ -166,7 +166,7 @@ func (p *eventPipeline) processReassessPolicies() error {
 		return err
 	}
 	msg := component.NewEvent()
-	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
+	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
 	msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
 		component.WithForceDetection())
 	msg.Context = p.getCurrentContext()
@@ -180,7 +180,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 		return err
 	}
 	msg := component.NewEvent()
-	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
+	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
 	msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
 		component.WithForceDetection())
 	msg.Context = p.getCurrentContext()

@@ -1,9 +1,9 @@
 package generic
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
@@ -48,7 +48,7 @@ func (c *crudImpl) Count() (int, error) {
 	return count, errors.Wrap(err, "getting count of objects in DB")
 }
 
-func (c *crudImpl) Get(id string) (proto.Message, bool, error) {
+func (c *crudImpl) Get(id string) (protocompat.Message, bool, error) {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, false, err
 	}
@@ -84,7 +84,7 @@ func (c *crudImpl) Exists(id string) (exists bool, err error) {
 	return slice.Exists(), nil
 }
 
-func (c *crudImpl) GetMany(ids []string) (msgs []proto.Message, missingIndices []int, err error) {
+func (c *crudImpl) GetMany(ids []string) (msgs []protocompat.Message, missingIndices []int, err error) {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, nil, err
 	}
@@ -115,8 +115,8 @@ func (c *crudImpl) GetMany(ids []string) (msgs []proto.Message, missingIndices [
 	return msgs, missingIndices, nil
 }
 
-func (c *crudImpl) addToWriteBatch(batch *gorocksdb.WriteBatch, msg proto.Message) error {
-	data, err := proto.Marshal(msg)
+func (c *crudImpl) addToWriteBatch(batch *gorocksdb.WriteBatch, msg protocompat.Message) error {
+	data, err := protocompat.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshaling message")
 	}
@@ -130,7 +130,7 @@ func (c *crudImpl) addKVToWriteBatch(batch *gorocksdb.WriteBatch, id []byte, dat
 	return nil
 }
 
-func (c *crudImpl) Upsert(msg proto.Message) error {
+func (c *crudImpl) Upsert(msg protocompat.Message) error {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (c *crudImpl) Upsert(msg proto.Message) error {
 	return nil
 }
 
-func (c *crudImpl) UpsertMany(msgs []proto.Message) error {
+func (c *crudImpl) UpsertMany(msgs []protocompat.Message) error {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (c *crudImpl) UpsertMany(msgs []proto.Message) error {
 	return nil
 }
 
-func (c *crudImpl) UpsertWithID(id string, msg proto.Message) error {
+func (c *crudImpl) UpsertWithID(id string, msg protocompat.Message) error {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (c *crudImpl) UpsertWithID(id string, msg proto.Message) error {
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
-	data, err := proto.Marshal(msg)
+	data, err := protocompat.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshaling message")
 	}
@@ -194,7 +194,7 @@ func (c *crudImpl) UpsertWithID(id string, msg proto.Message) error {
 	return nil
 }
 
-func (c *crudImpl) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+func (c *crudImpl) UpsertManyWithIDs(ids []string, msgs []protocompat.Message) error {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -208,7 +208,7 @@ func (c *crudImpl) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
 	defer batch.Destroy()
 
 	for i, msg := range msgs {
-		data, err := proto.Marshal(msg)
+		data, err := protocompat.Marshal(msg)
 		if err != nil {
 			return errors.Wrap(err, "marshaling message")
 		}
@@ -277,7 +277,7 @@ func (c *crudImpl) GetKeys() ([]string, error) {
 	return keys, errors.Wrap(err, "getting keys")
 }
 
-func (c *crudImpl) Walk(fn func(msg proto.Message) error) error {
+func (c *crudImpl) Walk(fn func(msg protocompat.Message) error) error {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func (c *crudImpl) Walk(fn func(msg proto.Message) error) error {
 	})
 }
 
-func (c *crudImpl) WalkAllWithID(fn func(id []byte, msg proto.Message) error) error {
+func (c *crudImpl) WalkAllWithID(fn func(id []byte, msg protocompat.Message) error) error {
 	if err := c.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}

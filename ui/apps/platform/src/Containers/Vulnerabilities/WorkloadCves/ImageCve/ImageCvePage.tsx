@@ -21,6 +21,7 @@ import { useParams } from 'react-router-dom';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -30,6 +31,8 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
+import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
+
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -38,16 +41,19 @@ import {
     CLUSTER_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
-} from 'Containers/Vulnerabilities/searchOptions';
-import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
+} from '../../searchOptions';
+import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
-    getOverviewCvesPath,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
-    parseQuerySearchFilter,
-} from '../searchUtils';
-import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
+    parseWorkloadQuerySearchFilter,
+} from '../../utils/searchUtils';
+import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
+import { DynamicTableLabel } from '../../components/DynamicIcon';
+
+import { getOverviewCvesPath } from '../utils/searchUtils';
+import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
@@ -56,9 +62,7 @@ import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
 } from '../Tables/AffectedImagesTable';
-import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
-import { DynamicTableLabel } from '../components/DynamicIcon';
-import TableErrorComponent from '../components/TableErrorComponent';
+import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
@@ -68,7 +72,6 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import { EntityTab, VulnerabilitySeverityLabel } from '../types';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
@@ -178,7 +181,7 @@ function ImageCvePage() {
     const cveId = urlParams.cveId ?? '';
     const exactCveIdSearchRegex = `^${cveId}$`;
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
             ...querySearchFilter,
@@ -299,7 +302,9 @@ function ImageCvePage() {
         tableLoading = deploymentDataRequest.loading;
     }
 
-    function trackEntityTabView(entityTab: EntityTab) {
+    function onEntityTypeChange(entityTab: WorkloadEntityTab) {
+        setSortOption(getDefaultWorkloadSortOption(entityTab));
+        setPage(1);
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {
@@ -311,7 +316,7 @@ function ImageCvePage() {
 
     // Track the initial entity tab view
     useEffect(() => {
-        trackEntityTabView(entityTab);
+        onEntityTypeChange(entityTab);
     }, []);
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
@@ -369,7 +374,7 @@ function ImageCvePage() {
                 />
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar
+                        <WorkloadCveFilterToolbar
                             searchOptions={searchOptions}
                             autocompleteSearchContext={{
                                 CVE: exactCveIdSearchRegex,
@@ -422,12 +427,12 @@ function ImageCvePage() {
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
-                                    imageCount={imageCount}
-                                    deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
-                                    setSortOption={setSortOption}
-                                    setPage={setPage}
-                                    onChange={trackEntityTabView}
+                                    entityCounts={{
+                                        Image: imageCount,
+                                        Deployment: deploymentCount,
+                                    }}
+                                    onChange={onEntityTypeChange}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>

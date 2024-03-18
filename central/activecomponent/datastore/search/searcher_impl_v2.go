@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/activecomponent/datastore/index"
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,23 +10,21 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
-// NewV2 returns a new instance of Searcher for the given storage and indexer.
-func NewV2(storage store.Store, indexer index.Indexer) Searcher {
+// NewV2 returns a new instance of Searcher for the given storage.
+func NewV2(storage store.Store) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
-		indexer:  indexer,
-		searcher: postgres.WithScoping(indexer),
+		searcher: postgres.WithScoping(storage),
 	}
 }
 
 // searcherImplV2 provides an intermediary implementation layer for image storage.
 type searcherImplV2 struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
-// SearchRawActiveComponents retrieves SearchResults from the indexer and storage
+// SearchRawActiveComponents retrieves SearchResults from the storage
 func (s *searcherImplV2) SearchRawActiveComponents(ctx context.Context, q *v1.Query) ([]*storage.ActiveComponent, error) {
 	results, err := s.Search(ctx, q)
 	if err != nil {

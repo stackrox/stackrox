@@ -6,10 +6,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	notificationschedulestore "github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_create_notification_schedule_table/notificationschedulestore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,10 +36,9 @@ func TestMigration(t *testing.T) {
 
 	// Test upsert is possible
 	scheduleToInsert := &storage.NotificationSchedule{
-		LastRun: &types.Timestamp{
-			Seconds: 1234567890,
-			Nanos:   0,
-		},
+		LastRun: protocompat.GetProtoTimestampFromSecondsAndNanos(
+			1234567890,
+			0),
 	}
 	upsertErr := scheduleStore.Upsert(ctx, scheduleToInsert)
 	assert.NoError(t, upsertErr)

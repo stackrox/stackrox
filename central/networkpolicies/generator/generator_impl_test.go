@@ -6,8 +6,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
@@ -17,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -202,20 +201,20 @@ func sortPolicies(policies []*storage.NetworkPolicy) {
 	for _, policy := range policies {
 		for _, ingressRule := range policy.Spec.Ingress {
 			sort.Slice(ingressRule.From, func(i, j int) bool {
-				return proto.MarshalTextString(ingressRule.From[i]) < proto.MarshalTextString(ingressRule.From[j])
+				return protocompat.MarshalTextString(ingressRule.From[i]) < protocompat.MarshalTextString(ingressRule.From[j])
 			})
 		}
 		sort.Slice(policy.Spec.Ingress, func(i, j int) bool {
-			return proto.MarshalTextString(policy.Spec.Ingress[i]) < proto.MarshalTextString(policy.Spec.Ingress[j])
+			return protocompat.MarshalTextString(policy.Spec.Ingress[i]) < protocompat.MarshalTextString(policy.Spec.Ingress[j])
 		})
 	}
 	sort.Slice(policies, func(i, j int) bool {
-		return proto.MarshalTextString(policies[i]) < proto.MarshalTextString(policies[j])
+		return protocompat.MarshalTextString(policies[i]) < protocompat.MarshalTextString(policies[j])
 	})
 }
 
 func (s *generatorTestSuite) TestGenerate() {
-	ts := types.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
@@ -383,7 +382,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, types.TimestampNow(), nil)
+		}, protocompat.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -530,7 +529,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 				},
 			}))
 
-	ts := types.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		Query:            "Namespace: foo,bar,qux",
@@ -661,7 +660,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, types.TimestampNow(), nil)
+		}, protocompat.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)

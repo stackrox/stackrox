@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -74,10 +75,10 @@ func (s *ComplianceOperatorSuiteV2StoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(complianceOperatorSuiteV2, foundComplianceOperatorSuiteV2)
 
-	complianceOperatorSuiteV2Count, err := store.Count(ctx)
+	complianceOperatorSuiteV2Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceOperatorSuiteV2Count)
-	complianceOperatorSuiteV2Count, err = store.Count(withNoAccessCtx)
+	complianceOperatorSuiteV2Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceOperatorSuiteV2Count)
 
@@ -110,13 +111,13 @@ func (s *ComplianceOperatorSuiteV2StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorSuiteV2s))
 
-	complianceOperatorSuiteV2Count, err = store.Count(ctx)
+	complianceOperatorSuiteV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorSuiteV2Count)
 
 	s.NoError(store.DeleteMany(ctx, complianceOperatorSuiteV2IDs))
 
-	complianceOperatorSuiteV2Count, err = store.Count(ctx)
+	complianceOperatorSuiteV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(0, complianceOperatorSuiteV2Count)
 }
@@ -265,7 +266,7 @@ func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACCount() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			expectedCount := len(testCase.expectedObjects)
-			count, err := s.store.Count(testCase.context)
+			count, err := s.store.Count(testCase.context, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -357,7 +358,7 @@ func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACDelete() {
 			assert.NoError(t, s.store.Delete(testCase.context, objA.GetId()))
 			assert.NoError(t, s.store.Delete(testCase.context, objB.GetId()))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 
@@ -385,7 +386,7 @@ func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACDeleteMany() {
 				objB.GetId(),
 			}))
 
-			count, err := s.store.Count(withAllAccessCtx)
+			count, err := s.store.Count(withAllAccessCtx, search.EmptyQuery())
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 

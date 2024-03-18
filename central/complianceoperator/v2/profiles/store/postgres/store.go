@@ -19,6 +19,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
 )
@@ -44,8 +45,9 @@ type Store interface {
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
@@ -118,10 +120,11 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 		obj.GetProductType(),
 		obj.GetStandard(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
+		pgutils.NilOrUUID(obj.GetProfileRefId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, ProfileId, Name, ProfileVersion, ProductType, Standard, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, Name = EXCLUDED.Name, ProfileVersion = EXCLUDED.ProfileVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, ProfileId, Name, ProfileVersion, ProductType, Standard, ClusterId, ProfileRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, Name = EXCLUDED.Name, ProfileVersion = EXCLUDED.ProfileVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, ClusterId = EXCLUDED.ClusterId, ProfileRefId = EXCLUDED.ProfileRefId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -171,6 +174,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		"producttype",
 		"standard",
 		"clusterid",
+		"profilerefid",
 		"serialized",
 	}
 
@@ -193,6 +197,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 			obj.GetProductType(),
 			obj.GetStandard(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
+			pgutils.NilOrUUID(obj.GetProfileRefId()),
 			serialized,
 		})
 

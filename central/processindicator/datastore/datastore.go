@@ -65,7 +65,6 @@ func New(store store.Store, plopStorage plopStore.Store, searcher search.Searche
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
 	plopDBstore := plopStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
+	searcher := search.New(dbstore)
 	return New(dbstore, plopDBstore, searcher, nil)
 }
