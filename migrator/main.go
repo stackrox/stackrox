@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
 	"github.com/stackrox/rox/migrator/log"
-	"github.com/stackrox/rox/migrator/option"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -80,28 +79,18 @@ func run() error {
 	}
 
 	// Get the clone we are migrating
-	clone, clonePath, pgClone, err := dbm.GetCloneToMigrate()
+	pgClone, err := dbm.GetCloneToMigrate()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clone to migrate")
 	}
-	log.WriteToStderrf("Clone to Migrate %q, %q", clone, pgClone)
+	log.WriteToStderrf("Clone to Migrate %q, %q", pgClone)
 
-	// Set the path to Rocks if it exists.
-	if clonePath != "" {
-		option.MigratorOptions.DBPathBase = clonePath
-	}
-
-	// If GetCloneToMigrate returns Rocks and Postgres clones that means we need
-	// to migrate Rocks->Postgres.  Otherwise, we need to process Rocks in Rocks mode and
-	// Postgres in Postgres mode.
-	processBoth := clone != "" && pgClone != ""
-
-	err = upgrade(conf, pgClone, processBoth)
+	err = upgrade(pgClone)
 	if err != nil {
 		return err
 	}
 
-	if err = dbm.Persist(clone, pgClone, processBoth); err != nil {
+	if err = dbm.Persist(pgClone); err != nil {
 		return err
 	}
 

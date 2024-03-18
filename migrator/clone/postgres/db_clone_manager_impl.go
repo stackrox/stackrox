@@ -202,7 +202,7 @@ func (d *dbCloneManagerImpl) shouldMigrateFromRocks(rocksVersion *migrations.Mig
 	return false
 }
 
-func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
+func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.MigrationVersion) (string, bool, error) {
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
@@ -213,32 +213,15 @@ func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.Mi
 	}
 	log.Infof("db is of version %v", ver)
 
-	migrateFromRocks := restoreFromRocks || d.shouldMigrateFromRocks(rocksVersion, ver)
-
-	return d.adminConfig.ConnConfig.Database, migrateFromRocks, nil
+	return d.adminConfig.ConnConfig.Database, d.shouldMigrateFromRocks(rocksVersion, ver), nil
 }
 
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the database clone name, flag informing if Rocks should be used as well and error if fails.
-func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
+func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion) (string, bool, error) {
 	log.Info("GetCloneToMigrate")
 	if pgconfig.IsExternalDatabase() {
-		return d.checkForRocksToExternal(rocksVersion, restoreFromRocks)
-	}
-
-	// If a restore clone exists, our focus is to try to restore that database.
-	if _, ok := d.cloneMap[RestoreClone]; ok || restoreFromRocks {
-		if restoreFromRocks {
-			// We are restoring from Rocks, so we need to start with fresh Postgres each time
-			err := pgadmin.DropDB(d.sourceMap, d.adminConfig, RestoreClone)
-			if err != nil {
-				log.Errorf("Unable to drop clone - %q", RestoreClone)
-				return "", false, err
-			}
-			d.cloneMap[RestoreClone] = metadata.NewPostgres(rocksVersion, RestoreClone)
-			return RestoreClone, true, nil
-		}
-		return RestoreClone, false, nil
+		return d.checkForRocksToExternal(rocksVersion)
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
