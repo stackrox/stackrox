@@ -54,11 +54,6 @@ func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 	return t
 }
 
-// ConvertTimeToTimestampOrError converts golang time to proto timestamp.
-func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, error) {
-	return gogoTimestamp.TimestampProto(goTime)
-}
-
 // ConvertTimeToTimestampOrNil converts golang time to proto timestamp or if it fails returns nil.
 func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
 	t, err := gogoTimestamp.TimestampProto(goTime)

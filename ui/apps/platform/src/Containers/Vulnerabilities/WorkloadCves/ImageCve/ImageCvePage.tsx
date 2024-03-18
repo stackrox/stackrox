@@ -42,16 +42,18 @@ import {
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
 } from '../../searchOptions';
-import { EntityTab, VulnerabilitySeverityLabel } from '../../types';
+import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
-    parseQuerySearchFilter,
+    parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
+import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
+import { DynamicTableLabel } from '../../components/DynamicIcon';
 
 import { getOverviewCvesPath } from '../utils/searchUtils';
-import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
+import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
     imageCveMetadataFragment,
@@ -60,8 +62,7 @@ import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
 } from '../Tables/AffectedImagesTable';
-import EntityTypeToggleGroup from '../components/EntityTypeToggleGroup';
-import { DynamicTableLabel } from '../components/DynamicIcon';
+import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
@@ -180,7 +181,7 @@ function ImageCvePage() {
     const cveId = urlParams.cveId ?? '';
     const exactCveIdSearchRegex = `^${cveId}$`;
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
             ...querySearchFilter,
@@ -301,7 +302,9 @@ function ImageCvePage() {
         tableLoading = deploymentDataRequest.loading;
     }
 
-    function trackEntityTabView(entityTab: EntityTab) {
+    function onEntityTypeChange(entityTab: WorkloadEntityTab) {
+        setSortOption(getDefaultWorkloadSortOption(entityTab));
+        setPage(1);
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {
@@ -313,7 +316,7 @@ function ImageCvePage() {
 
     // Track the initial entity tab view
     useEffect(() => {
-        trackEntityTabView(entityTab);
+        onEntityTypeChange(entityTab);
     }, []);
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
@@ -371,7 +374,7 @@ function ImageCvePage() {
                 />
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar
+                        <WorkloadCveFilterToolbar
                             searchOptions={searchOptions}
                             autocompleteSearchContext={{
                                 CVE: exactCveIdSearchRegex,
@@ -424,12 +427,12 @@ function ImageCvePage() {
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
-                                    imageCount={imageCount}
-                                    deploymentCount={deploymentCount}
                                     entityTabs={imageCveEntities}
-                                    setSortOption={setSortOption}
-                                    setPage={setPage}
-                                    onChange={trackEntityTabView}
+                                    entityCounts={{
+                                        Image: imageCount,
+                                        Deployment: deploymentCount,
+                                    }}
+                                    onChange={onEntityTypeChange}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>

@@ -8,7 +8,7 @@ import { Truncate } from '@patternfly/react-core';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { getEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistance from '../../components/DateDistance';
 import TooltipTh from '../components/TooltipTh';

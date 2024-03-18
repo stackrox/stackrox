@@ -6,7 +6,7 @@ import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import { NAMESPACE_SEARCH_OPTION, CLUSTER_SEARCH_OPTION } from '../../searchOptions';
 
-import WorkloadTableToolbar from './WorkloadTableToolbar';
+import WorkloadCveFilterToolbar from './WorkloadCveFilterToolbar';
 
 const readOnlyReduxStore = createStore((s) => s, {
     app: {
@@ -30,7 +30,7 @@ function setup() {
 
     cy.mount(
         <ComponentTestProviders reduxStore={readOnlyReduxStore}>
-            <WorkloadTableToolbar
+            <WorkloadCveFilterToolbar
                 searchOptions={[CLUSTER_SEARCH_OPTION, NAMESPACE_SEARCH_OPTION]}
             />
         </ComponentTestProviders>

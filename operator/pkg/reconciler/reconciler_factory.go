@@ -81,14 +81,14 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 	}
 
 	var opts = []client.ActionClientGetterOption{
-		client.AppendPostRenderers(func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
-			return overlays.NewOverlayPostRenderer(obj, obj.GetNamespace())
-		}),
-		client.AppendPostRenderers(func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
-			return commonLabels.NewLabelPostRenderer(kubeClient, map[string]string{
-				"app.stackrox.io/managed-by": "operator",
-			})
-		}),
+		client.AppendPostRenderers(
+			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+				return overlays.NewOverlayPostRenderer(obj, obj.GetNamespace())
+			},
+			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+				return commonLabels.NewLabelPostRenderer(kubeClient, commonLabels.DefaultLabels())
+			},
+		),
 	}
 
 	actionClientGetter, err := client.NewActionClientGetter(actionConfigGetter, opts...)

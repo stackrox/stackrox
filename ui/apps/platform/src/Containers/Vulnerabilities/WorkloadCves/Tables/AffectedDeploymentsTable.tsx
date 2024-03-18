@@ -16,7 +16,7 @@ import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { VulnerabilityState } from 'types/cve.proto';
 import { getEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,

@@ -16,7 +16,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
-import { defaultImageSortFields, imagesDefaultSort } from '../../utils/sortUtils';
+import { getDefaultWorkloadSortOption, getWorkloadSortFields } from '../../utils/sortUtils';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
 
 export type DeploymentPageResourcesProps = {
@@ -37,8 +37,8 @@ const deploymentResourcesQuery = gql`
 function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageResourcesProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: defaultImageSortFields,
-        defaultSortOption: imagesDefaultSort,
+        sortFields: getWorkloadSortFields('Image'),
+        defaultSortOption: getDefaultWorkloadSortOption('Image'),
         onSort: () => setPage(1),
     });
 

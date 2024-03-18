@@ -166,7 +166,7 @@ func run() error {
 		Cache: cache.Options{
 			// Limit caching of Secret and ConfigMaps to labeled
 			// resources because those are usually the objects
-			// with highest impact on memory consumption
+			// with highest impact on memory consumption.
 			ByObject: map[ctrlClient.Object]cache.ByObject{
 				&coreV1.Secret{}: {
 					Label: cacheLabelSelector,
