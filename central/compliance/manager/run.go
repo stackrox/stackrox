@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -122,7 +123,7 @@ func timeToProto(t time.Time) *types.Timestamp {
 	if t.IsZero() {
 		return nil
 	}
-	tspb, _ := types.TimestampProto(t)
+	tspb, _ := protocompat.ConvertTimeToTimestampOrError(t)
 	return tspb
 }
 

@@ -18,7 +18,7 @@ var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
+func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.CentralGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile central", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
@@ -43,6 +43,6 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 				return true
 			})
 		}
-		return runFn(ctx, &c, client, wrappedStatusUpdater, log)
+		return runFn(ctx, &c, client, apiReader, wrappedStatusUpdater, log)
 	}
 }

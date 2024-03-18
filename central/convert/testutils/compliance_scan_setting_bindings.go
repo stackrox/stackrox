@@ -3,9 +3,9 @@ package testutils
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -13,7 +13,7 @@ var (
 	// ScanSettingUID -- scan UID used in test objects
 	ScanSettingUID = uuid.NewV4().String()
 	// TransitionTime -- transition time used in test objects
-	TransitionTime = types.TimestampNow()
+	TransitionTime = protocompat.TimestampNow()
 )
 
 // GetScanSettingBindingV1Storage -- returns V1 storage scan setting binding storage object

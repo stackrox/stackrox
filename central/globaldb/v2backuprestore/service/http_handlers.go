@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/binenc"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,7 +52,7 @@ func (s *service) handleRestore(req *http.Request) error {
 	}
 
 	var header v1.DBRestoreRequestHeader
-	if err := proto.Unmarshal(headerBytes, &header); err != nil {
+	if err := protocompat.Unmarshal(headerBytes, &header); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "could not parse restore request header: %v", err)
 	}
 

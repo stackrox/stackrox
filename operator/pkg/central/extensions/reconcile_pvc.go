@@ -99,12 +99,12 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
 // because if a user uninstalls StackRox, it should keep the data, preventing to unintentionally erasing data.
 // On uninstall the owner reference is removed from the PVC objects.
-func ReconcilePVCExtension(client ctrlClient.Client, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
-	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
+func ReconcilePVCExtension(client ctrlClient.Client, apiReader ctrlClient.Reader, target PVCTarget, defaultClaimName string) extensions.ReconcileExtension {
+	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
 		persistence := getPersistenceByTarget(central, target)
 		return reconcilePVC(ctx, central, persistence, target, defaultClaimName, client, log)
 	}
-	return wrapExtension(fn, client)
+	return wrapExtension(fn, client, apiReader)
 }
 
 func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger) error {

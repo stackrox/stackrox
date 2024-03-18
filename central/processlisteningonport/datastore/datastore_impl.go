@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/metrics"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/id"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -503,7 +503,7 @@ func getPlopKey(plop *storage.ProcessListeningOnPortStorage) string {
 
 func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 	sort.Slice(values, func(i, j int) bool {
-		return values[i].GetCloseTimestamp().Compare(values[j].GetCloseTimestamp()) == -1
+		return protocompat.CompareTimestamps(values[i].GetCloseTimestamp(), values[j].GetCloseTimestamp()) == -1
 	})
 }
 
@@ -607,7 +607,7 @@ func (ds *datastoreImpl) readRowsToFindPLOPsWithNoProcessInformation(rows pgx.Ro
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := proto.Unmarshal(serialized, &msg); err != nil {
+		if err := protocompat.Unmarshal(serialized, &msg); err != nil {
 			return nil, err
 		}
 

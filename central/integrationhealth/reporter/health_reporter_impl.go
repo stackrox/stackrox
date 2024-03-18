@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -65,7 +66,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 		return nil
 	}
 
-	now := types.TimestampNow()
+	now := protocompat.TimestampNow()
 	// Integration health does not exist yet, initialize it.
 	d.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
 		Id:            id,
@@ -126,7 +127,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) processIntegrationHealthUpdate
 				if err := d.integrationDS.UpsertIntegrationHealth(integrationWriteCtx, health); err != nil {
 					log.Errorf("Error updating health for integration %s (%s): %v", health.Name, health.Id, err)
 				}
-			} else if health.LastTimestamp.Compare(d.latestDBTimestampMap[health.Id]) > 0 {
+			} else if protocompat.CompareTimestamps(health.LastTimestamp, d.latestDBTimestampMap[health.Id]) > 0 {
 				d.latestDBTimestampMap[health.Id] = health.LastTimestamp
 				_, exists, err := d.integrationDS.GetIntegrationHealth(integrationWriteCtx, health.Id)
 				if err != nil {

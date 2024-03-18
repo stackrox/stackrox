@@ -6,12 +6,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -606,8 +606,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateCluster() {
 func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldSensorExpiry := &types.Timestamp{Seconds: 1659478729}
-	oldSensorCertNotBefore := &types.Timestamp{Seconds: 1658458729}
+	oldSensorExpiry := protocompat.GetProtoTimestampFromSeconds(1659478729)
+	oldSensorCertNotBefore := protocompat.GetProtoTimestampFromSeconds(1658458729)
 	oldCertExpiryStatus := &storage.ClusterCertExpiryStatus{
 		SensorCertExpiry:    oldSensorExpiry,
 		SensorCertNotBefore: oldSensorCertNotBefore,
@@ -622,8 +622,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			CertExpiryStatus:      oldCertExpiryStatus,
 		}
 	}
-	newSensorExpiry := &types.Timestamp{Seconds: 1659479729}
-	newSensorCertNotBefore := &types.Timestamp{Seconds: 1658468729}
+	newSensorExpiry := protocompat.GetProtoTimestampFromSeconds(1659479729)
+	newSensorCertNotBefore := protocompat.GetProtoTimestampFromSeconds(1658468729)
 	newCertExpiryStatus := &storage.ClusterCertExpiryStatus{
 		SensorCertExpiry:    newSensorExpiry,
 		SensorCertNotBefore: newSensorCertNotBefore,
@@ -673,7 +673,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldLastContact := &types.Timestamp{Seconds: 1659478729}
+	oldLastContact := protocompat.GetProtoTimestampFromSeconds(1659478729)
 	oldHealthStatus := &storage.ClusterHealthStatus{
 		Id:                           "",
 		CollectorHealthInfo:          nil,
@@ -688,7 +688,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 		HealthInfoComplete:           true,
 	}
 	oldCluster.HealthStatus = oldHealthStatus
-	newLastContact := &types.Timestamp{Seconds: 1659479729}
+	newLastContact := protocompat.GetProtoTimestampFromSeconds(1659479729)
 	newHealthStatus := &storage.ClusterHealthStatus{
 		Id:                           "",
 		CollectorHealthInfo:          nil,
@@ -918,7 +918,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 	// only one value is used in the test, and moves from initial to replaced state and back.
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldCollectTimestamp := &types.Timestamp{Seconds: 1659478729}
+	oldCollectTimestamp := protocompat.GetProtoTimestampFromSeconds(1659478729)
 	oldAuditLogFileState := map[string]*storage.AuditLogFileState{
 		"fileState": {
 			CollectLogsSince: oldCollectTimestamp,
@@ -930,7 +930,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 	defer s.deleteCluster(clusterID)
 	s.Require().NoError(err)
 	oldCluster.Id = clusterID
-	newCollectTimestamp := &types.Timestamp{Seconds: 1659479729}
+	newCollectTimestamp := protocompat.GetProtoTimestampFromSeconds(1659479729)
 	newAuditLogFileState := map[string]*storage.AuditLogFileState{
 		"fileState": {
 			CollectLogsSince: newCollectTimestamp,

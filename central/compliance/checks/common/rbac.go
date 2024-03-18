@@ -3,10 +3,10 @@ package common
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/protocompat"
 	setPkg "github.com/stackrox/rox/pkg/set"
 )
 
@@ -89,7 +89,7 @@ func CheckDeploymentsDoNotHaveClusterAccess(ctx framework.ComplianceContext, pr 
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 		// Check deployment
 		if !isKubeSystem(deployment) && clusterEvaluator.ForSubject(k8srbac.GetSubjectForDeployment(deployment)).Grants(pr) {
-			framework.Failf(ctx, "deployment has cluster access to %s, this should be scoped down where possible.", proto.MarshalTextString(pr))
+			framework.Failf(ctx, "deployment has cluster access to %s, this should be scoped down where possible.", protocompat.MarshalTextString(pr))
 		} else {
 			framework.Pass(ctx, "No deployments have been launched with cluster admin level access.")
 		}

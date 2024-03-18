@@ -15,7 +15,6 @@ func TestFlavorsDontHaveEmptyFields(t *testing.T) {
 
 	flavors := []defaults.ImageFlavor{
 		defaults.DevelopmentBuildImageFlavor(),
-		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
 		defaults.OpenSourceImageFlavor(),
 		MakeImageFlavorForTest(t),

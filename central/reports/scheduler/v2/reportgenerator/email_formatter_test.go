@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/suite"
 )
@@ -147,7 +147,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				snap.GetVulnReportFilters().ImageTypes = []storage.VulnerabilityReportFilters_ImageType{
 					storage.VulnerabilityReportFilters_DEPLOYED,
 				}
-				dateTs, err := types.TimestampProto(timeutil.MustParse("2006-01-02 15:04:05", "2023-01-20 22:42:02"))
+				dateTs, err := protocompat.ConvertTimeToTimestampOrError(timeutil.MustParse("2006-01-02 15:04:05", "2023-01-20 22:42:02"))
 				s.Require().NoError(err)
 				snap.GetVulnReportFilters().CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{
 					SinceStartDate: dateTs,

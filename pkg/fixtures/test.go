@@ -1,8 +1,8 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -22,10 +22,10 @@ func GetTestSingleKeyStruct() *storage.TestSingleKeyStruct {
 			"key1": "value1",
 			"key2": "value2",
 		},
-		Timestamp: &types.Timestamp{
-			Seconds: 1645640515,
-			Nanos:   0,
-		},
+		Timestamp: protocompat.GetProtoTimestampFromSecondsAndNanos(
+			1645640515,
+			0),
+
 		Enum: storage.TestSingleKeyStruct_ENUM1,
 		Enums: []storage.TestSingleKeyStruct_Enum{
 			storage.TestSingleKeyStruct_ENUM1,

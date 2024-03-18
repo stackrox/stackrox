@@ -3,7 +3,6 @@ package singletonstore
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -22,7 +21,7 @@ type singletonStore struct {
 }
 
 func (s *singletonStore) Upsert(val protocompat.Message) error {
-	marshalled, err := proto.Marshal(val)
+	marshalled, err := protocompat.Marshal(val)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal %s", s.objectName)
 	}
@@ -32,7 +31,7 @@ func (s *singletonStore) Upsert(val protocompat.Message) error {
 }
 
 func (s *singletonStore) Create(val protocompat.Message) error {
-	marshalled, err := proto.Marshal(val)
+	marshalled, err := protocompat.Marshal(val)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal %s", s.objectName)
 	}
@@ -52,7 +51,7 @@ func (s *singletonStore) Get() (protocompat.Message, error) {
 			return nil
 		}
 		object = s.allocFunc()
-		if err := proto.Unmarshal(bytes, object); err != nil {
+		if err := protocompat.Unmarshal(bytes, object); err != nil {
 			return errors.Wrapf(err, "failed to unmarshal %s", s.objectName)
 		}
 		return nil

@@ -106,7 +106,7 @@ KUTTL_TEST_RUN_LABELS_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPEN
 ENABLE_WEBHOOKS ?= false
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
+# ROX_IMAGE_FLAVOR valid values are: development_build, opensource, rhacs.
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
 ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 

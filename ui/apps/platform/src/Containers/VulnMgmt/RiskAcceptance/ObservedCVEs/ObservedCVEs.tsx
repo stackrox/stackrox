@@ -16,7 +16,7 @@ type ObservedCVEsProps = {
     showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 };
 
-const sortFields = ['Severity', 'CVSS', 'Discovered'];
+const sortFields = ['Severity', 'CVSS', 'CVE Created Time'];
 const defaultSortOption: SortOption = {
     field: 'Severity',
     direction: 'desc',

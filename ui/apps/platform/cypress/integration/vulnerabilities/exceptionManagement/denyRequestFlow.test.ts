@@ -1,8 +1,7 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
-import { getInputByLabel } from '../../../helpers/formHelpers';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
-import { deferAndVisitRequestDetails } from './ExceptionManagement.helpers';
+import { deferAndVisitRequestDetails, denyRequest } from './ExceptionManagement.helpers';
 
 const comment = 'Defer me';
 const expiry = 'When all CVEs are fixable';
@@ -44,15 +43,7 @@ describe('Exception Management Request Details Page', () => {
     });
 
     it('should be able to deny a request if approval permissions are granted', () => {
-        cy.get('button:contains("Deny request")').click();
-        cy.get('div[role="dialog"]').should('exist');
-        getInputByLabel('Denial rationale').type('Denied');
-        cy.get('div[role="dialog"] button:contains("Deny")').click();
-        cy.get('div[role="dialog"]').should('not.exist');
-        cy.get('div[aria-label="Success Alert"]').should(
-            'contain',
-            'The vulnerability request was successfully denied.'
-        );
+        denyRequest();
         // should not be able to cancel a denied request
         cy.get('button:contains("Cancel request")').should('not.exist');
     });

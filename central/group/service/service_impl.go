@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
@@ -100,7 +100,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 		return nil, err
 	}
 	if group == nil {
-		return nil, errors.Wrapf(errox.NotFound, "group %q not found", proto.MarshalTextString(props))
+		return nil, errors.Wrapf(errox.NotFound, "group %q not found", protocompat.MarshalTextString(props))
 	}
 	return group, nil
 }
@@ -191,7 +191,7 @@ func diffGroups(previous []*storage.Group, required []*storage.Group) (removed [
 	}
 	for key, group := range requiredByID {
 		if previousGroup, hasPreviousGroup := previousByID[key]; hasPreviousGroup {
-			if !proto.Equal(previousGroup, group) {
+			if !protocompat.Equal(previousGroup, group) {
 				updated = append(updated, group)
 				// Delete the to-be-updated group, otherwise we potentially do not create a group based on stale data.
 				delete(groupsByPropsAndRole,

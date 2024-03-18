@@ -476,7 +476,9 @@ poll_for_system_test_images() {
     # Require images based on the job
     case "$CI_JOB_NAME" in
         *-operator-e2e-tests)
-            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index" "main")
+            reqd_images=("stackrox-operator" "stackrox-operator-bundle" "stackrox-operator-index"
+                         "main" "central-db" "collector" "collector-slim"
+                         "scanner" "scanner-db" "scanner-v4" "scanner-v4-db")
             ;;
         *-race-condition-qa-e2e-tests)
             reqd_images=("main-rcd" "roxctl")
@@ -1200,7 +1202,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.16/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.17/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1217,11 +1219,7 @@ post_process_test_results() {
             -slack-output "${slack_attachments_file}" \
             "${extra_args[@]}"
 
-        info "Creating Big Query test records from ${csv_output}"
-        bq load \
-            --skip_leading_rows=1 \
-            --allow_quoted_newlines \
-            ci_metrics.stackrox_tests "${csv_output}"
+        save_test_metrics "${csv_output}"
     } || true
     set -u
 }
@@ -1736,6 +1734,13 @@ _EO_SUITE_HEADER_
         local description="${lines[0]}"
         local result="${lines[1]}"
         local details="${lines[2]}"
+
+        # XML escape description
+        description="${description//&/&amp;}"
+        description="${description//\"/&quot;}"
+        description="${description//\'/&#39;}"
+        description="${description//</&lt;}"
+        description="${description//>/&gt;}"
 
         cat << _EO_CASE_HEADER_ >> "${junit_file}"
         <testcase name="${description}" classname="${class}">

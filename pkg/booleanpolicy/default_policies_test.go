@@ -8,9 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	gogoTypes "github.com/gogo/protobuf/types"
-	protoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
@@ -21,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
@@ -107,7 +105,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deployment) string {
 	suite.Require().Len(deployment.GetContainers(), 1, "This function only supports deployments with exactly one container")
 	id := deployment.GetContainers()[0].GetImage().GetId()
-	suite.NotEmpty(id, "Deployment '%s' had no image id", proto.MarshalTextString(deployment))
+	suite.NotEmpty(id, "Deployment '%s' had no image id", protocompat.MarshalTextString(deployment))
 	return id
 }
 
@@ -124,7 +122,7 @@ func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria
 	}
 
 	ts := time.Now().AddDate(0, 0, -5)
-	protoTs, err := protoTimestamp.TimestampProto(ts)
+	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
 	require.NoError(suite.T(), err)
 
 	suite.addDepAndImages(heartbleedDep, &storage.Image{
@@ -272,7 +270,7 @@ func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, pa
 			Name:         name,
 			Args:         args,
 			ExecFilePath: path,
-			Time:         gogoTypes.TimestampNow(),
+			Time:         protocompat.TimestampNow(),
 			LineageInfo:  lineageInfo,
 			Uid:          uid,
 		},
@@ -3197,7 +3195,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	suite.NoError(err)
 
 	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
-	timestamp, err := gogoTypes.TimestampProto(time.Now())
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(time.Now())
 	suite.Nil(err)
 	flow := &augmentedobjs.NetworkFlowDetails{
 		SrcEntityName:        srcName,

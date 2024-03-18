@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/pod/datastore/internal/store/mocks"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -127,11 +127,9 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
 	}
 	// Terminate the other instance.
 	terminatedInst0 := &storage.ContainerInstance{
-		InstanceId:    pod.LiveInstances[1].InstanceId,
-		ContainerName: pod.LiveInstances[1].ContainerName,
-		Finished: &types.Timestamp{
-			Seconds: 10,
-		},
+		InstanceId:        pod.LiveInstances[1].InstanceId,
+		ContainerName:     pod.LiveInstances[1].ContainerName,
+		Finished:          protocompat.GetProtoTimestampFromSeconds(10),
 		ExitCode:          0,
 		TerminationReason: "Completed",
 	}
@@ -141,10 +139,8 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
 		InstanceId: &storage.ContainerInstanceID{
 			Id: "newdeadcontainerid",
 		},
-		ContainerName: "newdeadcontainername",
-		Finished: &types.Timestamp{
-			Seconds: 9,
-		},
+		ContainerName:     "newdeadcontainername",
+		Finished:          protocompat.GetProtoTimestampFromSeconds(9),
 		ExitCode:          137,
 		TerminationReason: "Error",
 	}
@@ -155,9 +151,7 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
 			Id: "newlivecontainerid",
 		},
 		ContainerName: "newlivecontainername",
-		Started: &types.Timestamp{
-			Seconds: 8,
-		},
+		Started:       protocompat.GetProtoTimestampFromSeconds(8),
 	}
 	pod.LiveInstances = append(pod.LiveInstances, liveInst)
 

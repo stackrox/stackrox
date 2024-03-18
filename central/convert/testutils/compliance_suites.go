@@ -3,10 +3,10 @@ package testutils
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -15,10 +15,10 @@ var (
 	SuiteUID = uuid.NewV4().String()
 
 	// TransitionTimeForCondition1 -- fixed timestamp used in suite conditions
-	TransitionTimeForCondition1 = &types.Timestamp{Seconds: 1706633068}
+	TransitionTimeForCondition1 = protocompat.GetProtoTimestampFromSeconds(1706633068)
 
 	// TransitionTimeForCondition2 -- fixed timestamp used in suite conditions
-	TransitionTimeForCondition2 = &types.Timestamp{Seconds: 1706634000}
+	TransitionTimeForCondition2 = protocompat.GetProtoTimestampFromSeconds(1706634000)
 )
 
 // GetSuiteStorage -- returns suite storage

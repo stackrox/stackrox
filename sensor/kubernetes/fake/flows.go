@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -226,7 +227,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 			continue
 		}
 
-		closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
 		if err != nil {
 			log.Errorf("Unable to set closeTS %+v", err)
 		}
@@ -246,7 +247,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {
 		networkEndpoint := endpoint
-		closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
 		if err != nil {
 			log.Errorf("Unable to set CloseTimestamp for endpoint %+v", err)
 		} else {
@@ -260,7 +261,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 	return &sensor.NetworkConnectionInfo{
 		UpdatedConnections: conns,
 		UpdatedEndpoints:   networkEndpoints,
-		Time:               types.TimestampNow(),
+		Time:               protocompat.TimestampNow(),
 	}
 }
 

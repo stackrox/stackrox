@@ -43,11 +43,12 @@ class ImageScanningTest extends BaseSpecification {
     static final private String UBI8_0_IMAGE = "registry.access.redhat.com/ubi8:8.0-208"
     static final private String RHEL7_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:rhel7-minimal-7.5-422"
     static final private String QUAY_IMAGE_WITH_CLAIR_SCAN_DATA = "quay.io/rhacs-eng/qa:nginx-unprivileged"
-    static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa-multi-arch/registry-image:0.2"
+    static final private String GCR_IMAGE   = "us.gcr.io/acs-san-stackroxci/qa-multi-arch/registry-image:0.2"
     static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
     static final private String OCI_IMAGE   = "quay.io/rhacs-eng/qa:oci-manifest"
     static final private String LIST_IMAGE_OCI_MANIFEST = "quay.io/rhacs-eng/qa:list-image-oci-manifest"
-    static final private String AR_IMAGE    = "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
+    static final private String AR_IMAGE =
+        "us-west1-docker.pkg.dev/acs-san-stackroxci/artifact-registry-test/nginx:1.17"
     static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
     static final private String CENTOS_ECHO_IMAGE = "quay.io/rhacs-eng/qa:centos7-base-echo"
 
@@ -69,7 +70,7 @@ class ImageScanningTest extends BaseSpecification {
             "quay": new Deployment()
                     .setName("quay-image-scanning-test")
                     .setNamespace(TEST_NAMESPACE)
-                    // same image as us.gcr.io/stackrox-ci/qa/registry-image:0.3 but just retagged
+                    // same image as us.gcr.io/acs-san-stackroxci/qa/registry-image:0.3 but just retagged
                     // Alternatively can use quay.io/rhacs-eng/qa:struts-app but that doesn't have as many
                     // dockerfile violations
                     .setImage("quay.io/rhacs-eng/qa:registry-image-0-3")
@@ -78,7 +79,7 @@ class ImageScanningTest extends BaseSpecification {
             "gcr": new Deployment()
                     .setName("gcr-image-scanning-test")
                     .setNamespace(TEST_NAMESPACE)
-                    .setImage("us.gcr.io/stackrox-ci/qa/registry-image:0.3")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/registry-image:0.3")
                     .addLabel("app", "gcr-image-scanning-test")
                     .addImagePullSecret("gcr-image-scanning-test"),
             "ecr": new Deployment()
@@ -107,7 +108,7 @@ class ImageScanningTest extends BaseSpecification {
                     name: "gcr-image-scanning-test",
                     namespace: TEST_NAMESPACE,
                     username: "_json_key",
-                    password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                    password: Env.mustGetGCRServiceAccount(),
                     server: "https://us.gcr.io"),
             "ecr": new Secret(
                     name: "ecr-image-registry-test",
@@ -377,7 +378,7 @@ class ImageScanningTest extends BaseSpecification {
                  {
             GCRImageIntegration.createCustomIntegration(
                              name: "gcr-no-access",
-                             serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),
+                             serviceAccount: Env.mustGetGCRNoAccessServiceAccount(),
                              skipTestIntegration: true,
                      ) },]                                                                                          |
                 41  | 170 | 28
@@ -554,6 +555,8 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     // ACR, ECR, GCR don't have MA images to verify the the integrations on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName ==~ /^acr.*/ })
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName == "quay-auto" })
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
 
@@ -740,6 +743,7 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.testName ==~ /quay registry\+scanner with token.*/ })
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
         if (coreImageIntegrationId != null) {
             // For this test we don't want it

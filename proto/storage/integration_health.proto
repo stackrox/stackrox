@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "storage";
@@ -22,7 +21,7 @@ message IntegrationHealth {
     DECLARATIVE_CONFIG = 4;
   }
 
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string id = 1; // @gotags: sql:"pk"
   string name = 2;
   Type type = 3;
   Status status = 4;

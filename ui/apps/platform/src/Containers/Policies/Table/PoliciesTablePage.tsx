@@ -11,6 +11,7 @@ import {
     Button,
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
+import orderBy from 'lodash/orderBy';
 
 import { policiesBasePath } from 'routePaths';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
@@ -21,23 +22,32 @@ import {
     exportPolicies,
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
-import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useURLSort from 'hooks/useURLSort';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import { getSearchOptionsForCategory } from 'services/SearchService';
 import { ListPolicy } from 'types/policy.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
+import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
+import { columns } from './PoliciesTable.utils';
 
 type PoliciesTablePageProps = {
     hasWriteAccessForPolicy: boolean;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     searchFilter?: SearchFilter;
+};
+
+export const sortFields = ['Policy', 'Status', 'Origin', 'Notifiers', 'Severity', 'Lifecycle'];
+export const defaultSortOption: SortOption = {
+    field: 'Policy',
+    direction: 'asc',
 };
 
 function PoliciesTablePage({
@@ -46,6 +56,7 @@ function PoliciesTablePage({
     searchFilter,
 }: PoliciesTablePageProps): React.ReactElement {
     const history = useHistory();
+    const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +67,8 @@ function PoliciesTablePage({
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+    const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
 
     function onClickCreatePolicy() {
         history.push(`${policiesBasePath}/?action=create`);
@@ -75,11 +88,26 @@ function PoliciesTablePage({
             });
     }
 
-    function fetchPolicies(query: string) {
+    function fetchPolicies(query: string, sortOption: ApiSortOption) {
         setIsLoading(true);
         getPolicies(query)
             .then((data) => {
-                setPolicies(data);
+                const { field, reversed } = sortOption;
+                const activeSortIndex = columns.findIndex((col) => col.Header === field) || 0;
+                const activeSortDirection = reversed ? 'desc' : 'asc';
+                const { sortMethod, accessor } = columns[activeSortIndex];
+
+                let sortedPolicies = [...data];
+                if (sortMethod) {
+                    sortedPolicies.sort(sortMethod);
+                    if (activeSortDirection === 'desc') {
+                        sortedPolicies.reverse();
+                    }
+                } else {
+                    sortedPolicies = orderBy(sortedPolicies, [accessor], [activeSortDirection]);
+                }
+
+                setPolicies(sortedPolicies);
                 setErrorMessage('');
             })
             .catch((error) => {
@@ -89,13 +117,11 @@ function PoliciesTablePage({
             .finally(() => setIsLoading(false));
     }
 
-    const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
-
     function deletePoliciesHandler(ids: string[]): Promise<void> {
         const policyText = pluralize('policy', ids.length);
         return deletePolicies(ids)
             .then(() => {
-                fetchPolicies(query);
+                fetchPolicies(query, sortOption);
                 addToast(`Successfully deleted ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -122,7 +148,7 @@ function PoliciesTablePage({
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, false)
             .then(() => {
-                fetchPolicies(query);
+                fetchPolicies(query, sortOption);
                 addToast(`Successfully enabled ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -134,7 +160,7 @@ function PoliciesTablePage({
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, true)
             .then(() => {
-                fetchPolicies(query);
+                fetchPolicies(query, sortOption);
                 addToast(`Successfully disabled ${policyText}`, 'success');
             })
             .catch(({ response }) => {
@@ -166,8 +192,8 @@ function PoliciesTablePage({
     }, []);
 
     useEffect(() => {
-        fetchPolicies(query);
-    }, [query]);
+        fetchPolicies(query, sortOption);
+    }, [query, sortOption]);
 
     let pageContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
@@ -192,7 +218,7 @@ function PoliciesTablePage({
             <PoliciesTable
                 notifiers={notifiers}
                 policies={policies}
-                fetchPoliciesHandler={() => fetchPolicies(query)}
+                fetchPoliciesHandler={() => fetchPolicies(query, sortOption)}
                 addToast={addToast}
                 hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                 deletePoliciesHandler={deletePoliciesHandler}
@@ -201,6 +227,7 @@ function PoliciesTablePage({
                 disablePoliciesHandler={disablePoliciesHandler}
                 handleChangeSearchFilter={handleChangeSearchFilter}
                 onClickReassessPolicies={onClickReassessPolicies}
+                getSortParams={getSortParams}
                 searchFilter={searchFilter}
                 searchOptions={searchOptions}
             />
@@ -235,7 +262,7 @@ function PoliciesTablePage({
                 cancelModal={() => {
                     setIsImportModalOpen(false);
                 }}
-                fetchPoliciesWithQuery={() => fetchPolicies(query)}
+                fetchPoliciesWithQuery={() => fetchPolicies(query, sortOption)}
             />
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (

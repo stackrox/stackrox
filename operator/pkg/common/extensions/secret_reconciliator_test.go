@@ -6,6 +6,7 @@ import (
 
 	pkgErrors "github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -72,6 +73,7 @@ func (s *secretReconcilerTestSuite) SetupTest() {
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(s.centralObj, platform.CentralGVK),
 			},
+			Labels: labels.DefaultLabels(),
 		},
 		Data: map[string][]byte{
 			"secret-name": []byte("existing-managed-secret"),
@@ -81,7 +83,7 @@ func (s *secretReconcilerTestSuite) SetupTest() {
 
 	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
-	s.reconciliator = NewSecretReconciliator(s.client, s.centralObj)
+	s.reconciliator = NewSecretReconciliator(s.client, s.client, s.centralObj)
 }
 
 func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {

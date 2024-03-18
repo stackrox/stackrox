@@ -48,7 +48,7 @@ func TestRestoreKeysAndCerts(t *testing.T) {
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
-		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+		flavorName = defaults.ImageFlavorNameOpenSource
 	}
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
@@ -129,7 +129,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
-		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+		flavorName = defaults.ImageFlavorNameOpenSource
 	}
 	config := renderer.Config{
 		Version:     version.GetMainVersion(),
@@ -215,7 +215,7 @@ func TestMonitoringConfiguration(t *testing.T) {
 
 	flavorName := defaults.ImageFlavorNameDevelopmentBuild
 	if buildinfo.ReleaseBuild {
-		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+		flavorName = defaults.ImageFlavorNameOpenSource
 	}
 	config := renderer.Config{
 		K8sConfig: &renderer.K8sConfig{

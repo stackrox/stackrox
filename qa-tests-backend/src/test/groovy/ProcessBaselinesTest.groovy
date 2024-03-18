@@ -3,12 +3,8 @@ import static Services.waitForViolation
 import static util.Helpers.evaluateWithRetry
 import static util.Helpers.trueWithin
 
-import java.util.concurrent.TimeUnit
-
 import com.google.protobuf.util.Timestamps
 import org.apache.commons.lang3.StringUtils
-import org.junit.Rule
-import org.junit.rules.Timeout
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
@@ -43,6 +39,8 @@ class ProcessBaselinesTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_DELETE_API = "pb-deploymentnginx-delete-api"
     static final private String DEPLOYMENTNGINX_POST_DELETE_API = "pb-deploymentnginx-post-delete-api"
     static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pb-deploymentnginx-removeprocess"
+
+    static final private Integer RISK_WAIT_TIME = 240
 
     static final private List<Deployment> DEPLOYMENTS =
         [
@@ -111,17 +109,6 @@ class ProcessBaselinesTest extends BaseSpecification {
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
             ]
-
-    static final private Integer BASELINE_WAIT_TIME = 100
-    static final private Integer RISK_WAIT_TIME = 240
-
-    // Override the global JUnit test timeout to cover a test instance taking
-    // LONGEST_TEST over three test tries and the appprox. 6
-    // minutes it can take to gather debug when the first test run fails plus
-    // some padding.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(4*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
 
     @Shared
     private Policy unauthorizedProcessExecution

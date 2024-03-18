@@ -25,10 +25,10 @@ teardown() {
 registry_from_flavor() {
   case "$central_flavor" in
   "development_build")
-    echo "docker\.io/stackrox"
+    echo "quay.io/rhacs-eng"
     ;;
-  "stackrox.io")
-    echo "stackrox\.io"
+  "opensource")
+    echo "quay.io/stackrox-io"
     ;;
   esac
 }
@@ -38,7 +38,7 @@ collector_full_from_flavor() {
    "development_build")
      echo "collector:$any_version_latest"
      ;;
-   "stackrox.io")
+   "opensource")
      echo "collector:$any_version"
      ;;
    esac
@@ -49,7 +49,7 @@ collector_slim_from_flavor() {
      "development_build")
        echo "collector:$any_version_slim"
        ;;
-     "stackrox.io")
+     "opensource")
        echo "collector-slim:$any_version"
        ;;
      esac

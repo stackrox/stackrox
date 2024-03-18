@@ -117,6 +117,7 @@ class BaseSpecification extends Specification {
                 LOG.info "isGKE: ${orchestrator.isGKE()}"
                 LOG.info "isEKS: ${ClusterService.isEKS()}"
                 LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "testTarget: ${Env.getTestTarget()}"
             }
             catch (Exception ex) {
                 LOG.info "Cannot connect to central : ${ex.message}"
@@ -196,9 +197,13 @@ class BaseSpecification extends Specification {
         globalSetupDone = true
     }
 
+    // `globalTimeout` serves to stop stuck tests hogging clusters. A side
+    // effect is that it can abort tests legitimately taking longer. Reaching
+    // `globalTimeout` is to be avoided because it upsets Spock and generates
+    // confusing junit reports.
     @Rule
     Timeout globalTimeout = new Timeout(
-            isRaceBuild() ? 2500 : 800,
+            isRaceBuild() ? 6000 : 2000,
             TimeUnit.SECONDS
     )
     @Rule
@@ -383,9 +388,9 @@ class BaseSpecification extends Specification {
     }
 
     static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
+        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER_V2 env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }
@@ -399,7 +404,7 @@ class BaseSpecification extends Specification {
                 name: "gcr-image-pull-secret",
                 server: "https://us.gcr.io",
                 username: "_json_key",
-                password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER", "{}"),
+                password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", "{}"),
                 namespace: ns
         ))
 

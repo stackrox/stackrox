@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -25,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -35,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -416,9 +415,6 @@ func (s *serviceImpl) generateApplyYamlFromGeneratedPolicies(generatedPolicies [
 }
 
 func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context.Context, request *v1.GetBaselineGeneratedPolicyForDeploymentRequest) (*v1.GetBaselineGeneratedPolicyForDeploymentResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
 	// policy no matter what
 	if request.GetDeploymentId() == "" {
@@ -444,9 +440,6 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 }
 
 func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {
 		return nil, err
@@ -657,7 +650,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	}
 	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
 		User:                 user,
-		ApplyTimestamp:       types.TimestampNow(),
+		ApplyTimestamp:       protocompat.TimestampNow(),
 		OriginalModification: modification,
 		UndoModification:     undoMod,
 	}
@@ -665,10 +658,6 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 }
 
 func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, request *v1.ApplyNetworkPolicyYamlForDeploymentRequest) (*v1.Empty, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
-
 	// Get the deployment
 	deployment, found, err := s.deployments.GetDeployment(ctx, request.GetDeploymentId())
 	if err != nil {
@@ -695,9 +684,6 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 }
 
 func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetUndoModificationForDeploymentResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	// Try getting the deployment first
 	_, found, err := s.deployments.GetDeployment(ctx, request.GetId())
 	if err != nil {
@@ -723,10 +709,6 @@ type nameNSPair struct {
 }
 
 func (s *serviceImpl) GetDiffFlowsFromUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
-
 	// First get allowed peers from current network policies
 	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {
@@ -779,9 +761,6 @@ func (s *serviceImpl) GetDiffFlowsFromUndoModificationForDeployment(ctx context.
 }
 
 func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	// First get allowed peers from current network policies
 	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {

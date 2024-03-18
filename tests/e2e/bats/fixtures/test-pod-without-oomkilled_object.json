@@ -147,28 +147,12 @@
                         "value": "sensor.stackrox.svc:443"
                     },
                     {
-                        "name": "ROX_CSV_EXPORT",
-                        "value": "false"
-                    },
-                    {
-                        "name": "ROX_INTEGRATIONS_AS_CONFIG",
-                        "value": "false"
-                    },
-                    {
                         "name": "ROX_NETPOL_FIELDS",
-                        "value": "true"
-                    },
-                    {
-                        "name": "ROX_NETWORK_DETECTION_BASELINE_SIMULATION",
                         "value": "true"
                     },
                     {
                         "name": "ROX_PROCESSES_LISTENING_ON_PORT",
                         "value": "false"
-                    },
-                    {
-                        "name": "ROX_QUAY_ROBOT_ACCOUNTS",
-                        "value": "true"
                     },
                     {
                         "name": "ROX_RESYNC_DISABLED",

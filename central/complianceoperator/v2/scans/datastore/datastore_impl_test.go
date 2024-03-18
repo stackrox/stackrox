@@ -6,12 +6,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	scanStorage "github.com/stackrox/rox/central/complianceoperator/v2/scans/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -218,7 +218,7 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	s.Require().Error(s.dataStore.UpsertScan(s.hasReadCtx, testScan3))
 
 	// Update an object
-	testScan3.LastExecutedTime = types.TimestampNow()
+	testScan3.LastExecutedTime = protocompat.TimestampNow()
 	s.Require().NoError(s.dataStore.UpsertScan(s.hasWriteCtx, testScan3))
 
 	count, err = s.storage.Count(s.hasReadCtx, search.EmptyQuery())
@@ -294,7 +294,7 @@ func getTestScan(scanName string, profileID string, clusterID string) *storage.C
 		ScanType:         0,
 		NodeSelector:     0,
 		Status:           nil,
-		CreatedTime:      types.TimestampNow(),
-		LastExecutedTime: types.TimestampNow(),
+		CreatedTime:      protocompat.TimestampNow(),
+		LastExecutedTime: protocompat.TimestampNow(),
 	}
 }

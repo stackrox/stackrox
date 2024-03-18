@@ -116,10 +116,11 @@ func insertIntoComplianceIntegrations(batch *pgx.Batch, obj *storage.ComplianceI
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetVersion(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
+		obj.GetOperatorInstalled(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, OperatorInstalled, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, OperatorInstalled = EXCLUDED.OperatorInstalled, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -140,6 +141,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 		"id",
 		"version",
 		"clusterid",
+		"operatorinstalled",
 		"serialized",
 	}
 
@@ -158,6 +160,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetVersion(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetOperatorInstalled(),
 			serialized,
 		})
 

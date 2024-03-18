@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -85,7 +85,7 @@ func (resolver *Resolver) ComplianceRecentRuns(
 		req.StandardIdOpt = &v1.GetRecentComplianceRunsRequest_StandardId{StandardId: string(*args.StandardID)}
 	}
 	if args.Since != nil {
-		t, err := types.TimestampProto(args.Since.Time)
+		t, err := protocompat.ConvertTimeToTimestampOrError(args.Since.Time)
 		if err != nil {
 			return nil, err
 		}

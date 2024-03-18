@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
@@ -134,7 +133,6 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.networkBaselines = networkBaselineDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.T().Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.networkBaselines, suite.netTreeMgr,
 		suite.evaluator, suite.namespaces, suite.clusters, suite.notifiers, nil, nil)
@@ -599,9 +597,6 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	// dependency calls are mocked out. Thus those dependency calls' logics are not tested. This
 	// only verifies the needed dependency calls are indeed getting called and also the execution logic
 	// of the private functions used by GetAllowedPeersFromCurrentPolicyForDeployment.
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return
-	}
 	// Prepare deployment001 - deployment004
 	numDeployments := 4
 	deps := make([]*storage.Deployment, 0, numDeployments)
@@ -737,9 +732,6 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 }
 
 func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return
-	}
 	suite.deployments.EXPECT().GetDeployment(gomock.Any(), "some-deployment").Return(
 		&storage.Deployment{
 			Id:        "some-deployment",

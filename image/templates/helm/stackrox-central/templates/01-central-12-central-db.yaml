@@ -26,10 +26,11 @@ spec:
         app: central-db
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
-        {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+        {{- $annotations := dict -}}
         {{- if eq ._rox.env.openshift 4 }}
-        openshift.io/required-scc: nonroot-v2
+          {{- $_ := set $annotations "openshift.io/required-scc" "nonroot-v2" -}}
         {{- end }}
+        {{- include "srox.podAnnotations" (list . "deployment" "central-db" $annotations) | nindent 8 }}
     spec:
       {{- if ._rox.central.db._nodeSelector }}
       nodeSelector:
@@ -72,6 +73,9 @@ spec:
               matchExpressions:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
+      {{- if ._rox.central.db.priorityClassName }}
+      priorityClassName: {{ ._rox.central.db.priorityClassName }}
+      {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
       initContainers:
@@ -188,9 +192,9 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "secret" "central-db-password") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "secret" "central-db-password") | nindent 4 }}
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/resource-policy": keep
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
+    {{- include "srox.annotations" (list . "secret" "central-db-password" $annotations) | nindent 4 }}
 type: Opaque
 stringData:
   password: |

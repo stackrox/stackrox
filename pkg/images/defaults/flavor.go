@@ -34,12 +34,6 @@ var (
 			constructorFunc:         DevelopmentBuildImageFlavor,
 		},
 		{
-			// TODO(ROX-11642): This was just hidden in release builds but should go away completely.
-			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
-			isVisibleInReleaseBuild: false,
-			constructorFunc:         StackRoxIOReleaseImageFlavor,
-		},
-		{
 			imageFlavorName:         ImageFlavorNameRHACSRelease,
 			isVisibleInReleaseBuild: true,
 			constructorFunc:         RHACSReleaseImageFlavor,
@@ -81,7 +75,6 @@ type ImageFlavor struct {
 	CentralDBImageTag  string
 	CentralDBImageName string
 
-	// CollectorRegistry may be different from MainRegistry in case of stackrox.io.
 	CollectorRegistry      string
 	CollectorImageName     string
 	CollectorImageTag      string
@@ -147,45 +140,6 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
-		},
-		Versions: v,
-	}
-}
-
-// StackRoxIOReleaseImageFlavor returns image values for `stackrox.io` flavor.
-// TODO(ROX-11642): remove stackrox.io flavor as stackrox.io image distribution is shut down.
-func StackRoxIOReleaseImageFlavor() ImageFlavor {
-	v := version.GetAllVersionsUnified()
-	return ImageFlavor{
-		MainRegistry:       "stackrox.io",
-		MainImageName:      "main",
-		MainImageTag:       v.MainVersion,
-		CentralDBImageTag:  v.MainVersion,
-		CentralDBImageName: "central-db",
-
-		CollectorRegistry:      "collector.stackrox.io",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "collector-slim",
-		CollectorSlimImageTag:  v.CollectorVersion,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
-
-		ScannerV4ImageName:   "scanner-v4",
-		ScannerV4DBImageName: "scanner-v4-db",
-		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
-		ScannerV4ImageTag: v.MainVersion,
-
-		ChartRepo: ChartRepo{
-			URL:     "https://charts.stackrox.io",
-			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
-		},
-		ImagePullSecrets: ImagePullSecrets{
-			AllowNone: false,
 		},
 		Versions: v,
 	}

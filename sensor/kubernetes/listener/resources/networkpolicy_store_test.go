@@ -1,10 +1,12 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNetworkPoliciesStoreFind(t *testing.T) {
@@ -68,23 +70,67 @@ func TestNetworkPoliciesStoreFind(t *testing.T) {
 	}
 }
 
-func TestNetworkPoliciesStoreCleanup(t *testing.T) {
-	policies := make([]*storage.NetworkPolicy, 0)
-	policies = append(policies, newNPDummy("p1", defaultNS, map[string]string{"app": "sensor"}))
-	policies = append(policies, newNPDummy("p2", defaultNS, map[string]string{"app": "sensor", "role": "backend"}))
-	policies = append(policies, newNPDummy("p3", defaultNS, map[string]string{"app": "central"}))
-	policies = append(policies, newNPDummy("p4", defaultNS, map[string]string{"app": "central", "role": "frontend"}))
-
-	store := newNetworkPoliciesStore()
-	for _, p := range policies {
-		store.Upsert(p)
+func TestNetworkPolicyStoreCleanup(t *testing.T) {
+	testCases := []struct {
+		before []*storage.NetworkPolicy
+		after  []*storage.NetworkPolicy
+	}{
+		{
+			before: []*storage.NetworkPolicy{
+				newNPDummy("before1", defaultNS, map[string]string{"app": "sensor"}),
+				newNPDummy("before2", defaultNS, map[string]string{"app": "sensor"}),
+			},
+			after: []*storage.NetworkPolicy{
+				newNPDummy("after1", defaultNS, map[string]string{"app": "sensor"}),
+			},
+		},
+		{
+			before: []*storage.NetworkPolicy{
+				newNPDummy("before1", defaultNS, map[string]string{"app": "sensor"}),
+			},
+			after: []*storage.NetworkPolicy{},
+		},
+		{
+			before: []*storage.NetworkPolicy{},
+			after: []*storage.NetworkPolicy{
+				newNPDummy("after1", defaultNS, map[string]string{"app": "sensor"}),
+			},
+		},
+		{
+			before: []*storage.NetworkPolicy{
+				newNPDummy("before1", "old-ns", map[string]string{"app": "sensor"}),
+			},
+			after: []*storage.NetworkPolicy{
+				newNPDummy("after1", "new-ns", map[string]string{"app": "sensor"}),
+			},
+		},
 	}
 
-	store.Cleanup()
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("Delete Network Policies %d before / %d after", len(tc.before), len(tc.after)), func(t *testing.T) {
+			store := newNetworkPoliciesStore()
 
-	for _, p := range policies {
-		assert.Nil(t, store.Get(p.GetId()))
-		assert.Len(t, store.Find(defaultNS, p.GetLabels()), 0)
+			for _, before := range tc.before {
+				store.Upsert(before)
+			}
+
+			store.Cleanup()
+
+			require.Equal(t, 0, store.Size())
+			for _, before := range tc.before {
+				assert.Nil(t, store.Get(before.GetId()))
+				podLabels := before.GetSpec().GetPodSelector().GetMatchLabels()
+				assert.Len(t, store.Find(before.GetNamespace(), podLabels), 0)
+			}
+
+			for _, after := range tc.after {
+				store.Upsert(after)
+				assert.NotNil(t, store.Get(after.GetId()))
+				podLabels := after.GetSpec().GetPodSelector().GetMatchLabels()
+				assert.Greater(t, len(store.Find(after.GetNamespace(), podLabels)), 0)
+			}
+			require.Equal(t, len(tc.after), store.Size())
+		})
 	}
 }
 

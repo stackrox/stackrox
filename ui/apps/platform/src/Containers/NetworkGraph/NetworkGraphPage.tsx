@@ -18,6 +18,7 @@ import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
+import useAnalytics, { CIDR_BLOCK_FORM_OPENED } from 'hooks/useAnalytics';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
 import queryService from 'utils/queryService';
@@ -44,6 +45,7 @@ import {
     createExtraneousFlowsModel,
     graphModel,
 } from './utils/modelUtils';
+import { getPropertiesForAnalytics } from './utils/networkGraphURLUtils';
 import getSimulation from './utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import CIDRFormModal from './components/CIDRFormModal';
@@ -95,6 +97,7 @@ function NetworkGraphPage() {
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
 
+    const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
@@ -274,6 +277,15 @@ function NetworkGraphPage() {
     ]);
 
     function toggleCIDRBlockForm() {
+        if (!isCIDRBlockFormOpen) {
+            const properties = getPropertiesForAnalytics(searchFilter);
+
+            analyticsTrack({
+                event: CIDR_BLOCK_FORM_OPENED,
+                properties,
+            });
+        }
+
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
     }
 

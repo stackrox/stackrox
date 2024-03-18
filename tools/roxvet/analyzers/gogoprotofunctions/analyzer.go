@@ -29,9 +29,30 @@ var (
 		// value is a replaced/replacement function map where
 		// - inner key is the function name in the gogo protobuf library
 		// - inner value is the replacement function name in protocompat
+		"github.com/gogo/protobuf/proto": {
+			"Marshal":           "Marshal",
+			"MarshalTextString": "MarshalTextString",
+			"Equal":             "Equal",
+			"Unmarshal":         "Unmarshal",
+		},
+		"github.com/gogo/protobuf/types": {
+			"Compare":            "CompareTimestamps",
+			"DurationFromProto":  "DurationFromProto",
+			"DurationProto":      "DurationProto",
+			"TimestampFromProto": "ConvertTimestampToTimeOrError",
+			"TimestampNow":       "TimestampNow",
+			"TimestampProto":     "ConvertTimeToTimestampOrError",
+		},
 	}
 
-	extraAllowedCallerPackages = map[string]map[string][]string{}
+	extraAllowedCallerPackages = map[string]map[string][]string{
+		"github.com/gogo/protobuf/proto": {
+			"Unmarshal": {
+				"github.com/stackrox/rox/pkg/postgres/pgutils",
+				"github.com/stackrox/rox/pkg/search/postgres",
+			},
+		},
+	}
 
 	// Analyzer is the analyzer.
 	Analyzer = &analysis.Analyzer{

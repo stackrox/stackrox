@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -349,7 +350,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 							{
 								Type:               "Processing",
 								Status:             "False",
-								LastTransitionTime: &types.Timestamp{Seconds: lastUpdatedTime.GetSeconds() - 10},
+								LastTransitionTime: protocompat.GetProtoTimestampFromSeconds(lastUpdatedTime.GetSeconds() - 10),
 							},
 							{
 								Type:               "Ready",
@@ -469,7 +470,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 								{
 									Type:               "Processing",
 									Status:             "False",
-									LastTransitionTime: &types.Timestamp{Seconds: lastUpdatedTime.GetSeconds() - 10},
+									LastTransitionTime: protocompat.GetProtoTimestampFromSeconds(lastUpdatedTime.GetSeconds() - 10),
 								},
 							},
 						},

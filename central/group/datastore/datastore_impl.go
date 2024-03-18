@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -248,7 +248,7 @@ func (ds *dataStoreImpl) RemoveAllWithEmptyProperties(ctx context.Context) error
 		id := group.GetProps().GetId()
 		if id == "" {
 			removeGroupErrs = multierror.Append(removeGroupErrs, errox.InvalidArgs.Newf("group %s has no ID"+
-				" set and cannot be deleted", proto.MarshalTextString(group)))
+				" set and cannot be deleted", protocompat.MarshalTextString(group)))
 			continue
 		}
 		if err := ds.storage.Delete(ctx, id); err != nil {

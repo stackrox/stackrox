@@ -555,7 +555,7 @@ more info.
 <details><summary>Kubernetes</summary>
 
 ```bash
-docker run -i --rm stackrox.io/main:<tag> interactive > k8s.zip
+docker run -i --rm quay.io/stackrox-io/main:<tag> central generate interactive > k8s.zip
 ```
 
 This will run you through an installer and generate a `k8s.zip` file.
@@ -585,7 +585,7 @@ bash image-setup.sh
 ```
 
 ```bash
-docker run -i --rm stackrox.io/main:<tag> interactive > openshift.zip
+docker run -i --rm quay.io/stackrox-io/main:<tag> central generate interactive > openshift.zip
 ```
 
 This will run you through an installer and generate a `openshift.zip` file.

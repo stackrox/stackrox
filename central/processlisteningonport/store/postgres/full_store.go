@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v5"
 	metrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
@@ -12,6 +11,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // NewFullStore augments the generated store with GetProcessListeningOnPort functions.
@@ -107,12 +107,12 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := proto.Unmarshal(serialized, &msg); err != nil {
+		if err := protocompat.Unmarshal(serialized, &msg); err != nil {
 			return nil, err
 		}
 
 		var procMsg storage.ProcessIndicator
-		if err := proto.Unmarshal(procSerialized, &procMsg); err != nil {
+		if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
 			return nil, err
 		}
 

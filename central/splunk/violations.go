@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -106,11 +107,11 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 	if err != nil {
 		return nil, err
 	}
-	fromTimestamp, err := types.TimestampProto(checkpoint.fromTimestamp)
+	fromTimestamp, err := protocompat.ConvertTimeToTimestampOrError(checkpoint.fromTimestamp)
 	if err != nil {
 		return nil, err
 	}
-	toTimestamp, err := types.TimestampProto(checkpoint.toTimestamp)
+	toTimestamp, err := protocompat.ConvertTimeToTimestampOrError(checkpoint.toTimestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +219,8 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 			seenViolations = true
 
 			timestamp := getProcessViolationTime(alert, procIndicator)
-			if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+			if protocompat.CompareTimestamps(timestamp, fromTimestamp) <= 0 ||
+				protocompat.CompareTimestamps(timestamp, toTimestamp) > 0 {
 				continue
 			}
 
@@ -240,7 +242,8 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 		seenViolations = true
 
 		timestamp := getNonProcessViolationTime(alert, v)
-		if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+		if protocompat.CompareTimestamps(timestamp, fromTimestamp) <= 0 ||
+			protocompat.CompareTimestamps(timestamp, toTimestamp) > 0 {
 			continue
 		}
 

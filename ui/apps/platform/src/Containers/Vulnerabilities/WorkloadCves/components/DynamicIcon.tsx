@@ -1,10 +1,10 @@
 import React from 'react';
 import { Label, Tooltip } from '@patternfly/react-core';
-import { BoltIcon } from '@patternfly/react-icons';
+import { FilterIcon } from '@patternfly/react-icons';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 export function DynamicIcon(props: SVGIconProps) {
-    return <BoltIcon color="var(--pf-global--palette--blue-300)" {...props} />;
+    return <FilterIcon color="var(--pf-global--palette--blue-300)" {...props} />;
 }
 
 export function DynamicColumnIcon() {

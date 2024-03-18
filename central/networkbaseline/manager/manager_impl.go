@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -26,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -774,7 +774,7 @@ func (m *manager) flushBaselineQueue() {
 	for {
 		// ObservationEnd is in the future so we have nothing to do at this time
 		head := m.deploymentObservationQueue.Peek()
-		if head == nil || protoutils.After(head.ObservationEnd, types.TimestampNow()) {
+		if head == nil || protoutils.After(head.ObservationEnd, protocompat.TimestampNow()) {
 			return
 		}
 

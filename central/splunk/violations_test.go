@@ -16,11 +16,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil/mock"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -1349,10 +1349,9 @@ func (s *violationsTestSuite) TestGenerateViolationId() {
 	v3 := storage.Alert_Violation{
 		Message: "mock message",
 		Type:    storage.Alert_Violation_K8S_EVENT,
-		Time: &types.Timestamp{
-			Seconds: 123,
-			Nanos:   456,
-		},
+		Time: protocompat.GetProtoTimestampFromSecondsAndNanos(
+			123,
+			456),
 	}
 	id3, err := generateViolationID("alert1", &v3)
 	s.Require().NoError(err)

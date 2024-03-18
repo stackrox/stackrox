@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -208,7 +208,9 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	image.Metadata = existingImage.GetMetadata()
+	if existingImage.GetMetadata() != nil {
+		image.Metadata = existingImage.GetMetadata()
+	}
 	image.Notes = existingImage.GetNotes()
 	hasChangedNames := !protoutils.SlicesEqual(existingImage.GetNames(), image.GetNames())
 	image.Names = protoutils.SliceUnique(append(existingImage.GetNames(), image.GetNames()...))
@@ -378,7 +380,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 					Name:          registry.Source().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: timestamp.TimestampNow(),
+					LastTimestamp: protocompat.TimestampNow(),
 					ErrorMessage:  err.Error(),
 				})
 			}
@@ -406,7 +408,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 				Name:          name,
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
-				LastTimestamp: timestamp.TimestampNow(),
+				LastTimestamp: protocompat.TimestampNow(),
 				ErrorMessage:  "",
 			})
 			return true, nil
@@ -589,7 +591,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 					Name:          scanner.DataSource().Name,
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: timestamp.TimestampNow(),
+					LastTimestamp: protocompat.TimestampNow(),
 					ErrorMessage:  err.Error(),
 				})
 			}
@@ -621,7 +623,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				Name:          scanner.DataSource().Name,
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
-				LastTimestamp: timestamp.TimestampNow(),
+				LastTimestamp: protocompat.TimestampNow(),
 				ErrorMessage:  "",
 			})
 			return result, nil

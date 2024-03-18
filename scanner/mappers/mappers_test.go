@@ -7,10 +7,10 @@ import (
 	"time"
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
-	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +50,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 
 func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
 
 	tests := map[string]struct {
@@ -606,7 +606,7 @@ func Test_toProtoV4Contents(t *testing.T) {
 
 func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
@@ -990,9 +990,17 @@ func Test_vulnerabilityName(t *testing.T) {
 			name:     "DSA-4591-1 cyrus-sasl2",
 			expected: "DSA-4591-1",
 		},
-		"RHEL": {
+		"RHEL/RHSA": {
 			name:     "RHSA-2023:0173: libxml2 security update (Moderate)",
 			expected: "RHSA-2023:0173",
+		},
+		"RHEL/RHBA": {
+			name:     "RHBA-2019:1992: cloud-init bug fix and enhancement update (Moderate)",
+			expected: "RHBA-2019:1992",
+		},
+		"RHEL/RHEA": {
+			name:     "RHEA-2019:3845: microcode_ctl bug fix and enhancement update (Important)",
+			expected: "RHEA-2019:3845",
 		},
 		"Ubuntu": {
 			name:     "CVE-2022-45061 on Ubuntu 22.04 LTS (jammy) - medium.",

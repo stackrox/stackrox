@@ -139,13 +139,11 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
-    ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
+    ci_export ROX_VULN_MGMT_NODE_PLATFORM_CVES "${ROX_VULN_MGMT_NODE_PLATFORM_CVES:-true}"
     ci_export ROX_WORKLOAD_CVES_FIXABILITY_FILTERS "${ROX_WORKLOAD_CVES_FIXABILITY_FILTERS:-true}"
-    ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_MOVE_INIT_BUNDLES_UI "${ROX_MOVE_INIT_BUNDLES_UI:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -625,6 +623,8 @@ check_for_stackrox_restarts() {
 }
 
 check_for_errors_in_stackrox_logs() {
+    info "Checking stackrox pod logs for errors"
+
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
     fi
@@ -648,6 +648,7 @@ check_for_errors_in_stackrox_logs() {
     LOGCHECK_SCRIPT="${LOGCHECK_SCRIPT:-scripts/ci/logcheck/check.sh}"
     for app in "${!podnames_by_app[@]}"; do
         logs="$(_get_logs_for_app "${app}")"
+        info "Checking app: ${app}, logs: ${logs}"
         # shellcheck disable=SC2086
         if [[ -n "${logs}" ]] && ! check_out="$(${LOGCHECK_SCRIPT} ${logs})"; then
             summary="$(summarize_check_output "${check_out}")"
@@ -1057,15 +1058,15 @@ _record_build_info() {
     update_job_record "build" "${build_info}"
 }
 
-restore_56_1_backup() {
-    info "Restoring a 56.1 backup"
+restore_4_1_postgres_backup() {
+    info "Restoring a 4.1 postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
-        central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+        central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
 
 update_public_config() {

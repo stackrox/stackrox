@@ -65,6 +65,8 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				continue
 			}
 
+			// Runs the deployment resolution. This callback will fetch all the deployment IDs that are affected by
+			// the resource event.
 			referenceIds := deploymentReference.Reference(r.storeProvider.Deployments())
 
 			if deploymentReference.ForceDetection && len(referenceIds) > 0 {
@@ -90,7 +92,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 						log.Debugf("Deployment with id %s is already in the pipeline, skipping processing", id)
 						continue
 					}
-					msg.AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+					msg.AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: deploymentReference.ParentResourceAction})
 					continue
 				}
 
@@ -125,7 +127,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				// new and detection isn't forced.
 				if deploymentReference.ForceDetection || newObject {
 					msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
-						AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+						AddDeploymentForDetection(component.DeploytimeDetectionRequest{Object: d, Action: deploymentReference.ParentResourceAction})
 				}
 			}
 		}

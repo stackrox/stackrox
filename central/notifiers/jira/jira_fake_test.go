@@ -11,11 +11,11 @@ import (
 	"testing"
 
 	jiraLib "github.com/andygrunwald/go-jira"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -300,7 +300,7 @@ func testWithFakeJira(t *testing.T, cloud bool) {
 			Name: "myDeployment",
 			Id:   "myDeploymentID",
 		}},
-		Time: types.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 	}
 	assert.NoError(t, j.AlertNotify(context.Background(), testAlert))
 	require.Len(t, fj.createdIssues, 2)

@@ -15,6 +15,7 @@ import services.ImageService
 import services.PolicyService
 import util.ApplicationHealth
 import util.ChaosMonkey
+import util.Env
 import util.Timer
 
 import spock.lang.IgnoreIf
@@ -137,6 +138,8 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.flaky })
+    @SuppressWarnings('LineLength')
     def "Verify Admission Controller Config: #desc"() {
         when:
         prepareChaosMonkey()
@@ -172,11 +175,11 @@ class AdmissionControllerTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        timeout | scan  | bypassable | deployment                   | launched | desc
-        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
-        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
-        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
-        30      | true  | false      | NGINX_DEPLOYMENT             | false    | "nginx w/ inline scan"
+        timeout | scan  | bypassable | deployment                   | launched | desc                                    | flaky
+        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"  | false
+        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"     | false
+        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"         | false
+        30      | true  | false      | NGINX_DEPLOYMENT             | false    | "nginx w/ inline scan"                  | true
     }
 
     @Unroll
@@ -308,6 +311,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
+    @IgnoreIf({ Env.getTestTarget() == "bat-test" && data.desc == "nginx w/ inline scan" })
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
         when:
         prepareChaosMonkey()

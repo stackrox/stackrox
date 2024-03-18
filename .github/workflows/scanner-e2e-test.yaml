@@ -10,7 +10,6 @@ jobs:
     env:
       SCANNER_E2E_QUAY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       SCANNER_E2E_QUAY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      SCANNER_E2E_GOOGLE_SA_TOKEN: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
       # TODO Add registry.redhat.io secrets.
       SCANNER_E2E_REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
       SCANNER_E2E_REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storage;
 
-import "gogoproto/gogo.proto";
 import "storage/labels.proto";
 import "storage/traits.proto";
 
@@ -17,12 +16,12 @@ message Role {
   reserved 4; // id, future field
 
   // `name` and `description` are provided by the user and can be changed.
-  string name = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string name = 1; // @gotags: sql:"pk"
   string description = 5;
 
   // The associated PermissionSet and AccessScope for this Role.
-  string permission_set_id = 6 [(gogoproto.moretags) = 'sql:"type(uuid)"'];
-  string access_scope_id = 7 [(gogoproto.moretags) = 'sql:"type(uuid)"'];
+  string permission_set_id = 6; // @gotags: sql:"type(uuid)"
+  string access_scope_id = 7; // @gotags: sql:"type(uuid)"
 
   // Minimum (not default!) access level for every resource. Can be extended
   // below by explicit permissions but not shrunk.
@@ -45,10 +44,10 @@ enum Access {
 // This encodes a set of permissions for StackRox resources.
 message PermissionSet {
   // id is generated and cannot be changed.
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
 
   // `name` and `description` are provided by the user and can be changed.
-  string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+  string name = 2; // @gotags: sql:"unique"
   string description = 3;
 
   map<string, Access> resource_to_access = 4;
@@ -77,10 +76,10 @@ message SimpleAccessScope {
   }
 
   // `id` is generated and cannot be changed.
-  string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
 
   // `name` and `description` are provided by the user and can be changed.
-  string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+  string name = 2; // @gotags: sql:"unique"
   string description = 3;
 
   Rules rules = 4;

@@ -43,7 +43,7 @@ bitfield_to_failure() {
 }
 
 assert_flavor_prompt_development() {
-  assert_line --partial 'Default container images settings (development_build, stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
+  assert_line --partial 'Default container images settings (development_build, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
 }
 
 assert_flavor_prompt_release() {
@@ -58,10 +58,10 @@ assert_prompts_development() {
   assert_line --regexp '^Scanner .* "quay.io/rhacs-eng/scanner:'
 }
 
-assert_prompts_stackrox() {
-  assert_line --regexp '^Main .* "stackrox.io/main:'
-  assert_line --regexp '^Scanner-db .* "stackrox.io/scanner-db:'
-  assert_line --regexp '^Scanner .* "stackrox.io/scanner:'
+assert_prompts_opensource() {
+  assert_line --regexp '^Main .* "quay.io/stackrox-io/main:'
+  assert_line --regexp '^Scanner-db .* "quay.io/stackrox-io/scanner-db:'
+  assert_line --regexp '^Scanner .* "quay.io/stackrox-io/scanner:'
 }
 
 assert_prompts_rhacs() {
@@ -88,16 +88,16 @@ assert_prompts_rhacs() {
   assert_components_registry "$out_dir/scanner" "quay.io/rhacs-eng" "$any_version" 'scanner' 'scanner-db'
 }
 
-@test "roxctl-development central generate interactive flavor=stackrox.io" {
+@test "roxctl-development central generate interactive flavor=opensource" {
   roxctl_bin="$(roxctl-development-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" stackrox.io "$out_dir" "stackrox.io"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" opensource "$out_dir" "quay.io/stackrox-io"
   bitfield_to_failure "$status"
   assert_success
-  assert_prompts_stackrox
+  assert_prompts_opensource
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "stackrox.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "stackrox.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "quay.io/stackrox-io" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "quay.io/stackrox-io" "$any_version" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=rhacs" {
@@ -120,16 +120,16 @@ assert_prompts_rhacs() {
   assert_success
 }
 
-@test "roxctl-release central generate interactive flavor=stackrox.io" {
+@test "roxctl-release central generate interactive flavor=opensource" {
   roxctl_bin="$(roxctl-release-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" stackrox.io "$out_dir" "stackrox.io"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" opensource "$out_dir" "quay.io/stackrox-io"
   bitfield_to_failure "$status"
   assert_success
-  assert_prompts_stackrox
+  assert_prompts_opensource
   assert_flavor_prompt_release
   sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "stackrox.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "stackrox.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "quay.io/stackrox-io" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "quay.io/stackrox-io" "$any_version" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release central generate interactive flavor=rhacs" {
