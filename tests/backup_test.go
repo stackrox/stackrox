@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -23,10 +24,11 @@ import (
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestBackup(t *testing.T) {
-	setupNginxLatestTagDeployment(t)
-	defer teardownNginxLatestTagDeployment(t)
+	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	waitForDeployment(t, nginxDeploymentName)
+	setupDeployment(t, "nginx", deploymentName)
+	defer teardownDeploymentWithoutCheck(deploymentName)
+	waitForDeployment(t, deploymentName)
 
 	for _, includeCerts := range []bool{false, true} {
 		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {

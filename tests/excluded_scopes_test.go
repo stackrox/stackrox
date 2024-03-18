@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os/exec"
 	"testing"
 	"time"
 
@@ -20,7 +19,7 @@ func TestExcludedScopes(t *testing.T) {
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
 	setupDeployment(t, "nginx", deploymentName)
-	defer teardownTestExcludedScopes(deploymentName)
+	defer teardownDeploymentWithoutCheck(deploymentName)
 	waitForDeployment(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
@@ -122,10 +121,4 @@ func verifyAlertForExcludedScopesRemoval(t *testing.T, deploymentName string) {
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 1)
-}
-
-func teardownTestExcludedScopes(deploymentName string) {
-	// Since deployment name is randomized, and it will not cause issues to other test,
-	// we can assume that deployment will be deleted eventually.
-	exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
 }
