@@ -19,13 +19,13 @@ import (
 )
 
 // ReconcileProxySecretExtension returns a reconcile extension that ensures that a proxy secret exists.
-func ReconcileProxySecretExtension(client ctrlClient.Client, apiReader ctrlClient.Reader, proxyEnv map[string]string) extensions.ReconcileExtension {
+func ReconcileProxySecretExtension(client ctrlClient.Client, direct ctrlClient.Reader, proxyEnv map[string]string) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), _ logr.Logger) error {
 		if obj.GetDeletionTimestamp() != nil {
-			return deleteProxyEnvSecret(ctx, obj, client, apiReader)
+			return deleteProxyEnvSecret(ctx, obj, client, direct)
 		}
 
-		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client, apiReader)
+		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client, direct)
 	}
 }
 
@@ -33,12 +33,12 @@ func getProxyEnvSecretName(obj k8sutil.Object) string {
 	return strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind + "-" + obj.GetName() + "-proxy-env")
 }
 
-func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client, apiReader ctrlClient.Reader) error {
+func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client, direct ctrlClient.Reader) error {
 	var err error
 	if len(proxyEnvVars) == 0 {
-		err = deleteProxyEnvSecret(ctx, obj, client, apiReader)
+		err = deleteProxyEnvSecret(ctx, obj, client, direct)
 	} else {
-		err = updateProxyEnvSecret(ctx, obj, client, apiReader, proxyEnvVars)
+		err = updateProxyEnvSecret(ctx, obj, client, direct, proxyEnvVars)
 	}
 
 	if err != nil {
@@ -66,10 +66,10 @@ func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars 
 	return nil
 }
 
-func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, apiReader ctrlClient.Reader) error {
+func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, direct ctrlClient.Reader) error {
 	existingSecret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: getProxyEnvSecretName(obj)}
-	if err := utils.GetWithFallbackToAPIReader(ctx, client, apiReader, key, existingSecret); err != nil {
+	if err := utils.GetWithFallbackToUncached(ctx, client, direct, key, existingSecret); err != nil {
 		if apiErrors.IsNotFound(err) {
 			return nil
 		}
@@ -83,12 +83,12 @@ func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 	return utils.DeleteExact(ctx, client, existingSecret)
 }
 
-func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, apiReader ctrlClient.Reader, proxyEnvVars map[string]string) error {
+func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, direct ctrlClient.Reader, proxyEnvVars map[string]string) error {
 	secretName := getProxyEnvSecretName(obj)
 
 	secret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: secretName}
-	if err := utils.GetWithFallbackToAPIReader(ctx, client, apiReader, key, secret); err != nil {
+	if err := utils.GetWithFallbackToUncached(ctx, client, direct, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return err
 		}

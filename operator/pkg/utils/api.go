@@ -21,16 +21,16 @@ func RemoveOwnerRef(obj metav1.Object, owner metav1.Object) {
 	obj.SetOwnerReferences(r)
 }
 
-// GetWithFallbackToAPIReader attempts to get a k8s object from the cached client
+// GetWithFallbackToUncached attempts to get a k8s object from the cached client
 // if it does not find a matching object it will try to use a direct read
 // to the k8s API server. This is necessary because controller-runtime returns
-// 404 for all objects that don't match the cache selector
-func GetWithFallbackToAPIReader(ctx context.Context, client ctrlClient.Client, apiReader ctrlClient.Reader, key ctrlClient.ObjectKey, obj ctrlClient.Object) error {
+// 404 for all objects that don't match the cache selector.
+func GetWithFallbackToUncached(ctx context.Context, client ctrlClient.Client, uncached ctrlClient.Reader, key ctrlClient.ObjectKey, obj ctrlClient.Object) error {
 	if err := client.Get(ctx, key, obj); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s object", key.Name)
 		}
-		return apiReader.Get(ctx, key, obj)
+		return uncached.Get(ctx, key, obj)
 	}
 
 	return nil

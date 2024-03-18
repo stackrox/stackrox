@@ -47,7 +47,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
-	// Using uncached APIReader since this is reading secrets not
+	// Using uncached UncachedClient since this is reading secrets not
 	// owned by the operator so we can't guarantee labels for cache
 	// are set propperly
 	pullSecretRefInjector := legacy.NewImagePullSecretReferenceInjector(
