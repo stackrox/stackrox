@@ -40,6 +40,8 @@ import (
 type Backends struct {
 	// Indexer is the indexing backend.
 	Indexer indexer.Indexer
+	// NodeIndexer is the backend used to index live kubernetes nodes.
+	NodeIndexer indexer.NodeIndexer
 	// Matcher is the vulnerability matching backend.
 	Matcher matcher.Matcher
 	// RemoteIndexer is the indexing backend located in a remote scanner instance.
