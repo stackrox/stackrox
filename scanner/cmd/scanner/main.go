@@ -212,6 +212,15 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	} else {
 		zlog.Info(ctx).Msg("indexer is disabled")
 	}
+	if cfg.NodeIndexer.Enable {
+		zlog.Info(ctx).Msg("nodeindexer is enabled")
+		b.NodeIndexer, err = indexer.NewNodeIndexer(ctx, cfg.NodeIndexer)
+		if err != nil {
+			return nil, fmt.Errorf("nodeindexer: %w", err)
+		}
+	} else {
+		zlog.Info(ctx).Msg("nodeindexer is disabled")
+	}
 	if cfg.Matcher.Enable {
 		zlog.Info(ctx).Msg("matcher is enabled")
 		if cfg.Matcher.RemoteIndexerEnabled {
@@ -237,6 +246,9 @@ func (b *Backends) APIServices() []grpc.APIService {
 	var srvs []grpc.APIService
 	if b.Indexer != nil {
 		srvs = append(srvs, services.NewIndexerService(b.Indexer))
+	}
+	if b.NodeIndexer != nil {
+		srvs = append(srvs, services.NewNodeIndexerService(b.NodeIndexer))
 	}
 	if b.Matcher != nil {
 		// Set the index report getter to the remote indexer if available, otherwise the
