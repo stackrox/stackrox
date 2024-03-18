@@ -73,4 +73,7 @@ var (
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
 		2*time.Minute)
+
+	// ComplianceCRDsWatchTimer indicates how often sensor checks for the presence of Compliance CRDs. Setting this variable to zero will disable the feature.
+	ComplianceCRDsWatchTimer = registerDurationSetting("ROX_COMPLIANCE_CRD_WATCHER_TIMER", 10*time.Minute, WithDurationZeroAllowed())
 )
