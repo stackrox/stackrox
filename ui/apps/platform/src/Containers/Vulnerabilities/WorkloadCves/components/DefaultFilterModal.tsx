@@ -86,10 +86,10 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                     className: 'custom-badge-unread',
                 }}
             >
-                Default vulnerability filters
+                Default filters
             </Button>
             <Modal
-                title="Default vulnerability filters"
+                title="Default filters"
                 description="Select default vulnerability filters to be applied across all views."
                 isOpen={isOpen}
                 onClose={handleModalToggle}

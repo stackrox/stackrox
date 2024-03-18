@@ -244,7 +244,7 @@ function WorkloadCvesOverviewPage() {
                     {hasReadAccessForNamespaces && (
                         <Link to={vulnerabilityNamespaceViewPath}>
                             <Button variant="secondary" onClick={() => {}}>
-                                Namespace overview
+                                Namespace view
                             </Button>
                         </Link>
                     )}

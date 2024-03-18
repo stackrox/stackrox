@@ -26,8 +26,9 @@ const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCves
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
 function WorkloadCvesPage() {
-    const { hasReadAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
+    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
 
     return (
         <>
@@ -38,13 +39,15 @@ function WorkloadCvesPage() {
                 routeKey="vulnerability-management"
             />
             <Switch>
+                {hasReadAccessForNamespaces && (
+                    <Route path={vulnerabilityNamespaceViewPath} component={NamespaceViewPage} />
+                )}
                 <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
                 <Route path={vulnerabilitiesWorkloadCveImageSinglePath} component={ImagePage} />
                 <Route
                     path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
                     component={DeploymentPage}
                 />
-                <Route path={vulnerabilityNamespaceViewPath} component={NamespaceViewPage} />
                 <Route
                     exact
                     path={vulnerabilitiesWorkloadCvesPath}

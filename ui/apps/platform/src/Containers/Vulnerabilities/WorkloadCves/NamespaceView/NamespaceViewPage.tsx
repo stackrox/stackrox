@@ -1,3 +1,4 @@
+import React from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -9,19 +10,18 @@ import {
 } from '@patternfly/react-core';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import React from 'react';
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 
 function NamespaceViewPage() {
     return (
         <>
-            <PageTitle title="Workload CVEs - Namespace View" />
+            <PageTitle title="Workload CVEs - Namespace view" />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
                         Workload CVEs
                     </BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>Namespace overview</BreadcrumbItem>
+                    <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
@@ -31,7 +31,7 @@ function NamespaceViewPage() {
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
                     <Title headingLevel="h1" className="pf-u-mb-sm">
-                        Namespace overview
+                        Namespace view
                     </Title>
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>
                 </Flex>
