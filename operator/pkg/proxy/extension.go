@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -18,13 +19,13 @@ import (
 )
 
 // ReconcileProxySecretExtension returns a reconcile extension that ensures that a proxy secret exists.
-func ReconcileProxySecretExtension(client ctrlClient.Client, proxyEnv map[string]string) extensions.ReconcileExtension {
+func ReconcileProxySecretExtension(client ctrlClient.Client, apiReader ctrlClient.Reader, proxyEnv map[string]string) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), _ logr.Logger) error {
 		if obj.GetDeletionTimestamp() != nil {
-			return deleteProxyEnvSecret(ctx, obj, client)
+			return deleteProxyEnvSecret(ctx, obj, client, apiReader)
 		}
 
-		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client)
+		return reconcileProxySecret(ctx, obj, proxyEnv, statusUpdater, client, apiReader)
 	}
 }
 
@@ -32,12 +33,12 @@ func getProxyEnvSecretName(obj k8sutil.Object) string {
 	return strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind + "-" + obj.GetName() + "-proxy-env")
 }
 
-func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client) error {
+func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars map[string]string, statusUpdater func(extensions.UpdateStatusFunc), client ctrlClient.Client, apiReader ctrlClient.Reader) error {
 	var err error
 	if len(proxyEnvVars) == 0 {
-		err = deleteProxyEnvSecret(ctx, obj, client)
+		err = deleteProxyEnvSecret(ctx, obj, client, apiReader)
 	} else {
-		err = updateProxyEnvSecret(ctx, obj, client, proxyEnvVars)
+		err = updateProxyEnvSecret(ctx, obj, client, apiReader, proxyEnvVars)
 	}
 
 	if err != nil {
@@ -65,10 +66,10 @@ func reconcileProxySecret(ctx context.Context, obj k8sutil.Object, proxyEnvVars 
 	return nil
 }
 
-func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client) error {
+func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, apiReader ctrlClient.Reader) error {
 	existingSecret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: getProxyEnvSecretName(obj)}
-	if err := client.Get(ctx, key, existingSecret); err != nil {
+	if err := utils.GetWithFallbackToAPIReader(ctx, client, apiReader, key, existingSecret); err != nil {
 		if apiErrors.IsNotFound(err) {
 			return nil
 		}
@@ -82,12 +83,12 @@ func deleteProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 	return utils.DeleteExact(ctx, client, existingSecret)
 }
 
-func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, proxyEnvVars map[string]string) error {
+func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlClient.Client, apiReader ctrlClient.Reader, proxyEnvVars map[string]string) error {
 	secretName := getProxyEnvSecretName(obj)
 
 	secret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: obj.GetNamespace(), Name: secretName}
-	if err := client.Get(ctx, key, secret); err != nil {
+	if err := utils.GetWithFallbackToAPIReader(ctx, client, apiReader, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return err
 		}
@@ -99,6 +100,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: obj.GetNamespace(),
+				Labels:    commonLabels.DefaultLabels(),
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(obj, obj.GetObjectKind().GroupVersionKind()),
 				},
@@ -123,5 +125,8 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 	if secret.ResourceVersion == "" {
 		return client.Create(ctx, secret)
 	}
+
+	labels, _ := commonLabels.WithDefaults(secret.Labels)
+	secret.Labels = labels
 	return client.Update(ctx, secret)
 }

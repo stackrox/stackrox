@@ -42,13 +42,16 @@ var (
 )
 
 // New creates a translator
-func New(client ctrlClient.Client) Translator {
-	return Translator{client: client}
+// apiReader should be a Reader without cache to allow directly
+// reading resources that don't match the caching configuration
+func New(client ctrlClient.Client, apiReader ctrlClient.Reader) Translator {
+	return Translator{client: client, apiReader: apiReader}
 }
 
 // Translator translates and enriches helm values
 type Translator struct {
-	client ctrlClient.Client
+	client    ctrlClient.Client
+	apiReader ctrlClient.Reader
 }
 
 // Translate translates and enriches helm values
@@ -147,7 +150,7 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 	v.SetBoolValue("createSecrets", false)
 	sensorSecret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: sc.Namespace, Name: sensorTLSSecretName}
-	if err := t.client.Get(ctx, key, sensorSecret); err != nil {
+	if err := t.apiReader.Get(ctx, key, sensorSecret); err != nil {
 		return v.SetError(errors.Wrapf(err, "failed reading %q secret", sensorTLSSecretName))
 	}
 
@@ -176,7 +179,7 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	namespace := sc.Namespace
 	secret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: namespace, Name: secretName}
-	if err := t.client.Get(ctx, key, secret); err != nil {
+	if err := t.apiReader.Get(ctx, key, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "init-bundle secret %q does not exist in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", secretName, namespace)
 		}

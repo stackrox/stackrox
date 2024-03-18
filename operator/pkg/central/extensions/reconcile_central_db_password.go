@@ -25,13 +25,13 @@ const (
 )
 
 // ReconcileCentralDBPasswordExtension returns an extension that takes care of reconciling the central-db-password secret.
-func ReconcileCentralDBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralDBPassword, client)
+func ReconcileCentralDBPasswordExtension(client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralDBPassword, client, apiReader)
 }
 
-func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileCentralDBPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, apiReader, c),
 		centralObj:          c,
 	}
 	return run.Execute(ctx)
@@ -39,8 +39,8 @@ func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client
 
 type reconcileCentralDBPasswordExtensionRun struct {
 	*commonExtensions.SecretReconciliator
-	centralObj *platform.Central
-	password   string
+	centralObj       *platform.Central
+	externalPassword string
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReferencedSecret(ctx context.Context) error {
@@ -52,7 +52,9 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 	passwordSecret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: passwordSecretName}
-	if err := r.Client().Get(ctx, key, passwordSecret); err != nil {
+	// using APIReader for uncached access because the operator might not own this secret
+	// thus we can't guarantee that labels are set properly for it to be in the cache
+	if err := r.APIReader().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
 	}
 
@@ -61,7 +63,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 		return errors.Wrapf(err, "reading central db password from secret %s", passwordSecretName)
 	}
 
-	r.password = password
+	r.externalPassword = password
 	return nil
 }
 
@@ -102,22 +104,23 @@ func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.S
 	if err != nil {
 		return errors.Wrap(err, "error validating existing secret data")
 	}
-	if r.password != "" && r.password != password {
+	if r.externalPassword != "" && r.externalPassword != password {
 		return errors.New("existing password does not match expected one")
 	}
-	// The following assignment shouldn't have any consequences, as a successful validation should prevent generation
-	// from being invoked, but better safe than sorry (about clobbering a user-set password).
-	r.password = password
+
 	return nil
 }
 
 func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword(_ types.SecretDataMap) (types.SecretDataMap, error) {
-	if r.password == "" {
-		r.password = renderer.CreatePassword()
+	var password string
+	if r.externalPassword != "" {
+		password = r.externalPassword
+	} else {
+		password = renderer.CreatePassword()
 	}
 
 	return types.SecretDataMap{
-		centralDBPasswordKey: []byte(r.password),
+		centralDBPasswordKey: []byte(password),
 	}, nil
 }
 
