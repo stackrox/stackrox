@@ -15,8 +15,10 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
-if ('aws' in os.environ.get('CLUSTER_PROFILE_NAME', '') or
-        'aws' in os.environ.get('CLUSTER_TYPE', '')):
+for v in ['JOB_NAME_SAFE', 'CLUSTER_FLAVOR_VARIANT', 'CLUSTER_PROFILE_NAME', 'CLUSTER_TYPE', 'OPENSHIFT_CI_STEP_NAME']:
+    print(v + ':' + os.environ.get(v, ''))
+
+if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
     os.environ["SETUP_WORKLOAD_IDENTITIES"] = "false"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
