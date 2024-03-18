@@ -152,6 +152,28 @@ func (c *IndexerConfig) validate() error {
 	return nil
 }
 
+// NodeIndexerConfig .
+type NodeIndexerConfig struct {
+	// StackRoxServices specifies whether Indexer is deployed alongside StackRox services.
+	StackRoxServices bool
+	// Database provides indexer's database configuration.
+	Database Database `yaml:"database"`
+	// Enable if false disables the Indexer service.
+	Enable bool `yaml:"enable"`
+}
+
+func (c *NodeIndexerConfig) validate() error {
+	if !c.Enable {
+		return nil
+	}
+
+	if err := c.Database.validate(); err != nil {
+		return fmt.Errorf("database: %w", err)
+	}
+
+	return nil
+}
+
 // MatcherConfig provides Scanner Matcher configuration.
 type MatcherConfig struct {
 	// StackRoxServices specifies whether Matcher is deployed alongside StackRox services.

@@ -14,6 +14,11 @@ matcher:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
   vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst
+nodeindexer:
+  enable: true
+  database:
+    conn_string: "host=/var/run/postgresql"
+    password_file: ""
 mtls:
   certs_dir: certs/scanner-v4
 log_level: info
