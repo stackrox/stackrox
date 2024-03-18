@@ -41,9 +41,9 @@ var (
 	baseValuesYAML []byte
 )
 
-// New creates a translator
-// direct should be a Reader without cache to allow directly
-// reading resources that don't match the caching configuration
+// New creates a translator.
+// direct should be an uncached Reader to allow directly
+// reading resources that don't match the caching configuration.
 func New(client ctrlClient.Client, direct ctrlClient.Reader) Translator {
 	return Translator{client: client, direct: direct}
 }

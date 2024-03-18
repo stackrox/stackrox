@@ -64,7 +64,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			// Using uncached UncachedClient since this is reading secrets not
 			// owned by the operator so we can't guarantee labels for cache
-			// are set properly
+			// are set properly.
 			legacy.NewImagePullSecretReferenceInjector(mgr.GetAPIReader(), "imagePullSecrets",
 				"stackrox", "stackrox-scanner", "stackrox-scanner-v4")),
 		opts...,

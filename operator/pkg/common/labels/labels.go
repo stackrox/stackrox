@@ -15,7 +15,7 @@ var defaultLabels = map[string]string{
 	"app.stackrox.io/managed-by": "operator",
 }
 
-// DefaultLabels defines the default labels the operator should set on resources it creates
+// DefaultLabels defines the default labels the operator should set on resources it creates.
 func DefaultLabels() map[string]string {
 	labels := make(map[string]string, len(defaultLabels))
 	for k, v := range defaultLabels {
@@ -26,7 +26,7 @@ func DefaultLabels() map[string]string {
 }
 
 // WithDefaults return a copy of the given labels with the default labels added.
-// It returns a bool as second argument to indicate whether default labels had to be added or not
+// It returns a bool as second argument to indicate whether default labels had to be added or not.
 func WithDefaults(labels map[string]string) (map[string]string, bool) {
 	updated := false
 	newLabels := map[string]string{}
@@ -46,7 +46,7 @@ func WithDefaults(labels map[string]string) (map[string]string, bool) {
 }
 
 // NewLabelPostRenderer is a postrenderer for helm operator plugin kube clients to add
-// given labels to each renderered object
+// given labels to each renderered object.
 func NewLabelPostRenderer(client kube.Interface, labels map[string]string) postrender.PostRenderer {
 	return &labelPostRenderer{
 		kubeClient: client,

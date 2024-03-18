@@ -49,7 +49,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	// Using uncached UncachedClient since this is reading secrets not
 	// owned by the operator so we can't guarantee labels for cache
-	// are set propperly
+	// are set properly.
 	pullSecretRefInjector := legacy.NewImagePullSecretReferenceInjector(
 		mgr.GetAPIReader(), "imagePullSecrets",
 		"secured-cluster-services-main", "stackrox", "stackrox-scanner", "stackrox-scanner-v4")

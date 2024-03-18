@@ -80,7 +80,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 
 	// Fallback to read directly from API server as oposed to a cache client
 	// to make sure we recognize old secrets that have not been labeled properly
-	// to match the cache selector
+	// to match the cache selector.
 	if err := utils.GetWithFallbackToUncached(ctx, r.Client(), r.UncachedClient(), key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
