@@ -25,29 +25,29 @@ type generateSecretDataFunc func(types.SecretDataMap) (types.SecretDataMap, erro
 
 // NewSecretReconciliator creates a new SecretReconciliator. It takes a context and controller client.
 // The obj parameter is the owner object (i.e. a custom resource).
-func NewSecretReconciliator(client ctrlClient.Client, apiReader ctrlClient.Reader, obj types.K8sObject) *SecretReconciliator {
+func NewSecretReconciliator(client ctrlClient.Client, direct ctrlClient.Reader, obj types.K8sObject) *SecretReconciliator {
 	return &SecretReconciliator{
-		client:    client,
-		obj:       obj,
-		apiReader: apiReader,
+		client: client,
+		obj:    obj,
+		direct: direct,
 	}
 }
 
 // SecretReconciliator reconciles a secret.
 type SecretReconciliator struct {
-	client    ctrlClient.Client
-	obj       types.K8sObject
-	apiReader ctrlClient.Reader
+	client ctrlClient.Client
+	obj    types.K8sObject
+	direct ctrlClient.Reader
 }
 
-// Client returns the controller-runtime client used by the extension.
+// Client returns the (cached) controller-runtime client used by the extension.
 func (r *SecretReconciliator) Client() ctrlClient.Client {
 	return r.client
 }
 
-// APIReader returns the controller-runtime APIReader used by the extension.
-func (r *SecretReconciliator) APIReader() ctrlClient.Reader {
-	return r.apiReader
+// UncachedClient returns the uncached controller-runtime client used by the extension.
+func (r *SecretReconciliator) UncachedClient() ctrlClient.Reader {
+	return r.direct
 }
 
 // DeleteSecret makes sure a secret with the given name does NOT exist.
@@ -55,7 +55,7 @@ func (r *SecretReconciliator) APIReader() ctrlClient.Reader {
 func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
-	if err := utils.GetWithFallbackToAPIReader(ctx, r.Client(), r.APIReader(), key, secret); err != nil {
+	if err := utils.GetWithFallbackToUncached(ctx, r.Client(), r.UncachedClient(), key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
@@ -80,8 +80,8 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 
 	// Fallback to read directly from API server as oposed to a cache client
 	// to make sure we recognize old secrets that have not been labeled properly
-	// to match the cache selector
-	if err := utils.GetWithFallbackToAPIReader(ctx, r.Client(), r.APIReader(), key, secret); err != nil {
+	// to match the cache selector.
+	if err := utils.GetWithFallbackToUncached(ctx, r.Client(), r.UncachedClient(), key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
@@ -89,8 +89,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	}
 
 	if secret != nil {
-		err := r.updateExisting(ctx, secret, validate, generate)
-		return err
+		return r.updateExisting(ctx, secret, validate, generate)
 	}
 
 	// Try to generate the secret, in order to fix it.
@@ -110,11 +109,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 		Data: data,
 	}
 
-	if err := r.Client().Create(ctx, newSecret); err != nil {
-		return errors.Wrapf(err, "creating new %s secret failed", name)
-	}
-
-	return nil
+	return errors.Wrapf(r.Client().Create(ctx, newSecret), "creating new %s secret failed", name)
 }
 
 func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
@@ -146,11 +141,7 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		return nil
 	}
 
-	if err := r.client.Update(ctx, secret); err != nil {
-		return errors.Wrapf(err, "updating secret %s/%s", secret.Namespace, secret.Name)
-	}
-
-	return nil
+	return errors.Wrapf(r.client.Update(ctx, secret), "updating secret %s/%s", secret.Namespace, secret.Name)
 }
 
 func generateError(err error, secretName, extraInfo string) error {

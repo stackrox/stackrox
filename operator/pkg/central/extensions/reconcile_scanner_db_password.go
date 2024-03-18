@@ -20,10 +20,10 @@ const (
 
 // ReconcileScannerDBPasswordExtension returns an extension that takes care of creating the scanner-db-password
 // secret ahead of time.
-func ReconcileScannerDBPasswordExtension(client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileScannerDBPassword, client, apiReader)
+func ReconcileScannerDBPasswordExtension(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileScannerDBPassword, client, direct)
 }
 
-func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
-	return commonExtensions.ReconcileScannerDBPassword(ctx, c, client, apiReader)
+func reconcileScannerDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+	return commonExtensions.ReconcileScannerDBPassword(ctx, c, client, direct)
 }
