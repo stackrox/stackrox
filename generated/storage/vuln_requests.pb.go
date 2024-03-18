@@ -426,8 +426,8 @@ func (m *FalsePositiveRequest) Clone() *FalsePositiveRequest {
 }
 
 type DeferralUpdate struct {
-	CVEs                 []string       `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty"`
-	Expiry               *RequestExpiry `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	CVEs                 []string       `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"Deferral Update CVEs"`     // @gotags: search:"Deferral Update CVEs"
+	Expiry               *RequestExpiry `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty" search:"-"` // @gotags: search:"-"
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -499,7 +499,7 @@ func (m *DeferralUpdate) Clone() *DeferralUpdate {
 }
 
 type FalsePositiveUpdate struct {
-	CVEs                 []string `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty"`
+	CVEs                 []string `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"False Positive Update CVEs"` // @gotags: search:"False Positive Update CVEs"
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -806,7 +806,7 @@ type VulnerabilityRequest_UpdatedDeferralReq struct {
 	UpdatedDeferralReq *DeferralRequest `protobuf:"bytes,21,opt,name=updated_deferral_req,json=updatedDeferralReq,proto3,oneof" json:"updated_deferral_req,omitempty" search:"-"` // @gotags: search:"-"
 }
 type VulnerabilityRequest_DeferralUpdate struct {
-	DeferralUpdate *DeferralUpdate `protobuf:"bytes,22,opt,name=deferral_update,json=deferralUpdate,proto3,oneof" json:"deferral_update,omitempty" search:"-"` // @gotags: search:"-"
+	DeferralUpdate *DeferralUpdate `protobuf:"bytes,22,opt,name=deferral_update,json=deferralUpdate,proto3,oneof" json:"deferral_update,omitempty"`
 }
 type VulnerabilityRequest_FalsePositiveUpdate struct {
 	FalsePositiveUpdate *FalsePositiveUpdate `protobuf:"bytes,23,opt,name=false_positive_update,json=falsePositiveUpdate,proto3,oneof" json:"false_positive_update,omitempty"`
