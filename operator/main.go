@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
+	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -38,9 +39,13 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	rawZap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	coreV1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -149,6 +154,7 @@ func run() error {
 		webhookServer = webhook.NewServer(getWebhookOptions(tlsOpts))
 	}
 
+	cacheLabelSelector := labels.SelectorFromSet(commonLabels.DefaultLabels())
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: server.Options{
@@ -156,6 +162,19 @@ func run() error {
 			SecureServing:  true,
 			FilterProvider: filters.WithAuthenticationAndAuthorization,
 			TLSOpts:        tlsOpts,
+		},
+		Cache: cache.Options{
+			// Limit caching of Secret and ConfigMaps to labeled
+			// resources because those are usually the objects
+			// with highest impact on memory consumption
+			ByObject: map[ctrlClient.Object]cache.ByObject{
+				&coreV1.Secret{}: {
+					Label: cacheLabelSelector,
+				},
+				&coreV1.ConfigMap{}: {
+					Label: cacheLabelSelector,
+				},
+			},
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
