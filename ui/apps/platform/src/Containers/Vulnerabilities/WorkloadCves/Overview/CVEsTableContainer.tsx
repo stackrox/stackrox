@@ -13,15 +13,13 @@ import { VulnerabilityState } from 'types/cve.proto';
 
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
-import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../../types';
+import { VulnerabilitySeverityLabel } from '../../types';
 import {
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
-    parseQuerySearchFilter,
+    parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
-import { defaultCVESortFields, CVEsDefaultSort } from '../../utils/sortUtils';
-import TableEntityToolbar from '../components/TableEntityToolbar';
+import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
@@ -29,31 +27,29 @@ import CompletedExceptionRequestModal from '../../components/ExceptionRequestMod
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
-    defaultFilters: DefaultFilters;
-    countsData: EntityCounts;
+    filterToolbar: TableEntityToolbarProps['filterToolbar'];
+    entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
+    rowCount: number;
     vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
+    sort: ReturnType<typeof useURLSort>;
     isUnifiedDeferralsEnabled: boolean; // TODO Remove this when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
-    onEntityTabChange: (entityTab: EntityTab) => void;
 };
 
 function CVEsTableContainer({
-    defaultFilters,
-    countsData,
+    filterToolbar,
+    entityToggleGroup,
+    rowCount,
     vulnerabilityState,
     pagination,
+    sort,
     isUnifiedDeferralsEnabled,
-    onEntityTabChange,
 }: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
     const isFiltered = getHasSearchApplied(querySearchFilter);
-    const { page, perPage, setPage } = pagination;
-    const { sortOption, getSortParams, setSortOption } = useURLSort({
-        sortFields: defaultCVESortFields,
-        defaultSortOption: CVEsDefaultSort,
-        onSort: () => setPage(1),
-    });
+    const { page, perPage } = pagination;
+    const { sortOption, getSortParams } = sort;
 
     const { error, loading, data, previousData } = useQuery(cveListQuery, {
         variables: {
@@ -107,13 +103,11 @@ function CVEsTableContainer({
                 />
             )}
             <TableEntityToolbar
-                defaultFilters={defaultFilters}
-                countsData={countsData}
-                setSortOption={setSortOption}
+                filterToolbar={filterToolbar}
+                entityToggleGroup={entityToggleGroup}
                 pagination={pagination}
-                tableRowCount={countsData.imageCVECount}
+                tableRowCount={rowCount}
                 isFiltered={isFiltered}
-                onEntityTabChange={onEntityTabChange}
             >
                 {canSelectRows && (
                     <ToolbarItem alignment={{ default: 'alignRight' }}>

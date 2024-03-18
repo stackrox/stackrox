@@ -22,7 +22,7 @@ import { VulnerabilitySeverityLabel } from '../../types';
 import { getEntityPagePath } from '../../utils/searchUtils';
 import TooltipTh from '../components/TooltipTh';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import DateDistance from '../../components/DateDistance';
 import CvssFormatted from '../../components/CvssFormatted';
 import {

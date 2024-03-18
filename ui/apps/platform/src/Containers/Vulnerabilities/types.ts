@@ -58,13 +58,15 @@ export function isDetailsTab(value: unknown): value is DetailsTab {
     return detailsTabValues.some((tab) => tab === value);
 }
 
-export const entityTabValues = ['CVE', 'Image', 'Deployment'] as const;
+export const workloadEntityTabValues = ['CVE', 'Image', 'Deployment'] as const;
 
-export type EntityTab = (typeof entityTabValues)[number];
+export type WorkloadEntityTab = (typeof workloadEntityTabValues)[number];
 
-export function isValidEntityTab(value: unknown): value is EntityTab {
-    return entityTabValues.some((tab) => tab === value);
+export function isValidWorkloadEntityTab(value: unknown): value is WorkloadEntityTab {
+    return workloadEntityTabValues.some((tab) => tab === value);
 }
+
+export type EntityTab = WorkloadEntityTab;
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 
