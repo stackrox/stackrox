@@ -19,7 +19,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - ROX-18969: Added a label selector for the caching configuration of secrets and configmaps to the operator.
   - Reduces memory consumption of the operator significantly, especially on large clusters. (28% on a fresh OCP cluster)
-  - Slightly increases number of requests sent to the API server to get secrets that are not managed by the operator and don't match the cache label selector.
+  - Increases number of requests sent to the API server to get secrets that are not managed by the operator and don't match the cache label selector.
   - Adds a label `app.stackrox.io/managed-by: operator` to all helm chart resources and secrets created by the operator
 
 ## [4.4.0]
