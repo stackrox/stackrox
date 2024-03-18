@@ -58,14 +58,15 @@ var (
 // Config represents the Scanner configuration parameters.
 type Config struct {
 	// StackRoxServices indicates the Scanner is deployed alongside StackRox services.
-	StackRoxServices bool          `yaml:"stackrox_services"`
-	Indexer          IndexerConfig `yaml:"indexer"`
-	Matcher          MatcherConfig `yaml:"matcher"`
-	HTTPListenAddr   string        `yaml:"http_listen_addr"`
-	GRPCListenAddr   string        `yaml:"grpc_listen_addr"`
-	MTLS             MTLSConfig    `yaml:"mtls"`
-	Proxy            ProxyConfig   `yaml:"proxy"`
-	LogLevel         LogLevel      `yaml:"log_level"`
+	StackRoxServices bool              `yaml:"stackrox_services"`
+	Indexer          IndexerConfig     `yaml:"indexer"`
+	Matcher          MatcherConfig     `yaml:"matcher"`
+	NodeIndexer      NodeIndexerConfig `yaml:"nodeindexer"`
+	HTTPListenAddr   string            `yaml:"http_listen_addr"`
+	GRPCListenAddr   string            `yaml:"grpc_listen_addr"`
+	MTLS             MTLSConfig        `yaml:"mtls"`
+	Proxy            ProxyConfig       `yaml:"proxy"`
+	LogLevel         LogLevel          `yaml:"log_level"`
 }
 
 func (c *Config) validate() error {

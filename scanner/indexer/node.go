@@ -7,10 +7,12 @@ import (
 	"os"
 	"time"
 
+	"errors"
+
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
+	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
@@ -34,20 +36,14 @@ type localNodeIndexer struct {
 	getIndexerTimeout time.Duration
 }
 
-func (l *localNodeIndexer) IndexNode(ctx context.Context, basePath string) (*claircore.IndexReport, error) {
-	//TODO implement me
-	zlog.Info(ctx).Msg("Would call index node now!")
-	return nil, errors.New("Not implemented")
-}
-
-func NewNodeIndexer(ctx context.Context, cfg config.IndexerConfig) (NodeIndexer, error) {
+func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeIndexer, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewNodeIndexer")
 
 	var success bool
 
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindexNodeIndex")
 	if err != nil {
-		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
+		return nil, fmt.Errorf("connecting to postgres for nodeindexer: %w", err)
 	}
 	defer func() {
 		if !success {
@@ -95,7 +91,7 @@ func NewNodeIndexer(ctx context.Context, cfg config.IndexerConfig) (NodeIndexer,
 		Transport: t,
 	}
 
-	indexer, err := newLibindex(ctx, cfg, client, root, store, locker)
+	indexer, err := newNodeLibindex(ctx, cfg, client, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +101,49 @@ func NewNodeIndexer(ctx context.Context, cfg config.IndexerConfig) (NodeIndexer,
 		libIndex:          indexer,
 		pool:              pool,
 		root:              root,
-		getIndexerTimeout: time.Duration(cfg.GetLayerTimeout),
+		getIndexerTimeout: time.Duration(1 * time.Second),
 	}, nil
+}
+
+func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *http.Client, mountPath string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+	opts := libindex.Options{
+		Store:                store,
+		Locker:               locker,
+		FetchArena:           NewNodeArena(client, mountPath), // FIXME: Actually implement FetchArena
+		ScanLockRetry:        libindex.DefaultScanLockRetry,
+		LayerScanConcurrency: 1,
+		NoLayerValidation:    true,
+		ControllerFactory:    nil,
+		Ecosystems:           ecosystems(ctx),
+		ScannerConfig: struct {
+			Package, Dist, Repo, File map[string]func(interface{}) error
+		}{},
+		Resolvers: nil,
+	}
+
+	indexer, err := libindex.New(ctx, &opts, client)
+	if err != nil {
+		return nil, fmt.Errorf("creating libindex: %w", err)
+	}
+
+	return indexer, nil
+}
+
+// IndexNode indexes a live fs.FS at the container mountpoint given in the basePath.
+func (l *localNodeIndexer) IndexNode(ctx context.Context, basePath string) (*claircore.IndexReport, error) {
+	//FIXME: implement me
+	zlog.Info(ctx).Str("basePath", basePath).Msg("Would call index node now")
+	return nil, errors.New("not implemented")
+}
+
+// Closes the NodeIndexer.
+func (l *localNodeIndexer) Close(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/nodeindexer.Close")
+	err := errors.Join(l.libIndex.Close(ctx)) //, os.RemoveAll(l.root)) // FIXME: Close fs.FS here!
+	return err
+}
+
+// Ready check function.
+func (l *localNodeIndexer) Ready(_ context.Context) error {
+	return nil
 }
