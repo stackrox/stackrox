@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -15,10 +16,14 @@ import (
 )
 
 func TestExcludedScopes(t *testing.T) {
-	defer teardownTestExcludedScopes(t)
-	setupNginxLatestTagDeployment(t)
-	verifyNoAlertForExcludedScopes(t)
-	verifyAlertForExcludedScopesRemoval(t)
+	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
+
+	setupDeployment(t, "nginx", deploymentName)
+	defer teardownDeploymentWithoutCheck(deploymentName)
+	waitForDeployment(t, deploymentName)
+
+	verifyNoAlertForExcludedScopes(t, deploymentName)
+	verifyAlertForExcludedScopesRemoval(t, deploymentName)
 }
 
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
@@ -43,7 +48,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 
-func verifyNoAlertForExcludedScopes(t *testing.T) {
+func verifyNoAlertForExcludedScopes(t *testing.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
@@ -66,7 +71,7 @@ func verifyNoAlertForExcludedScopes(t *testing.T) {
 	latestPolicy.Exclusions = []*storage.Exclusion{
 		{
 			Deployment: &storage.Exclusion_Deployment{
-				Name: nginxDeploymentName,
+				Name: deploymentName,
 			},
 		},
 	}
@@ -75,14 +80,14 @@ func verifyNoAlertForExcludedScopes(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 	alertService := v1.NewAlertServiceClient(conn)
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 0)
 }
 
-func verifyAlertForExcludedScopesRemoval(t *testing.T) {
+func verifyAlertForExcludedScopesRemoval(t *testing.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
@@ -111,13 +116,9 @@ func verifyAlertForExcludedScopesRemoval(t *testing.T) {
 
 	alertService := v1.NewAlertServiceClient(conn)
 
-	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 	// Wait for alert to be removed now that it is excluded
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 1)
-}
-
-func teardownTestExcludedScopes(t *testing.T) {
-	teardownNginxLatestTagDeployment(t)
 }
