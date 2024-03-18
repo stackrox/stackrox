@@ -39,6 +39,12 @@ type listenerImpl struct {
 	storeProvider      *resources.StoreProvider
 	mayCreateHandlers  concurrency.Signal
 	context            context.Context
+	stopCallback       func(string)
+}
+
+// SetStopCallback to be used in case Sensor needs to be gracefully restarted.
+func (k *listenerImpl) SetStopCallback(fn func(string)) {
+	k.stopCallback = fn
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {

@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"time"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
@@ -51,6 +53,35 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 	return obj, nil
 }
 
+func watchComplianceAPIResources(cli client.Interface, stop *concurrency.Signal, stopCallback func(string)) {
+	featureDisabledMsg := "Sensor will not watch for the presence of Compliance CRDs. If the Compliance Operator is deployed in the cluster, Sensor will require a manual restart"
+	if env.ComplianceCRDsWatchTimer.DurationSetting() == 0 {
+		log.Warnf("%s is set to zero", env.ComplianceCRDsWatchTimer.EnvVar())
+		log.Info(featureDisabledMsg)
+		return
+	}
+	if stopCallback == nil {
+		log.Warn("The stop callback is nil")
+		log.Info(featureDisabledMsg)
+		return
+	}
+	log.Infof("Starting the Compliance CRDs watcher with interval %v", env.ComplianceCRDsWatchTimer.DurationSetting())
+	ticker := time.NewTicker(env.ComplianceCRDsWatchTimer.DurationSetting())
+	for {
+		select {
+		case <-stop.Done():
+			return
+		case <-ticker.C:
+			if resourceList, err := serverResourcesForGroup(cli, complianceoperator.GetGroupVersion().String()); err != nil {
+				continue
+			} else if resourceExists(resourceList, complianceoperator.ComplianceCheckResult.Name) {
+				stopCallback("Compliance Operator CRDs detected. Gracefully restarting sensor...")
+				return
+			}
+		}
+	}
+}
+
 func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
@@ -78,6 +109,7 @@ func (k *listenerImpl) handleAllEvents() {
 	var profileLister cache.GenericLister
 	if resourceList, err := serverResourcesForGroup(k.client, complianceoperator.GetGroupVersion().String()); err != nil {
 		log.Errorf("Checking API resources for group %q: %v", complianceoperator.GetGroupVersion().String(), err)
+		go watchComplianceAPIResources(k.client, &k.stopSig, k.stopCallback)
 	} else if resourceExists(resourceList, complianceoperator.ComplianceCheckResult.Name) {
 		log.Info("initializing compliance operator informers")
 		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)

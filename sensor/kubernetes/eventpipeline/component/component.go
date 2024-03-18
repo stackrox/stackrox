@@ -48,4 +48,5 @@ type OutputQueue interface {
 type ContextListener interface {
 	PipelineComponent
 	StartWithContext(context.Context) error
+	SetStopCallback(func(string))
 }

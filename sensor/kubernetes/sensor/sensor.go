@@ -58,6 +58,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
+type stopCallbackSetter interface {
+	SetStopCallback(func(string))
+}
+
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
@@ -207,6 +211,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.centralConnFactory,
 		components...,
 	)
+	if pipelineImpl, ok := pipeline.(stopCallbackSetter); ok {
+		pipelineImpl.SetStopCallback(func(msg string) {
+			log.Info(msg)
+			s.Stop()
+		})
+	}
 
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
