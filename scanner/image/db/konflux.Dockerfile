@@ -38,8 +38,9 @@ RUN dnf upgrade -y --nobest && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
-ENV PG_MAJOR=15 \
-    PGDATA="/var/lib/postgresql/data/pgdata"
+ENV LANG=en_US.utf8
+
+STOPSIGNAL SIGINT
 
 USER 70:70
 
