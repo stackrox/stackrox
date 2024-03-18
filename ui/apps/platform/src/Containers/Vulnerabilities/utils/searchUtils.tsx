@@ -74,7 +74,7 @@ export function severityLabelToSeverity(label: VulnerabilitySeverityLabel): Vuln
  * Parses an open `SearchFilter` obtained from the URL into a restricted `SearchFilter` that
  * matches the fields and values expected by the backend.
  */
-export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySearchFilter {
+export function parseWorkloadQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySearchFilter {
     const cleanSearchFilter: QuerySearchFilter = {};
 
     // SearchFilter values that can be directly translated over to the backend equivalent

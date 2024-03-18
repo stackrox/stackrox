@@ -20,7 +20,7 @@ import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
 import { getEntityPagePath } from '../../utils/searchUtils';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,

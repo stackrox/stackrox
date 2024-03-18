@@ -1,21 +1,7 @@
 import sortBy from 'lodash/sortBy';
 import { ensureExhaustive } from 'utils/type.utils';
-import { SortAggregate } from 'types/table';
-import { EntityTab } from '../types';
-
-export const defaultImageSortFields = [
-    'Image',
-    'Image OS',
-    'Image created time',
-    'Image scan time',
-];
-
-export const imagesDefaultSort = {
-    field: 'Image',
-    direction: 'desc',
-} as const;
-
-export const defaultCVESortFields = ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
+import { SortAggregate, SortOption } from 'types/table';
+import { WorkloadEntityTab } from '../types';
 
 export const aggregateByCVSS: SortAggregate = {
     aggregateFunc: 'max',
@@ -30,27 +16,37 @@ export const aggregateByCreatedTime: SortAggregate = {
     aggregateFunc: 'min',
 };
 
-export const CVEsDefaultSort = {
-    field: 'CVSS',
-    aggregateBy: aggregateByCVSS,
-    direction: 'desc',
-} as const;
-
-export const defaultDeploymentSortFields = ['Deployment', 'Cluster', 'Namespace', 'Created'];
-
-export const deploymentsDefaultSort = {
-    field: 'Deployment',
-    direction: 'asc',
-} as const;
-
-export function getDefaultSortOption(entityTab: EntityTab) {
+/**
+ * Get the available sort fields for a given Workload CVE entity
+ * @param entityTab The chosen entity
+ * @returns The available sort fields
+ */
+export function getWorkloadSortFields(entityTab: WorkloadEntityTab): string[] {
     switch (entityTab) {
         case 'CVE':
-            return CVEsDefaultSort;
-        case 'Deployment':
-            return deploymentsDefaultSort;
+            return ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
-            return imagesDefaultSort;
+            return ['Image', 'Image OS', 'Image created time', 'Image scan time'];
+        case 'Deployment':
+            return ['Deployment', 'Cluster', 'Namespace', 'Created'];
+        default:
+            return ensureExhaustive(entityTab);
+    }
+}
+
+/**
+ *  Get the default table sort option for a given Workload CVE entity
+ * @param entityTab The chosen entity
+ * @returns The default sort option
+ */
+export function getDefaultWorkloadSortOption(entityTab: WorkloadEntityTab): SortOption {
+    switch (entityTab) {
+        case 'CVE':
+            return { field: 'CVSS', aggregateBy: aggregateByCVSS, direction: 'desc' };
+        case 'Deployment':
+            return { field: 'Deployment', direction: 'asc' };
+        case 'Image':
+            return { field: 'Image', direction: 'desc' };
         default:
             return ensureExhaustive(entityTab);
     }
