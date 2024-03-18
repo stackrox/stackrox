@@ -38,7 +38,10 @@ spec:
   #   value: "true"
   # TODO: Enable prefetching - will be done as part of ROX-20160.
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" }
+      ]
   - name: build-source-image
     value: 'true'
 
@@ -60,6 +63,26 @@ spec:
   - name: subscription-manager-activation-key
     secret:
       secretName: subscription-manager-activation-key
+
+  taskRunSpecs:
+  - pipelineTaskName: build-container
+    stepSpecs:
+    # Provision more CPU to speed up build compared to the defaults.
+    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
+    - name: build
+      computeResources:
+        limits:
+          cpu: 4
+        requests:
+          cpu: 4
+  - pipelineTaskName: clamav-scan
+    stepSpecs:
+    # Provision more CPU to speed up ClamAV scan compared to the defaults.
+    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/clamav-scan/0.1/clamav-scan.yaml#L48
+    - name: extract-and-scan-image
+      computeResources:
+        requests:
+          cpu: 1
 
   pipelineSpec:
 
@@ -277,10 +300,12 @@ spec:
       - prefetch-dependencies
       taskRef:
         params:
+        # buildah with more memory is needed for UI builds to succeed. Otherwise, there's an error like this in logs:
+        # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
         - name: name
-          value: buildah
+          value: buildah-6gb
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:e1e6c6308b8c7d5aa2faa02129af7fcc9e8dc4bbfe741c1acab5c9edca28fb77
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-6gb:0.1@sha256:22f12f318163afe03c1feacef61fe858adf9be5fbc8dae345eda175deedef1aa
         - name: kind
           value: task
         resolver: bundles
