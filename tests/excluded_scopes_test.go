@@ -20,8 +20,7 @@ func TestExcludedScopes(t *testing.T) {
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
 	setupDeployment(t, "nginx", deploymentName)
-	// TODO: TESTING: If leftover will cause other tests to fail!!!
-	//defer teardownTestExcludedScopes(deploymentName)
+	defer teardownTestExcludedScopes(deploymentName)
 	waitForDeployment(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
