@@ -19,7 +19,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Added a label selector for caching secrets and configmaps to the operator.
   - Reduces memory consumption of the operator significantly, especially on large clusters. (28% on a fresh OCP cluster)
-  - Slightly increases requests send to the API server to get secrets that not match the cache label selector
+  - Slightly increases requests send to the API server to get secrets that are not managed by the operator and don't match the cache label selector
 
 ## [4.4.0]
 
