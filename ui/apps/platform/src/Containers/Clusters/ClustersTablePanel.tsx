@@ -412,7 +412,7 @@ function ClustersTablePanel({
                             )}
                             {hasAdminRole && (
                                 <ToolbarItem>
-                                    <Button variant="tertiary">
+                                    <Button variant="secondary">
                                         <ManageTokensButton />
                                     </Button>
                                 </ToolbarItem>
