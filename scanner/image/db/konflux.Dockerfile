@@ -20,11 +20,13 @@ USER root
 
 COPY --chown=postgres:postgres \
      scanner/image/db/scripts/docker-entrypoint.sh \
+     scanner/image/db/scripts/init-entrypoint.sh \
      /usr/local/bin/
 
 COPY db-init.dump.zst /db-init.dump.zst
 
 RUN dnf upgrade -y --nobest && \
+    dnf install -y zstd && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
     groupmod -g 70 postgres && \
@@ -39,9 +41,10 @@ RUN dnf upgrade -y --nobest && \
 ENV PG_MAJOR=15 \
     PGDATA="/var/lib/postgresql/data/pgdata"
 
+USER 70:70
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 5432
 CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
 
-USER 70:70
