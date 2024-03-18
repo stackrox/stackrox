@@ -12,6 +12,7 @@ scanner:
     minReplicas: null # int
     maxReplicas: null # int
   affinity: null # dict
+  dbAffinity: null # dict
   priorityClassName: null # string
   dbPriorityClassName: null # string
   resources: null # string | dict
