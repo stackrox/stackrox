@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/kuttl
 
 go 1.19
 
-require github.com/kudobuilder/kuttl v0.15.1-0.20240201073944-c735bec25959
+require github.com/kudobuilder/kuttl v0.15.1-0.20240314095807-ad66f0338e71
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
