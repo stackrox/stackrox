@@ -89,8 +89,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	}
 
 	if secret != nil {
-		err := r.updateExisting(ctx, secret, validate, generate)
-		return err
+		return r.updateExisting(ctx, secret, validate, generate)
 	}
 
 	// Try to generate the secret, in order to fix it.
@@ -110,11 +109,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 		Data: data,
 	}
 
-	if err := r.Client().Create(ctx, newSecret); err != nil {
-		return errors.Wrapf(err, "creating new %s secret failed", name)
-	}
-
-	return nil
+	return errors.Wrapf(r.Client().Create(ctx, newSecret), "creating new %s secret failed", name)
 }
 
 func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1.Secret, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
@@ -146,11 +141,7 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		return nil
 	}
 
-	if err := r.client.Update(ctx, secret); err != nil {
-		return errors.Wrapf(err, "updating secret %s/%s", secret.Namespace, secret.Name)
-	}
-
-	return nil
+	return errors.Wrapf(r.client.Update(ctx, secret), "updating secret %s/%s", secret.Namespace, secret.Name)
 }
 
 func generateError(err error, secretName, extraInfo string) error {

@@ -28,7 +28,7 @@ func RemoveOwnerRef(obj metav1.Object, owner metav1.Object) {
 func GetWithFallbackToUncached(ctx context.Context, client ctrlClient.Client, uncached ctrlClient.Reader, key ctrlClient.ObjectKey, obj ctrlClient.Object) error {
 	if err := client.Get(ctx, key, obj); err != nil {
 		if !apiErrors.IsNotFound(err) {
-			return errors.Wrapf(err, "checking existence of %s object", key.Name)
+			return errors.Wrapf(err, "retrieving %s failed", key.Name)
 		}
 		return uncached.Get(ctx, key, obj)
 	}

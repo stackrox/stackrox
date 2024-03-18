@@ -50,7 +50,7 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	s.Require().NoError(err)
 
 	fc := newDefaultFakeClient(s.T())
-	translator := Translator{client: fc, direct: newDefaultFakeClient(s.T())}
+	translator := Translator{client: fc, direct: fc}
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
