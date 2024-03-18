@@ -141,10 +141,6 @@ func DescriptionComparator(first, second *storage.Policy) bool {
 	return strings.TrimSpace(first.GetDescription()) == strings.TrimSpace(second.GetDescription())
 }
 
-var (
-	policyBucketName = []byte("policies")
-)
-
 // ReadPolicyFromFile reads policies from file given the path and the collection of files.
 func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 	contents, err := fs.ReadFile(filePath)
