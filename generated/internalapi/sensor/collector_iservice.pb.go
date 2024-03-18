@@ -129,17 +129,72 @@ func (m *MsgToCollector) Clone() *MsgToCollector {
 	return cloned
 }
 
-type MsgFromCollector struct {
+type RuntimeFiltersRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RuntimeFiltersRequest) Reset()         { *m = RuntimeFiltersRequest{} }
+func (m *RuntimeFiltersRequest) String() string { return proto.CompactTextString(m) }
+func (*RuntimeFiltersRequest) ProtoMessage()    {}
+func (*RuntimeFiltersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6ac8c5c7ee64002d, []int{1}
+}
+func (m *RuntimeFiltersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RuntimeFiltersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RuntimeFiltersRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RuntimeFiltersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RuntimeFiltersRequest.Merge(m, src)
+}
+func (m *RuntimeFiltersRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *RuntimeFiltersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RuntimeFiltersRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RuntimeFiltersRequest proto.InternalMessageInfo
+
+func (m *RuntimeFiltersRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *RuntimeFiltersRequest) Clone() *RuntimeFiltersRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(RuntimeFiltersRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+type MsgFromCollector struct {
+	// Types that are valid to be assigned to Msg:
+	//	*MsgFromCollector_RuntimeFiltersRequest
+	Msg                  isMsgFromCollector_Msg `protobuf_oneof:"msg"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
 func (m *MsgFromCollector) Reset()         { *m = MsgFromCollector{} }
 func (m *MsgFromCollector) String() string { return proto.CompactTextString(m) }
 func (*MsgFromCollector) ProtoMessage()    {}
 func (*MsgFromCollector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6ac8c5c7ee64002d, []int{1}
+	return fileDescriptor_6ac8c5c7ee64002d, []int{2}
 }
 func (m *MsgFromCollector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -168,6 +223,50 @@ func (m *MsgFromCollector) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgFromCollector proto.InternalMessageInfo
 
+type isMsgFromCollector_Msg interface {
+	isMsgFromCollector_Msg()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isMsgFromCollector_Msg
+}
+
+type MsgFromCollector_RuntimeFiltersRequest struct {
+	RuntimeFiltersRequest *RuntimeFiltersRequest `protobuf:"bytes,1,opt,name=runtime_filters_request,json=runtimeFiltersRequest,proto3,oneof" json:"runtime_filters_request,omitempty"`
+}
+
+func (*MsgFromCollector_RuntimeFiltersRequest) isMsgFromCollector_Msg() {}
+func (m *MsgFromCollector_RuntimeFiltersRequest) Clone() isMsgFromCollector_Msg {
+	if m == nil {
+		return nil
+	}
+	cloned := new(MsgFromCollector_RuntimeFiltersRequest)
+	*cloned = *m
+
+	cloned.RuntimeFiltersRequest = m.RuntimeFiltersRequest.Clone()
+	return cloned
+}
+
+func (m *MsgFromCollector) GetMsg() isMsgFromCollector_Msg {
+	if m != nil {
+		return m.Msg
+	}
+	return nil
+}
+
+func (m *MsgFromCollector) GetRuntimeFiltersRequest() *RuntimeFiltersRequest {
+	if x, ok := m.GetMsg().(*MsgFromCollector_RuntimeFiltersRequest); ok {
+		return x.RuntimeFiltersRequest
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*MsgFromCollector) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*MsgFromCollector_RuntimeFiltersRequest)(nil),
+	}
+}
+
 func (m *MsgFromCollector) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -178,11 +277,15 @@ func (m *MsgFromCollector) Clone() *MsgFromCollector {
 	cloned := new(MsgFromCollector)
 	*cloned = *m
 
+	if m.Msg != nil {
+		cloned.Msg = m.Msg.Clone()
+	}
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*MsgToCollector)(nil), "sensor.MsgToCollector")
+	proto.RegisterType((*RuntimeFiltersRequest)(nil), "sensor.RuntimeFiltersRequest")
 	proto.RegisterType((*MsgFromCollector)(nil), "sensor.MsgFromCollector")
 }
 
@@ -191,23 +294,25 @@ func init() {
 }
 
 var fileDescriptor_6ac8c5c7ee64002d = []byte{
-	// 243 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0xce, 0xcc, 0x2b, 0x49,
-	0x2d, 0xca, 0x4b, 0xcc, 0x49, 0x2c, 0xc8, 0xd4, 0x2f, 0x4e, 0xcd, 0x2b, 0xce, 0x2f, 0xd2, 0x4f,
-	0xce, 0xcf, 0xc9, 0x49, 0x4d, 0x2e, 0xc9, 0x2f, 0x8a, 0xcf, 0x2c, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c,
-	0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x83, 0x28, 0x90, 0xd2, 0x44, 0xd6, 0x94,
-	0x9c, 0x9a, 0x57, 0x52, 0x94, 0x98, 0xa3, 0x5f, 0x54, 0x9a, 0x57, 0x92, 0x99, 0x9b, 0x1a, 0x9f,
-	0x96, 0x99, 0x53, 0x92, 0x5a, 0x54, 0x0c, 0xd1, 0xa2, 0x94, 0xc7, 0xc5, 0xe7, 0x5b, 0x9c, 0x1e,
-	0x92, 0xef, 0x0c, 0x33, 0x53, 0x28, 0x94, 0x4b, 0x0c, 0x4d, 0x69, 0x7c, 0x69, 0x41, 0x4a, 0x62,
-	0x49, 0xaa, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0xb7, 0x91, 0xac, 0x1e, 0xd4, 0x44, 0xbd, 0x20, 0x88,
-	0x32, 0x37, 0x88, 0xaa, 0x50, 0xb0, 0x22, 0x0f, 0x86, 0x20, 0x91, 0x22, 0x2c, 0xe2, 0x4e, 0xac,
-	0x5c, 0xcc, 0xb9, 0xc5, 0xe9, 0x4a, 0x42, 0x5c, 0x02, 0xbe, 0xc5, 0xe9, 0x6e, 0x45, 0xf9, 0xb9,
-	0x70, 0x1b, 0x8d, 0x22, 0xb9, 0x04, 0xe0, 0x9c, 0x60, 0x88, 0x87, 0x84, 0x5c, 0xb9, 0xb8, 0x9d,
-	0xf3, 0x73, 0x73, 0x4b, 0xf3, 0x32, 0x93, 0x13, 0x4b, 0x52, 0x85, 0x24, 0xf4, 0x20, 0x5e, 0xd3,
-	0x43, 0xd7, 0x2c, 0x85, 0x53, 0x46, 0x83, 0xd1, 0x80, 0xd1, 0x49, 0xe2, 0xc4, 0x23, 0x39, 0xc6,
-	0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf1, 0x58, 0x8e, 0x21, 0x0a, 0x1a, 0x46,
-	0x49, 0x6c, 0x60, 0xff, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x05, 0x1a, 0xe2, 0x88, 0x61,
-	0x01, 0x00, 0x00,
+	// 278 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0x4f, 0x4a, 0xc3, 0x40,
+	0x14, 0xc6, 0x3b, 0x88, 0x5d, 0x4c, 0x41, 0x4a, 0xb0, 0x36, 0x14, 0x0c, 0x92, 0x55, 0x45, 0x48,
+	0xa4, 0xde, 0xa0, 0xc5, 0xd2, 0x4d, 0x37, 0xd1, 0x22, 0xba, 0x09, 0xe3, 0xf8, 0x0c, 0x03, 0xf3,
+	0x27, 0xbe, 0x99, 0x78, 0x16, 0x8f, 0xe4, 0xd2, 0x23, 0x48, 0xbc, 0x88, 0xd0, 0x49, 0xab, 0x86,
+	0xb8, 0xcd, 0xfb, 0x7d, 0xdf, 0xfb, 0xe5, 0x0d, 0xbd, 0x10, 0xda, 0x01, 0x6a, 0x26, 0x59, 0x29,
+	0x52, 0x0b, 0xda, 0x1a, 0x4c, 0xb9, 0x91, 0x12, 0xb8, 0x33, 0x98, 0x0b, 0x0b, 0xf8, 0x2a, 0x38,
+	0x24, 0x25, 0x1a, 0x67, 0x82, 0xbe, 0x07, 0x26, 0xe7, 0xbf, 0x43, 0x1c, 0xb4, 0x43, 0x26, 0x53,
+	0xac, 0xb4, 0x13, 0x0a, 0xf2, 0x67, 0x21, 0x1d, 0xa0, 0xf5, 0x91, 0x58, 0xd3, 0xa3, 0xb5, 0x2d,
+	0x6e, 0xcd, 0x62, 0xd7, 0x19, 0x6c, 0xe8, 0x49, 0x0b, 0xcd, 0xab, 0xf2, 0x89, 0x39, 0x08, 0xc9,
+	0x19, 0x99, 0x0e, 0x66, 0xa7, 0x49, 0xd3, 0x98, 0x64, 0x1e, 0x5b, 0x7a, 0x6a, 0xb3, 0x85, 0x56,
+	0xbd, 0xec, 0x18, 0x3b, 0xbe, 0xcf, 0x0f, 0xe9, 0x81, 0xb2, 0x45, 0x3c, 0xa6, 0xa3, 0xbf, 0xb1,
+	0x0c, 0x5e, 0x2a, 0xb0, 0x2e, 0x46, 0x3a, 0x5c, 0xdb, 0x62, 0x89, 0x46, 0xfd, 0xa8, 0xdc, 0xd1,
+	0x71, 0x5b, 0x05, 0x3d, 0xbe, 0x77, 0xf1, 0x7f, 0x9c, 0x74, 0x76, 0xae, 0x7a, 0xd9, 0x08, 0xbb,
+	0x06, 0x8d, 0xcc, 0xec, 0x9e, 0x0e, 0xf7, 0xcb, 0x6e, 0xfc, 0x25, 0x83, 0x6b, 0x3a, 0x58, 0x18,
+	0xa5, 0x2a, 0x2d, 0x38, 0x73, 0x10, 0x84, 0xbb, 0x0d, 0x6d, 0xb9, 0xc9, 0xbf, 0x93, 0x29, 0xb9,
+	0x24, 0xf3, 0xf0, 0xbd, 0x8e, 0xc8, 0x47, 0x1d, 0x91, 0xcf, 0x3a, 0x22, 0x6f, 0x5f, 0x51, 0xef,
+	0xa1, 0x79, 0x9c, 0xc7, 0xfe, 0xf6, 0xf0, 0x57, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xbe, 0x91,
+	0x9d, 0xbf, 0xda, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -379,6 +484,33 @@ func (m *MsgToCollector_RuntimeFiltersUpdate) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
+func (m *RuntimeFiltersRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RuntimeFiltersRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RuntimeFiltersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *MsgFromCollector) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -403,9 +535,39 @@ func (m *MsgFromCollector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.Msg != nil {
+		{
+			size := m.Msg.Size()
+			i -= size
+			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgFromCollector_RuntimeFiltersRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgFromCollector_RuntimeFiltersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.RuntimeFiltersRequest != nil {
+		{
+			size, err := m.RuntimeFiltersRequest.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCollectorIservice(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
 func encodeVarintCollectorIservice(dAtA []byte, offset int, v uint64) int {
 	offset -= sovCollectorIservice(v)
 	base := offset
@@ -444,7 +606,7 @@ func (m *MsgToCollector_RuntimeFiltersUpdate) Size() (n int) {
 	}
 	return n
 }
-func (m *MsgFromCollector) Size() (n int) {
+func (m *RuntimeFiltersRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -452,6 +614,34 @@ func (m *MsgFromCollector) Size() (n int) {
 	_ = l
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MsgFromCollector) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Msg != nil {
+		n += m.Msg.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MsgFromCollector_RuntimeFiltersRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RuntimeFiltersRequest != nil {
+		l = m.RuntimeFiltersRequest.Size()
+		n += 1 + l + sovCollectorIservice(uint64(l))
 	}
 	return n
 }
@@ -548,6 +738,57 @@ func (m *MsgToCollector) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *RuntimeFiltersRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCollectorIservice
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RuntimeFiltersRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RuntimeFiltersRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCollectorIservice(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCollectorIservice
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *MsgFromCollector) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -577,6 +818,41 @@ func (m *MsgFromCollector) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: MsgFromCollector: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeFiltersRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCollectorIservice
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCollectorIservice
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCollectorIservice
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &RuntimeFiltersRequest{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Msg = &MsgFromCollector_RuntimeFiltersRequest{v}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCollectorIservice(dAtA[iNdEx:])

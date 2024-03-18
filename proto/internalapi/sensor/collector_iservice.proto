@@ -12,7 +12,13 @@ message MsgToCollector {
   }
 }
 
-message MsgFromCollector {}
+message RuntimeFiltersRequest {}
+
+message MsgFromCollector {
+    oneof msg {
+        RuntimeFiltersRequest runtime_filters_request = 1;
+    }
+}
 
 service CollectorService {
   rpc Communicate(stream MsgFromCollector) returns (stream MsgFromCollector);
