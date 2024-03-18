@@ -65,7 +65,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	// currently connected to sensor.
 	// Note: Sensor is required to scan images in the local registry.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
-		// Central route
+		log.Debugf("Central route: CachedOnly: %b", !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline())
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      img,
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
@@ -76,7 +76,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 		return resp.GetImage(), nil
 	}
 
-	// Sensor route
+	log.Debugf("Sensor route: ScanInline: %b", s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline())
 	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
 		Image:      img,
 		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
