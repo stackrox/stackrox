@@ -19,6 +19,10 @@ import (
 // The tests in here are a subset of what exists in policy_migrator_test.go
 // The ones that were copied over have been updated to work with postgres.
 
+var (
+	policyID = "0000-0000-0000-0000"
+)
+
 func TestPostgresPolicyMigrator(t *testing.T) {
 	suite.Run(t, new(postgresPolicyMigratorTestSuite))
 }
@@ -208,4 +212,24 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 	}
 
 	s.comparePolicyWithDB(policyID, policy)
+}
+
+func testPolicy(id string) *storage.Policy {
+	return &storage.Policy{
+		Id:          id,
+		Name:        "name",
+		Remediation: "remediation",
+		Rationale:   "rationale",
+		Description: "description",
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{FieldName: "Process Name", BooleanOperator: storage.BooleanOperator_OR, Negate: false, Values: []*storage.PolicyValue{{Value: "iptables"}}},
+				},
+			},
+		},
+		Exclusions: []*storage.Exclusion{
+			{Name: "exclusion name", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace name"}}},
+		},
+	}
 }
