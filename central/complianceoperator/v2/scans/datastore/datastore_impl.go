@@ -17,7 +17,9 @@ func (d *datastoreImpl) GetScan(ctx context.Context, id string) (*storage.Compli
 	return d.store.Get(ctx, id)
 }
 
-// UpsertScan adds the scan object to the database
+// UpsertScan adds the scan object to the database.  If enabling the use of this
+// method from a service, the creation of the `ProfileRefID` and `ScanRefID` must be accounted for.  In reality this
+// method should only be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {
 	return d.store.Upsert(ctx, scan)
 }

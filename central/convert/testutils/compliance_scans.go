@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -63,7 +64,7 @@ func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
 		Errors:         "",
 		Warnings:       "",
 		Profile: &storage.ProfileShim{
-			ProfileId: profileID,
+			ProfileId: internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
 		},
 		Labels:       map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
 		Annotations:  nil,
@@ -76,5 +77,7 @@ func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
 		},
 		CreatedTime:      startTime,
 		LastExecutedTime: endTime,
+		ProductType:      "",
+		ScanRefId:        internaltov2storage.BuildScanRefID(fixtureconsts.Cluster1, "ocp-cis"),
 	}
 }

@@ -15,12 +15,14 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		})
 	}
 
+	productType := internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation]
+
 	return &storage.ComplianceOperatorProfileV2{
 		Id:             internalMsg.GetId(),
 		ProfileId:      internalMsg.GetProfileId(),
 		Name:           internalMsg.GetName(),
 		ProfileVersion: internalMsg.GetProfileVersion(),
-		ProductType:    internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation],
+		ProductType:    productType,
 		Labels:         internalMsg.GetLabels(),
 		Annotations:    internalMsg.GetAnnotations(),
 		Description:    internalMsg.GetDescription(),
@@ -29,5 +31,6 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		Title:          internalMsg.GetTitle(),
 		Values:         internalMsg.GetValues(),
 		ClusterId:      clusterID,
+		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
 	}
 }
