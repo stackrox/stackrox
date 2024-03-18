@@ -658,7 +658,7 @@
         ]
       }
     },
-    "/v2/compliance/scan/stats/profile": {
+    "/v2/compliance/scan/stats/profile/{profileName}": {
       "get": {
         "summary": "GetComplianceProfileScanStats lists current scan stats grouped by profile\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
         "operationId": "ComplianceResultsService_GetComplianceProfileStats",
@@ -679,8 +679,8 @@
         "parameters": [
           {
             "name": "profileName",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           },
           {

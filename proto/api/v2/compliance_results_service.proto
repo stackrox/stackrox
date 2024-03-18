@@ -176,7 +176,7 @@ service ComplianceResultsService {
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
   rpc GetComplianceProfileStats(ComplianceProfileResultsRequest) returns (ListComplianceProfileScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile"};
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile/{profile_name}"};
   }
 
   // GetComplianceProfileScanStats lists current scan stats grouped by profile
