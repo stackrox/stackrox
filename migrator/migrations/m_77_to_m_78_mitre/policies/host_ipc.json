@@ -1,6 +1,0 @@
-{
-  "id": "47cb9e0a-879a-417b-9a8f-de644d7c8a77",
-  "name": "Docker CIS 5.16: Ensure that the host's IPC namespace is not shared",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

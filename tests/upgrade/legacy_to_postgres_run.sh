@@ -14,8 +14,8 @@ set -euo pipefail
 # TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-LAST_POSTGRES_TAG="4.4.0-rc.9"
-LAST_POSTGRES_SHA="4b772ddf2348c90a90df1c3e7c9ce8fd08a459f2"
+LAST_POSTGRES_TAG="4.4.0"
+LAST_POSTGRES_SHA="9a475905b70cb7ce54dd54e2d77f88fd8a3c81be"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -201,6 +201,8 @@ helm_upgrade_to_last_postgres() {
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
+
+    make cli
 
     # Get opensource charts and convert to development_build to support release builds
     if is_CI; then
