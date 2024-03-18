@@ -25,13 +25,13 @@ const (
 )
 
 // ReconcileCentralDBPasswordExtension returns an extension that takes care of reconciling the central-db-password secret.
-func ReconcileCentralDBPasswordExtension(client ctrlClient.Client, apiReader ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralDBPassword, client, apiReader)
+func ReconcileCentralDBPasswordExtension(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralDBPassword, client, direct)
 }
 
-func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileCentralDBPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, apiReader, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 	}
 	return run.Execute(ctx)
@@ -52,9 +52,9 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 	passwordSecret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: passwordSecretName}
-	// using APIReader for uncached access because the operator might not own this secret
-	// thus we can't guarantee that labels are set properly for it to be in the cache
-	if err := r.APIReader().Get(ctx, key, passwordSecret); err != nil {
+	// Using UncachedClient for uncached access because the operator might not own this secret
+	// thus we can't guarantee that labels are set properly for it to be in the cache.
+	if err := r.UncachedClient().Get(ctx, key, passwordSecret); err != nil {
 		return errors.Wrapf(err, "failed to retrieve central db password secret %q", passwordSecretName)
 	}
 

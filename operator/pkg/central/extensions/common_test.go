@@ -61,7 +61,7 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 }
 
 // TODO(ROX-9453): Refactor this to be used also by Secured Cluster reconciler extensions.
-func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, apiReader ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
 	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "platform.stackrox.io/v1alpha1",

@@ -50,7 +50,7 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	s.Require().NoError(err)
 
 	fc := newDefaultFakeClient(s.T())
-	translator := Translator{client: fc, apiReader: newDefaultFakeClient(s.T())}
+	translator := Translator{client: fc, direct: fc}
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
@@ -92,7 +92,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	require.NoError(t, err)
 
 	fc := newDefaultFakeClient(t)
-	translator := Translator{client: fc, apiReader: fc}
+	translator := Translator{client: fc, direct: fc}
 	vals, err := translator.Translate(context.Background(), u)
 	require.NoError(t, err)
 
@@ -855,7 +855,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
-			translator := Translator{client: tt.args.client, apiReader: tt.args.client}
+			translator := Translator{client: tt.args.client, direct: tt.args.client}
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			require.NoError(t, err)
 
