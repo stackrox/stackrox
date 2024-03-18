@@ -226,6 +226,18 @@ func (m *MockContextListener) EXPECT() *MockContextListenerMockRecorder {
 	return m.recorder
 }
 
+// SetStopCallback mocks base method.
+func (m *MockContextListener) SetStopCallback(arg0 func(string)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetStopCallback", arg0)
+}
+
+// SetStopCallback indicates an expected call of SetStopCallback.
+func (mr *MockContextListenerMockRecorder) SetStopCallback(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStopCallback", reflect.TypeOf((*MockContextListener)(nil).SetStopCallback), arg0)
+}
+
 // Start mocks base method.
 func (m *MockContextListener) Start() error {
 	m.ctrl.T.Helper()
