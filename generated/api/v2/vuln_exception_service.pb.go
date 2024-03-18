@@ -1664,6 +1664,7 @@ type UpdateVulnerabilityExceptionRequest struct {
 	// REQUIRED. The rationale for updating the exception.
 	Comment string `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
 	// Types that are valid to be assigned to Update:
+	//
 	//	*UpdateVulnerabilityExceptionRequest_DeferralUpdate
 	//	*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate
 	Update               isUpdateVulnerabilityExceptionRequest_Update `protobuf_oneof:"update"`

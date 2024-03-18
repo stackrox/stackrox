@@ -22,7 +22,7 @@ func ComplianceOperatorScanObject(sensorData *central.ComplianceOperatorScanV2, 
 		ClusterId:      clusterID,
 		Errors:         sensorData.GetStatus().ErrorMessage,
 		Profile: &storage.ProfileShim{
-			ProfileId: sensorData.GetProfileId(),
+			ProfileId: BuildProfileRefID(clusterID, sensorData.GetProfileId(), sensorData.GetScanType()),
 		},
 		Labels:      sensorData.GetLabels(),
 		Annotations: sensorData.GetAnnotations(),
@@ -34,5 +34,7 @@ func ComplianceOperatorScanObject(sensorData *central.ComplianceOperatorScanV2, 
 		},
 		CreatedTime:      sensorData.GetStatus().GetStartTime(),
 		LastExecutedTime: sensorData.GetStatus().GetEndTime(),
+		ProductType:      sensorData.GetScanType(),
+		ScanRefId:        BuildScanRefID(clusterID, sensorData.GetName()),
 	}
 }

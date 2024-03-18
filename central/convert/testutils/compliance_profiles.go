@@ -3,6 +3,7 @@ package testutils
 import (
 	"testing"
 
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -113,6 +114,7 @@ func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
 		Product:        "",
 		Values:         values,
 		ClusterId:      fixtureconsts.Cluster1,
+		ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
 	}
 }
 
@@ -134,6 +136,7 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 			Product:        "",
 			Values:         values,
 			ClusterId:      fixtureconsts.Cluster1,
+			ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
 		},
 		{
 			Id:             profileUID2,
@@ -150,6 +153,7 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 			Product:        "",
 			Values:         values,
 			ClusterId:      fixtureconsts.Cluster1,
+			ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
 		},
 	}
 }

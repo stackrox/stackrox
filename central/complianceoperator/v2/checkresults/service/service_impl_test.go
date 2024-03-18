@@ -554,6 +554,170 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanConfigurationRe
 	}
 }
 
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileScanStats() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.RawQuery
+		expectedResp []*apiV2.ComplianceProfileScanStats
+		expectedErr  error
+		setMocks     func()
+	}{
+		{
+			desc:        "Empty query",
+			query:       &apiV2.RawQuery{Query: ""},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileScanStats{
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "rhcos4-moderate"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				results := []*datastore.ResourceResultCountByProfile{
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4"),
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "rhcos4-moderate"),
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
+				}
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with search field",
+			query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileScanStats{
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
+				results := []*datastore.ResourceResultCountByProfile{
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
+				}
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with non-existent field",
+			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceProfilesStats(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+			}
+		})
+	}
+}
+
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileStats() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.ComplianceProfileResultsRequest
+		expectedResp []*apiV2.ComplianceProfileScanStats
+		expectedErr  error
+		setMocks     func()
+	}{
+		{
+			desc: "Empty query",
+			query: &apiV2.ComplianceProfileResultsRequest{
+				ProfileName: "ocp4",
+				Query:       &apiV2.RawQuery{Query: ""},
+			},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileScanStats{
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "rhcos4-moderate"),
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+			},
+			setMocks: func() {
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
+					search.EmptyQuery(),
+				)
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				results := []*datastore.ResourceResultCountByProfile{
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4"),
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "rhcos4-moderate"),
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
+				}
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with search field",
+			query: &apiV2.ComplianceProfileResultsRequest{
+				ProfileName: "ocp4",
+				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileScanStats{
+				convertUtils.GetComplianceProfileScanV2Count(s.T(), "ocp4-node"),
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
+					expectedQ,
+				)
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				results := []*datastore.ResourceResultCountByProfile{
+					convertUtils.GetComplianceStorageProfileScanCount(s.T(), "ocp4-node"),
+				}
+				s.resultDatastore.EXPECT().ComplianceProfileResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+			},
+		},
+		{
+			desc: "Query with non-existent field",
+			query: &apiV2.ComplianceProfileResultsRequest{
+				ProfileName: "",
+				Query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			},
+			expectedErr: errors.Wrap(errox.InvalidArgs, "Profile name is required"),
+			setMocks: func() {
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceProfileStats(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+			}
+		})
+	}
+}
+
 func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		Id:                     scanName,
