@@ -168,7 +168,13 @@ func TestProxyOptions(t *testing.T) {
 	for _, testCase := range cases {
 		tc := testCase
 		t.Run(tc.name, func(t *testing.T) {
-			transport := RoundTripper(tc.options...).(*http.Transport)
+			transport := Without(tc.options...).(*http.Transport)
+			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
+
+			transport = RoundTripper(tc.options...).(*http.Transport)
+			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
+
+			transport = RoundTripperWithTLSConfig(nil, tc.options...).(*http.Transport)
 			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
 		})
 	}
