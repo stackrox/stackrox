@@ -62,17 +62,9 @@ export const workloadEntityTabValues = ['CVE', 'Image', 'Deployment'] as const;
 
 export type WorkloadEntityTab = (typeof workloadEntityTabValues)[number];
 
-export function isValidWorkloadEntityTab(value: unknown): value is WorkloadEntityTab {
-    return workloadEntityTabValues.some((tab) => tab === value);
-}
-
 export const nodeEntityTabValues = ['CVE', 'Node'] as const;
 
 export type NodeEntityTab = (typeof nodeEntityTabValues)[number];
-
-export function isValidNodeEntityTab(value: unknown): value is NodeEntityTab {
-    return nodeEntityTabValues.some((tab) => tab === value);
-}
 
 export type EntityTab = WorkloadEntityTab | NodeEntityTab;
 
