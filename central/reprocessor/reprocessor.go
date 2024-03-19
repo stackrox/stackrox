@@ -348,7 +348,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		return
 	}
 
-	sema := semaphore.NewWeighted(5)
+	sema := semaphore.NewWeighted(int64(env.ReprocessorSemaphoreLimit.IntegerSetting()))
 	wg := concurrency.NewWaitGroup(0)
 	nReprocessed := atomic.NewInt32(0)
 	for _, result := range results {
