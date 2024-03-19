@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -97,8 +98,8 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		obj.GetReportConfigurationId(),
 		obj.GetName(),
 		obj.GetReportStatus().GetRunState(),
-		pgutils.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
-		pgutils.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
+		protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
+		protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
 		obj.GetReportStatus().GetReportRequestType(),
 		obj.GetReportStatus().GetReportNotificationMethod(),
 		obj.GetRequester().GetId(),
@@ -153,8 +154,8 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetReportConfigurationId(),
 			obj.GetName(),
 			obj.GetReportStatus().GetRunState(),
-			pgutils.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
-			pgutils.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
+			protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
+			protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
 			obj.GetReportStatus().GetReportRequestType(),
 			obj.GetReportStatus().GetReportNotificationMethod(),
 			obj.GetRequester().GetId(),

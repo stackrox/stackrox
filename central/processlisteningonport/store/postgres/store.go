@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -116,7 +117,7 @@ func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListenin
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetPort(),
 		obj.GetProtocol(),
-		pgutils.NilOrTime(obj.GetCloseTimestamp()),
+		protocompat.NilOrTime(obj.GetCloseTimestamp()),
 		pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 		obj.GetClosed(),
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
@@ -172,7 +173,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetPort(),
 			obj.GetProtocol(),
-			pgutils.NilOrTime(obj.GetCloseTimestamp()),
+			protocompat.NilOrTime(obj.GetCloseTimestamp()),
 			pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
 			obj.GetClosed(),
 			pgutils.NilOrUUID(obj.GetDeploymentId()),

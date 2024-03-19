@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -102,7 +102,7 @@ func insertIntoPolicies(batch *pgx.Batch, obj *storage.Policy) error {
 		obj.GetLifecycleStages(),
 		obj.GetSeverity(),
 		obj.GetEnforcementActions(),
-		pgutils.NilOrTime(obj.GetLastUpdated()),
+		protocompat.NilOrTime(obj.GetLastUpdated()),
 		obj.GetSORTName(),
 		obj.GetSORTLifecycleStage(),
 		obj.GetSORTEnforcement(),
@@ -162,7 +162,7 @@ func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 			obj.GetLifecycleStages(),
 			obj.GetSeverity(),
 			obj.GetEnforcementActions(),
-			pgutils.NilOrTime(obj.GetLastUpdated()),
+			protocompat.NilOrTime(obj.GetLastUpdated()),
 			obj.GetSORTName(),
 			obj.GetSORTLifecycleStage(),
 			obj.GetSORTEnforcement(),
