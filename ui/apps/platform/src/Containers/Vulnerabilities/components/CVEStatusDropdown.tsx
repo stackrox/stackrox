@@ -3,6 +3,8 @@ import { Select, SelectOption } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 
+import './FilterDropdowns.css';
+
 type CVEStatusDropdownProps = {
     searchFilter: SearchFilter;
     onSelect: (filterType: 'FIXABLE', checked: boolean, selection: string) => void;
@@ -17,6 +19,7 @@ function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
 
     return (
         <Select
+            className="vm-filter-toolbar-dropdown"
             variant="checkbox"
             aria-label="CVE status filter menu items"
             toggleAriaLabel="CVE status filter menu toggle"
