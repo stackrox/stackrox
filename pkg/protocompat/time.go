@@ -61,30 +61,6 @@ func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, er
 	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
-// ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
-func ConvertTimestampToTimeOrNil(gogo *gogoTimestamp.Timestamp) *time.Time {
-	if gogo == nil {
-		return nil
-	}
-	goTime, err := ConvertTimestampToTimeOrError(gogo)
-	if err != nil {
-		return nil
-	}
-	return &goTime
-}
-
-// ConvertTimeToTimestampOrNil converts a golang Time to a proto timestamp, defaulting to nil in case of error.
-func ConvertTimeToTimestampOrNil(goTime *time.Time) *gogoTimestamp.Timestamp {
-	if goTime == nil {
-		return nil
-	}
-	gogo, err := ConvertTimeToTimestampOrError(*goTime)
-	if err != nil {
-		return nil
-	}
-	return gogo
-}
-
 // ConvertTimeToTimestampOrError converts golang time to proto timestamp.
 func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, error) {
 	return gogoTimestamp.TimestampProto(goTime)
