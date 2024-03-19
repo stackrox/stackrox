@@ -103,7 +103,8 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.Equal(networkFlow, foundNetworkFlows[0])
 
 	// Check the get all flows by since time
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, getTimestamp(3))
+	time3 := time.Unix(3, 0)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, &time3)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 

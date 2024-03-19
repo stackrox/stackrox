@@ -87,7 +87,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 		},
 	}
 
-	secondTimestamp := protoconv.ConvertTimeToTimestamp(time.Now())
+	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -105,7 +105,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: secondTimestamp,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
 		},
 	}
 
@@ -159,7 +159,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				},
 				DstPort:  2,
 				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			}: timestamp.FromProtobuf(secondTimestamp),
+			}: timestamp.FromGoTime(secondTimestamp),
 		}
 
 		if len(expectedMap) != len(got) {
@@ -206,6 +206,6 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}), gomock.Any()).Return(nil)
 
 	// Run test.
-	err := suite.tested.update(suite.hasWriteCtx, newFlows, secondTimestamp)
+	err := suite.tested.update(suite.hasWriteCtx, newFlows, &secondTimestamp)
 	suite.NoError(err, "update should succeed on first insert")
 }
