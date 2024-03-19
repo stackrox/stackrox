@@ -88,12 +88,12 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
+            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
                 <Text>View details about this deployment</Text>
             </PageSection>
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
                 {error && (
@@ -108,7 +108,7 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                     </Bullseye>
                 )}
                 {deploymentDetailsData && (
-                    <Card className="pf-u-m-md pf-u-p-md" isFlat>
+                    <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsLg' }}
