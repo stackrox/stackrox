@@ -69,6 +69,19 @@ func GetProtoTimestampZero() *gogoTimestamp.Timestamp {
 	return &gogoTimestamp.Timestamp{}
 }
 
+// NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres
+func NilOrTime(t *gogoTimestamp.Timestamp) *time.Time {
+	if t == nil {
+		return nil
+	}
+	ts, err := ConvertTimestampToTimeOrError(t)
+	if err != nil {
+		return nil
+	}
+	ts = ts.Round(time.Microsecond)
+	return &ts
+}
+
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
 // the first timestamp is before the second or a positive value if the first timestamp is
 // after the second.
