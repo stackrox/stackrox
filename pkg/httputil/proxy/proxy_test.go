@@ -173,9 +173,6 @@ func TestProxyOptions(t *testing.T) {
 
 			transport = RoundTripper(tc.options...).(*http.Transport)
 			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
-
-			transport = RoundTripperWithTLSConfig(nil, tc.options...).(*http.Transport)
-			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
 		})
 	}
 }

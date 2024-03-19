@@ -58,10 +58,8 @@ func DefaultTransport(cfg *Config) registry.Transport {
 		proxy.WithResponseHeaderTimeout(registryResponseTimeout),
 	)
 	if cfg.Insecure {
-		transport = proxy.RoundTripperWithTLSConfig(
-			&tls.Config{
-				InsecureSkipVerify: true,
-			},
+		transport = proxy.RoundTripper(
+			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
 			proxy.WithDialTimeout(registryDialerTimeout),
 			proxy.WithResponseHeaderTimeout(registryResponseTimeout),
 		)

@@ -62,6 +62,14 @@ func WithResponseHeaderTimeout(timeout time.Duration) Option {
 	}
 }
 
+// WithTLSConfig returns a proxy option which sets the TLS config on the transport.
+func WithTLSConfig(tlsConf *tls.Config) Option {
+	return func(transport *http.Transport) *http.Transport {
+		transport.TLSClientConfig = tlsConf
+		return transport
+	}
+}
+
 func applyOptions(transport *http.Transport, options ...Option) *http.Transport {
 	for _, opt := range options {
 		transport = opt(transport)
@@ -105,14 +113,6 @@ func RoundTripper(options ...Option) http.RoundTripper {
 		return proxyTransport
 	}
 	transport := proxyTransport.Clone()
-	return applyOptions(transport, options...)
-}
-
-// RoundTripperWithTLSConfig returns a round tripper like RoundTripper(), but using a custom TLS config.
-// TODO(stehessel): refactor as proxy option.
-func RoundTripperWithTLSConfig(tlsConf *tls.Config, options ...Option) http.RoundTripper {
-	transport := proxyTransport.Clone()
-	transport.TLSClientConfig = tlsConf
 	return applyOptions(transport, options...)
 }
 
