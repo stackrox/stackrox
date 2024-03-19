@@ -23,8 +23,6 @@ COPY --chown=postgres:postgres \
      scanner/image/db/scripts/init-entrypoint.sh \
      /usr/local/bin/
 
-COPY db-init.dump.zst /db-init.dump.zst
-
 RUN dnf upgrade -y --nobest && \
     dnf install -y zstd && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \

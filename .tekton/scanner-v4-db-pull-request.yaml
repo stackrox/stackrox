@@ -241,22 +241,6 @@ spec:
       - name: source
         workspace: workspace
 
-    - name: fetch-db-init-bundle
-      runAfter:
-      - init
-      - clone-repository
-      taskSpec:
-        steps:
-          - name: fetch-db-init-bundle
-            image: registry.access.redhat.com/ubi8-minimal:latest
-            script: |
-              curl --silent --retry 3 --show-error --fail --output "$(workspaces.source.path)/source/db-init.dump.zst" \
-                "https://storage.googleapis.com/scanner-v4-test/database-init-bundles/db-init-dev.dump.zst"
-              echo "Download complete!"
-      workspaces:
-      - name: source
-        workspace: workspace
-
     - name: build-container
       params:
       - name: IMAGE
@@ -275,7 +259,6 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
-      - fetch-db-init-bundle
       taskRef:
         params:
         - name: name
