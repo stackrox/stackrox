@@ -170,6 +170,7 @@ customize:
   other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
+allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
 monitoring:
   openshift:
