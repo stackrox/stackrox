@@ -60,7 +60,7 @@ func DefaultTransport(cfg *Config) registry.Transport {
 		transport = proxy.RoundTripper(
 			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
 			proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
-			proxy.WithResponseHeaderTimeout(registryResponseTimeout),
+			proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
 		)
 	}
 	username, password := cfg.GetCredentials()
