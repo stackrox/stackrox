@@ -1,3 +1,31 @@
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-base
+
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-rpm-installer
+
+ARG MOUNT_PATH="/mnt"
+
+COPY --from=rocksdb-builder-base / "$MOUNT_PATH"
+
+COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
+RUN /tmp/.konflux/subscription-manager-bro.sh register "$MOUNT_PATH" && \
+    # gflags and snappy-devel come from this repo codeready-builder-for-rhel-8.
+    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    dnf -y --installroot="$MOUNT_PATH" upgrade --nobest && \
+    dnf -y --installroot="$MOUNT_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel && \
+    /tmp/.konflux/subscription-manager-bro.sh cleanup
+
+FROM scratch AS rocksdb-builder
+
+COPY --from=rocksdb-builder-rpm-installer /mnt /
+
+WORKDIR /staging
+
+COPY .konflux/rocksdb ./
+
+# Set up and build rocksdb
+RUN PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul" CXXFLAGS="-fPIC" make --jobs=6 static_lib
+
+
 FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
@@ -51,6 +79,10 @@ FROM scratch
 COPY --from=rpm-installer /mnt/final /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
+
+# TODO: move this to go-builder stage. Will be done as part of the same ROX-20160.
+COPY --from=rocksdb-builder /staging/librocksdb.a /lib/rocksdb/librocksdb.a
+COPY --from=rocksdb-builder /staging/include /lib/rocksdb/include
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
