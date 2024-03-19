@@ -46,6 +46,9 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
+	// CreateNodeIndexReport indexes the node the target indexer is running on
+	CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -53,6 +56,7 @@ type Scanner interface {
 // gRPCScanner A scanner client implementation based on gRPC endpoints.
 type gRPCScanner struct {
 	indexer         v4.IndexerClient
+	nodeIndexer     v4.NodeIndexerClient
 	matcher         v4.MatcherClient
 	gRPCConnections []*grpc.ClientConn
 }
@@ -79,10 +83,12 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 		connList = append(connList, mConn)
 	}
 	indexerClient := v4.NewIndexerClient(iConn)
+	nodeIndexerClient := v4.NewNodeIndexerClient(iConn)
 	matcherClient := v4.NewMatcherClient(mConn)
 	return &gRPCScanner{
 		gRPCConnections: connList,
 		indexer:         indexerClient,
+		nodeIndexer:     nodeIndexerClient,
 		matcher:         matcherClient,
 	}, nil
 }
@@ -258,6 +264,14 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 		return nil, fmt.Errorf("get metadata: %w", err)
 	}
 	return m, nil
+}
+
+func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
+	r := &v4.CreateNodeIndexReportRequest{
+		HashId: "FIXME",
+	}
+	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
 }
 
 func getImageManifestID(ref name.Digest) string {

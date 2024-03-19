@@ -113,6 +113,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		factory = opts
 	}
 	cmd.AddCommand(scanCmd(ctx))
+	cmd.AddCommand(nodeScanCmd(ctx))
 	cmd.AddCommand(scaleCmd(ctx))
 	return &cmd
 }
