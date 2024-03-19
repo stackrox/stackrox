@@ -159,67 +159,6 @@ function get_cluster_zip {
     echo
 }
 
-# get_identity
-# arguments:
-#   - central API server endpoint reachable from this host
-#   - ID of a cluster that has already been created
-#   - directory to drop files in
-function get_identity {
-    LOCAL_API_ENDPOINT="$1"
-    CLUSTER_ID="$2"
-    OUTPUT_DIR="$3"
-
-    echo "Getting identity for new cluster"
-    export ID_JSON="{\"id\": \"$CLUSTER_ID\", \"type\": \"SENSOR_SERVICE\"}"
-    TMP=$(mktemp)
-    STATUS=$(curl_central -X POST \
-        -d "$ID_JSON" \
-        -s \
-        -o "$TMP" \
-        -w "%{http_code}\n" \
-        "https://$LOCAL_API_ENDPOINT/v1/serviceIdentities")
-    echo "Status: $STATUS"
-    echo "Response: $(cat "${TMP}")"
-    jq -r .certificate "$TMP" > "$OUTPUT_DIR/sensor-cert.pem"
-    jq -r .privateKey "$TMP" > "$OUTPUT_DIR/sensor-key.pem"
-    rm "$TMP"
-    echo
-}
-
-# get_authority
-# arguments:
-#   - central API server endpoint reachable from this host
-#   - directory to drop files in
-function get_authority {
-    LOCAL_API_ENDPOINT="$1"
-    OUTPUT_DIR="$2"
-
-    echo "Getting CA certificate"
-    TMP="$(mktemp)"
-    STATUS=$(curl_central \
-        -s \
-        -o "$TMP" \
-        -w "%{http_code}\n" \
-        "https://$LOCAL_API_ENDPOINT/v1/authorities")
-    echo "Status: $STATUS"
-    echo "Response: $(cat "${TMP}")"
-    jq -r .authorities[0].certificate "$TMP" > "$OUTPUT_DIR/ca.pem"
-    rm "$TMP"
-    echo
-}
-
-# get_central_feature_flag_enabled
-# arguments:
-#   - central API server endpoint reachable from this host
-#   - envVar of feature flag to get
-function get_central_feature_flag_enabled {
-    local local_api_endpoint="$1"
-    local env_var="$2"
-
-    curl_central -s "https://${local_api_endpoint}/v1/featureflags" | \
-        jq ".featureFlags[] | select(.envVar==\"${env_var}\") | .enabled"
-}
-
 function setup_internal_sso() {
     local LOCAL_API_ENDPOINT="$1"
     local LOCAL_CLIENT_SECRET="$2"
