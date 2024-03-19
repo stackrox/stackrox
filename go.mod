@@ -36,7 +36,7 @@ require (
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/georgysavva/scany v1.2.1
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/go-jose/go-jose/v3 v3.0.1
+	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/go-logr/logr v1.3.0
 	github.com/go-logr/zapr v1.2.4
 	github.com/godbus/dbus/v5 v5.1.0
@@ -97,7 +97,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.2.1
 	github.com/sergi/go-diff v1.3.1
-	github.com/sigstore/cosign/v2 v2.0.2
+	github.com/sigstore/cosign/v2 v2.2.2
 	github.com/sigstore/sigstore v1.7.5
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
@@ -177,7 +177,7 @@ require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
-	github.com/cloudflare/circl v1.3.5 // indirect
+	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cockroachdb/cockroach-go/v2 v2.3.5 // indirect
 	github.com/cockroachdb/errors v1.8.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
