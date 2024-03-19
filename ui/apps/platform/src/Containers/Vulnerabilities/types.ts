@@ -66,7 +66,15 @@ export function isValidWorkloadEntityTab(value: unknown): value is WorkloadEntit
     return workloadEntityTabValues.some((tab) => tab === value);
 }
 
-export type EntityTab = WorkloadEntityTab;
+export const nodeEntityTabValues = ['CVE', 'Node'] as const;
+
+export type NodeEntityTab = (typeof nodeEntityTabValues)[number];
+
+export function isValidNodeEntityTab(value: unknown): value is NodeEntityTab {
+    return nodeEntityTabValues.some((tab) => tab === value);
+}
+
+export type EntityTab = WorkloadEntityTab | NodeEntityTab;
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 

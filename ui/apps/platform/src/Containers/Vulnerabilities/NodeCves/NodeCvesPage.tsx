@@ -7,10 +7,7 @@ import PageTitle from 'Components/PageTitle';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import { vulnerabilitiesNodeCvesPath } from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
-
-function TmpNodeCvesOverviewPage() {
-    return <div>NodeCvesOverviewPage</div>;
-}
+import NodeCvesOverviewPage from './Overview/NodeCvesOverviewPage';
 
 function NodeCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -20,11 +17,7 @@ function NodeCvesPage() {
         <>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
-                <Route
-                    exact
-                    path={vulnerabilitiesNodeCvesPath}
-                    component={TmpNodeCvesOverviewPage}
-                />
+                <Route exact path={vulnerabilitiesNodeCvesPath} component={NodeCvesOverviewPage} />
                 <Route>
                     <PageSection variant="light">
                         <PageTitle title="Node CVEs - Not Found" />

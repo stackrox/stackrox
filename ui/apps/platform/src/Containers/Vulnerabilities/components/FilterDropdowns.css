@@ -1,4 +1,4 @@
 /* Fixes the issue where badge counts in select components wrap to a new line */
-.workload-table-toolbar .pf-c-select__toggle-wrapper {
+.vm-filter-toolbar-dropdown .pf-c-select__toggle-wrapper {
   flex-wrap: nowrap;
 }
