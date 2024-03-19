@@ -446,15 +446,16 @@ require (
 // The `go mod tidy` takes care of normalizing the symbol version information (e.g. branch name) which is required
 // for Go build tools to accept the `go.mod`.
 
-// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
-// we currently depend on.
-replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
-
 // @stackrox/core-workflows
 replace (
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 )
+
+// @stackrox/draco
+// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
+// we currently depend on.
+replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
 // @stackrox/merlin
 replace (
