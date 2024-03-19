@@ -1,6 +1,9 @@
 package policycleaner
 
 import (
+	"testing"
+
+	"github.com/stackrox/rox/central/detection"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	runTimeDetection "github.com/stackrox/rox/central/detection/runtime"
@@ -25,4 +28,13 @@ func initialize() {
 func Singleton() PolicyCleaner {
 	once.Do(initialize)
 	return pc
+}
+
+// GetTestPolicyCleaner provides a policy cleaner that can be used for testing purposes.
+func GetTestPolicyCleaner(_ *testing.T, set detection.PolicySet) PolicyCleaner {
+	return PolicyCleaner{
+		buildTimePolicies:  set,
+		deployTimePolicies: set,
+		runTimePolicies:    set,
+	}
 }
