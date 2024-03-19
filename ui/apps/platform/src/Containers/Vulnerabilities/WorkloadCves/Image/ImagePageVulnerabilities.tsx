@@ -332,7 +332,7 @@ function ImagePageVulnerabilities({
                 component="div"
             >
                 <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
-                <div className="pf-v5-u-px-sm pf-u-background-color-100">
+                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     <WorkloadCveFilterToolbar
                         searchOptions={searchOptions}
                         autocompleteSearchContext={{
