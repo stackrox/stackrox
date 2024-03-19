@@ -145,7 +145,7 @@ func (c *nodeIndexerClient) CreateNodeIndexReport(ctx context.Context, in *Creat
 }
 
 // NodeIndexerServer is the server API for NodeIndexer service.
-type cNodeIndexerServer interface {
+type NodeIndexerServer interface {
 	// CreateNodeIndexReport creates an index report for the node the container runs on and returns the report.
 	CreateNodeIndexReport(context.Context, *CreateNodeIndexReportRequest) (*IndexReport, error)
 }
