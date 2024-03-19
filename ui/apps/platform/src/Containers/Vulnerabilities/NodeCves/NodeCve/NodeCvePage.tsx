@@ -19,7 +19,7 @@ function NodeCvePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - NodeCVE ${nodeCveName}`} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{nodeCveName} </BreadcrumbItem>

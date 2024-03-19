@@ -1,5 +1,5 @@
 .policy-criteria-key {
-    border: var(--pf-global--BorderColor--100) 1px solid;
+    border: var(--pf-v5-global--BorderColor--100) 1px solid;
     cursor: move;
 }
 
