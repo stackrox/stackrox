@@ -596,9 +596,6 @@ function launch_central {
     echo "Successfully deployed Central!"
 
     echo "Access the UI at: https://${API_ENDPOINT}"
-    if [[ "${ROX_DEV_AUTH0_CLIENT_SECRET}" != "" ]]; then
-        setup_auth0 "${API_ENDPOINT}" "${ROX_DEV_AUTH0_CLIENT_SECRET}"
-    fi
 }
 
 function launch_sensor {
