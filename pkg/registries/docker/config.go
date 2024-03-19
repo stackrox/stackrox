@@ -53,13 +53,8 @@ func (c *Config) formatURL() string {
 
 // DefaultTransport returns the default transport based on the configuration.
 func DefaultTransport(cfg *Config) registry.Transport {
-	defaultDialer := &net.Dialer{
-		Timeout:   registryDialerTimeout,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}
 	transport := proxy.RoundTripper(
-		proxy.WithDialContext(defaultDialer.DialContext),
+		proxy.WithDialTimeout(registryDialerTimeout),
 		proxy.WithResponseHeaderTimeout(registryResponseTimeout),
 	)
 	if cfg.Insecure {
@@ -67,7 +62,7 @@ func DefaultTransport(cfg *Config) registry.Transport {
 			&tls.Config{
 				InsecureSkipVerify: true,
 			},
-			proxy.WithDialContext(defaultDialer.DialContext),
+			proxy.WithDialTimeout(registryDialerTimeout),
 			proxy.WithResponseHeaderTimeout(registryResponseTimeout),
 		)
 	}

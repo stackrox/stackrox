@@ -45,13 +45,10 @@ func getGlobalProxyConfig() *compiledConfig {
 // Option returns a modified proxy round tripper.
 type Option func(base *http.Transport) *http.Transport
 
-// DialContextType is the function type of http.Transport.DialContext.
-type DialContextType func(ctx context.Context, network, addr string) (net.Conn, error)
-
-// WithDialContext returns a proxy option which sets the dial context on the transport.
-func WithDialContext(dialContext DialContextType) Option {
+// WithDialTimeout returns a proxy option which sets the dial timeout on the transport.
+func WithDialTimeout(timeout time.Duration) Option {
 	return func(transport *http.Transport) *http.Transport {
-		transport.DialContext = dialContext
+		transport.DialContext = dialerWithTimeout(timeout).DialContext
 		return transport
 	}
 }
