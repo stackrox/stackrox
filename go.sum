@@ -817,8 +817,6 @@ github.com/cockroachdb/redact v1.1.5/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZ
 github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 h1:zuQyyAKVxetITBuuhv3BI9cMrmStnpT18zmgmTxunpo=
 github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06/go.mod h1:7nc4anLGjupUW/PeY5qiNYsdNXj7zopG+eqsS7To5IQ=
 github.com/codahale/rfc6979 v0.0.0-20141003034818-6a90f24967eb h1:EDmT6Q9Zs+SbUoc7Ik9EfrFqcylYqgPZ9ANSbTAntnE=
-github.com/connorgorman/protobuf v1.2.2-0.20240207122816-e936d453291c h1:Uan3mDsQz3G6k2uS16TATAgf9yHyjLhBGxDPVBivr9U=
-github.com/connorgorman/protobuf v1.2.2-0.20240207122816-e936d453291c/go.mod h1:4n/qquk+A505mqkK9+o7Xth9+UxUWFc4/5faDXkYyyU=
 github.com/containerd/cgroups v1.1.0 h1:v8rEWFl6EoqHB+swVNjVoCJE8o3jX7e8nqBGPLaDFBM=
 github.com/containerd/cgroups/v3 v3.0.2 h1:f5WFqIVSgo5IZmtTT3qVBo6TzI1ON6sycSBKkymb9L0=
 github.com/containerd/containerd v1.7.11 h1:lfGKw3eU35sjV0aG2eYZTiwFEY1pCzxdzicHP3SZILw=
@@ -1816,6 +1814,8 @@ github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df h1:759L43a+41f3z+4
 github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df/go.mod h1:Wf7knwG0MPoWIMMBgFlEaSUDaKskp0dCfrlJRJXbBi8=
 github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d h1:aLCTq23tpBhbmrLa/3+21rESx7VXgkrjIKJpbhcrvVk=
 github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d/go.mod h1:zwEXo3PEZZb6QQZBrBORMX0Hvnnwst3PduSaTQZMFYc=
+github.com/stackrox/protobuf v1.2.2-0.20240207122816-e936d453291c h1:qEJYZA6jpEQ+xhUIhnsnTX56h09S28tIa7zOdB5GY90=
+github.com/stackrox/protobuf v1.2.2-0.20240207122816-e936d453291c/go.mod h1:4n/qquk+A505mqkK9+o7Xth9+UxUWFc4/5faDXkYyyU=
 github.com/stackrox/scanner v0.0.0-20240110222630-351caa1e0024 h1:g0Taj+vFHCzrFsLFLnm+5eaUdLFhzthcBqPBTSCGIUY=
 github.com/stackrox/scanner v0.0.0-20240110222630-351caa1e0024/go.mod h1:HziPXIAPcO7GcxEI9Cc8iB80dxyoleexmdp17r0v7hc=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
