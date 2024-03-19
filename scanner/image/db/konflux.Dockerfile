@@ -33,8 +33,7 @@ RUN dnf upgrade -y --nobest && \
     chown -R postgres:postgres /var/run/postgresql && \
     dnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum && \
-    chmod +x /usr/local/bin/docker-entrypoint.sh
+    rm -rf /var/cache/dnf /var/cache/yum
 
 ENV LANG=en_US.utf8
 
