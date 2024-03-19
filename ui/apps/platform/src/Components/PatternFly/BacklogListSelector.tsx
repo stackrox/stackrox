@@ -6,7 +6,10 @@ import {
     EmptyStateIcon,
     EmptyStateVariant,
     Flex,
-    FormGroup, EmptyStateHeader, EmptyStateFooter,
+    FormGroup,
+    EmptyStateHeader,
+    EmptyStateFooter,
+    Icon,
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
@@ -41,9 +44,13 @@ function BacklogTable<Item>({
 }: BacklogTableProps<Item>) {
     const actionIcon =
         type === 'selected' ? (
-            <MinusCircleIcon color="var(--pf-v5-global--danger-color--200)" />
+            <Icon color="var(--pf-v5-global--danger-color--200)">
+                <MinusCircleIcon />
+            </Icon>
         ) : (
-            <PlusCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+            <Icon color="var(--pf-v5-global--primary-color--100)">
+                <PlusCircleIcon />
+            </Icon>
         );
 
     const itemsToDisplay = items.filter(searchFilter);
@@ -88,8 +95,11 @@ function BacklogTable<Item>({
                 </Table>
             ) : (
                 <EmptyState variant={EmptyStateVariant.xs}>
-                    <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} /><EmptyStateFooter><p>No items remaining</p>
-                </EmptyStateFooter></EmptyState>
+                    <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+                    <EmptyStateFooter>
+                        <p>No items remaining</p>
+                    </EmptyStateFooter>
+                </EmptyState>
             )}
         </FormGroup>
     );
