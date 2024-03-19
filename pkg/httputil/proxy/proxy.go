@@ -65,11 +65,7 @@ func WithResponseHeaderTimeout(timeout time.Duration) Option {
 	}
 }
 
-func applyOptions(base *http.Transport, options ...Option) *http.Transport {
-	if len(options) == 0 {
-		return base
-	}
-	transport := base.Clone()
+func applyOptions(transport *http.Transport, options ...Option) *http.Transport {
 	for _, opt := range options {
 		transport = opt(transport)
 	}
@@ -108,7 +104,11 @@ func Without(options ...Option) http.RoundTripper {
 // RoundTripper returns something very similar to http.DefaultTransport, but with the Proxy setting changed to use
 // the configuration supported by this package.
 func RoundTripper(options ...Option) http.RoundTripper {
-	return applyOptions(proxyTransport, options...)
+	if len(options) == 0 {
+		return proxyTransport
+	}
+	transport := proxyTransport.Clone()
+	return applyOptions(transport, options...)
 }
 
 // RoundTripperWithTLSConfig returns a round tripper like RoundTripper(), but using a custom TLS config.
