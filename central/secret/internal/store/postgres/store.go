@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -119,7 +120,7 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetNamespace(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
+		protocompat.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
@@ -148,7 +149,7 @@ func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secre
 		pgutils.NilOrUUID(secretID),
 		idx,
 		obj.GetType(),
-		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
+		protocompat.NilOrTime(obj.GetCert().GetEndDate()),
 	}
 
 	finalStr := "INSERT INTO secrets_files (secrets_Id, idx, Type, Cert_EndDate) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Cert_EndDate = EXCLUDED.Cert_EndDate"
@@ -221,7 +222,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
 			obj.GetNamespace(),
-			pgutils.NilOrTime(obj.GetCreatedAt()),
+			protocompat.NilOrTime(obj.GetCreatedAt()),
 			serialized,
 		})
 
@@ -282,7 +283,7 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 			pgutils.NilOrUUID(secretID),
 			idx,
 			obj.GetType(),
-			pgutils.NilOrTime(obj.GetCert().GetEndDate()),
+			protocompat.NilOrTime(obj.GetCert().GetEndDate()),
 		})
 
 		// if we hit our batch size we need to push the data

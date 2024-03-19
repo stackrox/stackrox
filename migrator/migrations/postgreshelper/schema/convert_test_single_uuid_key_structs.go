@@ -5,6 +5,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertTestSingleUUIDKeyStructFromProto converts a `*storage.TestSingleUUIDKeyStruct` to Gorm model
@@ -22,7 +23,7 @@ func ConvertTestSingleUUIDKeyStructFromProto(obj *storage.TestSingleUUIDKeyStruc
 		Int64:       obj.GetInt64(),
 		Float:       obj.GetFloat(),
 		Labels:      obj.GetLabels(),
-		Timestamp:   pgutils.NilOrTime(obj.GetTimestamp()),
+		Timestamp:   protocompat.NilOrTime(obj.GetTimestamp()),
 		Enum:        obj.GetEnum(),
 		Enums:       pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
 		Serialized:  serialized,
