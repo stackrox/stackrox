@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -254,18 +255,18 @@ func main() {
 		metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 	}
-	var fakeClient client.Interface
-	fakeClient, err := k8s.MakeOutOfClusterClient()
+	var k8sClient client.Interface
+	k8sClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
 	if localConfig.ReplayK8sEnabled {
-		fakeClient = k8s.MakeFakeClient()
+		k8sClient = k8s.MakeFakeClient()
 	}
 	var workloadManager *fake.WorkloadManager
 	// if we are using a fake workload we don't want to connect to a real K8s cluster
 	if localConfig.FakeWorkloadFile != "" {
 		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
 			WithWorkloadFile(localConfig.FakeWorkloadFile))
-		fakeClient = workloadManager.Client()
+		k8sClient = workloadManager.Client()
 	}
 	utils.CrashOnError(err)
 	if !localConfig.NoCPUProfile {
@@ -299,14 +300,14 @@ func main() {
 		connection, spyCentral = setupCentralWithFakeConnection(localConfig)
 		defer spyCentral.Stop()
 	} else {
-		connection = setupCentralWithRealConnection(localConfig)
+		connection = setupCentralWithRealConnection(k8sClient, localConfig)
 	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
 	sensorConfig := sensor.ConfigWithDefaults().
-		WithK8sClient(fakeClient).
+		WithK8sClient(k8sClient).
 		WithCentralConnectionFactory(connection).
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager)
@@ -340,7 +341,7 @@ func main() {
 		fm := k8s.FakeEventsManager{
 			Delay:   localConfig.Delay,
 			Mode:    localConfig.CreateMode,
-			Client:  fakeClient,
+			Client:  k8sClient,
 			Reader:  trReader,
 			Verbose: localConfig.Verbose,
 		}
@@ -408,15 +409,11 @@ func main() {
 	}
 }
 
-func setupCentralWithRealConnection(localConfig localSensorConfig) centralclient.CentralConnectionFactory {
-	// These files depend on running `tools/local-sensor/scripts/fetch-certs.sh`.
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tmp/sensor-cert.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tmp/sensor-key.pem"))
-	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tmp/ca.pem"))
-
-	utils.CrashOnError(os.Setenv("ROX_HELM_CONFIG_FILE_OVERRIDE", "tmp/helm-config.yaml"))
-	utils.CrashOnError(os.Setenv("ROX_HELM_CLUSTER_NAME_FILE_OVERRIDE", "tmp/helm-name.yaml"))
-
+func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) centralclient.CentralConnectionFactory {
+	certFetcher := certs.NewCertificateFetcher(cli, certs.WithOutputDir("tmp/"))
+	if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
+		utils.CrashOnError(errors.Wrap(err, "failed to retrieve sensor's certificates"))
+	}
 	utils.CrashOnError(os.Setenv("ROX_CERTIFICATE_CACHE_DIR", "tmp/.local-sensor-cache"))
 
 	utils.CrashOnError(os.Setenv("ROX_CENTRAL_ENDPOINT", localConfig.CentralEndpoint))
