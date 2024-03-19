@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"errors"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
