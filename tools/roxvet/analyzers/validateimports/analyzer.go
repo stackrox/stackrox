@@ -74,11 +74,7 @@ var (
 				// The packages below should be removed from the set
 				// once migrated to the compatibility layer (above three packages).
 				"github.com/stackrox/rox/central/audit",
-				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
-				"github.com/stackrox/rox/pkg/db/mapcache",
-				"github.com/stackrox/rox/pkg/notifier",
 				"github.com/stackrox/rox/pkg/postgres/pgutils",
-				"github.com/stackrox/rox/pkg/search/postgres",
 			),
 		},
 		"github.com/gogo/protobuf/types": {
@@ -144,14 +140,6 @@ var (
 				"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store",
 				"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/legacy",
 				"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/postgres",
-				"github.com/stackrox/rox/pkg/booleanpolicy/evaluator",
-				"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer",
-				"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters",
-				"github.com/stackrox/rox/pkg/csv",
-				"github.com/stackrox/rox/pkg/networkgraph/testutils",
-				"github.com/stackrox/rox/pkg/postgres/pgutils",
-				"github.com/stackrox/rox/pkg/postgres/walker",
-				"github.com/stackrox/rox/pkg/readable",
 				"github.com/stackrox/rox/pkg/search/predicate",
 				"github.com/stackrox/rox/pkg/search/predicate/basematchers",
 				"github.com/stackrox/rox/pkg/telemetry",
