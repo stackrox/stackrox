@@ -66,3 +66,29 @@
 true
 {{- end -}}
 {{- end -}}
+
+{{- define "srox.checkVersionRequirements" -}}
+  {{- $minHelmVersion := "3.9.0" -}}
+  {{- $ := . -}}
+
+  {{- $helmVersion := "" -}}
+  {{- if and (not (kindIs "invalid" $.Capabilities.HelmVersion)) $.Capabilities.HelmVersion -}}
+    {{- $helmVersion = $.Capabilities.HelmVersion.Version -}}
+  {{- end -}}
+
+  {{- if empty $helmVersion -}}
+    {{- $msg := printf "Failed to retrieve Helm version. Please make sure you are running Helm >= v%s." $minHelmVersion -}}
+    {{- if $._rox.allowUnsupportedHelmVersion -}}
+      {{- include "srox.warn" (list $ $msg) -}}
+    {{- else -}}
+      {{- include "srox.fail" $msg -}}
+    {{- end -}}
+  {{- else if semverCompare (printf "< %s" $minHelmVersion) $helmVersion -}}
+    {{- $msg := printf "Helm version requirements not satisfied. Your Helm %s is too old. Please update to Helm >= v%s." $helmVersion $minHelmVersion -}}
+    {{- if $._rox.allowUnsupportedHelmVersion -}}
+      {{- include "srox.warn" (list $ $msg) -}}
+    {{- else -}}
+      {{- include "srox.fail" $msg -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
