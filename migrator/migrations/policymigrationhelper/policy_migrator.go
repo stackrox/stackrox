@@ -2,20 +2,14 @@ package policymigrationhelper
 
 import (
 	"embed"
-	"fmt"
-	"path/filepath"
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
-	bolt "go.etcd.io/bbolt"
 )
 
 // PolicyDiff is an alternative to PolicyChanges that automatically constructs migrations based on diffs of policies.
@@ -147,39 +141,6 @@ func DescriptionComparator(first, second *storage.Policy) bool {
 	return strings.TrimSpace(first.GetDescription()) == strings.TrimSpace(second.GetDescription())
 }
 
-var (
-	policyBucketName = []byte("policies")
-)
-
-// ReadPolicyFromDir reads policies from file given the path and the dir.
-func ReadPolicyFromDir(fs embed.FS, dir string) ([]*storage.Policy, error) {
-	files, err := fs.ReadDir(dir)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not read default system policies JSON")
-	}
-
-	var multiErr *multierror.Error
-	var policies []*storage.Policy
-	for _, f := range files {
-		p, err := ReadPolicyFromFile(fs, filepath.Join(dir, f.Name()))
-		if err != nil {
-			multiErr = multierror.Append(multiErr, err)
-			continue
-		}
-
-		if p.GetId() == "" {
-			multiErr = multierror.Append(multiErr, errors.Errorf("policy %s does not have an ID defined", p.GetName()))
-			continue
-		}
-		policies = append(policies, p)
-	}
-	if multiErr != nil {
-		return nil, multiErr
-	}
-
-	return policies, nil
-}
-
 // ReadPolicyFromFile reads policies from file given the path and the collection of files.
 func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 	contents, err := fs.ReadFile(filePath)
@@ -301,112 +262,6 @@ const (
 	beforeDirName           = policyDiffParentDirName + "/before"
 	afterDirName            = policyDiffParentDirName + "/after"
 )
-
-// MigratePoliciesWithDiffs migrates policies with the given diffs.
-// The policyDiffFS should be an embedded FS that satisfies the following conditions:
-// 1. It must contain a top-level directory called "policies_before_and_after".
-// 2. That directory must contain two subdirectories: "before" and "after".
-// 3. For each policy being migrated, there must be one copy in the "before" directory and one in the "after" directory.
-// 4. The file names for a policy should match the PolicyFileName in the corresponding PolicyDiff passed in the third argument.
-// This function then automatically computes the diff for each policy, and executes the migration.
-// Deprecated: This relies on boltDB. Remove once we no longer support ACS <4.0
-func MigratePoliciesWithDiffs(db *bolt.DB, policyDiffFS embed.FS, policyDiffs []PolicyDiff) error {
-	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
-	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
-	for _, diff := range policyDiffs {
-		beforePolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(beforeDirName, diff.PolicyFileName))
-		if err != nil {
-			return err
-		}
-		afterPolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(afterDirName, diff.PolicyFileName))
-		if err != nil {
-			return err
-		}
-		if beforePolicy.GetId() == "" || beforePolicy.GetId() != afterPolicy.GetId() {
-			return errors.Errorf("policies in file %s don't both have the same, non-empty, id", diff.PolicyFileName)
-		}
-		updates, err := diffPolicies(beforePolicy, afterPolicy)
-		if err != nil {
-			return err
-		}
-		policiesToMigrate[beforePolicy.GetId()] = PolicyChanges{FieldsToCompare: diff.FieldsToCompare, ToChange: updates}
-		preMigrationPolicies[beforePolicy.GetId()] = beforePolicy
-	}
-	return MigratePolicies(db, policiesToMigrate, preMigrationPolicies)
-}
-
-// MigratePoliciesWithPreMigrationFS is a variant of MigratePolicies that takes in an embed.FS with the pre migration policies.
-// `preMigFS` is expected to have a directory called `preMigDirName`, which has one JSON file per policy.
-// Each JSON file is expected to have the filename <policy_id>.json.
-// Deprecated: This relies on boltDB. Remove once we no longer support ACS <4.0
-func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, preMigFS embed.FS, preMigDirName string) error {
-	comparisonPolicies := make(map[string]*storage.Policy)
-	for policyID := range policiesToMigrate {
-		path := filepath.Join(preMigDirName, fmt.Sprintf("%s.json", policyID))
-		policy, err := ReadPolicyFromFile(preMigFS, path)
-		if err != nil {
-			return err
-		}
-		comparisonPolicies[policyID] = policy
-	}
-	return MigratePolicies(db, policiesToMigrate, comparisonPolicies)
-}
-
-// MigratePolicies will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
-// matches the policies within comparisonPolicies.
-// Deprecated: This relies on boltDB. Remove once we no longer support ACS <4.0
-func MigratePolicies(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
-	if exists, err := bolthelpers.BucketExists(db, policyBucketName); err != nil {
-		return errors.Wrapf(err, "getting bucket with name %q", policyBucketName)
-	} else if !exists {
-		return errors.Errorf("unable to find policy bucket with name %s", policyBucketName)
-	}
-
-	return db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(policyBucketName)
-
-		// Migrate and update policies one by one. Abort the transaction, and hence
-		// the migration, in case of any error.
-		for policyID, updateDetails := range policiesToMigrate {
-			v := bucket.Get([]byte(policyID))
-			if v == nil {
-				log.WriteToStderrf("no policy exists for ID %s in policy migration. Continuing", policyID)
-				continue
-			}
-
-			var policy storage.Policy
-			if err := proto.Unmarshal(v, &policy); err != nil {
-				// Unable to recover, so abort transaction
-				return errors.Wrapf(err, "unmarshaling migrated policy with id %q", policyID)
-			}
-
-			// Fetch the saved policy state to compare with
-			comparePolicy, ok := comparisonPolicies[policyID]
-			if !ok || comparePolicy == nil {
-				return errors.Errorf("policy cannot be compared because comparison policy doesn't exist for %q", policyID)
-			}
-
-			// Validate all the required fields to ensure policy hasn't been updated
-			if !checkIfPoliciesMatch(updateDetails.FieldsToCompare, comparePolicy, &policy) {
-				log.WriteToStderrf("policy ID %s has already been altered. Will not update.", policyID)
-				continue
-			}
-
-			// Update policy as needed
-			updateDetails.ToChange.applyToPolicy(&policy)
-
-			policyBytes, err := proto.Marshal(&policy)
-			if err != nil {
-				return errors.Wrapf(err, "marshaling migrated policy %q with id %q", policy.GetName(), policy.GetId())
-			}
-			if err := bucket.Put([]byte(policyID), policyBytes); err != nil {
-				return errors.Wrapf(err, "writing migrated policy with id %q to the store", policy.GetId())
-			}
-		}
-
-		return nil
-	})
-}
 
 func checkIfPoliciesMatch(fieldsToCompare []FieldComparator, first *storage.Policy, second *storage.Policy) bool {
 	for _, field := range fieldsToCompare {
