@@ -37,6 +37,7 @@ import (
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 
 	// import gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -503,6 +504,20 @@ func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *cen
 					return m.GetEvent().GetSynced()
 				}
 			}
+		}
+	}
+}
+
+// WaitForStop will wait until sensor stops.
+func (c *TestContext) WaitForStop(t *testing.T, timeout time.Duration) {
+	timeoutTimer := time.NewTicker(timeout)
+	for {
+		select {
+		case <-timeoutTimer.C:
+			t.Errorf("timeout (%s) reached waiting for sensor to stop", timeout)
+			return
+		case <-c.sensorStopped.WaitC():
+			return
 		}
 	}
 }
@@ -975,6 +990,11 @@ func (c *TestContext) ApplyResourceAndWait(ctx context.Context, t *testing.T, ns
 	}
 
 	return fn, nil
+}
+
+// GetK8sConfig returns the rest.Config.
+func (c *TestContext) GetK8sConfig() *rest.Config {
+	return c.r.GetConfig()
 }
 
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see

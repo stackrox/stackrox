@@ -1,7 +1,6 @@
 package imagescan
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -79,7 +78,6 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 		helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, resource map[string]k8s.Object) {
 			var image *storage.ContainerImage
 			// Image should be received by central
-			fmt.Println("lvm: waiting for pod")
 			tc.LastDeploymentStateWithTimeout(t, "myapp", func(dp *storage.Deployment, _ central.ResourceAction) error {
 				if len(dp.GetContainers()) != 1 {
 					return errors.Errorf("expected 1 container found %d", len(dp.GetContainers()))
