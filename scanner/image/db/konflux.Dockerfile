@@ -44,4 +44,3 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 5432
 CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
-
