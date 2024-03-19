@@ -43,7 +43,7 @@ export function visitWorkloadCveOverview() {
  * @param {('Fixable' | 'Not fixable')[]} fixabilities
  */
 export function applyDefaultFilters(severities, fixabilities) {
-    cy.get('button:contains("Default vulnerability filters")').click();
+    cy.get('button:contains("Default filters")').click();
     severities.forEach((severity) => {
         cy.get(`label:contains("${severity}")`).click();
     });
