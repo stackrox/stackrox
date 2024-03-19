@@ -257,50 +257,6 @@ function setup_license() {
     wait_for_central "$local_api_endpoint"
 }
 
-function setup_auth0() {
-    local LOCAL_API_ENDPOINT="$1"
-    local LOCAL_CLIENT_SECRET="$2"
-	echo "Setting up Dev Auth0 login"
-
-	TMP=$(mktemp)
-	STATUS=$(curl_central \
-	    -s \
-        -o "$TMP" \
-        "https://${LOCAL_API_ENDPOINT}/v1/authProviders" \
-        -w "%{http_code}\n" \
-        -X POST \
-        -d @- <<-EOF
-{
-	"name": "StackRox Dev (Auth0)",
-	"type": "oidc",
-	"uiEndpoint": "${LOCAL_API_ENDPOINT}",
-	"enabled": true,
-	"validated": true,
-	"config": {
-		"issuer": "https://sr-dev.auth0.com",
-		"client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
-		"client_secret": "${LOCAL_CLIENT_SECRET}",
-		"mode": "post"
-	},
-	"extraUiEndpoints": ["localhost:8000", "localhost:3000", "localhost:8001"]
-}
-EOF
-    )
-    echo "Status: $STATUS"
-    AUTH_PROVIDER_ID="$(jq <"$TMP" -r '.id')"
-    echo "Created auth provider: ${AUTH_PROVIDER_ID}"
-
-    echo "Setting up role for Auth0"
-    curl_central -s "https://${LOCAL_API_ENDPOINT}/v1/groups" -X POST -d @- >/dev/null <<-EOF
-{
-    "props": {
-        "authProviderId": "${AUTH_PROVIDER_ID}"
-    },
-    "roleName": "Admin"
-}
-EOF
-}
-
 function setup_internal_sso() {
     local LOCAL_API_ENDPOINT="$1"
     local LOCAL_CLIENT_SECRET="$2"
