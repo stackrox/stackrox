@@ -10,7 +10,9 @@ from clusters import AutomationFlavorsCluster
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
-os.environ["SETUP_WORKLOAD_IDENTITIES"] = "true"
+# Workload identities are only set up for `openshift-4` infra clusters.
+if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
+    os.environ["SETUP_WORKLOAD_IDENTITIES"] = "true"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
