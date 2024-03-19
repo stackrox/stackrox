@@ -104,7 +104,7 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                 )}
                 {loading && !deploymentDetailsData && (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 )}
                 {deploymentDetailsData && (
