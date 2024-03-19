@@ -6,7 +6,7 @@ LABEL \
     description="Scanner v4 Database Image for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.description="Scanner v4 Database Image for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.display-name="scanner-v4-db" \
-    io.openshift.tags="rhacs,scanner-db,stackrox" \
+    io.openshift.tags="rhacs,scanner-v4-db,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-scanner-v4-db-rhel8" \
     source-location="https://github.com/stackrox/stackrox" \
