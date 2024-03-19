@@ -2,7 +2,9 @@ package docker
 
 import (
 	"crypto/tls"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -51,11 +53,23 @@ func (c *Config) formatURL() string {
 
 // DefaultTransport returns the default transport based on the configuration.
 func DefaultTransport(cfg *Config) registry.Transport {
-	transport := proxy.RoundTripper()
+	defaultDialer := &net.Dialer{
+		Timeout:   registryDialerTimeout,
+		KeepAlive: 30 * time.Second,
+		DualStack: true,
+	}
+	transport := proxy.RoundTripper(
+		proxy.WithDialContext(defaultDialer.DialContext),
+		proxy.WithResponseHeaderTimeout(registryResponseTimeout),
+	)
 	if cfg.Insecure {
-		transport = proxy.RoundTripperWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: true,
-		})
+		transport = proxy.RoundTripperWithTLSConfig(
+			&tls.Config{
+				InsecureSkipVerify: true,
+			},
+			proxy.WithDialContext(defaultDialer.DialContext),
+			proxy.WithResponseHeaderTimeout(registryResponseTimeout),
+		)
 	}
 	username, password := cfg.GetCredentials()
 	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)

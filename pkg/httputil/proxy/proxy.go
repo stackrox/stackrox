@@ -42,6 +42,40 @@ func getGlobalProxyConfig() *compiledConfig {
 	return cc
 }
 
+// Option returns a modified proxy round tripper.
+type Option func(base *http.Transport) *http.Transport
+
+// DialContextType is the function type of http.Transport.DialContext.
+type DialContextType func(ctx context.Context, network, addr string) (net.Conn, error)
+
+// WithDialContext returns a proxy option which sets the dial context on the transport.
+func WithDialContext(dialContext DialContextType) Option {
+	return func(transport *http.Transport) *http.Transport {
+		transport.DialContext = dialContext
+		return transport
+	}
+}
+
+// WithResponseHeaderTimeout returns a proxy option which sets the response header timeout
+// on the transport.
+func WithResponseHeaderTimeout(timeout time.Duration) Option {
+	return func(transport *http.Transport) *http.Transport {
+		transport.ResponseHeaderTimeout = timeout
+		return transport
+	}
+}
+
+func applyOptions(base *http.Transport, options ...Option) *http.Transport {
+	if len(options) == 0 {
+		return base
+	}
+	transport := base.Clone()
+	for _, opt := range options {
+		transport = opt(transport)
+	}
+	return transport
+}
+
 // UseWithDefaultTransport configures the default HTTP transport to use the proxy function defined in this package.
 // It should be called from an `init()` function to avoid any concurrent access to fields of `http.DefaultTransport`.
 func UseWithDefaultTransport() bool {
@@ -65,23 +99,24 @@ func TransportFunc(req *http.Request) (*url.URL, error) {
 }
 
 // Without is a ProxyFunc for http.Transport that will always attempt a direct connection.
-func Without() http.RoundTripper {
+func Without(options ...Option) http.RoundTripper {
 	transport := copyDefaultTransport()
 	transport.Proxy = nil
-	return transport
+	return applyOptions(transport, options...)
 }
 
 // RoundTripper returns something very similar to http.DefaultTransport, but with the Proxy setting changed to use
 // the configuration supported by this package.
-func RoundTripper() http.RoundTripper {
-	return proxyTransport
+func RoundTripper(options ...Option) http.RoundTripper {
+	return applyOptions(proxyTransport, options...)
 }
 
 // RoundTripperWithTLSConfig returns a round tripper like RoundTripper(), but using a custom TLS config.
-func RoundTripperWithTLSConfig(tlsConf *tls.Config) http.RoundTripper {
-	trans := proxyTransport.Clone()
-	trans.TLSClientConfig = tlsConf
-	return trans
+// TODO(stehessel): refactor as proxy option.
+func RoundTripperWithTLSConfig(tlsConf *tls.Config, options ...Option) http.RoundTripper {
+	transport := proxyTransport.Clone()
+	transport.TLSClientConfig = tlsConf
+	return applyOptions(transport, options...)
 }
 
 // AwareDialContext implements a TCP "DialContext", but respecting the proxy configuration.
