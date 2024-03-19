@@ -59,9 +59,11 @@ func main() {
 		}
 
 		m := jsonpb.Marshaler{Indent: "  "}
-		if err := m.Marshal(os.Stdout, msg); err != nil {
+		json, err := m.MarshalToString(msg)
+		if err != nil {
 			log.Fatalf("error while prettifying, message = %+v, err = %v", msg, err)
 		}
+		fmt.Println(json)
 	}
 
 	if err := reader.Err(); err != nil {
