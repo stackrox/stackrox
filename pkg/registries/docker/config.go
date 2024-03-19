@@ -2,9 +2,7 @@ package docker
 
 import (
 	"crypto/tls"
-	"net"
 	"strings"
-	"time"
 
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
