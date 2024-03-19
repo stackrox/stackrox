@@ -10,5 +10,4 @@ cp -r ../proto/* ${JAVA_PATH}
 SCANNER_DIR=$(go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 # files from gomod cache have no write permission causing problems for gradle
 cp -r ${SCANNER_DIR}/proto/* ${JAVA_PATH}
-chown -R $(whoami) ${JAVA_PATH}
-chmod -R u+rw ${JAVA_PATH}
+chmod -R u+w ${JAVA_PATH}
