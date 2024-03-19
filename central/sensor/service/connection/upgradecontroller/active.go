@@ -37,11 +37,11 @@ func (u *upgradeController) makeProcessActive(cluster *storage.Cluster, processS
 }
 
 func (u *upgradeController) maybeTimeoutUpgrade(processID string) error {
+	if u == nil {
+		return errors.New("upgrade controller is nil")
+	}
 	currState := u.active.status.GetProgress().GetUpgradeState()
 	var relevantGoTime time.Time
-	if u == nil {
-		return errors.Errorf("got no relevant timestamp for nil upgrade controller")
-	}
 	if u.active == nil || u.active.status == nil {
 		return errors.Errorf("got no relevant timestamp for upgrade controller with status: %+v", u.upgradeStatus)
 	}
