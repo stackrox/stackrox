@@ -125,7 +125,7 @@ func insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.
 		obj.GetProps().GetDstEntity().GetId(),
 		obj.GetProps().GetDstPort(),
 		obj.GetProps().GetL4Protocol(),
-		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
+		protocompat.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
 	}
 
@@ -162,7 +162,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 			obj.GetProps().GetDstEntity().GetId(),
 			obj.GetProps().GetDstPort(),
 			obj.GetProps().GetL4Protocol(),
-			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
+			protocompat.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
 		})
 
@@ -341,7 +341,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	if since == nil {
 		rows, err = s.db.Query(ctx, walkStmt, s.clusterID)
 	} else {
-		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
+		rows, err = s.db.Query(ctx, getSinceStmt, protocompat.NilOrTime(since), s.clusterID)
 	}
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
@@ -374,7 +374,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	if since == nil {
 		rows, err = s.db.Query(ctx, walkStmt, s.clusterID)
 	} else {
-		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
+		rows, err = s.db.Query(ctx, getSinceStmt, protocompat.NilOrTime(since), s.clusterID)
 	}
 
 	if err != nil {

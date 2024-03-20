@@ -17,7 +17,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -80,7 +80,7 @@ func (s *blobMigrationTestSuite) TestScannerDefinitionMigration() {
 	s.Equal(scannerDefBlobName, blob.GetName())
 	s.EqualValues(size, blob.GetLength())
 
-	modTime := pgutils.NilOrTime(blob.GetModifiedTime())
+	modTime := protocompat.NilOrTime(blob.GetModifiedTime())
 	s.Equal(fileInfo.ModTime().UTC().Round(time.Microsecond), modTime.UTC().Round(time.Microsecond))
 
 	// Verify Data

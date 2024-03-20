@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -528,7 +529,7 @@ func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.Test
 		obj.GetInt64(),
 		obj.GetFloat(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
-		pgutils.NilOrTime(obj.GetTimestamp()),
+		protocompat.NilOrTime(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
 		serialized,
@@ -587,7 +588,7 @@ func copyFromTestSingleKeyStructsWithCache(ctx context.Context, s Deleter, tx *p
 			obj.GetInt64(),
 			obj.GetFloat(),
 			pgutils.EmptyOrMap(obj.GetLabels()),
-			pgutils.NilOrTime(obj.GetTimestamp()),
+			protocompat.NilOrTime(obj.GetTimestamp()),
 			obj.GetEnum(),
 			obj.GetEnums(),
 			serialized,
