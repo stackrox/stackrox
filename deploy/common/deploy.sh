@@ -78,23 +78,18 @@ function wait_for_central {
     local central_namespace=${2:-stackrox}
 
     echo -n "Waiting for Central in namespace ${central_namespace} to respond."
-    set +e
     local start_time
     start_time="$(date '+%s')"
     local deadline=$((start_time + 10*60))  # 10 minutes
     until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
         if [[ "$(date '+%s')" -gt "$deadline" ]]; then
-            echo >&2 "Exceeded deadline waiting for Central."
-            central_pod="$("${ORCH_CMD}" -n "${central_namespace}" get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
-            if [[ -n "$central_pod" ]]; then
-                "${ORCH_CMD}" -n "${central_namespace}" exec "${central_pod}" -c central -- kill -ABRT 1
-            fi
+            echo >&2 "Exceeded deadline waiting for Central, aborting its process."
+            "${ORCH_CMD}" -n "${central_namespace}" exec deployment/central -c central -- kill -ABRT 1
             exit 1
         fi
         echo -n '.'
         sleep 1
     done
-    set -e
     echo
 }
 
