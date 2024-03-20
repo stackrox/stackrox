@@ -80,13 +80,13 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                 )}
                 {loading && !deploymentResourcesData && (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 )}
                 {deploymentResourcesData && (
                     <ExpandableSection
                         toggleText={`Images (${imageCount})`}
-                        onToggle={imageTableToggle.onToggle}
+                        onToggle={() => imageTableToggle.onToggle}
                         isExpanded={imageTableToggle.isOpen}
                         style={
                             {

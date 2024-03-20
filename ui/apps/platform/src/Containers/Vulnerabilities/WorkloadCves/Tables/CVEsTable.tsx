@@ -279,7 +279,7 @@ function CVEsTable({
                                 {createTableActions && (
                                     <Td className="pf-v5-u-px-0">
                                         <ActionsColumn
-                                            menuAppendTo={() => document.body}
+                                            // menuAppendTo={() => document.body}
                                             items={createTableActions({
                                                 cve,
                                                 summary,

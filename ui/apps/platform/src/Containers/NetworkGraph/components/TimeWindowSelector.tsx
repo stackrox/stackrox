@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { timeWindows } from 'constants/timeWindows';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -28,7 +25,7 @@ function TimeWindowSelector({
     return (
         <Select
             isOpen={isOpen}
-            onToggle={onToggle}
+            onToggle={() => onToggle}
             onSelect={selectTimeWindow}
             selections={activeTimeWindow}
             isDisabled={isDisabled}

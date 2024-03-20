@@ -135,7 +135,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                     tickLabelComponent={
                         <LinkableChartLabel
                             linkWith={(props) => labelLinkCallback(props, chartData)}
-                            text={(props) => labelTextCallback(props, chartData)}
+                            // text={(props) => labelTextCallback(props, chartData)}
                         />
                     }
                 />

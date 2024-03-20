@@ -4,19 +4,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { Bullseye, Button, PageSection, pluralize, Spinner, Title } from '@patternfly/react-core';
 import {
-	Bullseye,
-	Button,
-	PageSection,
-	pluralize,
-	Spinner,
-	Title
-} from '@patternfly/react-core';
-import {
-	Dropdown,
-	DropdownItem,
-	DropdownPosition,
-	DropdownToggle
+    Dropdown,
+    DropdownItem,
+    DropdownPosition,
+    DropdownToggle,
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
@@ -176,9 +169,11 @@ function AuthProviders(): ReactElement {
                                     position={DropdownPosition.right}
                                     toggle={
                                         <DropdownToggle
-                                            onToggle={(_event, isOpen) => onToggleCreateMenu(isOpen)}
+                                            onToggle={(_event, isOpen) =>
+                                                onToggleCreateMenu(isOpen)
+                                            }
                                             toggleIndicator={CaretDownIcon}
-                                            isPrimary
+                                            toggleVariant="primary"
                                         >
                                             Create auth provider
                                         </DropdownToggle>
@@ -203,7 +198,7 @@ function AuthProviders(): ReactElement {
             <PageSection variant={isList ? 'default' : 'light'}>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : isList ? (
                     <PageSection variant="light">

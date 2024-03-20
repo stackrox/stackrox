@@ -9,18 +9,19 @@ import {
     Flex,
     Form,
     FormGroup,
-    FormGroupProps,
     FormHelperText,
     Grid,
     GridItem,
     HelperText,
     HelperTextItem,
+    HelperTextItemProps,
     PageSection,
     Split,
     SplitItem,
     Switch,
     Text,
     TextInput,
+    TextInputProps,
     Title,
 } from '@patternfly/react-core';
 import get from 'lodash/get';
@@ -53,8 +54,8 @@ function NumericSetting({
     helperTextInvalid,
 }: BaseSettingProps & {
     value: number;
-    validated: FormGroupProps['validated'];
-    helperTextInvalid: FormGroupProps['helperTextInvalid'];
+    validated: HelperTextItemProps['variant'];
+    helperTextInvalid: string;
 }) {
     return (
         <>
@@ -73,7 +74,7 @@ function NumericSetting({
                             value={value}
                             onChange={(e, _) => handleChange(e)}
                             isDisabled={!isSettingEnabled || isDisabled}
-                            validated={validated}
+                            validated={validated as TextInputProps['validated']}
                         />
                         <span>days</span>
                     </Flex>

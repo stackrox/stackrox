@@ -10,26 +10,24 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import {
-	Alert,
-	AlertGroup,
-	AlertVariant,
-	Bullseye,
-	Button,
-	Card,
-	Divider,
-	Flex,
-	FlexItem,
-	Pagination,
-	Spinner,
-	Switch,
-	Text,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem
+    Alert,
+    AlertGroup,
+    AlertVariant,
+    Bullseye,
+    Button,
+    Card,
+    Divider,
+    Flex,
+    FlexItem,
+    Pagination,
+    Spinner,
+    Switch,
+    Text,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
 import { ReportConfiguration, RunState, runStates } from 'services/ReportsService.types';
@@ -269,7 +267,9 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v5-u-danger-color-100">Delete download</span>
+                                    <span className="pf-v5-u-danger-color-100">
+                                        Delete download
+                                    </span>
                                 ),
                                 onClick: (event) => {
                                     event.preventDefault();
@@ -305,7 +305,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     <Td isActionCell>
                                         {isDownloadAvailable && (
                                             <ActionsColumn
-                                                menuAppendTo={() => document.body}
+                                                // menuAppendTo={() => document.body}
                                                 items={rowActions}
                                                 isDisabled={areDownloadActionsDisabled}
                                             />

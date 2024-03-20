@@ -1,8 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { SearchOption } from '../searchOptions';
@@ -29,7 +26,7 @@ function SearchOptionsDropdown({
             variant="single"
             toggleAriaLabel="search options filter menu toggle"
             aria-label="search options filter menu items"
-            onToggle={onToggle}
+            onToggle={() => onToggle}
             onSelect={onSearchOptionSelect}
             selections={searchOption.value}
             isOpen={isOpen}
