@@ -240,3 +240,29 @@ message ComplianceOperatorSuiteV2 {
 
   ComplianceOperatorStatus status = 4;
 }
+
+// Next Tag: 6
+message ComplianceOperatorBenchmark {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
+  string version = 3;
+  string description = 4;
+  string profile_label = 5;
+}
+
+// TODO: Combined primary key for benchmark_id and rule_id
+// Next Tag: 5
+message ComplianceOperatorControl {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string benchmark_id = 2; // @gotags sql:"fk(ComplianceOperatorBenchmark:id)"
+  string title = 3;
+  string control = 4;
+}
+
+
+// Next tag: 4
+message ComplianceOperatorControlRuleV2Edge {
+  string id = 1; // @gotags: sql:"pk,id"
+  string control_id = 2; //@gotags: sql:"fk(ComplianceOperatorControl:id)"
+  string rule_id = 3; //@gotags sql:"fk(ComplianceOperatorRuleV2:id)"
+}
