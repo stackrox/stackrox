@@ -27,7 +27,7 @@ run_shellcheck() {
     rm -f "${output}/*" "${flag_failure}"
 
     for shell in $(retrieve_shell_scripts | grep -v -x -f "${known_failures_file}"); do
-        if ! shellcheck -P SCRIPTDIR -x "$shell"; then
+        if ! shellcheck --norc -P SCRIPTDIR -x "$shell"; then
             if [[ "${CI:-}" == "true" ]]; then
                 mkdir -p "${output}"
                 local xmlout="${shell//.sh/.xml}"
