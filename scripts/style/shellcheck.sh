@@ -32,7 +32,7 @@ run_shellcheck() {
                 mkdir -p "${output}"
                 local xmlout="${shell//.sh/.xml}"
                 xmlout="${xmlout//\//_}"
-                shellcheck -f checkstyle -x "$shell" | xmlstarlet tr scripts/style/checkstyle2junit.xslt > \
+                shellcheck -f checkstyle --norc -P SCRIPTDIR -x "$shell" | xmlstarlet tr scripts/style/checkstyle2junit.xslt > \
                     "${output}/${xmlout}" || true
             fi
             touch "${flag_failure}"
