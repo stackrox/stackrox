@@ -90,10 +90,3 @@ func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
 	}
 	return nil
 }
-
-// CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
-// the first timestamp is before the second or a positive value if the first timestamp is
-// after the second.
-func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
-	return t1.Compare(t2)
-}

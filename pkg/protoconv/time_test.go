@@ -2,7 +2,6 @@ package protoconv
 
 import (
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -36,20 +35,4 @@ func TestConvertTimeString(t *testing.T) {
 			assert.Equal(t, c.output, ConvertTimeString(c.input))
 		})
 	}
-}
-
-func TestCompareTimestamps(t *testing.T) {
-	protoTS1 := &types.Timestamp{
-		Seconds: 2345678901,
-		Nanos:   234567891,
-	}
-
-	protoTS2 := &types.Timestamp{
-		Seconds: 3456789012,
-		Nanos:   345678912,
-	}
-
-	assert.Zero(t, CompareTimestamps(protoTS1, protoTS1))
-	assert.Negative(t, CompareTimestamps(protoTS1, protoTS2))
-	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
 }
