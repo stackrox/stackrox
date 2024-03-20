@@ -2,6 +2,7 @@ import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
@@ -37,6 +38,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private String INLINE_SCAN_DEPLOYMENT_NAME = "inline-scan"
     static final private String INLINE_SCAN_IMAGE_NAME_WITH_SHA = TEST_IMAGE_NAME_WITH_SHA
+    static final private String INLINE_SCAN_IMAGE_SHA = TEST_IMAGE_SHA
 
     static final private String NGINX_IMAGE          = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"
     static final private String NGINX_IMAGE_WITH_SHA = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"+
@@ -102,8 +104,16 @@ class AdmissionControllerTest extends BaseSpecification {
         sleep(10000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
         // Pre run scan to avoid registry timeouts with inline scans in the
-        // tests below
+        // tests below.
         ImageService.scanImage(INLINE_SCAN_IMAGE_NAME_WITH_SHA)
+
+        // Wait until we received metadata the inline scan image. This will
+        // ensure that enrichment has finalized.
+        withRetry(18, 10) {
+            ImageOuterClass.Image image = ImageService.getImage(INLINE_SCAN_IMAGE_SHA, false)
+            assert image
+            assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+        }
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
     }
@@ -182,7 +192,7 @@ class AdmissionControllerTest extends BaseSpecification {
         3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"  | false
         3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"     | false
         3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"         | false
-        30      | true  | false      | INLINE_SCAN_DEPLOYMENT             | false    | "nginx w/ inline scan"                  | true
+        30      | true  | false      | INLINE_SCAN_DEPLOYMENT       | false    | "nginx w/ inline scan"                  | true
     }
 
     @Unroll
@@ -362,7 +372,7 @@ class AdmissionControllerTest extends BaseSpecification {
         3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
         3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
         3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
-        30      | true  | false      | INLINE_SCAN_DEPLOYMENT             | false    | "nginx w/ inline scan"
+        30      | true  | false      | INLINE_SCAN_DEPLOYMENT       | false    | "nginx w/ inline scan"
     }
 
     @Unroll
