@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FormEvent } from 'react';
 import {
     Button,
     FormGroup,
@@ -75,7 +75,7 @@ function ByNameSelector({
     }
 
     function onChangeValue(resourceSelector, valueIndex) {
-        return (value: string) => {
+        return (event: FormEvent<HTMLInputElement>, value: string) => {
             const newSelector = cloneDeep(resourceSelector);
             newSelector.rule.values[valueIndex].value = value;
             handleChange(entityType, newSelector);

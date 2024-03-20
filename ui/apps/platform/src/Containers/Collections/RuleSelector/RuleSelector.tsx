@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import pluralize from 'pluralize';
 import { FormikErrors } from 'formik';
 
@@ -86,7 +83,7 @@ function RuleSelector({
             <Select
                 toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
                 isOpen={isOpen}
-                onToggle={onToggle}
+                onToggle={() => onToggle}
                 selections={selection}
                 onSelect={onRuleOptionSelect}
                 isDisabled={isDisabled}

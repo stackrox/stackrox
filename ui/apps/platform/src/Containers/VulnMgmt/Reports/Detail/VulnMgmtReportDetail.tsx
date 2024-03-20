@@ -1,29 +1,25 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-	Alert,
-	AlertProps,
-	AlertVariant,
-	Breadcrumb,
-	BreadcrumbItem,
-	Card,
-	CardBody,
-	DescriptionList,
-	DescriptionListDescription,
-	DescriptionListGroup,
-	DescriptionListTerm,
-	Divider,
-	PageSection,
-	Title,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem
+    Alert,
+    AlertProps,
+    AlertVariant,
+    Breadcrumb,
+    BreadcrumbItem,
+    Card,
+    CardBody,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Divider,
+    PageSection,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import {
-	Dropdown,
-	DropdownItem,
-	DropdownToggle
-} from '@patternfly/react-core/deprecated';
+import { Dropdown, DropdownItem, DropdownToggle } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -163,7 +159,7 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
                                     position="right"
                                     toggle={
                                         <DropdownToggle
-                                            isPrimary
+                                            toggleVariant="primary"
                                             onToggle={(_event, isOpen) => onToggleActions(isOpen)}
                                             toggleIndicator={CaretDownIcon}
                                         >

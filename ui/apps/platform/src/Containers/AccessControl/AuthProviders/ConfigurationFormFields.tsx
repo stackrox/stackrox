@@ -22,12 +22,10 @@ export type ConfigurationFormFieldsProps = {
     config: AuthProviderConfig;
     isViewing: boolean;
     onChange: (
-        _value: unknown,
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
+        _value: unknown
     ) => void;
-    onBlur: (
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
-    ) => void;
+    onBlur: (event?: React.FocusEvent<HTMLTextAreaElement, Element>) => void;
     setFieldValue: (name: string, value: string | boolean) => void;
     type: AuthProviderType;
     configErrors?: FormikErrors<Record<string, string>>;
