@@ -88,6 +88,9 @@ spec:
         value: $(tasks.build-container.status)
       - name: source-image-url
         value: $(tasks.build-source-image.results.SOURCE_IMAGE_URL)
+      workspaces:
+      - name: workspace
+        workspace: workspace
       taskRef:
         params:
         - name: name
