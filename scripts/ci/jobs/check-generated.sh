@@ -88,9 +88,7 @@ function check-shellcheck-failing-list() {
 }
 check-shellcheck-failing-list || {
     # Do not mark the job as failed if new additions; The lint job will already report the change.
-    removals=$(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f1)
-    echo "removals:${removals}"
-    if [[ $removals -gt 0 ]]; then
+    if [[ $(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f1) -gt 0 ]]; then
         save_junit_failure "Check_Shellcheck_Skip_List" \
             "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
             "$(git diff HEAD || true)"
