@@ -87,12 +87,13 @@ function check-shellcheck-failing-list() {
     git diff --exit-code HEAD
 }
 check-shellcheck-failing-list || {
-    # Do not mark the job as failed if new additions; The lint job will already report the change.
-    if [[ $(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f1) -gt 0 ]]; then
+    if [[ $(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f2) -gt 0 ]]; then
+        # Report the job as failed if files can be removed from the skip file.
         save_junit_failure "Check_Shellcheck_Skip_List" \
             "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
             "$(git diff HEAD || true)"
     else
+        # Do not mark the job as failed if new additions; The lint job will already report the change.
         save_junit_success "Check_Shellcheck_Skip_List" \
             "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
             "$(git diff HEAD || true)"
