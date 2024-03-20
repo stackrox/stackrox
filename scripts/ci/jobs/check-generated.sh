@@ -84,7 +84,7 @@ echo 'Check if a script that was on the failed shellcheck list is now fixed. (If
 function check-shellcheck-failing-list() {
     make update-shellcheck-skip
     echo 'Checking for diffs after updating shellcheck failing list...'
-    git diff --exit-code HEAD
+    git diff --exit-code HEAD || true  # Do not mark the job as failed on update; The lint job will already report the change.
 }
 check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
