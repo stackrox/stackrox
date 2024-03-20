@@ -84,12 +84,20 @@ echo 'Check if a script that was on the failed shellcheck list is now fixed. (If
 function check-shellcheck-failing-list() {
     make update-shellcheck-skip
     echo 'Checking for diffs after updating shellcheck failing list...'
-    git diff --exit-code HEAD || true  # Do not mark the job as failed on update; The lint job will already report the change.
+    git diff --exit-code HEAD
 }
 check-shellcheck-failing-list || {
-    save_junit_failure "Check_Shellcheck_Skip_List" \
-        "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
-        "$(git diff HEAD || true)"
+    # Do not mark the job as failed if new additions; The lint job will already report the change.
+    removals=$(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f1)
+    if [[ $removals -gt 0 ]]; then
+        save_junit_failure "Check_Shellcheck_Skip_List" \
+            "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
+            "$(git diff HEAD || true)"
+    else
+        save_junit_success "Check_Shellcheck_Skip_List" \
+            "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
+            "$(git diff HEAD || true)"
+    fi
     git reset --hard HEAD
     echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 }
