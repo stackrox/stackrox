@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -173,7 +172,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 		Return(now, nil)
 
 	srv := NewMatcherService(s.matcherMock, nil)
-	res, err := srv.GetMetadata(s.ctx, &types.Empty{})
+	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.NoError(err)
 	s.Equal(&v4.Metadata{
 		LastVulnerabilityUpdate: protoNow,
@@ -187,7 +186,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {
 		Return(time.Time{}, errors.New("some error"))
 
 	srv := NewMatcherService(s.matcherMock, nil)
-	res, err := srv.GetMetadata(s.ctx, &types.Empty{})
+	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.Error(err)
 	s.Nil(res)
 }
