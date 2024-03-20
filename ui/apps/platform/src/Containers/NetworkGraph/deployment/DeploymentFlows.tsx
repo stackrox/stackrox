@@ -137,7 +137,7 @@ function DeploymentFlows({
     if (isLoadingNetworkFlows || isModifying) {
         return (
             <Bullseye>
-                <Spinner  size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }
@@ -200,7 +200,7 @@ function DeploymentFlows({
                                     'flow',
                                     numAnomalousFlows
                                 )}`}
-                                onToggle={toggleAnomalousFlowsExpandable}
+                                onToggle={() => toggleAnomalousFlowsExpandable}
                                 isExpanded={isAnomalousFlowsExpanded}
                             >
                                 {numAnomalousFlows > 0 ? (
@@ -230,7 +230,7 @@ function DeploymentFlows({
                                     'flow',
                                     numBaselineFlows
                                 )}`}
-                                onToggle={toggleBaselineFlowsExpandable}
+                                onToggle={() => toggleBaselineFlowsExpandable}
                                 isExpanded={isBaselineFlowsExpanded}
                             >
                                 {numBaselineFlows > 0 ? (

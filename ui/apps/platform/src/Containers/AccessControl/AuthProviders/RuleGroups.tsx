@@ -32,8 +32,8 @@ export type RuleGroupErrors = {
 export type RuleGroupsProps = {
     authProviderId: string;
     onChange: (
-        _value: unknown,
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
+        _value: unknown
     ) => void;
     roles: Role[];
     groups: Group[];

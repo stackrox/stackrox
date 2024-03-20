@@ -1,13 +1,11 @@
 import React, { ChangeEvent } from 'react';
+import { Divider } from '@patternfly/react-core';
 import {
-	Divider
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectGroup,
-	SelectOption,
-	SelectOptionObject,
-	SelectVariant
+    Select,
+    SelectGroup,
+    SelectOption,
+    SelectOptionObject,
+    SelectVariant,
 } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -100,7 +98,7 @@ function NamespaceSelect({
             className="namespace-select"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
-            onToggle={onToggle}
+            onToggle={() => onToggle}
             onSelect={onSelect}
             onFilter={onFilter}
             placeholderText={currentSelection === selectAll ? 'All namespaces' : 'Namespaces'}

@@ -65,13 +65,12 @@ function ImportPolicyJSONUpload({
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
-                    
                     onReadStarted={handleFileReadStarted}
                     onReadFinished={handleFileReadFinished}
                     isLoading={isFileLoading}
                     browseButtonText="Upload"
                     dropzoneProps={{
-                        accept: '.json',
+                        accept: { 'application/json': ['.json'] },
                     }}
                 />
                 {policies?.length > 0 && fileContent !== '' && (

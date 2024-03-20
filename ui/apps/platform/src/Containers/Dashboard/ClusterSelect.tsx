@@ -1,12 +1,10 @@
 import React, { ChangeEvent } from 'react';
+import { Divider } from '@patternfly/react-core';
 import {
-	Divider
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption,
-	SelectOptionObject,
-	SelectVariant
+    Select,
+    SelectOption,
+    SelectOptionObject,
+    SelectVariant,
 } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -88,7 +86,7 @@ function ClusterSelect({
             toggleAriaLabel="Select clusters"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
-            onToggle={onToggle}
+            onToggle={() => onToggle}
             onSelect={onSelect}
             onFilter={onFilter}
             placeholderText={currentSelection === selectAll ? 'All clusters' : 'Clusters'}

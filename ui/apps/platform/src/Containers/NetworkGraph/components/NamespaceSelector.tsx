@@ -1,21 +1,20 @@
 import React, { useMemo } from 'react';
 import {
-	Badge,
-	Button,
-	Divider,
-	Flex,
-	FlexItem,
-	Menu,
-	MenuContent,
-	MenuFooter,
-	MenuSearch,
-	MenuItem,
-	MenuList,
-	SearchInput, MenuSearchInput
+    Badge,
+    Button,
+    Divider,
+    Flex,
+    FlexItem,
+    Menu,
+    MenuContent,
+    MenuFooter,
+    MenuSearch,
+    MenuItem,
+    MenuList,
+    SearchInput,
+    MenuSearchInput,
 } from '@patternfly/react-core';
-import {
-	Select
-} from '@patternfly/react-core/deprecated';
+import { Select } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -127,15 +126,17 @@ function NamespaceSelector({
 
     const namespaceSelectMenu = (
         <Menu onSelect={onNamespaceSelect} selected={selectedNamespaces} isScrollable>
-            <MenuSearch><MenuSearchInput className="pf-v5-u-p-md">
-                <SearchInput
-                    value={input}
-                    aria-label="Filter namespaces"
-                    type="search"
-                    placeholder="Filter namespaces..."
-                    onChange={(_event, value) => handleTextInputChange(value)}
-                />
-            </MenuSearchInput></MenuSearch>
+            <MenuSearch>
+                <MenuSearchInput className="pf-v5-u-p-md">
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter namespaces"
+                        type="search"
+                        placeholder="Filter namespaces..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
             <Divider className="pf-v5-u-m-0" />
             <MenuContent>
                 <MenuList>
@@ -163,7 +164,7 @@ function NamespaceSelector({
     return (
         <Select
             isOpen={isNamespaceOpen}
-            onToggle={toggleIsNamespaceOpen}
+            onToggle={() => toggleIsNamespaceOpen}
             className="namespace-select"
             placeholderText={
                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>
