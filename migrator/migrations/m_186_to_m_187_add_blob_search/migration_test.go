@@ -60,7 +60,7 @@ func (s *blobMigrationTestSuite) TestMigration() {
 		s.Contains(blobs, nb.Name)
 		blob := blobs[nb.Name]
 		s.Equal(blob.Length, nb.Length)
-		s.Equal(pgutils.NilOrTime(blob.ModifiedTime), nb.ModifiedTime)
+		s.Equal(protocompat.NilOrTime(blob.ModifiedTime), nb.ModifiedTime)
 		converted, err := afterSchema.ConvertBlobToProto(&newBlobs[i])
 		s.Require().NoError(err)
 		s.Equal(blob, converted)

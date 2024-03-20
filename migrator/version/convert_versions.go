@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -16,7 +16,7 @@ func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
 		Version:       obj.GetVersion(),
 		SeqNum:        obj.GetSeqNum(),
 		MinSeqNum:     obj.GetMinSeqNum(),
-		LastPersisted: pgutils.NilOrTime(obj.GetLastPersisted()),
+		LastPersisted: protocompat.NilOrTime(obj.GetLastPersisted()),
 	}
 	return model, nil
 }

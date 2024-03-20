@@ -203,7 +203,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
+		rows, err = s.db.Query(ctx, partitionSinceStmt, protocompat.NilOrTime(since))
 	}
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
@@ -238,7 +238,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
+		rows, err = s.db.Query(ctx, partitionSinceStmt, protocompat.NilOrTime(since))
 	}
 
 	if err != nil {
