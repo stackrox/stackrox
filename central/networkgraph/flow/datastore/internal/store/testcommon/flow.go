@@ -43,9 +43,8 @@ func (suite *FlowStoreTestSuite) SetupSuite() {
 func (suite *FlowStoreTestSuite) TestStore() {
 	// Postgres timestamp only goes to the microsecond level, so we need to truncate these test times
 	// to ensure the comparisons of the results works correctly.
-	now := time.Now().UTC()
-	t1 := now.Add(-5 * time.Minute).Truncate(time.Microsecond)
-	t2 := now.Truncate(time.Microsecond)
+	t1 := time.Now().Add(-5 * time.Minute).Truncate(time.Microsecond)
+	t2 := time.Now().Truncate(time.Microsecond)
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -91,6 +90,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[1:])
 
+	now := time.Now()
 	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &now)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[2:])
