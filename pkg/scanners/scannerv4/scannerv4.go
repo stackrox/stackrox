@@ -36,10 +36,6 @@ var (
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
 	metadataTimeout = 1 * time.Minute
-
-	// zeroProtoTimestampFromTime represents the zero value of a proto
-	// timestamp when initialized from the zero time.
-	zeroProtoTimestampFromTime, _ = protocompat.ConvertTimeToTimestampOrError(time.Time{})
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -156,7 +152,7 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	}
 
 	lastTms := metadata.GetLastVulnerabilityUpdate()
-	if lastTms == nil || lastTms.Equal(protocompat.GetProtoTimestampZero()) || lastTms.Equal(zeroProtoTimestampFromTime) {
+	if protocompat.IsZeroTimestamp(lastTms) {
 		return nil, errors.New("no timestamp available")
 	}
 
