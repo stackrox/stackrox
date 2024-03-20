@@ -672,8 +672,7 @@ function launch_sensor {
         exit 1
       fi
       mkdir "$k8s_dir/sensor-deploy"
-      touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
-      chmod 0600 "$k8s_dir/sensor-deploy/init-bundle.yaml"
+      (umask 077; touch "$k8s_dir/sensor-deploy/init-bundle.yaml")
       curl_central "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
           -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}' \
           | jq '.helmValuesBundle' -r | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
