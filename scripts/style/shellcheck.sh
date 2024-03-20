@@ -57,7 +57,7 @@ update_failing_list() {
     pushd "$ROOT" > /dev/null
 
     for shell in $(retrieve_shell_scripts); do
-        if ! shellcheck -P SCRIPTDIR -x "$shell" > /dev/null; then
+        if ! shellcheck --norc -P SCRIPTDIR -x "$shell" > /dev/null; then
             echo "$shell" >> "$known_failures_file"
         fi
     done
