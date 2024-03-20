@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
@@ -105,6 +106,19 @@ func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeInde
 }
 
 func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *http.Client, mountPath string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+	o := ccindexer.Options{
+		Client: nil,
+		ScannerConfig: struct {
+			Package, Dist, Repo, File map[string]func(interface{}) error
+		}{},
+		Store:        nil,
+		LayerScanner: nil, // FIXME: Use Nodescanner here
+		FetchArena:   nil, // FIXME: Use NodeArena here
+		Ecosystems:   nil,
+		Resolvers:    nil,
+		Vscnrs:       nil,
+	}
+
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
@@ -120,6 +134,8 @@ func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *ht
 		Resolvers: nil,
 	}
 
+	// FIXME: Cannot use libindex.New here, instead we need to build this ourselves,
+	// as we need to set custom indexer options that .New doesn't expose
 	indexer, err := libindex.New(ctx, &opts, client)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
