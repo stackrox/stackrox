@@ -19,7 +19,7 @@ import (
 func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*v1.Query, error) {
 	switch queryType {
 	// DELETE is expected to be the only Write use case for the query generator
-	case DELETE:
+	case DELETE, DELETERETURNINGIDS:
 		if schema.PermissionChecker != nil {
 			if ok, err := schema.PermissionChecker.WriteAllowed(ctx); err != nil {
 				return nil, err

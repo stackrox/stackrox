@@ -5,20 +5,30 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 var (
@@ -450,7 +460,763 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 	}
 }
 
+type storeCreateFunction = func(testDB *pgtest.TestPostgres) Store[storage.ServiceAccount, *storage.ServiceAccount]
+
+func TestNamespaceScopedPostgresStore(t *testing.T) {
+	testClusterNamespaceScopedStoreSAC(
+		t,
+		resources.ServiceAccount,
+		newNamespaceScopedNamespacePostgresStore,
+		testutils.GenericNamespaceSACUpsertTestCases,
+		testutils.GenericNamespaceSACDeleteTestCases,
+		testutils.GenericNamespaceSACGetTestCases,
+	)
+}
+
+func TestNamespaceScopedCachedStore(t *testing.T) {
+	testClusterNamespaceScopedStoreSAC(
+		t,
+		resources.ServiceAccount,
+		newNamespaceScopedNamespaceCachedPostgresStore,
+		testutils.GenericNamespaceSACUpsertTestCases,
+		testutils.GenericNamespaceSACDeleteTestCases,
+		testutils.GenericNamespaceSACGetTestCases,
+	)
+}
+
+func TestClusterScopedPostgresStore(t *testing.T) {
+	testClusterNamespaceScopedStoreSAC(
+		t,
+		resources.Cluster,
+		newClusterScopedNamespacePostgresStore,
+		testutils.GenericClusterSACUpsertTestCases,
+		testutils.GenericClusterSACDeleteTestCases,
+		testutils.GenericClusterSACReadTestCases,
+	)
+}
+
+func TestClusterScopedCachedStore(t *testing.T) {
+	testClusterNamespaceScopedStoreSAC(
+		t,
+		resources.Cluster,
+		newClusterScopedNamespaceCachedPostgresStore,
+		testutils.GenericClusterSACUpsertTestCases,
+		testutils.GenericClusterSACDeleteTestCases,
+		testutils.GenericClusterSACReadTestCases,
+	)
+}
+
+func testClusterNamespaceScopedStoreSAC(
+	t *testing.T,
+	scopingResource permissions.ResourceMetadata,
+	storeCreate storeCreateFunction,
+	getUpsertTestCases func(*testing.T, string) map[string]testutils.SACCrudTestCase,
+	getDeleteTestCases func(*testing.T) map[string]testutils.SACCrudTestCase,
+	getReadTestCases func(*testing.T) map[string]testutils.SACCrudTestCase,
+) {
+	testSuite := new(clusterNamespaceScopedStoreSACTestSuite)
+	testSuite.storeCreateFunc = storeCreate
+	testSuite.scopingResource = scopingResource
+	testSuite.getUpsertTestCases = getUpsertTestCases
+	testSuite.getDeleteTestCases = getDeleteTestCases
+	testSuite.getReadTestCases = getReadTestCases
+	suite.Run(t, testSuite)
+}
+
+type clusterNamespaceScopedStoreSACTestSuite struct {
+	suite.Suite
+
+	storeCreateFunc storeCreateFunction
+
+	scopingResource permissions.ResourceMetadata
+
+	testDB *pgtest.TestPostgres
+	store  Store[storage.ServiceAccount, *storage.ServiceAccount]
+
+	getUpsertTestCases func(*testing.T, string) map[string]testutils.SACCrudTestCase
+	getDeleteTestCases func(*testing.T) map[string]testutils.SACCrudTestCase
+	getReadTestCases   func(*testing.T) map[string]testutils.SACCrudTestCase
+
+	testContexts          map[string]context.Context
+	testServiceAccountIDs []string
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) SetupTest() {
+	s.testDB = pgtest.ForT(s.T())
+	s.store = s.storeCreateFunc(s.testDB)
+	s.testServiceAccountIDs = make([]string, 0)
+	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
+		s.scopingResource)
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TearDownTest() {
+	for _, id := range s.testServiceAccountIDs {
+		s.deleteServiceAccount(id)
+	}
+	s.testDB.DB.Close()
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) deleteServiceAccount(id string) {
+	s.Require().NoError(s.store.Delete(s.testContexts[testutils.UnrestrictedReadWriteCtx], id))
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestUpsert() {
+	testCases := s.getUpsertTestCases(s.T(), testutils.VerbUpsert)
+	for name, c := range testCases {
+		s.Run(name, func() {
+			sa := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, sa.GetId())
+			ctx := s.testContexts[c.ScopeKey]
+			err := s.store.Upsert(ctx, sa)
+			defer s.deleteServiceAccount(sa.GetId())
+			if c.ExpectError {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.ExpectedError)
+			} else {
+				s.NoError(err)
+			}
+			obj, found, err := s.store.Get(s.testContexts[testutils.UnrestrictedReadWriteCtx], sa.GetId())
+			s.NoError(err)
+			if c.ExpectError {
+				s.False(found)
+				s.Nil(obj)
+			} else {
+				s.True(found)
+				s.Equal(sa, obj)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestUpsertMany() {
+	testCases := s.getUpsertTestCases(s.T(), testutils.VerbUpsert)
+	for name, c := range testCases {
+		s.Run(name, func() {
+			sa1 := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			sa2 := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, sa1.GetId())
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, sa2.GetId())
+			ctx := s.testContexts[c.ScopeKey]
+			serviceAccounts := []*storage.ServiceAccount{sa1, sa2}
+			checkIDs := []string{sa1.GetId(), sa2.GetId()}
+			err := s.store.UpsertMany(ctx, serviceAccounts)
+			defer s.deleteServiceAccount(sa1.GetId())
+			defer s.deleteServiceAccount(sa2.GetId())
+			if c.ExpectError {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.ExpectedError)
+			} else {
+				s.NoError(err)
+			}
+			objs, missed, err := s.store.GetMany(s.testContexts[testutils.UnrestrictedReadWriteCtx], checkIDs)
+			s.NoError(err)
+			if c.ExpectError {
+				s.Equal([]int{0, 1}, missed)
+				s.Len(objs, 0)
+			} else {
+				s.Len(missed, 0)
+				s.ElementsMatch(serviceAccounts, objs)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestDelete() {
+	testCases := s.getDeleteTestCases(s.T())
+	for name, c := range testCases {
+		s.Run(name, func() {
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			serviceAccount := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			serviceAccountID := serviceAccount.GetId()
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, serviceAccountID)
+			s.Require().NoError(s.store.Upsert(unrestrictedCtx, serviceAccount))
+			objBefore, foundBefore, err := s.store.Get(unrestrictedCtx, serviceAccountID)
+			s.Require().NoError(err)
+			s.Require().True(foundBefore)
+			s.Require().Equal(serviceAccount, objBefore)
+
+			ctx := s.testContexts[c.ScopeKey]
+			deleteErr := s.store.Delete(ctx, serviceAccountID)
+			s.NoError(deleteErr)
+
+			objAfter, foundAfter, checkGetErr := s.store.Get(unrestrictedCtx, serviceAccountID)
+			s.NoError(checkGetErr)
+			if c.ExpectError {
+				s.True(foundAfter)
+				s.Equal(serviceAccount, objAfter)
+			} else {
+				s.False(foundAfter)
+				s.Nil(objAfter)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestDeleteMany() {
+	testCases := s.getDeleteTestCases(s.T())
+	for name, c := range testCases {
+		s.Run(name, func() {
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			serviceAccount1 := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			serviceAccount2 := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, serviceAccount1.GetId())
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, serviceAccount2.GetId())
+			serviceAccounts := []*storage.ServiceAccount{serviceAccount1, serviceAccount2}
+			checkIDs := []string{serviceAccount1.GetId(), serviceAccount2.GetId()}
+			s.Require().NoError(s.store.UpsertMany(unrestrictedCtx, serviceAccounts))
+			objectsBefore, missingBefore, err := s.store.GetMany(unrestrictedCtx, checkIDs)
+			s.Require().NoError(err)
+			s.Require().Empty(missingBefore)
+			s.Require().Equal(serviceAccounts, objectsBefore)
+
+			ctx := s.testContexts[c.ScopeKey]
+			deleteErr := s.store.DeleteMany(ctx, checkIDs)
+			s.NoError(deleteErr)
+
+			objectsAfter, missingAfter, checkGetErr := s.store.GetMany(unrestrictedCtx, checkIDs)
+			s.NoError(checkGetErr)
+			if c.ExpectError {
+				s.Empty(missingAfter)
+				s.Equal(serviceAccounts, objectsAfter)
+			} else {
+				s.Equal([]int{0, 1}, missingAfter)
+				s.Empty(objectsAfter)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) setupReadTest() []*storage.ServiceAccount {
+	unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+	serviceAccount1 := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+		testconsts.NamespaceB)
+	serviceAccount2 := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+		testconsts.NamespaceB)
+	serviceAccounts := []*storage.ServiceAccount{serviceAccount1, serviceAccount2}
+	s.testServiceAccountIDs = append(s.testServiceAccountIDs, serviceAccount1.GetId())
+	s.testServiceAccountIDs = append(s.testServiceAccountIDs, serviceAccount2.GetId())
+	s.Require().NoError(s.store.UpsertMany(unrestrictedCtx, serviceAccounts))
+	return serviceAccounts
+}
+
+func getServiceAccountIDs(serviceAccounts []*storage.ServiceAccount) []string {
+	serviceAccountIDs := make([]string, 0, len(serviceAccounts))
+	for _, serviceAccount := range serviceAccounts {
+		serviceAccountIDs = append(serviceAccountIDs, serviceAccount.GetId())
+	}
+	return serviceAccountIDs
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestExists() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().NotEmpty(serviceAccounts)
+	serviceAccountID := serviceAccounts[0].GetId()
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			exists, err := s.store.Exists(ctx, serviceAccountID)
+			s.NoError(err)
+			s.Equal(c.ExpectedFound, exists)
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestCount() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().NotEmpty(serviceAccounts)
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			count, err := s.store.Count(ctx)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.Equal(2, count)
+			} else {
+				s.Equal(0, count)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestWalk() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().Len(serviceAccounts, 2)
+	expectedFullSerializedServiceAccounts := []string{
+		fmt.Sprintf("%s|%s/%s",
+			serviceAccounts[0].GetId(),
+			serviceAccounts[0].GetClusterId(),
+			serviceAccounts[0].GetNamespace(),
+		),
+		fmt.Sprintf("%s|%s/%s",
+			serviceAccounts[1].GetId(),
+			serviceAccounts[1].GetClusterId(),
+			serviceAccounts[1].GetNamespace(),
+		),
+	}
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			serializedSAs := make([]string, 0, 2)
+			err := s.store.Walk(ctx, func(obj *storage.ServiceAccount) error {
+				serializedSAs = append(
+					serializedSAs,
+					fmt.Sprintf("%s|%s/%s", obj.GetId(), obj.GetClusterId(), obj.GetNamespace()),
+				)
+				return nil
+			})
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.ElementsMatch(serializedSAs, expectedFullSerializedServiceAccounts)
+			} else {
+				s.Empty(serializedSAs)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestWalkByQuery() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().Len(serviceAccounts, 2)
+	expectedFullSerializedServiceAccounts := []string{
+		fmt.Sprintf("%s|%s/%s",
+			serviceAccounts[0].GetId(),
+			serviceAccounts[0].GetClusterId(),
+			serviceAccounts[0].GetNamespace(),
+		),
+		fmt.Sprintf("%s|%s/%s",
+			serviceAccounts[1].GetId(),
+			serviceAccounts[1].GetClusterId(),
+			serviceAccounts[1].GetNamespace(),
+		),
+	}
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			serializedSAs := make([]string, 0, 2)
+			err := s.store.WalkByQuery(ctx, search.EmptyQuery(), func(obj *storage.ServiceAccount) error {
+				serializedSAs = append(
+					serializedSAs,
+					fmt.Sprintf("%s|%s/%s", obj.GetId(), obj.GetClusterId(), obj.GetNamespace()),
+				)
+				return nil
+			})
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.ElementsMatch(serializedSAs, expectedFullSerializedServiceAccounts)
+			} else {
+				s.Empty(serializedSAs)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestGetAll() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().NotEmpty(serviceAccounts)
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			fetchedServiceAccounts, err := s.store.GetAll(ctx)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.ElementsMatch(fetchedServiceAccounts, serviceAccounts)
+			} else {
+				s.Empty(fetchedServiceAccounts)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestGetIDs() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().NotEmpty(serviceAccounts)
+	serviceAccountIDs := getServiceAccountIDs(serviceAccounts)
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			fetchedServiceAccountIDs, err := s.store.GetIDs(ctx)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.ElementsMatch(fetchedServiceAccountIDs, serviceAccountIDs)
+			} else {
+				s.Empty(fetchedServiceAccountIDs)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestGet() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().NotEmpty(serviceAccounts)
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			serviceAccount := serviceAccounts[0]
+			obj, found, err := s.store.Get(ctx, serviceAccount.GetId())
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				s.Equal(serviceAccount, obj)
+			} else {
+				s.False(found)
+				s.Nil(obj)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestGetMany() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.Require().Len(serviceAccounts, 2)
+	serviceAccountIDs := getServiceAccountIDs(serviceAccounts)
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			objects, missing, err := s.store.GetMany(ctx, serviceAccountIDs)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.Empty(missing)
+				s.ElementsMatch(objects, serviceAccounts)
+			} else {
+				s.Equal([]int{0, 1}, missing)
+				s.Empty(objects)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestGetByQuery() {
+	testCases := s.getReadTestCases(s.T())
+
+	serviceAccounts := s.setupReadTest()
+	s.NotEmpty(serviceAccounts)
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+
+			objs, err := s.store.GetByQuery(ctx, search.EmptyQuery())
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.ElementsMatch(objs, serviceAccounts)
+			} else {
+				s.Nil(objs)
+			}
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestDeleteByQuery() {
+	testCases := s.getDeleteTestCases(s.T())
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			serviceAccounts := s.setupReadTest()
+			s.Len(serviceAccounts, 2)
+			serviceAccountIDs := getServiceAccountIDs(serviceAccounts)
+
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			objsBefore, missingBefore, errBefore := s.store.GetMany(unrestrictedCtx, serviceAccountIDs)
+			s.NoError(errBefore)
+			s.Empty(missingBefore)
+			s.ElementsMatch(objsBefore, serviceAccounts)
+
+			ctx := s.testContexts[c.ScopeKey]
+			_, err := s.store.DeleteByQuery(ctx, search.EmptyQuery())
+			s.NoError(err)
+
+			objsAfter, missingAfter, errAfter := s.store.GetMany(unrestrictedCtx, serviceAccountIDs)
+			s.NoError(errAfter)
+			if c.ExpectError {
+				s.Empty(missingAfter)
+				s.ElementsMatch(objsAfter, serviceAccounts)
+			} else {
+				s.Equal([]int{0, 1}, missingAfter)
+				s.Empty(objsAfter)
+			}
+
+			s.NoError(s.store.DeleteMany(unrestrictedCtx, serviceAccountIDs))
+		})
+	}
+}
+
+func (s *clusterNamespaceScopedStoreSACTestSuite) TestDeleteByQueryReturningIDs() {
+	testCases := s.getDeleteTestCases(s.T())
+
+	for name, c := range testCases {
+		s.Run(name, func() {
+			serviceAccounts := s.setupReadTest()
+			s.Len(serviceAccounts, 2)
+			serviceAccountIDs := getServiceAccountIDs(serviceAccounts)
+
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			objsBefore, missingBefore, errBefore := s.store.GetMany(unrestrictedCtx, serviceAccountIDs)
+			s.NoError(errBefore)
+			s.Empty(missingBefore)
+			s.ElementsMatch(objsBefore, serviceAccounts)
+
+			ctx := s.testContexts[c.ScopeKey]
+			fetchedIDs, err := s.store.DeleteByQuery(ctx, search.EmptyQuery())
+			s.NoError(err)
+
+			objsAfter, missingAfter, errAfter := s.store.GetMany(unrestrictedCtx, serviceAccountIDs)
+			s.NoError(errAfter)
+			if c.ExpectError {
+				s.Empty(fetchedIDs)
+				s.Empty(missingAfter)
+				s.ElementsMatch(objsAfter, serviceAccounts)
+			} else {
+				s.ElementsMatch(fetchedIDs, serviceAccountIDs)
+				s.Equal([]int{0, 1}, missingAfter)
+				s.Empty(objsAfter)
+			}
+
+			s.NoError(s.store.DeleteMany(unrestrictedCtx, serviceAccountIDs))
+		})
+	}
+}
+
 // region Helper Functions
+
+var (
+	// ClusterScopedServiceAccountsSchema is the go schema for table `service_accounts`.
+	ClusterScopedServiceAccountsSchema = func() *walker.Schema {
+		schema := walker.Walk(reflect.TypeOf((*storage.ServiceAccount)(nil)), "service_accounts")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SERVICE_ACCOUNTS, "serviceaccount", (*storage.ServiceAccount)(nil)))
+		schema.ScopingResource = resources.Cluster
+		return schema
+	}()
+)
+
+func newNamespaceScopedNamespacePostgresStore(testDB *pgtest.TestPostgres) Store[storage.ServiceAccount, *storage.ServiceAccount] {
+	return NewGenericStore[storage.ServiceAccount, *storage.ServiceAccount](
+		testDB.DB,
+		pkgSchema.ServiceAccountsSchema,
+		serviceAccountPkGetter,
+		insertIntoServiceAccounts,
+		copyFromServiceAccounts,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		isNamespaceScopedUpsertAllowed,
+		resources.ServiceAccount,
+	)
+}
+
+func newNamespaceScopedNamespaceCachedPostgresStore(testDB *pgtest.TestPostgres) Store[storage.ServiceAccount, *storage.ServiceAccount] {
+	return NewGenericStoreWithCache[storage.ServiceAccount, *storage.ServiceAccount](
+		testDB.DB,
+		pkgSchema.ServiceAccountsSchema,
+		serviceAccountPkGetter,
+		insertIntoServiceAccounts,
+		copyFromServiceAccounts,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		isNamespaceScopedUpsertAllowed,
+		resources.ServiceAccount,
+	)
+}
+
+func newClusterScopedNamespacePostgresStore(testDB *pgtest.TestPostgres) Store[storage.ServiceAccount, *storage.ServiceAccount] {
+	return NewGenericStore[storage.ServiceAccount, *storage.ServiceAccount](
+		testDB.DB,
+		ClusterScopedServiceAccountsSchema,
+		serviceAccountPkGetter,
+		insertIntoServiceAccounts,
+		copyFromServiceAccounts,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		isClusterScopedUpsertAllowed,
+		resources.Cluster,
+	)
+}
+
+func newClusterScopedNamespaceCachedPostgresStore(testDB *pgtest.TestPostgres) Store[storage.ServiceAccount, *storage.ServiceAccount] {
+	return NewGenericStoreWithCache[storage.ServiceAccount, *storage.ServiceAccount](
+		testDB.DB,
+		ClusterScopedServiceAccountsSchema,
+		serviceAccountPkGetter,
+		insertIntoServiceAccounts,
+		copyFromServiceAccounts,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		isClusterScopedUpsertAllowed,
+		resources.Cluster,
+	)
+}
+
+func serviceAccountPkGetter(obj *storage.ServiceAccount) string {
+	return obj.GetId()
+}
+
+func isNamespaceScopedUpsertAllowed(ctx context.Context, objs ...*storage.ServiceAccount) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.ServiceAccount)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying serviceAccounts with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
+}
+
+func isClusterScopedUpsertAllowed(ctx context.Context, objs ...*storage.ServiceAccount) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Cluster)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying namespaceMetadatas with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
+}
+
+func isGlobalScopedUpsertAllowed(ctx context.Context, _ ...*storage.ServiceAccount) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Access)
+	if !scopeChecker.IsAllowed() {
+		return sac.ErrResourceAccessDenied
+	}
+	return nil
+}
+
+func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) error {
+
+	serialized, marshalErr := obj.Marshal()
+	if marshalErr != nil {
+		return marshalErr
+	}
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetName(),
+		obj.GetNamespace(),
+		obj.GetClusterName(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
+		serialized,
+	}
+
+	finalStr := "INSERT INTO service_accounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
+
+	return nil
+}
+
+func copyFromServiceAccounts(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...*storage.ServiceAccount) error {
+	batchSize := MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	deletes := make([]string, 0, batchSize)
+
+	copyCols := []string{
+		"id",
+		"name",
+		"namespace",
+		"clustername",
+		"clusterid",
+		"labels",
+		"annotations",
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetName(),
+			obj.GetNamespace(),
+			obj.GetClusterName(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
+			serialized,
+		})
+
+		// Add the ID to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if err := s.DeleteMany(ctx, deletes); err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = deletes[:0]
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"service_accounts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return nil
+}
 
 func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
 	return NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
