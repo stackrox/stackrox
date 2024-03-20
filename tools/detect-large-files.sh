@@ -14,7 +14,7 @@ allowed_files=""
 if [[ -n "$allowlist_path" ]]
 then
   LC_ALL=C LC_COLLATE=C sort --check "${allowlist_path}"
-  allowed_files=$(grep -E -v '^\s*(#.*)$' "${allowlist_path}" | xargs git -C "$GIT_REPO_TOP" ls-files --)
+  allowed_files=$(egrep -v '^\s*(#.*)$' "${allowlist_path}" | xargs git -C "$GIT_REPO_TOP" ls-files --)
 fi
 
 large_files=$(git ls-tree --full-tree -l -r HEAD "$GIT_REPO_TOP" | awk '$4 > 50*1024 {print$5}')
