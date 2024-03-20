@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# This file is only sourced, but the following line helps set the stage for shellcheck.
+set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
