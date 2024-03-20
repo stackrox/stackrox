@@ -14,6 +14,7 @@ import {
     Button,
     Flex,
     FlexItem,
+    Icon,
     Text,
     TextContent,
     TextVariants,
@@ -249,7 +250,7 @@ function FlowsTable({
                                                   onSelect: (_event, isSelecting) =>
                                                       setRowSelected(row, isSelecting),
                                                   isSelected: isRowSelected(row),
-                                                  disable: !!row.children.length,
+                                                  isDisabled: !!row.children.length,
                                               }
                                             : undefined
                                     }
@@ -259,18 +260,16 @@ function FlowsTable({
                                 <Td dataLabel={columnNames.direction}>
                                     {row.baselineSimulationDiffState === 'ADDED' && (
                                         <Tooltip content={<div>Baseline added</div>}>
-                                            <PlusIcon
-                                                size="sm"
-                                                className="pf-v5-u-success-color-200"
-                                            />
+                                            <Icon size="sm">
+                                                <PlusIcon className="pf-v5-u-success-color-200" />
+                                            </Icon>
                                         </Tooltip>
                                     )}
                                     {row.baselineSimulationDiffState === 'REMOVED' && (
                                         <Tooltip content={<div>Baseline removed</div>}>
-                                            <MinusIcon
-                                                size="sm"
-                                                className="pf-v5-u-danger-color-200"
-                                            />
+                                            <Icon size="sm">
+                                                <MinusIcon className="pf-v5-u-danger-color-200" />
+                                            </Icon>
                                         </Tooltip>
                                     )}
                                 </Td>

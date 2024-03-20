@@ -5,6 +5,7 @@ import {
     Button,
     Checkbox,
     Divider,
+    DropEvent,
     Flex,
     FlexItem,
     Popover,
@@ -105,10 +106,7 @@ function NetworkPolicySimulatorSidePanel({
     );
     const { data: currentNetworkPolicies } = useRestQuery(fetchNetworkPolicies);
 
-    function handleFileInputChange(
-        _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
-        file: File
-    ) {
+    function handleFileInputChange(_event: DropEvent, file: File) {
         if (file && !file.name.includes('.yaml')) {
             setNetworkPolicyModification({
                 state: 'UPLOAD',
@@ -178,7 +176,7 @@ function NetworkPolicySimulatorSidePanel({
     if (simulator.isLoading) {
         return (
             <Bullseye>
-                <Spinner  size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }
@@ -492,7 +490,9 @@ function NetworkPolicySimulatorSidePanel({
                                         <Checkbox
                                             label="Exclude ports & protocols"
                                             isChecked={isExcludingPortsAndProtocols}
-                                            onChange={(_event, val) => setIsExcludingPortsAndProtocols(val)}
+                                            onChange={(_event, val) =>
+                                                setIsExcludingPortsAndProtocols(val)
+                                            }
                                             id="controlled-check-1"
                                             name="check1"
                                         />

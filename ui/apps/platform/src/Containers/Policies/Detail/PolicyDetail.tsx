@@ -1,24 +1,24 @@
 import React, { ReactElement, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-	Alert,
-	AlertActionCloseButton,
-	AlertGroup,
-	Breadcrumb,
-	BreadcrumbItem,
-	Label,
-	Title,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem,
-	Divider,
-	PageSection
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    Breadcrumb,
+    BreadcrumbItem,
+    Label,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    Divider,
+    PageSection,
 } from '@patternfly/react-core';
 import {
-	Dropdown,
-	DropdownItem,
-	DropdownSeparator,
-	DropdownToggle
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
@@ -177,7 +177,7 @@ function PolicyDetail({
                                 toggle={
                                     <DropdownToggle
                                         isDisabled={isRequesting}
-                                        isPrimary
+                                        toggleVariant="primary"
                                         onToggle={(_event, isOpen) => onToggleActions(isOpen)}
                                         toggleIndicator={CaretDownIcon}
                                     >

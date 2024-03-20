@@ -1,15 +1,14 @@
 import React, { useEffect } from 'react';
 import {
-	Bullseye,
-	EmptyState,
-	EmptyStateVariant,
-	Stack,
-	StackItem, EmptyStateHeader,
-	
+    Bullseye,
+    EmptyState,
+    EmptyStateVariant,
+    Stack,
+    StackItem,
+    EmptyStateHeader,
+    DropEvent,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
@@ -19,10 +18,7 @@ type ViewActiveYamlsProps = {
     networkPolicies: NetworkPolicy[];
     generateNetworkPolicies: () => void;
     undoNetworkPolicies: () => void;
-    onFileInputChange: (
-        _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
-        file: File
-    ) => void;
+    onFileInputChange: (_event: DropEvent, file: File) => void;
 };
 
 function ViewActiveYamls({

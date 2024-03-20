@@ -15,6 +15,7 @@ export interface FormLabelGroupProps<T> extends FormGroupProps {
     touched?: FormikTouched<T>;
     errors: FormikErrors<T>;
     children: ReactElement | ReactElement[];
+    helperText?: string | ReactElement;
 }
 
 function FormLabelGroup<T>({
@@ -22,6 +23,7 @@ function FormLabelGroup<T>({
     touched,
     errors,
     children,
+    helperText,
     ...rest
 }: FormLabelGroupProps<T>): ReactElement {
     const error = get(errors, fieldId);
@@ -36,7 +38,7 @@ function FormLabelGroup<T>({
                             isTouched && error ? ValidatedOptions.error : ValidatedOptions.default
                         }
                     >
-                        {error}
+                        {error ? error : helperText}
                     </HelperTextItem>
                 </HelperText>
             </FormHelperText>

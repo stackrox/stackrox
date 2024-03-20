@@ -2,34 +2,41 @@ import React, { useState } from 'react';
 import { Link, generatePath, useHistory } from 'react-router-dom';
 import isEmpty from 'lodash/isEmpty';
 import {
-	AlertActionCloseButton,
-	AlertGroup,
-	PageSection,
-	Title,
-	Flex,
-	FlexItem,
-	Button,
-	Card,
-	CardBody,
-	Bullseye,
-	Spinner,
-	EmptyState,
-	EmptyStateIcon,
-	EmptyStateBody,
-	EmptyStateVariant,
-	Text,
-	Alert,
-	AlertVariant,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem,
-	SearchInput,
-	Pagination, EmptyStateHeader
+    AlertActionCloseButton,
+    AlertGroup,
+    PageSection,
+    Title,
+    Flex,
+    FlexItem,
+    Button,
+    Card,
+    CardBody,
+    Bullseye,
+    Spinner,
+    EmptyState,
+    EmptyStateIcon,
+    EmptyStateBody,
+    EmptyStateVariant,
+    Text,
+    Alert,
+    AlertVariant,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    SearchInput,
+    Pagination,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
-import { ActionsColumn, Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+    ActionsColumn,
+    Table /* data-codemods */,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -266,16 +273,22 @@ function VulnReportsPage() {
                             {isLoading && !reportConfigurations && (
                                 <div className="pf-v5-u-p-md">
                                     <Bullseye>
-                                        <Spinner  />
+                                        <Spinner />
                                     </Bullseye>
                                 </div>
                             )}
                             {fetchError && (
                                 <EmptyState variant={EmptyStateVariant.sm}>
-                                    <EmptyStateHeader titleText="Unable to get vulnerability reports" icon={<EmptyStateIcon
-                                        icon={ExclamationCircleIcon}
-                                        className="pf-v5-u-danger-color-100"
-                                    />} headingLevel="h2" />
+                                    <EmptyStateHeader
+                                        titleText="Unable to get vulnerability reports"
+                                        icon={
+                                            <EmptyStateIcon
+                                                icon={ExclamationCircleIcon}
+                                                className="pf-v5-u-danger-color-100"
+                                            />
+                                        }
+                                        headingLevel="h2"
+                                    />
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
@@ -559,7 +572,7 @@ function VulnReportsPage() {
                                                             <ActionsColumn
                                                                 items={rowActions}
                                                                 isDisabled={isRunning}
-                                                                menuAppendTo={() => document.body}
+                                                                // menuAppendTo={() => document.body}
                                                             />
                                                         </Td>
                                                     )}

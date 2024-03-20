@@ -1,7 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-	Select
-} from '@patternfly/react-core/deprecated';
+import { Select } from '@patternfly/react-core/deprecated';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { ByLabelMatchType, ByNameMatchType, MatchType } from '../types';
 
@@ -29,7 +27,7 @@ function MatchTypeSelect<T extends MatchType>({
         <>
             <Select
                 isOpen={isOpen}
-                onToggle={onToggle}
+                onToggle={() => onToggle}
                 selections={selected}
                 onSelect={onSelect}
                 isDisabled={isDisabled}

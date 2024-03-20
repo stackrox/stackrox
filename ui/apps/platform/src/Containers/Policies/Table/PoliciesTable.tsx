@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-	Button,
-	ButtonVariant,
-	PageSection,
-	Pagination,
-	Toolbar,
-	ToolbarContent,
-	ToolbarGroup,
-	ToolbarItem,
-	Tooltip
+    Button,
+    ButtonVariant,
+    PageSection,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
+    Tooltip,
 } from '@patternfly/react-core';
 import {
-	Dropdown,
-	DropdownItem,
-	DropdownSeparator,
-	DropdownToggle
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
 } from '@patternfly/react-core/deprecated';
 import {
     Table /* data-codemods */,
@@ -213,8 +213,10 @@ function PoliciesTable({
                                         toggle={
                                             <DropdownToggle
                                                 isDisabled={!hasSelections}
-                                                isPrimary
-                                                onToggle={(_event, toggleOpen) => onToggleActions(toggleOpen)}
+                                                toggleVariant="primary"
+                                                onToggle={(_event, toggleOpen) =>
+                                                    onToggleActions(toggleOpen)
+                                                }
                                                 toggleIndicator={CaretDownIcon}
                                             >
                                                 Bulk actions
@@ -306,11 +308,7 @@ function PoliciesTable({
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-                <Table
-                    isStickyHeader
-                    aria-label="Policies table"
-                    data-testid="policies-table"
-                >
+                <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                     <Thead>
                         <Tr>
                             <Th>{/* Header for expanded column */}</Th>

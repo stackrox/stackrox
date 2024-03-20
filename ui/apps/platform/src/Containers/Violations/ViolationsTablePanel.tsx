@@ -1,21 +1,26 @@
 import React, { useState, ReactElement } from 'react';
 import {
-	Alert,
-	AlertActionCloseButton,
-	AlertGroup,
-	Divider,
-	Flex,
-	FlexItem,
-	Title,
-	PageSection,
-	Pagination,
-	pluralize
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    Divider,
+    Flex,
+    FlexItem,
+    Title,
+    PageSection,
+    Pagination,
+    pluralize,
 } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
-import { ActionsColumn, Table /* data-codemods */, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
+    ActionsColumn,
+    Table /* data-codemods */,
+    Tbody,
+    Thead,
+    Td,
+    Th,
+    Tr,
+} from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
@@ -327,7 +332,7 @@ function ViolationsTablePanel({
                                     {hasActions && (
                                         <Td>
                                             <ActionsColumn
-                                                menuAppendTo={() => document.body}
+                                                // menuAppendTo={() => document.body}
                                                 isDisabled={actionItems.length === 0}
                                                 items={actionItems}
                                             />
