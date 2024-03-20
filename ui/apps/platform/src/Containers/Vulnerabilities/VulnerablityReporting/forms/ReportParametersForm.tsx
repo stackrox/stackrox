@@ -1,18 +1,16 @@
-import React, { ReactElement } from 'react';
+import React, { ChangeEvent, FormEvent, ReactElement } from 'react';
 import {
-	DatePicker,
-	Divider,
-	Flex,
-	FlexItem,
-	Form,
-	PageSection,
-	TextArea,
-	TextInput,
-	Title
+    DatePicker,
+    Divider,
+    Flex,
+    FlexItem,
+    Form,
+    PageSection,
+    TextArea,
+    TextInput,
+    Title,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 
 import {
@@ -39,9 +37,11 @@ export type ReportParametersFormParams = {
 };
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
-    const handleTextChange = (fieldName: string) => (value: string) => {
-        formik.setFieldValue(fieldName, value);
-    };
+    const handleTextChange =
+        (fieldName: string) =>
+        (event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>, value: string) => {
+            formik.setFieldValue(fieldName, value);
+        };
 
     const handleCheckboxSelectChange = (fieldName: string) => (selection: string[]) => {
         formik.setFieldValue(fieldName, selection);

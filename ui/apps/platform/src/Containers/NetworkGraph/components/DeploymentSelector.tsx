@@ -1,22 +1,21 @@
 import React, { useMemo } from 'react';
 import {
-	Badge,
-	Button,
-	Divider,
-	Flex,
-	FlexItem,
-	Menu,
-	MenuContent,
-	MenuFooter,
-	MenuGroup,
-	MenuSearch,
-	MenuItem,
-	MenuList,
-	SearchInput, MenuSearchInput
+    Badge,
+    Button,
+    Divider,
+    Flex,
+    FlexItem,
+    Menu,
+    MenuContent,
+    MenuFooter,
+    MenuGroup,
+    MenuSearch,
+    MenuItem,
+    MenuList,
+    SearchInput,
+    MenuSearchInput,
 } from '@patternfly/react-core';
-import {
-	Select
-} from '@patternfly/react-core/deprecated';
+import { Select } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -99,15 +98,17 @@ function DeploymentSelector({
 
     const deploymentSelectMenu = (
         <Menu onSelect={onDeploymentSelect} selected={selectedDeployments} isScrollable>
-            <MenuSearch><MenuSearchInput className="pf-v5-u-p-md">
-                <SearchInput
-                    value={input}
-                    aria-label="Filter deployments"
-                    type="search"
-                    placeholder="Filter deployments..."
-                    onChange={(_event, value) => handleTextInputChange(value)}
-                />
-            </MenuSearchInput></MenuSearch>
+            <MenuSearch>
+                <MenuSearchInput className="pf-v5-u-p-md">
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter deployments"
+                        type="search"
+                        placeholder="Filter deployments..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
             <Divider className="pf-v5-u-m-0" />
             <MenuContent>
                 <MenuList>
@@ -135,7 +136,7 @@ function DeploymentSelector({
     return (
         <Select
             isOpen={isDeploymentOpen}
-            onToggle={toggleIsDeploymentOpen}
+            onToggle={() => toggleIsDeploymentOpen}
             className="deployment-select"
             placeholderText={
                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>

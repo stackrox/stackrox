@@ -251,12 +251,12 @@ function MachineAccessIntegrationForm({
                                                                                 backgroundColor:
                                                                                     'transparent',
                                                                             }}
+                                                                            isInline
                                                                         >
                                                                             <HelpIcon
                                                                                 style={{
                                                                                     color: 'black',
                                                                                 }}
-                                                                                noVerticalAlign
                                                                             />
                                                                         </Button>
                                                                     }

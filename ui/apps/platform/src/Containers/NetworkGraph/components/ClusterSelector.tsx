@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { ClusterScopeObject } from 'services/RolesService';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -58,7 +55,7 @@ function ClusterSelector({
                 </span>
             }
             toggleAriaLabel="Select a cluster"
-            onToggle={toggleIsClusterOpen}
+            onToggle={() => toggleIsClusterOpen}
             onSelect={onClusterSelect}
             isOpen={isClusterOpen}
             selections={selectedClusterName}

@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { ActionsColumn, Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    ActionsColumn,
+    Table /* data-codemods */,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 
 import { ClusterInitBundle } from 'services/ClustersService';
 import { clustersInitBundlesPath } from 'routePaths';
@@ -40,9 +48,9 @@ function InitBundlesTable({
                             <Td dataLabel="Created at">{createdAt}</Td>
                             <Td dataLabel="Expires at">{expiresAt}</Td>
                             {hasWriteAccessForInitBundles && (
-                                <Td>
+                                <Td isActionCell>
                                     <ActionsColumn
-                                        menuAppendTo={() => document.body}
+                                        // menuAppendTo={() => document.body}
                                         items={[
                                             {
                                                 title: 'Revoke bundle',

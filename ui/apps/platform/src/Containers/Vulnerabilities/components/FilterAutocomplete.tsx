@@ -1,13 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import {
-	debounce,
-	Skeleton,
-	ToolbarGroup
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { debounce, Skeleton, ToolbarGroup } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useQuery } from '@apollo/client';
 
 import { SearchFilter } from 'types/search';
@@ -166,7 +159,7 @@ function FilterAutocompleteSelect({
                 onSelect={(e, value) => {
                     onSelect(value);
                 }}
-                onToggle={onToggle}
+                onToggle={() => onToggle}
                 isOpen={isOpen}
                 placeholderText={`Filter results by ${searchOption.label}`}
                 variant="typeaheadmulti"
