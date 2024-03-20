@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -334,11 +333,6 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
-		var ts *types.Timestamp
-		if lastTime != nil {
-			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
-		}
-
 		flow := &storage.NetworkFlow{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity: &storage.NetworkEntityInfo{
@@ -352,8 +346,11 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 				DstPort:    port,
 				L4Protocol: protocol,
 			},
-			LastSeenTimestamp: ts,
-			ClusterId:         clusterID,
+			ClusterId: clusterID,
+		}
+
+		if lastTime != nil {
+			flow.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(*lastTime)
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause

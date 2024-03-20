@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -69,10 +68,6 @@ func (s *NetworkflowStoreSuite) TearDownSuite() {
 	}
 }
 
-func getTimestamp(seconds int64) *types.Timestamp {
-	return protocompat.GetProtoTimestampFromSeconds(seconds)
-}
-
 func (s *NetworkflowStoreSuite) TestStore() {
 	secondCluster := fixtureconsts.Cluster2
 	store2 := New(s.pool, secondCluster)
@@ -84,7 +79,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 			DstPort:    1,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		LastSeenTimestamp: getTimestamp(1),
+		LastSeenTimestamp: protocompat.GetProtoTimestampFromSeconds(1),
 		ClusterId:         clusterID,
 	}
 	zeroTs := timestamp.MicroTS(0)
@@ -95,7 +90,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	// Adding the same thing twice to ensure that we only retrieve 1 based on serial Flow_Id implementation
 	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
-	networkFlow.LastSeenTimestamp = getTimestamp(2)
+	networkFlow.LastSeenTimestamp = protocompat.GetProtoTimestampFromSeconds(2)
 	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
@@ -279,7 +274,7 @@ func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool 
 }
 
 func (s *NetworkflowStoreSuite) TestGetMatching() {
-	now, err := types.TimestampProto(time.Now().Truncate(time.Microsecond))
+	now, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Truncate(time.Microsecond))
 	s.Require().NoError(err)
 
 	flows := []*storage.NetworkFlow{
