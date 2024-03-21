@@ -59,7 +59,7 @@ function DelegatedScanningSettings({
                                     </span>
                                 }
                                 toggleAriaLabel="Select a cluster"
-                                onToggle={() => toggleIsClusterOpen}
+                                onToggle={(_e, v) => toggleIsClusterOpen(v)}
                                 onSelect={onClusterSelect}
                                 isOpen={isClusterOpen}
                                 selections={selectedClusterName}

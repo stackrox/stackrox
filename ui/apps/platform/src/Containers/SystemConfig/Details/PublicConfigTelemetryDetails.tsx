@@ -30,7 +30,6 @@ const PublicConfigTelemetryDetails = ({
                     className: undefined,
                 }}
             >
-                actions=
                 {
                     <>
                         <CardTitle component="h3">Online Telemetry Data Collection</CardTitle>

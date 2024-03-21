@@ -164,7 +164,7 @@ function NamespaceSelector({
     return (
         <Select
             isOpen={isNamespaceOpen}
-            onToggle={() => toggleIsNamespaceOpen}
+            onToggle={(_e, v) => toggleIsNamespaceOpen(v)}
             className="namespace-select"
             placeholderText={
                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>

@@ -253,7 +253,7 @@ function CollectionResults({
                             <Select
                                 toggleAriaLabel="Select an entity type to filter the results by"
                                 isOpen={isOpen}
-                                onToggle={() => onToggle}
+                                onToggle={(_e, v) => onToggle(v)}
                                 selections={selected}
                                 onSelect={onRuleOptionSelect}
                                 isDisabled={false}

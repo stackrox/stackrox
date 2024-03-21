@@ -40,7 +40,6 @@ function IntegrationTile({
                         }}
                         className="pf-v5-u-mb-lg"
                     >
-                        actions=
                         {
                             <>
                                 <img src={image} alt="" style={{ height: '100px' }} />
