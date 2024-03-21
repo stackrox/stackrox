@@ -1470,10 +1470,6 @@ _make_slack_failure_attachments() {
 
     slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
 
-    _handle_no_slack_attachments
-}
-
-_handle_no_slack_attachments() {
     if [[ "$(echo "${slack_attachments}" | jq 'length')" == "0" ]]; then
         msg="No junit records were found for this failure. Check build logs \
 and artifacts for more information. Consider adding an \
@@ -1569,8 +1565,9 @@ slack_workflow_failure() {
     repo=$(jq -r <<<"${github_context}" '.repository')
     run_id=$(jq -r <<<"${github_context}" '.run_id')
 
-    local mention_author=""
-    _do_we_at_the_author
+    local mention_author="true"
+    local slack_mention=""
+    _make_slack_mention
 
     local attachments=""
     local job_name job_url
@@ -1582,11 +1579,6 @@ slack_workflow_failure() {
         attachments+="$(_make_slack_failure_markdown_block "Job: <${job_url}|${job_name}>")"
     done
     attachments="$(echo "${attachments}" | jq '.[]' | jq -s '.')"
-
-    _handle_no_slack_attachments
-
-    local slack_mention=""
-    _make_slack_mention
 
     # shellcheck disable=SC2016
     local body='
