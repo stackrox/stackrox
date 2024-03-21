@@ -75,7 +75,7 @@ validate_helm_charts() {
     git clone --quiet https://github.com/stackrox/helm-charts
     check_dir_not_empty "helm-charts/${RELEASE_PATCH}"
     if [ "${LATEST_VERSION}" == "true" ]; then
-        if ! grep -q "${RELEASE_PATCH}" < "helm-charts/latest/central-services/Chart.yaml"; then
+        if ! grep -q "${RELEASE_PATCH}" <"helm-charts/latest/central-services/Chart.yaml"; then
             mark_failed
             gh_log error "The symbolic link to the latest chart does not point to the ${RELEASE_PATCH} version."
         fi
@@ -103,8 +103,8 @@ validate_jira_release() {
 
     IS_RELEASED=$(curl -sSLf \
         -H "Authorization: Bearer $JIRA_TOKEN" \
-        "https://issues.redhat.com/rest/api/2/project/${PROJECT}/versions" \
-    | jq -r ".[] | select(.name == \"${RELEASE_PATCH}\") | .released")
+        "https://issues.redhat.com/rest/api/2/project/${PROJECT}/versions" |
+        jq -r ".[] | select(.name == \"${RELEASE_PATCH}\") | .released")
     if [ "${IS_RELEASED}" != "true" ]; then
         mark_failed
         gh_log error "JIRA Release $RELEASE_PATCH has not been marked as done."

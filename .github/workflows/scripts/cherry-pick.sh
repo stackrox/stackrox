@@ -47,7 +47,7 @@ cherry_pick() {
         [ "$DRY_RUN" = "false" ] &&
             gh pr comment "$PR" --body "Merge commit has been cherry-picked to branch \`$BRANCH\`."
 
-        PICKED=$((PICKED+1))
+        PICKED=$((PICKED + 1))
     else
         git cherry-pick --abort
 

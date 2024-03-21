@@ -46,7 +46,7 @@ comment_on_issues_list() {
     ISSUES=$1
     while read -r KEY; do
         comment_on_single_issue "$KEY"
-    done < <(cut -d " " -f 1 <<< "$ISSUES")
+    done < <(cut -d " " -f 1 <<<"$ISSUES")
 }
 
 comment_on_single_issue() {

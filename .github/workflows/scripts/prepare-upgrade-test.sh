@@ -64,12 +64,13 @@ deploy_sensor() {
     COLLECTION_METHOD=$3
 
     # Register cluster
-    CLUSTER_ID="$(curl "https://${CENTRAL_IP}/v1/clusters" \
-        --insecure \
-        --user "admin:${ROX_PASSWORD}" \
-        --silent \
-        --data-raw '{"name":"'"${CLUSTER_NAME}"'","type":"KUBERNETES_CLUSTER","mainImage":"quay.io/rhacs-eng/main","collectorImage":"quay.io/rhacs-eng/collector","centralApiEndpoint":"'"${CENTRAL_API_ENDPOINT}"'","runtimeSupport":false,"collectionMethod":"'"${COLLECTION_METHOD}"'","DEPRECATEDProviderMetadata":null,"admissionControllerEvents":true,"admissionController":false,"admissionControllerUpdates":false,"DEPRECATEDOrchestratorMetadata":null,"tolerationsConfig":{"disabled":false},"dynamicConfig":{"admissionControllerConfig":{"enabled":false,"enforceOnUpdates":false,"timeoutSeconds":3,"scanInline":false,"disableBypass":false},"registryOverride":""},"slimCollector":true}' \
-        | jq -r '.cluster.id'
+    CLUSTER_ID="$(
+        curl "https://${CENTRAL_IP}/v1/clusters" \
+            --insecure \
+            --user "admin:${ROX_PASSWORD}" \
+            --silent \
+            --data-raw '{"name":"'"${CLUSTER_NAME}"'","type":"KUBERNETES_CLUSTER","mainImage":"quay.io/rhacs-eng/main","collectorImage":"quay.io/rhacs-eng/collector","centralApiEndpoint":"'"${CENTRAL_API_ENDPOINT}"'","runtimeSupport":false,"collectionMethod":"'"${COLLECTION_METHOD}"'","DEPRECATEDProviderMetadata":null,"admissionControllerEvents":true,"admissionController":false,"admissionControllerUpdates":false,"DEPRECATEDOrchestratorMetadata":null,"tolerationsConfig":{"disabled":false},"dynamicConfig":{"admissionControllerConfig":{"enabled":false,"enforceOnUpdates":false,"timeoutSeconds":3,"scanInline":false,"disableBypass":false},"registryOverride":""},"slimCollector":true}' |
+            jq -r '.cluster.id'
     )"
 
     # Download sensor bundle

@@ -19,13 +19,11 @@ check_not_empty \
 create_pr() {
     # shellcheck disable=SC2154
     gh pr create \
-    --title "$TITLE" \
-    --base "$main_branch" \
-    --body "Adding $VERSION to the scanner updater configuration." \
-    --assignee "$GITHUB_ACTOR"
+        --title "$TITLE" \
+        --base "$main_branch" \
+        --body "Adding $VERSION to the scanner updater configuration." \
+        --assignee "$GITHUB_ACTOR"
 }
-
-
 
 if grep -F "^${VERSION}$" ${CONFIG_FILE}; then
     gh_summary "\`${CONFIG_FILE}\` has got already the \`$VERSION\`."
@@ -51,7 +49,7 @@ fi
 
 git switch --create "$UPDATE_BRANCH"
 
-echo "${VERSION}" >> "${CONFIG_FILE}"
+echo "${VERSION}" >>"${CONFIG_FILE}"
 git add "${CONFIG_FILE}"
 
 if ! git diff-index --quiet HEAD; then

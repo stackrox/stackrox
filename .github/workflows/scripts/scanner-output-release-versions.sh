@@ -8,7 +8,7 @@ set -euo pipefail
 # Save all tags from the repo to a temporary file.
 
 tags=$(mktemp)
-git tag > "$tags"
+git tag >"$tags"
 
 # tag prints the tag associated with a vulnerability updater version.
 #
@@ -29,7 +29,7 @@ tag() {
     re="^$re-rc\.[0-9]+|${re%.*}.x$"
     local tag
     tag=$(grep -E "^$re$" "$tags" | sort -rV | head -n 1)
-    if [ -z "$tag" ] ; then
+    if [ -z "$tag" ]; then
         echo >&2 "WARNING: Could not find a matching tags for version '$ver'"
         echo "$ver"
         return

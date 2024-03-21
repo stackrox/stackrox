@@ -18,7 +18,7 @@ done
 unzip -j "v4/mapping.zip" "repomapping/*" -d v4 && rm v4/mapping.zip
 
 for f in v4/*.json; do
-  jq empty "$f" || echo "jq processing failed for $f"
+    jq empty "$f" || echo "jq processing failed for $f"
 done
 
 dir=out
@@ -26,6 +26,6 @@ mkdir -p $dir
 jq -n \
     --arg version "$ROX_PRODUCT_VERSION" \
     --arg date "$(date -u -Iseconds)" \
-    '{"version": $version, "created": $date}' > v4/manifest.json
+    '{"version": $version, "created": $date}' >v4/manifest.json
 zip -j "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" v4/*
 gsutil cp "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" "gs://definitions.stackrox.io/v4/offline-bundles/"
