@@ -69,7 +69,7 @@ type hostConnections struct {
 type connStatus struct {
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
-	// used keeps track of if an endpoint has been used by the the networkgraph path.
+	// used keeps track of if an endpoint has been used by the networkgraph path.
 	used bool
 	// usedProcess keeps track of if an endpoint has been used by the processes listening on
 	// ports path. If processes listening on ports is used, both must be true to delete the
@@ -525,16 +525,24 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if isFresh {
 			return
 		}
-		if !status.used {
-			flowMetrics.ExternalFlowCounter.Inc()
-		}
-		status.used = true
+
+		defer func() {
+			status.used = true
+		}()
 
 		var port uint16
+		var direction string
 		if conn.incoming {
+			direction = "ingress"
 			port = conn.local.Port
 		} else {
+			direction = "egress"
 			port = conn.remote.IPAndPort.Port
+		}
+
+		metricDirection := prometheus.Labels{
+			"direction": direction,
+			"namespace": container.Namespace,
 		}
 
 		if extSrc == nil {
@@ -570,7 +578,18 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 					"Marking it as '%s' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
 			}
+
+			if !status.used {
+				if isExternal {
+					flowMetrics.ExternalFlowCounter.With(metricDirection).Inc()
+				} else {
+					flowMetrics.InternalFlowCounter.With(metricDirection).Inc()
+				}
+			}
 		} else {
+			if !status.used {
+				flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
+			}
 			lookupResults = []clusterentities.LookupResult{
 				{
 					Entity:         networkgraph.EntityFromProto(extSrc),
