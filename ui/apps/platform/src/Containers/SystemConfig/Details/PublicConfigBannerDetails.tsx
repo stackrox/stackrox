@@ -54,7 +54,6 @@ const PublicConfigBannerDetails = ({
                     className: undefined,
                 }}
             >
-                actions=
                 {
                     <>
                         <CardTitle component="h3">{title}</CardTitle>

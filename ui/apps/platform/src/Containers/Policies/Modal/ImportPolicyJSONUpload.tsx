@@ -25,25 +25,30 @@ function ImportPolicyJSONUpload({
     setPolicies,
     policies,
 }: ImportPolicyJSONUploadProps): ReactElement {
-    const [fileContent, setFileContent] = useState('');
+    const [fileContent, setFileContent] = useState<File>();
     const [filename, setFilename] = useState('');
     const [isFileLoading, setIsFileLoading] = useState(false);
 
     function handleCancelModal() {
-        setFileContent('');
+        setFileContent(undefined);
         setFilename('');
         cancelModal();
     }
 
-    function handleFileChange(newFileContent, newFilename) {
+    async function handleFileChange(e, newFileContent) {
         setFileContent(newFileContent);
-        setFilename(newFilename);
+        setFilename(newFileContent.name);
         if (newFileContent) {
-            const jsonObj = JSON.parse(newFileContent);
+            const jsonFile = await newFileContent.text();
+            const jsonObj = JSON.parse(jsonFile);
             if (jsonObj?.policies) {
                 setPolicies(jsonObj.policies);
             }
         }
+    }
+
+    function handleTextOrDataChange(e, value: string) {
+        setFileContent(value as unknown as File);
     }
 
     function handleFileReadStarted() {
@@ -52,6 +57,11 @@ function ImportPolicyJSONUpload({
 
     function handleFileReadFinished() {
         setIsFileLoading(false);
+    }
+
+    function handleClear() {
+        setFileContent(undefined);
+        setFilename('');
     }
 
     return (
@@ -65,15 +75,19 @@ function ImportPolicyJSONUpload({
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
+                    onFileInputChange={handleFileChange}
+                    onDataChange={handleTextOrDataChange}
+                    onTextChange={handleTextOrDataChange}
                     onReadStarted={handleFileReadStarted}
                     onReadFinished={handleFileReadFinished}
+                    onClearClick={handleClear}
                     isLoading={isFileLoading}
                     browseButtonText="Upload"
                     dropzoneProps={{
                         accept: { 'application/json': ['.json'] },
                     }}
                 />
-                {policies?.length > 0 && fileContent !== '' && (
+                {policies?.length > 0 && fileContent && (
                     <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-md">
                         <FlexItem>
                             <Title headingLevel="h3">

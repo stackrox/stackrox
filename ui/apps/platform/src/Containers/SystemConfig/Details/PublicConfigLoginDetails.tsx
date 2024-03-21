@@ -41,7 +41,6 @@ const PublicConfigLoginDetails = ({
                     className: undefined,
                 }}
             >
-                actions=
                 {
                     <>
                         <CardTitle component="h3">Login configuration</CardTitle>
