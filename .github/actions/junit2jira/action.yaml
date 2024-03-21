@@ -32,14 +32,21 @@ runs:
   - name: Check files
     shell: bash
     env:
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     run: |
+      csv_output="$(mktemp --suffix=.csv)"
       ./junit2jira \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
           -build-id "${{ github.run_id }}"  \
           -build-link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           -build-tag "${{ github.ref_name }}@${{ github.sha }}" \
+          -csv-output "${csv_output}" \
           -job-name "${{ github.job }}" \
           -junit-reports-dir "${{ inputs.directory }}" \
           -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \
           -threshold "${{ inputs.threshold }}"
+
+      source scripts/ci/lib.sh
+      setup_gcp
+      save_test_metrics "${csv_output}"
