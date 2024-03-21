@@ -155,7 +155,7 @@ function ListeningEndpointsPage() {
                                     variant="single"
                                     toggleAriaLabel="Search entity selection menu toggle"
                                     aria-label="Select an entity to filter by"
-                                    onToggle={() => entityToggle.onToggle}
+                                    onToggle={(_e, v) => entityToggle.onToggle(v)}
                                     onSelect={onEntitySelect}
                                     selections={entity}
                                     isOpen={entityToggle.isOpen}
@@ -174,10 +174,10 @@ function ListeningEndpointsPage() {
                                 <Select
                                     typeAheadAriaLabel={`Search by ${entity}`}
                                     aria-label={`Filter by ${entity}`}
-                                    onSelect={(e, value) => {
+                                    onSelect={(_e, value) => {
                                         onSelectAutocompleteValue(value);
                                     }}
-                                    onToggle={() => autocompleteToggle.onToggle}
+                                    onToggle={(_e, v) => autocompleteToggle.onToggle(v)}
                                     isOpen={autocompleteToggle.isOpen}
                                     placeholderText={`Filter results by ${entity}`}
                                     variant="typeaheadmulti"

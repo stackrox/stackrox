@@ -65,7 +65,6 @@ function DeclarativeConfigurationHealthCard({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                actions=
                 {
                     <>
                         <Flex className="pf-v5-u-flex-grow-1">
