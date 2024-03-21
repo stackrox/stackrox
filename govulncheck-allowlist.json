@@ -5,7 +5,7 @@
     },
     "GO-2023-2186": {
       "reason": "False positive as this path is not exercised in the codebase",
-      "until": "2024-03-22T00:00:00Z"
+      "until": "2024-04-07T00:00:00Z"
     },
     "GO-2023-2382": {
       "reason": "Requires version bump",
