@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import {
-	Select,
-	SelectOption,
-	SelectVariant
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 
 export type CategoryFilter = 'Default categories' | 'Custom categories';
 

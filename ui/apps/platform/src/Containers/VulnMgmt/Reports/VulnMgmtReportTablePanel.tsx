@@ -1,22 +1,20 @@
 import React, { useState, ReactElement } from 'react';
 import {
-	Alert,
-	AlertGroup,
-	AlertVariant,
-	Bullseye,
-	Button,
-	ButtonVariant,
-	Divider,
-	PageSection,
-	PageSectionVariants,
-	Pagination,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem
+    Alert,
+    AlertGroup,
+    AlertVariant,
+    Bullseye,
+    Button,
+    ButtonVariant,
+    Divider,
+    PageSection,
+    PageSectionVariants,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
@@ -317,7 +315,9 @@ function ReportingTablePanel({
 
                                 actionItems.push({
                                     title: (
-                                        <div className="pf-v5-u-danger-color-100">Delete report</div>
+                                        <div className="pf-v5-u-danger-color-100">
+                                            Delete report
+                                        </div>
                                     ),
                                     onClick: () => onClickDelete([report.id]),
                                 });

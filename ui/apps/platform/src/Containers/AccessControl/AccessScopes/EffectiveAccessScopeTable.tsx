@@ -1,7 +1,15 @@
 import React, { CSSProperties, ReactElement, useState } from 'react';
 import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
-import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
+import {
+    Table /* data-codemods */,
+    Tbody,
+    Td,
+    Thead,
+    Th,
+    Tr,
+    TreeRowWrapper,
+} from '@patternfly/react-table';
 
 import {
     EffectiveAccessScopeCluster,
@@ -291,7 +299,9 @@ function EffectiveAccessScopeTable({
                             <Th width={40}>Cluster name</Th>
                             <Th
                                 modifier="fitContent"
-                                className={counterComputing === 0 ? '' : '--pf-v5-global--Color--200'}
+                                className={
+                                    counterComputing === 0 ? '' : '--pf-v5-global--Color--200'
+                                }
                             >
                                 Allowed
                             </Th>

@@ -1,16 +1,8 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { FormikProvider, useFormik } from 'formik';
-import {
-	Breadcrumb,
-	Title,
-	BreadcrumbItem,
-	Divider,
-	PageSection
-} from '@patternfly/react-core';
-import {
-	Wizard
-} from '@patternfly/react-core/deprecated';
+import { Breadcrumb, Title, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
+import { Wizard } from '@patternfly/react-core/deprecated';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { fetchAlertCount } from 'services/AlertsService';

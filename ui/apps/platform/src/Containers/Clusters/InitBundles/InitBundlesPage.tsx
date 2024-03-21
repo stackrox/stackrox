@@ -56,7 +56,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : errorForFetch ? (
                     <Alert

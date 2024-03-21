@@ -1,16 +1,8 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { FormikErrors, FormikTouched } from 'formik';
 
-import {
-	Button,
-	ButtonVariant,
-	Flex,
-	FlexItem,
-	TextInput
-} from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Button, ButtonVariant, Flex, FlexItem, TextInput } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';

@@ -137,7 +137,7 @@ function WatchedImagesModal({
                 <Divider component="div" />
                 {currentWatchedImagesRequest.loading && !currentWatchedImagesRequest.data && (
                     <Bullseye>
-                        <Spinner  aria-label="Loading current watched images" />
+                        <Spinner aria-label="Loading current watched images" />
                     </Bullseye>
                 )}
                 {currentWatchedImagesRequest.data && (

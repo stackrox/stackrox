@@ -102,7 +102,7 @@ function CollectionsFormModal({
     } else if (loading) {
         content = (
             <Bullseye className="pf-v5-u-p-2xl">
-                <Spinner  />
+                <Spinner />
             </Bullseye>
         );
         modalTitle = 'Loading collection';

@@ -1,17 +1,15 @@
 import React, { ReactElement, useState } from 'react';
 import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-	Bullseye,
-	Divider,
-	Pagination,
-	Spinner,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem
+    Bullseye,
+    Divider,
+    Pagination,
+    Spinner,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
@@ -244,7 +242,7 @@ function PendingApprovalsTable({
             <Divider component="div" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner  size="xl" />
+                    <Spinner size="xl" />
                 </Bullseye>
             ) : (
                 <Table aria-label="Pending Approvals Table" variant="compact" borders>

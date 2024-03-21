@@ -219,7 +219,9 @@ function JiraIntegrationForm({
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={(event, value) => onUpdateCredentialsChange(value, event)}
+                                    onChange={(event, value) =>
+                                        onUpdateCredentialsChange(value, event)
+                                    }
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -366,7 +368,6 @@ function JiraIntegrationForm({
                                                                     isRequired
                                                                     tabIndex={-1}
                                                                     className="pf-v5-u-background-color-200"
-                                                                    
                                                                     type="text"
                                                                     id={`notifier.jira.priorityMappings[${index}].severity`}
                                                                     value={
@@ -375,8 +376,11 @@ function JiraIntegrationForm({
                                                                             `${index}`
                                                                         ].severity
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
-                                                                    onBlur={handleBlur} readOnlyVariant="default"
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
+                                                                    onBlur={handleBlur}
+                                                                    readOnlyVariant="default"
                                                                 />
                                                             </FormLabelGroup>
                                                         </FlexItem>
@@ -402,7 +406,9 @@ function JiraIntegrationForm({
                                                                             `${index}`
                                                                         ].priorityName
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={
                                                                         !isEditable ||

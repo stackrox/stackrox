@@ -1,8 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import {
-	Select,
-	SelectVariant
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectVariant } from '@patternfly/react-core/deprecated';
 
 export type SelectSingleProps = {
     id: string;

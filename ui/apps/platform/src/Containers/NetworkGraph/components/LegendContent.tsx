@@ -25,7 +25,11 @@ function LegendContent() {
             </Title>
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
-                    <Title headingLevel="h4" className="pf-v5-u-pb-sm" data-testid="node-types-title">
+                    <Title
+                        headingLevel="h4"
+                        className="pf-v5-u-pb-sm"
+                        data-testid="node-types-title"
+                    >
                         Node types
                     </Title>
                     <DescriptionListCompact isHorizontal termWidth="20px" className="pf-v5-u-pl-md">

@@ -73,32 +73,49 @@ function PolicyGroupCard({
     return (
         <>
             <Card isFlat isCompact data-testid="policy-criteria-group-card">
-                <CardHeader actions={{ actions: <>{descriptor.negatedName && !readOnly && (
+                <CardHeader
+                    actions={{
+                        actions: (
                             <>
-                                <Divider component="div" orientation={{ default: 'vertical' }} />
-                                <Checkbox
-                                    label="Not"
-                                    isChecked={group.negate}
-                                    onChange={handleNegate}
-                                    id={`${group.fieldName}-negate`}
-                                    isDisabled={readOnly}
-                                    data-testid="policy-criteria-value-negate-checkbox"
-                                />
+                                {descriptor.negatedName && !readOnly && (
+                                    <>
+                                        <Divider
+                                            component="div"
+                                            orientation={{ default: 'vertical' }}
+                                        />
+                                        <Checkbox
+                                            label="Not"
+                                            isChecked={group.negate}
+                                            onChange={handleNegate}
+                                            id={`${group.fieldName}-negate`}
+                                            isDisabled={readOnly}
+                                            data-testid="policy-criteria-value-negate-checkbox"
+                                        />
+                                    </>
+                                )}
+                                {!readOnly && (
+                                    <>
+                                        <Divider
+                                            orientation={{ default: 'vertical' }}
+                                            component="div"
+                                        />
+                                        <Button
+                                            variant="plain"
+                                            className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                            onClick={onDeleteGroup}
+                                            data-testid="delete-policy-criteria-btn"
+                                        >
+                                            <TrashIcon />
+                                        </Button>
+                                    </>
+                                )}
                             </>
-                        )}
-                        {!readOnly && (
-                            <>
-                                <Divider orientation={{ default: 'vertical' }} component="div" />
-                                <Button
-                                    variant="plain"
-                                    className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
-                                    onClick={onDeleteGroup}
-                                    data-testid="delete-policy-criteria-btn"
-                                >
-                                    <TrashIcon />
-                                </Button>
-                            </>
-                        )}</>, hasNoOffset: true, className: "policy-group-card"}}  className="pf-v5-u-p-0">
+                        ),
+                        hasNoOffset: true,
+                        className: 'policy-group-card',
+                    }}
+                    className="pf-v5-u-p-0"
+                >
                     <CardTitle className="pf-v5-u-pl-md">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
@@ -114,7 +131,6 @@ function PolicyGroupCard({
                             </Stack>
                         </Flex>
                     </CardTitle>
-                    
                 </CardHeader>
                 <Divider component="div" />
                 <CardBody>

@@ -64,7 +64,6 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                         </FlexItem>
                         <FlexItem>
                             <Pagination
-                                
                                 itemCount={deployments.length}
                                 perPage={perPage}
                                 page={page}

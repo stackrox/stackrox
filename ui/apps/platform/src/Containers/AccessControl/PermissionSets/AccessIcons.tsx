@@ -3,8 +3,8 @@ import { CheckIcon, TimesIcon } from '@patternfly/react-icons';
 
 import { AccessLevel } from 'services/RolesService';
 
-import { getIsReadAccess, getIsWriteAccess } from './permissionSets.utils';
 import { Icon } from '@patternfly/react-core';
+import { getIsReadAccess, getIsWriteAccess } from './permissionSets.utils';
 
 const forbiddenIcon = (
     <Icon color="var(--pf-v5-global--danger-color--100)" size="sm">

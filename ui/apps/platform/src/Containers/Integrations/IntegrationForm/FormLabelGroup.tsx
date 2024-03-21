@@ -38,7 +38,7 @@ function FormLabelGroup<T>({
                             isTouched && error ? ValidatedOptions.error : ValidatedOptions.default
                         }
                     >
-                        {error ? error : helperText}
+                        {error || helperText}
                     </HelperTextItem>
                 </HelperText>
             </FormHelperText>

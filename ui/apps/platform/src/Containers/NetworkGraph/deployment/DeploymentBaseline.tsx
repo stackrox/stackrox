@@ -141,7 +141,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
     if (isLoading || isModifying || isToggling) {
         return (
             <Bullseye>
-                <Spinner  size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }

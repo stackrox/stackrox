@@ -1,11 +1,6 @@
 import React, { ReactElement, useState } from 'react';
-import {
-	Flex
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Flex } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { MitreTechnique } from 'types/mitre.proto';
 

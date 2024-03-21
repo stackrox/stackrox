@@ -1,25 +1,31 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
-	Bullseye,
-	Button,
-	ButtonVariant,
-	Divider,
-	Flex,
-	FlexItem,
-	PageSection,
-	PageSectionVariants,
-	Pagination,
-	Spinner,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem
+    Table /* data-codemods */,
+    Thead,
+    Tbody,
+    Tr,
+    Th,
+    Td,
+    IActions,
+} from '@patternfly/react-table';
+import {
+    Bullseye,
+    Button,
+    ButtonVariant,
+    Divider,
+    Flex,
+    FlexItem,
+    PageSection,
+    PageSectionVariants,
+    Pagination,
+    Spinner,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import useTableSelection from 'hooks/useTableSelection';
 
@@ -210,7 +216,7 @@ function ObservedCVEsTable({
                         <Tr>
                             <Td colSpan={7}>
                                 <Bullseye>
-                                    <Spinner  size="sm" />
+                                    <Spinner size="sm" />
                                 </Bullseye>
                             </Td>
                         </Tr>

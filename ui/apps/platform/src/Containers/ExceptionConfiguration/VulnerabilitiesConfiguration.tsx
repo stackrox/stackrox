@@ -72,7 +72,7 @@ function NumericSetting({
                             type="number"
                             style={{ width: '100px' }}
                             value={value}
-                            onChange={(e, _) => handleChange(e)}
+                            onChange={(e) => handleChange(e)}
                             isDisabled={!isSettingEnabled || isDisabled}
                             validated={validated as TextInputProps['validated']}
                         />
@@ -88,7 +88,7 @@ function NumericSetting({
                         labelOff="Disabled"
                         isChecked={isSettingEnabled}
                         isDisabled={isDisabled}
-                        onChange={(e, _) => handleChange(e)}
+                        onChange={(e) => handleChange(e)}
                     />
                 </FormGroup>
             </GridItem>
@@ -118,7 +118,7 @@ function BooleanSetting({
                         labelOff="Disabled"
                         isChecked={isSettingEnabled}
                         isDisabled={isDisabled}
-                        onChange={(e, _) => handleChange(e)}
+                        onChange={(e) => handleChange(e)}
                     />
                 </FormGroup>
             </GridItem>

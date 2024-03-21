@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
 import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardBody,
-	Divider,
-	Button,
-	TextInput,
-	Flex,
-	FlexItem,
-	Form,
-	FormGroup
+    Card,
+    CardHeader,
+    CardTitle,
+    CardBody,
+    Divider,
+    Button,
+    TextInput,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
@@ -90,16 +87,26 @@ function PolicyScopeCard({
 
     return (
         <Card>
-            <CardHeader actions={{ actions: <><Divider orientation={{ default: 'vertical' }} component="div" />
-                    <Button
-                        variant="plain"
-                        className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
-                        onClick={onDelete}
-                    >
-                        <TrashIcon />
-                    </Button></>, hasNoOffset: true, className: undefined}}  className="pf-v5-u-p-0">
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            <Divider orientation={{ default: 'vertical' }} component="div" />
+                            <Button
+                                variant="plain"
+                                className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                onClick={onDelete}
+                            >
+                                <TrashIcon />
+                            </Button>
+                        </>
+                    ),
+                    hasNoOffset: true,
+                    className: undefined,
+                }}
+                className="pf-v5-u-p-0"
+            >
                 <CardTitle className="pf-v5-u-pl-lg">{type} scope</CardTitle>
-                
             </CardHeader>
             <Divider component="div" />
             <CardBody>
@@ -128,7 +135,9 @@ function PolicyScopeCard({
                                     value={value.namespace || scope?.namespace}
                                     type="text"
                                     id={`${name}-namespace`}
-                                    onChange={(_event, namespace) => handleChangeNamespace(namespace)}
+                                    onChange={(_event, namespace) =>
+                                        handleChangeNamespace(namespace)
+                                    }
                                     placeholder="Provide a namespace"
                                 />
                             </FormGroup>

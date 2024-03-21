@@ -1,11 +1,6 @@
 import React, { ReactElement } from 'react';
-import {
-	Form,
-	TextArea
-} from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Form, TextArea } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import SelectSingle from 'Components/SelectSingle';

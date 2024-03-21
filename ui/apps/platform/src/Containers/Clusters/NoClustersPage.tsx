@@ -11,7 +11,9 @@ import {
     FlexItem,
     PageSection,
     Spinner,
-    Text, EmptyStateHeader, EmptyStateFooter,
+    Text,
+    EmptyStateHeader,
+    EmptyStateFooter,
 } from '@patternfly/react-core';
 import { CloudSecurityIcon } from '@patternfly/react-icons';
 
@@ -97,7 +99,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
             <PageSection variant="light">
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : errorMessage ? (
                     <Alert
@@ -110,7 +112,11 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                     </Alert>
                 ) : (
                     <EmptyState variant="xl">
-                        <EmptyStateHeader titleText="Secure clusters with a reusable init bundle" icon={<EmptyStateIcon icon={CloudSecurityIcon} />} headingLevel="h2" />
+                        <EmptyStateHeader
+                            titleText="Secure clusters with a reusable init bundle"
+                            icon={<EmptyStateIcon icon={CloudSecurityIcon} />}
+                            headingLevel="h2"
+                        />
                         <EmptyStateBody>
                             <Flex
                                 direction={{ default: 'column' }}
@@ -138,64 +144,68 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                     </FlexItem>
                                 )}
                             </Flex>
-                        </EmptyStateBody><EmptyStateFooter>
-                        {initBundlesCount === 0 ? (
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                component={LinkShim}
-                                href={`${clustersInitBundlesPath}?action=create`}
-                                onClick={() =>
-                                    analyticsTrack({
-                                        event: CREATE_INIT_BUNDLE_CLICKED,
-                                        properties: { source: 'No Clusters' },
-                                    })
-                                }
-                            >
-                                Create init bundle
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                onClick={() => {
-                                    setIsModalOpen(true);
-                                    analyticsTrack({
-                                        event: SECURE_A_CLUSTER_LINK_CLICKED,
-                                        properties: { source: 'No Clusters' },
-                                    });
-                                }}
-                            >
-                                View installation methods
-                            </Button>
-                        )}
-                        <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-xl">
-                            <Link
-                                to={`${clustersBasePath}/new`}
-                                onClick={() => {
-                                    analyticsTrack({
-                                        event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-                                        properties: { source: 'No Clusters' },
-                                    });
-                                }}
-                            >
-                                Legacy installation method
-                            </Link>
-                            {initBundlesCount !== 0 && (
-                                <Text component="p" className="pf-v5-u-w-50vw">
-                                    If you misplaced your init bundle, we recommend locating the
-                                    previously downloaded YAML on your device first by the name of
-                                    the{' '}
-                                    <Link to={clustersInitBundlesPath}>generated init bundle</Link>,
-                                    or you may need to create a new init bundle.
-                                </Text>
+                        </EmptyStateBody>
+                        <EmptyStateFooter>
+                            {initBundlesCount === 0 ? (
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    component={LinkShim}
+                                    href={`${clustersInitBundlesPath}?action=create`}
+                                    onClick={() =>
+                                        analyticsTrack({
+                                            event: CREATE_INIT_BUNDLE_CLICKED,
+                                            properties: { source: 'No Clusters' },
+                                        })
+                                    }
+                                >
+                                    Create init bundle
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="primary"
+                                    size="lg"
+                                    onClick={() => {
+                                        setIsModalOpen(true);
+                                        analyticsTrack({
+                                            event: SECURE_A_CLUSTER_LINK_CLICKED,
+                                            properties: { source: 'No Clusters' },
+                                        });
+                                    }}
+                                >
+                                    View installation methods
+                                </Button>
                             )}
-                        </Flex>
-                        <SecureClusterModal
-                            isModalOpen={isModalOpen}
-                            setIsModalOpen={setIsModalOpen}
-                        />
-                    </EmptyStateFooter></EmptyState>
+                            <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-xl">
+                                <Link
+                                    to={`${clustersBasePath}/new`}
+                                    onClick={() => {
+                                        analyticsTrack({
+                                            event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                                            properties: { source: 'No Clusters' },
+                                        });
+                                    }}
+                                >
+                                    Legacy installation method
+                                </Link>
+                                {initBundlesCount !== 0 && (
+                                    <Text component="p" className="pf-v5-u-w-50vw">
+                                        If you misplaced your init bundle, we recommend locating the
+                                        previously downloaded YAML on your device first by the name
+                                        of the{' '}
+                                        <Link to={clustersInitBundlesPath}>
+                                            generated init bundle
+                                        </Link>
+                                        , or you may need to create a new init bundle.
+                                    </Text>
+                                )}
+                            </Flex>
+                            <SecureClusterModal
+                                isModalOpen={isModalOpen}
+                                setIsModalOpen={setIsModalOpen}
+                            />
+                        </EmptyStateFooter>
+                    </EmptyState>
                 )}
             </PageSection>
         </>

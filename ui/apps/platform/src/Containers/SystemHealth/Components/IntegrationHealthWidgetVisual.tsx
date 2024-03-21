@@ -42,24 +42,27 @@ const IntegrationHealthWidget = ({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                actions={<>
-                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                        <FlexItem>{icon}</FlexItem>
-                        <FlexItem>
-                            <CardTitle component="h2">{integrationText}</CardTitle>
-                        </FlexItem>
-                        {hasCount && (
+                actions=
+                {
+                    <>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <FlexItem>{icon}</FlexItem>
                             <FlexItem>
-                                {integrations.length === 0
-                                    ? 'no errors'
-                                    : `${integrations.length} ${pluralize(
-                                          'error',
-                                          integrations.length
-                                      )}`}
+                                <CardTitle component="h2">{integrationText}</CardTitle>
                             </FlexItem>
-                        )}
-                    </Flex>
-                </>}
+                            {hasCount && (
+                                <FlexItem>
+                                    {integrations.length === 0
+                                        ? 'no errors'
+                                        : `${integrations.length} ${pluralize(
+                                              'error',
+                                              integrations.length
+                                          )}`}
+                                </FlexItem>
+                            )}
+                        </Flex>
+                    </>
+                }
             </CardHeader>
             {(errorMessageFetching || integrations.length !== 0) && (
                 <CardBody>

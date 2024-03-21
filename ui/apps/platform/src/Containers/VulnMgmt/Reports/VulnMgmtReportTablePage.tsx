@@ -147,7 +147,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
             {isLoading && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
                     <Bullseye>
-                        <Spinner  size="lg" />
+                        <Spinner size="lg" />
                     </Bullseye>
                 </PageSection>
             )}

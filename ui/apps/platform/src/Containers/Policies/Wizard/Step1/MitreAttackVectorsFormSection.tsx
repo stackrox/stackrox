@@ -132,7 +132,10 @@ function MitreAttackVectorsFormSection(): ReactElement {
                     const isDisabledTactic = techniqueIds.length !== 0;
 
                     return (
-                        <li key={tacticId} className="pf-v5-c-tree-view__list-item mitre-tactic-item">
+                        <li
+                            key={tacticId}
+                            className="pf-v5-c-tree-view__list-item mitre-tactic-item"
+                        >
                             <TreeViewContent>
                                 <Flex flexWrap={{ default: 'nowrap' }}>
                                     <MitreTacticSelect
