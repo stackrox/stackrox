@@ -633,6 +633,7 @@ ifdef CI
 	cp bin/linux_ppc64le/roxctl image/rhel/bin/roxctl-linux-ppc64le
 	cp bin/linux_s390x/roxctl image/rhel/bin/roxctl-linux-s390x
 	cp bin/darwin_amd64/roxctl image/rhel/bin/roxctl-darwin-amd64
+	cp bin/darwin_arm64/roxctl image/rhel/bin/roxctl-darwin-arm64
 	cp bin/windows_amd64/roxctl.exe image/rhel/bin/roxctl-windows-amd64.exe
 else
 ifneq ($(HOST_OS),linux)
