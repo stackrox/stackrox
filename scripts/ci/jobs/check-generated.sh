@@ -86,7 +86,7 @@ function check-shellcheck-failing-list() {
     echo 'Checking for diffs after updating shellcheck failing list...'
     echo 'Failure only if files can be removed from the skip file.'
     git diff --exit-code HEAD \
-        || test $(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f2) -lt 1
+        || test "$(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f2)" -lt 1
 }
 check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
