@@ -87,6 +87,7 @@ tests/upgrade/postgres_run.sh
 tests/upgrade/postgres_sensor_run.sh
 tests/yamls/roxctl_verification.sh
 tools/check-service-protos/run.sh
+tools/detect-large-files.sh
 tools/fix-blanks.sh
 tools/githooks/install-hooks.sh
 ui/apps/platform/scripts/cypress.sh
