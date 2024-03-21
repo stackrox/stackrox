@@ -12,6 +12,8 @@ import (
 func main() {
 	ctx := context.Background()
 
+	retestComment := "/retest"
+
 	// Use installation transport with client.
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 
@@ -28,7 +30,7 @@ func main() {
 
 		retested := 0
 		for _, c := range comments {
-			if c.GetBody() == "/retest" {
+			if c.GetBody() == retestComment {
 				retested++
 			}
 		}
@@ -37,27 +39,28 @@ func main() {
 			continue
 		}
 
-		get, _, err := client.PullRequests.Get(ctx, "stackrox", "stackrox", prNumber)
+		prDetails, _, err := client.PullRequests.Get(ctx, "stackrox", "stackrox", prNumber)
 		handleError(err)
 
 		var statuses []Status
-		request, err := http.NewRequest("GET", get.GetStatusesURL(), nil)
+		statusRequest, err := http.NewRequest("GET", prDetails.GetStatusesURL(), nil)
 		handleError(err)
-		_, err = client.Do(ctx, request, &statuses)
+		_, err = client.Do(ctx, statusRequest, &statuses)
 		handleError(err)
 
-		retest := "/retest"
 		retestComment := github.IssueComment{
-			Body: &retest,
+			Body: &retestComment,
 		}
 
 		for _, status := range statuses {
 			log.Printf("#%d %-40s\t%10s", prNumber, status.Context, status.State)
-			if status.State == "failure" {
-				comment, _, err := client.Issues.CreateComment(ctx, "stackrox", "stackrox", prNumber, &retestComment)
-				handleError(err)
-				log.Printf("#%d commented: %s", prNumber, comment.GetURL())
+			if status.State != "failure" {
+				continue
 			}
+			comment, _, err := client.Issues.CreateComment(ctx, "stackrox", "stackrox", prNumber, &retestComment)
+			handleError(err)
+			log.Printf("#%d commented: %s", prNumber, comment.GetURL())
+			break
 		}
 	}
 }
