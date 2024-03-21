@@ -48,6 +48,7 @@ for platform in Linux Darwin Windows; do
     cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-s390x"
     cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-s390x"
   fi
+
   if [[ "${platform}" == "Darwin" ]]; then
     cp "${source_dir}/bin/${platform_lower}_arm64/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-arm64"
     cp "${source_dir}/bin/${platform_lower}_arm64/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-arm64"
