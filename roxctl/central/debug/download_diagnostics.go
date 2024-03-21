@@ -24,6 +24,7 @@ const (
 func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 	var clusters []string
+	var excludedClusters []string
 	var since string
 
 	c := &cobra.Command{
@@ -37,6 +38,9 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 			values := url.Values{}
 			for _, cluster := range clusters {
 				values.Add("cluster", cluster)
+			}
+			for _, cluster := range excludedClusters {
+				values.Add("excludeCluster", cluster)
 			}
 			if since != "" {
 				values.Add("since", since)
@@ -68,7 +72,9 @@ To specify timeout, run  'roxctl' command:
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory in which to store bundle")
 	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "comma separated list of sensor clusters from which logs should be collected")
+	c.PersistentFlags().StringSliceVar(&excludedClusters, "excluded-clusters", nil, "comma separated list of sensor clusters from which logs should NOT collected")
 	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")
+	c.MarkFlagsMutuallyExclusive("clusters", "excluded-clusters")
 
 	return c
 }
