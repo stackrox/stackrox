@@ -131,7 +131,7 @@ function ProfileSelection({
                 <Tr>
                     <Td colSpan={6}>
                         <Bullseye>
-                            <Spinner  />
+                            <Spinner />
                         </Bullseye>
                     </Td>
                 </Tr>

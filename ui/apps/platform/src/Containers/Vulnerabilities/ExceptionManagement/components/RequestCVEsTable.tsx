@@ -84,7 +84,7 @@ function RequestCVEsTable({
     if (loading && !data) {
         return (
             <Bullseye>
-                <Spinner  />
+                <Spinner />
             </Bullseye>
         );
     }

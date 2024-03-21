@@ -1,8 +1,5 @@
 import React, { ReactElement, ReactNode, useState } from 'react';
-import {
-	Dropdown,
-	DropdownToggle
-} from '@patternfly/react-core/deprecated';
+import { Dropdown, DropdownToggle } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 type BulkActionsDropdownProps = {

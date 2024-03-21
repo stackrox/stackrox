@@ -26,11 +26,27 @@ const PublicConfigLoginDetails = ({
 
     return (
         <Card isFlat data-testid="login-notice-config">
-            <CardHeader actions={{ actions: <>{isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}</>, hasNoOffset: false, className: undefined}} >
-                actions={<>
-                    <CardTitle component="h3">Login configuration</CardTitle>
-                </>}
-                
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            {isEnabled ? (
+                                <Label color="green">Enabled</Label>
+                            ) : (
+                                <Label>Disabled</Label>
+                            )}
+                        </>
+                    ),
+                    hasNoOffset: false,
+                    className: undefined,
+                }}
+            >
+                actions=
+                {
+                    <>
+                        <CardTitle component="h3">Login configuration</CardTitle>
+                    </>
+                }
             </CardHeader>
             <Divider component="div" />
             <CardBody>

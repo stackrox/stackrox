@@ -2,23 +2,23 @@ import React, { ReactElement, useState, useReducer } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
-	Alert,
-	Bullseye,
-	Button,
-	Divider,
-	PageSection,
-	Title,
-	Toolbar,
-	ToolbarContent,
-	ToolbarGroup,
-	ToolbarItem,
-	Spinner
+    Alert,
+    Bullseye,
+    Button,
+    Divider,
+    PageSection,
+    Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+    ToolbarItem,
+    Spinner,
 } from '@patternfly/react-core';
 import {
-	Dropdown,
-	DropdownItem,
-	DropdownPosition,
-	DropdownToggle
+    Dropdown,
+    DropdownItem,
+    DropdownPosition,
+    DropdownToggle,
 } from '@patternfly/react-core/deprecated';
 
 import CheckboxTable from 'Components/CheckboxTable';
@@ -255,7 +255,7 @@ function ClustersTablePanel({
                             {errorMessage}
                         </Alert>
                     ) : (
-                        <Spinner  />
+                        <Spinner />
                     )}
                 </Bullseye>
             </PageSection>
@@ -427,7 +427,9 @@ function ClustersTablePanel({
                                             <DropdownToggle
                                                 id="install-toggle"
                                                 toggleVariant="secondary"
-                                                onToggle={(_event, newIsInstallMenuOpen) => onToggleInstallMenu(newIsInstallMenuOpen)}
+                                                onToggle={(_event, newIsInstallMenuOpen) =>
+                                                    onToggleInstallMenu(newIsInstallMenuOpen)
+                                                }
                                             >
                                                 Secure a cluster
                                             </DropdownToggle>

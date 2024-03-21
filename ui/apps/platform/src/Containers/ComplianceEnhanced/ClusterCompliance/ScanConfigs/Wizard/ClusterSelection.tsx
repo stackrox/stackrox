@@ -113,7 +113,7 @@ function ClusterSelection({
             <Tr>
                 <Td colSpan={2}>
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 </Td>
             </Tr>

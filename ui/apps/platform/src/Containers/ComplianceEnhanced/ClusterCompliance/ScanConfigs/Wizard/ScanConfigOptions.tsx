@@ -81,7 +81,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.name"
                                         name="parameters.name"
                                         value={formik.values.parameters.name}
-                                        onChange={(event, _value) => formik.handleChange(event)}
+                                        onChange={(event) => formik.handleChange(event)}
                                         onBlur={formik.handleBlur}
                                     />
                                 </FormLabelGroup>
@@ -98,7 +98,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.description"
                                         name="parameters.description"
                                         value={formik.values.parameters.description}
-                                        onChange={(event, _value) => formik.handleChange(event)}
+                                        onChange={(event) => formik.handleChange(event)}
                                         onBlur={formik.handleBlur}
                                     />
                                 </FormLabelGroup>

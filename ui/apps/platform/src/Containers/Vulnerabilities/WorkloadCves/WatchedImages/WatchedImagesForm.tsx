@@ -68,7 +68,7 @@ function WatchedImagesForm({
                     type="text"
                     value={values.imageName}
                     validated={nameFieldValidated}
-                    onChange={(e, _) => handleChange(e)}
+                    onChange={(e) => handleChange(e)}
                     isDisabled={isSubmitting}
                     placeholder="registry.example.com/namespace/image-name:tag"
                     isRequired

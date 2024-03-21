@@ -72,7 +72,7 @@ function ImagesTableContainer({
             <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
-                    <Spinner  />
+                    <Spinner />
                 </Bullseye>
             )}
             {error && (

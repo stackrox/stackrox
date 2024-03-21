@@ -1,15 +1,14 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
-	Button,
-	ButtonVariant,
-	Flex,
-	FlexItem,
-	InputGroup,
-	TextInput, InputGroupItem
+    Button,
+    ButtonVariant,
+    Flex,
+    FlexItem,
+    InputGroup,
+    TextInput,
+    InputGroupItem,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FilterIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
@@ -70,21 +69,25 @@ function ImageVulnsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'CVE' && (
                     <InputGroup>
-                        <InputGroupItem isFill ><TextInput
-                            name="cveSearchInput"
-                            id="cveSearchInput"
-                            type="search"
-                            aria-label="CVE search input"
-                            onChange={(_event, value) => handleInputChange(value)}
-                            value={inputValue}
-                        /></InputGroupItem>
-                        <InputGroupItem><Button
-                            variant={ButtonVariant.control}
-                            aria-label="search button for CVE search input"
-                            onClick={() => handleSearchChange(inputValue)}
-                        >
-                            <SearchIcon />
-                        </Button></InputGroupItem>
+                        <InputGroupItem isFill>
+                            <TextInput
+                                name="cveSearchInput"
+                                id="cveSearchInput"
+                                type="search"
+                                aria-label="CVE search input"
+                                onChange={(_event, value) => handleInputChange(value)}
+                                value={inputValue}
+                            />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                            <Button
+                                variant={ButtonVariant.control}
+                                aria-label="search button for CVE search input"
+                                onClick={() => handleSearchChange(inputValue)}
+                            >
+                                <SearchIcon />
+                            </Button>
+                        </InputGroupItem>
                     </InputGroup>
                 )}
                 {selectedAttribute === 'Fixable' && (

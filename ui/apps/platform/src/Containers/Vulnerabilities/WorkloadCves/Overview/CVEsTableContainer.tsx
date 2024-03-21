@@ -1,14 +1,7 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import {
-	Bullseye,
-	Divider,
-	Spinner,
-	ToolbarItem
-} from '@patternfly/react-core';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { Bullseye, Divider, Spinner, ToolbarItem } from '@patternfly/react-core';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
@@ -152,7 +145,7 @@ function CVEsTableContainer({
             <Divider component="div" />
             {loading && !tableData && (
                 <Bullseye>
-                    <Spinner  />
+                    <Spinner />
                 </Bullseye>
             )}
             {error && (

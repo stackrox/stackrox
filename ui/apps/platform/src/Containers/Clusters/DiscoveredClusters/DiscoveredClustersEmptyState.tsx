@@ -6,7 +6,8 @@ import {
     EmptyStateIcon,
     Flex,
     Text,
-    Title, EmptyStateHeader,
+    Title,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Td, Tr } from '@patternfly/react-table';
@@ -27,7 +28,8 @@ function DiscoveredClustersEmptyState({
                     <Bullseye>
                         {hasFilter ? (
                             <EmptyState>
-                                <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} /><EmptyStateBody>
+                                <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} />
+                                <EmptyStateBody>
                                     <Flex direction={{ default: 'column' }}>
                                         <Title headingLevel="h2">
                                             No discovered clusters found

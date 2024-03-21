@@ -1,7 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 

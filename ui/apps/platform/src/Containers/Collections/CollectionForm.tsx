@@ -349,7 +349,7 @@ function CollectionForm({
                                     name="name"
                                     value={values.name}
                                     validated={nameError ? 'error' : 'default'}
-                                    onChange={(e, _) => {
+                                    onChange={(e) => {
                                         if (
                                             configError?.type === 'DuplicateName' ||
                                             configError?.type === 'EmptyName'
@@ -369,7 +369,7 @@ function CollectionForm({
                                     id="description"
                                     name="description"
                                     value={values.description}
-                                    onChange={(e, _) => handleChange(e)}
+                                    onChange={(e) => handleChange(e)}
                                     onBlur={handleBlur}
                                     readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />

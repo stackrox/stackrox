@@ -114,7 +114,7 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
                             type="text"
                             id="rationale"
                             value={formik.values.rationale}
-                            onChange={(event, _) => formik.handleChange(event)}
+                            onChange={(event) => formik.handleChange(event)}
                             onBlur={formik.handleBlur}
                         />
                     </FormLabelGroup>

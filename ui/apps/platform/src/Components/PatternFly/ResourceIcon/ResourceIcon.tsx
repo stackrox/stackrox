@@ -24,7 +24,10 @@ const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: s
     Cluster: { text: 'CL', backgroundColor: 'var(--pf-v5-global--palette--purple-500)' },
     ConfigMap: { text: 'CM', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
     ClusterRoles: { text: 'CR', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
-    ClusterRoleBindings: { text: 'CRB', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    ClusterRoleBindings: {
+        text: 'CRB',
+        backgroundColor: 'var(--pf-v5-global--palette--purple-600)',
+    },
     NetworkPolicies: { text: 'NP', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
     SecurityContextConstraints: {
         text: 'SCC',

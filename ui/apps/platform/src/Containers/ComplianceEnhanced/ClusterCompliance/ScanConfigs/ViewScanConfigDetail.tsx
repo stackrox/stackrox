@@ -149,7 +149,7 @@ function ViewScanConfigDetail({
             <PageSection isCenterAligned>
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : (
                     error && (

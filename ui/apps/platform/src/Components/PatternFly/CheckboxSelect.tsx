@@ -1,9 +1,9 @@
 import React, { ReactElement, useState } from 'react';
 import {
-	Select,
-	SelectOptionObject,
-	SelectOptionProps,
-	SelectVariant
+    Select,
+    SelectOptionObject,
+    SelectOptionProps,
+    SelectVariant,
 } from '@patternfly/react-core/deprecated';
 
 export type CheckboxSelectProps = {

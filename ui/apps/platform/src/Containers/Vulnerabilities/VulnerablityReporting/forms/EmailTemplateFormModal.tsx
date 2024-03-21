@@ -140,7 +140,7 @@ function EmailTemplateFormModal({
                                 type="text"
                                 value={values.emailSubject}
                                 validated={emailSubjectValidated}
-                                onChange={(e, _) => handleChange(e)}
+                                onChange={(e) => handleChange(e)}
                                 onBlur={handleBlur}
                                 isDisabled={isSubmitting}
                                 placeholder={defaultEmailSubject}
@@ -184,7 +184,7 @@ function EmailTemplateFormModal({
                                 type="text"
                                 value={values.emailBody}
                                 validated={emailBodyValidated}
-                                onChange={(e, _) => handleChange(e)}
+                                onChange={(e) => handleChange(e)}
                                 onBlur={handleBlur}
                                 isDisabled={isSubmitting}
                                 style={{ minHeight: '250px' }}
