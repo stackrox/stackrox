@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -22,22 +23,7 @@ import (
 )
 
 const (
-	// registryDialerTimeout is the net.Dialer timeout of the client transport.
-	// It limits the time the dialer attempts the connection. The timeout is
-	// chosen as a small value to prevent unavailable registries from blocking
-	// image scanning. When connecting to a proxy, this timeout only limits the
-	// connection attempt to the proxy and not the proxy target.
-	registryDialerTimeout = 5 * time.Second
-	// registryResponseTimeout is the response header timeout of the client transport.
-	// It limits the time to wait for a server's response headers after fully
-	// writing the request.
-	registryResponseTimeout = 10 * time.Second
-	// registryClientTimeout is used as http.Client.Timeout for the registry's HTTP
-	// client and hence includes everything from connection to reading the
-	// response body. This timeout must not be chosen too large because it serves
-	// as a connection timeout for proxied registries.
-	registryClientTimeout = 10 * time.Second
-	repoListInterval      = 10 * time.Minute
+	repoListInterval = 10 * time.Minute
 )
 
 var log = logging.LoggerForModule()
@@ -99,7 +85,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		return nil, err
 	}
 
-	client.Client.Timeout = registryClientTimeout
+	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
 	var repoSet set.Set[string]
 	var ticker *time.Ticker
