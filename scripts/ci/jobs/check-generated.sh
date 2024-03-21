@@ -92,13 +92,13 @@ check-shellcheck-failing-list || {
         save_junit_failure "Check_Shellcheck_Skip_List" \
             "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
             "$(git diff HEAD || true)"
+        echo check-shellcheck-failing-list >> "$FAIL_FLAG"
     else
         # Do not mark the job as failed if new additions; The lint job will already report the change.
         save_junit_success "Check_Shellcheck_Skip_List" \
             "Script with shellcheck errors is not listed in scripts/style/shellcheck_skip.txt"
     fi
     git reset --hard HEAD
-    echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 }
 
 if [[ -e "$FAIL_FLAG" ]]; then
