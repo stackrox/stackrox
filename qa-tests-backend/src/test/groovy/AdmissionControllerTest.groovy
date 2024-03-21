@@ -110,13 +110,10 @@ class AdmissionControllerTest extends BaseSpecification {
         // tests below.
         ImageService.scanImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
 
-        // Wait until we received metadata the inline scan image. This will
-        // ensure that enrichment has finalized.
-        withRetry(18, 10) {
-            ImageOuterClass.Image image = ImageService.getImage(SCAN_INLINE_IMAGE_SHA, false)
-            assert image
-            assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
-        }
+        // Ensure that scanImage() provides the required metadata for test.
+        ImageOuterClass.Image image = ImageService.getImage(SCAN_INLINE_IMAGE_SHA, false)
+        assert image
+        assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
     }
