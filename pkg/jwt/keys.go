@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-jose/go-jose/v3"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"gopkg.in/square/go-jose.v2"
 )
 
 const (
