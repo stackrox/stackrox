@@ -277,12 +277,9 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 		return nil, nil, errors.Wrap(err, "could not parse query")
 	}
 
-	since, err := protocompat.ConvertTimestampToTimeOrError(req.GetNetworkDataSince())
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "parsing network data since")
-	}
+	since := protocompat.ConvertTimestampToTimeOrNil(req.GetNetworkDataSince())
 
-	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, &since, req.GetIncludePorts())
+	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, since, req.GetIncludePorts())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
