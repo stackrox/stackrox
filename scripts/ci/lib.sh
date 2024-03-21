@@ -1881,7 +1881,7 @@ highlight_cluster_versions() {
         return
     fi
 
-    artifact_file="$ARTIFACT_DIR/cluster-version-summary.html"
+    artifact_file="$ARTIFACT_DIR/cluster-version.html"
 
     cat > "$artifact_file" <<- HEAD
 <html>
