@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -46,6 +47,10 @@ type managerImpl struct {
 }
 
 func (m *managerImpl) flushHashes(ctx context.Context) {
+	if !features.PersistDeduperState.Enabled() {
+		log.Infof("%s disabled. We will not persist the deduper state", features.PersistDeduperState.EnvVar())
+		return
+	}
 	// Get clusters first to flush hashes one at a time.
 	clusters := concurrency.WithLock1(&m.dedupersLock, func() []string {
 		clusters := make([]string, 0, len(m.dedupers))
