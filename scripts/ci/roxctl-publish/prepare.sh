@@ -45,6 +45,7 @@ for platform in Linux Darwin Windows; do
 
     cp "${source_dir}/bin/${platform_lower}_ppc64le/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-ppc64le"
     cp "${source_dir}/bin/${platform_lower}_ppc64le/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-ppc64le"
+
     cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-s390x"
     cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-s390x"
   fi
