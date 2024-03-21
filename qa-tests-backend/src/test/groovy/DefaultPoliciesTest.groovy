@@ -258,7 +258,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933" | false
 
-        "Curl in Image"                                 | WGET_CURL      | "C948" | true
+        "Curl not in Image"                             | WGET_CURL      | "C948" | false
     }
 
     def hasApacheStrutsVuln(image) {
