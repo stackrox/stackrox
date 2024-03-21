@@ -49,7 +49,7 @@ func ScaleSizeOnNonDefault(setting *env.IntegerSetting) int {
 
 	scaled, err := ScaleSize(v)
 	if err != nil {
-		log.Warnf("Failed to scale setting %s. Returning its unscaled value", setting.EnvVar())
+		log.Warnf("Failed to scale setting: %s. Returning its unscaled value: %s", err, setting.EnvVar())
 		return v
 	}
 
