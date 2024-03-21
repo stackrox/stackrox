@@ -1,9 +1,11 @@
 const watchedImageLabelText = 'Watched image';
-const filterChipSection = '.pf-v5-c-toolbar .pf-v5-c-toolbar__group[aria-label="applied search filters"]';
+const filterChipSection =
+    '.pf-v5-c-toolbar .pf-v5-c-toolbar__group[aria-label="applied search filters"]';
 
 export const selectors = {
     // Toolbar selectors
-    searchOptionsDropdown: '.pf-v5-c-toolbar button[aria-label="search options filter menu toggle"]',
+    searchOptionsDropdown:
+        '.pf-v5-c-toolbar button[aria-label="search options filter menu toggle"]',
     searchOptionsMenuItem: (searchOption) =>
         `.pf-v5-c-toolbar ul[aria-label="search options filter menu items"] button:contains("${searchOption}")`,
     searchOptionsValueTypeahead: (searchOption) =>
