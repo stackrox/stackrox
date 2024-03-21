@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/nxadm/tail"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -119,13 +119,7 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 				continue // just move on
 			}
 
-			eventTS, err := auditLine.getEventTime()
-			if err != nil {
-				log.Errorf("Unable to parse timestamp from audit log: %v", err)
-				continue
-			}
-
-			if !s.shouldSendEvent(&auditLine, eventTS) {
+			if !s.shouldSendEvent(&auditLine) {
 				continue
 			}
 
@@ -141,9 +135,23 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 	}
 }
 
-func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.Timestamp) bool {
+func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 	if s.startState != nil {
-		if !protoutils.After(eventTS, s.startState.CollectLogsSince) {
+		protoTime, err := protocompat.ParseRFC3339NanoTimestamp(event.StageTimestamp)
+		if err != nil {
+			log.Errorf("Failed to parse stage time %s from audit log, so falling back to received time: %v", event.StageTimestamp, err)
+			// If StageTimestamp (which is the time for this particular stage) is not parsable, try the RequestReceivedTimestamp
+			// While it's not as accurate it should be relatively close. This should also be a rare occurrence.
+			protoTime, err = protocompat.ParseRFC3339NanoTimestamp(event.RequestReceivedTimestamp)
+			if err != nil {
+				protoTime = nil
+			}
+		}
+		if err != nil {
+			log.Errorf("Unable to parse timestamp from audit log: %v", err)
+			return false
+		}
+		if !protoutils.After(protoTime, s.startState.CollectLogsSince) {
 			// don't send since time hasn't matched yet
 			// but if the id matches then we're in the same time and everything after can be sent
 			if event.AuditID == s.startState.LastAuditId {
