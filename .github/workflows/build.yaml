@@ -573,7 +573,7 @@ jobs:
 
   scan-go-binaries:
     if: |
-      github.event_name == 'push' || 
+      github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
