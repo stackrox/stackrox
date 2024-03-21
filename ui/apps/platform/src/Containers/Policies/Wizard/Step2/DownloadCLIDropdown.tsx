@@ -43,8 +43,14 @@ function DownloadCLIDropdown({ hasBuild }) {
                 <DropdownItem value="darwin-amd64" component="button">
                     Mac x86_64
                 </DropdownItem>,
+                <DropdownItem value="darwin-arm64" component="button">
+                    Mac arm_64
+                </DropdownItem>,
                 <DropdownItem value="linux-amd64" component="button">
                     Linux x86_64
+                </DropdownItem>,
+                <DropdownItem value="linux-arm64" component="button">
+                    Linux arm_64
                 </DropdownItem>,
                 <DropdownItem value="linux-ppc64le" component="button">
                     Linux ppc64le

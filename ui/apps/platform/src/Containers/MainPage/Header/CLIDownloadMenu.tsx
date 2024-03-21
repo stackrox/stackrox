@@ -44,11 +44,25 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
             Mac x86_64
         </ApplicationLauncherItem>,
         <ApplicationLauncherItem
+            key="app-launcher-item-cli-mac-arm64"
+            component="button"
+            onClick={handleDownloadCLI('darwin-arm64')}
+        >
+            Mac arm_64
+        </ApplicationLauncherItem>,
+        <ApplicationLauncherItem
             key="app-launcher-item-cli-linux-amd64"
             component="button"
             onClick={handleDownloadCLI('linux-amd64')}
         >
             Linux x86_64
+        </ApplicationLauncherItem>,
+        <ApplicationLauncherItem
+            key="app-launcher-item-cli-linux-arm64"
+            component="button"
+            onClick={handleDownloadCLI('linux-arm64')}
+        >
+            Linux arm_64
         </ApplicationLauncherItem>,
         <ApplicationLauncherItem
             key="app-launcher-item-cli-linux-ppc64le"
