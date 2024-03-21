@@ -280,7 +280,7 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
-	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
+	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersio())
 	ensureDB(ctx)
 
 	if !pgconfig.IsExternalDatabase() {
