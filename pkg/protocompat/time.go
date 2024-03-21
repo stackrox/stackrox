@@ -5,21 +5,20 @@ import (
 	"time"
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
+	"github.com/graph-gophers/graphql-go"
 )
 
 var (
 	// TimestampPtrType is a variable containing a nil pointer of Timestamp type
 	TimestampPtrType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
+
+	// TimestampType is the type representing a proto timestamp.
+	TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
 )
 
 // TimestampNow returns a protobuf timestamp set to the current time.
 func TimestampNow() *gogoTimestamp.Timestamp {
 	return gogoTimestamp.TimestampNow()
-}
-
-// ConvertTimestampToTimeOrError converts a proto timestamp to a golang Time, or returns an error if there is one.
-func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
-	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
@@ -44,6 +43,22 @@ func ConvertTimeToTimestampOrNil(goTime *time.Time) *gogoTimestamp.Timestamp {
 		return nil
 	}
 	return gogo
+}
+
+// ConvertTimestampToGraphqlTimeOrError converts a proto timestamp
+// to a graphql Time, or returns an error if there is one.
+func ConvertTimestampToGraphqlTimeOrError(gogo *gogoTimestamp.Timestamp) (*graphql.Time, error) {
+	if gogo == nil {
+		return nil, nil
+	}
+	t, err := gogoTimestamp.TimestampFromProto(gogo)
+	return &graphql.Time{Time: t}, err
+}
+
+// ConvertTimestampToTimeOrError converts a proto timestamp
+// to a golang Time, or returns an error if there is one.
+func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
+	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
 // ConvertTimeToTimestampOrError converts golang time to proto timestamp.

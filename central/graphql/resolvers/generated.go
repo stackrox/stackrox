@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage" // end range imports
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -1890,7 +1891,7 @@ func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_Enforcem
 func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) Id(ctx context.Context) graphql.ID {
@@ -1942,7 +1943,7 @@ func (resolver *alertResolver) ProcessViolation(ctx context.Context) (*alert_Pro
 func (resolver *alertResolver) ResolvedAt(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetResolvedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceResolver, error) {
@@ -1954,7 +1955,7 @@ func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceRes
 func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSnoozeTill()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) State(ctx context.Context) string {
@@ -1970,7 +1971,7 @@ func (resolver *alertResolver) Time(ctx context.Context) (*graphql.Time, error) 
 	if resolver.data == nil {
 		value = resolver.list.GetTime()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_ViolationResolver, error) {
@@ -2419,7 +2420,7 @@ func (resolver *alert_ViolationResolver) NetworkFlowInfo(ctx context.Context) (*
 
 func (resolver *alert_ViolationResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alert_ViolationResolver) Type(ctx context.Context) string {
@@ -2862,7 +2863,7 @@ func (resolver *Resolver) wrapCVEsWithContext(ctx context.Context, values []*sto
 
 func (resolver *cVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {
@@ -2877,7 +2878,7 @@ func (resolver *cVEResolver) ImpactScore(ctx context.Context) float64 {
 
 func (resolver *cVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastModified()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) Link(ctx context.Context) string {
@@ -2887,7 +2888,7 @@ func (resolver *cVEResolver) Link(ctx context.Context) string {
 
 func (resolver *cVEResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetPublishedOn()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) References(ctx context.Context) ([]*cVE_ReferenceResolver, error) {
@@ -2912,12 +2913,12 @@ func (resolver *cVEResolver) Summary(ctx context.Context) string {
 
 func (resolver *cVEResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSuppressActivation()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSuppressExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) Suppressed(ctx context.Context) bool {
@@ -2979,7 +2980,7 @@ func (resolver *Resolver) wrapCVEInfosWithContext(ctx context.Context, values []
 
 func (resolver *cVEInfoResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
@@ -2999,7 +3000,7 @@ func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, e
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastModified()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEInfoResolver) Link(ctx context.Context) string {
@@ -3009,7 +3010,7 @@ func (resolver *cVEInfoResolver) Link(ctx context.Context) string {
 
 func (resolver *cVEInfoResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetPublishedOn()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEInfoResolver) References(ctx context.Context) ([]*cVEInfo_ReferenceResolver, error) {
@@ -3654,7 +3655,7 @@ func (resolver *certResolver) Algorithm(ctx context.Context) string {
 
 func (resolver *certResolver) EndDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetEndDate()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *certResolver) Issuer(ctx context.Context) (*certNameResolver, error) {
@@ -3669,7 +3670,7 @@ func (resolver *certResolver) Sans(ctx context.Context) []string {
 
 func (resolver *certResolver) StartDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartDate()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *certResolver) Subject(ctx context.Context) (*certNameResolver, error) {
@@ -3985,12 +3986,12 @@ func (resolver *clusterCVEResolver) Severity(ctx context.Context) string {
 
 func (resolver *clusterCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterCVEResolver) Snoozed(ctx context.Context) bool {
@@ -4047,12 +4048,12 @@ func (resolver *Resolver) wrapClusterCertExpiryStatusesWithContext(ctx context.C
 
 func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSensorCertExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterCertExpiryStatusResolver) SensorCertNotBefore(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSensorCertNotBefore()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 type clusterHealthStatusResolver struct {
@@ -4129,7 +4130,7 @@ func (resolver *clusterHealthStatusResolver) Id(ctx context.Context) graphql.ID 
 
 func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastContact()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
@@ -4459,7 +4460,7 @@ func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Id(ctx contex
 
 func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) InitiatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetInitiatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Progress(ctx context.Context) (*upgradeProgressResolver, error) {
@@ -5724,7 +5725,7 @@ func (resolver *complianceRunResolver) ErrorMessage(ctx context.Context) string 
 
 func (resolver *complianceRunResolver) FinishTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinishTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunResolver) Id(ctx context.Context) graphql.ID {
@@ -5739,7 +5740,7 @@ func (resolver *complianceRunResolver) StandardId(ctx context.Context) string {
 
 func (resolver *complianceRunResolver) StartTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunResolver) State(ctx context.Context) string {
@@ -5806,7 +5807,7 @@ func (resolver *complianceRunMetadataResolver) ErrorMessage(ctx context.Context)
 
 func (resolver *complianceRunMetadataResolver) FinishTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinishTimestamp()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunMetadataResolver) RunId(ctx context.Context) string {
@@ -5821,7 +5822,7 @@ func (resolver *complianceRunMetadataResolver) StandardId(ctx context.Context) s
 
 func (resolver *complianceRunMetadataResolver) StartTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartTimestamp()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunMetadataResolver) Success(ctx context.Context) bool {
@@ -6392,7 +6393,7 @@ func (resolver *containerInstanceResolver) ExitCode(ctx context.Context) int32 {
 
 func (resolver *containerInstanceResolver) Finished(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinished()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *containerInstanceResolver) ImageDigest(ctx context.Context) string {
@@ -6407,7 +6408,7 @@ func (resolver *containerInstanceResolver) InstanceId(ctx context.Context) (*con
 
 func (resolver *containerInstanceResolver) Started(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStarted()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *containerInstanceResolver) TerminationReason(ctx context.Context) string {
@@ -6748,7 +6749,7 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 	if resolver.data == nil {
 		value = resolver.list.GetCreated()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *deploymentResolver) HostIpc(ctx context.Context) bool {
@@ -7279,7 +7280,7 @@ func (resolver *exclusionResolver) Deployment(ctx context.Context) (*exclusion_D
 
 func (resolver *exclusionResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *exclusionResolver) Image(ctx context.Context) (*exclusion_ImageResolver, error) {
@@ -7911,7 +7912,7 @@ func (resolver *imageResolver) LastUpdated(ctx context.Context) (*graphql.Time, 
 	if resolver.data == nil {
 		value = resolver.list.GetLastUpdated()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageResolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
@@ -8044,12 +8045,12 @@ func (resolver *imageCVEResolver) Severity(ctx context.Context) string {
 
 func (resolver *imageCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageCVEResolver) Snoozed(ctx context.Context) bool {
@@ -8193,7 +8194,7 @@ func (resolver *imageLayerResolver) Author(ctx context.Context) string {
 
 func (resolver *imageLayerResolver) Created(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageLayerResolver) Empty(ctx context.Context) bool {
@@ -8493,7 +8494,7 @@ func (resolver *imageScanResolver) OperatingSystem(ctx context.Context) string {
 
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageScanResolver) ScannerVersion(ctx context.Context) string {
@@ -8563,7 +8564,7 @@ func (resolver *Resolver) wrapImageSignaturesWithContext(ctx context.Context, va
 
 func (resolver *imageSignatureResolver) Fetched(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFetched()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*signatureResolver, error) {
@@ -8672,7 +8673,7 @@ func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Con
 
 func (resolver *imageSignatureVerificationResultResolver) VerificationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetVerificationTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageSignatureVerificationResultResolver) VerifiedImageReferences(ctx context.Context) []string {
@@ -8914,7 +8915,7 @@ func (resolver *k8SRoleResolver) ClusterRole(ctx context.Context) bool {
 
 func (resolver *k8SRoleResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *k8SRoleResolver) Id(ctx context.Context) graphql.ID {
@@ -9006,7 +9007,7 @@ func (resolver *k8SRoleBindingResolver) ClusterRole(ctx context.Context) bool {
 
 func (resolver *k8SRoleBindingResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *k8SRoleBindingResolver) Id(ctx context.Context) graphql.ID {
@@ -9761,7 +9762,7 @@ func (resolver *namespaceMetadataResolver) ClusterName(ctx context.Context) stri
 
 func (resolver *namespaceMetadataResolver) CreationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreationTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *namespaceMetadataResolver) Id(ctx context.Context) graphql.ID {
@@ -10107,7 +10108,7 @@ func (resolver *networkFlowResolver) ClusterId(ctx context.Context) string {
 
 func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastSeenTimestamp()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *networkFlowResolver) Props(ctx context.Context) (*networkFlowPropertiesResolver, error) {
@@ -10261,12 +10262,12 @@ func (resolver *nodeResolver) InternalIpAddresses(ctx context.Context) []string 
 
 func (resolver *nodeResolver) JoinedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetJoinedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeResolver) K8SUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetK8SUpdated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeResolver) KernelVersion(ctx context.Context) string {
@@ -10291,7 +10292,7 @@ func (resolver *nodeResolver) Labels(ctx context.Context) labels {
 
 func (resolver *nodeResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastUpdated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeResolver) Name(ctx context.Context) string {
@@ -10403,12 +10404,12 @@ func (resolver *nodeCVEResolver) Severity(ctx context.Context) string {
 
 func (resolver *nodeCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeCVEResolver) Snoozed(ctx context.Context) bool {
@@ -10542,7 +10543,7 @@ func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
 
 func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func toNodeScan_Note(value *string) storage.NodeScan_Note {
@@ -10855,7 +10856,7 @@ func (resolver *orchestratorMetadataResolver) ApiVersions(ctx context.Context) [
 
 func (resolver *orchestratorMetadataResolver) BuildDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetBuildDate()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *orchestratorMetadataResolver) Version(ctx context.Context) string {
@@ -11064,7 +11065,7 @@ func (resolver *podResolver) Namespace(ctx context.Context) string {
 
 func (resolver *podResolver) Started(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStarted()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *podResolver) TerminatedInstances(ctx context.Context) ([]*pod_ContainerInstanceListResolver, error) {
@@ -11208,7 +11209,7 @@ func (resolver *policyResolver) IsDefault(ctx context.Context) bool {
 
 func (resolver *policyResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastUpdated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *policyResolver) LifecycleStages(ctx context.Context) []string {
@@ -11839,7 +11840,7 @@ func (resolver *processIndicatorResolver) ContainerName(ctx context.Context) str
 
 func (resolver *processIndicatorResolver) ContainerStartTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetContainerStartTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) string {
@@ -12028,7 +12029,7 @@ func (resolver *processSignalResolver) Scraped(ctx context.Context) bool {
 
 func (resolver *processSignalResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *processSignalResolver) Uid(ctx context.Context) int32 {
@@ -12294,7 +12295,7 @@ func (resolver *Resolver) wrapRequestCommentsWithContext(ctx context.Context, va
 
 func (resolver *requestCommentResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *requestCommentResolver) Id(ctx context.Context) graphql.ID {
@@ -13025,7 +13026,7 @@ func (resolver *secretResolver) CreatedAt(ctx context.Context) (*graphql.Time, e
 	if resolver.data == nil {
 		value = resolver.list.GetCreatedAt()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *secretResolver) Files(ctx context.Context) ([]*secretDataFileResolver, error) {
@@ -13690,7 +13691,7 @@ func (resolver *serviceAccountResolver) ClusterName(ctx context.Context) string 
 
 func (resolver *serviceAccountResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *serviceAccountResolver) Id(ctx context.Context) graphql.ID {
@@ -14782,7 +14783,7 @@ func (resolver *Resolver) wrapTokenMetadatasWithContext(ctx context.Context, val
 
 func (resolver *tokenMetadataResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *tokenMetadataResolver) Id(ctx context.Context) graphql.ID {
@@ -14792,7 +14793,7 @@ func (resolver *tokenMetadataResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *tokenMetadataResolver) IssuedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetIssuedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *tokenMetadataResolver) Name(ctx context.Context) string {
@@ -15097,7 +15098,7 @@ func (resolver *Resolver) wrapUpgradeProgressesWithContext(ctx context.Context, 
 
 func (resolver *upgradeProgressResolver) Since(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSince()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *upgradeProgressResolver) UpgradeState(ctx context.Context) string {
@@ -15182,7 +15183,7 @@ func (resolver *v1MetadataResolver) Command(ctx context.Context) []string {
 
 func (resolver *v1MetadataResolver) Created(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *v1MetadataResolver) Digest(ctx context.Context) string {
