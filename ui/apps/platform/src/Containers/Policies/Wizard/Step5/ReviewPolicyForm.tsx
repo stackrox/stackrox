@@ -109,9 +109,14 @@ function ReviewPolicyForm({
                     <Flex direction={{ default: 'column', xl: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h2">Review policy</Title>
-                            <div className="pf-v5-u-mt-sm">Review policy settings and violations.</div>
+                            <div className="pf-v5-u-mt-sm">
+                                Review policy settings and violations.
+                            </div>
                         </FlexItem>
-                        <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                        <FlexItem
+                            className="pf-v5-u-pr-md"
+                            alignSelf={{ default: 'alignSelfCenter' }}
+                        >
                             <Button
                                 variant="secondary"
                                 onClick={() => setShowPolicyResults(!showPolicyResults)}
@@ -166,7 +171,7 @@ function ReviewPolicyForm({
                         {isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
                                 <FlexItem>
-                                    <Spinner  />
+                                    <Spinner />
                                 </FlexItem>
                             </Flex>
                         ) : checkDryRunErrorMessage ? (

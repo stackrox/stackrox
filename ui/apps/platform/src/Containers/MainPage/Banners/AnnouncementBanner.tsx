@@ -44,7 +44,12 @@ function AnnouncementBanner(): ReactElement | null {
                     an upcoming major release. This change will require you to back up your database
                     before upgrading.
                 </span>
-                <Button className="pf-v5-u-ml-md" onClick={handleDismissClick} variant="link" isInline>
+                <Button
+                    className="pf-v5-u-ml-md"
+                    onClick={handleDismissClick}
+                    variant="link"
+                    isInline
+                >
                     dismiss
                 </Button>
             </Banner>

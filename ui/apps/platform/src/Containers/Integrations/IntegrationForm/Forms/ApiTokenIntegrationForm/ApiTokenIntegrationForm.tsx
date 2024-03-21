@@ -1,18 +1,16 @@
 import React, { ReactElement } from 'react';
 import {
-	DatePicker,
-	DescriptionList,
-	DescriptionListDescription,
-	DescriptionListGroup,
-	DescriptionListTerm,
-	Form,
-	PageSection,
-	TextInput,
-	yyyyMMddFormat
+    DatePicker,
+    DescriptionList,
+    DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Form,
+    PageSection,
+    TextInput,
+    yyyyMMddFormat,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import * as yup from 'yup';
 

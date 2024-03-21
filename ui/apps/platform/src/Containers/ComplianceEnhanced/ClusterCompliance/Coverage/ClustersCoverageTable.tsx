@@ -112,7 +112,7 @@ function ClustersCoverageTable() {
         <Tr>
             <Td colSpan={3}>
                 <Bullseye>
-                    <Spinner  />
+                    <Spinner />
                 </Bullseye>
             </Td>
         </Tr>

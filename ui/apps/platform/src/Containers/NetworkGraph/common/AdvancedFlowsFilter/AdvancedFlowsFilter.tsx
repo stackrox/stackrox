@@ -1,10 +1,10 @@
 import React from 'react';
 import {
-	Select,
-	SelectGroup,
-	SelectOption,
-	SelectPosition,
-	SelectVariant
+    Select,
+    SelectGroup,
+    SelectOption,
+    SelectPosition,
+    SelectVariant,
 } from '@patternfly/react-core/deprecated';
 
 import useMultiSelect from 'hooks/useMultiSelect';

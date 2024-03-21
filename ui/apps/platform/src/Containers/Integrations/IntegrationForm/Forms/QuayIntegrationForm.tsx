@@ -343,7 +343,9 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.username ??
                                             ''
                                         }
-                                        onChange={(event, value) => onChangeRobotUsername(value, event)}
+                                        onChange={(event, value) =>
+                                            onChangeRobotUsername(value, event)
+                                        }
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                     />
@@ -363,7 +365,9 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.password ??
                                             ''
                                         }
-                                        onChange={(event, value) => onChangeRobotPassword(value, event)}
+                                        onChange={(event, value) =>
+                                            onChangeRobotPassword(value, event)
+                                        }
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                         placeholder={

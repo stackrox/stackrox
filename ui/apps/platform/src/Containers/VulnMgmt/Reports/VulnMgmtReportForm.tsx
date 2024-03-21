@@ -2,27 +2,23 @@
 import React, { useState, ReactElement } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-	ActionList,
-	ActionListItem,
-	Button,
-	ButtonVariant,
-	Divider,
-	Form,
-	Grid,
-	GridItem,
-	PageSection,
-	PageSectionVariants,
-	Text,
-	TextArea,
-	TextInput,
-	TextVariants,
-	Title
+    ActionList,
+    ActionListItem,
+    Button,
+    ButtonVariant,
+    Divider,
+    Form,
+    Grid,
+    GridItem,
+    PageSection,
+    PageSectionVariants,
+    Text,
+    TextArea,
+    TextInput,
+    TextVariants,
+    Title,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption,
-	SelectVariant
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 

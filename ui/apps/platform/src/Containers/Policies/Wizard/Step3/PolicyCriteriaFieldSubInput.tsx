@@ -1,13 +1,7 @@
 import React from 'react';
 import { useField } from 'formik';
-import {
-	TextInput,
-	FormGroup
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { TextInput, FormGroup } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { SubComponent } from './policyCriteriaDescriptors';
 

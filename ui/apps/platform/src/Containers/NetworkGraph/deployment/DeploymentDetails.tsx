@@ -17,8 +17,9 @@ import {
     StackItem,
     Text,
     TextContent,
-    TextVariants, EmptyStateHeader,
-    } from '@patternfly/react-core';
+    TextVariants,
+    EmptyStateHeader,
+} from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
@@ -391,7 +392,10 @@ function DeploymentDetails({
                             </Stack>
                         ) : (
                             <EmptyState variant={EmptyStateVariant.xs}>
-                                <EmptyStateHeader titleText="No ports available" headingLevel="h4" />
+                                <EmptyStateHeader
+                                    titleText="No ports available"
+                                    headingLevel="h4"
+                                />
                             </EmptyState>
                         )}
                     </DetailSection>
@@ -411,7 +415,10 @@ function DeploymentDetails({
                             </Stack>
                         ) : (
                             <EmptyState variant={EmptyStateVariant.xs}>
-                                <EmptyStateHeader titleText="No containers available" headingLevel="h4" />
+                                <EmptyStateHeader
+                                    titleText="No containers available"
+                                    headingLevel="h4"
+                                />
                             </EmptyState>
                         )}
                     </DetailSection>

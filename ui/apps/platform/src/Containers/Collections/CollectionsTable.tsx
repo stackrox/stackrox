@@ -103,7 +103,7 @@ function CollectionsTable({
         <Tr>
             <Td colSpan={8}>
                 <Bullseye>
-                    <Spinner  />
+                    <Spinner />
                 </Bullseye>
             </Td>
         </Tr>

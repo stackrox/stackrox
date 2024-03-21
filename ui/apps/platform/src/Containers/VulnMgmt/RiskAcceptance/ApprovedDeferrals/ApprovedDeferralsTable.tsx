@@ -1,17 +1,15 @@
 import React, { ReactElement, useState } from 'react';
 import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-	Divider,
-	Pagination,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem,
-	Bullseye,
-	Spinner
+    Divider,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    Bullseye,
+    Spinner,
 } from '@patternfly/react-core';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
@@ -166,7 +164,7 @@ function ApprovedDeferralsTable({
             <Divider component="div" />
             {isLoading ? (
                 <Bullseye>
-                    <Spinner  size="xl" />
+                    <Spinner size="xl" />
                 </Bullseye>
             ) : (
                 <Table aria-label="Approved Deferrals Table" variant="compact" borders>

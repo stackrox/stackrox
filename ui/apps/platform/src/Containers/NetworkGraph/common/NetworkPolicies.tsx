@@ -1,21 +1,19 @@
 import React, { useEffect, useMemo } from 'react';
 import {
-	Alert,
-	AlertGroup,
-	AlertVariant,
-	Bullseye,
-	Button,
-	Divider,
-	EmptyState,
-	EmptyStateVariant,
-	Spinner,
-	Stack,
-	StackItem, EmptyStateHeader,
-	
+    Alert,
+    AlertGroup,
+    AlertVariant,
+    Bullseye,
+    Button,
+    Divider,
+    EmptyState,
+    EmptyStateVariant,
+    Spinner,
+    Stack,
+    StackItem,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import download from 'utils/download';
@@ -88,7 +86,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner  size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }

@@ -46,7 +46,8 @@ function RadioButtonWithStats({ scanStats, isSelected, onSelected }: RadioButton
                 isSelectable
                 isSelected={isSelected}
                 isCompact
-                selectableInputAriaLabel={`results for scan: ${scanName}`} tabIndex={0}
+                selectableInputAriaLabel={`results for scan: ${scanName}`}
+                tabIndex={0}
             >
                 <CardTitle className="pf-v5-u-p-sm pf-v5-u-pb-0">
                     <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
