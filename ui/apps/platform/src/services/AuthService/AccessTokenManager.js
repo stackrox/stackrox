@@ -1,4 +1,3 @@
-import store from 'store';
 /* eslint-disable import/no-duplicates */
 import differenceInMilliSeconds from 'date-fns/difference_in_milliseconds';
 import subSeconds from 'date-fns/sub_seconds';
@@ -39,8 +38,6 @@ import RefreshTokenTimeout from './RefreshTokenTimeout';
  * @callback RefreshTokenListener
  * @param {!RefreshTokenOpPromise} opPromise - Operation Promise
  */
-
-const accessTokenKey = 'access_token';
 
 /**
  * Performs all the operations for storing, accessing and refreshing access token.
@@ -120,7 +117,7 @@ export default class AccessTokenManager {
      * @param {TokenInfo} [info] - Token info
      */
     setToken = (token, info = null) => {
-        store.set(accessTokenKey, token);
+        this.token = token;
         this.updateTokenInfo(info);
     };
 
@@ -129,7 +126,7 @@ export default class AccessTokenManager {
      * @method
      * @returns {?string} Token
      */
-    getToken = () => store.get(accessTokenKey) || null;
+    getToken = () => this.token || null;
 
     /**
      * Deletes any stored token.
@@ -137,7 +134,7 @@ export default class AccessTokenManager {
      * @returns {void}
      */
     clearToken = () => {
-        store.remove(accessTokenKey);
+        this.token = '';
         this.updateTokenInfo(null);
     };
 
