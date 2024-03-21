@@ -68,7 +68,9 @@ describe('Network Graph smoke tests', () => {
         cy.get(
             '.pf-v5-c-popover__content [data-testid="namespace-types-title"]:contains("Namespace types")'
         );
-        cy.get('.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Related namespace")');
+        cy.get(
+            '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Related namespace")'
+        );
         cy.get(
             '.pf-v5-c-popover__content .pf-v5-c-description-list__text:contains("Filtered namespace")'
         );
