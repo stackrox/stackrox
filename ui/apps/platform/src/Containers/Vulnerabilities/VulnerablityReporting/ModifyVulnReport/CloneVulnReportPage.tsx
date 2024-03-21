@@ -1,19 +1,17 @@
 import React, { useEffect } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
-	PageSection,
-	Title,
-	Divider,
-	Flex,
-	FlexItem,
-	Breadcrumb,
-	BreadcrumbItem,
-	Bullseye,
-	Spinner
+    PageSection,
+    Title,
+    Divider,
+    Flex,
+    FlexItem,
+    Breadcrumb,
+    BreadcrumbItem,
+    Bullseye,
+    Spinner,
 } from '@patternfly/react-core';
-import {
-	Wizard
-} from '@patternfly/react-core/deprecated';
+import { Wizard } from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -124,7 +122,7 @@ function CloneVulnReportPage() {
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner  />
+                <Spinner />
             </Bullseye>
         );
     }

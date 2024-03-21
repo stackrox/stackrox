@@ -215,7 +215,7 @@ function PermissionSets(): ReactElement {
             <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
                 {counterFetching !== 0 ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : isList ? (
                     <PermissionSetsList

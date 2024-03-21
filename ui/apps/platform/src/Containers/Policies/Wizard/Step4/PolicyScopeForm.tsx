@@ -191,7 +191,7 @@ function PolicyScopeForm() {
                         <FormHelperText>
                             <HelperText>
                                 <HelperTextItem>
-                                    Select all images from the list for which you don't want to
+                                    Select all images from the list for which you don&apos;t want to
                                     trigger a violation for the policy.
                                 </HelperTextItem>
                             </HelperText>

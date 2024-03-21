@@ -65,7 +65,7 @@ function NotifyYAMLModal({
     if (isLoading) {
         content = (
             <Bullseye>
-                <Spinner  size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     } else {

@@ -166,7 +166,7 @@ function DeniedRequests() {
                         <Tr>
                             <Td colSpan={7}>
                                 <Bullseye>
-                                    <Spinner  aria-label="Loading table data" />
+                                    <Spinner aria-label="Loading table data" />
                                 </Bullseye>
                             </Td>
                         </Tr>

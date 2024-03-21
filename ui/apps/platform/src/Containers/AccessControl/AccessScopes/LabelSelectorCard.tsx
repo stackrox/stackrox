@@ -164,19 +164,30 @@ function LabelSelectorCard({
 
     return (
         <Card isCompact isFlat>
-            <CardHeader {...(hasAction && {actions: { actions: <><Button
-                            variant="danger"
-                            className="pf-m-smaller"
-                            isDisabled={activity !== 'ENABLED'}
-                            onClick={handleLabelSelectorDelete}
-                        >
-                            Delete label selector
-                        </Button></>, hasNoOffset: false, className: undefined}})} >
+            <CardHeader
+                {...(hasAction && {
+                    actions: {
+                        actions: (
+                            <>
+                                <Button
+                                    variant="danger"
+                                    className="pf-m-smaller"
+                                    isDisabled={activity !== 'ENABLED'}
+                                    onClick={handleLabelSelectorDelete}
+                                >
+                                    Delete label selector
+                                </Button>
+                            </>
+                        ),
+                        hasNoOffset: false,
+                        className: undefined,
+                    },
+                })}
+            >
                 <CardTitle className="pf-v5-u-font-size-sm">
                     {title}
                     {labelIconLabelSelector}
                 </CardTitle>
-                
             </CardHeader>
             <CardBody>
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">

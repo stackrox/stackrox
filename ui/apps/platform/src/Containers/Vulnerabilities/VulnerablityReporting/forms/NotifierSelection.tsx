@@ -1,13 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import {
-	Button,
-	Flex,
-	FlexItem,
-	TextInput
-} from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Button, Flex, FlexItem, TextInput } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
 import resolvePath from 'object-resolve-path';

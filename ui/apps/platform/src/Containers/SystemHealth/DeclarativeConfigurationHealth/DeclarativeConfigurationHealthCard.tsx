@@ -65,21 +65,24 @@ function DeclarativeConfigurationHealthCard({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                actions={<>
-                    <Flex className="pf-v5-u-flex-grow-1">
-                        <FlexItem>{icon}</FlexItem>
-                        <FlexItem>
-                            <CardTitle component="h2">Declarative configuration</CardTitle>
-                        </FlexItem>
-                        {hasCount && (
+                actions=
+                {
+                    <>
+                        <Flex className="pf-v5-u-flex-grow-1">
+                            <FlexItem>{icon}</FlexItem>
                             <FlexItem>
-                                {unhealthyCount === 0
-                                    ? 'no errors'
-                                    : `${unhealthyCount} ${pluralize('error', unhealthyCount)}`}
+                                <CardTitle component="h2">Declarative configuration</CardTitle>
                             </FlexItem>
-                        )}
-                    </Flex>
-                </>}
+                            {hasCount && (
+                                <FlexItem>
+                                    {unhealthyCount === 0
+                                        ? 'no errors'
+                                        : `${unhealthyCount} ${pluralize('error', unhealthyCount)}`}
+                                </FlexItem>
+                            )}
+                        </Flex>
+                    </>
+                }
             </CardHeader>
             {(errorMessageFetching || unhealthyCount !== 0) && (
                 <CardBody>

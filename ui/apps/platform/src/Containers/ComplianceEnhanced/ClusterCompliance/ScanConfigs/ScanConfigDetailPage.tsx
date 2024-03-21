@@ -2,7 +2,6 @@
 import React, { useCallback } from 'react';
 import { generatePath, Link, useParams } from 'react-router-dom';
 
-
 import usePageAction from 'hooks/usePageAction';
 import useRestQuery from 'hooks/useRestQuery';
 import { getScanConfig } from 'services/ComplianceEnhancedService';

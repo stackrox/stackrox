@@ -154,7 +154,15 @@ function SignatureIntegrationForm({
                                                                                     index
                                                                                 ].name || ''
                                                                             }
-                                                                            onChange={(event, value) => onChange(value, event)}
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
                                                                         />
@@ -191,7 +199,15 @@ function SignatureIntegrationForm({
                                                                                 ].publicKeyPemEnc ||
                                                                                 ''
                                                                             }
-                                                                            onChange={(event, value) => onChange(value, event)}
+                                                                            onChange={(
+                                                                                event,
+                                                                                value
+                                                                            ) =>
+                                                                                onChange(
+                                                                                    value,
+                                                                                    event
+                                                                                )
+                                                                            }
                                                                             onBlur={handleBlur}
                                                                             isDisabled={!isEditable}
                                                                         />

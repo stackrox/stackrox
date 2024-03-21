@@ -5,7 +5,9 @@ import {
     Flex,
     FlexItem,
     PageSection,
-    Title, EmptyStateHeader, EmptyStateFooter,
+    Title,
+    EmptyStateHeader,
+    EmptyStateFooter,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -40,17 +42,24 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                 spaceItems={{ default: 'spaceItemsXl' }}
             >
                 <EmptyState>
-                    <EmptyStateHeader icon={<EmptyStateIcon
-                        icon={ExclamationCircleIcon}
-                        color="var(--pf-v5-global--danger-color--200)"
-                    />} /><EmptyStateFooter><Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsSm' }}
-                    >
-                        <Title headingLevel="h1">Cannot display the page</Title>
-                        <p>The error has been logged.</p>
-                    </Flex>
-                </EmptyStateFooter></EmptyState>
+                    <EmptyStateHeader
+                        icon={
+                            <EmptyStateIcon
+                                icon={ExclamationCircleIcon}
+                                color="var(--pf-v5-global--danger-color--200)"
+                            />
+                        }
+                    />
+                    <EmptyStateFooter>
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <Title headingLevel="h1">Cannot display the page</Title>
+                            <p>The error has been logged.</p>
+                        </Flex>
+                    </EmptyStateFooter>
+                </EmptyState>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                     <Title headingLevel="h2">Error message</Title>
                     <ErrorBoundaryCodeBlock

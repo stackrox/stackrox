@@ -7,7 +7,8 @@ import {
     InputGroup,
     Modal,
     ModalVariant,
-    TextInput, InputGroupItem,
+    TextInput,
+    InputGroupItem,
 } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
@@ -69,15 +70,17 @@ function AffectedComponentsModal({
             onClose={onCloseHandler}
         >
             <InputGroup className="pf-v5-u-mt-md">
-                <InputGroupItem isFill ><TextInput
-                    name="componentsFilter"
-                    id="componentsFilter"
-                    type="text"
-                    aria-label="Filter components"
-                    placeholder="Filter components"
-                    value={inputValue}
-                    onChange={(_event, value) => onInputValueChange(value)}
-                /></InputGroupItem>
+                <InputGroupItem isFill>
+                    <TextInput
+                        name="componentsFilter"
+                        id="componentsFilter"
+                        type="text"
+                        aria-label="Filter components"
+                        placeholder="Filter components"
+                        value={inputValue}
+                        onChange={(_event, value) => onInputValueChange(value)}
+                    />
+                </InputGroupItem>
             </InputGroup>
             <Card isFlat className="pf-v5-u-mt-lg">
                 <Table aria-label="Affected Components Table" variant="compact" borders>

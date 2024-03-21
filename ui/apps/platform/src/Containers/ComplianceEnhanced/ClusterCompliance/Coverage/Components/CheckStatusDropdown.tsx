@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { SearchFilter } from 'types/search';
 

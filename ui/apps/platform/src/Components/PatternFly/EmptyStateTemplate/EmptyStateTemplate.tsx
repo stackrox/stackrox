@@ -3,8 +3,9 @@ import {
     EmptyState,
     EmptyStateIcon,
     EmptyStateBody,
-    EmptyStateVariant, EmptyStateHeader,
-    } from '@patternfly/react-core';
+    EmptyStateVariant,
+    EmptyStateHeader,
+} from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
 type EmptyStateTemplateProps = {
@@ -24,7 +25,11 @@ function EmptyStateTemplate({
 }: EmptyStateTemplateProps): ReactElement {
     return (
         <EmptyState variant={EmptyStateVariant.lg}>
-            <EmptyStateHeader titleText={<>{title}</>} icon={<EmptyStateIcon className={iconClassName} icon={icon} />} headingLevel={headingLevel} />
+            <EmptyStateHeader
+                titleText={<>{title}</>}
+                icon={<EmptyStateIcon className={iconClassName} icon={icon} />}
+                headingLevel={headingLevel}
+            />
             <EmptyStateBody>{children}</EmptyStateBody>
         </EmptyState>
     );

@@ -120,7 +120,7 @@ function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonM
                                 type="text"
                                 id="rationale"
                                 value={formik.values.rationale}
-                                onChange={(event, _) => formik.handleChange(event)}
+                                onChange={(event) => formik.handleChange(event)}
                                 onBlur={formik.handleBlur}
                             />
                         </FormLabelGroup>

@@ -1,9 +1,9 @@
 import React, { ReactElement } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-	PageHeaderTools,
-	PageHeaderToolsGroup,
-	PageHeaderToolsItem
+    PageHeaderTools,
+    PageHeaderToolsGroup,
+    PageHeaderToolsItem,
 } from '@patternfly/react-core/deprecated';
 
 import useCases from 'constants/useCaseTypes';

@@ -1,13 +1,6 @@
 import React from 'react';
-import {
-	Button,
-	Modal
-} from '@patternfly/react-core';
-import {
-	WizardContextConsumer,
-	WizardFooter,
-	WizardStep
-} from '@patternfly/react-core/deprecated';
+import { Button, Modal } from '@patternfly/react-core';
+import { WizardContextConsumer, WizardFooter, WizardStep } from '@patternfly/react-core/deprecated';
 import useModal from 'hooks/useModal';
 
 export type ScanConfigWizardFooterProps = {

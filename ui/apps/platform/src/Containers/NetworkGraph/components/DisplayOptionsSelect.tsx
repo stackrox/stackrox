@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
+import { Split, SplitItem } from '@patternfly/react-core';
 import {
-	Split,
-	SplitItem
-} from '@patternfly/react-core';
-import {
-	Select,
-	SelectVariant,
-	SelectGroup,
-	SelectOption
+    Select,
+    SelectVariant,
+    SelectGroup,
+    SelectOption,
 } from '@patternfly/react-core/deprecated';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
@@ -70,8 +67,8 @@ function DisplayOptionsSelect({
                     Network policy status badge
                 </SelectOption>
                 <SelectOption key={1} value="externalBadge">
-                    <PficonNetworkRangeIcon className="pf-v5-u-ml-xs pf-v5-u-mr-sm" /> Active external
-                    traffic badge
+                    <PficonNetworkRangeIcon className="pf-v5-u-ml-xs pf-v5-u-mr-sm" /> Active
+                    external traffic badge
                 </SelectOption>
             </SelectGroup>
             <SelectGroup label="Edge visuals" key="edge">

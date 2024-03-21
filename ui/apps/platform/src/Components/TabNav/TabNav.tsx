@@ -17,7 +17,9 @@ function TabNav({ tabLinks, currentTabTitle, isDisabled }: TabNavProps) {
             <ul className="pf-v5-c-nav__list">
                 {tabLinks.map(({ title, href }) => {
                     const isCurrent = currentTabTitle === title;
-                    const className = isCurrent ? 'pf-v5-c-nav__link pf-m-current' : 'pf-v5-c-nav__link';
+                    const className = isCurrent
+                        ? 'pf-v5-c-nav__link pf-m-current'
+                        : 'pf-v5-c-nav__link';
 
                     return (
                         <li key={title} className="pf-v5-c-nav__item">
