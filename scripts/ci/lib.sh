@@ -58,7 +58,7 @@ ci_exit_trap() {
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
-    post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}" "${JOB_JUNIT2JIRA_SUMMARY_FILE}
+    post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}" "${JOB_JUNIT2JIRA_SUMMARY_FILE}"
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
