@@ -37,7 +37,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     let listContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
             <Bullseye>
-                <Spinner  />
+                <Spinner />
             </Bullseye>
         </PageSection>
     );

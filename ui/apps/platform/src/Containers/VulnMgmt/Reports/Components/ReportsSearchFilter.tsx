@@ -5,7 +5,8 @@ import {
     Flex,
     FlexItem,
     InputGroup,
-    TextInput, InputGroupItem,
+    TextInput,
+    InputGroupItem,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
@@ -45,22 +46,26 @@ function ReportsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'Report Name' && (
                     <InputGroup>
-                        <InputGroupItem isFill ><TextInput
-                            name="reportNameSearchInput"
-                            id="reportNameSearchInput"
-                            type="search"
-                            aria-label="Report name search input"
-                            placeholder="Filter by report name"
-                            onChange={(_event, value) => handleInputChange(value)}
-                            value={inputValue}
-                        /></InputGroupItem>
-                        <InputGroupItem><Button
-                            variant={ButtonVariant.control}
-                            aria-label="Perform search"
-                            onClick={() => handleSearchChange(inputValue)}
-                        >
-                            <SearchIcon />
-                        </Button></InputGroupItem>
+                        <InputGroupItem isFill>
+                            <TextInput
+                                name="reportNameSearchInput"
+                                id="reportNameSearchInput"
+                                type="search"
+                                aria-label="Report name search input"
+                                placeholder="Filter by report name"
+                                onChange={(_event, value) => handleInputChange(value)}
+                                value={inputValue}
+                            />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                            <Button
+                                variant={ButtonVariant.control}
+                                aria-label="Perform search"
+                                onClick={() => handleSearchChange(inputValue)}
+                            >
+                                <SearchIcon />
+                            </Button>
+                        </InputGroupItem>
                     </InputGroup>
                 )}
             </FlexItem>

@@ -1,17 +1,15 @@
 /* eslint-disable no-void */
 import React, { ReactElement, useState } from 'react';
 import {
-	Alert,
-	AlertVariant,
-	Checkbox,
-	Form,
-	PageSection,
-	TextInput,
-	Popover
+    Alert,
+    AlertVariant,
+    Checkbox,
+    Form,
+    PageSection,
+    TextInput,
+    Popover,
 } from '@patternfly/react-core';
-import {
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 
@@ -258,7 +256,9 @@ function EmailIntegrationForm({
                                     label="Enable unauthenticated SMTP"
                                     id="notifier.email.unauthenticated"
                                     isChecked={allowUnauthenticatedSmtp}
-                                    onChange={(_event, isChecked) => onUpdateUnauthenticatedChange(isChecked)}
+                                    onChange={(_event, isChecked) =>
+                                        onUpdateUnauthenticatedChange(isChecked)
+                                    }
                                     onBlur={handleBlur}
                                 />
                                 <Popover
@@ -435,7 +435,9 @@ function EmailIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
-                            onChange={(event, value) => updateStartTLSAuthMethodOnChange(value, event)}
+                            onChange={(event, value) =>
+                                updateStartTLSAuthMethodOnChange(value, event)
+                            }
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

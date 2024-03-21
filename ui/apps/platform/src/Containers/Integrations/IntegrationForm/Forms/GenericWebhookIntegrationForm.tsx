@@ -262,7 +262,9 @@ function GenericWebhookIntegrationForm({
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={(event, value) => onUpdateCredentialsChange(value, event)}
+                                    onChange={(event, value) =>
+                                        onUpdateCredentialsChange(value, event)
+                                    }
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -323,7 +325,9 @@ function GenericWebhookIntegrationForm({
                                                                         values.notifier.generic
                                                                             .headers[`${index}`].key
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -345,7 +349,9 @@ function GenericWebhookIntegrationForm({
                                                                             .headers[`${index}`]
                                                                             .value
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -396,7 +402,11 @@ function GenericWebhookIntegrationForm({
                                 )}
                             />
                         </FormSection>
-                        <FormSection title="Extra Fields" titleElement="h3" className="pf-v5-u-mt-0">
+                        <FormSection
+                            title="Extra Fields"
+                            titleElement="h3"
+                            className="pf-v5-u-mt-0"
+                        >
                             <FieldArray
                                 name="notifier.generic.extraFields"
                                 render={(arrayHelpers) => (
@@ -424,7 +434,9 @@ function GenericWebhookIntegrationForm({
                                                                             .extraFields[`${index}`]
                                                                             .key
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />
@@ -446,7 +458,9 @@ function GenericWebhookIntegrationForm({
                                                                             .extraFields[`${index}`]
                                                                             .value
                                                                     }
-                                                                    onChange={(event, value) => onChange(value, event)}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
                                                                     isDisabled={!isEditable}
                                                                 />

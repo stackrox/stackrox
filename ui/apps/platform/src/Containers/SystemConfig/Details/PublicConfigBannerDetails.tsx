@@ -39,11 +39,27 @@ const PublicConfigBannerDetails = ({
 
     return (
         <Card isFlat data-testid={`${type}-config`}>
-            <CardHeader actions={{ actions: <>{enabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}</>, hasNoOffset: false, className: undefined}} >
-                actions={<>
-                    <CardTitle component="h3">{title}</CardTitle>
-                </>}
-                
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            {enabled ? (
+                                <Label color="green">Enabled</Label>
+                            ) : (
+                                <Label>Disabled</Label>
+                            )}
+                        </>
+                    ),
+                    hasNoOffset: false,
+                    className: undefined,
+                }}
+            >
+                actions=
+                {
+                    <>
+                        <CardTitle component="h3">{title}</CardTitle>
+                    </>
+                }
             </CardHeader>
             <Divider component="div" />
             <CardBody>

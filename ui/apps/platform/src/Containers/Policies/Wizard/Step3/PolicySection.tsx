@@ -59,26 +59,42 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     return (
         <>
             <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
-                <CardHeader {...(!readOnly && {actions: { actions: <><Button
-                                variant="plain"
-                                className="pf-v5-u-px-sm"
-                                onClick={() => setIsEditingName(!isEditingName)}
-                            >
-                                {isEditingName ? (
-                                    <CheckIcon data-testid="save-section-name-btn" />
-                                ) : (
-                                    <PencilAltIcon data-testid="edit-section-name-btn" />
-                                )}
-                            </Button>
-                            <Divider component="div" orientation={{ default: 'vertical' }} />
-                            <Button
-                                variant="plain"
-                                className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
-                                data-testid="delete-section-btn"
-                                onClick={onDeleteSection}
-                            >
-                                <TrashIcon />
-                            </Button></>, hasNoOffset: true, className: undefined}})}  className="policy-section-card-header pf-v5-u-p-0">
+                <CardHeader
+                    {...(!readOnly && {
+                        actions: {
+                            actions: (
+                                <>
+                                    <Button
+                                        variant="plain"
+                                        className="pf-v5-u-px-sm"
+                                        onClick={() => setIsEditingName(!isEditingName)}
+                                    >
+                                        {isEditingName ? (
+                                            <CheckIcon data-testid="save-section-name-btn" />
+                                        ) : (
+                                            <PencilAltIcon data-testid="edit-section-name-btn" />
+                                        )}
+                                    </Button>
+                                    <Divider
+                                        component="div"
+                                        orientation={{ default: 'vertical' }}
+                                    />
+                                    <Button
+                                        variant="plain"
+                                        className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                        data-testid="delete-section-btn"
+                                        onClick={onDeleteSection}
+                                    >
+                                        <TrashIcon />
+                                    </Button>
+                                </>
+                            ),
+                            hasNoOffset: true,
+                            className: undefined,
+                        },
+                    })}
+                    className="policy-section-card-header pf-v5-u-p-0"
+                >
                     <CardTitle className="pf-v5-u-display-flex pf-v5-u-align-self-stretch">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
@@ -95,14 +111,16 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                         onChange={(e, _) => onEditSectionName(_, e)}
                                     />
                                 ) : (
-                                    <div className="pf-v5-u-py-sm" data-testid="policy-section-name">
+                                    <div
+                                        className="pf-v5-u-py-sm"
+                                        data-testid="policy-section-name"
+                                    >
                                         {sectionName}
                                     </div>
                                 )}
                             </FlexItem>
                         </Flex>
                     </CardTitle>
-                    
                 </CardHeader>
                 <CardBody className="policy-section-card-body">
                     {policyGroups.map((group, groupIndex) => {

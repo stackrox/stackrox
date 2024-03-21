@@ -1,14 +1,7 @@
 import React, { ReactElement } from 'react';
 
 import { PublicConfig } from 'types/config.proto';
-import {
-    Card,
-    CardBody,
-    CardHeader,
-    CardTitle,
-    Divider,
-    Label,
-} from '@patternfly/react-core';
+import { Card, CardBody, CardHeader, CardTitle, Divider, Label } from '@patternfly/react-core';
 
 export type PublicConfigTelemetryDetailsProps = {
     publicConfig: PublicConfig | null;
@@ -22,11 +15,27 @@ const PublicConfigTelemetryDetails = ({
 
     return (
         <Card isFlat data-testid="telemetry-config">
-            <CardHeader actions={{ actions: <>{isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}</>, hasNoOffset: false, className: undefined}} >
-                actions={<>
-                    <CardTitle component="h3">Online Telemetry Data Collection</CardTitle>
-                </>}
-                
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            {isEnabled ? (
+                                <Label color="green">Enabled</Label>
+                            ) : (
+                                <Label>Disabled</Label>
+                            )}
+                        </>
+                    ),
+                    hasNoOffset: false,
+                    className: undefined,
+                }}
+            >
+                actions=
+                {
+                    <>
+                        <CardTitle component="h3">Online Telemetry Data Collection</CardTitle>
+                    </>
+                }
             </CardHeader>
             <Divider component="div" />
             <CardBody>

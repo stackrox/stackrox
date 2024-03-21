@@ -1,14 +1,16 @@
 /* eslint-disable react/jsx-no-comment-textnodes */
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
+import { Card, CardBody, CardHeader, CardTitle, Pagination } from '@patternfly/react-core';
 import {
-    Card,
-    CardBody,
-    CardHeader,
-    CardTitle,
-    Pagination,
-} from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
+    Table /* data-codemods */,
+    Tbody,
+    Td,
+    Th,
+    ThProps,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
 
@@ -99,14 +101,23 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
 
     return (
         <Card>
-            <CardHeader actions={{ actions: <><Pagination
-                        itemCount={clusterScanStatuses.length}
-                        page={page}
-                        onSetPage={onSetPage}
-                        perPage={perPage}
-                        onPerPageSelect={onPerPageSelect}
-                    /></>, hasNoOffset: false, className: undefined}} >
-                
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            <Pagination
+                                itemCount={clusterScanStatuses.length}
+                                page={page}
+                                onSetPage={onSetPage}
+                                perPage={perPage}
+                                onPerPageSelect={onPerPageSelect}
+                            />
+                        </>
+                    ),
+                    hasNoOffset: false,
+                    className: undefined,
+                }}
+            >
                 <CardTitle component="h2">Clusters</CardTitle>
             </CardHeader>
             <CardBody>

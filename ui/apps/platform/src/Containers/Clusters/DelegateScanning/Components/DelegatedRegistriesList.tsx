@@ -7,8 +7,10 @@ import {
     Card,
     CardFooter,
     EmptyState,
-    EmptyStateBody, EmptyStateHeader, EmptyStateFooter,
-    } from '@patternfly/react-core';
+    EmptyStateBody,
+    EmptyStateHeader,
+    EmptyStateFooter,
+} from '@patternfly/react-core';
 import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
 
 import {
@@ -72,11 +74,13 @@ function DelegatedRegistriesList({
                         <EmptyStateBody>
                             <p>All scans will be delegated to the default cluster.</p>
                             <p>You can override this for specific registries.</p>
-                        </EmptyStateBody><EmptyStateFooter>
-                        <Button variant="primary" onClick={addRegistryRow}>
-                            Add registry
-                        </Button>
-                    </EmptyStateFooter></EmptyState>
+                        </EmptyStateBody>
+                        <EmptyStateFooter>
+                            <Button variant="primary" onClick={addRegistryRow}>
+                                Add registry
+                            </Button>
+                        </EmptyStateFooter>
+                    </EmptyState>
                 </Bullseye>
             )}
         </Card>

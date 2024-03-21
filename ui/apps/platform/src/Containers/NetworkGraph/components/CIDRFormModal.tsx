@@ -213,7 +213,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
         >
             {isLoading && (
                 <Bullseye>
-                    <Spinner  />
+                    <Spinner />
                 </Bullseye>
             )}
             {CIDRBlocks.entities?.length >= 0 && !isLoading && (

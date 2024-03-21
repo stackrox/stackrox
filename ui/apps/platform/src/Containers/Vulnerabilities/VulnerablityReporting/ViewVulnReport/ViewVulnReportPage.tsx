@@ -1,31 +1,31 @@
 import React, { ReactElement, useState } from 'react';
 import { Link, useHistory, useParams, generatePath } from 'react-router-dom';
 import {
-	Alert,
-	AlertActionCloseButton,
-	AlertGroup,
-	AlertVariant,
-	PageSection,
-	Title,
-	Divider,
-	Flex,
-	FlexItem,
-	Breadcrumb,
-	BreadcrumbItem,
-	Bullseye,
-	Spinner,
-	Tabs,
-	Tab,
-	TabTitleText,
-	TabTitleIcon,
-	TabAction,
-	Popover
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    AlertVariant,
+    PageSection,
+    Title,
+    Divider,
+    Flex,
+    FlexItem,
+    Breadcrumb,
+    BreadcrumbItem,
+    Bullseye,
+    Spinner,
+    Tabs,
+    Tab,
+    TabTitleText,
+    TabTitleIcon,
+    TabAction,
+    Popover,
 } from '@patternfly/react-core';
 import {
-	Dropdown,
-	DropdownToggle,
-	DropdownItem,
-	DropdownSeparator
+    Dropdown,
+    DropdownToggle,
+    DropdownItem,
+    DropdownSeparator,
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon, ClipboardCheckIcon, HelpIcon, HomeIcon } from '@patternfly/react-icons';
 
@@ -124,7 +124,7 @@ function ViewVulnReportPage() {
     if (isLoading) {
         return (
             <Bullseye>
-                <Spinner  />
+                <Spinner />
             </Bullseye>
         );
     }

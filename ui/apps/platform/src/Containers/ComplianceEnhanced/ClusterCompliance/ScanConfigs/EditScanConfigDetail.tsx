@@ -66,7 +66,7 @@ function EditScanConfigDetail({
             <PageSection isCenterAligned>
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : (
                     error && (

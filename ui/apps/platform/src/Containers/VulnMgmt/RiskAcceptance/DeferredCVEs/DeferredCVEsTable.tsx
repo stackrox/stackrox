@@ -1,21 +1,19 @@
 import React, { ReactElement, useState } from 'react';
 import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
-	Bullseye,
-	Button,
-	ButtonVariant,
-	Divider,
-	PageSection,
-	PageSectionVariants,
-	Pagination,
-	Spinner,
-	Toolbar,
-	ToolbarContent,
-	ToolbarItem
+    Bullseye,
+    Button,
+    ButtonVariant,
+    Divider,
+    PageSection,
+    PageSectionVariants,
+    Pagination,
+    Spinner,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import {
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+import { DropdownItem } from '@patternfly/react-core/deprecated';
 
 import useTableSelection from 'hooks/useTableSelection';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
@@ -183,7 +181,7 @@ function DeferredCVEsTable({
                         <Tr>
                             <Td colSpan={9}>
                                 <Bullseye>
-                                    <Spinner  size="sm" />
+                                    <Spinner size="sm" />
                                 </Bullseye>
                             </Td>
                         </Tr>

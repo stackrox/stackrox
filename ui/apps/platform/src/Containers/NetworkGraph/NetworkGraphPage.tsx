@@ -403,7 +403,7 @@ function NetworkGraphPage() {
             <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
                 {isLoading ? (
                     <Bullseye>
-                        <Spinner  />
+                        <Spinner />
                     </Bullseye>
                 ) : (
                     <NetworkGraphContainer

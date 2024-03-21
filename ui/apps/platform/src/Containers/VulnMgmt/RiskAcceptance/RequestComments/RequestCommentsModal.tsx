@@ -37,7 +37,9 @@ function RequestCommentsModal({
                                     {/* @TODO: Show a more descriptive text other than just the commenter's name */}
                                     {comment.user.name}
                                 </HintTitle>
-                                <HintBody className="pf-v5-u-font-size-sm">{comment.message}</HintBody>
+                                <HintBody className="pf-v5-u-font-size-sm">
+                                    {comment.message}
+                                </HintBody>
                                 <HintFooter className="pf-v5-u-font-size-xs">
                                     {getDateTime(comment.createdAt)}
                                 </HintFooter>

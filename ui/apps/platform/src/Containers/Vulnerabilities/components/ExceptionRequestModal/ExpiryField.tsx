@@ -44,7 +44,7 @@ function ExpiryField({ formik }: ExpiryFieldProps) {
     if (loading || !config) {
         return (
             <Bullseye>
-                <Spinner  />
+                <Spinner />
             </Bullseye>
         );
     }
@@ -144,7 +144,7 @@ function ExpiryField({ formik }: ExpiryFieldProps) {
                     </div>
                 )}
                 {errors.expiry && (
-                    <FormHelperText  >
+                    <FormHelperText>
                         <HelperText>
                             <HelperTextItem
                                 variant="error"
