@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/image/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -65,7 +66,8 @@ func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *
 			if err != nil {
 				return nil, err
 			}
-			resolver.ctx = embeddedobjs.ComponentContext(ctx, os, imageScan.GetScanTime(), embeddedComponent)
+			imageScanTime := protocompat.ConvertTimestampToTimeOrNil(imageScan.GetScanTime())
+			resolver.ctx = embeddedobjs.ComponentContext(ctx, os, imageScanTime, embeddedComponent)
 			idToComponent[id] = resolver
 		}
 	}

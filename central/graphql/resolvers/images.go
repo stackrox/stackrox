@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -291,7 +292,7 @@ func (resolver *imageResolver) OperatingSystem(_ context.Context) string {
 
 func (resolver *imageResolver) ScanTime(_ context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScan().GetScanTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageResolver) ScannerVersion(_ context.Context) string {

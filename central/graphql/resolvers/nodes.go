@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -397,5 +398,5 @@ func (resolver *nodeResolver) ScanNotes(_ context.Context) []string {
 }
 
 func (resolver *nodeResolver) ScanTime(_ context.Context) (*graphql.Time, error) {
-	return timestamp(resolver.data.GetScan().GetScanTime())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetScan().GetScanTime())
 }
