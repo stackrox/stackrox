@@ -113,7 +113,7 @@ func TestExpiredVulnReqsPruning(t *testing.T) {
 }
 
 func newVulnReq(id string, age time.Duration, expired bool) *storage.VulnerabilityRequest {
-	lastUpdatedTime := time.Now().Add(age)
+	lastUpdatedTime := time.Now().Add(-age)
 	return &storage.VulnerabilityRequest{
 		Id:          id,
 		Name:        id,
