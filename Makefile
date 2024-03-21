@@ -335,7 +335,7 @@ deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)touch deps
 
-%/go.sum: %/go.mod $GOPATH/bin/go
+%/go.sum: %/go.mod
 	$(SILENT)cd $*
 	@echo "+ $@"
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
@@ -358,20 +358,7 @@ clean-obsolete-protos:
 	@echo "+ $@"
 	$(BASE_DIR)/tools/clean_autogen_protos.py --protos $(BASE_DIR)/proto --generated $(BASE_DIR)/generated
 
-$(GOPATH)/bin/go:
-#TODO(janisz): remove after https://github.com/openshift/release/pull/49962 is merged
-ifdef CI
-	GOLANG_VERSION:=1.21.8
-	GOLANG_SHA256:=538b3b143dc7f32b093c8ffe0e050c260b57fc9d57a12c4140a639a8dd2b4e4f
-	url="https://dl.google.com/go/go$(GOLANG_VERSION).linux-amd64.tar.gz" && \
-	wget --no-verbose -O go.tgz "$(url)" && \
-	echo "$(GOLANG_SHA256) *go.tgz" | sha256sum -c - && \
-	tar -C /usr/local -xzf go.tgz && \
-	rm go.tgz && \
-	mkdir -p "$(GOPATH)/src" "$(GOPATH)/bin" && \
-	chmod -R 777 "$(GOPATH)"
-endif
-	$(SILENT)touch $@
+
 
 ###########
 ## Build ##
