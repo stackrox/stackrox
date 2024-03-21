@@ -40,7 +40,7 @@ function ContainerVolumeInfo({ volumes }: ContainerVolumeInfoProps) {
                             <StackItem>
                                 <ExpandableSection
                                     toggleText={volume.name}
-                                    onToggle={() => setToggleAtIndex(index)}
+                                    onToggle={(_e, v) => setToggleAtIndex(v)}
                                     isExpanded={volumeToggles[index]}
                                     className="pf-expandable-not-large"
                                 >

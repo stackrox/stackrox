@@ -83,7 +83,7 @@ function RuleSelector({
             <Select
                 toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
                 isOpen={isOpen}
-                onToggle={() => onToggle}
+                onToggle={(_e, v) => onToggle(v)}
                 selections={selection}
                 onSelect={onRuleOptionSelect}
                 isDisabled={isDisabled}

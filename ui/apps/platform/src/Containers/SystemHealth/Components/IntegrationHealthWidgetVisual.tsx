@@ -42,7 +42,6 @@ const IntegrationHealthWidget = ({
     return (
         <Card isFullHeight isCompact>
             <CardHeader>
-                actions=
                 {
                     <>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>

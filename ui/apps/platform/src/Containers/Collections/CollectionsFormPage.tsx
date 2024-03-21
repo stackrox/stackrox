@@ -254,7 +254,7 @@ function CollectionsFormPage({
                                             toggle={
                                                 <DropdownToggle
                                                     toggleVariant="primary"
-                                                    onToggle={() => toggleMenu}
+                                                    onToggle={(_e, v) => toggleMenu(v)}
                                                     toggleIndicator={CaretDownIcon}
                                                 >
                                                     Actions

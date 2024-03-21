@@ -481,7 +481,6 @@ const SystemConfigForm = ({
                                 className: undefined,
                             }}
                         >
-                            actions=
                             {
                                 <>
                                     <CardTitle component="h3">Header configuration</CardTitle>
@@ -580,7 +579,6 @@ const SystemConfigForm = ({
                                 className: undefined,
                             }}
                         >
-                            actions=
                             {
                                 <>
                                     <CardTitle component="h3">Footer configuration</CardTitle>
@@ -679,7 +677,6 @@ const SystemConfigForm = ({
                                 className: undefined,
                             }}
                         >
-                            actions=
                             {
                                 <>
                                     <CardTitle component="h3">Login configuration</CardTitle>
@@ -726,7 +723,6 @@ const SystemConfigForm = ({
                                     className: undefined,
                                 }}
                             >
-                                actions=
                                 {
                                     <>
                                         <CardTitle component="h3">

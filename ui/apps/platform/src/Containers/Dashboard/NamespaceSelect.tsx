@@ -98,7 +98,7 @@ function NamespaceSelect({
             className="namespace-select"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
-            onToggle={() => onToggle}
+            onToggle={(_e, v) => onToggle(v)}
             onSelect={onSelect}
             onFilter={onFilter}
             placeholderText={currentSelection === selectAll ? 'All namespaces' : 'Namespaces'}
