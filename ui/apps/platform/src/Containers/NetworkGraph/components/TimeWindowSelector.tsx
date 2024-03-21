@@ -25,7 +25,7 @@ function TimeWindowSelector({
     return (
         <Select
             isOpen={isOpen}
-            onToggle={() => onToggle}
+            onToggle={(_e, v) => onToggle(v)}
             onSelect={selectTimeWindow}
             selections={activeTimeWindow}
             isDisabled={isDisabled}
