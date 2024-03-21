@@ -592,7 +592,9 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Receiver port').click().clear().blur();
 
             // check format toggle
-            cy.get('.pf-v5-c-form__group-label .pf-v5-c-form__label-text:contains("Message Format")');
+            cy.get(
+                '.pf-v5-c-form__group-label .pf-v5-c-form__label-text:contains("Message Format")'
+            );
             cy.get(
                 '#messageFormat .pf-v5-c-toggle-group__item .pf-v5-c-toggle-group__button.pf-m-selected:contains("CEF")'
             );
