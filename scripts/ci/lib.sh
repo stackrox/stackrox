@@ -933,6 +933,20 @@ get_pr_details() {
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
+    #TODO(janisz): remove after https://github.com/openshift/release/pull/49962 is merged
+    info "Install Go version"
+	rm -rf "$GOPATH"
+	GOLANG_VERSION=1.21.8
+	GOLANG_SHA256=538b3b143dc7f32b093c8ffe0e050c260b57fc9d57a12c4140a639a8dd2b4e4f
+	url="https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz"
+	wget --no-verbose -O go.tgz "$url"
+	echo "$GOLANG_SHA256 *go.tgz" | sha256sum -c -
+	tar -C "$GOPATH/.." -xvzf go.tgz
+	rm go.tgz
+	mkdir -p "$GOPATH/src" "$GOPATH/bin"
+	chmod -R 777 "$GOPATH"
+	go version
+
     openshift_ci_debug
 
     info "Current Status:"
