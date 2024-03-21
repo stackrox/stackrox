@@ -38,8 +38,8 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private String SCAN_INLINE_DEPLOYMENT_NAME = "scan-inline"
     // An image name with @sha... appended is used for admission control that
-    // requires inline scanning. This ensures that central does not connect to
-    // an external registry during test which avoids flakes.
+    // requires inline scanning. This ensures that metadata gets cached after initial scan,
+    // and therefore central does not connect to an external registry during test, which avoids flakes.
     static final private String SCAN_INLINE_IMAGE_NAME_WITH_SHA = TEST_IMAGE_NAME_WITH_SHA
     static final private String SCAN_INLINE_IMAGE_SHA = TEST_IMAGE_SHA
 
