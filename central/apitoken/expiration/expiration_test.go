@@ -7,11 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	apiTokenDataStore "github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -46,31 +45,25 @@ func (s *apiTokenExpirationNotifierTestSuite) TearDownTest() {
 	s.testpostgres.Teardown(s.T())
 }
 
-func truncateToMicroSeconds(timestamp *types.Timestamp) *types.Timestamp {
-	outputTs := timestamp.Clone()
-	outputTs.Nanos = 1000 * (outputTs.Nanos / 1000)
-	return outputTs
-}
-
 func generateToken(now *time.Time,
 	expiration *time.Time,
 	revoked bool) *storage.TokenMetadata {
-	var protoNow *types.Timestamp
-	var protoExpiration *types.Timestamp
+	var truncatedNow *time.Time
+	var truncatedExpiration *time.Time
 	if now != nil {
-		protoNow = protoconv.ConvertTimeToTimestamp(*now)
-		protoNow = truncateToMicroSeconds(protoNow)
+		rawTruncatedNow := now.Truncate(time.Microsecond)
+		truncatedNow = &rawTruncatedNow
 	}
 	if expiration != nil {
-		protoExpiration = protoconv.ConvertTimeToTimestamp(*expiration)
-		protoExpiration = truncateToMicroSeconds(protoExpiration)
+		rawTruncatedExpiration := expiration.Truncate(time.Microsecond)
+		truncatedExpiration = &rawTruncatedExpiration
 	}
 	return &storage.TokenMetadata{
 		Id:         uuid.NewV4().String(),
 		Name:       "Generated Test Token",
 		Roles:      []string{"Admin"},
-		IssuedAt:   protoNow,
-		Expiration: protoExpiration,
+		IssuedAt:   protocompat.ConvertTimeToTimestampOrNil(truncatedNow),
+		Expiration: protocompat.ConvertTimeToTimestampOrNil(truncatedExpiration),
 		Revoked:    revoked,
 	}
 }

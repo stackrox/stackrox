@@ -6,21 +6,16 @@ import (
 	"testing"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func timestampNowMinus(t time.Duration) *protoTypes.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
-}
 
 func TestExpiredVulnReqsPruning(t *testing.T) {
 	testingDB := pgtest.ForT(t)
@@ -118,10 +113,11 @@ func TestExpiredVulnReqsPruning(t *testing.T) {
 }
 
 func newVulnReq(id string, age time.Duration, expired bool) *storage.VulnerabilityRequest {
+	lastUpdatedTime := time.Now().Add(age)
 	return &storage.VulnerabilityRequest{
 		Id:          id,
 		Name:        id,
 		Expired:     expired,
-		LastUpdated: timestampNowMinus(age),
+		LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&lastUpdatedTime),
 	}
 }
