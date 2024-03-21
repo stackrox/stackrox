@@ -311,6 +311,7 @@ func (b *Backends) Close(ctx context.Context) {
 		instance Closeable
 	}{
 		{"matcher", b.Matcher},
+		{"node indexer", b.NodeIndexer},
 		{"indexer", b.Indexer},
 		{"remote indexer", b.RemoteIndexer},
 	} {

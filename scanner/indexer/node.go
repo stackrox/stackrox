@@ -25,8 +25,11 @@ import (
 //
 // It is a specialized mode of [indexer.Indexer] that takes a path and scans a live filesystem
 // instead of downloading and scanning layers of a container manifest.
+//
+// TODO: Find out if we really need a DB for the node indexer. Likely we need a caching layer, but not a DB.
 type NodeIndexer interface {
 	IndexNode(ctx context.Context, basePath string) (*claircore.IndexReport, error)
+	Close(ctx context.Context) error
 }
 
 type localNodeIndexer struct {
@@ -151,7 +154,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context, basePath string) (*cla
 	return nil, errors.New("not implemented")
 }
 
-// Closes the NodeIndexer.
+// Close closes the NodeIndexer.
 func (l *localNodeIndexer) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/nodeindexer.Close")
 	err := errors.Join(l.libIndex.Close(ctx)) //, os.RemoveAll(l.root)) // FIXME: Close fs.FS here!
