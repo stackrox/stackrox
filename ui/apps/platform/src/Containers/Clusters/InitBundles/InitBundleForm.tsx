@@ -187,7 +187,7 @@ function InitBundleForm(): ReactElement {
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
                                 isDisabled={values.platform !== 'OpenShift'}
-                                onToggle={() => onToggle}
+                                onToggle={(_e, v) => onToggle(v)}
                                 onSelect={(_event, value) => onSelectInstallation(value)}
                                 selections={values.installation}
                                 isOpen={isOpen}

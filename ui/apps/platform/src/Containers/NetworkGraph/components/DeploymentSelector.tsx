@@ -136,7 +136,7 @@ function DeploymentSelector({
     return (
         <Select
             isOpen={isDeploymentOpen}
-            onToggle={() => toggleIsDeploymentOpen}
+            onToggle={(_e, v) => toggleIsDeploymentOpen(v)}
             className="deployment-select"
             placeholderText={
                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>

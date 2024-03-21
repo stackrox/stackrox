@@ -40,7 +40,7 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                             <StackItem>
                                 <ExpandableSection
                                     toggleText={secret.name}
-                                    onToggle={() => setToggleAtIndex(index)}
+                                    onToggle={(_e, v) => setToggleAtIndex(v)}
                                     isExpanded={secretToggles[index]}
                                     className="pf-expandable-not-large"
                                 >
