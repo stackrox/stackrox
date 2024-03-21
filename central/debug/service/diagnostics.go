@@ -54,7 +54,7 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWrite
 	if len(clusterNameMap) > 0 {
 		// This is simply creating a static k8sintrospect.File, hence the context can be safely ignored.
 		gatherPool.Go(func(_ context.Context) ([]k8sintrospect.File, error) {
-			return addMissingClustersInfo(clusterNameMap, opts.clusters)
+			return addMissingClustersInfo(clusterNameMap, opts)
 		})
 	}
 
