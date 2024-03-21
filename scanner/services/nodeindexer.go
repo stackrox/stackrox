@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/mappers"
 	"google.golang.org/grpc"
 )
 
@@ -30,12 +32,25 @@ func (s *nodeIndexerService) CreateNodeIndexReport(ctx context.Context, req *v4.
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/nodeIndexer.CreateNodeIndexReport")
 	// TODO: Actually run the scan and create the report
 
-	return &v4.IndexReport{
-		State:    "",
-		Success:  false,
-		Err:      "Not implemented",
-		Contents: nil,
-	}, nil
+	clairReport, err := s.nodeIndexer.IndexNode(ctx, "/tmp/rhcos")
+	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
+		return nil, err
+	}
+
+	if !clairReport.Success {
+		return nil, fmt.Errorf("internal error: create node index report failed in state %q: %s", clairReport.State, clairReport.Err)
+	}
+
+	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting node index to v4.IndexReport")
+		return nil, err
+	}
+
+	indexReport.HashId = req.GetHashId()
+	return indexReport, nil
+
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
