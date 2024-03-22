@@ -27,6 +27,7 @@ class TestGKECluster(unittest.TestCase):
         GKECluster.TEARDOWN_PATH = os.path.join(
             _dirname, "fixtures", "null.sh")
 
+        # pylint: disable=consider-using-with
         self._osci_shared_dir = tempfile.TemporaryDirectory()
         os.environ["SHARED_DIR"] = self._osci_shared_dir.name
 
