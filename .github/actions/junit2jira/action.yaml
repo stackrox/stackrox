@@ -42,7 +42,7 @@ runs:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     run: |
-      local extra_args=()
+      extra_args=()
       if [[ "${{ inputs.create-jiras }}" == "false" ]]; then
         extra_args=(--dry-run)
         info "Will use junit2jira to create CSV for BigQuery input"
