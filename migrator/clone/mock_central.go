@@ -144,7 +144,6 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) error 
 	if err := m.migrateWithVersion(ver, breakpoint, ""); err != nil {
 		return err
 	}
-	
 	// Re-run migrator if the previous one breaks
 	if breakpoint != "" {
 		if err := m.runMigrator("", ""); err != nil {
