@@ -25,17 +25,17 @@ func (s *scalerTestSuite) TestScaleSize() {
 	}{
 		"50% memlimit": {
 			inputQueueSize:    100,
-			sensorMemLimit:    defaultMemLimit * 0.5,
+			sensorMemLimit:    int(defaultMemlimit * 0.5),
 			expectedQueueSize: 50,
 		},
 		"50% memlimit - rounding up": {
 			inputQueueSize:    5,
-			sensorMemLimit:    2097152000,
+			sensorMemLimit:    int(defaultMemlimit * 0.5),
 			expectedQueueSize: 3,
 		},
 		"200% memlimit": {
 			inputQueueSize:    100,
-			sensorMemLimit:    8388608000,
+			sensorMemLimit:    int(defaultMemlimit * 2),
 			expectedQueueSize: 200,
 		},
 		"At least size 1": {
@@ -43,10 +43,10 @@ func (s *scalerTestSuite) TestScaleSize() {
 			sensorMemLimit:    1,
 			expectedQueueSize: 1,
 		},
-		"At least size 1 on memlimit 0": {
+		"Default on memlimit 0": {
 			inputQueueSize:    100,
 			sensorMemLimit:    0,
-			expectedQueueSize: 1,
+			expectedQueueSize: 100,
 		},
 	}
 
@@ -56,7 +56,15 @@ func (s *scalerTestSuite) TestScaleSize() {
 			s.NoError(err)
 
 			actual, err := ScaleSize(c.inputQueueSize)
-			s.NoError(err)
+
+			if err != nil {
+				switch {
+				case s.ErrorContains(err, "ROX_MEMLIMIT is set to 0"):
+					break
+				default:
+					s.Failf("Encountered unexpected error: %v", err.Error())
+				}
+			}
 			s.Equal(c.expectedQueueSize, actual)
 		})
 	}
@@ -80,13 +88,13 @@ func (s *scalerTestSuite) TestScaleSizeOnNonDefault() {
 		"Scaling env var 50%": {
 			setting:        env.RegisterIntegerSetting("TEST_1", 100),
 			setValue:       100,
-			sensorMemLimit: 2097152000,
+			sensorMemLimit: int(defaultMemlimit * 0.5),
 			expected:       50,
 		},
 		"Don't scale non default": {
 			setting:        env.RegisterIntegerSetting("TEST_1", 100),
 			setValue:       42,
-			sensorMemLimit: 2097152000,
+			sensorMemLimit: int(defaultMemlimit * 0.5),
 			expected:       42,
 		},
 	}

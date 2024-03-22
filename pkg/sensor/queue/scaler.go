@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -16,15 +17,17 @@ var (
 
 // ScaleSize will scale the size of a given queue size based on the Sensor memory limit relative
 // to the default memory limit of 4GB. It returns the scaled queue size variable, which is at least 1.
+// On errors, the unscaled size is returned, together with an error.
 func ScaleSize(queueSize int) (int, error) {
 	if roxLimit := os.Getenv("ROX_MEMLIMIT"); roxLimit != "" {
 		l, err := strconv.ParseInt(roxLimit, 10, 64)
 		if err != nil {
 			log.Errorf("ROX_MEMLIMIT must be an integer in bytes: %v", err)
-			return -1, err
+			return queueSize, err
 		}
 		if l == 0 {
 			log.Warn("ROX_MEMLIMIT is set to 0!")
+			return queueSize, errors.New("ROX_MEMLIMIT is set to 0")
 		}
 		ratio := float64(l) / defaultMemlimit
 
