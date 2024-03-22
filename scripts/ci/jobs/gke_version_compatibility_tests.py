@@ -96,11 +96,10 @@ for test_tuple in test_tuples:
             ),
         },
     )
-sets[0]["pre_test"] = PreSystemTests()
-
 ClusterTestSetsRunner(
     cluster=GKECluster("compat-test",
                        machine_type="e2-standard-8", num_nodes=2),
+    initial_pre_test=PreSystemTests(),
     sets=sets,
     final_post=FinalPost(
         store_qa_tests_data=True,
