@@ -26,15 +26,3 @@ func And(ffs ...FileFilter) FileFilter {
 		return true
 	}
 }
-
-// Or returns the logical disjunction of the given filters.
-func Or(ffs ...FileFilter) FileFilter {
-	return func(f *ast.File) bool {
-		for _, ff := range ffs {
-			if ff(f) {
-				return true
-			}
-		}
-		return false
-	}
-}
