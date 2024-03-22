@@ -109,7 +109,12 @@ function EffectiveAccessScopeTable({
                         props: clusterProps,
                     }}
                 >
-                    {clusterName}
+                    {/*
+                        In rare cases this value can be an empty string which will cause a runtime error in PatternFly
+                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185
+                        In this case, we display a dash instead to avoid a crash.
+                    */}
+                    {clusterName || '-'}
                 </Td>
                 <Td dataLabel="Cluster allowed">
                     <EffectiveAccessScopeStateIcon state={clusterState} isCluster />
@@ -184,7 +189,12 @@ function EffectiveAccessScopeTable({
                             props: namespaceProps,
                         }}
                     >
-                        {namespaceName}
+                        {/*
+                        In rare cases this value can be an empty string which will cause a runtime error in PatternFly
+                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185
+                        In this case, we display a dash instead to avoid a crash.
+                    */}
+                        {namespaceName || '-'}
                     </Td>
                     <Td dataLabel="Namespace allowed">
                         <EffectiveAccessScopeStateIcon state={namespaceState} isCluster={false} />
