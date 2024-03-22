@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -61,7 +62,7 @@ func pkGetter(obj *storeType) string {
 }
 
 func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := protocompat.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -98,7 +99,7 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}

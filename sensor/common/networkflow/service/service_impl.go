@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -195,7 +196,7 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 			return
 		}
 		if s.writer != nil {
-			if data, err := msg.Marshal(); err == nil {
+			if data, err := protocompat.Marshal(msg); err == nil {
 				if _, err := s.writer.Write(data); err != nil {
 					log.Warnf("Error writing msg: %v", err)
 				}

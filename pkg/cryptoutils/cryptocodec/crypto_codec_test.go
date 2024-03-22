@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +27,7 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 		AccessKeyId:     "key-id",
 		SecretAccessKey: "lorem ipsum dolor sit amet",
 	}
-	marshalled, err := originalCreds.Marshal()
+	marshalled, err := protocompat.Marshal(originalCreds)
 	assert.NoError(t, err)
 	marshalledString := string(marshalled)
 

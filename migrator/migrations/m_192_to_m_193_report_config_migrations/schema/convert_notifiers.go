@@ -3,11 +3,12 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertNotifierFromProto converts a `*storage.Notifier` to Gorm model
 func ConvertNotifierFromProto(obj *storage.Notifier) (*Notifiers, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}

@@ -103,7 +103,7 @@ func (s *storeImpl) insertIntoNodes(
 		cloned = parts.node.Clone()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
+	serialized, marshalErr := protocompat.Marshal(cloned)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -228,7 +228,7 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -287,7 +287,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -354,7 +354,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -412,7 +412,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
