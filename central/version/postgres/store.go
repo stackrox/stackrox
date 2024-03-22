@@ -8,6 +8,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -46,7 +47,7 @@ func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Versi
 		obj.GetSeqNum(),
 		obj.GetVersion(),
 		obj.GetMinSeqNum(),
-		pgutils.NilOrTime(obj.GetLastPersisted()),
+		protocompat.NilOrTime(obj.GetLastPersisted()),
 	}
 
 	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)"

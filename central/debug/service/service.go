@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	concPool "github.com/sourcegraph/conc/pool"
@@ -47,6 +46,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/stats"
 	"github.com/stackrox/rox/pkg/prometheusutil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -235,7 +235,7 @@ func (s *serviceImpl) GetLogLevel(_ context.Context, req *v1.GetLogLevelRequest)
 }
 
 // SetLogLevel implements v1.DebugServiceServer, and it sets the log level for StackRox services.
-func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*types.Empty, error) {
+func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*protocompat.Empty, error) {
 	levelStr := req.GetLevel()
 	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {
@@ -245,7 +245,7 @@ func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*
 	// If this is a global request, then set the global level and return
 	if len(req.GetModules()) == 0 {
 		logging.SetGlobalLogLevel(zapLevel)
-		return &types.Empty{}, nil
+		return protocompat.ProtoEmpty(), nil
 	}
 
 	var unknownModules []string
@@ -262,7 +262,7 @@ func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*
 			strings.Join(unknownModules, ", "))
 	}
 
-	return &types.Empty{}, nil
+	return protocompat.ProtoEmpty(), nil
 }
 
 func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_StreamAuthzTracesServer) error {

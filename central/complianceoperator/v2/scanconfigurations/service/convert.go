@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
@@ -191,19 +190,18 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	}
 	clusterToSuiteMap := make(map[string]*v2.ClusterScanStatus_SuiteStatus, len(suiteClusters))
 	for _, suite := range suiteClusters {
-		var lastTransitionTime *types.Timestamp
+		suiteStatus := &v2.ClusterScanStatus_SuiteStatus{
+			Phase:        suite.GetStatus().GetPhase(),
+			Result:       suite.GetStatus().GetResult(),
+			ErrorMessage: suite.GetStatus().GetErrorMessage(),
+		}
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
-			if lastTransitionTime == nil || protoutils.After(c.LastTransitionTime, lastTransitionTime) {
-				lastTransitionTime = c.LastTransitionTime
+			if suiteStatus.LastTransitionTime == nil || protoutils.After(c.LastTransitionTime, suiteStatus.LastTransitionTime) {
+				suiteStatus.LastTransitionTime = c.LastTransitionTime
 			}
 		}
-		clusterToSuiteMap[suite.ClusterId] = &v2.ClusterScanStatus_SuiteStatus{
-			Phase:              suite.GetStatus().GetPhase(),
-			Result:             suite.GetStatus().GetResult(),
-			ErrorMessage:       suite.GetStatus().GetErrorMessage(),
-			LastTransitionTime: lastTransitionTime,
-		}
+		clusterToSuiteMap[suite.ClusterId] = suiteStatus
 	}
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),

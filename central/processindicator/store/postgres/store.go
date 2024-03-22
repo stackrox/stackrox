@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -119,7 +120,7 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 		obj.GetPodId(),
 		pgutils.NilOrUUID(obj.GetPodUid()),
 		obj.GetSignal().GetContainerId(),
-		pgutils.NilOrTime(obj.GetSignal().GetTime()),
+		protocompat.NilOrTime(obj.GetSignal().GetTime()),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
@@ -181,7 +182,7 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 			obj.GetPodId(),
 			pgutils.NilOrUUID(obj.GetPodUid()),
 			obj.GetSignal().GetContainerId(),
-			pgutils.NilOrTime(obj.GetSignal().GetTime()),
+			protocompat.NilOrTime(obj.GetSignal().GetTime()),
 			obj.GetSignal().GetName(),
 			obj.GetSignal().GetArgs(),
 			obj.GetSignal().GetExecFilePath(),

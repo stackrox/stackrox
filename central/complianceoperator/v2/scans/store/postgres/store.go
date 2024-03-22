@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -118,7 +119,7 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		pgutils.NilOrUUID(obj.GetProfile().GetProfileId()),
 		obj.GetStatus().GetResult(),
-		pgutils.NilOrTime(obj.GetLastExecutedTime()),
+		protocompat.NilOrTime(obj.GetLastExecutedTime()),
 		obj.GetScanName(),
 		pgutils.NilOrUUID(obj.GetScanRefId()),
 		serialized,
@@ -170,7 +171,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			pgutils.NilOrUUID(obj.GetProfile().GetProfileId()),
 			obj.GetStatus().GetResult(),
-			pgutils.NilOrTime(obj.GetLastExecutedTime()),
+			protocompat.NilOrTime(obj.GetLastExecutedTime()),
 			obj.GetScanName(),
 			pgutils.NilOrUUID(obj.GetScanRefId()),
 			serialized,

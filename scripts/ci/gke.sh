@@ -333,7 +333,7 @@ create_log_explorer_links() {
         return
     fi
 
-    artifact_file="$ARTIFACT_DIR/gke-logs-summary.html"
+    artifact_file="$ARTIFACT_DIR/gke-logs.html"
 
     cat > "$artifact_file" <<- HEAD
 <html>

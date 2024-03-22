@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -99,8 +100,8 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 		obj.GetDomain(),
 		obj.GetResource().GetType(),
 		obj.GetNumOccurrences(),
-		pgutils.NilOrTime(obj.GetLastOccurredAt()),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
+		protocompat.NilOrTime(obj.GetLastOccurredAt()),
+		protocompat.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
@@ -151,8 +152,8 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetDomain(),
 			obj.GetResource().GetType(),
 			obj.GetNumOccurrences(),
-			pgutils.NilOrTime(obj.GetLastOccurredAt()),
-			pgutils.NilOrTime(obj.GetCreatedAt()),
+			protocompat.NilOrTime(obj.GetLastOccurredAt()),
+			protocompat.NilOrTime(obj.GetCreatedAt()),
 			serialized,
 		})
 

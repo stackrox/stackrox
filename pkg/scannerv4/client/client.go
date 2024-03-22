@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -251,7 +251,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 	var m *v4.Metadata
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {
 		var err error
-		m, err = c.matcher.GetMetadata(ctx, &types.Empty{})
+		m, err = c.matcher.GetMetadata(ctx, protocompat.ProtoEmpty())
 		return err
 	})
 	if err != nil {

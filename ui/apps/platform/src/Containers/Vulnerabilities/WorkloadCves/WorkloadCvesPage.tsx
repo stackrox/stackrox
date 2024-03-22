@@ -5,7 +5,11 @@ import { PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
-import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import {
+    vulnManagementPath,
+    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityNamespaceViewPath,
+} from 'routePaths';
 import TechPreviewBanner from 'Components/TechPreviewBanner';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import usePermissions from 'hooks/usePermissions';
@@ -13,6 +17,7 @@ import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCve/ImageCvePage';
+import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 
 import './WorkloadCvesPage.css';
 
@@ -21,8 +26,9 @@ const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCves
 const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
 function WorkloadCvesPage() {
-    const { hasReadAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
+    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
 
     return (
         <>
@@ -33,6 +39,9 @@ function WorkloadCvesPage() {
                 routeKey="vulnerability-management"
             />
             <Switch>
+                {hasReadAccessForNamespaces && (
+                    <Route path={vulnerabilityNamespaceViewPath} component={NamespaceViewPage} />
+                )}
                 <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
                 <Route path={vulnerabilitiesWorkloadCveImageSinglePath} component={ImagePage} />
                 <Route

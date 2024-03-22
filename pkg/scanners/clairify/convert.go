@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -190,8 +191,8 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 	if v.GetMetadataV2() != nil {
 		m := v.GetMetadataV2()
 
-		vuln.PublishedOn = clair.ConvertTime(m.GetPublishedDateTime())
-		vuln.LastModified = clair.ConvertTime(m.GetLastModifiedDateTime())
+		vuln.PublishedOn = protoconv.ConvertTimeString(m.GetPublishedDateTime())
+		vuln.LastModified = protoconv.ConvertTimeString(m.GetLastModifiedDateTime())
 		if m.GetCvssV2() != nil && m.GetCvssV2().Vector != "" {
 			if cvssV2, err := cvssv2.ParseCVSSV2(m.GetCvssV2().GetVector()); err == nil {
 				cvssV2.ExploitabilityScore = m.GetCvssV2().GetExploitabilityScore()

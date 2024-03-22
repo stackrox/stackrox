@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -194,7 +193,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidSta
 	// Write a few log lines for other stages
 	unsupportedStages := []string{"RequestReceived", "ResponseStarted", "wut"}
 	for _, stage := range unsupportedStages {
-		line, _ := s.fakeAuditLogLineWithStage("get", "secrets", "fake-token", "stackrox", types.TimestampString(protocompat.TimestampNow()), stage)
+		line, _ := s.fakeAuditLogLineWithStage("get", "secrets", "fake-token", "stackrox", time.Now().Format(time.RFC3339Nano), stage)
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
 		s.NoError(f.Sync())
@@ -204,7 +203,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidSta
 	supportedStages := []string{"ResponseComplete", "Panic"}
 	expectedEvents := make([]auditEvent, 0, 2)
 	for _, stage := range supportedStages {
-		line, expectedEvent := s.fakeAuditLogLineWithStage("get", "secrets", "fake-token", "stackrox", types.TimestampString(protocompat.TimestampNow()), stage)
+		line, expectedEvent := s.fakeAuditLogLineWithStage("get", "secrets", "fake-token", "stackrox", time.Now().Format(time.RFC3339Nano), stage)
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
 		s.NoError(f.Sync())
@@ -238,7 +237,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNot
 	// Write a few log lines for verbs that won't be sent
 	unsupportedVerbs := []string{"WATCH", "watch", "LIST", "list", "Watch", "lIsT"}
 	for _, verb := range unsupportedVerbs {
-		line, _ := s.fakeAuditLogLineWithStage(verb, "secrets", "fake-token", "stackrox", types.TimestampString(protocompat.TimestampNow()), "ResponseComplete")
+		line, _ := s.fakeAuditLogLineWithStage(verb, "secrets", "fake-token", "stackrox", time.Now().Format(time.RFC3339Nano), "ResponseComplete")
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
 		s.NoError(f.Sync())
@@ -248,7 +247,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNot
 	supportedVerbs := []string{"GET", "get", "Create", "patCH", "DELETE"}
 	expectedEvents := make([]auditEvent, 0, 2)
 	for _, verb := range supportedVerbs {
-		line, expectedEvent := s.fakeAuditLogLineWithStage(verb, "secrets", "fake-token", "stackrox", types.TimestampString(protocompat.TimestampNow()), "ResponseComplete")
+		line, expectedEvent := s.fakeAuditLogLineWithStage(verb, "secrets", "fake-token", "stackrox", time.Now().Format(time.RFC3339Nano), "ResponseComplete")
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
 		s.NoError(f.Sync())

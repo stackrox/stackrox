@@ -56,7 +56,7 @@ func (s *ServiceLevelConfigSeparationSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	// Add notifier
-	notifierID, err := s.notifierDatastore.AddNotifier(s.ctx, &storage.Notifier{Name: "notifier"})
+	notifierID, err := s.notifierDatastore.AddNotifier(s.ctx, &storage.Notifier{Name: "notifier", Type: "generic", UiEndpoint: "http://localhost"})
 	s.Require().NoError(err)
 
 	// Add collection

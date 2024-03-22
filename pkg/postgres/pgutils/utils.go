@@ -52,19 +52,6 @@ func ConvertEnumSliceToIntArray[T ~int32](enumSlice []T) []int32 {
 	return resultSlice
 }
 
-// NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres
-func NilOrTime(t *types.Timestamp) *time.Time {
-	if t == nil {
-		return nil
-	}
-	ts, err := protocompat.ConvertTimestampToTimeOrError(t)
-	if err != nil {
-		return nil
-	}
-	ts = ts.Round(time.Microsecond)
-	return &ts
-}
-
 // NilOrNow allows for a proto timestamp to be stored a timestamp type in Postgres
 func NilOrNow(t *types.Timestamp) *time.Time {
 	now := time.Now()

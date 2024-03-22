@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Badge, Modal, Form, FormGroup, Checkbox, Flex } from '@patternfly/react-core';
+import { Button, Modal, Form, FormGroup, Checkbox } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import { useFormik, FormikProvider } from 'formik';
 import { Globe } from 'react-feather';
@@ -76,17 +76,20 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
 
     return (
         <>
-            <Button variant="plain" className="pf-u-color-300" onClick={handleModalToggle}>
-                <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                    <Globe className="pf-u-mr-sm" />
-                    Default vulnerability filters
-                    <Badge key={1} isRead className="pf-u-ml-sm">
-                        {totalFilters}
-                    </Badge>
-                </Flex>
+            <Button
+                variant="tertiary"
+                onClick={handleModalToggle}
+                icon={<Globe className="pf-u-mr-sm" />}
+                countOptions={{
+                    isRead: true,
+                    count: totalFilters,
+                    className: 'custom-badge-unread',
+                }}
+            >
+                Default filters
             </Button>
             <Modal
-                title="Default vulnerability filters"
+                title="Default filters"
                 description="Select default vulnerability filters to be applied across all views."
                 isOpen={isOpen}
                 onClose={handleModalToggle}

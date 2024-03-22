@@ -1,20 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import {
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
-    Card,
-    CardBody,
-    Button,
-    Toolbar,
-    ToolbarItem,
-} from '@patternfly/react-core';
+import { PageSection, Title, Flex, FlexItem, Card, CardBody, Button } from '@patternfly/react-core';
 import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
+import { Link } from 'react-router-dom';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -29,6 +19,7 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
+import { vulnerabilityNamespaceViewPath } from 'routePaths';
 import {
     getDefaultWorkloadSortOption,
     getWorkloadSortFields,
@@ -111,8 +102,11 @@ function mergeDefaultAndLocalFilters(
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
+
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
@@ -236,19 +230,6 @@ function WorkloadCvesOverviewPage() {
     return (
         <>
             <PageTitle title="Workload CVEs Overview" />
-            {isFixabilityFiltersEnabled && (
-                <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                    <Toolbar>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
-                            <DefaultFilterModal
-                                defaultFilters={localStorageValue.preferences.defaultFilters}
-                                setLocalStorage={updateDefaultFilters}
-                            />
-                        </ToolbarItem>
-                    </Toolbar>
-                </PageSection>
-            )}
-            <Divider component="div" />
             <PageSection
                 className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
                 variant="light"
@@ -259,8 +240,15 @@ function WorkloadCvesOverviewPage() {
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>
                 </Flex>
-                {hasWriteAccessForWatchedImage && (
-                    <FlexItem>
+                <Flex>
+                    {hasReadAccessForNamespaces && (
+                        <Link to={vulnerabilityNamespaceViewPath}>
+                            <Button variant="secondary" onClick={() => {}}>
+                                Namespace view
+                            </Button>
+                        </Link>
+                    )}
+                    {hasWriteAccessForWatchedImage && (
                         <Button
                             variant="secondary"
                             onClick={() => {
@@ -271,8 +259,14 @@ function WorkloadCvesOverviewPage() {
                         >
                             Manage watched images
                         </Button>
-                    </FlexItem>
-                )}
+                    )}
+                    {isFixabilityFiltersEnabled && (
+                        <DefaultFilterModal
+                            defaultFilters={localStorageValue.preferences.defaultFilters}
+                            setLocalStorage={updateDefaultFilters}
+                        />
+                    )}
+                </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection

@@ -40,7 +40,7 @@ if [[ "$goarch" == "amd64" ]]; then
 fi
 
 if [[ "$arch" == "s390x" ]]; then
-  yum install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs
+  dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
 else
