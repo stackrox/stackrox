@@ -28,7 +28,7 @@ function SecurityContext({ securityContext }: SecurityContextProps) {
                     <DescriptionList columnModifier={{ default: '2Col' }} isCompact>
                         {Array.from(filteredValues.entries()).map(([key, value]) => {
                             return (
-                                <DescriptionListGroup>
+                                <DescriptionListGroup key={key}>
                                     <DescriptionListTerm>{key}</DescriptionListTerm>
                                     <DescriptionListDescription>{value}</DescriptionListDescription>
                                 </DescriptionListGroup>

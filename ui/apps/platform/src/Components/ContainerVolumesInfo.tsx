@@ -37,7 +37,7 @@ function ContainerVolumeInfo({ volumes }: ContainerVolumeInfoProps) {
                 <Stack hasGutter>
                     {volumes.length > 0 ? (
                         volumes.map((volume, index) => (
-                            <StackItem>
+                            <StackItem key={volume.name}>
                                 <ExpandableSection
                                     toggleText={volume.name}
                                     onToggle={(_e, v) => setToggleAtIndex(v)}
