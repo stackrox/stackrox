@@ -3,9 +3,7 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
-import "storage/deployment.proto";
 import "storage/image.proto";
-import "storage/rbac.proto";
 import "storage/scope.proto";
 
 option go_package = "storage";
@@ -135,83 +133,12 @@ enum LifecycleStage {
   RUNTIME = 2;
 }
 
-message Component {
-  string name = 1;
-  string version = 2;
-}
-
-message DockerfileLineRuleField {
-  string instruction = 1;
-  string value = 2;
-}
-
-message KeyValuePolicy {
-  string key = 1;
-  string value = 2;
-  ContainerConfig.EnvironmentConfig.EnvVarSource env_var_source = 3;
-}
-
-message VolumePolicy {
-  string name = 1;
-  string source = 2;
-  string destination = 3;
-  oneof set_read_only {
-    bool read_only = 4;
-  }
-  string type = 5;
-}
-
-message HostMountPolicy {
-  oneof set_read_only {
-    bool read_only = 1;
-  }
-}
-
-message ProcessPolicy {
-  string name = 1;
-  string args = 2;
-  string ancestor = 3;
-  string uid = 4;
-}
-
-message ResourcePolicy {
-  NumericalPolicy cpu_resource_request = 1;
-  NumericalPolicy cpu_resource_limit = 2;
-  NumericalPolicy memory_resource_request = 3;
-  NumericalPolicy memory_resource_limit = 4;
-}
-
-message NumericalPolicy {
-  Comparator op = 1;
-  float value = 3;
-}
-
 enum Comparator {
   LESS_THAN = 0;
   LESS_THAN_OR_EQUALS = 1;
   EQUALS = 2;
   GREATER_THAN_OR_EQUALS = 3;
   GREATER_THAN = 4;
-}
-
-message PortPolicy {
-  int32 port = 1;
-  string protocol = 2;
-}
-
-// K8S RBAC Permission level configuration.
-message PermissionPolicy {
-  PermissionLevel permission_level = 1;
-}
-
-message ImageNamePolicy {
-  string registry = 1; // e.g. docker.io
-  string remote = 2; // e.g. stackrox/container-summarizer
-  string tag = 3; // e.g. latest
-}
-
-message PortExposurePolicy {
-  repeated PortConfig.ExposureLevel exposure_levels = 1;
 }
 
 message Exclusion {

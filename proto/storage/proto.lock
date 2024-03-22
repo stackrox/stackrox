@@ -3253,6 +3253,11 @@
                 "name": "status_errors",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "operator_installed",
+                "type": "bool"
               }
             ]
           }
@@ -3787,6 +3792,11 @@
                 "id": 14,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "profile_ref_id",
+                "type": "string"
               }
             ],
             "maps": [
@@ -4171,6 +4181,11 @@
                 "id": 17,
                 "name": "rationale",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "scan_ref_id",
+                "type": "string"
               }
             ],
             "maps": [
@@ -4226,11 +4241,6 @@
                 "type": "string"
               },
               {
-                "id": 13,
-                "name": "scan_name",
-                "type": "string"
-              },
-              {
                 "id": 3,
                 "name": "cluster_id",
                 "type": "string"
@@ -4238,11 +4248,6 @@
               {
                 "id": 4,
                 "name": "errors",
-                "type": "string"
-              },
-              {
-                "id": 14,
-                "name": "warnings",
                 "type": "string"
               },
               {
@@ -4274,6 +4279,26 @@
                 "id": 12,
                 "name": "last_executed_time",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 13,
+                "name": "scan_name",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "warnings",
+                "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "product_type",
+                "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "scan_ref_id",
+                "type": "string"
               }
             ],
             "maps": [
@@ -11833,219 +11858,6 @@
             ]
           },
           {
-            "name": "Component",
-            "fields": [
-              {
-                "id": 1,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "version",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "DockerfileLineRuleField",
-            "fields": [
-              {
-                "id": 1,
-                "name": "instruction",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "value",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "KeyValuePolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "key",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "value",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "env_var_source",
-                "type": "ContainerConfig.EnvironmentConfig.EnvVarSource"
-              }
-            ]
-          },
-          {
-            "name": "VolumePolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "source",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "destination",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "read_only",
-                "type": "bool",
-                "oneof_parent": "set_read_only"
-              },
-              {
-                "id": 5,
-                "name": "type",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "HostMountPolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "read_only",
-                "type": "bool",
-                "oneof_parent": "set_read_only"
-              }
-            ]
-          },
-          {
-            "name": "ProcessPolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "name",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "args",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "ancestor",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "uid",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "ResourcePolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "cpu_resource_request",
-                "type": "NumericalPolicy"
-              },
-              {
-                "id": 2,
-                "name": "cpu_resource_limit",
-                "type": "NumericalPolicy"
-              },
-              {
-                "id": 3,
-                "name": "memory_resource_request",
-                "type": "NumericalPolicy"
-              },
-              {
-                "id": 4,
-                "name": "memory_resource_limit",
-                "type": "NumericalPolicy"
-              }
-            ]
-          },
-          {
-            "name": "NumericalPolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "op",
-                "type": "Comparator"
-              },
-              {
-                "id": 3,
-                "name": "value",
-                "type": "float"
-              }
-            ]
-          },
-          {
-            "name": "PortPolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "port",
-                "type": "int32"
-              },
-              {
-                "id": 2,
-                "name": "protocol",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "PermissionPolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "permission_level",
-                "type": "PermissionLevel"
-              }
-            ]
-          },
-          {
-            "name": "ImageNamePolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "registry",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "remote",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "tag",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "PortExposurePolicy",
-            "fields": [
-              {
-                "id": 1,
-                "name": "exposure_levels",
-                "type": "PortConfig.ExposureLevel",
-                "is_repeated": true
-              }
-            ]
-          },
-          {
             "name": "Exclusion",
             "fields": [
               {
@@ -12127,13 +11939,7 @@
             "path": "google/protobuf/timestamp.proto"
           },
           {
-            "path": "storage/deployment.proto"
-          },
-          {
             "path": "storage/image.proto"
-          },
-          {
-            "path": "storage/rbac.proto"
           },
           {
             "path": "storage/scope.proto"
