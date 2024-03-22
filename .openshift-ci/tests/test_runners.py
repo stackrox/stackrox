@@ -210,6 +210,12 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         ClusterTestSetsRunner(sets=[{}, {"post_test": post_test}, {}]).run()
         post_test.run.assert_called_once()
 
+    def test_runs_final_post(self):
+        final_post = Mock()
+        ClusterTestSetsRunner(sets=[{}, {}],
+                              final_post=final_post).run()
+        final_post.run.assert_called_once()
+
     # Failure semantics
 
     def test_initial_failure_does_not_halt_the_set(self):
