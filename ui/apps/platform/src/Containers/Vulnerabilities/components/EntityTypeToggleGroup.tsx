@@ -29,6 +29,7 @@ export function EntityTabToggleGroup<EntityTabType extends EntityTab>({
         <ToggleGroup className={className} aria-label="Entity type toggle items">
             {entityTabs.map((tab) => (
                 <ToggleGroupItem
+                    key={tab}
                     text={`${pluralize(entityCounts[tab], tab)}`}
                     buttonId={tab}
                     isSelected={activeEntityTabKey === tab}
