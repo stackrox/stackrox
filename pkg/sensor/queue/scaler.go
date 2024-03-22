@@ -38,7 +38,7 @@ func ScaleSize(queueSize int) (int, error) {
 }
 
 // ScaleSizeOnNonDefault only scales the given integer setting if it is
-// set to its default value (e.g. not changed by hand).
+// set to its default value (i.e. not changed).
 func ScaleSizeOnNonDefault(setting *env.IntegerSetting) int {
 	v := setting.IntegerSetting()
 	if v != setting.DefaultValue() {
