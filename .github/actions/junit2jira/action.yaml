@@ -49,7 +49,6 @@ runs:
       else
         echo "Will create JIRA issues for junit failures found in ${{ inputs.directory }}"
       fi
-      ${{ inputs.debug_mode == true }}
       csv_output="$(mktemp --suffix=.csv)"
       ./junit2jira \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
