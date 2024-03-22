@@ -37,7 +37,7 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                 <Stack hasGutter>
                     {secrets.length > 0 ? (
                         secrets.map((secret, index) => (
-                            <StackItem>
+                            <StackItem key={`${secret.name}-${index}`}>
                                 <ExpandableSection
                                     toggleText={secret.name}
                                     onToggle={(_e, v) => setToggleAtIndex(v)}
