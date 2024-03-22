@@ -25,7 +25,7 @@ func (s *scalerTestSuite) TestScaleSize() {
 	}{
 		"50% memlimit": {
 			inputQueueSize:    100,
-			sensorMemLimit:    2097152000,
+			sensorMemLimit:    defaultMemLimit * 0.5,
 			expectedQueueSize: 50,
 		},
 		"50% memlimit - rounding up": {
