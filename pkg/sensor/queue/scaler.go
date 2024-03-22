@@ -17,6 +17,7 @@ var (
 
 // ScaleSize will scale the size of a given queue size based on the Sensor memory limit relative
 // to the default memory limit of 4GB. It returns the scaled queue size variable, which is at least 1.
+// The upper ceiling is defined by env.BufferScaleCeiling.
 // On errors, the unscaled size is returned, together with an error.
 func ScaleSize(queueSize int) (int, error) {
 	if roxLimit := os.Getenv("ROX_MEMLIMIT"); roxLimit != "" {
@@ -31,11 +32,16 @@ func ScaleSize(queueSize int) (int, error) {
 		}
 		ratio := float64(l) / defaultMemlimit
 
-		queueSize = int(math.Round(ratio * float64(queueSize)))
-		if queueSize <= 0 {
+		// Ensure lower limit
+		s := int(math.Round(ratio * float64(queueSize)))
+		if s <= 0 {
 			// Ensure that we always have at least a queue size of 1
-			queueSize = 1
+			s = 1
 		}
+
+		// Ensure upper limit
+		queueSize = int(math.Min(float64(s), float64(env.BufferScaleCeiling.IntegerSetting()*queueSize)))
+
 	}
 	return queueSize, nil
 }

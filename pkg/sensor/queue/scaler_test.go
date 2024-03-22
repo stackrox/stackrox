@@ -21,6 +21,7 @@ func (s *scalerTestSuite) TestScaleSize() {
 	cases := map[string]struct {
 		inputQueueSize    int
 		sensorMemLimit    int
+		bufferCeiling     int
 		expectedQueueSize int
 	}{
 		"50% memlimit": {
@@ -48,12 +49,27 @@ func (s *scalerTestSuite) TestScaleSize() {
 			sensorMemLimit:    0,
 			expectedQueueSize: 100,
 		},
+		"Upper limit hit": {
+			inputQueueSize:    100,
+			sensorMemLimit:    int(defaultMemlimit * 10),
+			expectedQueueSize: 300,
+		},
+		"Custom upper limit": {
+			inputQueueSize:    100,
+			sensorMemLimit:    int(defaultMemlimit * 10),
+			bufferCeiling:     5,
+			expectedQueueSize: 500,
+		},
 	}
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			err := os.Setenv("ROX_MEMLIMIT", strconv.Itoa(c.sensorMemLimit))
 			s.NoError(err)
+			if c.bufferCeiling != 0 {
+				err := os.Setenv("ROX_SENSOR_BUFFER_SCALE_CEILING", strconv.Itoa(c.bufferCeiling))
+				s.NoError(err)
+			}
 
 			actual, err := ScaleSize(c.inputQueueSize)
 
@@ -74,8 +90,9 @@ func (s *scalerTestSuite) TestScaleSizeEnvConversion() {
 	err := os.Setenv("ROX_MEMLIMIT", "definitelyNotAnInteger")
 	s.NoError(err)
 
-	_, err = ScaleSize(100)
+	actual, err := ScaleSize(100)
 	s.ErrorContains(err, "strconv.ParseInt: parsing")
+	s.Equal(100, actual, "ScaleSize must return the input on error")
 }
 
 func (s *scalerTestSuite) TestScaleSizeOnNonDefault() {
