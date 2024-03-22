@@ -32,23 +32,8 @@ class ClusterTestSetsRunner:
         self.final_post = final_post
 
     def run(self):
-        hold = None
-        try:
-            self.log_event("About to provision")
-            self.cluster.provision()
-            self.log_event("provisioned")
-        except Exception as err:
-            self.log_event(f"ERROR: provision failed [{err}]")
-            hold = err
-
-        if hold is None:
-            try:
-                self.log_event("About to run initial pre test")
-                self.initial_pre_test.run()
-                self.log_event("initial pre test completed")
-            except Exception as err:
-                self.log_event(f"ERROR: initial pre test failed [{err}]")
-                hold = err
+        hold = self.cluster_provision()
+        hold = self.run_initial_pre_test(hold)
 
         if hold is None:
             for idx, test_set in enumerate(self.sets):
@@ -92,6 +77,28 @@ class ClusterTestSetsRunner:
 
         if hold is not None:
             raise hold
+
+    def cluster_provision(self):
+        hold = None
+        try:
+            self.log_event("About to provision")
+            self.cluster.provision()
+            self.log_event("provisioned")
+        except Exception as err:
+            self.log_event(f"ERROR: provision failed [{err}]")
+            hold = err
+        return hold
+
+    def run_initial_pre_test(self, hold):
+        if hold is None:
+            try:
+                self.log_event("About to run initial pre test")
+                self.initial_pre_test.run()
+                self.log_event("initial pre test completed")
+            except Exception as err:
+                self.log_event(f"ERROR: initial pre test failed [{err}]")
+                hold = err
+        return hold
 
     def run_test_set(self, test_set):
         hold = None
