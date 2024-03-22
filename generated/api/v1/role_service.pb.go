@@ -72,7 +72,7 @@ func (*Permission) Descriptor() ([]byte, []int) {
 func (m *Permission) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Permission) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Permission) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Permission.Marshal(b, m, deterministic)
 	} else {
@@ -139,7 +139,7 @@ func (*GetRolesResponse) Descriptor() ([]byte, []int) {
 func (m *GetRolesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetRolesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetRolesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetRolesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -207,7 +207,7 @@ func (*GetPermissionsResponse) Descriptor() ([]byte, []int) {
 func (m *GetPermissionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetPermissionsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetPermissionsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -273,7 +273,7 @@ func (*GetResourcesResponse) Descriptor() ([]byte, []int) {
 func (m *GetResourcesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetResourcesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetResourcesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetResourcesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -337,7 +337,7 @@ func (*ListPermissionSetsResponse) Descriptor() ([]byte, []int) {
 func (m *ListPermissionSetsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListPermissionSetsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListPermissionSetsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListPermissionSetsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -403,7 +403,7 @@ func (*ListSimpleAccessScopesResponse) Descriptor() ([]byte, []int) {
 func (m *ListSimpleAccessScopesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListSimpleAccessScopesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListSimpleAccessScopesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListSimpleAccessScopesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -472,7 +472,7 @@ func (*ScopeObject) Descriptor() ([]byte, []int) {
 func (m *ScopeObject) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScopeObject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScopeObject) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScopeObject.Marshal(b, m, deterministic)
 	} else {
@@ -539,7 +539,7 @@ func (*GetClustersForPermissionsResponse) Descriptor() ([]byte, []int) {
 func (m *GetClustersForPermissionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetClustersForPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetClustersForPermissionsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetClustersForPermissionsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -609,7 +609,7 @@ func (*GetNamespacesForClusterAndPermissionsResponse) Descriptor() ([]byte, []in
 func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNamespacesForClusterAndPermissionsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -676,7 +676,7 @@ func (*ComputeEffectiveAccessScopeRequest) Descriptor() ([]byte, []int) {
 func (m *ComputeEffectiveAccessScopeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComputeEffectiveAccessScopeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComputeEffectiveAccessScopeRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComputeEffectiveAccessScopeRequest.Marshal(b, m, deterministic)
 	} else {
@@ -753,7 +753,7 @@ func (*ComputeEffectiveAccessScopeRequest_Payload) Descriptor() ([]byte, []int) 
 func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComputeEffectiveAccessScopeRequest_Payload.Marshal(b, m, deterministic)
 	} else {
@@ -779,7 +779,7 @@ var xxx_messageInfo_ComputeEffectiveAccessScopeRequest_Payload proto.InternalMes
 
 type isComputeEffectiveAccessScopeRequest_Payload_RulesOpt interface {
 	isComputeEffectiveAccessScopeRequest_Payload_RulesOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isComputeEffectiveAccessScopeRequest_Payload_RulesOpt
 }
@@ -857,7 +857,7 @@ func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
 func (m *CreateRoleRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateRoleRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateRoleRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateRoleRequest.Marshal(b, m, deterministic)
 	} else {
@@ -926,7 +926,7 @@ func (*GetClustersForPermissionsRequest) Descriptor() ([]byte, []int) {
 func (m *GetClustersForPermissionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetClustersForPermissionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetClustersForPermissionsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetClustersForPermissionsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1003,7 +1003,7 @@ func (*GetNamespaceForClusterAndPermissionsRequest) Descriptor() ([]byte, []int)
 func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNamespaceForClusterAndPermissionsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -2042,7 +2042,7 @@ var _RoleService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/role_service.proto",
 }
 
-func (m *Permission) Marshal() (dAtA []byte, err error) {
+func (m *Permission) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2052,7 +2052,7 @@ func (m *Permission) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Permission) MarshalTo(dAtA []byte) (int, error) {
+func (m *Permission) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2081,7 +2081,7 @@ func (m *Permission) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetRolesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetRolesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2091,7 +2091,7 @@ func (m *GetRolesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetRolesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetRolesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2122,7 +2122,7 @@ func (m *GetRolesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetPermissionsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetPermissionsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2132,7 +2132,7 @@ func (m *GetPermissionsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetPermissionsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetPermissionsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2166,7 +2166,7 @@ func (m *GetPermissionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetResourcesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetResourcesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2176,7 +2176,7 @@ func (m *GetResourcesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetResourcesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetResourcesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2202,7 +2202,7 @@ func (m *GetResourcesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListPermissionSetsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListPermissionSetsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2212,7 +2212,7 @@ func (m *ListPermissionSetsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListPermissionSetsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListPermissionSetsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2243,7 +2243,7 @@ func (m *ListPermissionSetsResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ListSimpleAccessScopesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListSimpleAccessScopesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2253,7 +2253,7 @@ func (m *ListSimpleAccessScopesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListSimpleAccessScopesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListSimpleAccessScopesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2284,7 +2284,7 @@ func (m *ListSimpleAccessScopesResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *ScopeObject) Marshal() (dAtA []byte, err error) {
+func (m *ScopeObject) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2294,7 +2294,7 @@ func (m *ScopeObject) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScopeObject) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScopeObject) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2325,7 +2325,7 @@ func (m *ScopeObject) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetClustersForPermissionsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetClustersForPermissionsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2335,7 +2335,7 @@ func (m *GetClustersForPermissionsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetClustersForPermissionsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetClustersForPermissionsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2366,7 +2366,7 @@ func (m *GetClustersForPermissionsResponse) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNamespacesForClusterAndPermissionsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2376,7 +2376,7 @@ func (m *GetNamespacesForClusterAndPermissionsResponse) Marshal() (dAtA []byte, 
 	return dAtA[:n], nil
 }
 
-func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2407,7 +2407,7 @@ func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalToSizedBuffer(dAt
 	return len(dAtA) - i, nil
 }
 
-func (m *ComputeEffectiveAccessScopeRequest) Marshal() (dAtA []byte, err error) {
+func (m *ComputeEffectiveAccessScopeRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2417,7 +2417,7 @@ func (m *ComputeEffectiveAccessScopeRequest) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *ComputeEffectiveAccessScopeRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComputeEffectiveAccessScopeRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2451,7 +2451,7 @@ func (m *ComputeEffectiveAccessScopeRequest) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *ComputeEffectiveAccessScopeRequest_Payload) Marshal() (dAtA []byte, err error) {
+func (m *ComputeEffectiveAccessScopeRequest_Payload) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2461,7 +2461,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) Marshal() (dAtA []byte, err
 	return dAtA[:n], nil
 }
 
-func (m *ComputeEffectiveAccessScopeRequest_Payload) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComputeEffectiveAccessScopeRequest_Payload) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2479,7 +2479,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) MarshalToSizedBuffer(dAtA [
 		{
 			size := m.RulesOpt.Size()
 			i -= size
-			if _, err := m.RulesOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.RulesOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2487,7 +2487,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) MarshalToSizedBuffer(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2508,7 +2508,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) MarshalToSizedB
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CreateRoleRequest) Marshal() (dAtA []byte, err error) {
+func (m *CreateRoleRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2518,7 +2518,7 @@ func (m *CreateRoleRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateRoleRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *CreateRoleRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2554,7 +2554,7 @@ func (m *CreateRoleRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetClustersForPermissionsRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetClustersForPermissionsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2564,7 +2564,7 @@ func (m *GetClustersForPermissionsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetClustersForPermissionsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetClustersForPermissionsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2602,7 +2602,7 @@ func (m *GetClustersForPermissionsRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNamespaceForClusterAndPermissionsRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNamespaceForClusterAndPermissionsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2612,7 +2612,7 @@ func (m *GetNamespaceForClusterAndPermissionsRequest) Marshal() (dAtA []byte, er
 	return dAtA[:n], nil
 }
 
-func (m *GetNamespaceForClusterAndPermissionsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNamespaceForClusterAndPermissionsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

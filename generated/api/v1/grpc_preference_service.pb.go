@@ -42,7 +42,7 @@ func (*Preferences) Descriptor() ([]byte, []int) {
 func (m *Preferences) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Preferences) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Preferences) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Preferences.Marshal(b, m, deterministic)
 	} else {
@@ -195,7 +195,7 @@ var _GRPCPreferencesService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/grpc_preference_service.proto",
 }
 
-func (m *Preferences) Marshal() (dAtA []byte, err error) {
+func (m *Preferences) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -205,7 +205,7 @@ func (m *Preferences) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Preferences) MarshalTo(dAtA []byte) (int, error) {
+func (m *Preferences) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

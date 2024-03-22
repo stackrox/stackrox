@@ -42,7 +42,7 @@ func (*GetUpgradeStatusResponse) Descriptor() ([]byte, []int) {
 func (m *GetUpgradeStatusResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetUpgradeStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetUpgradeStatusResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetUpgradeStatusResponse.Marshal(b, m, deterministic)
 	} else {
@@ -111,7 +111,7 @@ func (*CentralUpgradeStatus) Descriptor() ([]byte, []int) {
 func (m *CentralUpgradeStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CentralUpgradeStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CentralUpgradeStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CentralUpgradeStatus.Marshal(b, m, deterministic)
 	} else {
@@ -304,7 +304,7 @@ var _CentralHealthService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/central_health_service.proto",
 }
 
-func (m *GetUpgradeStatusResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetUpgradeStatusResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -314,7 +314,7 @@ func (m *GetUpgradeStatusResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetUpgradeStatusResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetUpgradeStatusResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -343,7 +343,7 @@ func (m *GetUpgradeStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CentralUpgradeStatus) Marshal() (dAtA []byte, err error) {
+func (m *CentralUpgradeStatus) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -353,7 +353,7 @@ func (m *CentralUpgradeStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CentralUpgradeStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *CentralUpgradeStatus) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -114,7 +114,7 @@ func (*DBRestoreRequestHeader) Descriptor() ([]byte, []int) {
 func (m *DBRestoreRequestHeader) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBRestoreRequestHeader) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBRestoreRequestHeader) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBRestoreRequestHeader.Marshal(b, m, deterministic)
 	} else {
@@ -195,7 +195,7 @@ func (*DBRestoreRequestHeader_LocalFileInfo) Descriptor() ([]byte, []int) {
 func (m *DBRestoreRequestHeader_LocalFileInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBRestoreRequestHeader_LocalFileInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBRestoreRequestHeader_LocalFileInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBRestoreRequestHeader_LocalFileInfo.Marshal(b, m, deterministic)
 	} else {
@@ -271,7 +271,7 @@ func (*DBRestoreProcessMetadata) Descriptor() ([]byte, []int) {
 func (m *DBRestoreProcessMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBRestoreProcessMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBRestoreProcessMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBRestoreProcessMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -360,7 +360,7 @@ func (*DBRestoreProcessStatus) Descriptor() ([]byte, []int) {
 func (m *DBRestoreProcessStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBRestoreProcessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBRestoreProcessStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBRestoreProcessStatus.Marshal(b, m, deterministic)
 	} else {
@@ -464,7 +464,7 @@ func (*DBRestoreProcessStatus_ResumeInfo) Descriptor() ([]byte, []int) {
 func (m *DBRestoreProcessStatus_ResumeInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBRestoreProcessStatus_ResumeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBRestoreProcessStatus_ResumeInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBRestoreProcessStatus_ResumeInfo.Marshal(b, m, deterministic)
 	} else {
@@ -527,7 +527,7 @@ func (*DBExportManifest) Descriptor() ([]byte, []int) {
 func (m *DBExportManifest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBExportManifest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBExportManifest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBExportManifest.Marshal(b, m, deterministic)
 	} else {
@@ -601,7 +601,7 @@ func (*DBExportManifest_File) Descriptor() ([]byte, []int) {
 func (m *DBExportManifest_File) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBExportManifest_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBExportManifest_File) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBExportManifest_File.Marshal(b, m, deterministic)
 	} else {
@@ -691,7 +691,7 @@ func (*DBExportFormat) Descriptor() ([]byte, []int) {
 func (m *DBExportFormat) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBExportFormat) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBExportFormat) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBExportFormat.Marshal(b, m, deterministic)
 	} else {
@@ -765,7 +765,7 @@ func (*DBExportFormat_File) Descriptor() ([]byte, []int) {
 func (m *DBExportFormat_File) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DBExportFormat_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DBExportFormat_File) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DBExportFormat_File.Marshal(b, m, deterministic)
 	} else {
@@ -833,7 +833,7 @@ func (*GetDBExportCapabilitiesResponse) Descriptor() ([]byte, []int) {
 func (m *GetDBExportCapabilitiesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDBExportCapabilitiesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDBExportCapabilitiesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDBExportCapabilitiesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -910,7 +910,7 @@ func (*GetActiveDBRestoreProcessResponse) Descriptor() ([]byte, []int) {
 func (m *GetActiveDBRestoreProcessResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetActiveDBRestoreProcessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetActiveDBRestoreProcessResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetActiveDBRestoreProcessResponse.Marshal(b, m, deterministic)
 	} else {
@@ -972,7 +972,7 @@ func (*InterruptDBRestoreProcessRequest) Descriptor() ([]byte, []int) {
 func (m *InterruptDBRestoreProcessRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InterruptDBRestoreProcessRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InterruptDBRestoreProcessRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InterruptDBRestoreProcessRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1039,7 +1039,7 @@ func (*InterruptDBRestoreProcessResponse) Descriptor() ([]byte, []int) {
 func (m *InterruptDBRestoreProcessResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InterruptDBRestoreProcessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InterruptDBRestoreProcessResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InterruptDBRestoreProcessResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1368,7 +1368,7 @@ var _DBService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/db_service.proto",
 }
 
-func (m *DBRestoreRequestHeader) Marshal() (dAtA []byte, err error) {
+func (m *DBRestoreRequestHeader) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1378,7 +1378,7 @@ func (m *DBRestoreRequestHeader) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBRestoreRequestHeader) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBRestoreRequestHeader) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1426,7 +1426,7 @@ func (m *DBRestoreRequestHeader) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DBRestoreRequestHeader_LocalFileInfo) Marshal() (dAtA []byte, err error) {
+func (m *DBRestoreRequestHeader_LocalFileInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1436,7 +1436,7 @@ func (m *DBRestoreRequestHeader_LocalFileInfo) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *DBRestoreRequestHeader_LocalFileInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBRestoreRequestHeader_LocalFileInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1465,7 +1465,7 @@ func (m *DBRestoreRequestHeader_LocalFileInfo) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *DBRestoreProcessMetadata) Marshal() (dAtA []byte, err error) {
+func (m *DBRestoreProcessMetadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1475,7 +1475,7 @@ func (m *DBRestoreProcessMetadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBRestoreProcessMetadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBRestoreProcessMetadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1530,7 +1530,7 @@ func (m *DBRestoreProcessMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *DBRestoreProcessStatus) Marshal() (dAtA []byte, err error) {
+func (m *DBRestoreProcessStatus) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1540,7 +1540,7 @@ func (m *DBRestoreProcessStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBRestoreProcessStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBRestoreProcessStatus) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1610,7 +1610,7 @@ func (m *DBRestoreProcessStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DBRestoreProcessStatus_ResumeInfo) Marshal() (dAtA []byte, err error) {
+func (m *DBRestoreProcessStatus_ResumeInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1620,7 +1620,7 @@ func (m *DBRestoreProcessStatus_ResumeInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBRestoreProcessStatus_ResumeInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBRestoreProcessStatus_ResumeInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1642,7 +1642,7 @@ func (m *DBRestoreProcessStatus_ResumeInfo) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *DBExportManifest) Marshal() (dAtA []byte, err error) {
+func (m *DBExportManifest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1652,7 +1652,7 @@ func (m *DBExportManifest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBExportManifest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBExportManifest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1683,7 +1683,7 @@ func (m *DBExportManifest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DBExportManifest_File) Marshal() (dAtA []byte, err error) {
+func (m *DBExportManifest_File) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1693,7 +1693,7 @@ func (m *DBExportManifest_File) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBExportManifest_File) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBExportManifest_File) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1738,7 +1738,7 @@ func (m *DBExportManifest_File) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DBExportFormat) Marshal() (dAtA []byte, err error) {
+func (m *DBExportFormat) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1748,7 +1748,7 @@ func (m *DBExportFormat) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBExportFormat) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBExportFormat) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1786,7 +1786,7 @@ func (m *DBExportFormat) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DBExportFormat_File) Marshal() (dAtA []byte, err error) {
+func (m *DBExportFormat_File) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1796,7 +1796,7 @@ func (m *DBExportFormat_File) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DBExportFormat_File) MarshalTo(dAtA []byte) (int, error) {
+func (m *DBExportFormat_File) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1830,7 +1830,7 @@ func (m *DBExportFormat_File) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetDBExportCapabilitiesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetDBExportCapabilitiesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1840,7 +1840,7 @@ func (m *GetDBExportCapabilitiesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDBExportCapabilitiesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetDBExportCapabilitiesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1889,7 +1889,7 @@ func (m *GetDBExportCapabilitiesResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *GetActiveDBRestoreProcessResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetActiveDBRestoreProcessResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1899,7 +1899,7 @@ func (m *GetActiveDBRestoreProcessResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetActiveDBRestoreProcessResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetActiveDBRestoreProcessResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1928,7 +1928,7 @@ func (m *GetActiveDBRestoreProcessResponse) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *InterruptDBRestoreProcessRequest) Marshal() (dAtA []byte, err error) {
+func (m *InterruptDBRestoreProcessRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1938,7 +1938,7 @@ func (m *InterruptDBRestoreProcessRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InterruptDBRestoreProcessRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *InterruptDBRestoreProcessRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1969,7 +1969,7 @@ func (m *InterruptDBRestoreProcessRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *InterruptDBRestoreProcessResponse) Marshal() (dAtA []byte, err error) {
+func (m *InterruptDBRestoreProcessResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1979,7 +1979,7 @@ func (m *InterruptDBRestoreProcessResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InterruptDBRestoreProcessResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *InterruptDBRestoreProcessResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

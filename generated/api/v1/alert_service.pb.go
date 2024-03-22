@@ -97,7 +97,7 @@ func (*CountAlertsResponse) Descriptor() ([]byte, []int) {
 func (m *CountAlertsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountAlertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountAlertsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountAlertsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -158,7 +158,7 @@ func (*ListAlertsRequest) Descriptor() ([]byte, []int) {
 func (m *ListAlertsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlertsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlertsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -228,7 +228,7 @@ func (*ResolveAlertRequest) Descriptor() ([]byte, []int) {
 func (m *ResolveAlertRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResolveAlertRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResolveAlertRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResolveAlertRequest.Marshal(b, m, deterministic)
 	} else {
@@ -303,7 +303,7 @@ func (*ResolveAlertsRequest) Descriptor() ([]byte, []int) {
 func (m *ResolveAlertsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResolveAlertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResolveAlertsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResolveAlertsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -364,7 +364,7 @@ func (*SnoozeAlertRequest) Descriptor() ([]byte, []int) {
 func (m *SnoozeAlertRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SnoozeAlertRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SnoozeAlertRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SnoozeAlertRequest.Marshal(b, m, deterministic)
 	} else {
@@ -432,7 +432,7 @@ func (*ListAlertsResponse) Descriptor() ([]byte, []int) {
 func (m *ListAlertsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlertsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlertsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -499,7 +499,7 @@ func (*DeleteAlertsRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteAlertsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteAlertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteAlertsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteAlertsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -568,7 +568,7 @@ func (*DeleteAlertsResponse) Descriptor() ([]byte, []int) {
 func (m *DeleteAlertsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteAlertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteAlertsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteAlertsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -635,7 +635,7 @@ func (*GetAlertsGroupResponse) Descriptor() ([]byte, []int) {
 func (m *GetAlertsGroupResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertsGroupResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertsGroupResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertsGroupResponse.Marshal(b, m, deterministic)
 	} else {
@@ -702,7 +702,7 @@ func (*GetAlertsGroupResponse_PolicyGroup) Descriptor() ([]byte, []int) {
 func (m *GetAlertsGroupResponse_PolicyGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertsGroupResponse_PolicyGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertsGroupResponse_PolicyGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertsGroupResponse_PolicyGroup.Marshal(b, m, deterministic)
 	} else {
@@ -771,7 +771,7 @@ func (*GetAlertsCountsRequest) Descriptor() ([]byte, []int) {
 func (m *GetAlertsCountsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertsCountsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertsCountsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertsCountsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -839,7 +839,7 @@ func (*GetAlertsCountsResponse) Descriptor() ([]byte, []int) {
 func (m *GetAlertsCountsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertsCountsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertsCountsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertsCountsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -906,7 +906,7 @@ func (*GetAlertsCountsResponse_AlertGroup) Descriptor() ([]byte, []int) {
 func (m *GetAlertsCountsResponse_AlertGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertsCountsResponse_AlertGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertsCountsResponse_AlertGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertsCountsResponse_AlertGroup.Marshal(b, m, deterministic)
 	} else {
@@ -984,7 +984,7 @@ func (*GetAlertsCountsResponse_AlertGroup_AlertCounts) Descriptor() ([]byte, []i
 func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertsCountsResponse_AlertGroup_AlertCounts.Marshal(b, m, deterministic)
 	} else {
@@ -1053,7 +1053,7 @@ func (*AlertEvent) Descriptor() ([]byte, []int) {
 func (m *AlertEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AlertEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AlertEvent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AlertEvent.Marshal(b, m, deterministic)
 	} else {
@@ -1127,7 +1127,7 @@ func (*GetAlertTimeseriesResponse) Descriptor() ([]byte, []int) {
 func (m *GetAlertTimeseriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertTimeseriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertTimeseriesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertTimeseriesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1196,7 +1196,7 @@ func (*GetAlertTimeseriesResponse_ClusterAlerts) Descriptor() ([]byte, []int) {
 func (m *GetAlertTimeseriesResponse_ClusterAlerts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertTimeseriesResponse_ClusterAlerts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertTimeseriesResponse_ClusterAlerts.Marshal(b, m, deterministic)
 	} else {
@@ -1274,7 +1274,7 @@ func (*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) Descriptor() ([]byt
 func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents.Marshal(b, m, deterministic)
 	} else {
@@ -1859,7 +1859,7 @@ var _AlertService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/alert_service.proto",
 }
 
-func (m *CountAlertsResponse) Marshal() (dAtA []byte, err error) {
+func (m *CountAlertsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1869,7 +1869,7 @@ func (m *CountAlertsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountAlertsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountAlertsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1891,7 +1891,7 @@ func (m *CountAlertsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlertsRequest) Marshal() (dAtA []byte, err error) {
+func (m *ListAlertsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1901,7 +1901,7 @@ func (m *ListAlertsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlertsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlertsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1937,7 +1937,7 @@ func (m *ListAlertsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ResolveAlertRequest) Marshal() (dAtA []byte, err error) {
+func (m *ResolveAlertRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1947,7 +1947,7 @@ func (m *ResolveAlertRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResolveAlertRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResolveAlertRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1991,7 +1991,7 @@ func (m *ResolveAlertRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ResolveAlertsRequest) Marshal() (dAtA []byte, err error) {
+func (m *ResolveAlertsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2001,7 +2001,7 @@ func (m *ResolveAlertsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResolveAlertsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResolveAlertsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2025,7 +2025,7 @@ func (m *ResolveAlertsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SnoozeAlertRequest) Marshal() (dAtA []byte, err error) {
+func (m *SnoozeAlertRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2035,7 +2035,7 @@ func (m *SnoozeAlertRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SnoozeAlertRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *SnoozeAlertRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2071,7 +2071,7 @@ func (m *SnoozeAlertRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlertsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListAlertsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2081,7 +2081,7 @@ func (m *ListAlertsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlertsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlertsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2112,7 +2112,7 @@ func (m *ListAlertsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteAlertsRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeleteAlertsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2122,7 +2122,7 @@ func (m *DeleteAlertsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteAlertsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteAlertsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2161,7 +2161,7 @@ func (m *DeleteAlertsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteAlertsResponse) Marshal() (dAtA []byte, err error) {
+func (m *DeleteAlertsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2171,7 +2171,7 @@ func (m *DeleteAlertsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteAlertsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteAlertsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2203,7 +2203,7 @@ func (m *DeleteAlertsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertsGroupResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertsGroupResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2213,7 +2213,7 @@ func (m *GetAlertsGroupResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertsGroupResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertsGroupResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2244,7 +2244,7 @@ func (m *GetAlertsGroupResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertsGroupResponse_PolicyGroup) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertsGroupResponse_PolicyGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2254,7 +2254,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertsGroupResponse_PolicyGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertsGroupResponse_PolicyGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2288,7 +2288,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertsCountsRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertsCountsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2298,7 +2298,7 @@ func (m *GetAlertsCountsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertsCountsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertsCountsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2332,7 +2332,7 @@ func (m *GetAlertsCountsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertsCountsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertsCountsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2342,7 +2342,7 @@ func (m *GetAlertsCountsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertsCountsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertsCountsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2373,7 +2373,7 @@ func (m *GetAlertsCountsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertsCountsResponse_AlertGroup) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertsCountsResponse_AlertGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2383,7 +2383,7 @@ func (m *GetAlertsCountsResponse_AlertGroup) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertsCountsResponse_AlertGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertsCountsResponse_AlertGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2421,7 +2421,7 @@ func (m *GetAlertsCountsResponse_AlertGroup) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2431,7 +2431,7 @@ func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) Marshal() (dAtA []byte,
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2458,7 +2458,7 @@ func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) MarshalToSizedBuffer(dA
 	return len(dAtA) - i, nil
 }
 
-func (m *AlertEvent) Marshal() (dAtA []byte, err error) {
+func (m *AlertEvent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2468,7 +2468,7 @@ func (m *AlertEvent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AlertEvent) MarshalTo(dAtA []byte) (int, error) {
+func (m *AlertEvent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2502,7 +2502,7 @@ func (m *AlertEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertTimeseriesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertTimeseriesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2512,7 +2512,7 @@ func (m *GetAlertTimeseriesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertTimeseriesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertTimeseriesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2543,7 +2543,7 @@ func (m *GetAlertTimeseriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertTimeseriesResponse_ClusterAlerts) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2553,7 +2553,7 @@ func (m *GetAlertTimeseriesResponse_ClusterAlerts) Marshal() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertTimeseriesResponse_ClusterAlerts) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2591,7 +2591,7 @@ func (m *GetAlertTimeseriesResponse_ClusterAlerts) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) Marshal() (dAtA []byte, err error) {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2601,7 +2601,7 @@ func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) Marshal() (dAtA [
 	return dAtA[:n], nil
 }
 
-func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

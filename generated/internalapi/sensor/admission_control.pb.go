@@ -47,7 +47,7 @@ func (*AdmissionControlSettings) Descriptor() ([]byte, []int) {
 func (m *AdmissionControlSettings) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdmissionControlSettings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdmissionControlSettings) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdmissionControlSettings.Marshal(b, m, deterministic)
 	} else {
@@ -153,7 +153,7 @@ func (*AdmissionControlAlerts) Descriptor() ([]byte, []int) {
 func (m *AdmissionControlAlerts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdmissionControlAlerts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdmissionControlAlerts) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdmissionControlAlerts.Marshal(b, m, deterministic)
 	} else {
@@ -225,7 +225,7 @@ func (*AdmCtrlUpdateResourceRequest) Descriptor() ([]byte, []int) {
 func (m *AdmCtrlUpdateResourceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdmCtrlUpdateResourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdmCtrlUpdateResourceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdmCtrlUpdateResourceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -251,7 +251,7 @@ var xxx_messageInfo_AdmCtrlUpdateResourceRequest proto.InternalMessageInfo
 
 type isAdmCtrlUpdateResourceRequest_Resource interface {
 	isAdmCtrlUpdateResourceRequest_Resource()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isAdmCtrlUpdateResourceRequest_Resource
 }
@@ -401,7 +401,7 @@ func (*AdmCtrlUpdateResourceRequest_ResourcesSynced) Descriptor() ([]byte, []int
 func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdmCtrlUpdateResourceRequest_ResourcesSynced.Marshal(b, m, deterministic)
 	} else {
@@ -490,7 +490,7 @@ var fileDescriptor_c391cfbe1d10cdc6 = []byte{
 	0xe4, 0xf3, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x71, 0x0f, 0x92, 0xe7, 0x59, 0x04, 0x00, 0x00,
 }
 
-func (m *AdmissionControlSettings) Marshal() (dAtA []byte, err error) {
+func (m *AdmissionControlSettings) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -500,7 +500,7 @@ func (m *AdmissionControlSettings) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdmissionControlSettings) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmissionControlSettings) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -586,7 +586,7 @@ func (m *AdmissionControlSettings) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *AdmissionControlAlerts) Marshal() (dAtA []byte, err error) {
+func (m *AdmissionControlAlerts) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -596,7 +596,7 @@ func (m *AdmissionControlAlerts) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdmissionControlAlerts) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmissionControlAlerts) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -627,7 +627,7 @@ func (m *AdmissionControlAlerts) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *AdmCtrlUpdateResourceRequest) Marshal() (dAtA []byte, err error) {
+func (m *AdmCtrlUpdateResourceRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -637,7 +637,7 @@ func (m *AdmCtrlUpdateResourceRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdmCtrlUpdateResourceRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmCtrlUpdateResourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -655,7 +655,7 @@ func (m *AdmCtrlUpdateResourceRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 		{
 			size := m.Resource.Size()
 			i -= size
-			if _, err := m.Resource.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Resource.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -668,7 +668,7 @@ func (m *AdmCtrlUpdateResourceRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *AdmCtrlUpdateResourceRequest_Deployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmCtrlUpdateResourceRequest_Deployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -689,7 +689,7 @@ func (m *AdmCtrlUpdateResourceRequest_Deployment) MarshalToSizedBuffer(dAtA []by
 	}
 	return len(dAtA) - i, nil
 }
-func (m *AdmCtrlUpdateResourceRequest_Pod) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmCtrlUpdateResourceRequest_Pod) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -710,7 +710,7 @@ func (m *AdmCtrlUpdateResourceRequest_Pod) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *AdmCtrlUpdateResourceRequest_Namespace) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmCtrlUpdateResourceRequest_Namespace) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -731,7 +731,7 @@ func (m *AdmCtrlUpdateResourceRequest_Namespace) MarshalToSizedBuffer(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *AdmCtrlUpdateResourceRequest_Synced) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmCtrlUpdateResourceRequest_Synced) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -752,7 +752,7 @@ func (m *AdmCtrlUpdateResourceRequest_Synced) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) Marshal() (dAtA []byte, err error) {
+func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -762,7 +762,7 @@ func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) Marshal() (dAtA []byte, e
 	return dAtA[:n], nil
 }
 
-func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

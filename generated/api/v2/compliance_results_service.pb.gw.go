@@ -566,21 +566,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanCheckResult_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanCheckResult_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -589,21 +589,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanResultsOverview_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanResultsOverview_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanResultsOverview_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanResultsOverview_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -612,21 +612,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanResults_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanResults_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanResults_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanResults_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -635,21 +635,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -658,21 +658,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceProfileStats_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceProfileStats_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceProfileStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceProfileStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -681,21 +681,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceProfilesStats_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceProfilesStats_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceProfilesStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceProfilesStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -704,21 +704,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceClusterScanStats_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceClusterScanStats_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceClusterScanStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceClusterScanStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -727,21 +727,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceOverallClusterStats_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceOverallClusterStats_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceOverallClusterStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceOverallClusterStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -750,21 +750,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceOverallClusterCount_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceOverallClusterCount_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceOverallClusterCount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceOverallClusterCount_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -773,21 +773,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanResultsCount_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanResultsCount_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanResultsCount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanResultsCount_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -796,21 +796,21 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -858,220 +858,220 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceScanCheckResult_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceScanCheckResult_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanResultsOverview_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceScanResultsOverview_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceScanResultsOverview_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanResultsOverview_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanResultsOverview_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceScanResults_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceScanResults_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanResults_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanResults_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceProfileStats_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceProfileStats_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceProfileStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceProfileStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfilesStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceProfilesStats_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceProfilesStats_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceProfilesStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceProfilesStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceClusterScanStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceClusterScanStats_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceClusterScanStats_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceClusterScanStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceClusterScanStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceOverallClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceOverallClusterStats_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceOverallClusterStats_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceOverallClusterStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceOverallClusterStats_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceOverallClusterCount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceOverallClusterCount_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceOverallClusterCount_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceOverallClusterCount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceOverallClusterCount_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanResultsCount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceScanResultsCount_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceScanResultsCount_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanResultsCount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanResultsCount_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceResultsService_GetComplianceScanConfigurationResultsCount_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 

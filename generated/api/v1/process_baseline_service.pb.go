@@ -43,7 +43,7 @@ func (*GetProcessBaselineRequest) Descriptor() ([]byte, []int) {
 func (m *GetProcessBaselineRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProcessBaselineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProcessBaselineRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetProcessBaselineRequest.Marshal(b, m, deterministic)
 	} else {
@@ -106,7 +106,7 @@ func (*UpdateProcessBaselinesRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateProcessBaselinesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateProcessBaselinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateProcessBaselinesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateProcessBaselinesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -198,7 +198,7 @@ func (*ProcessBaselinesResponse) Descriptor() ([]byte, []int) {
 func (m *ProcessBaselinesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessBaselinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessBaselinesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessBaselinesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -265,7 +265,7 @@ func (*ProcessBaselineUpdateError) Descriptor() ([]byte, []int) {
 func (m *ProcessBaselineUpdateError) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessBaselineUpdateError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessBaselineUpdateError) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessBaselineUpdateError.Marshal(b, m, deterministic)
 	} else {
@@ -334,7 +334,7 @@ func (*UpdateProcessBaselinesResponse) Descriptor() ([]byte, []int) {
 func (m *UpdateProcessBaselinesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateProcessBaselinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateProcessBaselinesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateProcessBaselinesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -414,7 +414,7 @@ func (*LockProcessBaselinesRequest) Descriptor() ([]byte, []int) {
 func (m *LockProcessBaselinesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LockProcessBaselinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LockProcessBaselinesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LockProcessBaselinesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -488,7 +488,7 @@ func (*DeleteProcessBaselinesRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteProcessBaselinesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteProcessBaselinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteProcessBaselinesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteProcessBaselinesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -556,7 +556,7 @@ func (*DeleteProcessBaselinesResponse) Descriptor() ([]byte, []int) {
 func (m *DeleteProcessBaselinesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteProcessBaselinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteProcessBaselinesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteProcessBaselinesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -866,7 +866,7 @@ var _ProcessBaselineService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/process_baseline_service.proto",
 }
 
-func (m *GetProcessBaselineRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetProcessBaselineRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -876,7 +876,7 @@ func (m *GetProcessBaselineRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetProcessBaselineRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetProcessBaselineRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -905,7 +905,7 @@ func (m *GetProcessBaselineRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateProcessBaselinesRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateProcessBaselinesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -915,7 +915,7 @@ func (m *UpdateProcessBaselinesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateProcessBaselinesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateProcessBaselinesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -974,7 +974,7 @@ func (m *UpdateProcessBaselinesRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessBaselinesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ProcessBaselinesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -984,7 +984,7 @@ func (m *ProcessBaselinesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessBaselinesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessBaselinesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1015,7 +1015,7 @@ func (m *ProcessBaselinesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessBaselineUpdateError) Marshal() (dAtA []byte, err error) {
+func (m *ProcessBaselineUpdateError) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1025,7 +1025,7 @@ func (m *ProcessBaselineUpdateError) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessBaselineUpdateError) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessBaselineUpdateError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1061,7 +1061,7 @@ func (m *ProcessBaselineUpdateError) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateProcessBaselinesResponse) Marshal() (dAtA []byte, err error) {
+func (m *UpdateProcessBaselinesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1071,7 +1071,7 @@ func (m *UpdateProcessBaselinesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateProcessBaselinesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateProcessBaselinesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1116,7 +1116,7 @@ func (m *UpdateProcessBaselinesResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *LockProcessBaselinesRequest) Marshal() (dAtA []byte, err error) {
+func (m *LockProcessBaselinesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1126,7 +1126,7 @@ func (m *LockProcessBaselinesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LockProcessBaselinesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *LockProcessBaselinesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1167,7 +1167,7 @@ func (m *LockProcessBaselinesRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteProcessBaselinesRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeleteProcessBaselinesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1177,7 +1177,7 @@ func (m *DeleteProcessBaselinesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteProcessBaselinesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteProcessBaselinesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1211,7 +1211,7 @@ func (m *DeleteProcessBaselinesRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteProcessBaselinesResponse) Marshal() (dAtA []byte, err error) {
+func (m *DeleteProcessBaselinesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1221,7 +1221,7 @@ func (m *DeleteProcessBaselinesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteProcessBaselinesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteProcessBaselinesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

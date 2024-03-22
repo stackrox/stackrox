@@ -378,21 +378,21 @@ func RegisterNetworkBaselineServiceHandlerServer(ctx context.Context, mux *runti
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -401,21 +401,21 @@ func RegisterNetworkBaselineServiceHandlerServer(ctx context.Context, mux *runti
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NetworkBaselineService_GetNetworkBaseline_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NetworkBaselineService_GetNetworkBaseline_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_GetNetworkBaseline_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_GetNetworkBaseline_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -424,21 +424,21 @@ func RegisterNetworkBaselineServiceHandlerServer(ctx context.Context, mux *runti
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -447,21 +447,21 @@ func RegisterNetworkBaselineServiceHandlerServer(ctx context.Context, mux *runti
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NetworkBaselineService_LockNetworkBaseline_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NetworkBaselineService_LockNetworkBaseline_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_LockNetworkBaseline_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_LockNetworkBaseline_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -470,21 +470,21 @@ func RegisterNetworkBaselineServiceHandlerServer(ctx context.Context, mux *runti
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NetworkBaselineService_UnlockNetworkBaseline_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NetworkBaselineService_UnlockNetworkBaseline_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_UnlockNetworkBaseline_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_UnlockNetworkBaseline_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -532,100 +532,100 @@ func RegisterNetworkBaselineServiceHandlerClient(ctx context.Context, mux *runti
 	mux.Handle("POST", pattern_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_GetNetworkBaselineStatusForFlows_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_NetworkBaselineService_GetNetworkBaseline_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NetworkBaselineService_GetNetworkBaseline_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NetworkBaselineService_GetNetworkBaseline_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_GetNetworkBaseline_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_GetNetworkBaseline_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_NetworkBaselineService_ModifyBaselineStatusForPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NetworkBaselineService_ModifyBaselineStatusForPeers_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_ModifyBaselineStatusForPeers_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_NetworkBaselineService_LockNetworkBaseline_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NetworkBaselineService_LockNetworkBaseline_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NetworkBaselineService_LockNetworkBaseline_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_LockNetworkBaseline_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_LockNetworkBaseline_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_NetworkBaselineService_UnlockNetworkBaseline_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NetworkBaselineService_UnlockNetworkBaseline_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NetworkBaselineService_UnlockNetworkBaseline_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NetworkBaselineService_UnlockNetworkBaseline_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NetworkBaselineService_UnlockNetworkBaseline_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 

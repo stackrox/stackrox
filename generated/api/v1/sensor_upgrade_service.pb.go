@@ -68,7 +68,7 @@ func (*UpdateSensorUpgradeConfigRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateSensorUpgradeConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateSensorUpgradeConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateSensorUpgradeConfigRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateSensorUpgradeConfigRequest.Marshal(b, m, deterministic)
 	} else {
@@ -129,7 +129,7 @@ func (*GetSensorUpgradeConfigResponse) Descriptor() ([]byte, []int) {
 func (m *GetSensorUpgradeConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetSensorUpgradeConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetSensorUpgradeConfigResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetSensorUpgradeConfigResponse.Marshal(b, m, deterministic)
 	} else {
@@ -195,7 +195,7 @@ func (*GetSensorUpgradeConfigResponse_UpgradeConfig) Descriptor() ([]byte, []int
 func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetSensorUpgradeConfigResponse_UpgradeConfig.Marshal(b, m, deterministic)
 	} else {
@@ -481,7 +481,7 @@ var _SensorUpgradeService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/sensor_upgrade_service.proto",
 }
 
-func (m *UpdateSensorUpgradeConfigRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateSensorUpgradeConfigRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -491,7 +491,7 @@ func (m *UpdateSensorUpgradeConfigRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateSensorUpgradeConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateSensorUpgradeConfigRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -520,7 +520,7 @@ func (m *UpdateSensorUpgradeConfigRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *GetSensorUpgradeConfigResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetSensorUpgradeConfigResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -530,7 +530,7 @@ func (m *GetSensorUpgradeConfigResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetSensorUpgradeConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetSensorUpgradeConfigResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -559,7 +559,7 @@ func (m *GetSensorUpgradeConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) Marshal() (dAtA []byte, err error) {
+func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -569,7 +569,7 @@ func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) Marshal() (dAtA []byte, e
 	return dAtA[:n], nil
 }
 
-func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

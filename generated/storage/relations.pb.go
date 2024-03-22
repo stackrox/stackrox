@@ -48,7 +48,7 @@ func (*ImageComponentEdge) Descriptor() ([]byte, []int) {
 func (m *ImageComponentEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageComponentEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageComponentEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageComponentEdge.Marshal(b, m, deterministic)
 	} else {
@@ -74,7 +74,7 @@ var xxx_messageInfo_ImageComponentEdge proto.InternalMessageInfo
 
 type isImageComponentEdge_HasLayerIndex interface {
 	isImageComponentEdge_HasLayerIndex()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImageComponentEdge_HasLayerIndex
 }
@@ -184,7 +184,7 @@ func (*ComponentCVEEdge) Descriptor() ([]byte, []int) {
 func (m *ComponentCVEEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComponentCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComponentCVEEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComponentCVEEdge.Marshal(b, m, deterministic)
 	} else {
@@ -210,7 +210,7 @@ var xxx_messageInfo_ComponentCVEEdge proto.InternalMessageInfo
 
 type isComponentCVEEdge_HasFixedBy interface {
 	isComponentCVEEdge_HasFixedBy()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isComponentCVEEdge_HasFixedBy
 }
@@ -316,7 +316,7 @@ func (*ImageCVEEdge) Descriptor() ([]byte, []int) {
 func (m *ImageCVEEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageCVEEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageCVEEdge.Marshal(b, m, deterministic)
 	} else {
@@ -408,7 +408,7 @@ func (*NodeComponentEdge) Descriptor() ([]byte, []int) {
 func (m *NodeComponentEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeComponentEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeComponentEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeComponentEdge.Marshal(b, m, deterministic)
 	} else {
@@ -490,7 +490,7 @@ func (*NodeComponentCVEEdge) Descriptor() ([]byte, []int) {
 func (m *NodeComponentCVEEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeComponentCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeComponentCVEEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeComponentCVEEdge.Marshal(b, m, deterministic)
 	} else {
@@ -516,7 +516,7 @@ var xxx_messageInfo_NodeComponentCVEEdge proto.InternalMessageInfo
 
 type isNodeComponentCVEEdge_HasFixedBy interface {
 	isNodeComponentCVEEdge_HasFixedBy()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isNodeComponentCVEEdge_HasFixedBy
 }
@@ -626,7 +626,7 @@ func (*ClusterCVEEdge) Descriptor() ([]byte, []int) {
 func (m *ClusterCVEEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterCVEEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterCVEEdge.Marshal(b, m, deterministic)
 	} else {
@@ -652,7 +652,7 @@ var xxx_messageInfo_ClusterCVEEdge proto.InternalMessageInfo
 
 type isClusterCVEEdge_HasFixedBy interface {
 	isClusterCVEEdge_HasFixedBy()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isClusterCVEEdge_HasFixedBy
 }
@@ -755,7 +755,7 @@ func (*PolicyCategoryEdge) Descriptor() ([]byte, []int) {
 func (m *PolicyCategoryEdge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyCategoryEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyCategoryEdge) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyCategoryEdge.Marshal(b, m, deterministic)
 	} else {
@@ -865,7 +865,7 @@ var fileDescriptor_62f882e266fcf764 = []byte{
 	0x05, 0x00, 0x00,
 }
 
-func (m *ImageComponentEdge) Marshal() (dAtA []byte, err error) {
+func (m *ImageComponentEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -875,7 +875,7 @@ func (m *ImageComponentEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageComponentEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageComponentEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -914,7 +914,7 @@ func (m *ImageComponentEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.HasLayerIndex.Size()
 			i -= size
-			if _, err := m.HasLayerIndex.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.HasLayerIndex.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -929,7 +929,7 @@ func (m *ImageComponentEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageComponentEdge_LayerIndex) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageComponentEdge_LayerIndex) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -941,7 +941,7 @@ func (m *ImageComponentEdge_LayerIndex) MarshalToSizedBuffer(dAtA []byte) (int, 
 	dAtA[i] = 0x10
 	return len(dAtA) - i, nil
 }
-func (m *ComponentCVEEdge) Marshal() (dAtA []byte, err error) {
+func (m *ComponentCVEEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -951,7 +951,7 @@ func (m *ComponentCVEEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComponentCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComponentCVEEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -983,7 +983,7 @@ func (m *ComponentCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.HasFixedBy.Size()
 			i -= size
-			if _, err := m.HasFixedBy.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.HasFixedBy.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1008,7 +1008,7 @@ func (m *ComponentCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ComponentCVEEdge_FixedBy) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComponentCVEEdge_FixedBy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1022,7 +1022,7 @@ func (m *ComponentCVEEdge_FixedBy) MarshalToSizedBuffer(dAtA []byte) (int, error
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *ImageCVEEdge) Marshal() (dAtA []byte, err error) {
+func (m *ImageCVEEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1032,7 +1032,7 @@ func (m *ImageCVEEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageCVEEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1087,7 +1087,7 @@ func (m *ImageCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeComponentEdge) Marshal() (dAtA []byte, err error) {
+func (m *NodeComponentEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1097,7 +1097,7 @@ func (m *NodeComponentEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeComponentEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *NodeComponentEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1135,7 +1135,7 @@ func (m *NodeComponentEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeComponentCVEEdge) Marshal() (dAtA []byte, err error) {
+func (m *NodeComponentCVEEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1145,7 +1145,7 @@ func (m *NodeComponentCVEEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeComponentCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *NodeComponentCVEEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1177,7 +1177,7 @@ func (m *NodeComponentCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.HasFixedBy.Size()
 			i -= size
-			if _, err := m.HasFixedBy.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.HasFixedBy.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1202,7 +1202,7 @@ func (m *NodeComponentCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeComponentCVEEdge_FixedBy) MarshalTo(dAtA []byte) (int, error) {
+func (m *NodeComponentCVEEdge_FixedBy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1216,7 +1216,7 @@ func (m *NodeComponentCVEEdge_FixedBy) MarshalToSizedBuffer(dAtA []byte) (int, e
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *ClusterCVEEdge) Marshal() (dAtA []byte, err error) {
+func (m *ClusterCVEEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1226,7 +1226,7 @@ func (m *ClusterCVEEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClusterCVEEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1258,7 +1258,7 @@ func (m *ClusterCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.HasFixedBy.Size()
 			i -= size
-			if _, err := m.HasFixedBy.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.HasFixedBy.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1283,7 +1283,7 @@ func (m *ClusterCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterCVEEdge_FixedBy) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClusterCVEEdge_FixedBy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1297,7 +1297,7 @@ func (m *ClusterCVEEdge_FixedBy) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *PolicyCategoryEdge) Marshal() (dAtA []byte, err error) {
+func (m *PolicyCategoryEdge) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1307,7 +1307,7 @@ func (m *PolicyCategoryEdge) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyCategoryEdge) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyCategoryEdge) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

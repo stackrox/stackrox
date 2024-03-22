@@ -54,7 +54,7 @@ func (*GetGroupsRequest) Descriptor() ([]byte, []int) {
 func (m *GetGroupsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetGroupsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetGroupsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetGroupsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -80,25 +80,25 @@ var xxx_messageInfo_GetGroupsRequest proto.InternalMessageInfo
 
 type isGetGroupsRequest_AuthProviderIdOpt interface {
 	isGetGroupsRequest_AuthProviderIdOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isGetGroupsRequest_AuthProviderIdOpt
 }
 type isGetGroupsRequest_KeyOpt interface {
 	isGetGroupsRequest_KeyOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isGetGroupsRequest_KeyOpt
 }
 type isGetGroupsRequest_ValueOpt interface {
 	isGetGroupsRequest_ValueOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isGetGroupsRequest_ValueOpt
 }
 type isGetGroupsRequest_IdOpt interface {
 	isGetGroupsRequest_IdOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isGetGroupsRequest_IdOpt
 }
@@ -263,7 +263,7 @@ func (*GetGroupsResponse) Descriptor() ([]byte, []int) {
 func (m *GetGroupsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetGroupsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetGroupsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetGroupsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -339,7 +339,7 @@ func (*GroupBatchUpdateRequest) Descriptor() ([]byte, []int) {
 func (m *GroupBatchUpdateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GroupBatchUpdateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GroupBatchUpdateRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GroupBatchUpdateRequest.Marshal(b, m, deterministic)
 	} else {
@@ -430,7 +430,7 @@ func (*DeleteGroupRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteGroupRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteGroupRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteGroupRequest.Marshal(b, m, deterministic)
 	} else {
@@ -519,7 +519,7 @@ func (*UpdateGroupRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateGroupRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateGroupRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateGroupRequest.Marshal(b, m, deterministic)
 	} else {
@@ -883,7 +883,7 @@ var _GroupService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/group_service.proto",
 }
 
-func (m *GetGroupsRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetGroupsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -893,7 +893,7 @@ func (m *GetGroupsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetGroupsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -911,7 +911,7 @@ func (m *GetGroupsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.IdOpt.Size()
 			i -= size
-			if _, err := m.IdOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.IdOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -920,7 +920,7 @@ func (m *GetGroupsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.ValueOpt.Size()
 			i -= size
-			if _, err := m.ValueOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.ValueOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -929,7 +929,7 @@ func (m *GetGroupsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.KeyOpt.Size()
 			i -= size
-			if _, err := m.KeyOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.KeyOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -938,7 +938,7 @@ func (m *GetGroupsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.AuthProviderIdOpt.Size()
 			i -= size
-			if _, err := m.AuthProviderIdOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.AuthProviderIdOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -946,7 +946,7 @@ func (m *GetGroupsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetGroupsRequest_AuthProviderId) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupsRequest_AuthProviderId) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -960,7 +960,7 @@ func (m *GetGroupsRequest_AuthProviderId) MarshalToSizedBuffer(dAtA []byte) (int
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
-func (m *GetGroupsRequest_Key) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupsRequest_Key) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -974,7 +974,7 @@ func (m *GetGroupsRequest_Key) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *GetGroupsRequest_Value) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupsRequest_Value) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -988,7 +988,7 @@ func (m *GetGroupsRequest_Value) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *GetGroupsRequest_Id) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupsRequest_Id) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1002,7 +1002,7 @@ func (m *GetGroupsRequest_Id) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x22
 	return len(dAtA) - i, nil
 }
-func (m *GetGroupsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetGroupsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1012,7 +1012,7 @@ func (m *GetGroupsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetGroupsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1043,7 +1043,7 @@ func (m *GetGroupsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GroupBatchUpdateRequest) Marshal() (dAtA []byte, err error) {
+func (m *GroupBatchUpdateRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1053,7 +1053,7 @@ func (m *GroupBatchUpdateRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GroupBatchUpdateRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GroupBatchUpdateRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1108,7 +1108,7 @@ func (m *GroupBatchUpdateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteGroupRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeleteGroupRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1118,7 +1118,7 @@ func (m *DeleteGroupRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteGroupRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteGroupRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1173,7 +1173,7 @@ func (m *DeleteGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateGroupRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateGroupRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1183,7 +1183,7 @@ func (m *UpdateGroupRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateGroupRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateGroupRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

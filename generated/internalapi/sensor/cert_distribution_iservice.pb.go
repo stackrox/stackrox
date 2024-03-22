@@ -44,7 +44,7 @@ func (*FetchCertificateRequest) Descriptor() ([]byte, []int) {
 func (m *FetchCertificateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FetchCertificateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *FetchCertificateRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_FetchCertificateRequest.Marshal(b, m, deterministic)
 	} else {
@@ -112,7 +112,7 @@ func (*FetchCertificateResponse) Descriptor() ([]byte, []int) {
 func (m *FetchCertificateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FetchCertificateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *FetchCertificateResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_FetchCertificateResponse.Marshal(b, m, deterministic)
 	} else {
@@ -275,7 +275,7 @@ var _CertDistributionService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/sensor/cert_distribution_iservice.proto",
 }
 
-func (m *FetchCertificateRequest) Marshal() (dAtA []byte, err error) {
+func (m *FetchCertificateRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -285,7 +285,7 @@ func (m *FetchCertificateRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FetchCertificateRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *FetchCertificateRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -314,7 +314,7 @@ func (m *FetchCertificateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *FetchCertificateResponse) Marshal() (dAtA []byte, err error) {
+func (m *FetchCertificateResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -324,7 +324,7 @@ func (m *FetchCertificateResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FetchCertificateResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *FetchCertificateResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

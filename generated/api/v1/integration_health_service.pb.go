@@ -69,7 +69,7 @@ func (*GetIntegrationHealthResponse) Descriptor() ([]byte, []int) {
 func (m *GetIntegrationHealthResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetIntegrationHealthResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetIntegrationHealthResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetIntegrationHealthResponse.Marshal(b, m, deterministic)
 	} else {
@@ -135,7 +135,7 @@ func (*VulnDefinitionsInfoRequest) Descriptor() ([]byte, []int) {
 func (m *VulnDefinitionsInfoRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnDefinitionsInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnDefinitionsInfoRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnDefinitionsInfoRequest.Marshal(b, m, deterministic)
 	} else {
@@ -195,7 +195,7 @@ func (*VulnDefinitionsInfo) Descriptor() ([]byte, []int) {
 func (m *VulnDefinitionsInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnDefinitionsInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnDefinitionsInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnDefinitionsInfo.Marshal(b, m, deterministic)
 	} else {
@@ -513,7 +513,7 @@ var _IntegrationHealthService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/integration_health_service.proto",
 }
 
-func (m *GetIntegrationHealthResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetIntegrationHealthResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -523,7 +523,7 @@ func (m *GetIntegrationHealthResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetIntegrationHealthResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetIntegrationHealthResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -554,7 +554,7 @@ func (m *GetIntegrationHealthResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnDefinitionsInfoRequest) Marshal() (dAtA []byte, err error) {
+func (m *VulnDefinitionsInfoRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -564,7 +564,7 @@ func (m *VulnDefinitionsInfoRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnDefinitionsInfoRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnDefinitionsInfoRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -586,7 +586,7 @@ func (m *VulnDefinitionsInfoRequest) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnDefinitionsInfo) Marshal() (dAtA []byte, err error) {
+func (m *VulnDefinitionsInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -596,7 +596,7 @@ func (m *VulnDefinitionsInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnDefinitionsInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnDefinitionsInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

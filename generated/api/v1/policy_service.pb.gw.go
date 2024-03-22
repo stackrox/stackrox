@@ -837,21 +837,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_GetPolicy_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_GetPolicy_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_GetPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_GetPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -860,21 +860,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_GetPolicyMitreVectors_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_GetPolicyMitreVectors_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_GetPolicyMitreVectors_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_GetPolicyMitreVectors_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -883,21 +883,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_ListPolicies_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_ListPolicies_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ListPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ListPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -906,21 +906,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_PostPolicy_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_PostPolicy_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PostPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PostPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -929,21 +929,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_PutPolicy_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_PutPolicy_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PutPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PutPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -952,21 +952,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_PatchPolicy_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_PatchPolicy_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PatchPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PatchPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -975,21 +975,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_DeletePolicy_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_DeletePolicy_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_DeletePolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_DeletePolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -998,21 +998,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_EnableDisablePolicyNotification_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_EnableDisablePolicyNotification_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_EnableDisablePolicyNotification_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_EnableDisablePolicyNotification_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1021,21 +1021,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_ReassessPolicies_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_ReassessPolicies_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ReassessPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ReassessPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1044,21 +1044,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_DryRunPolicy_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_DryRunPolicy_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_DryRunPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_DryRunPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1067,21 +1067,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_SubmitDryRunPolicyJob_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_SubmitDryRunPolicyJob_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_SubmitDryRunPolicyJob_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_SubmitDryRunPolicyJob_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1090,21 +1090,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_QueryDryRunJobStatus_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_QueryDryRunJobStatus_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_QueryDryRunJobStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_QueryDryRunJobStatus_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1113,21 +1113,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_CancelDryRunJob_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_CancelDryRunJob_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_CancelDryRunJob_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_CancelDryRunJob_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1136,21 +1136,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_GetPolicyCategories_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_GetPolicyCategories_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_GetPolicyCategories_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_GetPolicyCategories_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1159,21 +1159,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_ExportPolicies_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_ExportPolicies_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ExportPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ExportPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1182,21 +1182,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_PolicyFromSearch_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_PolicyFromSearch_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PolicyFromSearch_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PolicyFromSearch_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1205,21 +1205,21 @@ func RegisterPolicyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_PolicyService_ImportPolicies_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_PolicyService_ImportPolicies_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ImportPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ImportPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1267,340 +1267,340 @@ func RegisterPolicyServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 	mux.Handle("GET", pattern_PolicyService_GetPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_GetPolicy_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_GetPolicy_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_GetPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_GetPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_PolicyService_GetPolicyMitreVectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_GetPolicyMitreVectors_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_GetPolicyMitreVectors_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_GetPolicyMitreVectors_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_GetPolicyMitreVectors_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_PolicyService_ListPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_ListPolicies_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_ListPolicies_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ListPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ListPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_PostPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_PostPolicy_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_PostPolicy_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PostPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PostPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PUT", pattern_PolicyService_PutPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_PutPolicy_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_PutPolicy_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PutPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PutPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_PolicyService_PatchPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_PatchPolicy_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_PatchPolicy_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PatchPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PatchPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("DELETE", pattern_PolicyService_DeletePolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_DeletePolicy_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_DeletePolicy_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_DeletePolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_DeletePolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_PolicyService_EnableDisablePolicyNotification_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_EnableDisablePolicyNotification_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_EnableDisablePolicyNotification_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_EnableDisablePolicyNotification_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_EnableDisablePolicyNotification_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_ReassessPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_ReassessPolicies_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_ReassessPolicies_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ReassessPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ReassessPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_DryRunPolicy_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_DryRunPolicy_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_DryRunPolicy_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_DryRunPolicy_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_DryRunPolicy_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_SubmitDryRunPolicyJob_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_SubmitDryRunPolicyJob_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_SubmitDryRunPolicyJob_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_SubmitDryRunPolicyJob_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_SubmitDryRunPolicyJob_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_PolicyService_QueryDryRunJobStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_QueryDryRunJobStatus_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_QueryDryRunJobStatus_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_QueryDryRunJobStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_QueryDryRunJobStatus_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("DELETE", pattern_PolicyService_CancelDryRunJob_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_CancelDryRunJob_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_CancelDryRunJob_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_CancelDryRunJob_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_CancelDryRunJob_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_PolicyService_GetPolicyCategories_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_GetPolicyCategories_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_GetPolicyCategories_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_GetPolicyCategories_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_GetPolicyCategories_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_ExportPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_ExportPolicies_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_ExportPolicies_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ExportPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ExportPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_PolicyFromSearch_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_PolicyFromSearch_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_PolicyFromSearch_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_PolicyFromSearch_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_PolicyFromSearch_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_PolicyService_ImportPolicies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_PolicyService_ImportPolicies_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_PolicyService_ImportPolicies_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_PolicyService_ImportPolicies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_PolicyService_ImportPolicies_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 

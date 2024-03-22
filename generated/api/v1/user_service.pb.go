@@ -44,7 +44,7 @@ func (*GetUsersResponse) Descriptor() ([]byte, []int) {
 func (m *GetUsersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetUsersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetUsersResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetUsersResponse.Marshal(b, m, deterministic)
 	} else {
@@ -114,7 +114,7 @@ func (*UserAttributeTuple) Descriptor() ([]byte, []int) {
 func (m *UserAttributeTuple) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UserAttributeTuple) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UserAttributeTuple) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UserAttributeTuple.Marshal(b, m, deterministic)
 	} else {
@@ -189,7 +189,7 @@ func (*GetUsersAttributesResponse) Descriptor() ([]byte, []int) {
 func (m *GetUsersAttributesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetUsersAttributesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetUsersAttributesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetUsersAttributesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -430,7 +430,7 @@ var _UserService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/user_service.proto",
 }
 
-func (m *GetUsersResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetUsersResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -440,7 +440,7 @@ func (m *GetUsersResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetUsersResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetUsersResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -471,7 +471,7 @@ func (m *GetUsersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UserAttributeTuple) Marshal() (dAtA []byte, err error) {
+func (m *UserAttributeTuple) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -481,7 +481,7 @@ func (m *UserAttributeTuple) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UserAttributeTuple) MarshalTo(dAtA []byte) (int, error) {
+func (m *UserAttributeTuple) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -519,7 +519,7 @@ func (m *UserAttributeTuple) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetUsersAttributesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetUsersAttributesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -529,7 +529,7 @@ func (m *GetUsersAttributesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetUsersAttributesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetUsersAttributesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

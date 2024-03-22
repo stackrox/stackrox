@@ -42,7 +42,7 @@ func (*GetNotifiersRequest) Descriptor() ([]byte, []int) {
 func (m *GetNotifiersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNotifiersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNotifiersRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNotifiersRequest.Marshal(b, m, deterministic)
 	} else {
@@ -95,7 +95,7 @@ func (*GetNotifiersResponse) Descriptor() ([]byte, []int) {
 func (m *GetNotifiersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNotifiersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNotifiersResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNotifiersResponse.Marshal(b, m, deterministic)
 	} else {
@@ -162,7 +162,7 @@ func (*DeleteNotifierRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteNotifierRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteNotifierRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteNotifierRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteNotifierRequest.Marshal(b, m, deterministic)
 	} else {
@@ -231,7 +231,7 @@ func (*UpdateNotifierRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateNotifierRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateNotifierRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateNotifierRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateNotifierRequest.Marshal(b, m, deterministic)
 	} else {
@@ -678,7 +678,7 @@ var _NotifierService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/notifier_service.proto",
 }
 
-func (m *GetNotifiersRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNotifiersRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -688,7 +688,7 @@ func (m *GetNotifiersRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNotifiersRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNotifiersRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -705,7 +705,7 @@ func (m *GetNotifiersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNotifiersResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetNotifiersResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -715,7 +715,7 @@ func (m *GetNotifiersResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNotifiersResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNotifiersResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -746,7 +746,7 @@ func (m *GetNotifiersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteNotifierRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeleteNotifierRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -756,7 +756,7 @@ func (m *DeleteNotifierRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteNotifierRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteNotifierRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -790,7 +790,7 @@ func (m *DeleteNotifierRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateNotifierRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateNotifierRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -800,7 +800,7 @@ func (m *UpdateNotifierRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateNotifierRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateNotifierRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

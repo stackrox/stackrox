@@ -43,7 +43,7 @@ func (*SplunkEvent) Descriptor() ([]byte, []int) {
 func (m *SplunkEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkEvent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkEvent.Marshal(b, m, deterministic)
 	} else {
@@ -126,7 +126,7 @@ var fileDescriptor_02f414752d1f1082 = []byte{
 	0x10, 0x00, 0x00, 0xff, 0xff, 0x59, 0x84, 0xac, 0xfa, 0xe2, 0x00, 0x00, 0x00,
 }
 
-func (m *SplunkEvent) Marshal() (dAtA []byte, err error) {
+func (m *SplunkEvent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -136,7 +136,7 @@ func (m *SplunkEvent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkEvent) MarshalTo(dAtA []byte) (int, error) {
+func (m *SplunkEvent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

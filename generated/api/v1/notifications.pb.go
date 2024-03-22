@@ -39,7 +39,7 @@ func (*NetworkPolicyNotification) Descriptor() ([]byte, []int) {
 func (m *NetworkPolicyNotification) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkPolicyNotification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkPolicyNotification) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkPolicyNotification.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ var fileDescriptor_0e614fc19f85dc80 = []byte{
 	0x11, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0xbe, 0x89, 0x7b, 0xe7, 0xa3, 0x00, 0x00, 0x00,
 }
 
-func (m *NetworkPolicyNotification) Marshal() (dAtA []byte, err error) {
+func (m *NetworkPolicyNotification) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -120,7 +120,7 @@ func (m *NetworkPolicyNotification) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkPolicyNotification) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkPolicyNotification) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

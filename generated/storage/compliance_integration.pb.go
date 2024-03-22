@@ -45,7 +45,7 @@ func (*ComplianceIntegration) Descriptor() ([]byte, []int) {
 func (m *ComplianceIntegration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceIntegration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceIntegration.Marshal(b, m, deterministic)
 	} else {
@@ -157,7 +157,7 @@ var fileDescriptor_14e26a23cbdbee2c = []byte{
 	0x01, 0x00, 0x00,
 }
 
-func (m *ComplianceIntegration) Marshal() (dAtA []byte, err error) {
+func (m *ComplianceIntegration) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -167,7 +167,7 @@ func (m *ComplianceIntegration) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceIntegration) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComplianceIntegration) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

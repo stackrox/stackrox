@@ -70,7 +70,7 @@ func (*CancelPullTelemetryDataRequest) Descriptor() ([]byte, []int) {
 func (m *CancelPullTelemetryDataRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CancelPullTelemetryDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CancelPullTelemetryDataRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CancelPullTelemetryDataRequest.Marshal(b, m, deterministic)
 	} else {
@@ -133,7 +133,7 @@ func (*PullTelemetryDataRequest) Descriptor() ([]byte, []int) {
 func (m *PullTelemetryDataRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PullTelemetryDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PullTelemetryDataRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PullTelemetryDataRequest.Marshal(b, m, deterministic)
 	} else {
@@ -220,7 +220,7 @@ func (*TelemetryResponsePayload) Descriptor() ([]byte, []int) {
 func (m *TelemetryResponsePayload) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryResponsePayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryResponsePayload) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryResponsePayload.Marshal(b, m, deterministic)
 	} else {
@@ -246,7 +246,7 @@ var xxx_messageInfo_TelemetryResponsePayload proto.InternalMessageInfo
 
 type isTelemetryResponsePayload_Payload interface {
 	isTelemetryResponsePayload_Payload()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isTelemetryResponsePayload_Payload
 }
@@ -386,7 +386,7 @@ func (*TelemetryResponsePayload_EndOfStream) Descriptor() ([]byte, []int) {
 func (m *TelemetryResponsePayload_EndOfStream) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryResponsePayload_EndOfStream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryResponsePayload_EndOfStream) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryResponsePayload_EndOfStream.Marshal(b, m, deterministic)
 	} else {
@@ -448,7 +448,7 @@ func (*TelemetryResponsePayload_KubernetesInfo) Descriptor() ([]byte, []int) {
 func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo.Marshal(b, m, deterministic)
 	} else {
@@ -519,7 +519,7 @@ func (*TelemetryResponsePayload_KubernetesInfo_File) Descriptor() ([]byte, []int
 func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryResponsePayload_KubernetesInfo_File.Marshal(b, m, deterministic)
 	} else {
@@ -590,7 +590,7 @@ func (*TelemetryResponsePayload_ClusterInfo) Descriptor() ([]byte, []int) {
 func (m *TelemetryResponsePayload_ClusterInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryResponsePayload_ClusterInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryResponsePayload_ClusterInfo.Marshal(b, m, deterministic)
 	} else {
@@ -655,7 +655,7 @@ func (*PullTelemetryDataResponse) Descriptor() ([]byte, []int) {
 func (m *PullTelemetryDataResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PullTelemetryDataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PullTelemetryDataResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PullTelemetryDataResponse.Marshal(b, m, deterministic)
 	} else {
@@ -728,7 +728,7 @@ func (*TelemetryConfig) Descriptor() ([]byte, []int) {
 func (m *TelemetryConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryConfig.Marshal(b, m, deterministic)
 	} else {
@@ -849,7 +849,7 @@ var fileDescriptor_a73660af6899d9c4 = []byte{
 	0x00,
 }
 
-func (m *CancelPullTelemetryDataRequest) Marshal() (dAtA []byte, err error) {
+func (m *CancelPullTelemetryDataRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -859,7 +859,7 @@ func (m *CancelPullTelemetryDataRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CancelPullTelemetryDataRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *CancelPullTelemetryDataRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -883,7 +883,7 @@ func (m *CancelPullTelemetryDataRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *PullTelemetryDataRequest) Marshal() (dAtA []byte, err error) {
+func (m *PullTelemetryDataRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -893,7 +893,7 @@ func (m *PullTelemetryDataRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PullTelemetryDataRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *PullTelemetryDataRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -939,7 +939,7 @@ func (m *PullTelemetryDataRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *TelemetryResponsePayload) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryResponsePayload) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -949,7 +949,7 @@ func (m *TelemetryResponsePayload) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryResponsePayload) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -967,7 +967,7 @@ func (m *TelemetryResponsePayload) MarshalToSizedBuffer(dAtA []byte) (int, error
 		{
 			size := m.Payload.Size()
 			i -= size
-			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Payload.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -975,7 +975,7 @@ func (m *TelemetryResponsePayload) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *TelemetryResponsePayload_EndOfStream_) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_EndOfStream_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -996,7 +996,7 @@ func (m *TelemetryResponsePayload_EndOfStream_) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TelemetryResponsePayload_KubernetesInfo_) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_KubernetesInfo_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1017,7 +1017,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo_) MarshalToSizedBuffer(dAtA []b
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TelemetryResponsePayload_ClusterInfo_) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_ClusterInfo_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1038,7 +1038,7 @@ func (m *TelemetryResponsePayload_ClusterInfo_) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TelemetryResponsePayload_MetricsInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_MetricsInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1059,7 +1059,7 @@ func (m *TelemetryResponsePayload_MetricsInfo) MarshalToSizedBuffer(dAtA []byte)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TelemetryResponsePayload_EndOfStream) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryResponsePayload_EndOfStream) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1069,7 +1069,7 @@ func (m *TelemetryResponsePayload_EndOfStream) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryResponsePayload_EndOfStream) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_EndOfStream) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1093,7 +1093,7 @@ func (m *TelemetryResponsePayload_EndOfStream) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *TelemetryResponsePayload_KubernetesInfo) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryResponsePayload_KubernetesInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1103,7 +1103,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo) Marshal() (dAtA []byte, err er
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryResponsePayload_KubernetesInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_KubernetesInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1134,7 +1134,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
-func (m *TelemetryResponsePayload_KubernetesInfo_File) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1144,7 +1144,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo_File) Marshal() (dAtA []byte, e
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1175,7 +1175,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalToSizedBuffer(dAtA
 	return len(dAtA) - i, nil
 }
 
-func (m *TelemetryResponsePayload_ClusterInfo) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryResponsePayload_ClusterInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1185,7 +1185,7 @@ func (m *TelemetryResponsePayload_ClusterInfo) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryResponsePayload_ClusterInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryResponsePayload_ClusterInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1209,7 +1209,7 @@ func (m *TelemetryResponsePayload_ClusterInfo) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *PullTelemetryDataResponse) Marshal() (dAtA []byte, err error) {
+func (m *PullTelemetryDataResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1219,7 +1219,7 @@ func (m *PullTelemetryDataResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PullTelemetryDataResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *PullTelemetryDataResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1255,7 +1255,7 @@ func (m *PullTelemetryDataResponse) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *TelemetryConfig) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryConfig) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1265,7 +1265,7 @@ func (m *TelemetryConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryConfig) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

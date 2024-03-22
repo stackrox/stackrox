@@ -43,7 +43,7 @@ func (*PodsResponse) Descriptor() ([]byte, []int) {
 func (m *PodsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PodsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PodsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PodsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ func (*ExportPodRequest) Descriptor() ([]byte, []int) {
 func (m *ExportPodRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportPodRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportPodRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportPodRequest.Marshal(b, m, deterministic)
 	} else {
@@ -177,7 +177,7 @@ func (*ExportPodResponse) Descriptor() ([]byte, []int) {
 func (m *ExportPodResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportPodResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportPodResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportPodResponse.Marshal(b, m, deterministic)
 	} else {
@@ -402,7 +402,7 @@ var _PodService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/pod_service.proto",
 }
 
-func (m *PodsResponse) Marshal() (dAtA []byte, err error) {
+func (m *PodsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -412,7 +412,7 @@ func (m *PodsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PodsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *PodsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -443,7 +443,7 @@ func (m *PodsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPodRequest) Marshal() (dAtA []byte, err error) {
+func (m *ExportPodRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -453,7 +453,7 @@ func (m *ExportPodRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPodRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportPodRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -482,7 +482,7 @@ func (m *ExportPodRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPodResponse) Marshal() (dAtA []byte, err error) {
+func (m *ExportPodResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -492,7 +492,7 @@ func (m *ExportPodResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPodResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportPodResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

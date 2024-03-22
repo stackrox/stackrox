@@ -248,21 +248,21 @@ func RegisterImageCVEServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ImageCVEService_SuppressCVEs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ImageCVEService_SuppressCVEs_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ImageCVEService_SuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ImageCVEService_SuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -271,21 +271,21 @@ func RegisterImageCVEServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ImageCVEService_UnsuppressCVEs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ImageCVEService_UnsuppressCVEs_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ImageCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ImageCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -303,21 +303,21 @@ func RegisterNodeCVEServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NodeCVEService_SuppressCVEs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NodeCVEService_SuppressCVEs_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NodeCVEService_SuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NodeCVEService_SuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -326,21 +326,21 @@ func RegisterNodeCVEServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NodeCVEService_UnsuppressCVEs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_NodeCVEService_UnsuppressCVEs_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NodeCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NodeCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -358,21 +358,21 @@ func RegisterClusterCVEServiceHandlerServer(ctx context.Context, mux *runtime.Se
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ClusterCVEService_SuppressCVEs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ClusterCVEService_SuppressCVEs_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ClusterCVEService_SuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ClusterCVEService_SuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -381,21 +381,21 @@ func RegisterClusterCVEServiceHandlerServer(ctx context.Context, mux *runtime.Se
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ClusterCVEService_UnsuppressCVEs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ClusterCVEService_UnsuppressCVEs_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ClusterCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ClusterCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -443,40 +443,40 @@ func RegisterImageCVEServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 	mux.Handle("PATCH", pattern_ImageCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ImageCVEService_SuppressCVEs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ImageCVEService_SuppressCVEs_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ImageCVEService_SuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ImageCVEService_SuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_ImageCVEService_UnsuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ImageCVEService_UnsuppressCVEs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ImageCVEService_UnsuppressCVEs_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ImageCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ImageCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -536,40 +536,40 @@ func RegisterNodeCVEServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 	mux.Handle("PATCH", pattern_NodeCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NodeCVEService_SuppressCVEs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NodeCVEService_SuppressCVEs_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NodeCVEService_SuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NodeCVEService_SuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_NodeCVEService_UnsuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_NodeCVEService_UnsuppressCVEs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_NodeCVEService_UnsuppressCVEs_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_NodeCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_NodeCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -629,40 +629,40 @@ func RegisterClusterCVEServiceHandlerClient(ctx context.Context, mux *runtime.Se
 	mux.Handle("PATCH", pattern_ClusterCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ClusterCVEService_SuppressCVEs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ClusterCVEService_SuppressCVEs_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ClusterCVEService_SuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ClusterCVEService_SuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PATCH", pattern_ClusterCVEService_UnsuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ClusterCVEService_UnsuppressCVEs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ClusterCVEService_UnsuppressCVEs_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ClusterCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ClusterCVEService_UnsuppressCVEs_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 

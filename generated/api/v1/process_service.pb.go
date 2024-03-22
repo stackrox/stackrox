@@ -43,7 +43,7 @@ func (*GetProcessesByDeploymentRequest) Descriptor() ([]byte, []int) {
 func (m *GetProcessesByDeploymentRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProcessesByDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProcessesByDeploymentRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetProcessesByDeploymentRequest.Marshal(b, m, deterministic)
 	} else {
@@ -103,7 +103,7 @@ func (*GetProcessesResponse) Descriptor() ([]byte, []int) {
 func (m *GetProcessesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProcessesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProcessesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetProcessesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -170,7 +170,7 @@ func (*ProcessGroup) Descriptor() ([]byte, []int) {
 func (m *ProcessGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessGroup.Marshal(b, m, deterministic)
 	} else {
@@ -245,7 +245,7 @@ func (*ProcessNameGroup) Descriptor() ([]byte, []int) {
 func (m *ProcessNameGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessNameGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessNameGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessNameGroup.Marshal(b, m, deterministic)
 	} else {
@@ -325,7 +325,7 @@ func (*GetGroupedProcessesResponse) Descriptor() ([]byte, []int) {
 func (m *GetGroupedProcessesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetGroupedProcessesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetGroupedProcessesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetGroupedProcessesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -395,7 +395,7 @@ func (*ProcessNameAndContainerNameGroup) Descriptor() ([]byte, []int) {
 func (m *ProcessNameAndContainerNameGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessNameAndContainerNameGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessNameAndContainerNameGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessNameAndContainerNameGroup.Marshal(b, m, deterministic)
 	} else {
@@ -491,7 +491,7 @@ func (*GetGroupedProcessesWithContainerResponse) Descriptor() ([]byte, []int) {
 func (m *GetGroupedProcessesWithContainerResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetGroupedProcessesWithContainerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetGroupedProcessesWithContainerResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetGroupedProcessesWithContainerResponse.Marshal(b, m, deterministic)
 	} else {
@@ -557,7 +557,7 @@ func (*CountProcessesResponse) Descriptor() ([]byte, []int) {
 func (m *CountProcessesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountProcessesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountProcessesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountProcessesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -854,7 +854,7 @@ var _ProcessService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/process_service.proto",
 }
 
-func (m *GetProcessesByDeploymentRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetProcessesByDeploymentRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -864,7 +864,7 @@ func (m *GetProcessesByDeploymentRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetProcessesByDeploymentRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetProcessesByDeploymentRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -888,7 +888,7 @@ func (m *GetProcessesByDeploymentRequest) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *GetProcessesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetProcessesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -898,7 +898,7 @@ func (m *GetProcessesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetProcessesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetProcessesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -929,7 +929,7 @@ func (m *GetProcessesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessGroup) Marshal() (dAtA []byte, err error) {
+func (m *ProcessGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -939,7 +939,7 @@ func (m *ProcessGroup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -977,7 +977,7 @@ func (m *ProcessGroup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessNameGroup) Marshal() (dAtA []byte, err error) {
+func (m *ProcessNameGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -987,7 +987,7 @@ func (m *ProcessNameGroup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessNameGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessNameGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1030,7 +1030,7 @@ func (m *ProcessNameGroup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetGroupedProcessesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetGroupedProcessesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1040,7 +1040,7 @@ func (m *GetGroupedProcessesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetGroupedProcessesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupedProcessesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1071,7 +1071,7 @@ func (m *GetGroupedProcessesResponse) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessNameAndContainerNameGroup) Marshal() (dAtA []byte, err error) {
+func (m *ProcessNameAndContainerNameGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1081,7 +1081,7 @@ func (m *ProcessNameAndContainerNameGroup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessNameAndContainerNameGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessNameAndContainerNameGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1141,7 +1141,7 @@ func (m *ProcessNameAndContainerNameGroup) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *GetGroupedProcessesWithContainerResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetGroupedProcessesWithContainerResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1151,7 +1151,7 @@ func (m *GetGroupedProcessesWithContainerResponse) Marshal() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *GetGroupedProcessesWithContainerResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetGroupedProcessesWithContainerResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1182,7 +1182,7 @@ func (m *GetGroupedProcessesWithContainerResponse) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
-func (m *CountProcessesResponse) Marshal() (dAtA []byte, err error) {
+func (m *CountProcessesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1192,7 +1192,7 @@ func (m *CountProcessesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountProcessesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountProcessesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

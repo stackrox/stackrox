@@ -39,7 +39,7 @@ func (*NetworkBaselineSync) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselineSync) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselineSync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselineSync) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselineSync.Marshal(b, m, deterministic)
 	} else {
@@ -111,7 +111,7 @@ var fileDescriptor_7f52e7f2d7e76ab4 = []byte{
 	0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xb0, 0x8f, 0x95, 0x4f, 0xdb, 0x00, 0x00, 0x00,
 }
 
-func (m *NetworkBaselineSync) Marshal() (dAtA []byte, err error) {
+func (m *NetworkBaselineSync) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -121,7 +121,7 @@ func (m *NetworkBaselineSync) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselineSync) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselineSync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

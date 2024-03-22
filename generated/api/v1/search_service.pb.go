@@ -311,7 +311,7 @@ func (*RawQuery) Descriptor() ([]byte, []int) {
 func (m *RawQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RawQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RawQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RawQuery.Marshal(b, m, deterministic)
 	} else {
@@ -382,7 +382,7 @@ func (*RawSearchRequest) Descriptor() ([]byte, []int) {
 func (m *RawSearchRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RawSearchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RawSearchRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RawSearchRequest.Marshal(b, m, deterministic)
 	} else {
@@ -458,7 +458,7 @@ func (*QuerySortOption) Descriptor() ([]byte, []int) {
 func (m *QuerySortOption) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuerySortOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySortOption) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QuerySortOption.Marshal(b, m, deterministic)
 	} else {
@@ -484,7 +484,7 @@ var xxx_messageInfo_QuerySortOption proto.InternalMessageInfo
 
 type isQuerySortOption_SearchAfterOpt interface {
 	isQuerySortOption_SearchAfterOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isQuerySortOption_SearchAfterOpt
 }
@@ -581,7 +581,7 @@ func (*QueryField) Descriptor() ([]byte, []int) {
 func (m *QueryField) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryField) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryField) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryField.Marshal(b, m, deterministic)
 	} else {
@@ -656,7 +656,7 @@ func (*QuerySelectFilter) Descriptor() ([]byte, []int) {
 func (m *QuerySelectFilter) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuerySelectFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySelectFilter) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QuerySelectFilter.Marshal(b, m, deterministic)
 	} else {
@@ -725,7 +725,7 @@ func (*QuerySelect) Descriptor() ([]byte, []int) {
 func (m *QuerySelect) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuerySelect) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySelect) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QuerySelect.Marshal(b, m, deterministic)
 	} else {
@@ -794,7 +794,7 @@ func (*QueryGroupBy) Descriptor() ([]byte, []int) {
 func (m *QueryGroupBy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryGroupBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryGroupBy) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryGroupBy.Marshal(b, m, deterministic)
 	} else {
@@ -860,7 +860,7 @@ func (*QueryPagination) Descriptor() ([]byte, []int) {
 func (m *QueryPagination) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryPagination) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryPagination) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QueryPagination.Marshal(b, m, deterministic)
 	} else {
@@ -941,7 +941,7 @@ func (*BooleanQuery) Descriptor() ([]byte, []int) {
 func (m *BooleanQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BooleanQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BooleanQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BooleanQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1019,7 +1019,7 @@ func (*Query) Descriptor() ([]byte, []int) {
 func (m *Query) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Query) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Query) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Query.Marshal(b, m, deterministic)
 	} else {
@@ -1045,7 +1045,7 @@ var xxx_messageInfo_Query proto.InternalMessageInfo
 
 type isQuery_Query interface {
 	isQuery_Query()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isQuery_Query
 }
@@ -1216,7 +1216,7 @@ func (*StringQuery) Descriptor() ([]byte, []int) {
 func (m *StringQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *StringQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *StringQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_StringQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1280,7 +1280,7 @@ func (*MatchFieldQuery) Descriptor() ([]byte, []int) {
 func (m *MatchFieldQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MatchFieldQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MatchFieldQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MatchFieldQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1356,7 +1356,7 @@ func (*MatchLinkedFieldsQuery) Descriptor() ([]byte, []int) {
 func (m *MatchLinkedFieldsQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MatchLinkedFieldsQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MatchLinkedFieldsQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MatchLinkedFieldsQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1423,7 +1423,7 @@ func (*DocIDQuery) Descriptor() ([]byte, []int) {
 func (m *DocIDQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DocIDQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DocIDQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DocIDQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1492,7 +1492,7 @@ func (*BaseQuery) Descriptor() ([]byte, []int) {
 func (m *BaseQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BaseQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BaseQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BaseQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1518,7 +1518,7 @@ var xxx_messageInfo_BaseQuery proto.InternalMessageInfo
 
 type isBaseQuery_Query interface {
 	isBaseQuery_Query()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isBaseQuery_Query
 }
@@ -1658,7 +1658,7 @@ func (*ConjunctionQuery) Descriptor() ([]byte, []int) {
 func (m *ConjunctionQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConjunctionQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConjunctionQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ConjunctionQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1724,7 +1724,7 @@ func (*DisjunctionQuery) Descriptor() ([]byte, []int) {
 func (m *DisjunctionQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DisjunctionQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DisjunctionQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DisjunctionQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1789,7 +1789,7 @@ func (*MatchNoneQuery) Descriptor() ([]byte, []int) {
 func (m *MatchNoneQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MatchNoneQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MatchNoneQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MatchNoneQuery.Marshal(b, m, deterministic)
 	} else {
@@ -1852,7 +1852,7 @@ func (*SearchResult) Descriptor() ([]byte, []int) {
 func (m *SearchResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SearchResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SearchResult) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SearchResult.Marshal(b, m, deterministic)
 	} else {
@@ -1953,7 +1953,7 @@ func (*SearchResult_Matches) Descriptor() ([]byte, []int) {
 func (m *SearchResult_Matches) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SearchResult_Matches) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SearchResult_Matches) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SearchResult_Matches.Marshal(b, m, deterministic)
 	} else {
@@ -2018,7 +2018,7 @@ func (*SearchResponse) Descriptor() ([]byte, []int) {
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SearchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SearchResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SearchResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2098,7 +2098,7 @@ func (*SearchResponse_Count) Descriptor() ([]byte, []int) {
 func (m *SearchResponse_Count) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SearchResponse_Count) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SearchResponse_Count) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SearchResponse_Count.Marshal(b, m, deterministic)
 	} else {
@@ -2165,7 +2165,7 @@ func (*SearchOptionsRequest) Descriptor() ([]byte, []int) {
 func (m *SearchOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SearchOptionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SearchOptionsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SearchOptionsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -2229,7 +2229,7 @@ func (*SearchOptionsResponse) Descriptor() ([]byte, []int) {
 func (m *SearchOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SearchOptionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SearchOptionsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SearchOptionsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2293,7 +2293,7 @@ func (*AutocompleteResponse) Descriptor() ([]byte, []int) {
 func (m *AutocompleteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AutocompleteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AutocompleteResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AutocompleteResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2662,7 +2662,7 @@ var _SearchService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/search_service.proto",
 }
 
-func (m *RawQuery) Marshal() (dAtA []byte, err error) {
+func (m *RawQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2672,7 +2672,7 @@ func (m *RawQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RawQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *RawQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2708,7 +2708,7 @@ func (m *RawQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RawSearchRequest) Marshal() (dAtA []byte, err error) {
+func (m *RawSearchRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2718,7 +2718,7 @@ func (m *RawSearchRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RawSearchRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *RawSearchRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2760,7 +2760,7 @@ func (m *RawSearchRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuerySortOption) Marshal() (dAtA []byte, err error) {
+func (m *QuerySortOption) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2770,7 +2770,7 @@ func (m *QuerySortOption) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuerySortOption) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySortOption) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2800,7 +2800,7 @@ func (m *QuerySortOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SearchAfterOpt.Size()
 			i -= size
-			if _, err := m.SearchAfterOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SearchAfterOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2825,7 +2825,7 @@ func (m *QuerySortOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuerySortOption_SearchAfter) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySortOption_SearchAfter) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2839,7 +2839,7 @@ func (m *QuerySortOption_SearchAfter) MarshalToSizedBuffer(dAtA []byte) (int, er
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *QueryField) Marshal() (dAtA []byte, err error) {
+func (m *QueryField) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2849,7 +2849,7 @@ func (m *QueryField) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryField) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryField) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2890,7 +2890,7 @@ func (m *QueryField) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuerySelectFilter) Marshal() (dAtA []byte, err error) {
+func (m *QuerySelectFilter) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2900,7 +2900,7 @@ func (m *QuerySelectFilter) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuerySelectFilter) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySelectFilter) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2936,7 +2936,7 @@ func (m *QuerySelectFilter) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuerySelect) Marshal() (dAtA []byte, err error) {
+func (m *QuerySelect) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2946,7 +2946,7 @@ func (m *QuerySelect) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuerySelect) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySelect) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2987,7 +2987,7 @@ func (m *QuerySelect) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryGroupBy) Marshal() (dAtA []byte, err error) {
+func (m *QueryGroupBy) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2997,7 +2997,7 @@ func (m *QueryGroupBy) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryGroupBy) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryGroupBy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3023,7 +3023,7 @@ func (m *QueryGroupBy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryPagination) Marshal() (dAtA []byte, err error) {
+func (m *QueryPagination) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3033,7 +3033,7 @@ func (m *QueryPagination) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryPagination) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryPagination) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3074,7 +3074,7 @@ func (m *QueryPagination) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BooleanQuery) Marshal() (dAtA []byte, err error) {
+func (m *BooleanQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3084,7 +3084,7 @@ func (m *BooleanQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BooleanQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *BooleanQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3125,7 +3125,7 @@ func (m *BooleanQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Query) Marshal() (dAtA []byte, err error) {
+func (m *Query) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3135,7 +3135,7 @@ func (m *Query) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Query) MarshalTo(dAtA []byte) (int, error) {
+func (m *Query) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3179,7 +3179,7 @@ func (m *Query) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Query.Size()
 			i -= size
-			if _, err := m.Query.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Query.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3199,7 +3199,7 @@ func (m *Query) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Query_Conjunction) MarshalTo(dAtA []byte) (int, error) {
+func (m *Query_Conjunction) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3220,7 +3220,7 @@ func (m *Query_Conjunction) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Query_Disjunction) MarshalTo(dAtA []byte) (int, error) {
+func (m *Query_Disjunction) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3241,7 +3241,7 @@ func (m *Query_Disjunction) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Query_BaseQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *Query_BaseQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3262,7 +3262,7 @@ func (m *Query_BaseQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Query_BooleanQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *Query_BooleanQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3283,7 +3283,7 @@ func (m *Query_BooleanQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *StringQuery) Marshal() (dAtA []byte, err error) {
+func (m *StringQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3293,7 +3293,7 @@ func (m *StringQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StringQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *StringQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3317,7 +3317,7 @@ func (m *StringQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MatchFieldQuery) Marshal() (dAtA []byte, err error) {
+func (m *MatchFieldQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3327,7 +3327,7 @@ func (m *MatchFieldQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MatchFieldQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *MatchFieldQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3368,7 +3368,7 @@ func (m *MatchFieldQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MatchLinkedFieldsQuery) Marshal() (dAtA []byte, err error) {
+func (m *MatchLinkedFieldsQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3378,7 +3378,7 @@ func (m *MatchLinkedFieldsQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MatchLinkedFieldsQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *MatchLinkedFieldsQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3409,7 +3409,7 @@ func (m *MatchLinkedFieldsQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DocIDQuery) Marshal() (dAtA []byte, err error) {
+func (m *DocIDQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3419,7 +3419,7 @@ func (m *DocIDQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DocIDQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *DocIDQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3445,7 +3445,7 @@ func (m *DocIDQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BaseQuery) Marshal() (dAtA []byte, err error) {
+func (m *BaseQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3455,7 +3455,7 @@ func (m *BaseQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BaseQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaseQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3473,7 +3473,7 @@ func (m *BaseQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Query.Size()
 			i -= size
-			if _, err := m.Query.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Query.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3481,7 +3481,7 @@ func (m *BaseQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BaseQuery_MatchFieldQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaseQuery_MatchFieldQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3502,7 +3502,7 @@ func (m *BaseQuery_MatchFieldQuery) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	}
 	return len(dAtA) - i, nil
 }
-func (m *BaseQuery_MatchLinkedFieldsQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaseQuery_MatchLinkedFieldsQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3523,7 +3523,7 @@ func (m *BaseQuery_MatchLinkedFieldsQuery) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *BaseQuery_DocIdQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaseQuery_DocIdQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3544,7 +3544,7 @@ func (m *BaseQuery_DocIdQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *BaseQuery_MatchNoneQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaseQuery_MatchNoneQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3565,7 +3565,7 @@ func (m *BaseQuery_MatchNoneQuery) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ConjunctionQuery) Marshal() (dAtA []byte, err error) {
+func (m *ConjunctionQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3575,7 +3575,7 @@ func (m *ConjunctionQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ConjunctionQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConjunctionQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3606,7 +3606,7 @@ func (m *ConjunctionQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DisjunctionQuery) Marshal() (dAtA []byte, err error) {
+func (m *DisjunctionQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3616,7 +3616,7 @@ func (m *DisjunctionQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DisjunctionQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *DisjunctionQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3647,7 +3647,7 @@ func (m *DisjunctionQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MatchNoneQuery) Marshal() (dAtA []byte, err error) {
+func (m *MatchNoneQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3657,7 +3657,7 @@ func (m *MatchNoneQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MatchNoneQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *MatchNoneQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3674,7 +3674,7 @@ func (m *MatchNoneQuery) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SearchResult) Marshal() (dAtA []byte, err error) {
+func (m *SearchResult) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3684,7 +3684,7 @@ func (m *SearchResult) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SearchResult) MarshalTo(dAtA []byte) (int, error) {
+func (m *SearchResult) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3759,7 +3759,7 @@ func (m *SearchResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SearchResult_Matches) Marshal() (dAtA []byte, err error) {
+func (m *SearchResult_Matches) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3769,7 +3769,7 @@ func (m *SearchResult_Matches) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SearchResult_Matches) MarshalTo(dAtA []byte) (int, error) {
+func (m *SearchResult_Matches) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3795,7 +3795,7 @@ func (m *SearchResult_Matches) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SearchResponse) Marshal() (dAtA []byte, err error) {
+func (m *SearchResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3805,7 +3805,7 @@ func (m *SearchResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SearchResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *SearchResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3850,7 +3850,7 @@ func (m *SearchResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SearchResponse_Count) Marshal() (dAtA []byte, err error) {
+func (m *SearchResponse_Count) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3860,7 +3860,7 @@ func (m *SearchResponse_Count) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SearchResponse_Count) MarshalTo(dAtA []byte) (int, error) {
+func (m *SearchResponse_Count) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3887,7 +3887,7 @@ func (m *SearchResponse_Count) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SearchOptionsRequest) Marshal() (dAtA []byte, err error) {
+func (m *SearchOptionsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3897,7 +3897,7 @@ func (m *SearchOptionsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SearchOptionsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *SearchOptionsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3932,7 +3932,7 @@ func (m *SearchOptionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SearchOptionsResponse) Marshal() (dAtA []byte, err error) {
+func (m *SearchOptionsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3942,7 +3942,7 @@ func (m *SearchOptionsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SearchOptionsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *SearchOptionsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3968,7 +3968,7 @@ func (m *SearchOptionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AutocompleteResponse) Marshal() (dAtA []byte, err error) {
+func (m *AutocompleteResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3978,7 +3978,7 @@ func (m *AutocompleteResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AutocompleteResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *AutocompleteResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

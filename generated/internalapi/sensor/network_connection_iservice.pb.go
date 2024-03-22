@@ -46,7 +46,7 @@ func (*NetworkConnectionInfoMessage) Descriptor() ([]byte, []int) {
 func (m *NetworkConnectionInfoMessage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkConnectionInfoMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkConnectionInfoMessage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkConnectionInfoMessage.Marshal(b, m, deterministic)
 	} else {
@@ -72,7 +72,7 @@ var xxx_messageInfo_NetworkConnectionInfoMessage proto.InternalMessageInfo
 
 type isNetworkConnectionInfoMessage_Msg interface {
 	isNetworkConnectionInfoMessage_Msg()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isNetworkConnectionInfoMessage_Msg
 }
@@ -169,7 +169,7 @@ func (*NetworkFlowsControlMessage) Descriptor() ([]byte, []int) {
 func (m *NetworkFlowsControlMessage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkFlowsControlMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkFlowsControlMessage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkFlowsControlMessage.Marshal(b, m, deterministic)
 	} else {
@@ -245,7 +245,7 @@ func (*IPAddressList) Descriptor() ([]byte, []int) {
 func (m *IPAddressList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IPAddressList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *IPAddressList) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IPAddressList.Marshal(b, m, deterministic)
 	} else {
@@ -329,7 +329,7 @@ func (*IPNetworkList) Descriptor() ([]byte, []int) {
 func (m *IPNetworkList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IPNetworkList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *IPNetworkList) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IPNetworkList.Marshal(b, m, deterministic)
 	} else {
@@ -545,7 +545,7 @@ var _NetworkConnectionInfoService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/sensor/network_connection_iservice.proto",
 }
 
-func (m *NetworkConnectionInfoMessage) Marshal() (dAtA []byte, err error) {
+func (m *NetworkConnectionInfoMessage) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -555,7 +555,7 @@ func (m *NetworkConnectionInfoMessage) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkConnectionInfoMessage) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkConnectionInfoMessage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -573,7 +573,7 @@ func (m *NetworkConnectionInfoMessage) MarshalToSizedBuffer(dAtA []byte) (int, e
 		{
 			size := m.Msg.Size()
 			i -= size
-			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Msg.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -581,7 +581,7 @@ func (m *NetworkConnectionInfoMessage) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkConnectionInfoMessage_Register) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkConnectionInfoMessage_Register) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -602,7 +602,7 @@ func (m *NetworkConnectionInfoMessage_Register) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *NetworkConnectionInfoMessage_Info) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkConnectionInfoMessage_Info) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -623,7 +623,7 @@ func (m *NetworkConnectionInfoMessage_Info) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *NetworkFlowsControlMessage) Marshal() (dAtA []byte, err error) {
+func (m *NetworkFlowsControlMessage) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -633,7 +633,7 @@ func (m *NetworkFlowsControlMessage) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkFlowsControlMessage) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkFlowsControlMessage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -674,7 +674,7 @@ func (m *NetworkFlowsControlMessage) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *IPAddressList) Marshal() (dAtA []byte, err error) {
+func (m *IPAddressList) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -684,7 +684,7 @@ func (m *IPAddressList) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IPAddressList) MarshalTo(dAtA []byte) (int, error) {
+func (m *IPAddressList) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -719,7 +719,7 @@ func (m *IPAddressList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *IPNetworkList) Marshal() (dAtA []byte, err error) {
+func (m *IPNetworkList) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -729,7 +729,7 @@ func (m *IPNetworkList) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IPNetworkList) MarshalTo(dAtA []byte) (int, error) {
+func (m *IPNetworkList) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

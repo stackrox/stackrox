@@ -668,21 +668,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_PostReportConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_PostReportConfiguration_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_PostReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_PostReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -691,21 +691,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_UpdateReportConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_UpdateReportConfiguration_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_UpdateReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_UpdateReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -714,21 +714,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_ListReportConfigurations_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_ListReportConfigurations_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_ListReportConfigurations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_ListReportConfigurations_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -737,21 +737,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_CountReportConfigurations_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_CountReportConfigurations_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_CountReportConfigurations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_CountReportConfigurations_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -760,21 +760,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_GetReportConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_GetReportConfiguration_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -783,21 +783,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_DeleteReportConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_DeleteReportConfiguration_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_DeleteReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_DeleteReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -806,21 +806,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_GetReportStatus_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_GetReportStatus_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetReportStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetReportStatus_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -829,21 +829,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_GetReportHistory_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_GetReportHistory_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetReportHistory_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetReportHistory_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -852,21 +852,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_GetMyReportHistory_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_GetMyReportHistory_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetMyReportHistory_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetMyReportHistory_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -875,21 +875,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_RunReport_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_RunReport_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_RunReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_RunReport_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -898,21 +898,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_CancelReport_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_CancelReport_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_CancelReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_CancelReport_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -921,21 +921,21 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ReportService_DeleteReport_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ReportService_DeleteReport_0(rctx, inboundMarshalVTer, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_DeleteReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_DeleteReport_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -983,240 +983,240 @@ func RegisterReportServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 	mux.Handle("POST", pattern_ReportService_PostReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_PostReportConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_PostReportConfiguration_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_PostReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_PostReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("PUT", pattern_ReportService_UpdateReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_UpdateReportConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_UpdateReportConfiguration_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_UpdateReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_UpdateReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ReportService_ListReportConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_ListReportConfigurations_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_ListReportConfigurations_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_ListReportConfigurations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_ListReportConfigurations_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ReportService_CountReportConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_CountReportConfigurations_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_CountReportConfigurations_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_CountReportConfigurations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_CountReportConfigurations_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ReportService_GetReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_GetReportConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_GetReportConfiguration_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("DELETE", pattern_ReportService_DeleteReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_DeleteReportConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_DeleteReportConfiguration_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_DeleteReportConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_DeleteReportConfiguration_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ReportService_GetReportStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_GetReportStatus_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_GetReportStatus_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetReportStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetReportStatus_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ReportService_GetReportHistory_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_GetReportHistory_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_GetReportHistory_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetReportHistory_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetReportHistory_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("GET", pattern_ReportService_GetMyReportHistory_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_GetMyReportHistory_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_GetMyReportHistory_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_GetMyReportHistory_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_GetMyReportHistory_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("POST", pattern_ReportService_RunReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_RunReport_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_RunReport_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_RunReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_RunReport_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("DELETE", pattern_ReportService_CancelReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_CancelReport_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_CancelReport_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_CancelReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_CancelReport_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	mux.Handle("DELETE", pattern_ReportService_DeleteReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		inboundMarshalVTer, outboundMarshalVTer := runtime.MarshalerForRequest(mux, req)
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
-		resp, md, err := request_ReportService_DeleteReport_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ReportService_DeleteReport_0(rctx, inboundMarshalVTer, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshalVTer, w, req, err)
 			return
 		}
 
-		forward_ReportService_DeleteReport_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ReportService_DeleteReport_0(ctx, mux, outboundMarshalVTer, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 

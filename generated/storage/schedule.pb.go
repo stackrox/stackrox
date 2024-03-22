@@ -76,7 +76,7 @@ func (*Schedule) Descriptor() ([]byte, []int) {
 func (m *Schedule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Schedule) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Schedule.Marshal(b, m, deterministic)
 	} else {
@@ -102,7 +102,7 @@ var xxx_messageInfo_Schedule proto.InternalMessageInfo
 
 type isSchedule_Interval interface {
 	isSchedule_Interval()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isSchedule_Interval
 }
@@ -241,7 +241,7 @@ func (*Schedule_WeeklyInterval) Descriptor() ([]byte, []int) {
 func (m *Schedule_WeeklyInterval) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule_WeeklyInterval) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Schedule_WeeklyInterval) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Schedule_WeeklyInterval.Marshal(b, m, deterministic)
 	} else {
@@ -302,7 +302,7 @@ func (*Schedule_DaysOfWeek) Descriptor() ([]byte, []int) {
 func (m *Schedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Schedule_DaysOfWeek) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Schedule_DaysOfWeek.Marshal(b, m, deterministic)
 	} else {
@@ -367,7 +367,7 @@ func (*Schedule_DaysOfMonth) Descriptor() ([]byte, []int) {
 func (m *Schedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Schedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Schedule_DaysOfMonth) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Schedule_DaysOfMonth.Marshal(b, m, deterministic)
 	} else {
@@ -453,7 +453,7 @@ var fileDescriptor_50417c3585ef67fa = []byte{
 	0x02, 0x00, 0x00,
 }
 
-func (m *Schedule) Marshal() (dAtA []byte, err error) {
+func (m *Schedule) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -463,7 +463,7 @@ func (m *Schedule) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -481,7 +481,7 @@ func (m *Schedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Interval.Size()
 			i -= size
-			if _, err := m.Interval.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Interval.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -504,7 +504,7 @@ func (m *Schedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Schedule_Weekly) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule_Weekly) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -525,7 +525,7 @@ func (m *Schedule_Weekly) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Schedule_DaysOfWeek_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule_DaysOfWeek_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -546,7 +546,7 @@ func (m *Schedule_DaysOfWeek_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Schedule_DaysOfMonth_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule_DaysOfMonth_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -567,7 +567,7 @@ func (m *Schedule_DaysOfMonth_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Schedule_WeeklyInterval) Marshal() (dAtA []byte, err error) {
+func (m *Schedule_WeeklyInterval) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -577,7 +577,7 @@ func (m *Schedule_WeeklyInterval) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule_WeeklyInterval) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule_WeeklyInterval) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -599,7 +599,7 @@ func (m *Schedule_WeeklyInterval) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *Schedule_DaysOfWeek) Marshal() (dAtA []byte, err error) {
+func (m *Schedule_DaysOfWeek) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -609,7 +609,7 @@ func (m *Schedule_DaysOfWeek) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule_DaysOfWeek) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule_DaysOfWeek) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -645,7 +645,7 @@ func (m *Schedule_DaysOfWeek) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Schedule_DaysOfMonth) Marshal() (dAtA []byte, err error) {
+func (m *Schedule_DaysOfMonth) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -655,7 +655,7 @@ func (m *Schedule_DaysOfMonth) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Schedule_DaysOfMonth) MarshalTo(dAtA []byte) (int, error) {
+func (m *Schedule_DaysOfMonth) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

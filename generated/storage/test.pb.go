@@ -144,7 +144,7 @@ func (*TestSingleKeyStruct) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct.Marshal(b, m, deterministic)
 	} else {
@@ -170,7 +170,7 @@ var xxx_messageInfo_TestSingleKeyStruct proto.InternalMessageInfo
 
 type isTestSingleKeyStruct_Oneof interface {
 	isTestSingleKeyStruct_Oneof()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isTestSingleKeyStruct_Oneof
 }
@@ -389,7 +389,7 @@ func (*TestSingleKeyStruct_Embedded) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct_Embedded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct_Embedded) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct_Embedded.Marshal(b, m, deterministic)
 	} else {
@@ -451,7 +451,7 @@ func (*TestSingleKeyStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct_Embedded_Embedded2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct_Embedded_Embedded2.Marshal(b, m, deterministic)
 	} else {
@@ -512,7 +512,7 @@ func (*TestSingleKeyStruct_Nested) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct_Nested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct_Nested) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct_Nested.Marshal(b, m, deterministic)
 	} else {
@@ -580,7 +580,7 @@ func (*TestSingleKeyStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct_Nested_Nested2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct_Nested_Nested2.Marshal(b, m, deterministic)
 	} else {
@@ -641,7 +641,7 @@ func (*TestSingleKeyStruct_OneOfNested) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct_OneOfNested) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct_OneOfNested.Marshal(b, m, deterministic)
 	} else {
@@ -711,7 +711,7 @@ func (*TestSingleKeyStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleKeyStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleKeyStruct_OneOfNested_Nested2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleKeyStruct_OneOfNested_Nested2.Marshal(b, m, deterministic)
 	} else {
@@ -791,7 +791,7 @@ func (*TestSingleUUIDKeyStruct) Descriptor() ([]byte, []int) {
 func (m *TestSingleUUIDKeyStruct) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct.Marshal(b, m, deterministic)
 	} else {
@@ -817,7 +817,7 @@ var xxx_messageInfo_TestSingleUUIDKeyStruct proto.InternalMessageInfo
 
 type isTestSingleUUIDKeyStruct_Oneof interface {
 	isTestSingleUUIDKeyStruct_Oneof()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isTestSingleUUIDKeyStruct_Oneof
 }
@@ -1036,7 +1036,7 @@ func (*TestSingleUUIDKeyStruct_Embedded) Descriptor() ([]byte, []int) {
 func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded.Marshal(b, m, deterministic)
 	} else {
@@ -1100,7 +1100,7 @@ func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) 
 func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct_Embedded_Embedded2.Marshal(b, m, deterministic)
 	} else {
@@ -1161,7 +1161,7 @@ func (*TestSingleUUIDKeyStruct_Nested) Descriptor() ([]byte, []int) {
 func (m *TestSingleUUIDKeyStruct_Nested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct_Nested.Marshal(b, m, deterministic)
 	} else {
@@ -1231,7 +1231,7 @@ func (*TestSingleUUIDKeyStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
 func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct_Nested_Nested2.Marshal(b, m, deterministic)
 	} else {
@@ -1292,7 +1292,7 @@ func (*TestSingleUUIDKeyStruct_OneOfNested) Descriptor() ([]byte, []int) {
 func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested.Marshal(b, m, deterministic)
 	} else {
@@ -1364,7 +1364,7 @@ func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int)
 func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestSingleUUIDKeyStruct_OneOfNested_Nested2.Marshal(b, m, deterministic)
 	} else {
@@ -1445,7 +1445,7 @@ func (*TestStruct) Descriptor() ([]byte, []int) {
 func (m *TestStruct) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct.Marshal(b, m, deterministic)
 	} else {
@@ -1471,7 +1471,7 @@ var xxx_messageInfo_TestStruct proto.InternalMessageInfo
 
 type isTestStruct_Oneof interface {
 	isTestStruct_Oneof()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isTestStruct_Oneof
 }
@@ -1709,7 +1709,7 @@ func (*TestStruct_Embedded) Descriptor() ([]byte, []int) {
 func (m *TestStruct_Embedded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct_Embedded) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct_Embedded.Marshal(b, m, deterministic)
 	} else {
@@ -1769,7 +1769,7 @@ func (*TestStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 func (m *TestStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct_Embedded_Embedded2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct_Embedded_Embedded2.Marshal(b, m, deterministic)
 	} else {
@@ -1832,7 +1832,7 @@ func (*TestStruct_Nested) Descriptor() ([]byte, []int) {
 func (m *TestStruct_Nested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct_Nested) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct_Nested.Marshal(b, m, deterministic)
 	} else {
@@ -1916,7 +1916,7 @@ func (*TestStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
 func (m *TestStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct_Nested_Nested2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct_Nested_Nested2.Marshal(b, m, deterministic)
 	} else {
@@ -1990,7 +1990,7 @@ func (*TestStruct_OneOfNested) Descriptor() ([]byte, []int) {
 func (m *TestStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct_OneOfNested) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct_OneOfNested.Marshal(b, m, deterministic)
 	} else {
@@ -2050,7 +2050,7 @@ func (*TestStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
 func (m *TestStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestStruct_OneOfNested_Nested2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestStruct_OneOfNested_Nested2.Marshal(b, m, deterministic)
 	} else {
@@ -2131,7 +2131,7 @@ func (*TestGrandparent) Descriptor() ([]byte, []int) {
 func (m *TestGrandparent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestGrandparent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestGrandparent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestGrandparent.Marshal(b, m, deterministic)
 	} else {
@@ -2226,7 +2226,7 @@ func (*TestGrandparent_Embedded) Descriptor() ([]byte, []int) {
 func (m *TestGrandparent_Embedded) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestGrandparent_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestGrandparent_Embedded) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestGrandparent_Embedded.Marshal(b, m, deterministic)
 	} else {
@@ -2299,7 +2299,7 @@ func (*TestGrandparent_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 func (m *TestGrandparent_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestGrandparent_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestGrandparent_Embedded_Embedded2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestGrandparent_Embedded_Embedded2.Marshal(b, m, deterministic)
 	} else {
@@ -2363,7 +2363,7 @@ func (*TestParent1) Descriptor() ([]byte, []int) {
 func (m *TestParent1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestParent1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestParent1) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestParent1.Marshal(b, m, deterministic)
 	} else {
@@ -2461,7 +2461,7 @@ func (*TestParent1_Child1Ref) Descriptor() ([]byte, []int) {
 func (m *TestParent1_Child1Ref) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestParent1_Child1Ref) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestParent1_Child1Ref) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestParent1_Child1Ref.Marshal(b, m, deterministic)
 	} else {
@@ -2522,7 +2522,7 @@ func (*TestChild1) Descriptor() ([]byte, []int) {
 func (m *TestChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestChild1) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestChild1.Marshal(b, m, deterministic)
 	} else {
@@ -2592,7 +2592,7 @@ func (*TestGrandChild1) Descriptor() ([]byte, []int) {
 func (m *TestGrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestGrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestGrandChild1) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestGrandChild1.Marshal(b, m, deterministic)
 	} else {
@@ -2674,7 +2674,7 @@ func (*TestGGrandChild1) Descriptor() ([]byte, []int) {
 func (m *TestGGrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestGGrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestGGrandChild1) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestGGrandChild1.Marshal(b, m, deterministic)
 	} else {
@@ -2744,7 +2744,7 @@ func (*TestG2GrandChild1) Descriptor() ([]byte, []int) {
 func (m *TestG2GrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestG2GrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestG2GrandChild1) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestG2GrandChild1.Marshal(b, m, deterministic)
 	} else {
@@ -2826,7 +2826,7 @@ func (*TestG3GrandChild1) Descriptor() ([]byte, []int) {
 func (m *TestG3GrandChild1) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestG3GrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestG3GrandChild1) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestG3GrandChild1.Marshal(b, m, deterministic)
 	} else {
@@ -2895,7 +2895,7 @@ func (*TestParent2) Descriptor() ([]byte, []int) {
 func (m *TestParent2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestParent2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestParent2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestParent2.Marshal(b, m, deterministic)
 	} else {
@@ -2973,7 +2973,7 @@ func (*TestChild2) Descriptor() ([]byte, []int) {
 func (m *TestChild2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestChild2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestChild2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestChild2.Marshal(b, m, deterministic)
 	} else {
@@ -3056,7 +3056,7 @@ func (*TestParent3) Descriptor() ([]byte, []int) {
 func (m *TestParent3) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestParent3) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestParent3) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestParent3.Marshal(b, m, deterministic)
 	} else {
@@ -3132,7 +3132,7 @@ func (*TestParent4) Descriptor() ([]byte, []int) {
 func (m *TestParent4) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestParent4) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestParent4) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestParent4.Marshal(b, m, deterministic)
 	} else {
@@ -3208,7 +3208,7 @@ func (*TestChild1P4) Descriptor() ([]byte, []int) {
 func (m *TestChild1P4) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestChild1P4) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestChild1P4) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestChild1P4.Marshal(b, m, deterministic)
 	} else {
@@ -3284,7 +3284,7 @@ func (*TestShortCircuit) Descriptor() ([]byte, []int) {
 func (m *TestShortCircuit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestShortCircuit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestShortCircuit) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestShortCircuit.Marshal(b, m, deterministic)
 	} else {
@@ -3471,7 +3471,7 @@ var fileDescriptor_f80f1f1db1167453 = []byte{
 	0x00, 0xff, 0xff, 0xb8, 0x04, 0xf5, 0x09, 0x2a, 0x14, 0x00, 0x00,
 }
 
-func (m *TestSingleKeyStruct) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3481,7 +3481,7 @@ func (m *TestSingleKeyStruct) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3508,7 +3508,7 @@ func (m *TestSingleKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Oneof.Size()
 			i -= size
-			if _, err := m.Oneof.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Oneof.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3645,7 +3645,7 @@ func (m *TestSingleKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleKeyStruct_Oneofstring) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_Oneofstring) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3659,7 +3659,7 @@ func (m *TestSingleKeyStruct_Oneofstring) MarshalToSizedBuffer(dAtA []byte) (int
 	dAtA[i] = 0x72
 	return len(dAtA) - i, nil
 }
-func (m *TestSingleKeyStruct_Oneofnested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_Oneofnested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3680,7 +3680,7 @@ func (m *TestSingleKeyStruct_Oneofnested) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TestSingleKeyStruct_Embedded) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct_Embedded) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3690,7 +3690,7 @@ func (m *TestSingleKeyStruct_Embedded) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct_Embedded) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_Embedded) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3714,7 +3714,7 @@ func (m *TestSingleKeyStruct_Embedded) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleKeyStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct_Embedded_Embedded2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3724,7 +3724,7 @@ func (m *TestSingleKeyStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct_Embedded_Embedded2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_Embedded_Embedded2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3748,7 +3748,7 @@ func (m *TestSingleKeyStruct_Embedded_Embedded2) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleKeyStruct_Nested) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct_Nested) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3758,7 +3758,7 @@ func (m *TestSingleKeyStruct_Nested) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct_Nested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_Nested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3794,7 +3794,7 @@ func (m *TestSingleKeyStruct_Nested) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleKeyStruct_Nested_Nested2) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct_Nested_Nested2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3804,7 +3804,7 @@ func (m *TestSingleKeyStruct_Nested_Nested2) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct_Nested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_Nested_Nested2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3828,7 +3828,7 @@ func (m *TestSingleKeyStruct_Nested_Nested2) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleKeyStruct_OneOfNested) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct_OneOfNested) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3838,7 +3838,7 @@ func (m *TestSingleKeyStruct_OneOfNested) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct_OneOfNested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_OneOfNested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3874,7 +3874,7 @@ func (m *TestSingleKeyStruct_OneOfNested) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleKeyStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3884,7 +3884,7 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, err er
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3908,7 +3908,7 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3918,7 +3918,7 @@ func (m *TestSingleUUIDKeyStruct) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3945,7 +3945,7 @@ func (m *TestSingleUUIDKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		{
 			size := m.Oneof.Size()
 			i -= size
-			if _, err := m.Oneof.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Oneof.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4082,7 +4082,7 @@ func (m *TestSingleUUIDKeyStruct) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Oneofstring) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_Oneofstring) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4096,7 +4096,7 @@ func (m *TestSingleUUIDKeyStruct_Oneofstring) MarshalToSizedBuffer(dAtA []byte) 
 	dAtA[i] = 0x72
 	return len(dAtA) - i, nil
 }
-func (m *TestSingleUUIDKeyStruct_Oneofnested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_Oneofnested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4117,7 +4117,7 @@ func (m *TestSingleUUIDKeyStruct_Oneofnested) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TestSingleUUIDKeyStruct_Embedded) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct_Embedded) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4127,7 +4127,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Embedded) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_Embedded) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4151,7 +4151,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4161,7 +4161,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4185,7 +4185,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalToSizedBuffer(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Nested) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct_Nested) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4195,7 +4195,7 @@ func (m *TestSingleUUIDKeyStruct_Nested) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Nested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_Nested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4231,7 +4231,7 @@ func (m *TestSingleUUIDKeyStruct_Nested) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4241,7 +4241,7 @@ func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4265,7 +4265,7 @@ func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct_OneOfNested) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4275,7 +4275,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested) Marshal() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4311,7 +4311,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, err error) {
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4321,7 +4321,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, er
 	return dAtA[:n], nil
 }
 
-func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4345,7 +4345,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalToSizedBuffer(dAtA 
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4355,7 +4355,7 @@ func (m *TestStruct) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4424,7 +4424,7 @@ func (m *TestStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Oneof.Size()
 			i -= size
-			if _, err := m.Oneof.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Oneof.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4561,7 +4561,7 @@ func (m *TestStruct) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct_Oneofstring) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_Oneofstring) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4575,7 +4575,7 @@ func (m *TestStruct_Oneofstring) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	dAtA[i] = 0x72
 	return len(dAtA) - i, nil
 }
-func (m *TestStruct_Oneofnested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_Oneofnested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4596,7 +4596,7 @@ func (m *TestStruct_Oneofnested) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *TestStruct_Embedded) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct_Embedded) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4606,7 +4606,7 @@ func (m *TestStruct_Embedded) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct_Embedded) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_Embedded) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4630,7 +4630,7 @@ func (m *TestStruct_Embedded) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct_Embedded_Embedded2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4640,7 +4640,7 @@ func (m *TestStruct_Embedded_Embedded2) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct_Embedded_Embedded2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_Embedded_Embedded2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4664,7 +4664,7 @@ func (m *TestStruct_Embedded_Embedded2) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct_Nested) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct_Nested) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4674,7 +4674,7 @@ func (m *TestStruct_Nested) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct_Nested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_Nested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4725,7 +4725,7 @@ func (m *TestStruct_Nested) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct_Nested_Nested2) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct_Nested_Nested2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4735,7 +4735,7 @@ func (m *TestStruct_Nested_Nested2) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct_Nested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_Nested_Nested2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4774,7 +4774,7 @@ func (m *TestStruct_Nested_Nested2) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct_OneOfNested) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct_OneOfNested) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4784,7 +4784,7 @@ func (m *TestStruct_OneOfNested) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct_OneOfNested) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_OneOfNested) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4808,7 +4808,7 @@ func (m *TestStruct_OneOfNested) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *TestStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, err error) {
+func (m *TestStruct_OneOfNested_Nested2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4818,7 +4818,7 @@ func (m *TestStruct_OneOfNested_Nested2) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestStruct_OneOfNested_Nested2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestStruct_OneOfNested_Nested2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4842,7 +4842,7 @@ func (m *TestStruct_OneOfNested_Nested2) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *TestGrandparent) Marshal() (dAtA []byte, err error) {
+func (m *TestGrandparent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4852,7 +4852,7 @@ func (m *TestGrandparent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestGrandparent) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestGrandparent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4908,7 +4908,7 @@ func (m *TestGrandparent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestGrandparent_Embedded) Marshal() (dAtA []byte, err error) {
+func (m *TestGrandparent_Embedded) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4918,7 +4918,7 @@ func (m *TestGrandparent_Embedded) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestGrandparent_Embedded) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestGrandparent_Embedded) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4956,7 +4956,7 @@ func (m *TestGrandparent_Embedded) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *TestGrandparent_Embedded_Embedded2) Marshal() (dAtA []byte, err error) {
+func (m *TestGrandparent_Embedded_Embedded2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4966,7 +4966,7 @@ func (m *TestGrandparent_Embedded_Embedded2) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *TestGrandparent_Embedded_Embedded2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestGrandparent_Embedded_Embedded2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4990,7 +4990,7 @@ func (m *TestGrandparent_Embedded_Embedded2) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *TestParent1) Marshal() (dAtA []byte, err error) {
+func (m *TestParent1) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5000,7 +5000,7 @@ func (m *TestParent1) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestParent1) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestParent1) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5061,7 +5061,7 @@ func (m *TestParent1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestParent1_Child1Ref) Marshal() (dAtA []byte, err error) {
+func (m *TestParent1_Child1Ref) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5071,7 +5071,7 @@ func (m *TestParent1_Child1Ref) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestParent1_Child1Ref) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestParent1_Child1Ref) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5095,7 +5095,7 @@ func (m *TestParent1_Child1Ref) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestChild1) Marshal() (dAtA []byte, err error) {
+func (m *TestChild1) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5105,7 +5105,7 @@ func (m *TestChild1) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestChild1) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestChild1) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5136,7 +5136,7 @@ func (m *TestChild1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestGrandChild1) Marshal() (dAtA []byte, err error) {
+func (m *TestGrandChild1) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5146,7 +5146,7 @@ func (m *TestGrandChild1) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestGrandChild1) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestGrandChild1) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5191,7 +5191,7 @@ func (m *TestGrandChild1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestGGrandChild1) Marshal() (dAtA []byte, err error) {
+func (m *TestGGrandChild1) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5201,7 +5201,7 @@ func (m *TestGGrandChild1) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestGGrandChild1) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestGGrandChild1) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5232,7 +5232,7 @@ func (m *TestGGrandChild1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestG2GrandChild1) Marshal() (dAtA []byte, err error) {
+func (m *TestG2GrandChild1) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5242,7 +5242,7 @@ func (m *TestG2GrandChild1) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestG2GrandChild1) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestG2GrandChild1) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5287,7 +5287,7 @@ func (m *TestG2GrandChild1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestG3GrandChild1) Marshal() (dAtA []byte, err error) {
+func (m *TestG3GrandChild1) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5297,7 +5297,7 @@ func (m *TestG3GrandChild1) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestG3GrandChild1) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestG3GrandChild1) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5328,7 +5328,7 @@ func (m *TestG3GrandChild1) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestParent2) Marshal() (dAtA []byte, err error) {
+func (m *TestParent2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5338,7 +5338,7 @@ func (m *TestParent2) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestParent2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestParent2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5376,7 +5376,7 @@ func (m *TestParent2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestChild2) Marshal() (dAtA []byte, err error) {
+func (m *TestChild2) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5386,7 +5386,7 @@ func (m *TestChild2) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestChild2) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestChild2) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5431,7 +5431,7 @@ func (m *TestChild2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestParent3) Marshal() (dAtA []byte, err error) {
+func (m *TestParent3) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5441,7 +5441,7 @@ func (m *TestParent3) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestParent3) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestParent3) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5479,7 +5479,7 @@ func (m *TestParent3) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestParent4) Marshal() (dAtA []byte, err error) {
+func (m *TestParent4) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5489,7 +5489,7 @@ func (m *TestParent4) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestParent4) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestParent4) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5527,7 +5527,7 @@ func (m *TestParent4) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestChild1P4) Marshal() (dAtA []byte, err error) {
+func (m *TestChild1P4) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5537,7 +5537,7 @@ func (m *TestChild1P4) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestChild1P4) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestChild1P4) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5575,7 +5575,7 @@ func (m *TestChild1P4) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestShortCircuit) Marshal() (dAtA []byte, err error) {
+func (m *TestShortCircuit) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5585,7 +5585,7 @@ func (m *TestShortCircuit) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestShortCircuit) MarshalTo(dAtA []byte) (int, error) {
+func (m *TestShortCircuit) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

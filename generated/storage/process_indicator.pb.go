@@ -52,7 +52,7 @@ func (*ProcessIndicator) Descriptor() ([]byte, []int) {
 func (m *ProcessIndicator) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessIndicator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessIndicator) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessIndicator.Marshal(b, m, deterministic)
 	} else {
@@ -184,7 +184,7 @@ func (*ProcessIndicatorUniqueKey) Descriptor() ([]byte, []int) {
 func (m *ProcessIndicatorUniqueKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessIndicatorUniqueKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessIndicatorUniqueKey) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessIndicatorUniqueKey.Marshal(b, m, deterministic)
 	} else {
@@ -275,7 +275,7 @@ func (*NetworkProcessUniqueKey) Descriptor() ([]byte, []int) {
 func (m *NetworkProcessUniqueKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkProcessUniqueKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkProcessUniqueKey) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkProcessUniqueKey.Marshal(b, m, deterministic)
 	} else {
@@ -375,7 +375,7 @@ func (*ProcessSignal) Descriptor() ([]byte, []int) {
 func (m *ProcessSignal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessSignal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessSignal) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessSignal.Marshal(b, m, deterministic)
 	} else {
@@ -525,7 +525,7 @@ func (*ProcessSignal_LineageInfo) Descriptor() ([]byte, []int) {
 func (m *ProcessSignal_LineageInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessSignal_LineageInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessSignal_LineageInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessSignal_LineageInfo.Marshal(b, m, deterministic)
 	} else {
@@ -631,7 +631,7 @@ var fileDescriptor_a226da59a324d96a = []byte{
 	0xa9, 0xbd, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x2c, 0x60, 0xb0, 0x2b, 0x56, 0x05, 0x00, 0x00,
 }
 
-func (m *ProcessIndicator) Marshal() (dAtA []byte, err error) {
+func (m *ProcessIndicator) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -641,7 +641,7 @@ func (m *ProcessIndicator) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessIndicator) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessIndicator) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -738,7 +738,7 @@ func (m *ProcessIndicator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessIndicatorUniqueKey) Marshal() (dAtA []byte, err error) {
+func (m *ProcessIndicatorUniqueKey) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -748,7 +748,7 @@ func (m *ProcessIndicatorUniqueKey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessIndicatorUniqueKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessIndicatorUniqueKey) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -800,7 +800,7 @@ func (m *ProcessIndicatorUniqueKey) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkProcessUniqueKey) Marshal() (dAtA []byte, err error) {
+func (m *NetworkProcessUniqueKey) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -810,7 +810,7 @@ func (m *NetworkProcessUniqueKey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkProcessUniqueKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkProcessUniqueKey) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -848,7 +848,7 @@ func (m *NetworkProcessUniqueKey) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessSignal) Marshal() (dAtA []byte, err error) {
+func (m *ProcessSignal) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -858,7 +858,7 @@ func (m *ProcessSignal) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessSignal) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessSignal) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -970,7 +970,7 @@ func (m *ProcessSignal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessSignal_LineageInfo) Marshal() (dAtA []byte, err error) {
+func (m *ProcessSignal_LineageInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -980,7 +980,7 @@ func (m *ProcessSignal_LineageInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessSignal_LineageInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessSignal_LineageInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

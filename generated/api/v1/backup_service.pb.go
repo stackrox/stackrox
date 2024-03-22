@@ -43,7 +43,7 @@ func (*GetExternalBackupsResponse) Descriptor() ([]byte, []int) {
 func (m *GetExternalBackupsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetExternalBackupsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetExternalBackupsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetExternalBackupsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -111,7 +111,7 @@ func (*UpdateExternalBackupRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateExternalBackupRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateExternalBackupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateExternalBackupRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateExternalBackupRequest.Marshal(b, m, deterministic)
 	} else {
@@ -593,7 +593,7 @@ var _ExternalBackupService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/backup_service.proto",
 }
 
-func (m *GetExternalBackupsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetExternalBackupsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -603,7 +603,7 @@ func (m *GetExternalBackupsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetExternalBackupsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetExternalBackupsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -634,7 +634,7 @@ func (m *GetExternalBackupsResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateExternalBackupRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateExternalBackupRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -644,7 +644,7 @@ func (m *UpdateExternalBackupRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateExternalBackupRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateExternalBackupRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

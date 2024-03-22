@@ -46,7 +46,7 @@ func (*SuppressCVERequest) Descriptor() ([]byte, []int) {
 func (m *SuppressCVERequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SuppressCVERequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SuppressCVERequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SuppressCVERequest.Marshal(b, m, deterministic)
 	} else {
@@ -120,7 +120,7 @@ func (*UnsuppressCVERequest) Descriptor() ([]byte, []int) {
 func (m *UnsuppressCVERequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnsuppressCVERequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UnsuppressCVERequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UnsuppressCVERequest.Marshal(b, m, deterministic)
 	} else {
@@ -549,7 +549,7 @@ var _ClusterCVEService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/cve_service.proto",
 }
 
-func (m *SuppressCVERequest) Marshal() (dAtA []byte, err error) {
+func (m *SuppressCVERequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -559,7 +559,7 @@ func (m *SuppressCVERequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SuppressCVERequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *SuppressCVERequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -597,7 +597,7 @@ func (m *SuppressCVERequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UnsuppressCVERequest) Marshal() (dAtA []byte, err error) {
+func (m *UnsuppressCVERequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -607,7 +607,7 @@ func (m *UnsuppressCVERequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UnsuppressCVERequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UnsuppressCVERequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

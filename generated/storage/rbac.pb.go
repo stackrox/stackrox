@@ -121,7 +121,7 @@ func (*K8SRole) Descriptor() ([]byte, []int) {
 func (m *K8SRole) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *K8SRole) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *K8SRole) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_K8SRole.Marshal(b, m, deterministic)
 	} else {
@@ -269,7 +269,7 @@ func (*PolicyRule) Descriptor() ([]byte, []int) {
 func (m *PolicyRule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyRule) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyRule.Marshal(b, m, deterministic)
 	} else {
@@ -392,7 +392,7 @@ func (*K8SRoleBinding) Descriptor() ([]byte, []int) {
 func (m *K8SRoleBinding) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *K8SRoleBinding) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *K8SRoleBinding) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_K8SRoleBinding.Marshal(b, m, deterministic)
 	} else {
@@ -548,7 +548,7 @@ func (*Subject) Descriptor() ([]byte, []int) {
 func (m *Subject) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Subject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Subject) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Subject.Marshal(b, m, deterministic)
 	} else {
@@ -693,7 +693,7 @@ var fileDescriptor_385316e6bc10731c = []byte{
 	0x7f, 0x0a, 0x00, 0x00, 0xff, 0xff, 0x59, 0x26, 0xf8, 0xe3, 0x01, 0x07, 0x00, 0x00,
 }
 
-func (m *K8SRole) Marshal() (dAtA []byte, err error) {
+func (m *K8SRole) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -703,7 +703,7 @@ func (m *K8SRole) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *K8SRole) MarshalTo(dAtA []byte) (int, error) {
+func (m *K8SRole) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -829,7 +829,7 @@ func (m *K8SRole) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyRule) Marshal() (dAtA []byte, err error) {
+func (m *PolicyRule) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -839,7 +839,7 @@ func (m *PolicyRule) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyRule) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyRule) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -901,7 +901,7 @@ func (m *PolicyRule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *K8SRoleBinding) Marshal() (dAtA []byte, err error) {
+func (m *K8SRoleBinding) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -911,7 +911,7 @@ func (m *K8SRoleBinding) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *K8SRoleBinding) MarshalTo(dAtA []byte) (int, error) {
+func (m *K8SRoleBinding) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1044,7 +1044,7 @@ func (m *K8SRoleBinding) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Subject) Marshal() (dAtA []byte, err error) {
+func (m *Subject) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1054,7 +1054,7 @@ func (m *Subject) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Subject) MarshalTo(dAtA []byte) (int, error) {
+func (m *Subject) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -46,7 +46,7 @@ func (*Namespace) Descriptor() ([]byte, []int) {
 func (m *Namespace) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Namespace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Namespace) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Namespace.Marshal(b, m, deterministic)
 	} else {
@@ -128,7 +128,7 @@ func (*GetNamespacesResponse) Descriptor() ([]byte, []int) {
 func (m *GetNamespacesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNamespacesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNamespacesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNamespacesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -194,7 +194,7 @@ func (*GetNamespaceRequest) Descriptor() ([]byte, []int) {
 func (m *GetNamespaceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNamespaceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNamespaceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNamespaceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -395,7 +395,7 @@ var _NamespaceService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/namespace_service.proto",
 }
 
-func (m *Namespace) Marshal() (dAtA []byte, err error) {
+func (m *Namespace) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -405,7 +405,7 @@ func (m *Namespace) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Namespace) MarshalTo(dAtA []byte) (int, error) {
+func (m *Namespace) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -449,7 +449,7 @@ func (m *Namespace) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNamespacesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetNamespacesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -459,7 +459,7 @@ func (m *GetNamespacesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNamespacesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNamespacesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -490,7 +490,7 @@ func (m *GetNamespacesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNamespaceRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNamespaceRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -500,7 +500,7 @@ func (m *GetNamespaceRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNamespaceRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNamespaceRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

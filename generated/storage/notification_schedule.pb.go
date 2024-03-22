@@ -39,7 +39,7 @@ func (*NotificationSchedule) Descriptor() ([]byte, []int) {
 func (m *NotificationSchedule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NotificationSchedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NotificationSchedule) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NotificationSchedule.Marshal(b, m, deterministic)
 	} else {
@@ -108,7 +108,7 @@ var fileDescriptor_6cd1470f5425c810 = []byte{
 	0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0xef, 0x06, 0x87, 0xdd, 0xe2, 0x00, 0x00, 0x00,
 }
 
-func (m *NotificationSchedule) Marshal() (dAtA []byte, err error) {
+func (m *NotificationSchedule) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -118,7 +118,7 @@ func (m *NotificationSchedule) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NotificationSchedule) MarshalTo(dAtA []byte) (int, error) {
+func (m *NotificationSchedule) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

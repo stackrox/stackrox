@@ -159,7 +159,7 @@ func (*DiscoveredCluster) Descriptor() ([]byte, []int) {
 func (m *DiscoveredCluster) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DiscoveredCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DiscoveredCluster) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DiscoveredCluster.Marshal(b, m, deterministic)
 	} else {
@@ -255,7 +255,7 @@ func (*DiscoveredCluster_Metadata) Descriptor() ([]byte, []int) {
 func (m *DiscoveredCluster_Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DiscoveredCluster_Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DiscoveredCluster_Metadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DiscoveredCluster_Metadata.Marshal(b, m, deterministic)
 	} else {
@@ -351,7 +351,7 @@ func (*DiscoveredCluster_CloudSource) Descriptor() ([]byte, []int) {
 func (m *DiscoveredCluster_CloudSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DiscoveredCluster_CloudSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DiscoveredCluster_CloudSource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DiscoveredCluster_CloudSource.Marshal(b, m, deterministic)
 	} else {
@@ -418,7 +418,7 @@ func (*DiscoveredClustersFilter) Descriptor() ([]byte, []int) {
 func (m *DiscoveredClustersFilter) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DiscoveredClustersFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DiscoveredClustersFilter) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DiscoveredClustersFilter.Marshal(b, m, deterministic)
 	} else {
@@ -516,7 +516,7 @@ func (*CountDiscoveredClustersRequest) Descriptor() ([]byte, []int) {
 func (m *CountDiscoveredClustersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountDiscoveredClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountDiscoveredClustersRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountDiscoveredClustersRequest.Marshal(b, m, deterministic)
 	} else {
@@ -577,7 +577,7 @@ func (*CountDiscoveredClustersResponse) Descriptor() ([]byte, []int) {
 func (m *CountDiscoveredClustersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountDiscoveredClustersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountDiscoveredClustersResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountDiscoveredClustersResponse.Marshal(b, m, deterministic)
 	} else {
@@ -637,7 +637,7 @@ func (*GetDiscoveredClusterRequest) Descriptor() ([]byte, []int) {
 func (m *GetDiscoveredClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDiscoveredClusterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDiscoveredClusterRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDiscoveredClusterRequest.Marshal(b, m, deterministic)
 	} else {
@@ -697,7 +697,7 @@ func (*GetDiscoveredClusterResponse) Descriptor() ([]byte, []int) {
 func (m *GetDiscoveredClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDiscoveredClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDiscoveredClusterResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDiscoveredClusterResponse.Marshal(b, m, deterministic)
 	} else {
@@ -761,7 +761,7 @@ func (*ListDiscoveredClustersRequest) Descriptor() ([]byte, []int) {
 func (m *ListDiscoveredClustersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListDiscoveredClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListDiscoveredClustersRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListDiscoveredClustersRequest.Marshal(b, m, deterministic)
 	} else {
@@ -830,7 +830,7 @@ func (*ListDiscoveredClustersResponse) Descriptor() ([]byte, []int) {
 func (m *ListDiscoveredClustersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListDiscoveredClustersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListDiscoveredClustersResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListDiscoveredClustersResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1118,7 +1118,7 @@ var _DiscoveredClustersService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/discovered_cluster_service.proto",
 }
 
-func (m *DiscoveredCluster) Marshal() (dAtA []byte, err error) {
+func (m *DiscoveredCluster) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1128,7 +1128,7 @@ func (m *DiscoveredCluster) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DiscoveredCluster) MarshalTo(dAtA []byte) (int, error) {
+func (m *DiscoveredCluster) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1181,7 +1181,7 @@ func (m *DiscoveredCluster) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DiscoveredCluster_Metadata) Marshal() (dAtA []byte, err error) {
+func (m *DiscoveredCluster_Metadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1191,7 +1191,7 @@ func (m *DiscoveredCluster_Metadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DiscoveredCluster_Metadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *DiscoveredCluster_Metadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1251,7 +1251,7 @@ func (m *DiscoveredCluster_Metadata) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *DiscoveredCluster_CloudSource) Marshal() (dAtA []byte, err error) {
+func (m *DiscoveredCluster_CloudSource) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1261,7 +1261,7 @@ func (m *DiscoveredCluster_CloudSource) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DiscoveredCluster_CloudSource) MarshalTo(dAtA []byte) (int, error) {
+func (m *DiscoveredCluster_CloudSource) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1285,7 +1285,7 @@ func (m *DiscoveredCluster_CloudSource) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *DiscoveredClustersFilter) Marshal() (dAtA []byte, err error) {
+func (m *DiscoveredClustersFilter) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1295,7 +1295,7 @@ func (m *DiscoveredClustersFilter) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DiscoveredClustersFilter) MarshalTo(dAtA []byte) (int, error) {
+func (m *DiscoveredClustersFilter) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1366,7 +1366,7 @@ func (m *DiscoveredClustersFilter) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CountDiscoveredClustersRequest) Marshal() (dAtA []byte, err error) {
+func (m *CountDiscoveredClustersRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1376,7 +1376,7 @@ func (m *CountDiscoveredClustersRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountDiscoveredClustersRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountDiscoveredClustersRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1405,7 +1405,7 @@ func (m *CountDiscoveredClustersRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *CountDiscoveredClustersResponse) Marshal() (dAtA []byte, err error) {
+func (m *CountDiscoveredClustersResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1415,7 +1415,7 @@ func (m *CountDiscoveredClustersResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountDiscoveredClustersResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountDiscoveredClustersResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1437,7 +1437,7 @@ func (m *CountDiscoveredClustersResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *GetDiscoveredClusterRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetDiscoveredClusterRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1447,7 +1447,7 @@ func (m *GetDiscoveredClusterRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDiscoveredClusterRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetDiscoveredClusterRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1471,7 +1471,7 @@ func (m *GetDiscoveredClusterRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *GetDiscoveredClusterResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetDiscoveredClusterResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1481,7 +1481,7 @@ func (m *GetDiscoveredClusterResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDiscoveredClusterResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetDiscoveredClusterResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1510,7 +1510,7 @@ func (m *GetDiscoveredClusterResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *ListDiscoveredClustersRequest) Marshal() (dAtA []byte, err error) {
+func (m *ListDiscoveredClustersRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1520,7 +1520,7 @@ func (m *ListDiscoveredClustersRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListDiscoveredClustersRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListDiscoveredClustersRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1561,7 +1561,7 @@ func (m *ListDiscoveredClustersRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *ListDiscoveredClustersResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListDiscoveredClustersResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1571,7 +1571,7 @@ func (m *ListDiscoveredClustersResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListDiscoveredClustersResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListDiscoveredClustersResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

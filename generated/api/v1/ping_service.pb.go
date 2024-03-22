@@ -42,7 +42,7 @@ func (*PongMessage) Descriptor() ([]byte, []int) {
 func (m *PongMessage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PongMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PongMessage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PongMessage.Marshal(b, m, deterministic)
 	} else {
@@ -190,7 +190,7 @@ var _PingService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/ping_service.proto",
 }
 
-func (m *PongMessage) Marshal() (dAtA []byte, err error) {
+func (m *PongMessage) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -200,7 +200,7 @@ func (m *PongMessage) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PongMessage) MarshalTo(dAtA []byte) (int, error) {
+func (m *PongMessage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

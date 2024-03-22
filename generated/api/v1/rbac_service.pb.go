@@ -45,7 +45,7 @@ func (*ListRolesResponse) Descriptor() ([]byte, []int) {
 func (m *ListRolesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListRolesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListRolesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListRolesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -111,7 +111,7 @@ func (*GetRoleResponse) Descriptor() ([]byte, []int) {
 func (m *GetRoleResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetRoleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetRoleResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetRoleResponse.Marshal(b, m, deterministic)
 	} else {
@@ -174,7 +174,7 @@ func (*ListRoleBindingsResponse) Descriptor() ([]byte, []int) {
 func (m *ListRoleBindingsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListRoleBindingsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListRoleBindingsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListRoleBindingsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -240,7 +240,7 @@ func (*GetRoleBindingResponse) Descriptor() ([]byte, []int) {
 func (m *GetRoleBindingResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetRoleBindingResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetRoleBindingResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetRoleBindingResponse.Marshal(b, m, deterministic)
 	} else {
@@ -303,7 +303,7 @@ func (*ListSubjectsResponse) Descriptor() ([]byte, []int) {
 func (m *ListSubjectsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListSubjectsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListSubjectsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListSubjectsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -370,7 +370,7 @@ func (*SubjectAndRoles) Descriptor() ([]byte, []int) {
 func (m *SubjectAndRoles) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SubjectAndRoles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SubjectAndRoles) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SubjectAndRoles.Marshal(b, m, deterministic)
 	} else {
@@ -446,7 +446,7 @@ func (*GetSubjectResponse) Descriptor() ([]byte, []int) {
 func (m *GetSubjectResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetSubjectResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetSubjectResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetSubjectResponse.Marshal(b, m, deterministic)
 	} else {
@@ -534,7 +534,7 @@ func (*ScopedRoles) Descriptor() ([]byte, []int) {
 func (m *ScopedRoles) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScopedRoles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScopedRoles) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScopedRoles.Marshal(b, m, deterministic)
 	} else {
@@ -911,7 +911,7 @@ var _RbacService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/rbac_service.proto",
 }
 
-func (m *ListRolesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListRolesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -921,7 +921,7 @@ func (m *ListRolesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListRolesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListRolesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -952,7 +952,7 @@ func (m *ListRolesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetRoleResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetRoleResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -962,7 +962,7 @@ func (m *GetRoleResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetRoleResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetRoleResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -991,7 +991,7 @@ func (m *GetRoleResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListRoleBindingsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListRoleBindingsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1001,7 +1001,7 @@ func (m *ListRoleBindingsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListRoleBindingsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListRoleBindingsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1032,7 +1032,7 @@ func (m *ListRoleBindingsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *GetRoleBindingResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetRoleBindingResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1042,7 +1042,7 @@ func (m *GetRoleBindingResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetRoleBindingResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetRoleBindingResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1071,7 +1071,7 @@ func (m *GetRoleBindingResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ListSubjectsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListSubjectsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1081,7 +1081,7 @@ func (m *ListSubjectsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListSubjectsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListSubjectsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1112,7 +1112,7 @@ func (m *ListSubjectsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SubjectAndRoles) Marshal() (dAtA []byte, err error) {
+func (m *SubjectAndRoles) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1122,7 +1122,7 @@ func (m *SubjectAndRoles) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SubjectAndRoles) MarshalTo(dAtA []byte) (int, error) {
+func (m *SubjectAndRoles) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1165,7 +1165,7 @@ func (m *SubjectAndRoles) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetSubjectResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetSubjectResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1175,7 +1175,7 @@ func (m *GetSubjectResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetSubjectResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetSubjectResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1232,7 +1232,7 @@ func (m *GetSubjectResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ScopedRoles) Marshal() (dAtA []byte, err error) {
+func (m *ScopedRoles) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1242,7 +1242,7 @@ func (m *ScopedRoles) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScopedRoles) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScopedRoles) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

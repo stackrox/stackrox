@@ -111,7 +111,7 @@ func (*GetNetworkPoliciesRequest) Descriptor() ([]byte, []int) {
 func (m *GetNetworkPoliciesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNetworkPoliciesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNetworkPoliciesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNetworkPoliciesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -185,7 +185,7 @@ func (*NetworkPoliciesResponse) Descriptor() ([]byte, []int) {
 func (m *NetworkPoliciesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkPoliciesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkPoliciesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -253,7 +253,7 @@ func (*SendNetworkPolicyYamlRequest) Descriptor() ([]byte, []int) {
 func (m *SendNetworkPolicyYamlRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SendNetworkPolicyYamlRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SendNetworkPolicyYamlRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SendNetworkPolicyYamlRequest.Marshal(b, m, deterministic)
 	} else {
@@ -336,7 +336,7 @@ func (*GetNetworkGraphRequest) Descriptor() ([]byte, []int) {
 func (m *GetNetworkGraphRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNetworkGraphRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNetworkGraphRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNetworkGraphRequest.Marshal(b, m, deterministic)
 	} else {
@@ -424,7 +424,7 @@ func (*SimulateNetworkGraphRequest) Descriptor() ([]byte, []int) {
 func (m *SimulateNetworkGraphRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SimulateNetworkGraphRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SimulateNetworkGraphRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SimulateNetworkGraphRequest.Marshal(b, m, deterministic)
 	} else {
@@ -522,7 +522,7 @@ func (*ApplyNetworkPolicyYamlRequest) Descriptor() ([]byte, []int) {
 func (m *ApplyNetworkPolicyYamlRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyNetworkPolicyYamlRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyNetworkPolicyYamlRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyNetworkPolicyYamlRequest.Marshal(b, m, deterministic)
 	} else {
@@ -590,7 +590,7 @@ func (*GetUndoModificationRequest) Descriptor() ([]byte, []int) {
 func (m *GetUndoModificationRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetUndoModificationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetUndoModificationRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetUndoModificationRequest.Marshal(b, m, deterministic)
 	} else {
@@ -650,7 +650,7 @@ func (*GetUndoModificationResponse) Descriptor() ([]byte, []int) {
 func (m *GetUndoModificationResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetUndoModificationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetUndoModificationResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetUndoModificationResponse.Marshal(b, m, deterministic)
 	} else {
@@ -713,7 +713,7 @@ func (*NetworkPolicyInSimulation) Descriptor() ([]byte, []int) {
 func (m *NetworkPolicyInSimulation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkPolicyInSimulation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkPolicyInSimulation) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkPolicyInSimulation.Marshal(b, m, deterministic)
 	} else {
@@ -793,7 +793,7 @@ func (*NetworkNodeDiff) Descriptor() ([]byte, []int) {
 func (m *NetworkNodeDiff) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkNodeDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkNodeDiff) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkNodeDiff.Marshal(b, m, deterministic)
 	} else {
@@ -899,7 +899,7 @@ func (*NetworkGraphDiff) Descriptor() ([]byte, []int) {
 func (m *NetworkGraphDiff) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkGraphDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkGraphDiff) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkGraphDiff.Marshal(b, m, deterministic)
 	} else {
@@ -982,7 +982,7 @@ func (*SimulateNetworkGraphResponse) Descriptor() ([]byte, []int) {
 func (m *SimulateNetworkGraphResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SimulateNetworkGraphResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SimulateNetworkGraphResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SimulateNetworkGraphResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1072,7 +1072,7 @@ func (*GetNetworkGraphEpochRequest) Descriptor() ([]byte, []int) {
 func (m *GetNetworkGraphEpochRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNetworkGraphEpochRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNetworkGraphEpochRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNetworkGraphEpochRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1132,7 +1132,7 @@ func (*NetworkGraphEpoch) Descriptor() ([]byte, []int) {
 func (m *NetworkGraphEpoch) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkGraphEpoch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkGraphEpoch) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkGraphEpoch.Marshal(b, m, deterministic)
 	} else {
@@ -1197,7 +1197,7 @@ func (*GenerateNetworkPoliciesRequest) Descriptor() ([]byte, []int) {
 func (m *GenerateNetworkPoliciesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GenerateNetworkPoliciesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GenerateNetworkPoliciesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenerateNetworkPoliciesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1287,7 +1287,7 @@ func (*GenerateNetworkPoliciesResponse) Descriptor() ([]byte, []int) {
 func (m *GenerateNetworkPoliciesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GenerateNetworkPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GenerateNetworkPoliciesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenerateNetworkPoliciesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1354,7 +1354,7 @@ func (*GetBaselineGeneratedPolicyForDeploymentRequest) Descriptor() ([]byte, []i
 func (m *GetBaselineGeneratedPolicyForDeploymentRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetBaselineGeneratedPolicyForDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetBaselineGeneratedPolicyForDeploymentRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetBaselineGeneratedPolicyForDeploymentRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1432,7 +1432,7 @@ func (*GetBaselineGeneratedPolicyForDeploymentResponse) Descriptor() ([]byte, []
 func (m *GetBaselineGeneratedPolicyForDeploymentResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetBaselineGeneratedPolicyForDeploymentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetBaselineGeneratedPolicyForDeploymentResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetBaselineGeneratedPolicyForDeploymentResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1497,7 +1497,7 @@ func (*GetAllowedPeersFromCurrentPolicyForDeploymentResponse) Descriptor() ([]by
 func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAllowedPeersFromCurrentPolicyForDeploymentResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1568,7 +1568,7 @@ func (*ApplyNetworkPolicyYamlForDeploymentRequest) Descriptor() ([]byte, []int) 
 func (m *ApplyNetworkPolicyYamlForDeploymentRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyNetworkPolicyYamlForDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyNetworkPolicyYamlForDeploymentRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyNetworkPolicyYamlForDeploymentRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1638,7 +1638,7 @@ func (*GetUndoModificationForDeploymentResponse) Descriptor() ([]byte, []int) {
 func (m *GetUndoModificationForDeploymentResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetUndoModificationForDeploymentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetUndoModificationForDeploymentResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetUndoModificationForDeploymentResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1702,7 +1702,7 @@ func (*GetDiffFlowsReconciledFlow) Descriptor() ([]byte, []int) {
 func (m *GetDiffFlowsReconciledFlow) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDiffFlowsReconciledFlow) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDiffFlowsReconciledFlow) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDiffFlowsReconciledFlow.Marshal(b, m, deterministic)
 	} else {
@@ -1803,7 +1803,7 @@ func (*GetDiffFlowsGroupedFlow) Descriptor() ([]byte, []int) {
 func (m *GetDiffFlowsGroupedFlow) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDiffFlowsGroupedFlow) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDiffFlowsGroupedFlow) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDiffFlowsGroupedFlow.Marshal(b, m, deterministic)
 	} else {
@@ -1879,7 +1879,7 @@ func (*GetDiffFlowsResponse) Descriptor() ([]byte, []int) {
 func (m *GetDiffFlowsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDiffFlowsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDiffFlowsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDiffFlowsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2709,7 +2709,7 @@ var _NetworkPolicyService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/network_policy_service.proto",
 }
 
-func (m *GetNetworkPoliciesRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNetworkPoliciesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2719,7 +2719,7 @@ func (m *GetNetworkPoliciesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNetworkPoliciesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNetworkPoliciesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2757,7 +2757,7 @@ func (m *GetNetworkPoliciesRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkPoliciesResponse) Marshal() (dAtA []byte, err error) {
+func (m *NetworkPoliciesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2767,7 +2767,7 @@ func (m *NetworkPoliciesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkPoliciesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkPoliciesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2798,7 +2798,7 @@ func (m *NetworkPoliciesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *SendNetworkPolicyYamlRequest) Marshal() (dAtA []byte, err error) {
+func (m *SendNetworkPolicyYamlRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2808,7 +2808,7 @@ func (m *SendNetworkPolicyYamlRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SendNetworkPolicyYamlRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *SendNetworkPolicyYamlRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2853,7 +2853,7 @@ func (m *SendNetworkPolicyYamlRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNetworkGraphRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNetworkGraphRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2863,7 +2863,7 @@ func (m *GetNetworkGraphRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNetworkGraphRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNetworkGraphRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2916,7 +2916,7 @@ func (m *GetNetworkGraphRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *SimulateNetworkGraphRequest) Marshal() (dAtA []byte, err error) {
+func (m *SimulateNetworkGraphRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2926,7 +2926,7 @@ func (m *SimulateNetworkGraphRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SimulateNetworkGraphRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *SimulateNetworkGraphRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3001,7 +3001,7 @@ func (m *SimulateNetworkGraphRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyNetworkPolicyYamlRequest) Marshal() (dAtA []byte, err error) {
+func (m *ApplyNetworkPolicyYamlRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3011,7 +3011,7 @@ func (m *ApplyNetworkPolicyYamlRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ApplyNetworkPolicyYamlRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ApplyNetworkPolicyYamlRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3047,7 +3047,7 @@ func (m *ApplyNetworkPolicyYamlRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetUndoModificationRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetUndoModificationRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3057,7 +3057,7 @@ func (m *GetUndoModificationRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetUndoModificationRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetUndoModificationRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3081,7 +3081,7 @@ func (m *GetUndoModificationRequest) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *GetUndoModificationResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetUndoModificationResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3091,7 +3091,7 @@ func (m *GetUndoModificationResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetUndoModificationResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetUndoModificationResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3120,7 +3120,7 @@ func (m *GetUndoModificationResponse) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkPolicyInSimulation) Marshal() (dAtA []byte, err error) {
+func (m *NetworkPolicyInSimulation) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3130,7 +3130,7 @@ func (m *NetworkPolicyInSimulation) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkPolicyInSimulation) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkPolicyInSimulation) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3176,7 +3176,7 @@ func (m *NetworkPolicyInSimulation) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkNodeDiff) Marshal() (dAtA []byte, err error) {
+func (m *NetworkNodeDiff) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3186,7 +3186,7 @@ func (m *NetworkNodeDiff) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkNodeDiff) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkNodeDiff) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3282,7 +3282,7 @@ func (m *NetworkNodeDiff) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkGraphDiff) Marshal() (dAtA []byte, err error) {
+func (m *NetworkGraphDiff) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3292,7 +3292,7 @@ func (m *NetworkGraphDiff) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkGraphDiff) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkGraphDiff) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3359,7 +3359,7 @@ func (m *NetworkGraphDiff) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SimulateNetworkGraphResponse) Marshal() (dAtA []byte, err error) {
+func (m *SimulateNetworkGraphResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3369,7 +3369,7 @@ func (m *SimulateNetworkGraphResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SimulateNetworkGraphResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *SimulateNetworkGraphResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3436,7 +3436,7 @@ func (m *SimulateNetworkGraphResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNetworkGraphEpochRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNetworkGraphEpochRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3446,7 +3446,7 @@ func (m *GetNetworkGraphEpochRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNetworkGraphEpochRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNetworkGraphEpochRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3470,7 +3470,7 @@ func (m *GetNetworkGraphEpochRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkGraphEpoch) Marshal() (dAtA []byte, err error) {
+func (m *NetworkGraphEpoch) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3480,7 +3480,7 @@ func (m *NetworkGraphEpoch) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkGraphEpoch) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkGraphEpoch) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3502,7 +3502,7 @@ func (m *NetworkGraphEpoch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GenerateNetworkPoliciesRequest) Marshal() (dAtA []byte, err error) {
+func (m *GenerateNetworkPoliciesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3512,7 +3512,7 @@ func (m *GenerateNetworkPoliciesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GenerateNetworkPoliciesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GenerateNetworkPoliciesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3570,7 +3570,7 @@ func (m *GenerateNetworkPoliciesRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *GenerateNetworkPoliciesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GenerateNetworkPoliciesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3580,7 +3580,7 @@ func (m *GenerateNetworkPoliciesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GenerateNetworkPoliciesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GenerateNetworkPoliciesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3609,7 +3609,7 @@ func (m *GenerateNetworkPoliciesResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *GetBaselineGeneratedPolicyForDeploymentRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetBaselineGeneratedPolicyForDeploymentRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3619,7 +3619,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentRequest) Marshal() (dAtA []byte,
 	return dAtA[:n], nil
 }
 
-func (m *GetBaselineGeneratedPolicyForDeploymentRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetBaselineGeneratedPolicyForDeploymentRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3658,7 +3658,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentRequest) MarshalToSizedBuffer(dA
 	return len(dAtA) - i, nil
 }
 
-func (m *GetBaselineGeneratedPolicyForDeploymentResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetBaselineGeneratedPolicyForDeploymentResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3668,7 +3668,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) Marshal() (dAtA []byte
 	return dAtA[:n], nil
 }
 
-func (m *GetBaselineGeneratedPolicyForDeploymentResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetBaselineGeneratedPolicyForDeploymentResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3697,7 +3697,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) MarshalToSizedBuffer(d
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3707,7 +3707,7 @@ func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) Marshal() (dAtA 
 	return dAtA[:n], nil
 }
 
-func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3738,7 +3738,7 @@ func (m *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) MarshalToSizedBu
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyNetworkPolicyYamlForDeploymentRequest) Marshal() (dAtA []byte, err error) {
+func (m *ApplyNetworkPolicyYamlForDeploymentRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3748,7 +3748,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) Marshal() (dAtA []byte, err
 	return dAtA[:n], nil
 }
 
-func (m *ApplyNetworkPolicyYamlForDeploymentRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ApplyNetworkPolicyYamlForDeploymentRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3784,7 +3784,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) MarshalToSizedBuffer(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *GetUndoModificationForDeploymentResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetUndoModificationForDeploymentResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3794,7 +3794,7 @@ func (m *GetUndoModificationForDeploymentResponse) Marshal() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *GetUndoModificationForDeploymentResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetUndoModificationForDeploymentResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3823,7 +3823,7 @@ func (m *GetUndoModificationForDeploymentResponse) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
-func (m *GetDiffFlowsReconciledFlow) Marshal() (dAtA []byte, err error) {
+func (m *GetDiffFlowsReconciledFlow) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3833,7 +3833,7 @@ func (m *GetDiffFlowsReconciledFlow) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDiffFlowsReconciledFlow) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetDiffFlowsReconciledFlow) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3904,7 +3904,7 @@ func (m *GetDiffFlowsReconciledFlow) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *GetDiffFlowsGroupedFlow) Marshal() (dAtA []byte, err error) {
+func (m *GetDiffFlowsGroupedFlow) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3914,7 +3914,7 @@ func (m *GetDiffFlowsGroupedFlow) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDiffFlowsGroupedFlow) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetDiffFlowsGroupedFlow) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3957,7 +3957,7 @@ func (m *GetDiffFlowsGroupedFlow) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetDiffFlowsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetDiffFlowsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3967,7 +3967,7 @@ func (m *GetDiffFlowsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDiffFlowsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetDiffFlowsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

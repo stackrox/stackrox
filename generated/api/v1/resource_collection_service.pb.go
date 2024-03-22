@@ -43,7 +43,7 @@ func (*ListCollectionSelectorsResponse) Descriptor() ([]byte, []int) {
 func (m *ListCollectionSelectorsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListCollectionSelectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListCollectionSelectorsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListCollectionSelectorsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -108,7 +108,7 @@ func (*GetCollectionRequest) Descriptor() ([]byte, []int) {
 func (m *GetCollectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCollectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCollectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -177,7 +177,7 @@ func (*CollectionDeploymentMatchOptions) Descriptor() ([]byte, []int) {
 func (m *CollectionDeploymentMatchOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CollectionDeploymentMatchOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CollectionDeploymentMatchOptions) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CollectionDeploymentMatchOptions.Marshal(b, m, deterministic)
 	} else {
@@ -246,7 +246,7 @@ func (*GetCollectionResponse) Descriptor() ([]byte, []int) {
 func (m *GetCollectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCollectionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCollectionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -320,7 +320,7 @@ func (*GetCollectionCountRequest) Descriptor() ([]byte, []int) {
 func (m *GetCollectionCountRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCollectionCountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCollectionCountRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCollectionCountRequest.Marshal(b, m, deterministic)
 	} else {
@@ -381,7 +381,7 @@ func (*GetCollectionCountResponse) Descriptor() ([]byte, []int) {
 func (m *GetCollectionCountResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCollectionCountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCollectionCountResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCollectionCountResponse.Marshal(b, m, deterministic)
 	} else {
@@ -444,7 +444,7 @@ func (*CreateCollectionRequest) Descriptor() ([]byte, []int) {
 func (m *CreateCollectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateCollectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateCollectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -535,7 +535,7 @@ func (*CreateCollectionResponse) Descriptor() ([]byte, []int) {
 func (m *CreateCollectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateCollectionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateCollectionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -600,7 +600,7 @@ func (*UpdateCollectionRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateCollectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateCollectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateCollectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -698,7 +698,7 @@ func (*UpdateCollectionResponse) Descriptor() ([]byte, []int) {
 func (m *UpdateCollectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateCollectionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateCollectionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -764,7 +764,7 @@ func (*DryRunCollectionRequest) Descriptor() ([]byte, []int) {
 func (m *DryRunCollectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DryRunCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DryRunCollectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DryRunCollectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -870,7 +870,7 @@ func (*DryRunCollectionResponse) Descriptor() ([]byte, []int) {
 func (m *DryRunCollectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DryRunCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DryRunCollectionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DryRunCollectionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -936,7 +936,7 @@ func (*ListCollectionsRequest) Descriptor() ([]byte, []int) {
 func (m *ListCollectionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListCollectionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListCollectionsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListCollectionsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -997,7 +997,7 @@ func (*ListCollectionsResponse) Descriptor() ([]byte, []int) {
 func (m *ListCollectionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListCollectionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListCollectionsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListCollectionsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1460,7 +1460,7 @@ var _CollectionService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/resource_collection_service.proto",
 }
 
-func (m *ListCollectionSelectorsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListCollectionSelectorsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1470,7 +1470,7 @@ func (m *ListCollectionSelectorsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListCollectionSelectorsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListCollectionSelectorsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1496,7 +1496,7 @@ func (m *ListCollectionSelectorsResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCollectionRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetCollectionRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1506,7 +1506,7 @@ func (m *GetCollectionRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetCollectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1542,7 +1542,7 @@ func (m *GetCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectionDeploymentMatchOptions) Marshal() (dAtA []byte, err error) {
+func (m *CollectionDeploymentMatchOptions) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1552,7 +1552,7 @@ func (m *CollectionDeploymentMatchOptions) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectionDeploymentMatchOptions) MarshalTo(dAtA []byte) (int, error) {
+func (m *CollectionDeploymentMatchOptions) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1591,7 +1591,7 @@ func (m *CollectionDeploymentMatchOptions) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCollectionResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetCollectionResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1601,7 +1601,7 @@ func (m *GetCollectionResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetCollectionResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1644,7 +1644,7 @@ func (m *GetCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCollectionCountRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetCollectionCountRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1654,7 +1654,7 @@ func (m *GetCollectionCountRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCollectionCountRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetCollectionCountRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1683,7 +1683,7 @@ func (m *GetCollectionCountRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCollectionCountResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetCollectionCountResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1693,7 +1693,7 @@ func (m *GetCollectionCountResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCollectionCountResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetCollectionCountResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1715,7 +1715,7 @@ func (m *GetCollectionCountResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateCollectionRequest) Marshal() (dAtA []byte, err error) {
+func (m *CreateCollectionRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1725,7 +1725,7 @@ func (m *CreateCollectionRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *CreateCollectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1779,7 +1779,7 @@ func (m *CreateCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateCollectionResponse) Marshal() (dAtA []byte, err error) {
+func (m *CreateCollectionResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1789,7 +1789,7 @@ func (m *CreateCollectionResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CreateCollectionResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1818,7 +1818,7 @@ func (m *CreateCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateCollectionRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateCollectionRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1828,7 +1828,7 @@ func (m *UpdateCollectionRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateCollectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1889,7 +1889,7 @@ func (m *UpdateCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateCollectionResponse) Marshal() (dAtA []byte, err error) {
+func (m *UpdateCollectionResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1899,7 +1899,7 @@ func (m *UpdateCollectionResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateCollectionResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1928,7 +1928,7 @@ func (m *UpdateCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunCollectionRequest) Marshal() (dAtA []byte, err error) {
+func (m *DryRunCollectionRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1938,7 +1938,7 @@ func (m *DryRunCollectionRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DryRunCollectionRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DryRunCollectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2011,7 +2011,7 @@ func (m *DryRunCollectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunCollectionResponse) Marshal() (dAtA []byte, err error) {
+func (m *DryRunCollectionResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2021,7 +2021,7 @@ func (m *DryRunCollectionResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DryRunCollectionResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DryRunCollectionResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2052,7 +2052,7 @@ func (m *DryRunCollectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ListCollectionsRequest) Marshal() (dAtA []byte, err error) {
+func (m *ListCollectionsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2062,7 +2062,7 @@ func (m *ListCollectionsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListCollectionsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListCollectionsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2091,7 +2091,7 @@ func (m *ListCollectionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ListCollectionsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListCollectionsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2101,7 +2101,7 @@ func (m *ListCollectionsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListCollectionsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListCollectionsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

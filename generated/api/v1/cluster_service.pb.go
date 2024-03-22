@@ -106,7 +106,7 @@ func (*DecommissionedClusterRetentionInfo) Descriptor() ([]byte, []int) {
 func (m *DecommissionedClusterRetentionInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DecommissionedClusterRetentionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DecommissionedClusterRetentionInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DecommissionedClusterRetentionInfo.Marshal(b, m, deterministic)
 	} else {
@@ -132,7 +132,7 @@ var xxx_messageInfo_DecommissionedClusterRetentionInfo proto.InternalMessageInfo
 
 type isDecommissionedClusterRetentionInfo_RetentionInfo interface {
 	isDecommissionedClusterRetentionInfo_RetentionInfo()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isDecommissionedClusterRetentionInfo_RetentionInfo
 }
@@ -229,7 +229,7 @@ func (*ClusterResponse) Descriptor() ([]byte, []int) {
 func (m *ClusterResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterResponse.Marshal(b, m, deterministic)
 	} else {
@@ -300,7 +300,7 @@ func (*ClusterDefaultsResponse) Descriptor() ([]byte, []int) {
 func (m *ClusterDefaultsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterDefaultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterDefaultsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterDefaultsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -376,7 +376,7 @@ func (*ClustersList) Descriptor() ([]byte, []int) {
 func (m *ClustersList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClustersList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClustersList) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClustersList.Marshal(b, m, deterministic)
 	} else {
@@ -455,7 +455,7 @@ func (*GetClustersRequest) Descriptor() ([]byte, []int) {
 func (m *GetClustersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetClustersRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetClustersRequest.Marshal(b, m, deterministic)
 	} else {
@@ -516,7 +516,7 @@ func (*KernelSupportAvailableResponse) Descriptor() ([]byte, []int) {
 func (m *KernelSupportAvailableResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KernelSupportAvailableResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KernelSupportAvailableResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KernelSupportAvailableResponse.Marshal(b, m, deterministic)
 	} else {
@@ -933,7 +933,7 @@ var _ClustersService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/cluster_service.proto",
 }
 
-func (m *DecommissionedClusterRetentionInfo) Marshal() (dAtA []byte, err error) {
+func (m *DecommissionedClusterRetentionInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -943,7 +943,7 @@ func (m *DecommissionedClusterRetentionInfo) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *DecommissionedClusterRetentionInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *DecommissionedClusterRetentionInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -961,7 +961,7 @@ func (m *DecommissionedClusterRetentionInfo) MarshalToSizedBuffer(dAtA []byte) (
 		{
 			size := m.RetentionInfo.Size()
 			i -= size
-			if _, err := m.RetentionInfo.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.RetentionInfo.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -969,7 +969,7 @@ func (m *DecommissionedClusterRetentionInfo) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *DecommissionedClusterRetentionInfo_IsExcluded) MarshalTo(dAtA []byte) (int, error) {
+func (m *DecommissionedClusterRetentionInfo_IsExcluded) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -986,7 +986,7 @@ func (m *DecommissionedClusterRetentionInfo_IsExcluded) MarshalToSizedBuffer(dAt
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
-func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) MarshalTo(dAtA []byte) (int, error) {
+func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -998,7 +998,7 @@ func (m *DecommissionedClusterRetentionInfo_DaysUntilDeletion) MarshalToSizedBuf
 	dAtA[i] = 0x10
 	return len(dAtA) - i, nil
 }
-func (m *ClusterResponse) Marshal() (dAtA []byte, err error) {
+func (m *ClusterResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1008,7 +1008,7 @@ func (m *ClusterResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClusterResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1049,7 +1049,7 @@ func (m *ClusterResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterDefaultsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ClusterDefaultsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1059,7 +1059,7 @@ func (m *ClusterDefaultsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterDefaultsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClusterDefaultsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1100,7 +1100,7 @@ func (m *ClusterDefaultsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *ClustersList) Marshal() (dAtA []byte, err error) {
+func (m *ClustersList) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1110,7 +1110,7 @@ func (m *ClustersList) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClustersList) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClustersList) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1167,7 +1167,7 @@ func (m *ClustersList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetClustersRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetClustersRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1177,7 +1177,7 @@ func (m *GetClustersRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetClustersRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetClustersRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1201,7 +1201,7 @@ func (m *GetClustersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *KernelSupportAvailableResponse) Marshal() (dAtA []byte, err error) {
+func (m *KernelSupportAvailableResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1211,7 +1211,7 @@ func (m *KernelSupportAvailableResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KernelSupportAvailableResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *KernelSupportAvailableResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

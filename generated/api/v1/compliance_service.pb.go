@@ -80,7 +80,7 @@ func (*ComplianceAggregationRequest) Descriptor() ([]byte, []int) {
 func (m *ComplianceAggregationRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceAggregationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceAggregationRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceAggregationRequest.Marshal(b, m, deterministic)
 	} else {
@@ -165,7 +165,7 @@ func (*ComplianceStandardMetadata) Descriptor() ([]byte, []int) {
 func (m *ComplianceStandardMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceStandardMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceStandardMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceStandardMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -275,7 +275,7 @@ func (*ComplianceControlGroup) Descriptor() ([]byte, []int) {
 func (m *ComplianceControlGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceControlGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceControlGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceControlGroup.Marshal(b, m, deterministic)
 	} else {
@@ -369,7 +369,7 @@ func (*ComplianceControl) Descriptor() ([]byte, []int) {
 func (m *ComplianceControl) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceControl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceControl) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceControl.Marshal(b, m, deterministic)
 	} else {
@@ -473,7 +473,7 @@ func (*ComplianceStandard) Descriptor() ([]byte, []int) {
 func (m *ComplianceStandard) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceStandard) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceStandard) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceStandard.Marshal(b, m, deterministic)
 	} else {
@@ -560,7 +560,7 @@ func (*GetComplianceStandardResponse) Descriptor() ([]byte, []int) {
 func (m *GetComplianceStandardResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetComplianceStandardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetComplianceStandardResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetComplianceStandardResponse.Marshal(b, m, deterministic)
 	} else {
@@ -621,7 +621,7 @@ func (*GetComplianceStandardsResponse) Descriptor() ([]byte, []int) {
 func (m *GetComplianceStandardsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetComplianceStandardsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetComplianceStandardsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetComplianceStandardsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -688,7 +688,7 @@ func (*UpdateComplianceRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateComplianceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateComplianceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateComplianceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -760,7 +760,7 @@ func (*GetComplianceRunResultsRequest) Descriptor() ([]byte, []int) {
 func (m *GetComplianceRunResultsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetComplianceRunResultsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetComplianceRunResultsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetComplianceRunResultsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -835,7 +835,7 @@ func (*GetComplianceRunResultsResponse) Descriptor() ([]byte, []int) {
 func (m *GetComplianceRunResultsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetComplianceRunResultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetComplianceRunResultsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetComplianceRunResultsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1201,7 +1201,7 @@ var _ComplianceService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/compliance_service.proto",
 }
 
-func (m *ComplianceAggregationRequest) Marshal() (dAtA []byte, err error) {
+func (m *ComplianceAggregationRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1211,7 +1211,7 @@ func (m *ComplianceAggregationRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceAggregationRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComplianceAggregationRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1263,7 +1263,7 @@ func (m *ComplianceAggregationRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceStandardMetadata) Marshal() (dAtA []byte, err error) {
+func (m *ComplianceStandardMetadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1273,7 +1273,7 @@ func (m *ComplianceStandardMetadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceStandardMetadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComplianceStandardMetadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1354,7 +1354,7 @@ func (m *ComplianceStandardMetadata) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceControlGroup) Marshal() (dAtA []byte, err error) {
+func (m *ComplianceControlGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1364,7 +1364,7 @@ func (m *ComplianceControlGroup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceControlGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComplianceControlGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1414,7 +1414,7 @@ func (m *ComplianceControlGroup) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceControl) Marshal() (dAtA []byte, err error) {
+func (m *ComplianceControl) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1424,7 +1424,7 @@ func (m *ComplianceControl) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceControl) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComplianceControl) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1493,7 +1493,7 @@ func (m *ComplianceControl) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceStandard) Marshal() (dAtA []byte, err error) {
+func (m *ComplianceStandard) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1503,7 +1503,7 @@ func (m *ComplianceStandard) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceStandard) MarshalTo(dAtA []byte) (int, error) {
+func (m *ComplianceStandard) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1560,7 +1560,7 @@ func (m *ComplianceStandard) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetComplianceStandardResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetComplianceStandardResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1570,7 +1570,7 @@ func (m *GetComplianceStandardResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetComplianceStandardResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetComplianceStandardResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1599,7 +1599,7 @@ func (m *GetComplianceStandardResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetComplianceStandardsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetComplianceStandardsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1609,7 +1609,7 @@ func (m *GetComplianceStandardsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetComplianceStandardsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetComplianceStandardsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1640,7 +1640,7 @@ func (m *GetComplianceStandardsResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateComplianceRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateComplianceRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1650,7 +1650,7 @@ func (m *UpdateComplianceRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateComplianceRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1684,7 +1684,7 @@ func (m *UpdateComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetComplianceRunResultsRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetComplianceRunResultsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1694,7 +1694,7 @@ func (m *GetComplianceRunResultsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetComplianceRunResultsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetComplianceRunResultsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1732,7 +1732,7 @@ func (m *GetComplianceRunResultsRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *GetComplianceRunResultsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetComplianceRunResultsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1742,7 +1742,7 @@ func (m *GetComplianceRunResultsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetComplianceRunResultsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetComplianceRunResultsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -44,7 +44,7 @@ func (*InitBundleMeta) Descriptor() ([]byte, []int) {
 func (m *InitBundleMeta) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleMeta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleMeta) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleMeta.Marshal(b, m, deterministic)
 	} else {
@@ -154,7 +154,7 @@ var fileDescriptor_bd67d3248f7aceeb = []byte{
 	0xff, 0xff, 0xb0, 0x7c, 0xf5, 0x7e, 0x92, 0x01, 0x00, 0x00,
 }
 
-func (m *InitBundleMeta) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleMeta) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -164,7 +164,7 @@ func (m *InitBundleMeta) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleMeta) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleMeta) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

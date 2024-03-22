@@ -39,7 +39,7 @@ func (*Hash) Descriptor() ([]byte, []int) {
 func (m *Hash) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Hash) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Hash) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Hash.Marshal(b, m, deterministic)
 	} else {
@@ -120,7 +120,7 @@ var fileDescriptor_899ccb266c1186a2 = []byte{
 	0xe9, 0x45, 0x92, 0xb8, 0xf1, 0x00, 0x00, 0x00,
 }
 
-func (m *Hash) Marshal() (dAtA []byte, err error) {
+func (m *Hash) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -130,7 +130,7 @@ func (m *Hash) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Hash) MarshalTo(dAtA []byte) (int, error) {
+func (m *Hash) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

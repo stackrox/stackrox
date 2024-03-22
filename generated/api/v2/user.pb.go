@@ -39,7 +39,7 @@ func (*SlimUser) Descriptor() ([]byte, []int) {
 func (m *SlimUser) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SlimUser) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SlimUser) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SlimUser.Marshal(b, m, deterministic)
 	} else {
@@ -109,7 +109,7 @@ var fileDescriptor_1d828e80cf5bea46 = []byte{
 	0x00, 0xff, 0xff, 0xff, 0x0f, 0xc0, 0xa8, 0x7f, 0x00, 0x00, 0x00,
 }
 
-func (m *SlimUser) Marshal() (dAtA []byte, err error) {
+func (m *SlimUser) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -119,7 +119,7 @@ func (m *SlimUser) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SlimUser) MarshalTo(dAtA []byte) (int, error) {
+func (m *SlimUser) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

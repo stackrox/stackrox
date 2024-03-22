@@ -210,7 +210,7 @@ func (*Alert) Descriptor() ([]byte, []int) {
 func (m *Alert) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert.Marshal(b, m, deterministic)
 	} else {
@@ -236,7 +236,7 @@ var xxx_messageInfo_Alert proto.InternalMessageInfo
 
 type isAlert_Entity interface {
 	isAlert_Entity()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isAlert_Entity
 }
@@ -482,7 +482,7 @@ func (*Alert_Deployment) Descriptor() ([]byte, []int) {
 func (m *Alert_Deployment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Deployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Deployment) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Deployment.Marshal(b, m, deterministic)
 	} else {
@@ -631,7 +631,7 @@ func (*Alert_Deployment_Container) Descriptor() ([]byte, []int) {
 func (m *Alert_Deployment_Container) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Deployment_Container) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Deployment_Container) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Deployment_Container.Marshal(b, m, deterministic)
 	} else {
@@ -705,7 +705,7 @@ func (*Alert_Resource) Descriptor() ([]byte, []int) {
 func (m *Alert_Resource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Resource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Resource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Resource.Marshal(b, m, deterministic)
 	} else {
@@ -810,7 +810,7 @@ func (*Alert_Violation) Descriptor() ([]byte, []int) {
 func (m *Alert_Violation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Violation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Violation) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Violation.Marshal(b, m, deterministic)
 	} else {
@@ -836,7 +836,7 @@ var xxx_messageInfo_Alert_Violation proto.InternalMessageInfo
 
 type isAlert_Violation_MessageAttributes interface {
 	isAlert_Violation_MessageAttributes()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isAlert_Violation_MessageAttributes
 }
@@ -954,7 +954,7 @@ func (*Alert_Violation_KeyValueAttrs) Descriptor() ([]byte, []int) {
 func (m *Alert_Violation_KeyValueAttrs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Violation_KeyValueAttrs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Violation_KeyValueAttrs) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Violation_KeyValueAttrs.Marshal(b, m, deterministic)
 	} else {
@@ -1025,7 +1025,7 @@ func (*Alert_Violation_KeyValueAttrs_KeyValueAttr) Descriptor() ([]byte, []int) 
 func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Violation_KeyValueAttrs_KeyValueAttr.Marshal(b, m, deterministic)
 	} else {
@@ -1094,7 +1094,7 @@ func (*Alert_Violation_NetworkFlowInfo) Descriptor() ([]byte, []int) {
 func (m *Alert_Violation_NetworkFlowInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Violation_NetworkFlowInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Violation_NetworkFlowInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Violation_NetworkFlowInfo.Marshal(b, m, deterministic)
 	} else {
@@ -1176,7 +1176,7 @@ func (*Alert_Violation_NetworkFlowInfo_Entity) Descriptor() ([]byte, []int) {
 func (m *Alert_Violation_NetworkFlowInfo_Entity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Violation_NetworkFlowInfo_Entity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Violation_NetworkFlowInfo_Entity) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Violation_NetworkFlowInfo_Entity.Marshal(b, m, deterministic)
 	} else {
@@ -1265,7 +1265,7 @@ func (*Alert_ProcessViolation) Descriptor() ([]byte, []int) {
 func (m *Alert_ProcessViolation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_ProcessViolation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_ProcessViolation) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_ProcessViolation.Marshal(b, m, deterministic)
 	} else {
@@ -1339,7 +1339,7 @@ func (*Alert_Enforcement) Descriptor() ([]byte, []int) {
 func (m *Alert_Enforcement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Alert_Enforcement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Alert_Enforcement) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Alert_Enforcement.Marshal(b, m, deterministic)
 	} else {
@@ -1419,7 +1419,7 @@ func (*ListAlert) Descriptor() ([]byte, []int) {
 func (m *ListAlert) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlert) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlert.Marshal(b, m, deterministic)
 	} else {
@@ -1445,7 +1445,7 @@ var xxx_messageInfo_ListAlert proto.InternalMessageInfo
 
 type isListAlert_Entity interface {
 	isListAlert_Entity()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isListAlert_Entity
 }
@@ -1605,7 +1605,7 @@ func (*ListAlert_CommonEntityInfo) Descriptor() ([]byte, []int) {
 func (m *ListAlert_CommonEntityInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlert_CommonEntityInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlert_CommonEntityInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlert_CommonEntityInfo.Marshal(b, m, deterministic)
 	} else {
@@ -1693,7 +1693,7 @@ func (*ListAlert_ResourceEntity) Descriptor() ([]byte, []int) {
 func (m *ListAlert_ResourceEntity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlert_ResourceEntity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlert_ResourceEntity) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlert_ResourceEntity.Marshal(b, m, deterministic)
 	} else {
@@ -1759,7 +1759,7 @@ func (*ListAlertPolicy) Descriptor() ([]byte, []int) {
 func (m *ListAlertPolicy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlertPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlertPolicy) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlertPolicy.Marshal(b, m, deterministic)
 	} else {
@@ -1859,7 +1859,7 @@ func (*ListAlertPolicy_DevFields) Descriptor() ([]byte, []int) {
 func (m *ListAlertPolicy_DevFields) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlertPolicy_DevFields) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlertPolicy_DevFields) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlertPolicy_DevFields.Marshal(b, m, deterministic)
 	} else {
@@ -1929,7 +1929,7 @@ func (*ListAlertDeployment) Descriptor() ([]byte, []int) {
 func (m *ListAlertDeployment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAlertDeployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAlertDeployment) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAlertDeployment.Marshal(b, m, deterministic)
 	} else {
@@ -2165,7 +2165,7 @@ var fileDescriptor_bfba8812535cd55e = []byte{
 	0x00, 0x00,
 }
 
-func (m *Alert) Marshal() (dAtA []byte, err error) {
+func (m *Alert) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2175,7 +2175,7 @@ func (m *Alert) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2243,7 +2243,7 @@ func (m *Alert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Entity.Size()
 			i -= size
-			if _, err := m.Entity.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Entity.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2354,7 +2354,7 @@ func (m *Alert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Deployment_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Deployment_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2375,7 +2375,7 @@ func (m *Alert_Deployment_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Image) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Image) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2396,7 +2396,7 @@ func (m *Alert_Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Resource_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Resource_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2419,7 +2419,7 @@ func (m *Alert_Resource_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Deployment) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Deployment) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2429,7 +2429,7 @@ func (m *Alert_Deployment) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Deployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Deployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2559,7 +2559,7 @@ func (m *Alert_Deployment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Deployment_Container) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Deployment_Container) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2569,7 +2569,7 @@ func (m *Alert_Deployment_Container) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Deployment_Container) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Deployment_Container) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2605,7 +2605,7 @@ func (m *Alert_Deployment_Container) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Resource) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Resource) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2615,7 +2615,7 @@ func (m *Alert_Resource) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Resource) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Resource) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2672,7 +2672,7 @@ func (m *Alert_Resource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Violation) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Violation) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2682,7 +2682,7 @@ func (m *Alert_Violation) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Violation) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2700,7 +2700,7 @@ func (m *Alert_Violation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.MessageAttributes.Size()
 			i -= size
-			if _, err := m.MessageAttributes.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.MessageAttributes.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2732,7 +2732,7 @@ func (m *Alert_Violation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Violation_KeyValueAttrs_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation_KeyValueAttrs_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2753,7 +2753,7 @@ func (m *Alert_Violation_KeyValueAttrs_) MarshalToSizedBuffer(dAtA []byte) (int,
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Violation_NetworkFlowInfo_) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation_NetworkFlowInfo_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2774,7 +2774,7 @@ func (m *Alert_Violation_NetworkFlowInfo_) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Violation_KeyValueAttrs) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Violation_KeyValueAttrs) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2784,7 +2784,7 @@ func (m *Alert_Violation_KeyValueAttrs) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Violation_KeyValueAttrs) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation_KeyValueAttrs) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2815,7 +2815,7 @@ func (m *Alert_Violation_KeyValueAttrs) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2825,7 +2825,7 @@ func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) Marshal() (dAtA []byte, err
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2856,7 +2856,7 @@ func (m *Alert_Violation_KeyValueAttrs_KeyValueAttr) MarshalToSizedBuffer(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Violation_NetworkFlowInfo) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Violation_NetworkFlowInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2866,7 +2866,7 @@ func (m *Alert_Violation_NetworkFlowInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Violation_NetworkFlowInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation_NetworkFlowInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2912,7 +2912,7 @@ func (m *Alert_Violation_NetworkFlowInfo) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Violation_NetworkFlowInfo_Entity) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Violation_NetworkFlowInfo_Entity) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2922,7 +2922,7 @@ func (m *Alert_Violation_NetworkFlowInfo_Entity) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Violation_NetworkFlowInfo_Entity) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Violation_NetworkFlowInfo_Entity) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2970,7 +2970,7 @@ func (m *Alert_Violation_NetworkFlowInfo_Entity) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_ProcessViolation) Marshal() (dAtA []byte, err error) {
+func (m *Alert_ProcessViolation) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2980,7 +2980,7 @@ func (m *Alert_ProcessViolation) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_ProcessViolation) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_ProcessViolation) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3018,7 +3018,7 @@ func (m *Alert_ProcessViolation) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Enforcement) Marshal() (dAtA []byte, err error) {
+func (m *Alert_Enforcement) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3028,7 +3028,7 @@ func (m *Alert_Enforcement) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Enforcement) MarshalTo(dAtA []byte) (int, error) {
+func (m *Alert_Enforcement) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3057,7 +3057,7 @@ func (m *Alert_Enforcement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlert) Marshal() (dAtA []byte, err error) {
+func (m *ListAlert) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3067,7 +3067,7 @@ func (m *ListAlert) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlert) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlert) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3085,7 +3085,7 @@ func (m *ListAlert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Entity.Size()
 			i -= size
-			if _, err := m.Entity.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Entity.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3156,7 +3156,7 @@ func (m *ListAlert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlert_Deployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlert_Deployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3177,7 +3177,7 @@ func (m *ListAlert_Deployment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ListAlert_Resource) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlert_Resource) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3198,7 +3198,7 @@ func (m *ListAlert_Resource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ListAlert_CommonEntityInfo) Marshal() (dAtA []byte, err error) {
+func (m *ListAlert_CommonEntityInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3208,7 +3208,7 @@ func (m *ListAlert_CommonEntityInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlert_CommonEntityInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlert_CommonEntityInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3258,7 +3258,7 @@ func (m *ListAlert_CommonEntityInfo) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlert_ResourceEntity) Marshal() (dAtA []byte, err error) {
+func (m *ListAlert_ResourceEntity) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3268,7 +3268,7 @@ func (m *ListAlert_ResourceEntity) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlert_ResourceEntity) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlert_ResourceEntity) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3292,7 +3292,7 @@ func (m *ListAlert_ResourceEntity) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlertPolicy) Marshal() (dAtA []byte, err error) {
+func (m *ListAlertPolicy) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3302,7 +3302,7 @@ func (m *ListAlertPolicy) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlertPolicy) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlertPolicy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3366,7 +3366,7 @@ func (m *ListAlertPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlertPolicy_DevFields) Marshal() (dAtA []byte, err error) {
+func (m *ListAlertPolicy_DevFields) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3376,7 +3376,7 @@ func (m *ListAlertPolicy_DevFields) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlertPolicy_DevFields) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlertPolicy_DevFields) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3400,7 +3400,7 @@ func (m *ListAlertPolicy_DevFields) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlertDeployment) Marshal() (dAtA []byte, err error) {
+func (m *ListAlertDeployment) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3410,7 +3410,7 @@ func (m *ListAlertDeployment) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlertDeployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListAlertDeployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

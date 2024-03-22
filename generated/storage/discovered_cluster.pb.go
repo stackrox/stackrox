@@ -105,7 +105,7 @@ func (*DiscoveredCluster) Descriptor() ([]byte, []int) {
 func (m *DiscoveredCluster) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DiscoveredCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DiscoveredCluster) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DiscoveredCluster.Marshal(b, m, deterministic)
 	} else {
@@ -200,7 +200,7 @@ func (*DiscoveredCluster_Metadata) Descriptor() ([]byte, []int) {
 func (m *DiscoveredCluster_Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DiscoveredCluster_Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DiscoveredCluster_Metadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DiscoveredCluster_Metadata.Marshal(b, m, deterministic)
 	} else {
@@ -324,7 +324,7 @@ var fileDescriptor_01c648cee3275093 = []byte{
 	0xcf, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0x96, 0xff, 0x77, 0x2b, 0x85, 0x03, 0x00, 0x00,
 }
 
-func (m *DiscoveredCluster) Marshal() (dAtA []byte, err error) {
+func (m *DiscoveredCluster) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -334,7 +334,7 @@ func (m *DiscoveredCluster) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DiscoveredCluster) MarshalTo(dAtA []byte) (int, error) {
+func (m *DiscoveredCluster) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -394,7 +394,7 @@ func (m *DiscoveredCluster) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DiscoveredCluster_Metadata) Marshal() (dAtA []byte, err error) {
+func (m *DiscoveredCluster_Metadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -404,7 +404,7 @@ func (m *DiscoveredCluster_Metadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DiscoveredCluster_Metadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *DiscoveredCluster_Metadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

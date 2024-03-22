@@ -43,7 +43,7 @@ func (*GetReportConfigurationsResponse) Descriptor() ([]byte, []int) {
 func (m *GetReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetReportConfigurationsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetReportConfigurationsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -109,7 +109,7 @@ func (*GetReportConfigurationResponse) Descriptor() ([]byte, []int) {
 func (m *GetReportConfigurationResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetReportConfigurationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetReportConfigurationResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetReportConfigurationResponse.Marshal(b, m, deterministic)
 	} else {
@@ -170,7 +170,7 @@ func (*PostReportConfigurationResponse) Descriptor() ([]byte, []int) {
 func (m *PostReportConfigurationResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PostReportConfigurationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PostReportConfigurationResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PostReportConfigurationResponse.Marshal(b, m, deterministic)
 	} else {
@@ -231,7 +231,7 @@ func (*PostReportConfigurationRequest) Descriptor() ([]byte, []int) {
 func (m *PostReportConfigurationRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PostReportConfigurationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PostReportConfigurationRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PostReportConfigurationRequest.Marshal(b, m, deterministic)
 	} else {
@@ -293,7 +293,7 @@ func (*UpdateReportConfigurationRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateReportConfigurationRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateReportConfigurationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateReportConfigurationRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateReportConfigurationRequest.Marshal(b, m, deterministic)
 	} else {
@@ -361,7 +361,7 @@ func (*CountReportConfigurationsResponse) Descriptor() ([]byte, []int) {
 func (m *CountReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountReportConfigurationsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountReportConfigurationsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -723,7 +723,7 @@ var _ReportConfigurationService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/report_configuration_service.proto",
 }
 
-func (m *GetReportConfigurationsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetReportConfigurationsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -733,7 +733,7 @@ func (m *GetReportConfigurationsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetReportConfigurationsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetReportConfigurationsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -764,7 +764,7 @@ func (m *GetReportConfigurationsResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *GetReportConfigurationResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetReportConfigurationResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -774,7 +774,7 @@ func (m *GetReportConfigurationResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetReportConfigurationResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetReportConfigurationResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -803,7 +803,7 @@ func (m *GetReportConfigurationResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *PostReportConfigurationResponse) Marshal() (dAtA []byte, err error) {
+func (m *PostReportConfigurationResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -813,7 +813,7 @@ func (m *PostReportConfigurationResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PostReportConfigurationResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *PostReportConfigurationResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -842,7 +842,7 @@ func (m *PostReportConfigurationResponse) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *PostReportConfigurationRequest) Marshal() (dAtA []byte, err error) {
+func (m *PostReportConfigurationRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -852,7 +852,7 @@ func (m *PostReportConfigurationRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PostReportConfigurationRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *PostReportConfigurationRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -881,7 +881,7 @@ func (m *PostReportConfigurationRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateReportConfigurationRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateReportConfigurationRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -891,7 +891,7 @@ func (m *UpdateReportConfigurationRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateReportConfigurationRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateReportConfigurationRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -927,7 +927,7 @@ func (m *UpdateReportConfigurationRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *CountReportConfigurationsResponse) Marshal() (dAtA []byte, err error) {
+func (m *CountReportConfigurationsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -937,7 +937,7 @@ func (m *CountReportConfigurationsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountReportConfigurationsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountReportConfigurationsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

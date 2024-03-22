@@ -44,7 +44,7 @@ func (*GetVulnerabilitiesRequest) Descriptor() ([]byte, []int) {
 func (m *GetVulnerabilitiesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetVulnerabilitiesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetVulnerabilitiesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetVulnerabilitiesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -112,7 +112,7 @@ func (*Metadata) Descriptor() ([]byte, []int) {
 func (m *Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Metadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Metadata.Marshal(b, m, deterministic)
 	} else {
@@ -312,7 +312,7 @@ var _Matcher_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/scanner/v4/matcher_service.proto",
 }
 
-func (m *GetVulnerabilitiesRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetVulnerabilitiesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -322,7 +322,7 @@ func (m *GetVulnerabilitiesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetVulnerabilitiesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetVulnerabilitiesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -358,7 +358,7 @@ func (m *GetVulnerabilitiesRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *Metadata) Marshal() (dAtA []byte, err error) {
+func (m *Metadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -368,7 +368,7 @@ func (m *Metadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Metadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *Metadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

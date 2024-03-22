@@ -42,7 +42,7 @@ func (*IndexReport) Descriptor() ([]byte, []int) {
 func (m *IndexReport) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IndexReport) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *IndexReport) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IndexReport.Marshal(b, m, deterministic)
 	} else {
@@ -142,7 +142,7 @@ var fileDescriptor_9a3455143a5a0b61 = []byte{
 	0x00, 0x00,
 }
 
-func (m *IndexReport) Marshal() (dAtA []byte, err error) {
+func (m *IndexReport) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -152,7 +152,7 @@ func (m *IndexReport) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IndexReport) MarshalTo(dAtA []byte) (int, error) {
+func (m *IndexReport) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

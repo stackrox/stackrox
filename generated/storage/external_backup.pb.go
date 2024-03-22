@@ -49,7 +49,7 @@ func (*ExternalBackup) Descriptor() ([]byte, []int) {
 func (m *ExternalBackup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExternalBackup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExternalBackup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExternalBackup.Marshal(b, m, deterministic)
 	} else {
@@ -75,13 +75,13 @@ var xxx_messageInfo_ExternalBackup proto.InternalMessageInfo
 
 type isExternalBackup_Config interface {
 	isExternalBackup_Config()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isExternalBackup_Config
 }
 type isExternalBackup_IncludeCertificatesOpt interface {
 	isExternalBackup_IncludeCertificatesOpt()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isExternalBackup_IncludeCertificatesOpt
 }
@@ -252,7 +252,7 @@ func (*S3Config) Descriptor() ([]byte, []int) {
 func (m *S3Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *S3Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *S3Config) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_S3Config.Marshal(b, m, deterministic)
 	} else {
@@ -358,7 +358,7 @@ func (*GCSConfig) Descriptor() ([]byte, []int) {
 func (m *GCSConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GCSConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GCSConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GCSConfig.Marshal(b, m, deterministic)
 	} else {
@@ -467,7 +467,7 @@ var fileDescriptor_38dc9102c7d6c41e = []byte{
 	0xf2, 0x89, 0x98, 0xeb, 0x4f, 0x03, 0x00, 0x00,
 }
 
-func (m *ExternalBackup) Marshal() (dAtA []byte, err error) {
+func (m *ExternalBackup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -477,7 +477,7 @@ func (m *ExternalBackup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExternalBackup) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExternalBackup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -495,7 +495,7 @@ func (m *ExternalBackup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.IncludeCertificatesOpt.Size()
 			i -= size
-			if _, err := m.IncludeCertificatesOpt.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.IncludeCertificatesOpt.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -504,7 +504,7 @@ func (m *ExternalBackup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Config.Size()
 			i -= size
-			if _, err := m.Config.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Config.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -550,7 +550,7 @@ func (m *ExternalBackup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExternalBackup_S3) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExternalBackup_S3) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -571,7 +571,7 @@ func (m *ExternalBackup_S3) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ExternalBackup_Gcs) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExternalBackup_Gcs) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -592,7 +592,7 @@ func (m *ExternalBackup_Gcs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ExternalBackup_IncludeCertificates) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExternalBackup_IncludeCertificates) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -609,7 +609,7 @@ func (m *ExternalBackup_IncludeCertificates) MarshalToSizedBuffer(dAtA []byte) (
 	dAtA[i] = 0x40
 	return len(dAtA) - i, nil
 }
-func (m *S3Config) Marshal() (dAtA []byte, err error) {
+func (m *S3Config) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -619,7 +619,7 @@ func (m *S3Config) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *S3Config) MarshalTo(dAtA []byte) (int, error) {
+func (m *S3Config) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -688,7 +688,7 @@ func (m *S3Config) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GCSConfig) Marshal() (dAtA []byte, err error) {
+func (m *GCSConfig) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -698,7 +698,7 @@ func (m *GCSConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GCSConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *GCSConfig) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

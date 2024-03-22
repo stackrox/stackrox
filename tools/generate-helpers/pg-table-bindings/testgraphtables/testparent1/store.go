@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -155,7 +155,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

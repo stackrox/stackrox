@@ -49,7 +49,7 @@ func (*InitBundleMeta) Descriptor() ([]byte, []int) {
 func (m *InitBundleMeta) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleMeta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleMeta) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleMeta.Marshal(b, m, deterministic)
 	} else {
@@ -154,7 +154,7 @@ func (*InitBundleMeta_ImpactedCluster) Descriptor() ([]byte, []int) {
 func (m *InitBundleMeta_ImpactedCluster) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleMeta_ImpactedCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleMeta_ImpactedCluster) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleMeta_ImpactedCluster.Marshal(b, m, deterministic)
 	} else {
@@ -223,7 +223,7 @@ func (*InitBundleGenResponse) Descriptor() ([]byte, []int) {
 func (m *InitBundleGenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleGenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleGenResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleGenResponse.Marshal(b, m, deterministic)
 	} else {
@@ -306,7 +306,7 @@ func (*GetCAConfigResponse) Descriptor() ([]byte, []int) {
 func (m *GetCAConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCAConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCAConfigResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCAConfigResponse.Marshal(b, m, deterministic)
 	} else {
@@ -370,7 +370,7 @@ func (*InitBundleMetasResponse) Descriptor() ([]byte, []int) {
 func (m *InitBundleMetasResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleMetasResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleMetasResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleMetasResponse.Marshal(b, m, deterministic)
 	} else {
@@ -436,7 +436,7 @@ func (*InitBundleGenRequest) Descriptor() ([]byte, []int) {
 func (m *InitBundleGenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleGenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleGenRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleGenRequest.Marshal(b, m, deterministic)
 	} else {
@@ -497,7 +497,7 @@ func (*InitBundleRevokeRequest) Descriptor() ([]byte, []int) {
 func (m *InitBundleRevokeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleRevokeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleRevokeRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleRevokeRequest.Marshal(b, m, deterministic)
 	} else {
@@ -573,7 +573,7 @@ func (*InitBundleRevokeResponse) Descriptor() ([]byte, []int) {
 func (m *InitBundleRevokeResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleRevokeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleRevokeResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleRevokeResponse.Marshal(b, m, deterministic)
 	} else {
@@ -656,7 +656,7 @@ func (*InitBundleRevokeResponse_InitBundleRevocationError) Descriptor() ([]byte,
 func (m *InitBundleRevokeResponse_InitBundleRevocationError) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InitBundleRevokeResponse_InitBundleRevocationError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InitBundleRevokeResponse_InitBundleRevocationError.Marshal(b, m, deterministic)
 	} else {
@@ -983,7 +983,7 @@ var _ClusterInitService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/cluster_init_service.proto",
 }
 
-func (m *InitBundleMeta) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleMeta) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -993,7 +993,7 @@ func (m *InitBundleMeta) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleMeta) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleMeta) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1074,7 +1074,7 @@ func (m *InitBundleMeta) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleMeta_ImpactedCluster) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleMeta_ImpactedCluster) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1084,7 +1084,7 @@ func (m *InitBundleMeta_ImpactedCluster) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleMeta_ImpactedCluster) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleMeta_ImpactedCluster) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1115,7 +1115,7 @@ func (m *InitBundleMeta_ImpactedCluster) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleGenResponse) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleGenResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1125,7 +1125,7 @@ func (m *InitBundleGenResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleGenResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleGenResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1168,7 +1168,7 @@ func (m *InitBundleGenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCAConfigResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetCAConfigResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1178,7 +1178,7 @@ func (m *GetCAConfigResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCAConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetCAConfigResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1202,7 +1202,7 @@ func (m *GetCAConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleMetasResponse) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleMetasResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1212,7 +1212,7 @@ func (m *InitBundleMetasResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleMetasResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleMetasResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1243,7 +1243,7 @@ func (m *InitBundleMetasResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleGenRequest) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleGenRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1253,7 +1253,7 @@ func (m *InitBundleGenRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleGenRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleGenRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1277,7 +1277,7 @@ func (m *InitBundleGenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleRevokeRequest) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleRevokeRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1287,7 +1287,7 @@ func (m *InitBundleRevokeRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleRevokeRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleRevokeRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1322,7 +1322,7 @@ func (m *InitBundleRevokeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleRevokeResponse) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleRevokeResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1332,7 +1332,7 @@ func (m *InitBundleRevokeResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleRevokeResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleRevokeResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1372,7 +1372,7 @@ func (m *InitBundleRevokeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *InitBundleRevokeResponse_InitBundleRevocationError) Marshal() (dAtA []byte, err error) {
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1382,7 +1382,7 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) Marshal() (dAtA []b
 	return dAtA[:n], nil
 }
 
-func (m *InitBundleRevokeResponse_InitBundleRevocationError) MarshalTo(dAtA []byte) (int, error) {
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -45,7 +45,7 @@ func (*TimeRange) Descriptor() ([]byte, []int) {
 func (m *TimeRange) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TimeRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TimeRange) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TimeRange.Marshal(b, m, deterministic)
 	} else {
@@ -117,7 +117,7 @@ func (*SecuredUnitsUsageResponse) Descriptor() ([]byte, []int) {
 func (m *SecuredUnitsUsageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecuredUnitsUsageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecuredUnitsUsageResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SecuredUnitsUsageResponse.Marshal(b, m, deterministic)
 	} else {
@@ -190,7 +190,7 @@ func (*MaxSecuredUnitsUsageResponse) Descriptor() ([]byte, []int) {
 func (m *MaxSecuredUnitsUsageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MaxSecuredUnitsUsageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MaxSecuredUnitsUsageResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MaxSecuredUnitsUsageResponse.Marshal(b, m, deterministic)
 	} else {
@@ -447,7 +447,7 @@ var _AdministrationUsageService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/administration_usage_service.proto",
 }
 
-func (m *TimeRange) Marshal() (dAtA []byte, err error) {
+func (m *TimeRange) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -457,7 +457,7 @@ func (m *TimeRange) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TimeRange) MarshalTo(dAtA []byte) (int, error) {
+func (m *TimeRange) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -498,7 +498,7 @@ func (m *TimeRange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SecuredUnitsUsageResponse) Marshal() (dAtA []byte, err error) {
+func (m *SecuredUnitsUsageResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -508,7 +508,7 @@ func (m *SecuredUnitsUsageResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecuredUnitsUsageResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecuredUnitsUsageResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -535,7 +535,7 @@ func (m *SecuredUnitsUsageResponse) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *MaxSecuredUnitsUsageResponse) Marshal() (dAtA []byte, err error) {
+func (m *MaxSecuredUnitsUsageResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -545,7 +545,7 @@ func (m *MaxSecuredUnitsUsageResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MaxSecuredUnitsUsageResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MaxSecuredUnitsUsageResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

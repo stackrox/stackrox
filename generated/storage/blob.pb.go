@@ -45,7 +45,7 @@ func (*Blob) Descriptor() ([]byte, []int) {
 func (m *Blob) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Blob) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Blob) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Blob.Marshal(b, m, deterministic)
 	} else {
@@ -153,7 +153,7 @@ var fileDescriptor_93b63e008eb8666f = []byte{
 	0x01, 0x00, 0x00,
 }
 
-func (m *Blob) Marshal() (dAtA []byte, err error) {
+func (m *Blob) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -163,7 +163,7 @@ func (m *Blob) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Blob) MarshalTo(dAtA []byte) (int, error) {
+func (m *Blob) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

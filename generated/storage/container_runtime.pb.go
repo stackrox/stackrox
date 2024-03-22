@@ -67,7 +67,7 @@ func (*ContainerRuntimeInfo) Descriptor() ([]byte, []int) {
 func (m *ContainerRuntimeInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ContainerRuntimeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ContainerRuntimeInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ContainerRuntimeInfo.Marshal(b, m, deterministic)
 	} else {
@@ -144,7 +144,7 @@ var fileDescriptor_8b69161c52e2baa2 = []byte{
 	0x00, 0x00,
 }
 
-func (m *ContainerRuntimeInfo) Marshal() (dAtA []byte, err error) {
+func (m *ContainerRuntimeInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -154,7 +154,7 @@ func (m *ContainerRuntimeInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ContainerRuntimeInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *ContainerRuntimeInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -43,7 +43,7 @@ func (*ListSignatureIntegrationsResponse) Descriptor() ([]byte, []int) {
 func (m *ListSignatureIntegrationsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListSignatureIntegrationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListSignatureIntegrationsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListSignatureIntegrationsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -357,7 +357,7 @@ var _SignatureIntegrationService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/signature_integration_service.proto",
 }
 
-func (m *ListSignatureIntegrationsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListSignatureIntegrationsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -367,7 +367,7 @@ func (m *ListSignatureIntegrationsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListSignatureIntegrationsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListSignatureIntegrationsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

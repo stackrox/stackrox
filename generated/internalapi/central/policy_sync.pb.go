@@ -39,7 +39,7 @@ func (*PolicySync) Descriptor() ([]byte, []int) {
 func (m *PolicySync) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicySync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicySync) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicySync.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ var fileDescriptor_4c217656959c2b05 = []byte{
 	0xe1, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xee, 0x11, 0x24, 0x11, 0xa4, 0x00, 0x00, 0x00,
 }
 
-func (m *PolicySync) Marshal() (dAtA []byte, err error) {
+func (m *PolicySync) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -120,7 +120,7 @@ func (m *PolicySync) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicySync) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicySync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

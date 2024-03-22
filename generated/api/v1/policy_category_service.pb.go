@@ -44,7 +44,7 @@ func (*PolicyCategory) Descriptor() ([]byte, []int) {
 func (m *PolicyCategory) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyCategory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyCategory) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyCategory.Marshal(b, m, deterministic)
 	} else {
@@ -118,7 +118,7 @@ func (*PostPolicyCategoryRequest) Descriptor() ([]byte, []int) {
 func (m *PostPolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PostPolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PostPolicyCategoryRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PostPolicyCategoryRequest.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ func (*GetPolicyCategoriesResponse) Descriptor() ([]byte, []int) {
 func (m *GetPolicyCategoriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetPolicyCategoriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetPolicyCategoriesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetPolicyCategoriesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -246,7 +246,7 @@ func (*RenamePolicyCategoryRequest) Descriptor() ([]byte, []int) {
 func (m *RenamePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RenamePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RenamePolicyCategoryRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RenamePolicyCategoryRequest.Marshal(b, m, deterministic)
 	} else {
@@ -313,7 +313,7 @@ func (*DeletePolicyCategoryRequest) Descriptor() ([]byte, []int) {
 func (m *DeletePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeletePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeletePolicyCategoryRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeletePolicyCategoryRequest.Marshal(b, m, deterministic)
 	} else {
@@ -639,7 +639,7 @@ var _PolicyCategoryService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/policy_category_service.proto",
 }
 
-func (m *PolicyCategory) Marshal() (dAtA []byte, err error) {
+func (m *PolicyCategory) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -649,7 +649,7 @@ func (m *PolicyCategory) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyCategory) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyCategory) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -690,7 +690,7 @@ func (m *PolicyCategory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PostPolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
+func (m *PostPolicyCategoryRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -700,7 +700,7 @@ func (m *PostPolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PostPolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *PostPolicyCategoryRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -729,7 +729,7 @@ func (m *PostPolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *GetPolicyCategoriesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetPolicyCategoriesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -739,7 +739,7 @@ func (m *GetPolicyCategoriesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetPolicyCategoriesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetPolicyCategoriesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -770,7 +770,7 @@ func (m *GetPolicyCategoriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *RenamePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
+func (m *RenamePolicyCategoryRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -780,7 +780,7 @@ func (m *RenamePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RenamePolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *RenamePolicyCategoryRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -811,7 +811,7 @@ func (m *RenamePolicyCategoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *DeletePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeletePolicyCategoryRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -821,7 +821,7 @@ func (m *DeletePolicyCategoryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeletePolicyCategoryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeletePolicyCategoryRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

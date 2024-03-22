@@ -49,7 +49,7 @@ func (*ProcessListeningOnPort) Descriptor() ([]byte, []int) {
 func (m *ProcessListeningOnPort) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessListeningOnPort) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessListeningOnPort) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessListeningOnPort.Marshal(b, m, deterministic)
 	} else {
@@ -176,7 +176,7 @@ func (*ProcessListeningOnPort_Endpoint) Descriptor() ([]byte, []int) {
 func (m *ProcessListeningOnPort_Endpoint) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessListeningOnPort_Endpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessListeningOnPort_Endpoint) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessListeningOnPort_Endpoint.Marshal(b, m, deterministic)
 	} else {
@@ -251,7 +251,7 @@ func (*ProcessListeningOnPortFromSensor) Descriptor() ([]byte, []int) {
 func (m *ProcessListeningOnPortFromSensor) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessListeningOnPortFromSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessListeningOnPortFromSensor) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessListeningOnPortFromSensor.Marshal(b, m, deterministic)
 	} else {
@@ -379,7 +379,7 @@ func (*ProcessListeningOnPortStorage) Descriptor() ([]byte, []int) {
 func (m *ProcessListeningOnPortStorage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessListeningOnPortStorage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessListeningOnPortStorage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessListeningOnPortStorage.Marshal(b, m, deterministic)
 	} else {
@@ -548,7 +548,7 @@ var fileDescriptor_44bd1925a567394f = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x12, 0x14, 0x1d, 0x3c, 0xe1, 0x05, 0x00, 0x00,
 }
 
-func (m *ProcessListeningOnPort) Marshal() (dAtA []byte, err error) {
+func (m *ProcessListeningOnPort) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -558,7 +558,7 @@ func (m *ProcessListeningOnPort) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessListeningOnPort) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessListeningOnPort) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -660,7 +660,7 @@ func (m *ProcessListeningOnPort) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessListeningOnPort_Endpoint) Marshal() (dAtA []byte, err error) {
+func (m *ProcessListeningOnPort_Endpoint) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -670,7 +670,7 @@ func (m *ProcessListeningOnPort_Endpoint) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessListeningOnPort_Endpoint) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessListeningOnPort_Endpoint) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -697,7 +697,7 @@ func (m *ProcessListeningOnPort_Endpoint) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessListeningOnPortFromSensor) Marshal() (dAtA []byte, err error) {
+func (m *ProcessListeningOnPortFromSensor) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -707,7 +707,7 @@ func (m *ProcessListeningOnPortFromSensor) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessListeningOnPortFromSensor) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessListeningOnPortFromSensor) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -786,7 +786,7 @@ func (m *ProcessListeningOnPortFromSensor) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessListeningOnPortStorage) Marshal() (dAtA []byte, err error) {
+func (m *ProcessListeningOnPortStorage) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -796,7 +796,7 @@ func (m *ProcessListeningOnPortStorage) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessListeningOnPortStorage) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessListeningOnPortStorage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

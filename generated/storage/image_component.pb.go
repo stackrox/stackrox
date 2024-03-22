@@ -51,7 +51,7 @@ func (*ImageComponent) Descriptor() ([]byte, []int) {
 func (m *ImageComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageComponent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageComponent.Marshal(b, m, deterministic)
 	} else {
@@ -77,7 +77,7 @@ var xxx_messageInfo_ImageComponent proto.InternalMessageInfo
 
 type isImageComponent_SetTopCvss interface {
 	isImageComponent_SetTopCvss()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImageComponent_SetTopCvss
 }
@@ -230,7 +230,7 @@ var fileDescriptor_f72cea254a8774ea = []byte{
 	0x00,
 }
 
-func (m *ImageComponent) Marshal() (dAtA []byte, err error) {
+func (m *ImageComponent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -240,7 +240,7 @@ func (m *ImageComponent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageComponent) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageComponent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -272,7 +272,7 @@ func (m *ImageComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetTopCvss.Size()
 			i -= size
-			if _, err := m.SetTopCvss.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetTopCvss.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -329,7 +329,7 @@ func (m *ImageComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageComponent_TopCvss) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageComponent_TopCvss) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

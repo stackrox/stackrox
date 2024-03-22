@@ -38,7 +38,7 @@ func (*ResourceByID) Descriptor() ([]byte, []int) {
 func (m *ResourceByID) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResourceByID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResourceByID) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResourceByID.Marshal(b, m, deterministic)
 	} else {
@@ -102,7 +102,7 @@ func (*DeleteByIDWithForce) Descriptor() ([]byte, []int) {
 func (m *DeleteByIDWithForce) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteByIDWithForce) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteByIDWithForce) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteByIDWithForce.Marshal(b, m, deterministic)
 	} else {
@@ -175,7 +175,7 @@ var fileDescriptor_4f1c0dc18920e9b2 = []byte{
 	0xff, 0x02, 0x8b, 0x43, 0x72, 0xae, 0x00, 0x00, 0x00,
 }
 
-func (m *ResourceByID) Marshal() (dAtA []byte, err error) {
+func (m *ResourceByID) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -185,7 +185,7 @@ func (m *ResourceByID) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResourceByID) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResourceByID) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -209,7 +209,7 @@ func (m *ResourceByID) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteByIDWithForce) Marshal() (dAtA []byte, err error) {
+func (m *DeleteByIDWithForce) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -219,7 +219,7 @@ func (m *DeleteByIDWithForce) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteByIDWithForce) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteByIDWithForce) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -73,7 +73,7 @@ func (*ResourceCollection) Descriptor() ([]byte, []int) {
 func (m *ResourceCollection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResourceCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResourceCollection) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResourceCollection.Marshal(b, m, deterministic)
 	} else {
@@ -210,7 +210,7 @@ func (*ResourceCollection_EmbeddedResourceCollection) Descriptor() ([]byte, []in
 func (m *ResourceCollection_EmbeddedResourceCollection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResourceCollection_EmbeddedResourceCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResourceCollection_EmbeddedResourceCollection) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResourceCollection_EmbeddedResourceCollection.Marshal(b, m, deterministic)
 	} else {
@@ -271,7 +271,7 @@ func (*ResourceSelector) Descriptor() ([]byte, []int) {
 func (m *ResourceSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResourceSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResourceSelector) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResourceSelector.Marshal(b, m, deterministic)
 	} else {
@@ -350,7 +350,7 @@ func (*SelectorRule) Descriptor() ([]byte, []int) {
 func (m *SelectorRule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SelectorRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SelectorRule) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SelectorRule.Marshal(b, m, deterministic)
 	} else {
@@ -431,7 +431,7 @@ func (*RuleValue) Descriptor() ([]byte, []int) {
 func (m *RuleValue) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RuleValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RuleValue) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RuleValue.Marshal(b, m, deterministic)
 	} else {
@@ -531,7 +531,7 @@ var fileDescriptor_ef506d17363ff2fd = []byte{
 	0x34, 0x7f, 0xf6, 0x37, 0x00, 0x00, 0xff, 0xff, 0x74, 0x25, 0x1e, 0x17, 0x1f, 0x04, 0x00, 0x00,
 }
 
-func (m *ResourceCollection) Marshal() (dAtA []byte, err error) {
+func (m *ResourceCollection) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -541,7 +541,7 @@ func (m *ResourceCollection) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResourceCollection) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResourceCollection) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -655,7 +655,7 @@ func (m *ResourceCollection) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ResourceCollection_EmbeddedResourceCollection) Marshal() (dAtA []byte, err error) {
+func (m *ResourceCollection_EmbeddedResourceCollection) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -665,7 +665,7 @@ func (m *ResourceCollection_EmbeddedResourceCollection) Marshal() (dAtA []byte, 
 	return dAtA[:n], nil
 }
 
-func (m *ResourceCollection_EmbeddedResourceCollection) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResourceCollection_EmbeddedResourceCollection) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -689,7 +689,7 @@ func (m *ResourceCollection_EmbeddedResourceCollection) MarshalToSizedBuffer(dAt
 	return len(dAtA) - i, nil
 }
 
-func (m *ResourceSelector) Marshal() (dAtA []byte, err error) {
+func (m *ResourceSelector) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -699,7 +699,7 @@ func (m *ResourceSelector) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResourceSelector) MarshalTo(dAtA []byte) (int, error) {
+func (m *ResourceSelector) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -730,7 +730,7 @@ func (m *ResourceSelector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SelectorRule) Marshal() (dAtA []byte, err error) {
+func (m *SelectorRule) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -740,7 +740,7 @@ func (m *SelectorRule) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SelectorRule) MarshalTo(dAtA []byte) (int, error) {
+func (m *SelectorRule) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -783,7 +783,7 @@ func (m *SelectorRule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RuleValue) Marshal() (dAtA []byte, err error) {
+func (m *RuleValue) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -793,7 +793,7 @@ func (m *RuleValue) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RuleValue) MarshalTo(dAtA []byte) (int, error) {
+func (m *RuleValue) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

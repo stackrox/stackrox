@@ -39,7 +39,7 @@ func (*LocalScannerCertsIssueError) Descriptor() ([]byte, []int) {
 func (m *LocalScannerCertsIssueError) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LocalScannerCertsIssueError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LocalScannerCertsIssueError) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LocalScannerCertsIssueError.Marshal(b, m, deterministic)
 	} else {
@@ -99,7 +99,7 @@ func (*IssueLocalScannerCertsRequest) Descriptor() ([]byte, []int) {
 func (m *IssueLocalScannerCertsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IssueLocalScannerCertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *IssueLocalScannerCertsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IssueLocalScannerCertsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -163,7 +163,7 @@ func (*IssueLocalScannerCertsResponse) Descriptor() ([]byte, []int) {
 func (m *IssueLocalScannerCertsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IssueLocalScannerCertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *IssueLocalScannerCertsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IssueLocalScannerCertsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -189,7 +189,7 @@ var xxx_messageInfo_IssueLocalScannerCertsResponse proto.InternalMessageInfo
 
 type isIssueLocalScannerCertsResponse_Response interface {
 	isIssueLocalScannerCertsResponse_Response()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isIssueLocalScannerCertsResponse_Response
 }
@@ -309,7 +309,7 @@ var fileDescriptor_856923c76f63cf0a = []byte{
 	0x00,
 }
 
-func (m *LocalScannerCertsIssueError) Marshal() (dAtA []byte, err error) {
+func (m *LocalScannerCertsIssueError) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -319,7 +319,7 @@ func (m *LocalScannerCertsIssueError) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LocalScannerCertsIssueError) MarshalTo(dAtA []byte) (int, error) {
+func (m *LocalScannerCertsIssueError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -343,7 +343,7 @@ func (m *LocalScannerCertsIssueError) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *IssueLocalScannerCertsRequest) Marshal() (dAtA []byte, err error) {
+func (m *IssueLocalScannerCertsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -353,7 +353,7 @@ func (m *IssueLocalScannerCertsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IssueLocalScannerCertsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *IssueLocalScannerCertsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -377,7 +377,7 @@ func (m *IssueLocalScannerCertsRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *IssueLocalScannerCertsResponse) Marshal() (dAtA []byte, err error) {
+func (m *IssueLocalScannerCertsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -387,7 +387,7 @@ func (m *IssueLocalScannerCertsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IssueLocalScannerCertsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *IssueLocalScannerCertsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -405,7 +405,7 @@ func (m *IssueLocalScannerCertsResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 		{
 			size := m.Response.Size()
 			i -= size
-			if _, err := m.Response.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Response.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -420,7 +420,7 @@ func (m *IssueLocalScannerCertsResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *IssueLocalScannerCertsResponse_Certificates) MarshalTo(dAtA []byte) (int, error) {
+func (m *IssueLocalScannerCertsResponse_Certificates) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -441,7 +441,7 @@ func (m *IssueLocalScannerCertsResponse_Certificates) MarshalToSizedBuffer(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *IssueLocalScannerCertsResponse_Error) MarshalTo(dAtA []byte) (int, error) {
+func (m *IssueLocalScannerCertsResponse_Error) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

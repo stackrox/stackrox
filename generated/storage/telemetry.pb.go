@@ -40,7 +40,7 @@ func (*TelemetryConfiguration) Descriptor() ([]byte, []int) {
 func (m *TelemetryConfiguration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TelemetryConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TelemetryConfiguration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TelemetryConfiguration.Marshal(b, m, deterministic)
 	} else {
@@ -117,7 +117,7 @@ var fileDescriptor_7d24d8afb30dff46 = []byte{
 	0x70, 0xc8, 0xfc, 0x00, 0x00, 0x00,
 }
 
-func (m *TelemetryConfiguration) Marshal() (dAtA []byte, err error) {
+func (m *TelemetryConfiguration) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -127,7 +127,7 @@ func (m *TelemetryConfiguration) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TelemetryConfiguration) MarshalTo(dAtA []byte) (int, error) {
+func (m *TelemetryConfiguration) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

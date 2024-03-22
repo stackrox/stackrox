@@ -83,7 +83,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoClusterInitBundles(batch *pgx.Batch, obj *storage.InitBundleMeta) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -122,7 +122,7 @@ func copyFromClusterInitBundles(ctx context.Context, s pgSearch.Deleter, tx *pos
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

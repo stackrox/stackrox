@@ -50,7 +50,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoInstallationInfos(ctx context.Context, tx *postgres.Tx, obj *storage.InstallationInfo) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}

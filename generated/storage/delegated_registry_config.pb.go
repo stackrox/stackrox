@@ -73,7 +73,7 @@ func (*DelegatedRegistryConfig) Descriptor() ([]byte, []int) {
 func (m *DelegatedRegistryConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DelegatedRegistryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DelegatedRegistryConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DelegatedRegistryConfig.Marshal(b, m, deterministic)
 	} else {
@@ -158,7 +158,7 @@ func (*DelegatedRegistryConfig_DelegatedRegistry) Descriptor() ([]byte, []int) {
 func (m *DelegatedRegistryConfig_DelegatedRegistry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DelegatedRegistryConfig_DelegatedRegistry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DelegatedRegistryConfig_DelegatedRegistry) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DelegatedRegistryConfig_DelegatedRegistry.Marshal(b, m, deterministic)
 	} else {
@@ -242,7 +242,7 @@ var fileDescriptor_e8bf9a7bdbf38232 = []byte{
 	0xff, 0xff, 0x30, 0x60, 0x72, 0xdd, 0xd3, 0x01, 0x00, 0x00,
 }
 
-func (m *DelegatedRegistryConfig) Marshal() (dAtA []byte, err error) {
+func (m *DelegatedRegistryConfig) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -252,7 +252,7 @@ func (m *DelegatedRegistryConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DelegatedRegistryConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *DelegatedRegistryConfig) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -295,7 +295,7 @@ func (m *DelegatedRegistryConfig) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *DelegatedRegistryConfig_DelegatedRegistry) Marshal() (dAtA []byte, err error) {
+func (m *DelegatedRegistryConfig_DelegatedRegistry) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -305,7 +305,7 @@ func (m *DelegatedRegistryConfig_DelegatedRegistry) Marshal() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *DelegatedRegistryConfig_DelegatedRegistry) MarshalTo(dAtA []byte) (int, error) {
+func (m *DelegatedRegistryConfig_DelegatedRegistry) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

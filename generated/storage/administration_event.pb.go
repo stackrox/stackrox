@@ -121,7 +121,7 @@ func (*AdministrationEvent) Descriptor() ([]byte, []int) {
 func (m *AdministrationEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdministrationEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdministrationEvent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdministrationEvent.Marshal(b, m, deterministic)
 	} else {
@@ -249,7 +249,7 @@ func (*AdministrationEvent_Resource) Descriptor() ([]byte, []int) {
 func (m *AdministrationEvent_Resource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdministrationEvent_Resource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdministrationEvent_Resource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdministrationEvent_Resource.Marshal(b, m, deterministic)
 	} else {
@@ -355,7 +355,7 @@ var fileDescriptor_b517965aab4cb00c = []byte{
 	0xf2, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe7, 0xe5, 0xf7, 0xfc, 0x0f, 0x04, 0x00, 0x00,
 }
 
-func (m *AdministrationEvent) Marshal() (dAtA []byte, err error) {
+func (m *AdministrationEvent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -365,7 +365,7 @@ func (m *AdministrationEvent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdministrationEvent) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdministrationEvent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -461,7 +461,7 @@ func (m *AdministrationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AdministrationEvent_Resource) Marshal() (dAtA []byte, err error) {
+func (m *AdministrationEvent_Resource) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -471,7 +471,7 @@ func (m *AdministrationEvent_Resource) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdministrationEvent_Resource) MarshalTo(dAtA []byte) (int, error) {
+func (m *AdministrationEvent_Resource) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

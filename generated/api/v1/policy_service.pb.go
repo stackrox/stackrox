@@ -43,7 +43,7 @@ func (*DryRunResponse) Descriptor() ([]byte, []int) {
 func (m *DryRunResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DryRunResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DryRunResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DryRunResponse.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ func (*DryRunResponse_Alert) Descriptor() ([]byte, []int) {
 func (m *DryRunResponse_Alert) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DryRunResponse_Alert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DryRunResponse_Alert) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DryRunResponse_Alert.Marshal(b, m, deterministic)
 	} else {
@@ -181,7 +181,7 @@ func (*JobId) Descriptor() ([]byte, []int) {
 func (m *JobId) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *JobId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *JobId) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_JobId.Marshal(b, m, deterministic)
 	} else {
@@ -242,7 +242,7 @@ func (*DryRunJobStatusResponse) Descriptor() ([]byte, []int) {
 func (m *DryRunJobStatusResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DryRunJobStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DryRunJobStatusResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DryRunJobStatusResponse.Marshal(b, m, deterministic)
 	} else {
@@ -310,7 +310,7 @@ func (*PolicyCategoriesResponse) Descriptor() ([]byte, []int) {
 func (m *PolicyCategoriesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyCategoriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyCategoriesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyCategoriesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -378,7 +378,7 @@ func (*EnableDisablePolicyNotificationRequest) Descriptor() ([]byte, []int) {
 func (m *EnableDisablePolicyNotificationRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EnableDisablePolicyNotificationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EnableDisablePolicyNotificationRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EnableDisablePolicyNotificationRequest.Marshal(b, m, deterministic)
 	} else {
@@ -456,7 +456,7 @@ func (*ListPoliciesResponse) Descriptor() ([]byte, []int) {
 func (m *ListPoliciesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListPoliciesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListPoliciesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -523,7 +523,7 @@ func (*PostPolicyRequest) Descriptor() ([]byte, []int) {
 func (m *PostPolicyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PostPolicyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PostPolicyRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PostPolicyRequest.Marshal(b, m, deterministic)
 	} else {
@@ -594,7 +594,7 @@ func (*PatchPolicyRequest) Descriptor() ([]byte, []int) {
 func (m *PatchPolicyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PatchPolicyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PatchPolicyRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PatchPolicyRequest.Marshal(b, m, deterministic)
 	} else {
@@ -620,7 +620,7 @@ var xxx_messageInfo_PatchPolicyRequest proto.InternalMessageInfo
 
 type isPatchPolicyRequest_SetDisabled interface {
 	isPatchPolicyRequest_SetDisabled()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isPatchPolicyRequest_SetDisabled
 }
@@ -700,7 +700,7 @@ func (*ExportPoliciesRequest) Descriptor() ([]byte, []int) {
 func (m *ExportPoliciesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportPoliciesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportPoliciesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportPoliciesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -764,7 +764,7 @@ func (*PolicyError) Descriptor() ([]byte, []int) {
 func (m *PolicyError) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyError) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyError.Marshal(b, m, deterministic)
 	} else {
@@ -825,7 +825,7 @@ func (*ExportPolicyError) Descriptor() ([]byte, []int) {
 func (m *ExportPolicyError) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportPolicyError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportPolicyError) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportPolicyError.Marshal(b, m, deterministic)
 	} else {
@@ -893,7 +893,7 @@ func (*ExportPoliciesErrorList) Descriptor() ([]byte, []int) {
 func (m *ExportPoliciesErrorList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportPoliciesErrorList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportPoliciesErrorList) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportPoliciesErrorList.Marshal(b, m, deterministic)
 	} else {
@@ -959,7 +959,7 @@ func (*PolicyFromSearchRequest) Descriptor() ([]byte, []int) {
 func (m *PolicyFromSearchRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyFromSearchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyFromSearchRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyFromSearchRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1019,7 +1019,7 @@ func (*ImportPoliciesMetadata) Descriptor() ([]byte, []int) {
 func (m *ImportPoliciesMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImportPoliciesMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImportPoliciesMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImportPoliciesMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -1080,7 +1080,7 @@ func (*ImportPoliciesRequest) Descriptor() ([]byte, []int) {
 func (m *ImportPoliciesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImportPoliciesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImportPoliciesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImportPoliciesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1159,7 +1159,7 @@ func (*ImportPolicyError) Descriptor() ([]byte, []int) {
 func (m *ImportPolicyError) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImportPolicyError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImportPolicyError) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImportPolicyError.Marshal(b, m, deterministic)
 	} else {
@@ -1185,7 +1185,7 @@ var xxx_messageInfo_ImportPolicyError proto.InternalMessageInfo
 
 type isImportPolicyError_Metadata interface {
 	isImportPolicyError_Metadata()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImportPolicyError_Metadata
 }
@@ -1295,7 +1295,7 @@ func (*ImportPolicyResponse) Descriptor() ([]byte, []int) {
 func (m *ImportPolicyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImportPolicyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImportPolicyResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImportPolicyResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1377,7 +1377,7 @@ func (*ImportPoliciesResponse) Descriptor() ([]byte, []int) {
 func (m *ImportPoliciesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImportPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImportPoliciesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImportPoliciesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1452,7 +1452,7 @@ func (*PolicyFromSearchResponse) Descriptor() ([]byte, []int) {
 func (m *PolicyFromSearchResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyFromSearchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyFromSearchResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyFromSearchResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1532,7 +1532,7 @@ func (*GetPolicyMitreVectorsRequest) Descriptor() ([]byte, []int) {
 func (m *GetPolicyMitreVectorsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetPolicyMitreVectorsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetPolicyMitreVectorsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetPolicyMitreVectorsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1601,7 +1601,7 @@ func (*GetPolicyMitreVectorsRequest_Options) Descriptor() ([]byte, []int) {
 func (m *GetPolicyMitreVectorsRequest_Options) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetPolicyMitreVectorsRequest_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetPolicyMitreVectorsRequest_Options) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetPolicyMitreVectorsRequest_Options.Marshal(b, m, deterministic)
 	} else {
@@ -1662,7 +1662,7 @@ func (*GetPolicyMitreVectorsResponse) Descriptor() ([]byte, []int) {
 func (m *GetPolicyMitreVectorsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetPolicyMitreVectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetPolicyMitreVectorsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetPolicyMitreVectorsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2529,7 +2529,7 @@ var _PolicyService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/policy_service.proto",
 }
 
-func (m *DryRunResponse) Marshal() (dAtA []byte, err error) {
+func (m *DryRunResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2539,7 +2539,7 @@ func (m *DryRunResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DryRunResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DryRunResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2570,7 +2570,7 @@ func (m *DryRunResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunResponse_Alert) Marshal() (dAtA []byte, err error) {
+func (m *DryRunResponse_Alert) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2580,7 +2580,7 @@ func (m *DryRunResponse_Alert) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DryRunResponse_Alert) MarshalTo(dAtA []byte) (int, error) {
+func (m *DryRunResponse_Alert) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2613,7 +2613,7 @@ func (m *DryRunResponse_Alert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *JobId) Marshal() (dAtA []byte, err error) {
+func (m *JobId) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2623,7 +2623,7 @@ func (m *JobId) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *JobId) MarshalTo(dAtA []byte) (int, error) {
+func (m *JobId) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2647,7 +2647,7 @@ func (m *JobId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunJobStatusResponse) Marshal() (dAtA []byte, err error) {
+func (m *DryRunJobStatusResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2657,7 +2657,7 @@ func (m *DryRunJobStatusResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DryRunJobStatusResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DryRunJobStatusResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2696,7 +2696,7 @@ func (m *DryRunJobStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyCategoriesResponse) Marshal() (dAtA []byte, err error) {
+func (m *PolicyCategoriesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2706,7 +2706,7 @@ func (m *PolicyCategoriesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyCategoriesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyCategoriesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2732,7 +2732,7 @@ func (m *PolicyCategoriesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *EnableDisablePolicyNotificationRequest) Marshal() (dAtA []byte, err error) {
+func (m *EnableDisablePolicyNotificationRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2742,7 +2742,7 @@ func (m *EnableDisablePolicyNotificationRequest) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *EnableDisablePolicyNotificationRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *EnableDisablePolicyNotificationRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2785,7 +2785,7 @@ func (m *EnableDisablePolicyNotificationRequest) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *ListPoliciesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListPoliciesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2795,7 +2795,7 @@ func (m *ListPoliciesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListPoliciesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListPoliciesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2826,7 +2826,7 @@ func (m *ListPoliciesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PostPolicyRequest) Marshal() (dAtA []byte, err error) {
+func (m *PostPolicyRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2836,7 +2836,7 @@ func (m *PostPolicyRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PostPolicyRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *PostPolicyRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2875,7 +2875,7 @@ func (m *PostPolicyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PatchPolicyRequest) Marshal() (dAtA []byte, err error) {
+func (m *PatchPolicyRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2885,7 +2885,7 @@ func (m *PatchPolicyRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PatchPolicyRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *PatchPolicyRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2903,7 +2903,7 @@ func (m *PatchPolicyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetDisabled.Size()
 			i -= size
-			if _, err := m.SetDisabled.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetDisabled.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2918,7 +2918,7 @@ func (m *PatchPolicyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PatchPolicyRequest_Disabled) MarshalTo(dAtA []byte) (int, error) {
+func (m *PatchPolicyRequest_Disabled) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2935,7 +2935,7 @@ func (m *PatchPolicyRequest_Disabled) MarshalToSizedBuffer(dAtA []byte) (int, er
 	dAtA[i] = 0x10
 	return len(dAtA) - i, nil
 }
-func (m *ExportPoliciesRequest) Marshal() (dAtA []byte, err error) {
+func (m *ExportPoliciesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2945,7 +2945,7 @@ func (m *ExportPoliciesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPoliciesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportPoliciesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2971,7 +2971,7 @@ func (m *ExportPoliciesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyError) Marshal() (dAtA []byte, err error) {
+func (m *PolicyError) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2981,7 +2981,7 @@ func (m *PolicyError) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyError) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3005,7 +3005,7 @@ func (m *PolicyError) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPolicyError) Marshal() (dAtA []byte, err error) {
+func (m *ExportPolicyError) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3015,7 +3015,7 @@ func (m *ExportPolicyError) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPolicyError) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportPolicyError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3051,7 +3051,7 @@ func (m *ExportPolicyError) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPoliciesErrorList) Marshal() (dAtA []byte, err error) {
+func (m *ExportPoliciesErrorList) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3061,7 +3061,7 @@ func (m *ExportPoliciesErrorList) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPoliciesErrorList) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportPoliciesErrorList) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3092,7 +3092,7 @@ func (m *ExportPoliciesErrorList) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyFromSearchRequest) Marshal() (dAtA []byte, err error) {
+func (m *PolicyFromSearchRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3102,7 +3102,7 @@ func (m *PolicyFromSearchRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyFromSearchRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyFromSearchRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3126,7 +3126,7 @@ func (m *PolicyFromSearchRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *ImportPoliciesMetadata) Marshal() (dAtA []byte, err error) {
+func (m *ImportPoliciesMetadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3136,7 +3136,7 @@ func (m *ImportPoliciesMetadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImportPoliciesMetadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPoliciesMetadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3163,7 +3163,7 @@ func (m *ImportPoliciesMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ImportPoliciesRequest) Marshal() (dAtA []byte, err error) {
+func (m *ImportPoliciesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3173,7 +3173,7 @@ func (m *ImportPoliciesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImportPoliciesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPoliciesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3216,7 +3216,7 @@ func (m *ImportPoliciesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImportPolicyError) Marshal() (dAtA []byte, err error) {
+func (m *ImportPolicyError) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3226,7 +3226,7 @@ func (m *ImportPolicyError) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImportPolicyError) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPolicyError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3244,7 +3244,7 @@ func (m *ImportPolicyError) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Metadata.Size()
 			i -= size
-			if _, err := m.Metadata.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Metadata.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3266,7 +3266,7 @@ func (m *ImportPolicyError) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImportPolicyError_DuplicateName) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPolicyError_DuplicateName) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3280,7 +3280,7 @@ func (m *ImportPolicyError_DuplicateName) MarshalToSizedBuffer(dAtA []byte) (int
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *ImportPolicyError_ValidationError) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPolicyError_ValidationError) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3294,7 +3294,7 @@ func (m *ImportPolicyError_ValidationError) MarshalToSizedBuffer(dAtA []byte) (i
 	dAtA[i] = 0x22
 	return len(dAtA) - i, nil
 }
-func (m *ImportPolicyResponse) Marshal() (dAtA []byte, err error) {
+func (m *ImportPolicyResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3304,7 +3304,7 @@ func (m *ImportPolicyResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImportPolicyResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPolicyResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3357,7 +3357,7 @@ func (m *ImportPolicyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImportPoliciesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ImportPoliciesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3367,7 +3367,7 @@ func (m *ImportPoliciesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImportPoliciesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImportPoliciesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3408,7 +3408,7 @@ func (m *ImportPoliciesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyFromSearchResponse) Marshal() (dAtA []byte, err error) {
+func (m *PolicyFromSearchResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3418,7 +3418,7 @@ func (m *PolicyFromSearchResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyFromSearchResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyFromSearchResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3466,7 +3466,7 @@ func (m *PolicyFromSearchResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *GetPolicyMitreVectorsRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetPolicyMitreVectorsRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3476,7 +3476,7 @@ func (m *GetPolicyMitreVectorsRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetPolicyMitreVectorsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetPolicyMitreVectorsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3512,7 +3512,7 @@ func (m *GetPolicyMitreVectorsRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *GetPolicyMitreVectorsRequest_Options) Marshal() (dAtA []byte, err error) {
+func (m *GetPolicyMitreVectorsRequest_Options) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3522,7 +3522,7 @@ func (m *GetPolicyMitreVectorsRequest_Options) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *GetPolicyMitreVectorsRequest_Options) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetPolicyMitreVectorsRequest_Options) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3549,7 +3549,7 @@ func (m *GetPolicyMitreVectorsRequest_Options) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetPolicyMitreVectorsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetPolicyMitreVectorsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3559,7 +3559,7 @@ func (m *GetPolicyMitreVectorsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetPolicyMitreVectorsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetPolicyMitreVectorsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

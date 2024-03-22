@@ -226,7 +226,7 @@ func (*Image) Descriptor() ([]byte, []int) {
 func (m *Image) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Image) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Image.Marshal(b, m, deterministic)
 	} else {
@@ -252,25 +252,25 @@ var xxx_messageInfo_Image proto.InternalMessageInfo
 
 type isImage_SetComponents interface {
 	isImage_SetComponents()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImage_SetComponents
 }
 type isImage_SetCves interface {
 	isImage_SetCves()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImage_SetCves
 }
 type isImage_SetFixable interface {
 	isImage_SetFixable()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImage_SetFixable
 }
 type isImage_SetTopCvss interface {
 	isImage_SetTopCvss()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImage_SetTopCvss
 }
@@ -542,7 +542,7 @@ func (*DataSource) Descriptor() ([]byte, []int) {
 func (m *DataSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DataSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DataSource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DataSource.Marshal(b, m, deterministic)
 	} else {
@@ -626,7 +626,7 @@ func (*ImageScan) Descriptor() ([]byte, []int) {
 func (m *ImageScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageScan.Marshal(b, m, deterministic)
 	} else {
@@ -652,7 +652,7 @@ var xxx_messageInfo_ImageScan proto.InternalMessageInfo
 
 type isImageScan_Hashoneof interface {
 	isImageScan_Hashoneof()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isImageScan_Hashoneof
 }
@@ -779,7 +779,7 @@ func (*ImageSignatureVerificationData) Descriptor() ([]byte, []int) {
 func (m *ImageSignatureVerificationData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageSignatureVerificationData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageSignatureVerificationData) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageSignatureVerificationData.Marshal(b, m, deterministic)
 	} else {
@@ -853,7 +853,7 @@ func (*ImageSignatureVerificationResult) Descriptor() ([]byte, []int) {
 func (m *ImageSignatureVerificationResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageSignatureVerificationResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageSignatureVerificationResult) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageSignatureVerificationResult.Marshal(b, m, deterministic)
 	} else {
@@ -964,7 +964,7 @@ func (*EmbeddedImageScanComponent) Descriptor() ([]byte, []int) {
 func (m *EmbeddedImageScanComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EmbeddedImageScanComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EmbeddedImageScanComponent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EmbeddedImageScanComponent.Marshal(b, m, deterministic)
 	} else {
@@ -990,13 +990,13 @@ var xxx_messageInfo_EmbeddedImageScanComponent proto.InternalMessageInfo
 
 type isEmbeddedImageScanComponent_HasLayerIndex interface {
 	isEmbeddedImageScanComponent_HasLayerIndex()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isEmbeddedImageScanComponent_HasLayerIndex
 }
 type isEmbeddedImageScanComponent_SetTopCvss interface {
 	isEmbeddedImageScanComponent_SetTopCvss()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isEmbeddedImageScanComponent_SetTopCvss
 }
@@ -1183,7 +1183,7 @@ func (*EmbeddedImageScanComponent_Executable) Descriptor() ([]byte, []int) {
 func (m *EmbeddedImageScanComponent_Executable) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EmbeddedImageScanComponent_Executable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EmbeddedImageScanComponent_Executable) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EmbeddedImageScanComponent_Executable.Marshal(b, m, deterministic)
 	} else {
@@ -1256,7 +1256,7 @@ func (*License) Descriptor() ([]byte, []int) {
 func (m *License) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *License) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *License) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_License.Marshal(b, m, deterministic)
 	} else {
@@ -1345,7 +1345,7 @@ func (*ImageMetadata) Descriptor() ([]byte, []int) {
 func (m *ImageMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -1441,7 +1441,7 @@ func (*ImageSignature) Descriptor() ([]byte, []int) {
 func (m *ImageSignature) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageSignature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageSignature) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageSignature.Marshal(b, m, deterministic)
 	} else {
@@ -1517,7 +1517,7 @@ func (*Signature) Descriptor() ([]byte, []int) {
 func (m *Signature) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Signature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Signature) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Signature.Marshal(b, m, deterministic)
 	} else {
@@ -1543,7 +1543,7 @@ var xxx_messageInfo_Signature proto.InternalMessageInfo
 
 type isSignature_Signature interface {
 	isSignature_Signature()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isSignature_Signature
 }
@@ -1618,7 +1618,7 @@ func (*CosignSignature) Descriptor() ([]byte, []int) {
 func (m *CosignSignature) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CosignSignature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CosignSignature) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CosignSignature.Marshal(b, m, deterministic)
 	} else {
@@ -1693,7 +1693,7 @@ func (*V2Metadata) Descriptor() ([]byte, []int) {
 func (m *V2Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *V2Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *V2Metadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_V2Metadata.Marshal(b, m, deterministic)
 	} else {
@@ -1761,7 +1761,7 @@ func (*V1Metadata) Descriptor() ([]byte, []int) {
 func (m *V1Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *V1Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *V1Metadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_V1Metadata.Marshal(b, m, deterministic)
 	} else {
@@ -1906,7 +1906,7 @@ func (*ImageLayer) Descriptor() ([]byte, []int) {
 func (m *ImageLayer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageLayer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageLayer) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageLayer.Marshal(b, m, deterministic)
 	} else {
@@ -1998,7 +1998,7 @@ func (*ImageName) Descriptor() ([]byte, []int) {
 func (m *ImageName) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageName) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageName.Marshal(b, m, deterministic)
 	} else {
@@ -2095,7 +2095,7 @@ func (*ListImage) Descriptor() ([]byte, []int) {
 func (m *ListImage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListImage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListImage.Marshal(b, m, deterministic)
 	} else {
@@ -2121,19 +2121,19 @@ var xxx_messageInfo_ListImage proto.InternalMessageInfo
 
 type isListImage_SetComponents interface {
 	isListImage_SetComponents()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isListImage_SetComponents
 }
 type isListImage_SetCves interface {
 	isListImage_SetCves()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isListImage_SetCves
 }
 type isListImage_SetFixable interface {
 	isListImage_SetFixable()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isListImage_SetFixable
 }
@@ -2303,7 +2303,7 @@ func (*WatchedImage) Descriptor() ([]byte, []int) {
 func (m *WatchedImage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *WatchedImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *WatchedImage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_WatchedImage.Marshal(b, m, deterministic)
 	} else {
@@ -2500,7 +2500,7 @@ var fileDescriptor_c926ac8b7cb24b2e = []byte{
 	0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0x00, 0x07, 0xb7, 0xbb, 0xe3, 0x11, 0x00, 0x00,
 }
 
-func (m *Image) Marshal() (dAtA []byte, err error) {
+func (m *Image) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2510,7 +2510,7 @@ func (m *Image) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Image) MarshalTo(dAtA []byte) (int, error) {
+func (m *Image) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2600,7 +2600,7 @@ func (m *Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetTopCvss.Size()
 			i -= size
-			if _, err := m.SetTopCvss.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetTopCvss.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2630,7 +2630,7 @@ func (m *Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetFixable.Size()
 			i -= size
-			if _, err := m.SetFixable.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetFixable.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2639,7 +2639,7 @@ func (m *Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetCves.Size()
 			i -= size
-			if _, err := m.SetCves.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetCves.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2648,7 +2648,7 @@ func (m *Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetComponents.Size()
 			i -= size
-			if _, err := m.SetComponents.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetComponents.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2711,7 +2711,7 @@ func (m *Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Image_Components) MarshalTo(dAtA []byte) (int, error) {
+func (m *Image_Components) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2723,7 +2723,7 @@ func (m *Image_Components) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x38
 	return len(dAtA) - i, nil
 }
-func (m *Image_Cves) MarshalTo(dAtA []byte) (int, error) {
+func (m *Image_Cves) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2735,7 +2735,7 @@ func (m *Image_Cves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x40
 	return len(dAtA) - i, nil
 }
-func (m *Image_FixableCves) MarshalTo(dAtA []byte) (int, error) {
+func (m *Image_FixableCves) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2747,7 +2747,7 @@ func (m *Image_FixableCves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x48
 	return len(dAtA) - i, nil
 }
-func (m *Image_TopCvss) MarshalTo(dAtA []byte) (int, error) {
+func (m *Image_TopCvss) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2760,7 +2760,7 @@ func (m *Image_TopCvss) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x6d
 	return len(dAtA) - i, nil
 }
-func (m *DataSource) Marshal() (dAtA []byte, err error) {
+func (m *DataSource) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2770,7 +2770,7 @@ func (m *DataSource) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DataSource) MarshalTo(dAtA []byte) (int, error) {
+func (m *DataSource) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2808,7 +2808,7 @@ func (m *DataSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageScan) Marshal() (dAtA []byte, err error) {
+func (m *ImageScan) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2818,7 +2818,7 @@ func (m *ImageScan) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageScan) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageScan) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2836,7 +2836,7 @@ func (m *ImageScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Hashoneof.Size()
 			i -= size
-			if _, err := m.Hashoneof.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Hashoneof.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2914,7 +2914,7 @@ func (m *ImageScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageScan_Hash) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageScan_Hash) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2926,7 +2926,7 @@ func (m *ImageScan_Hash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x38
 	return len(dAtA) - i, nil
 }
-func (m *ImageSignatureVerificationData) Marshal() (dAtA []byte, err error) {
+func (m *ImageSignatureVerificationData) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2936,7 +2936,7 @@ func (m *ImageSignatureVerificationData) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageSignatureVerificationData) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageSignatureVerificationData) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2967,7 +2967,7 @@ func (m *ImageSignatureVerificationData) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageSignatureVerificationResult) Marshal() (dAtA []byte, err error) {
+func (m *ImageSignatureVerificationResult) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2977,7 +2977,7 @@ func (m *ImageSignatureVerificationResult) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageSignatureVerificationResult) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageSignatureVerificationResult) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3034,7 +3034,7 @@ func (m *ImageSignatureVerificationResult) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *EmbeddedImageScanComponent) Marshal() (dAtA []byte, err error) {
+func (m *EmbeddedImageScanComponent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3044,7 +3044,7 @@ func (m *EmbeddedImageScanComponent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EmbeddedImageScanComponent) MarshalTo(dAtA []byte) (int, error) {
+func (m *EmbeddedImageScanComponent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3089,7 +3089,7 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBuffer(dAtA []byte) (int, err
 		{
 			size := m.SetTopCvss.Size()
 			i -= size
-			if _, err := m.SetTopCvss.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetTopCvss.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3115,7 +3115,7 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBuffer(dAtA []byte) (int, err
 		{
 			size := m.HasLayerIndex.Size()
 			i -= size
-			if _, err := m.HasLayerIndex.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.HasLayerIndex.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3163,7 +3163,7 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *EmbeddedImageScanComponent_LayerIndex) MarshalTo(dAtA []byte) (int, error) {
+func (m *EmbeddedImageScanComponent_LayerIndex) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3175,7 +3175,7 @@ func (m *EmbeddedImageScanComponent_LayerIndex) MarshalToSizedBuffer(dAtA []byte
 	dAtA[i] = 0x28
 	return len(dAtA) - i, nil
 }
-func (m *EmbeddedImageScanComponent_TopCvss) MarshalTo(dAtA []byte) (int, error) {
+func (m *EmbeddedImageScanComponent_TopCvss) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3188,7 +3188,7 @@ func (m *EmbeddedImageScanComponent_TopCvss) MarshalToSizedBuffer(dAtA []byte) (
 	dAtA[i] = 0x4d
 	return len(dAtA) - i, nil
 }
-func (m *EmbeddedImageScanComponent_Executable) Marshal() (dAtA []byte, err error) {
+func (m *EmbeddedImageScanComponent_Executable) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3198,7 +3198,7 @@ func (m *EmbeddedImageScanComponent_Executable) Marshal() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *EmbeddedImageScanComponent_Executable) MarshalTo(dAtA []byte) (int, error) {
+func (m *EmbeddedImageScanComponent_Executable) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3231,7 +3231,7 @@ func (m *EmbeddedImageScanComponent_Executable) MarshalToSizedBuffer(dAtA []byte
 	return len(dAtA) - i, nil
 }
 
-func (m *License) Marshal() (dAtA []byte, err error) {
+func (m *License) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3241,7 +3241,7 @@ func (m *License) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *License) MarshalTo(dAtA []byte) (int, error) {
+func (m *License) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3279,7 +3279,7 @@ func (m *License) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageMetadata) Marshal() (dAtA []byte, err error) {
+func (m *ImageMetadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3289,7 +3289,7 @@ func (m *ImageMetadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageMetadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageMetadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3356,7 +3356,7 @@ func (m *ImageMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageSignature) Marshal() (dAtA []byte, err error) {
+func (m *ImageSignature) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3366,7 +3366,7 @@ func (m *ImageSignature) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageSignature) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageSignature) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3409,7 +3409,7 @@ func (m *ImageSignature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Signature) Marshal() (dAtA []byte, err error) {
+func (m *Signature) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3419,7 +3419,7 @@ func (m *Signature) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Signature) MarshalTo(dAtA []byte) (int, error) {
+func (m *Signature) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3437,7 +3437,7 @@ func (m *Signature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Signature.Size()
 			i -= size
-			if _, err := m.Signature.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Signature.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3445,7 +3445,7 @@ func (m *Signature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Signature_Cosign) MarshalTo(dAtA []byte) (int, error) {
+func (m *Signature_Cosign) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3466,7 +3466,7 @@ func (m *Signature_Cosign) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CosignSignature) Marshal() (dAtA []byte, err error) {
+func (m *CosignSignature) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3476,7 +3476,7 @@ func (m *CosignSignature) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CosignSignature) MarshalTo(dAtA []byte) (int, error) {
+func (m *CosignSignature) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3507,7 +3507,7 @@ func (m *CosignSignature) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *V2Metadata) Marshal() (dAtA []byte, err error) {
+func (m *V2Metadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3517,7 +3517,7 @@ func (m *V2Metadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *V2Metadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *V2Metadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3541,7 +3541,7 @@ func (m *V2Metadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *V1Metadata) Marshal() (dAtA []byte, err error) {
+func (m *V1Metadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3551,7 +3551,7 @@ func (m *V1Metadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *V1Metadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *V1Metadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3661,7 +3661,7 @@ func (m *V1Metadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageLayer) Marshal() (dAtA []byte, err error) {
+func (m *ImageLayer) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3671,7 +3671,7 @@ func (m *ImageLayer) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageLayer) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageLayer) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3731,7 +3731,7 @@ func (m *ImageLayer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageName) Marshal() (dAtA []byte, err error) {
+func (m *ImageName) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3741,7 +3741,7 @@ func (m *ImageName) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageName) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImageName) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3786,7 +3786,7 @@ func (m *ImageName) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListImage) Marshal() (dAtA []byte, err error) {
+func (m *ListImage) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3796,7 +3796,7 @@ func (m *ListImage) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListImage) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListImage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3850,7 +3850,7 @@ func (m *ListImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetFixable.Size()
 			i -= size
-			if _, err := m.SetFixable.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetFixable.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3859,7 +3859,7 @@ func (m *ListImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetCves.Size()
 			i -= size
-			if _, err := m.SetCves.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetCves.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3868,7 +3868,7 @@ func (m *ListImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetComponents.Size()
 			i -= size
-			if _, err := m.SetComponents.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.SetComponents.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3883,7 +3883,7 @@ func (m *ListImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListImage_Components) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListImage_Components) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3895,7 +3895,7 @@ func (m *ListImage_Components) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x18
 	return len(dAtA) - i, nil
 }
-func (m *ListImage_Cves) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListImage_Cves) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3907,7 +3907,7 @@ func (m *ListImage_Cves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x20
 	return len(dAtA) - i, nil
 }
-func (m *ListImage_FixableCves) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListImage_FixableCves) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3919,7 +3919,7 @@ func (m *ListImage_FixableCves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x28
 	return len(dAtA) - i, nil
 }
-func (m *WatchedImage) Marshal() (dAtA []byte, err error) {
+func (m *WatchedImage) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3929,7 +3929,7 @@ func (m *WatchedImage) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *WatchedImage) MarshalTo(dAtA []byte) (int, error) {
+func (m *WatchedImage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -88,7 +88,7 @@ func (*MsgFromSensor) Descriptor() ([]byte, []int) {
 func (m *MsgFromSensor) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgFromSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgFromSensor) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MsgFromSensor.Marshal(b, m, deterministic)
 	} else {
@@ -114,7 +114,7 @@ var xxx_messageInfo_MsgFromSensor proto.InternalMessageInfo
 
 type isMsgFromSensor_Msg interface {
 	isMsgFromSensor_Msg()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isMsgFromSensor_Msg
 }
@@ -516,7 +516,7 @@ func (*ReassessPolicies) Descriptor() ([]byte, []int) {
 func (m *ReassessPolicies) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReassessPolicies) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReassessPolicies) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ReassessPolicies.Marshal(b, m, deterministic)
 	} else {
@@ -568,7 +568,7 @@ func (*ReprocessDeployments) Descriptor() ([]byte, []int) {
 func (m *ReprocessDeployments) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReprocessDeployments) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReprocessDeployments) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ReprocessDeployments.Marshal(b, m, deterministic)
 	} else {
@@ -650,7 +650,7 @@ func (*MsgToSensor) Descriptor() ([]byte, []int) {
 func (m *MsgToSensor) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgToSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgToSensor) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MsgToSensor.Marshal(b, m, deterministic)
 	} else {
@@ -676,7 +676,7 @@ var xxx_messageInfo_MsgToSensor proto.InternalMessageInfo
 
 type isMsgToSensor_Msg interface {
 	isMsgToSensor_Msg()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isMsgToSensor_Msg
 }
@@ -1324,7 +1324,7 @@ func (*DeduperState) Descriptor() ([]byte, []int) {
 func (m *DeduperState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeduperState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeduperState) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeduperState.Marshal(b, m, deterministic)
 	} else {
@@ -1406,7 +1406,7 @@ func (*NodeInventoryACK) Descriptor() ([]byte, []int) {
 func (m *NodeInventoryACK) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeInventoryACK) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeInventoryACK) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeInventoryACK.Marshal(b, m, deterministic)
 	} else {
@@ -1480,7 +1480,7 @@ func (*AuditLogSync) Descriptor() ([]byte, []int) {
 func (m *AuditLogSync) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuditLogSync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuditLogSync) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuditLogSync.Marshal(b, m, deterministic)
 	} else {
@@ -1546,7 +1546,7 @@ func (*AuditLogStatusInfo) Descriptor() ([]byte, []int) {
 func (m *AuditLogStatusInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuditLogStatusInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuditLogStatusInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuditLogStatusInfo.Marshal(b, m, deterministic)
 	} else {
@@ -1612,7 +1612,7 @@ func (*ReprocessDeployment) Descriptor() ([]byte, []int) {
 func (m *ReprocessDeployment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReprocessDeployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReprocessDeployment) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ReprocessDeployment.Marshal(b, m, deterministic)
 	} else {
@@ -1676,7 +1676,7 @@ func (*InvalidateImageCache) Descriptor() ([]byte, []int) {
 func (m *InvalidateImageCache) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InvalidateImageCache) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InvalidateImageCache) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InvalidateImageCache.Marshal(b, m, deterministic)
 	} else {
@@ -1743,7 +1743,7 @@ func (*InvalidateImageCache_ImageKey) Descriptor() ([]byte, []int) {
 func (m *InvalidateImageCache_ImageKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InvalidateImageCache_ImageKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *InvalidateImageCache_ImageKey) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InvalidateImageCache_ImageKey.Marshal(b, m, deterministic)
 	} else {
@@ -2050,7 +2050,7 @@ var _SensorService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/central/sensor_iservice.proto",
 }
 
-func (m *MsgFromSensor) Marshal() (dAtA []byte, err error) {
+func (m *MsgFromSensor) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2060,7 +2060,7 @@ func (m *MsgFromSensor) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgFromSensor) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2078,7 +2078,7 @@ func (m *MsgFromSensor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Msg.Size()
 			i -= size
-			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Msg.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2105,7 +2105,7 @@ func (m *MsgFromSensor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgFromSensor_Event) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_Event) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2126,7 +2126,7 @@ func (m *MsgFromSensor_Event) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_NetworkFlowUpdate) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_NetworkFlowUpdate) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2147,7 +2147,7 @@ func (m *MsgFromSensor_NetworkFlowUpdate) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ScrapeUpdate) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ScrapeUpdate) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2168,7 +2168,7 @@ func (m *MsgFromSensor_ScrapeUpdate) MarshalToSizedBuffer(dAtA []byte) (int, err
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_NetworkPoliciesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_NetworkPoliciesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2189,7 +2189,7 @@ func (m *MsgFromSensor_NetworkPoliciesResponse) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ClusterStatusUpdate) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ClusterStatusUpdate) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2210,7 +2210,7 @@ func (m *MsgFromSensor_ClusterStatusUpdate) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_TelemetryDataResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_TelemetryDataResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2231,7 +2231,7 @@ func (m *MsgFromSensor_TelemetryDataResponse) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ClusterHealthInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ClusterHealthInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2252,7 +2252,7 @@ func (m *MsgFromSensor_ClusterHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_Hello) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_Hello) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2273,7 +2273,7 @@ func (m *MsgFromSensor_Hello) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_AuditLogStatusInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_AuditLogStatusInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2294,7 +2294,7 @@ func (m *MsgFromSensor_AuditLogStatusInfo) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_IssueLocalScannerCertsRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_IssueLocalScannerCertsRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2315,7 +2315,7 @@ func (m *MsgFromSensor_IssueLocalScannerCertsRequest) MarshalToSizedBuffer(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ClusterMetrics) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ClusterMetrics) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2336,7 +2336,7 @@ func (m *MsgFromSensor_ClusterMetrics) MarshalToSizedBuffer(dAtA []byte) (int, e
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ProcessListeningOnPortUpdate) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ProcessListeningOnPortUpdate) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2357,7 +2357,7 @@ func (m *MsgFromSensor_ProcessListeningOnPortUpdate) MarshalToSizedBuffer(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ComplianceOperatorInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ComplianceOperatorInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2380,7 +2380,7 @@ func (m *MsgFromSensor_ComplianceOperatorInfo) MarshalToSizedBuffer(dAtA []byte)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_ComplianceResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2403,7 +2403,7 @@ func (m *MsgFromSensor_ComplianceResponse) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_DeploymentEnhancementResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgFromSensor_DeploymentEnhancementResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2426,7 +2426,7 @@ func (m *MsgFromSensor_DeploymentEnhancementResponse) MarshalToSizedBuffer(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ReassessPolicies) Marshal() (dAtA []byte, err error) {
+func (m *ReassessPolicies) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2436,7 +2436,7 @@ func (m *ReassessPolicies) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReassessPolicies) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReassessPolicies) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2453,7 +2453,7 @@ func (m *ReassessPolicies) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ReprocessDeployments) Marshal() (dAtA []byte, err error) {
+func (m *ReprocessDeployments) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2463,7 +2463,7 @@ func (m *ReprocessDeployments) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReprocessDeployments) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReprocessDeployments) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2480,7 +2480,7 @@ func (m *ReprocessDeployments) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgToSensor) Marshal() (dAtA []byte, err error) {
+func (m *MsgToSensor) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2490,7 +2490,7 @@ func (m *MsgToSensor) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgToSensor) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2508,7 +2508,7 @@ func (m *MsgToSensor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Msg.Size()
 			i -= size
-			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Msg.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2516,7 +2516,7 @@ func (m *MsgToSensor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgToSensor_Enforcement) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_Enforcement) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2537,7 +2537,7 @@ func (m *MsgToSensor_Enforcement) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ScrapeCommand) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ScrapeCommand) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2558,7 +2558,7 @@ func (m *MsgToSensor_ScrapeCommand) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_NetworkPoliciesCommand) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_NetworkPoliciesCommand) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2579,7 +2579,7 @@ func (m *MsgToSensor_NetworkPoliciesCommand) MarshalToSizedBuffer(dAtA []byte) (
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ClusterConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ClusterConfig) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2600,7 +2600,7 @@ func (m *MsgToSensor_ClusterConfig) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_SensorUpgradeTrigger) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_SensorUpgradeTrigger) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2621,7 +2621,7 @@ func (m *MsgToSensor_SensorUpgradeTrigger) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_TelemetryDataRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_TelemetryDataRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2642,7 +2642,7 @@ func (m *MsgToSensor_TelemetryDataRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_PolicySync) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_PolicySync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2663,7 +2663,7 @@ func (m *MsgToSensor_PolicySync) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ReassessPolicies) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ReassessPolicies) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2684,7 +2684,7 @@ func (m *MsgToSensor_ReassessPolicies) MarshalToSizedBuffer(dAtA []byte) (int, e
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_BaselineSync) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_BaselineSync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2705,7 +2705,7 @@ func (m *MsgToSensor_BaselineSync) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_CancelPullTelemetryDataRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_CancelPullTelemetryDataRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2726,7 +2726,7 @@ func (m *MsgToSensor_CancelPullTelemetryDataRequest) MarshalToSizedBuffer(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_PushNetworkEntitiesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_PushNetworkEntitiesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2747,7 +2747,7 @@ func (m *MsgToSensor_PushNetworkEntitiesRequest) MarshalToSizedBuffer(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_Hello) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_Hello) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2768,7 +2768,7 @@ func (m *MsgToSensor_Hello) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_NetworkBaselineSync) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_NetworkBaselineSync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2789,7 +2789,7 @@ func (m *MsgToSensor_NetworkBaselineSync) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_AuditLogSync) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_AuditLogSync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2810,7 +2810,7 @@ func (m *MsgToSensor_AuditLogSync) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ReprocessDeployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ReprocessDeployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2831,7 +2831,7 @@ func (m *MsgToSensor_ReprocessDeployment) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_InvalidateImageCache) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_InvalidateImageCache) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2854,7 +2854,7 @@ func (m *MsgToSensor_InvalidateImageCache) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_IssueLocalScannerCertsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_IssueLocalScannerCertsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2877,7 +2877,7 @@ func (m *MsgToSensor_IssueLocalScannerCertsResponse) MarshalToSizedBuffer(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_UpdatedImage) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_UpdatedImage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2900,7 +2900,7 @@ func (m *MsgToSensor_UpdatedImage) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ReprocessDeployments) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ReprocessDeployments) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2923,7 +2923,7 @@ func (m *MsgToSensor_ReprocessDeployments) MarshalToSizedBuffer(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_NodeInventoryAck) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_NodeInventoryAck) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2946,7 +2946,7 @@ func (m *MsgToSensor_NodeInventoryAck) MarshalToSizedBuffer(dAtA []byte) (int, e
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_DelegatedRegistryConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_DelegatedRegistryConfig) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2969,7 +2969,7 @@ func (m *MsgToSensor_DelegatedRegistryConfig) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ScanImage) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ScanImage) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2992,7 +2992,7 @@ func (m *MsgToSensor_ScanImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ImageIntegrations) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ImageIntegrations) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3015,7 +3015,7 @@ func (m *MsgToSensor_ImageIntegrations) MarshalToSizedBuffer(dAtA []byte) (int, 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ComplianceRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3038,7 +3038,7 @@ func (m *MsgToSensor_ComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_ClusterHealthResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_ClusterHealthResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3061,7 +3061,7 @@ func (m *MsgToSensor_ClusterHealthResponse) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_DeduperState) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_DeduperState) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3084,7 +3084,7 @@ func (m *MsgToSensor_DeduperState) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_DeploymentEnhancementRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *MsgToSensor_DeploymentEnhancementRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3107,7 +3107,7 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) MarshalToSizedBuffer(dAtA []b
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DeduperState) Marshal() (dAtA []byte, err error) {
+func (m *DeduperState) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3117,7 +3117,7 @@ func (m *DeduperState) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeduperState) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeduperState) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3161,7 +3161,7 @@ func (m *DeduperState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeInventoryACK) Marshal() (dAtA []byte, err error) {
+func (m *NodeInventoryACK) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3171,7 +3171,7 @@ func (m *NodeInventoryACK) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeInventoryACK) MarshalTo(dAtA []byte) (int, error) {
+func (m *NodeInventoryACK) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3207,7 +3207,7 @@ func (m *NodeInventoryACK) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AuditLogSync) Marshal() (dAtA []byte, err error) {
+func (m *AuditLogSync) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3217,7 +3217,7 @@ func (m *AuditLogSync) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuditLogSync) MarshalTo(dAtA []byte) (int, error) {
+func (m *AuditLogSync) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3260,7 +3260,7 @@ func (m *AuditLogSync) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AuditLogStatusInfo) Marshal() (dAtA []byte, err error) {
+func (m *AuditLogStatusInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3270,7 +3270,7 @@ func (m *AuditLogStatusInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuditLogStatusInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *AuditLogStatusInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3313,7 +3313,7 @@ func (m *AuditLogStatusInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ReprocessDeployment) Marshal() (dAtA []byte, err error) {
+func (m *ReprocessDeployment) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3323,7 +3323,7 @@ func (m *ReprocessDeployment) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReprocessDeployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *ReprocessDeployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3349,7 +3349,7 @@ func (m *ReprocessDeployment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InvalidateImageCache) Marshal() (dAtA []byte, err error) {
+func (m *InvalidateImageCache) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3359,7 +3359,7 @@ func (m *InvalidateImageCache) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InvalidateImageCache) MarshalTo(dAtA []byte) (int, error) {
+func (m *InvalidateImageCache) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3390,7 +3390,7 @@ func (m *InvalidateImageCache) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InvalidateImageCache_ImageKey) Marshal() (dAtA []byte, err error) {
+func (m *InvalidateImageCache_ImageKey) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3400,7 +3400,7 @@ func (m *InvalidateImageCache_ImageKey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InvalidateImageCache_ImageKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *InvalidateImageCache_ImageKey) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

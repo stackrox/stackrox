@@ -43,7 +43,7 @@ func (*ListNodesRequest) Descriptor() ([]byte, []int) {
 func (m *ListNodesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListNodesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListNodesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListNodesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -103,7 +103,7 @@ func (*ListNodesResponse) Descriptor() ([]byte, []int) {
 func (m *ListNodesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListNodesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListNodesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListNodesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -170,7 +170,7 @@ func (*GetNodeRequest) Descriptor() ([]byte, []int) {
 func (m *GetNodeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetNodeRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetNodeRequest.Marshal(b, m, deterministic)
 	} else {
@@ -238,7 +238,7 @@ func (*ExportNodeRequest) Descriptor() ([]byte, []int) {
 func (m *ExportNodeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportNodeRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportNodeRequest.Marshal(b, m, deterministic)
 	} else {
@@ -305,7 +305,7 @@ func (*ExportNodeResponse) Descriptor() ([]byte, []int) {
 func (m *ExportNodeResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportNodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportNodeResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportNodeResponse.Marshal(b, m, deterministic)
 	} else {
@@ -570,7 +570,7 @@ var _NodeService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/node_service.proto",
 }
 
-func (m *ListNodesRequest) Marshal() (dAtA []byte, err error) {
+func (m *ListNodesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -580,7 +580,7 @@ func (m *ListNodesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListNodesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListNodesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -604,7 +604,7 @@ func (m *ListNodesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListNodesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListNodesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -614,7 +614,7 @@ func (m *ListNodesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListNodesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListNodesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -645,7 +645,7 @@ func (m *ListNodesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetNodeRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetNodeRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -655,7 +655,7 @@ func (m *GetNodeRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetNodeRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetNodeRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -686,7 +686,7 @@ func (m *GetNodeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportNodeRequest) Marshal() (dAtA []byte, err error) {
+func (m *ExportNodeRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -696,7 +696,7 @@ func (m *ExportNodeRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportNodeRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportNodeRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -725,7 +725,7 @@ func (m *ExportNodeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportNodeResponse) Marshal() (dAtA []byte, err error) {
+func (m *ExportNodeResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -735,7 +735,7 @@ func (m *ExportNodeResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportNodeResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportNodeResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

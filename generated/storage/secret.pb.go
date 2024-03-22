@@ -110,7 +110,7 @@ func (*Secret) Descriptor() ([]byte, []int) {
 func (m *Secret) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Secret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Secret) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Secret.Marshal(b, m, deterministic)
 	} else {
@@ -266,7 +266,7 @@ func (*ListSecret) Descriptor() ([]byte, []int) {
 func (m *ListSecret) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListSecret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListSecret) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListSecret.Marshal(b, m, deterministic)
 	} else {
@@ -380,7 +380,7 @@ func (*SecretRelationship) Descriptor() ([]byte, []int) {
 func (m *SecretRelationship) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecretRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecretRelationship) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SecretRelationship.Marshal(b, m, deterministic)
 	} else {
@@ -471,7 +471,7 @@ func (*SecretDeploymentRelationship) Descriptor() ([]byte, []int) {
 func (m *SecretDeploymentRelationship) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecretDeploymentRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecretDeploymentRelationship) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SecretDeploymentRelationship.Marshal(b, m, deterministic)
 	} else {
@@ -543,7 +543,7 @@ func (*SecretContainerRelationship) Descriptor() ([]byte, []int) {
 func (m *SecretContainerRelationship) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecretContainerRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecretContainerRelationship) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SecretContainerRelationship.Marshal(b, m, deterministic)
 	} else {
@@ -610,7 +610,7 @@ func (*ImagePullSecret) Descriptor() ([]byte, []int) {
 func (m *ImagePullSecret) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImagePullSecret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImagePullSecret) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImagePullSecret.Marshal(b, m, deterministic)
 	} else {
@@ -677,7 +677,7 @@ func (*ImagePullSecret_Registry) Descriptor() ([]byte, []int) {
 func (m *ImagePullSecret_Registry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImagePullSecret_Registry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImagePullSecret_Registry) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImagePullSecret_Registry.Marshal(b, m, deterministic)
 	} else {
@@ -752,7 +752,7 @@ func (*SecretDataFile) Descriptor() ([]byte, []int) {
 func (m *SecretDataFile) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecretDataFile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecretDataFile) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SecretDataFile.Marshal(b, m, deterministic)
 	} else {
@@ -778,7 +778,7 @@ var xxx_messageInfo_SecretDataFile proto.InternalMessageInfo
 
 type isSecretDataFile_Metadata interface {
 	isSecretDataFile_Metadata()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isSecretDataFile_Metadata
 }
@@ -893,7 +893,7 @@ func (*Cert) Descriptor() ([]byte, []int) {
 func (m *Cert) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Cert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Cert) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Cert.Marshal(b, m, deterministic)
 	} else {
@@ -1004,7 +1004,7 @@ func (*CertName) Descriptor() ([]byte, []int) {
 func (m *CertName) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CertName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CertName) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CertName.Marshal(b, m, deterministic)
 	} else {
@@ -1199,7 +1199,7 @@ var fileDescriptor_b4b7da2d1fc45954 = []byte{
 	0x00, 0xff, 0xff, 0x8e, 0x12, 0x89, 0xe9, 0xdc, 0x09, 0x00, 0x00,
 }
 
-func (m *Secret) Marshal() (dAtA []byte, err error) {
+func (m *Secret) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1209,7 +1209,7 @@ func (m *Secret) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Secret) MarshalTo(dAtA []byte) (int, error) {
+func (m *Secret) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1344,7 +1344,7 @@ func (m *Secret) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListSecret) Marshal() (dAtA []byte, err error) {
+func (m *ListSecret) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1354,7 +1354,7 @@ func (m *ListSecret) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListSecret) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListSecret) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1436,7 +1436,7 @@ func (m *ListSecret) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SecretRelationship) Marshal() (dAtA []byte, err error) {
+func (m *SecretRelationship) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1446,7 +1446,7 @@ func (m *SecretRelationship) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecretRelationship) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretRelationship) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1498,7 +1498,7 @@ func (m *SecretRelationship) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SecretDeploymentRelationship) Marshal() (dAtA []byte, err error) {
+func (m *SecretDeploymentRelationship) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1508,7 +1508,7 @@ func (m *SecretDeploymentRelationship) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecretDeploymentRelationship) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretDeploymentRelationship) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1539,7 +1539,7 @@ func (m *SecretDeploymentRelationship) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *SecretContainerRelationship) Marshal() (dAtA []byte, err error) {
+func (m *SecretContainerRelationship) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1549,7 +1549,7 @@ func (m *SecretContainerRelationship) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecretContainerRelationship) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretContainerRelationship) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1580,7 +1580,7 @@ func (m *SecretContainerRelationship) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ImagePullSecret) Marshal() (dAtA []byte, err error) {
+func (m *ImagePullSecret) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1590,7 +1590,7 @@ func (m *ImagePullSecret) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImagePullSecret) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImagePullSecret) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1621,7 +1621,7 @@ func (m *ImagePullSecret) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImagePullSecret_Registry) Marshal() (dAtA []byte, err error) {
+func (m *ImagePullSecret_Registry) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1631,7 +1631,7 @@ func (m *ImagePullSecret_Registry) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImagePullSecret_Registry) MarshalTo(dAtA []byte) (int, error) {
+func (m *ImagePullSecret_Registry) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1662,7 +1662,7 @@ func (m *ImagePullSecret_Registry) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *SecretDataFile) Marshal() (dAtA []byte, err error) {
+func (m *SecretDataFile) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1672,7 +1672,7 @@ func (m *SecretDataFile) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecretDataFile) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretDataFile) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1690,7 +1690,7 @@ func (m *SecretDataFile) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Metadata.Size()
 			i -= size
-			if _, err := m.Metadata.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Metadata.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1710,7 +1710,7 @@ func (m *SecretDataFile) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SecretDataFile_Cert) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretDataFile_Cert) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1731,7 +1731,7 @@ func (m *SecretDataFile_Cert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *SecretDataFile_ImagePullSecret) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretDataFile_ImagePullSecret) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1752,7 +1752,7 @@ func (m *SecretDataFile_ImagePullSecret) MarshalToSizedBuffer(dAtA []byte) (int,
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Cert) Marshal() (dAtA []byte, err error) {
+func (m *Cert) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1762,7 +1762,7 @@ func (m *Cert) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Cert) MarshalTo(dAtA []byte) (int, error) {
+func (m *Cert) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1843,7 +1843,7 @@ func (m *Cert) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CertName) Marshal() (dAtA []byte, err error) {
+func (m *CertName) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1853,7 +1853,7 @@ func (m *CertName) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CertName) MarshalTo(dAtA []byte) (int, error) {
+func (m *CertName) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -45,7 +45,7 @@ func (*RawQuery) Descriptor() ([]byte, []int) {
 func (m *RawQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RawQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RawQuery) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RawQuery.Marshal(b, m, deterministic)
 	} else {
@@ -118,7 +118,7 @@ var fileDescriptor_1c361d25c2071008 = []byte{
 	0xff, 0xff, 0x01, 0x06, 0x04, 0xf8, 0xc2, 0x00, 0x00, 0x00,
 }
 
-func (m *RawQuery) Marshal() (dAtA []byte, err error) {
+func (m *RawQuery) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -128,7 +128,7 @@ func (m *RawQuery) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RawQuery) MarshalTo(dAtA []byte) (int, error) {
+func (m *RawQuery) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

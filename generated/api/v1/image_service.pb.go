@@ -78,7 +78,7 @@ func (*GetImageRequest) Descriptor() ([]byte, []int) {
 func (m *GetImageRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetImageRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetImageRequest.Marshal(b, m, deterministic)
 	} else {
@@ -152,7 +152,7 @@ func (*ListImagesResponse) Descriptor() ([]byte, []int) {
 func (m *ListImagesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListImagesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListImagesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -218,7 +218,7 @@ func (*CountImagesResponse) Descriptor() ([]byte, []int) {
 func (m *CountImagesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountImagesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountImagesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -282,7 +282,7 @@ func (*ScanImageRequest) Descriptor() ([]byte, []int) {
 func (m *ScanImageRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImageRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImageRequest.Marshal(b, m, deterministic)
 	} else {
@@ -365,7 +365,7 @@ func (*ScanImageInternalRequest) Descriptor() ([]byte, []int) {
 func (m *ScanImageInternalRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImageInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImageInternalRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImageInternalRequest.Marshal(b, m, deterministic)
 	} else {
@@ -443,7 +443,7 @@ func (*ScanImageInternalRequest_Source) Descriptor() ([]byte, []int) {
 func (m *ScanImageInternalRequest_Source) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImageInternalRequest_Source) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImageInternalRequest_Source) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImageInternalRequest_Source.Marshal(b, m, deterministic)
 	} else {
@@ -521,7 +521,7 @@ func (*ScanImageInternalResponse) Descriptor() ([]byte, []int) {
 func (m *ScanImageInternalResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImageInternalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImageInternalResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImageInternalResponse.Marshal(b, m, deterministic)
 	} else {
@@ -589,7 +589,7 @@ func (*GetImageVulnerabilitiesInternalRequest) Descriptor() ([]byte, []int) {
 func (m *GetImageVulnerabilitiesInternalRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetImageVulnerabilitiesInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetImageVulnerabilitiesInternalRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetImageVulnerabilitiesInternalRequest.Marshal(b, m, deterministic)
 	} else {
@@ -702,7 +702,7 @@ func (*EnrichLocalImageInternalRequest) Descriptor() ([]byte, []int) {
 func (m *EnrichLocalImageInternalRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EnrichLocalImageInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EnrichLocalImageInternalRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EnrichLocalImageInternalRequest.Marshal(b, m, deterministic)
 	} else {
@@ -853,7 +853,7 @@ func (*UpdateLocalScanStatusInternalRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateLocalScanStatusInternalRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateLocalScanStatusInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateLocalScanStatusInternalRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateLocalScanStatusInternalRequest.Marshal(b, m, deterministic)
 	} else {
@@ -921,7 +921,7 @@ func (*DeleteImagesRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteImagesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteImagesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteImagesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteImagesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -990,7 +990,7 @@ func (*DeleteImagesResponse) Descriptor() ([]byte, []int) {
 func (m *DeleteImagesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteImagesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteImagesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1060,7 +1060,7 @@ func (*WatchImageRequest) Descriptor() ([]byte, []int) {
 func (m *WatchImageRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *WatchImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *WatchImageRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_WatchImageRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1126,7 +1126,7 @@ func (*WatchImageResponse) Descriptor() ([]byte, []int) {
 func (m *WatchImageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *WatchImageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *WatchImageResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_WatchImageResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1202,7 +1202,7 @@ func (*UnwatchImageRequest) Descriptor() ([]byte, []int) {
 func (m *UnwatchImageRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UnwatchImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UnwatchImageRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UnwatchImageRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1262,7 +1262,7 @@ func (*GetWatchedImagesResponse) Descriptor() ([]byte, []int) {
 func (m *GetWatchedImagesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetWatchedImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetWatchedImagesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetWatchedImagesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1329,7 +1329,7 @@ func (*ScanImageInternalResponseDetails) Descriptor() ([]byte, []int) {
 func (m *ScanImageInternalResponseDetails) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImageInternalResponseDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImageInternalResponseDetails) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImageInternalResponseDetails.Marshal(b, m, deterministic)
 	} else {
@@ -1387,7 +1387,7 @@ func (*ScanImageInternalResponseDetails_TooManyParallelScans) Descriptor() ([]by
 func (m *ScanImageInternalResponseDetails_TooManyParallelScans) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImageInternalResponseDetails_TooManyParallelScans) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImageInternalResponseDetails_TooManyParallelScans) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImageInternalResponseDetails_TooManyParallelScans.Marshal(b, m, deterministic)
 	} else {
@@ -1441,7 +1441,7 @@ func (*ExportImageRequest) Descriptor() ([]byte, []int) {
 func (m *ExportImageRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportImageRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportImageRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1508,7 +1508,7 @@ func (*ExportImageResponse) Descriptor() ([]byte, []int) {
 func (m *ExportImageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportImageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportImageResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportImageResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2296,7 +2296,7 @@ var _ImageService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/image_service.proto",
 }
 
-func (m *GetImageRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetImageRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2306,7 +2306,7 @@ func (m *GetImageRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetImageRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetImageRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2350,7 +2350,7 @@ func (m *GetImageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListImagesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListImagesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2360,7 +2360,7 @@ func (m *ListImagesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListImagesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListImagesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2391,7 +2391,7 @@ func (m *ListImagesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CountImagesResponse) Marshal() (dAtA []byte, err error) {
+func (m *CountImagesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2401,7 +2401,7 @@ func (m *CountImagesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountImagesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountImagesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2423,7 +2423,7 @@ func (m *CountImagesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ScanImageRequest) Marshal() (dAtA []byte, err error) {
+func (m *ScanImageRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2433,7 +2433,7 @@ func (m *ScanImageRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScanImageRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScanImageRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2484,7 +2484,7 @@ func (m *ScanImageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ScanImageInternalRequest) Marshal() (dAtA []byte, err error) {
+func (m *ScanImageInternalRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2494,7 +2494,7 @@ func (m *ScanImageInternalRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScanImageInternalRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScanImageInternalRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2545,7 +2545,7 @@ func (m *ScanImageInternalRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ScanImageInternalRequest_Source) Marshal() (dAtA []byte, err error) {
+func (m *ScanImageInternalRequest_Source) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2555,7 +2555,7 @@ func (m *ScanImageInternalRequest_Source) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScanImageInternalRequest_Source) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScanImageInternalRequest_Source) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2595,7 +2595,7 @@ func (m *ScanImageInternalRequest_Source) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *ScanImageInternalResponse) Marshal() (dAtA []byte, err error) {
+func (m *ScanImageInternalResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2605,7 +2605,7 @@ func (m *ScanImageInternalResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScanImageInternalResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScanImageInternalResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2634,7 +2634,7 @@ func (m *ScanImageInternalResponse) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *GetImageVulnerabilitiesInternalRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetImageVulnerabilitiesInternalRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2644,7 +2644,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *GetImageVulnerabilitiesInternalRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetImageVulnerabilitiesInternalRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2732,7 +2732,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *EnrichLocalImageInternalRequest) Marshal() (dAtA []byte, err error) {
+func (m *EnrichLocalImageInternalRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2742,7 +2742,7 @@ func (m *EnrichLocalImageInternalRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EnrichLocalImageInternalRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *EnrichLocalImageInternalRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2893,7 +2893,7 @@ func (m *EnrichLocalImageInternalRequest) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateLocalScanStatusInternalRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateLocalScanStatusInternalRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2903,7 +2903,7 @@ func (m *UpdateLocalScanStatusInternalRequest) Marshal() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *UpdateLocalScanStatusInternalRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateLocalScanStatusInternalRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2934,7 +2934,7 @@ func (m *UpdateLocalScanStatusInternalRequest) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteImagesRequest) Marshal() (dAtA []byte, err error) {
+func (m *DeleteImagesRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2944,7 +2944,7 @@ func (m *DeleteImagesRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteImagesRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteImagesRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2983,7 +2983,7 @@ func (m *DeleteImagesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteImagesResponse) Marshal() (dAtA []byte, err error) {
+func (m *DeleteImagesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2993,7 +2993,7 @@ func (m *DeleteImagesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteImagesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DeleteImagesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3025,7 +3025,7 @@ func (m *DeleteImagesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *WatchImageRequest) Marshal() (dAtA []byte, err error) {
+func (m *WatchImageRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3035,7 +3035,7 @@ func (m *WatchImageRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *WatchImageRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *WatchImageRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3059,7 +3059,7 @@ func (m *WatchImageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *WatchImageResponse) Marshal() (dAtA []byte, err error) {
+func (m *WatchImageResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3069,7 +3069,7 @@ func (m *WatchImageResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *WatchImageResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *WatchImageResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3105,7 +3105,7 @@ func (m *WatchImageResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UnwatchImageRequest) Marshal() (dAtA []byte, err error) {
+func (m *UnwatchImageRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3115,7 +3115,7 @@ func (m *UnwatchImageRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UnwatchImageRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UnwatchImageRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3139,7 +3139,7 @@ func (m *UnwatchImageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetWatchedImagesResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetWatchedImagesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3149,7 +3149,7 @@ func (m *GetWatchedImagesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetWatchedImagesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetWatchedImagesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3180,7 +3180,7 @@ func (m *GetWatchedImagesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ScanImageInternalResponseDetails) Marshal() (dAtA []byte, err error) {
+func (m *ScanImageInternalResponseDetails) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3190,7 +3190,7 @@ func (m *ScanImageInternalResponseDetails) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScanImageInternalResponseDetails) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScanImageInternalResponseDetails) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3207,7 +3207,7 @@ func (m *ScanImageInternalResponseDetails) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *ScanImageInternalResponseDetails_TooManyParallelScans) Marshal() (dAtA []byte, err error) {
+func (m *ScanImageInternalResponseDetails_TooManyParallelScans) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3217,7 +3217,7 @@ func (m *ScanImageInternalResponseDetails_TooManyParallelScans) Marshal() (dAtA 
 	return dAtA[:n], nil
 }
 
-func (m *ScanImageInternalResponseDetails_TooManyParallelScans) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScanImageInternalResponseDetails_TooManyParallelScans) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3234,7 +3234,7 @@ func (m *ScanImageInternalResponseDetails_TooManyParallelScans) MarshalToSizedBu
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportImageRequest) Marshal() (dAtA []byte, err error) {
+func (m *ExportImageRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3244,7 +3244,7 @@ func (m *ExportImageRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportImageRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportImageRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3273,7 +3273,7 @@ func (m *ExportImageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportImageResponse) Marshal() (dAtA []byte, err error) {
+func (m *ExportImageResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3283,7 +3283,7 @@ func (m *ExportImageResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportImageResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportImageResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -75,7 +75,7 @@ func (*ProcessBaselineKey) Descriptor() ([]byte, []int) {
 func (m *ProcessBaselineKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessBaselineKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessBaselineKey) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessBaselineKey.Marshal(b, m, deterministic)
 	} else {
@@ -163,7 +163,7 @@ func (*ProcessBaseline) Descriptor() ([]byte, []int) {
 func (m *ProcessBaseline) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessBaseline) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessBaseline) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessBaseline.Marshal(b, m, deterministic)
 	} else {
@@ -290,7 +290,7 @@ func (*BaselineElement) Descriptor() ([]byte, []int) {
 func (m *BaselineElement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BaselineElement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BaselineElement) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BaselineElement.Marshal(b, m, deterministic)
 	} else {
@@ -360,7 +360,7 @@ func (*BaselineItem) Descriptor() ([]byte, []int) {
 func (m *BaselineItem) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BaselineItem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BaselineItem) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BaselineItem.Marshal(b, m, deterministic)
 	} else {
@@ -386,7 +386,7 @@ var xxx_messageInfo_BaselineItem proto.InternalMessageInfo
 
 type isBaselineItem_Item interface {
 	isBaselineItem_Item()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isBaselineItem_Item
 }
@@ -463,7 +463,7 @@ func (*ContainerNameAndBaselineStatus) Descriptor() ([]byte, []int) {
 func (m *ContainerNameAndBaselineStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ContainerNameAndBaselineStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ContainerNameAndBaselineStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ContainerNameAndBaselineStatus.Marshal(b, m, deterministic)
 	} else {
@@ -541,7 +541,7 @@ func (*ProcessBaselineResults) Descriptor() ([]byte, []int) {
 func (m *ProcessBaselineResults) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessBaselineResults) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessBaselineResults) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessBaselineResults.Marshal(b, m, deterministic)
 	} else {
@@ -670,7 +670,7 @@ var fileDescriptor_f494f50fa1cf9c47 = []byte{
 	0x59, 0xb8, 0x05, 0x00, 0x00,
 }
 
-func (m *ProcessBaselineKey) Marshal() (dAtA []byte, err error) {
+func (m *ProcessBaselineKey) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -680,7 +680,7 @@ func (m *ProcessBaselineKey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessBaselineKey) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessBaselineKey) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -725,7 +725,7 @@ func (m *ProcessBaselineKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessBaseline) Marshal() (dAtA []byte, err error) {
+func (m *ProcessBaseline) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -735,7 +735,7 @@ func (m *ProcessBaseline) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessBaseline) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessBaseline) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -847,7 +847,7 @@ func (m *ProcessBaseline) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BaselineElement) Marshal() (dAtA []byte, err error) {
+func (m *BaselineElement) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -857,7 +857,7 @@ func (m *BaselineElement) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BaselineElement) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaselineElement) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -896,7 +896,7 @@ func (m *BaselineElement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BaselineItem) Marshal() (dAtA []byte, err error) {
+func (m *BaselineItem) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -906,7 +906,7 @@ func (m *BaselineItem) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BaselineItem) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaselineItem) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -924,7 +924,7 @@ func (m *BaselineItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Item.Size()
 			i -= size
-			if _, err := m.Item.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.Item.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -932,7 +932,7 @@ func (m *BaselineItem) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BaselineItem_ProcessName) MarshalTo(dAtA []byte) (int, error) {
+func (m *BaselineItem_ProcessName) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -946,7 +946,7 @@ func (m *BaselineItem_ProcessName) MarshalToSizedBuffer(dAtA []byte) (int, error
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
-func (m *ContainerNameAndBaselineStatus) Marshal() (dAtA []byte, err error) {
+func (m *ContainerNameAndBaselineStatus) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -956,7 +956,7 @@ func (m *ContainerNameAndBaselineStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ContainerNameAndBaselineStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *ContainerNameAndBaselineStatus) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -995,7 +995,7 @@ func (m *ContainerNameAndBaselineStatus) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessBaselineResults) Marshal() (dAtA []byte, err error) {
+func (m *ProcessBaselineResults) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1005,7 +1005,7 @@ func (m *ProcessBaselineResults) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessBaselineResults) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessBaselineResults) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

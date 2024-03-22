@@ -72,7 +72,7 @@ func (*NetworkBaselinePeerEntity) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselinePeerEntity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselinePeerEntity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselinePeerEntity) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselinePeerEntity.Marshal(b, m, deterministic)
 	} else {
@@ -152,7 +152,7 @@ func (*NetworkBaselineStatusPeer) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselineStatusPeer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselineStatusPeer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselineStatusPeer) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselineStatusPeer.Marshal(b, m, deterministic)
 	} else {
@@ -235,7 +235,7 @@ func (*NetworkBaselinePeerStatus) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselinePeerStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselinePeerStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselinePeerStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselinePeerStatus.Marshal(b, m, deterministic)
 	} else {
@@ -304,7 +304,7 @@ func (*NetworkBaselineStatusRequest) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselineStatusRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselineStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselineStatusRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselineStatusRequest.Marshal(b, m, deterministic)
 	} else {
@@ -377,7 +377,7 @@ func (*NetworkBaselineStatusResponse) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselineStatusResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselineStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselineStatusResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselineStatusResponse.Marshal(b, m, deterministic)
 	} else {
@@ -444,7 +444,7 @@ func (*ModifyBaselineStatusForPeersRequest) Descriptor() ([]byte, []int) {
 func (m *ModifyBaselineStatusForPeersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ModifyBaselineStatusForPeersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ModifyBaselineStatusForPeersRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ModifyBaselineStatusForPeersRequest.Marshal(b, m, deterministic)
 	} else {
@@ -787,7 +787,7 @@ var _NetworkBaselineService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/network_baseline_service.proto",
 }
 
-func (m *NetworkBaselinePeerEntity) Marshal() (dAtA []byte, err error) {
+func (m *NetworkBaselinePeerEntity) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -797,7 +797,7 @@ func (m *NetworkBaselinePeerEntity) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselinePeerEntity) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselinePeerEntity) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -826,7 +826,7 @@ func (m *NetworkBaselinePeerEntity) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkBaselineStatusPeer) Marshal() (dAtA []byte, err error) {
+func (m *NetworkBaselineStatusPeer) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -836,7 +836,7 @@ func (m *NetworkBaselineStatusPeer) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselineStatusPeer) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselineStatusPeer) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -885,7 +885,7 @@ func (m *NetworkBaselineStatusPeer) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkBaselinePeerStatus) Marshal() (dAtA []byte, err error) {
+func (m *NetworkBaselinePeerStatus) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -895,7 +895,7 @@ func (m *NetworkBaselinePeerStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselinePeerStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselinePeerStatus) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -929,7 +929,7 @@ func (m *NetworkBaselinePeerStatus) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkBaselineStatusRequest) Marshal() (dAtA []byte, err error) {
+func (m *NetworkBaselineStatusRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -939,7 +939,7 @@ func (m *NetworkBaselineStatusRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselineStatusRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselineStatusRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -977,7 +977,7 @@ func (m *NetworkBaselineStatusRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkBaselineStatusResponse) Marshal() (dAtA []byte, err error) {
+func (m *NetworkBaselineStatusResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -987,7 +987,7 @@ func (m *NetworkBaselineStatusResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselineStatusResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselineStatusResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1018,7 +1018,7 @@ func (m *NetworkBaselineStatusResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *ModifyBaselineStatusForPeersRequest) Marshal() (dAtA []byte, err error) {
+func (m *ModifyBaselineStatusForPeersRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1028,7 +1028,7 @@ func (m *ModifyBaselineStatusForPeersRequest) Marshal() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *ModifyBaselineStatusForPeersRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ModifyBaselineStatusForPeersRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

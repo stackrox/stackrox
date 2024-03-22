@@ -45,7 +45,7 @@ func (*SecretList) Descriptor() ([]byte, []int) {
 func (m *SecretList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecretList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecretList) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SecretList.Marshal(b, m, deterministic)
 	} else {
@@ -113,7 +113,7 @@ func (*ListSecretsResponse) Descriptor() ([]byte, []int) {
 func (m *ListSecretsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListSecretsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListSecretsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListSecretsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ func (*CountSecretsResponse) Descriptor() ([]byte, []int) {
 func (m *CountSecretsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountSecretsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountSecretsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountSecretsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -416,7 +416,7 @@ var _SecretService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/secret_service.proto",
 }
 
-func (m *SecretList) Marshal() (dAtA []byte, err error) {
+func (m *SecretList) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -426,7 +426,7 @@ func (m *SecretList) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecretList) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecretList) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -457,7 +457,7 @@ func (m *SecretList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListSecretsResponse) Marshal() (dAtA []byte, err error) {
+func (m *ListSecretsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -467,7 +467,7 @@ func (m *ListSecretsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListSecretsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListSecretsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -498,7 +498,7 @@ func (m *ListSecretsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CountSecretsResponse) Marshal() (dAtA []byte, err error) {
+func (m *CountSecretsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -508,7 +508,7 @@ func (m *CountSecretsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountSecretsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *CountSecretsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

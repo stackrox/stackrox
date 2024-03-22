@@ -153,7 +153,7 @@ func (*KubernetesEvent) Descriptor() ([]byte, []int) {
 func (m *KubernetesEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KubernetesEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KubernetesEvent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KubernetesEvent.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ var xxx_messageInfo_KubernetesEvent proto.InternalMessageInfo
 
 type isKubernetesEvent_ObjectArgs interface {
 	isKubernetesEvent_ObjectArgs()
-	MarshalTo([]byte) (int, error)
+	MarshalVTTo([]byte) (int, error)
 	Size() int
 	Clone() isKubernetesEvent_ObjectArgs
 }
@@ -357,7 +357,7 @@ func (*KubernetesEvent_Object) Descriptor() ([]byte, []int) {
 func (m *KubernetesEvent_Object) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KubernetesEvent_Object) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KubernetesEvent_Object) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KubernetesEvent_Object.Marshal(b, m, deterministic)
 	} else {
@@ -439,7 +439,7 @@ func (*KubernetesEvent_PodExecArgs) Descriptor() ([]byte, []int) {
 func (m *KubernetesEvent_PodExecArgs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KubernetesEvent_PodExecArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KubernetesEvent_PodExecArgs) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KubernetesEvent_PodExecArgs.Marshal(b, m, deterministic)
 	} else {
@@ -510,7 +510,7 @@ func (*KubernetesEvent_PodPortForwardArgs) Descriptor() ([]byte, []int) {
 func (m *KubernetesEvent_PodPortForwardArgs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KubernetesEvent_PodPortForwardArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KubernetesEvent_PodPortForwardArgs) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KubernetesEvent_PodPortForwardArgs.Marshal(b, m, deterministic)
 	} else {
@@ -575,7 +575,7 @@ func (*KubernetesEvent_ResponseStatus) Descriptor() ([]byte, []int) {
 func (m *KubernetesEvent_ResponseStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KubernetesEvent_ResponseStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KubernetesEvent_ResponseStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KubernetesEvent_ResponseStatus.Marshal(b, m, deterministic)
 	} else {
@@ -643,7 +643,7 @@ func (*KubernetesEvent_User) Descriptor() ([]byte, []int) {
 func (m *KubernetesEvent_User) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *KubernetesEvent_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *KubernetesEvent_User) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_KubernetesEvent_User.Marshal(b, m, deterministic)
 	} else {
@@ -770,7 +770,7 @@ var fileDescriptor_a09c1108cf9e6345 = []byte{
 	0xc8, 0x00, 0xa9, 0x8e, 0x28, 0x06, 0x00, 0x00,
 }
 
-func (m *KubernetesEvent) Marshal() (dAtA []byte, err error) {
+func (m *KubernetesEvent) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -780,7 +780,7 @@ func (m *KubernetesEvent) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KubernetesEvent) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -867,7 +867,7 @@ func (m *KubernetesEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.ObjectArgs.Size()
 			i -= size
-			if _, err := m.ObjectArgs.MarshalTo(dAtA[i:]); err != nil {
+			if _, err := m.ObjectArgs.MarshalVTTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -911,7 +911,7 @@ func (m *KubernetesEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *KubernetesEvent_PodExecArgs_) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_PodExecArgs_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -932,7 +932,7 @@ func (m *KubernetesEvent_PodExecArgs_) MarshalToSizedBuffer(dAtA []byte) (int, e
 	}
 	return len(dAtA) - i, nil
 }
-func (m *KubernetesEvent_PodPortForwardArgs_) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_PodPortForwardArgs_) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -953,7 +953,7 @@ func (m *KubernetesEvent_PodPortForwardArgs_) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *KubernetesEvent_Object) Marshal() (dAtA []byte, err error) {
+func (m *KubernetesEvent_Object) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -963,7 +963,7 @@ func (m *KubernetesEvent_Object) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KubernetesEvent_Object) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_Object) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1006,7 +1006,7 @@ func (m *KubernetesEvent_Object) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *KubernetesEvent_PodExecArgs) Marshal() (dAtA []byte, err error) {
+func (m *KubernetesEvent_PodExecArgs) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1016,7 +1016,7 @@ func (m *KubernetesEvent_PodExecArgs) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KubernetesEvent_PodExecArgs) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_PodExecArgs) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1049,7 +1049,7 @@ func (m *KubernetesEvent_PodExecArgs) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *KubernetesEvent_PodPortForwardArgs) Marshal() (dAtA []byte, err error) {
+func (m *KubernetesEvent_PodPortForwardArgs) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1059,7 +1059,7 @@ func (m *KubernetesEvent_PodPortForwardArgs) Marshal() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *KubernetesEvent_PodPortForwardArgs) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_PodPortForwardArgs) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1095,7 +1095,7 @@ func (m *KubernetesEvent_PodPortForwardArgs) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *KubernetesEvent_ResponseStatus) Marshal() (dAtA []byte, err error) {
+func (m *KubernetesEvent_ResponseStatus) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1105,7 +1105,7 @@ func (m *KubernetesEvent_ResponseStatus) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KubernetesEvent_ResponseStatus) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_ResponseStatus) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1134,7 +1134,7 @@ func (m *KubernetesEvent_ResponseStatus) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *KubernetesEvent_User) Marshal() (dAtA []byte, err error) {
+func (m *KubernetesEvent_User) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1144,7 +1144,7 @@ func (m *KubernetesEvent_User) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *KubernetesEvent_User) MarshalTo(dAtA []byte) (int, error) {
+func (m *KubernetesEvent_User) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

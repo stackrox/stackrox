@@ -107,7 +107,7 @@ func (*IntegrationHealth) Descriptor() ([]byte, []int) {
 func (m *IntegrationHealth) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IntegrationHealth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *IntegrationHealth) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IntegrationHealth.Marshal(b, m, deterministic)
 	} else {
@@ -225,7 +225,7 @@ var fileDescriptor_2c35f22f95df38b9 = []byte{
 	0x00, 0xff, 0xff, 0xb4, 0xd9, 0x47, 0x1d, 0x33, 0x02, 0x00, 0x00,
 }
 
-func (m *IntegrationHealth) Marshal() (dAtA []byte, err error) {
+func (m *IntegrationHealth) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -235,7 +235,7 @@ func (m *IntegrationHealth) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IntegrationHealth) MarshalTo(dAtA []byte) (int, error) {
+func (m *IntegrationHealth) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

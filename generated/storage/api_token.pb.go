@@ -45,7 +45,7 @@ func (*TokenMetadata) Descriptor() ([]byte, []int) {
 func (m *TokenMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TokenMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TokenMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TokenMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -166,7 +166,7 @@ var fileDescriptor_c11d10095315801c = []byte{
 	0x74, 0x01, 0x00, 0x00,
 }
 
-func (m *TokenMetadata) Marshal() (dAtA []byte, err error) {
+func (m *TokenMetadata) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -176,7 +176,7 @@ func (m *TokenMetadata) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TokenMetadata) MarshalTo(dAtA []byte) (int, error) {
+func (m *TokenMetadata) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

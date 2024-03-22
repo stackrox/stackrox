@@ -266,7 +266,7 @@ func (*Policy) Descriptor() ([]byte, []int) {
 func (m *Policy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Policy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Policy) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Policy.Marshal(b, m, deterministic)
 	} else {
@@ -529,7 +529,7 @@ func (*Policy_MitreAttackVectors) Descriptor() ([]byte, []int) {
 func (m *Policy_MitreAttackVectors) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Policy_MitreAttackVectors) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Policy_MitreAttackVectors) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Policy_MitreAttackVectors.Marshal(b, m, deterministic)
 	} else {
@@ -601,7 +601,7 @@ func (*PolicySection) Descriptor() ([]byte, []int) {
 func (m *PolicySection) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicySection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicySection) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicySection.Marshal(b, m, deterministic)
 	} else {
@@ -677,7 +677,7 @@ func (*PolicyGroup) Descriptor() ([]byte, []int) {
 func (m *PolicyGroup) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyGroup) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyGroup.Marshal(b, m, deterministic)
 	} else {
@@ -764,7 +764,7 @@ func (*PolicyValue) Descriptor() ([]byte, []int) {
 func (m *PolicyValue) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyValue) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyValue.Marshal(b, m, deterministic)
 	} else {
@@ -824,7 +824,7 @@ func (*PolicyList) Descriptor() ([]byte, []int) {
 func (m *PolicyList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyList) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyList.Marshal(b, m, deterministic)
 	} else {
@@ -899,7 +899,7 @@ func (*ListPolicy) Descriptor() ([]byte, []int) {
 func (m *ListPolicy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListPolicy) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListPolicy.Marshal(b, m, deterministic)
 	} else {
@@ -1034,7 +1034,7 @@ func (*Exclusion) Descriptor() ([]byte, []int) {
 func (m *Exclusion) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Exclusion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Exclusion) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Exclusion.Marshal(b, m, deterministic)
 	} else {
@@ -1118,7 +1118,7 @@ func (*Exclusion_Container) Descriptor() ([]byte, []int) {
 func (m *Exclusion_Container) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Exclusion_Container) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Exclusion_Container) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Exclusion_Container.Marshal(b, m, deterministic)
 	} else {
@@ -1180,7 +1180,7 @@ func (*Exclusion_Deployment) Descriptor() ([]byte, []int) {
 func (m *Exclusion_Deployment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Exclusion_Deployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Exclusion_Deployment) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Exclusion_Deployment.Marshal(b, m, deterministic)
 	} else {
@@ -1248,7 +1248,7 @@ func (*Exclusion_Image) Descriptor() ([]byte, []int) {
 func (m *Exclusion_Image) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Exclusion_Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Exclusion_Image) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Exclusion_Image.Marshal(b, m, deterministic)
 	} else {
@@ -1310,7 +1310,7 @@ func (*ExportPoliciesResponse) Descriptor() ([]byte, []int) {
 func (m *ExportPoliciesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExportPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExportPoliciesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExportPoliciesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1477,7 +1477,7 @@ var fileDescriptor_6e41152b9b8342fa = []byte{
 	0xff, 0xff, 0xf4, 0x89, 0x0b, 0x2e, 0xbe, 0x0c, 0x00, 0x00,
 }
 
-func (m *Policy) Marshal() (dAtA []byte, err error) {
+func (m *Policy) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1487,7 +1487,7 @@ func (m *Policy) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Policy) MarshalTo(dAtA []byte) (int, error) {
+func (m *Policy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1764,7 +1764,7 @@ func (m *Policy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Policy_MitreAttackVectors) Marshal() (dAtA []byte, err error) {
+func (m *Policy_MitreAttackVectors) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1774,7 +1774,7 @@ func (m *Policy_MitreAttackVectors) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Policy_MitreAttackVectors) MarshalTo(dAtA []byte) (int, error) {
+func (m *Policy_MitreAttackVectors) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1807,7 +1807,7 @@ func (m *Policy_MitreAttackVectors) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicySection) Marshal() (dAtA []byte, err error) {
+func (m *PolicySection) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1817,7 +1817,7 @@ func (m *PolicySection) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicySection) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicySection) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1855,7 +1855,7 @@ func (m *PolicySection) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyGroup) Marshal() (dAtA []byte, err error) {
+func (m *PolicyGroup) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1865,7 +1865,7 @@ func (m *PolicyGroup) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyGroup) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyGroup) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1918,7 +1918,7 @@ func (m *PolicyGroup) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyValue) Marshal() (dAtA []byte, err error) {
+func (m *PolicyValue) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1928,7 +1928,7 @@ func (m *PolicyValue) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyValue) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyValue) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1952,7 +1952,7 @@ func (m *PolicyValue) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PolicyList) Marshal() (dAtA []byte, err error) {
+func (m *PolicyList) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1962,7 +1962,7 @@ func (m *PolicyList) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyList) MarshalTo(dAtA []byte) (int, error) {
+func (m *PolicyList) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1993,7 +1993,7 @@ func (m *PolicyList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListPolicy) Marshal() (dAtA []byte, err error) {
+func (m *ListPolicy) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2003,7 +2003,7 @@ func (m *ListPolicy) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListPolicy) MarshalTo(dAtA []byte) (int, error) {
+func (m *ListPolicy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2110,7 +2110,7 @@ func (m *ListPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Exclusion) Marshal() (dAtA []byte, err error) {
+func (m *Exclusion) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2120,7 +2120,7 @@ func (m *Exclusion) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Exclusion) MarshalTo(dAtA []byte) (int, error) {
+func (m *Exclusion) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2180,7 +2180,7 @@ func (m *Exclusion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Exclusion_Container) Marshal() (dAtA []byte, err error) {
+func (m *Exclusion_Container) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2190,7 +2190,7 @@ func (m *Exclusion_Container) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Exclusion_Container) MarshalTo(dAtA []byte) (int, error) {
+func (m *Exclusion_Container) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2219,7 +2219,7 @@ func (m *Exclusion_Container) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Exclusion_Deployment) Marshal() (dAtA []byte, err error) {
+func (m *Exclusion_Deployment) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2229,7 +2229,7 @@ func (m *Exclusion_Deployment) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Exclusion_Deployment) MarshalTo(dAtA []byte) (int, error) {
+func (m *Exclusion_Deployment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2265,7 +2265,7 @@ func (m *Exclusion_Deployment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Exclusion_Image) Marshal() (dAtA []byte, err error) {
+func (m *Exclusion_Image) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2275,7 +2275,7 @@ func (m *Exclusion_Image) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Exclusion_Image) MarshalTo(dAtA []byte) (int, error) {
+func (m *Exclusion_Image) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2299,7 +2299,7 @@ func (m *Exclusion_Image) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPoliciesResponse) Marshal() (dAtA []byte, err error) {
+func (m *ExportPoliciesResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2309,7 +2309,7 @@ func (m *ExportPoliciesResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPoliciesResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExportPoliciesResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

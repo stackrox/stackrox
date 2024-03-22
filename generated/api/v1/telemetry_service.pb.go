@@ -44,7 +44,7 @@ func (*ConfigureTelemetryRequest) Descriptor() ([]byte, []int) {
 func (m *ConfigureTelemetryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ConfigureTelemetryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ConfigureTelemetryRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ConfigureTelemetryRequest.Marshal(b, m, deterministic)
 	} else {
@@ -274,7 +274,7 @@ var _TelemetryService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/telemetry_service.proto",
 }
 
-func (m *ConfigureTelemetryRequest) Marshal() (dAtA []byte, err error) {
+func (m *ConfigureTelemetryRequest) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -284,7 +284,7 @@ func (m *ConfigureTelemetryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ConfigureTelemetryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *ConfigureTelemetryRequest) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

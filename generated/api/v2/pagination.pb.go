@@ -70,7 +70,7 @@ func (*AggregateBy) Descriptor() ([]byte, []int) {
 func (m *AggregateBy) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AggregateBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AggregateBy) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AggregateBy.Marshal(b, m, deterministic)
 	} else {
@@ -140,7 +140,7 @@ func (*SortOption) Descriptor() ([]byte, []int) {
 func (m *SortOption) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SortOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SortOption) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SortOption.Marshal(b, m, deterministic)
 	} else {
@@ -219,7 +219,7 @@ func (*Pagination) Descriptor() ([]byte, []int) {
 func (m *Pagination) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Pagination) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Pagination) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Pagination.Marshal(b, m, deterministic)
 	} else {
@@ -326,7 +326,7 @@ var fileDescriptor_789c41507a0ed95d = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x30, 0x67, 0xe2, 0xcd, 0xf9, 0x01, 0x00, 0x00,
 }
 
-func (m *AggregateBy) Marshal() (dAtA []byte, err error) {
+func (m *AggregateBy) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -336,7 +336,7 @@ func (m *AggregateBy) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AggregateBy) MarshalTo(dAtA []byte) (int, error) {
+func (m *AggregateBy) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -368,7 +368,7 @@ func (m *AggregateBy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SortOption) Marshal() (dAtA []byte, err error) {
+func (m *SortOption) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -378,7 +378,7 @@ func (m *SortOption) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SortOption) MarshalTo(dAtA []byte) (int, error) {
+func (m *SortOption) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -424,7 +424,7 @@ func (m *SortOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Pagination) Marshal() (dAtA []byte, err error) {
+func (m *Pagination) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -434,7 +434,7 @@ func (m *Pagination) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Pagination) MarshalTo(dAtA []byte) (int, error) {
+func (m *Pagination) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

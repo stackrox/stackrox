@@ -41,7 +41,7 @@ func (*ProcessListeningOnPortsUpdate) Descriptor() ([]byte, []int) {
 func (m *ProcessListeningOnPortsUpdate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProcessListeningOnPortsUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProcessListeningOnPortsUpdate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProcessListeningOnPortsUpdate.Marshal(b, m, deterministic)
 	} else {
@@ -127,7 +127,7 @@ var fileDescriptor_4d79a6d2a351caaa = []byte{
 	0x71, 0x01, 0x00, 0x00,
 }
 
-func (m *ProcessListeningOnPortsUpdate) Marshal() (dAtA []byte, err error) {
+func (m *ProcessListeningOnPortsUpdate) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -137,7 +137,7 @@ func (m *ProcessListeningOnPortsUpdate) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessListeningOnPortsUpdate) MarshalTo(dAtA []byte) (int, error) {
+func (m *ProcessListeningOnPortsUpdate) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

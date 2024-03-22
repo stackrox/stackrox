@@ -44,7 +44,7 @@ func (*FeatureFlag) Descriptor() ([]byte, []int) {
 func (m *FeatureFlag) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FeatureFlag) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *FeatureFlag) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_FeatureFlag.Marshal(b, m, deterministic)
 	} else {
@@ -118,7 +118,7 @@ func (*GetFeatureFlagsResponse) Descriptor() ([]byte, []int) {
 func (m *GetFeatureFlagsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetFeatureFlagsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetFeatureFlagsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetFeatureFlagsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -278,7 +278,7 @@ var _FeatureFlagService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/feature_flag_service.proto",
 }
 
-func (m *FeatureFlag) Marshal() (dAtA []byte, err error) {
+func (m *FeatureFlag) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -288,7 +288,7 @@ func (m *FeatureFlag) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FeatureFlag) MarshalTo(dAtA []byte) (int, error) {
+func (m *FeatureFlag) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -329,7 +329,7 @@ func (m *FeatureFlag) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetFeatureFlagsResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetFeatureFlagsResponse) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -339,7 +339,7 @@ func (m *GetFeatureFlagsResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetFeatureFlagsResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetFeatureFlagsResponse) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

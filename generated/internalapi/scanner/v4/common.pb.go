@@ -41,7 +41,7 @@ func (*Contents) Descriptor() ([]byte, []int) {
 func (m *Contents) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Contents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Contents) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Contents.Marshal(b, m, deterministic)
 	} else {
@@ -157,7 +157,7 @@ func (*Package) Descriptor() ([]byte, []int) {
 func (m *Package) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Package) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Package) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Package.Marshal(b, m, deterministic)
 	} else {
@@ -297,7 +297,7 @@ func (*NormalizedVersion) Descriptor() ([]byte, []int) {
 func (m *NormalizedVersion) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NormalizedVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *NormalizedVersion) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NormalizedVersion.Marshal(b, m, deterministic)
 	} else {
@@ -376,7 +376,7 @@ func (*Distribution) Descriptor() ([]byte, []int) {
 func (m *Distribution) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Distribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Distribution) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Distribution.Marshal(b, m, deterministic)
 	} else {
@@ -496,7 +496,7 @@ func (*Repository) Descriptor() ([]byte, []int) {
 func (m *Repository) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Repository) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Repository) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Repository.Marshal(b, m, deterministic)
 	} else {
@@ -589,7 +589,7 @@ func (*Environment) Descriptor() ([]byte, []int) {
 func (m *Environment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Environment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Environment) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Environment.Marshal(b, m, deterministic)
 	} else {
@@ -674,7 +674,7 @@ func (*Environment_List) Descriptor() ([]byte, []int) {
 func (m *Environment_List) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Environment_List) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Environment_List) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Environment_List.Marshal(b, m, deterministic)
 	} else {
@@ -786,7 +786,7 @@ var fileDescriptor_005c488b76892c40 = []byte{
 	0x00, 0xff, 0xff, 0x5c, 0x55, 0xc0, 0x17, 0xb8, 0x05, 0x00, 0x00,
 }
 
-func (m *Contents) Marshal() (dAtA []byte, err error) {
+func (m *Contents) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -796,7 +796,7 @@ func (m *Contents) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Contents) MarshalTo(dAtA []byte) (int, error) {
+func (m *Contents) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -881,7 +881,7 @@ func (m *Contents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Package) Marshal() (dAtA []byte, err error) {
+func (m *Package) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -891,7 +891,7 @@ func (m *Package) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Package) MarshalTo(dAtA []byte) (int, error) {
+func (m *Package) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1002,7 +1002,7 @@ func (m *Package) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NormalizedVersion) Marshal() (dAtA []byte, err error) {
+func (m *NormalizedVersion) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1012,7 +1012,7 @@ func (m *NormalizedVersion) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NormalizedVersion) MarshalTo(dAtA []byte) (int, error) {
+func (m *NormalizedVersion) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1055,7 +1055,7 @@ func (m *NormalizedVersion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Distribution) Marshal() (dAtA []byte, err error) {
+func (m *Distribution) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1065,7 +1065,7 @@ func (m *Distribution) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Distribution) MarshalTo(dAtA []byte) (int, error) {
+func (m *Distribution) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1145,7 +1145,7 @@ func (m *Distribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Repository) Marshal() (dAtA []byte, err error) {
+func (m *Repository) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1155,7 +1155,7 @@ func (m *Repository) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Repository) MarshalTo(dAtA []byte) (int, error) {
+func (m *Repository) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1207,7 +1207,7 @@ func (m *Repository) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Environment) Marshal() (dAtA []byte, err error) {
+func (m *Environment) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1217,7 +1217,7 @@ func (m *Environment) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Environment) MarshalTo(dAtA []byte) (int, error) {
+func (m *Environment) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1264,7 +1264,7 @@ func (m *Environment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Environment_List) Marshal() (dAtA []byte, err error) {
+func (m *Environment_List) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1274,7 +1274,7 @@ func (m *Environment_List) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Environment_List) MarshalTo(dAtA []byte) (int, error) {
+func (m *Environment_List) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

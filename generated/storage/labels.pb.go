@@ -114,7 +114,7 @@ func (*LabelSelector) Descriptor() ([]byte, []int) {
 func (m *LabelSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LabelSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LabelSelector) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LabelSelector.Marshal(b, m, deterministic)
 	} else {
@@ -196,7 +196,7 @@ func (*LabelSelector_Requirement) Descriptor() ([]byte, []int) {
 func (m *LabelSelector_Requirement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LabelSelector_Requirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *LabelSelector_Requirement) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LabelSelector_Requirement.Marshal(b, m, deterministic)
 	} else {
@@ -277,7 +277,7 @@ func (*SetBasedLabelSelector) Descriptor() ([]byte, []int) {
 func (m *SetBasedLabelSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SetBasedLabelSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SetBasedLabelSelector) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SetBasedLabelSelector.Marshal(b, m, deterministic)
 	} else {
@@ -346,7 +346,7 @@ func (*SetBasedLabelSelector_Requirement) Descriptor() ([]byte, []int) {
 func (m *SetBasedLabelSelector_Requirement) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SetBasedLabelSelector_Requirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SetBasedLabelSelector_Requirement) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SetBasedLabelSelector_Requirement.Marshal(b, m, deterministic)
 	} else {
@@ -448,7 +448,7 @@ var fileDescriptor_a13142881b5e7a12 = []byte{
 	0x37, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xc4, 0x7b, 0xba, 0x57, 0x21, 0x03, 0x00, 0x00,
 }
 
-func (m *LabelSelector) Marshal() (dAtA []byte, err error) {
+func (m *LabelSelector) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -458,7 +458,7 @@ func (m *LabelSelector) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LabelSelector) MarshalTo(dAtA []byte) (int, error) {
+func (m *LabelSelector) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -508,7 +508,7 @@ func (m *LabelSelector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *LabelSelector_Requirement) Marshal() (dAtA []byte, err error) {
+func (m *LabelSelector_Requirement) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -518,7 +518,7 @@ func (m *LabelSelector_Requirement) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LabelSelector_Requirement) MarshalTo(dAtA []byte) (int, error) {
+func (m *LabelSelector_Requirement) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -556,7 +556,7 @@ func (m *LabelSelector_Requirement) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *SetBasedLabelSelector) Marshal() (dAtA []byte, err error) {
+func (m *SetBasedLabelSelector) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -566,7 +566,7 @@ func (m *SetBasedLabelSelector) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SetBasedLabelSelector) MarshalTo(dAtA []byte) (int, error) {
+func (m *SetBasedLabelSelector) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -597,7 +597,7 @@ func (m *SetBasedLabelSelector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SetBasedLabelSelector_Requirement) Marshal() (dAtA []byte, err error) {
+func (m *SetBasedLabelSelector_Requirement) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -607,7 +607,7 @@ func (m *SetBasedLabelSelector_Requirement) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SetBasedLabelSelector_Requirement) MarshalTo(dAtA []byte) (int, error) {
+func (m *SetBasedLabelSelector_Requirement) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

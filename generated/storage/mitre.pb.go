@@ -40,7 +40,7 @@ func (*MitreTactic) Descriptor() ([]byte, []int) {
 func (m *MitreTactic) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MitreTactic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MitreTactic) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MitreTactic.Marshal(b, m, deterministic)
 	} else {
@@ -116,7 +116,7 @@ func (*MitreTechnique) Descriptor() ([]byte, []int) {
 func (m *MitreTechnique) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MitreTechnique) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MitreTechnique) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MitreTechnique.Marshal(b, m, deterministic)
 	} else {
@@ -191,7 +191,7 @@ func (*MitreAttackVector) Descriptor() ([]byte, []int) {
 func (m *MitreAttackVector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MitreAttackVector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MitreAttackVector) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MitreAttackVector.Marshal(b, m, deterministic)
 	} else {
@@ -266,7 +266,7 @@ func (*MitreAttackMatrix) Descriptor() ([]byte, []int) {
 func (m *MitreAttackMatrix) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MitreAttackMatrix) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MitreAttackMatrix) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MitreAttackMatrix.Marshal(b, m, deterministic)
 	} else {
@@ -341,7 +341,7 @@ func (*MitreAttackMatrix_MatrixInfo) Descriptor() ([]byte, []int) {
 func (m *MitreAttackMatrix_MatrixInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MitreAttackMatrix_MatrixInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MitreAttackMatrix_MatrixInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MitreAttackMatrix_MatrixInfo.Marshal(b, m, deterministic)
 	} else {
@@ -409,7 +409,7 @@ func (*MitreAttackBundle) Descriptor() ([]byte, []int) {
 func (m *MitreAttackBundle) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MitreAttackBundle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *MitreAttackBundle) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MitreAttackBundle.Marshal(b, m, deterministic)
 	} else {
@@ -504,7 +504,7 @@ var fileDescriptor_6622b189ba02caab = []byte{
 	0xc0, 0x01, 0x52, 0xc2, 0x02, 0x00, 0x00,
 }
 
-func (m *MitreTactic) Marshal() (dAtA []byte, err error) {
+func (m *MitreTactic) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -514,7 +514,7 @@ func (m *MitreTactic) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MitreTactic) MarshalTo(dAtA []byte) (int, error) {
+func (m *MitreTactic) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -552,7 +552,7 @@ func (m *MitreTactic) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MitreTechnique) Marshal() (dAtA []byte, err error) {
+func (m *MitreTechnique) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -562,7 +562,7 @@ func (m *MitreTechnique) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MitreTechnique) MarshalTo(dAtA []byte) (int, error) {
+func (m *MitreTechnique) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -600,7 +600,7 @@ func (m *MitreTechnique) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MitreAttackVector) Marshal() (dAtA []byte, err error) {
+func (m *MitreAttackVector) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -610,7 +610,7 @@ func (m *MitreAttackVector) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MitreAttackVector) MarshalTo(dAtA []byte) (int, error) {
+func (m *MitreAttackVector) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -653,7 +653,7 @@ func (m *MitreAttackVector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MitreAttackMatrix) Marshal() (dAtA []byte, err error) {
+func (m *MitreAttackMatrix) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -663,7 +663,7 @@ func (m *MitreAttackMatrix) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MitreAttackMatrix) MarshalTo(dAtA []byte) (int, error) {
+func (m *MitreAttackMatrix) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -706,7 +706,7 @@ func (m *MitreAttackMatrix) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MitreAttackMatrix_MatrixInfo) Marshal() (dAtA []byte, err error) {
+func (m *MitreAttackMatrix_MatrixInfo) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -716,7 +716,7 @@ func (m *MitreAttackMatrix_MatrixInfo) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MitreAttackMatrix_MatrixInfo) MarshalTo(dAtA []byte) (int, error) {
+func (m *MitreAttackMatrix_MatrixInfo) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -747,7 +747,7 @@ func (m *MitreAttackMatrix_MatrixInfo) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *MitreAttackBundle) Marshal() (dAtA []byte, err error) {
+func (m *MitreAttackBundle) MarshalVT() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -757,7 +757,7 @@ func (m *MitreAttackBundle) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MitreAttackBundle) MarshalTo(dAtA []byte) (int, error) {
+func (m *MitreAttackBundle) MarshalVTTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
