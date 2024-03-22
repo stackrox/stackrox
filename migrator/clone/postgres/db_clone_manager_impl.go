@@ -224,6 +224,11 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		return d.checkForRocksToExternal(rocksVersion)
 	}
 
+	// If a restore clone exists, our focus is to try to restore that database.
+	if _, ok := d.cloneMap[RestoreClone]; ok {
+		return RestoreClone, false, nil
+	}
+
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		d.cloneMap[CurrentClone] = metadata.NewPostgres(nil, CurrentClone)

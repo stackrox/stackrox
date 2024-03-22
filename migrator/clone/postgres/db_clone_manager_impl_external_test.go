@@ -107,18 +107,6 @@ func (s *PostgresExternalManagerSuite) TestGetCloneFreshExternal() {
 	s.Nil(err)
 }
 
-func (s *PostgresExternalManagerSuite) TestGetRestoreFromRocksExternal() {
-	dbm := New("", s.config, s.sourceMap)
-
-	// Scan the clones
-	s.Nil(dbm.Scan())
-
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
-	s.Equal(clone, externalDB)
-	s.True(migrateRocks)
-	s.Nil(err)
-}
-
 func (s *PostgresExternalManagerSuite) TestScanExternal() {
 	for clone := range knownClones {
 		s.False(pgadmin.CheckIfDBExists(s.config, clone))
