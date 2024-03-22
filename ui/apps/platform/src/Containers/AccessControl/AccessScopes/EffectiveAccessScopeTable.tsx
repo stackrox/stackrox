@@ -111,7 +111,7 @@ function EffectiveAccessScopeTable({
                 >
                     {/*
                         In rare cases this value can be an empty string which will cause a runtime error in PatternFly
-                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185 
+                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185
                         In this case, we display a dash instead to avoid a crash.
                     */}
                     {clusterName || '-'}
@@ -191,7 +191,7 @@ function EffectiveAccessScopeTable({
                     >
                         {/*
                         In rare cases this value can be an empty string which will cause a runtime error in PatternFly
-                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185 
+                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185
                         In this case, we display a dash instead to avoid a crash.
                     */}
                         {namespaceName || '-'}
