@@ -83,7 +83,7 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get clone to migrate")
 	}
-	log.WriteToStderrf("Clone to Migrate %q, %q", pgClone)
+	log.WriteToStderrf("Clone to Migrate %q", pgClone)
 
 	err = upgrade(pgClone)
 	if err != nil {
