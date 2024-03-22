@@ -236,22 +236,22 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 sets=[{"test": test1}, {"test": test2}]).run()
 
-    def test_can_always_run(self):
+    def test_can_skip_on_earlier_failure(self):
         test1 = Mock()
         test1.run.side_effect = Exception("test1 oops")
-        test2 = Mock()
-        post_test2 = Mock()
+        skipped_test = Mock()
+        post_skipped_test = Mock()
         test3 = Mock()
         post_test3 = Mock()
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
                 sets=[
                     {"test": test1},
-                    {"test": test2, "post_test": post_test2, "always_run": False},
+                    {"test": skipped_test, "post_test": post_skipped_test, "always_run": False},
                     {"test": test3, "post_test": post_test3},
                 ]
             ).run()
-        test2.run.assert_not_called()
-        post_test2.run.assert_not_called()
+        skipped_test.run.assert_not_called()
+        post_skipped_test.run.assert_not_called()
         test3.run.assert_called_once()
         post_test3.run.assert_called_once()
