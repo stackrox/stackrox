@@ -4,6 +4,10 @@ branding:
   icon: 'archive'
   color: 'blue'
 inputs:
+  create-jiras:
+    description: 'Weather to report failures to jira'
+    required: false
+    default: 'true'
   jira-token:
     description: 'Token used to authenticate with Jira.'
     required: true
@@ -35,6 +39,14 @@ runs:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     run: |
+      local extra_args=()
+      if [[ "${{ inputs.create-jiras }}" == "false" ]]; then
+        extra_args=(--dry-run)
+        info "Will use junit2jira to create CSV for BigQuery input"
+      else
+        info "Will create JIRA issues for junit failures found in ${{ inputs.directory }}"
+      fi
+      ${{ inputs.debug_mode == true }}
       csv_output="$(mktemp --suffix=.csv)"
       ./junit2jira \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
@@ -45,7 +57,8 @@ runs:
           -job-name "${{ github.job }}" \
           -junit-reports-dir "${{ inputs.directory }}" \
           -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \
-          -threshold "${{ inputs.threshold }}"
+          -threshold "${{ inputs.threshold }}" \
+          "${extra_args[@]}"
 
       source scripts/ci/lib.sh
       setup_gcp
