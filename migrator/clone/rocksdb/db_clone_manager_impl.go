@@ -123,11 +123,6 @@ func (d *dbCloneManagerImpl) safeRemove(clone string) {
 	delete(d.cloneMap, clone)
 }
 
-func (d *dbCloneManagerImpl) contains(clone string) bool {
-	_, ok := d.cloneMap[clone]
-	return ok
-}
-
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the clone link, path to database and error if fails.
 func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {

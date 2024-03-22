@@ -96,9 +96,9 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(c.toVersion, "")
+			require.NoError(t, mock.upgradeCentral(c.toVersion, ""))
 			if c.furtherToVersion != nil {
-				mock.upgradeCentral(c.furtherToVersion, "")
+				require.NoError(t, mock.upgradeCentral(c.furtherToVersion, ""))
 			}
 		})
 	}
@@ -108,7 +108,7 @@ func createAndRunCentral(t *testing.T, ver *versionPair, runBoth bool) *mockCent
 	mock := createCentral(t, runBoth)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
-	mock.runMigrator("", "")
+	require.NoError(t, mock.runMigrator("", ""))
 	mock.runCentral()
 	return mock
 }
@@ -168,14 +168,14 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			// Migration aborted
-			mock.upgradeCentral(c.toVersion, c.breakPoint)
+			require.NoError(t, mock.upgradeCentral(c.toVersion, c.breakPoint))
 			if reboot {
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			}
 			if c.furtherToVersion != nil {
 				// Run migrator multiple times
-				mock.runMigrator("", "")
-				mock.upgradeCentral(c.furtherToVersion, "")
+				require.NoError(t, mock.runMigrator("", ""))
+				require.NoError(t, mock.upgradeCentral(c.furtherToVersion, ""))
 			}
 		})
 	}
@@ -253,7 +253,7 @@ func testCloneRestore(t *testing.T) {
 			mock := createAndRunCentral(t, &preHistoryVer, c.rocksToPostgres)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(&currVer, "")
+			require.NoError(t, mock.upgradeCentral(&currVer, ""))
 			err := mock.restoreCentral(c.toVersion, c.breakPoint, c.rocksToPostgres)
 			if c.rocksToPostgres {
 				require.EqualError(t, err, "Effective release 4.5, restores from pre-4.0 releases are no longer supported.")
@@ -261,9 +261,9 @@ func testCloneRestore(t *testing.T) {
 			}
 
 			if reboot {
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			}
-			mock.upgradeCentral(&futureVer, "")
+			require.NoError(t, mock.upgradeCentral(&futureVer, ""))
 		})
 	}
 }
@@ -340,7 +340,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			}
 			mock := createAndRunCentral(t, ver, false)
 			defer mock.destroyCentral()
-			mock.upgradeCentral(&c.toVersion, "")
+			require.NoError(t, mock.upgradeCentral(&c.toVersion, ""))
 			if !c.withPrevious {
 				mock.removePreviousClone()
 			}
@@ -363,7 +363,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 				assert.EqualError(t, err, expectedError)
 			} else {
 				assert.NoError(t, err)
-				mock.rollbackCentral(&currVer, "", c.forceRollback)
+				require.NoError(t, mock.rollbackCentral(&currVer, "", c.forceRollback))
 			}
 
 		})
@@ -450,9 +450,9 @@ func doTestRollback(t *testing.T) {
 			mock := createAndRunCentral(t, c.toVersion, false)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(c.fromVersion, c.breakPoint)
-			mock.rollbackCentral(c.toVersion, "", c.toVersion.version)
-			mock.upgradeCentral(c.fromVersion, "")
+			require.NoError(t, mock.upgradeCentral(c.fromVersion, c.breakPoint))
+			require.NoError(t, mock.rollbackCentral(c.toVersion, "", c.toVersion.version))
+			require.NoError(t, mock.upgradeCentral(c.fromVersion, ""))
 		})
 	}
 }
@@ -482,7 +482,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Rollback breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.migrateWithVersion(&futureVer, breakBeforePersist, "")
+				require.NoError(t, m.migrateWithVersion(&futureVer, breakBeforePersist, ""))
 				setVersion(t, &currVer)
 			},
 		},
@@ -493,10 +493,10 @@ func TestRacingConditionInPersist(t *testing.T) {
 				log.Infof("Test = %q", c.description)
 				mock := createAndRunCentral(t, &preVer, false)
 				defer mock.destroyCentral()
-				mock.upgradeCentral(&currVer, "")
+				require.NoError(t, mock.upgradeCentral(&currVer, ""))
 				c.preRun(mock)
 				mock.runMigratorWithBreaksInPersist(breakpoint)
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			})
 		}
 

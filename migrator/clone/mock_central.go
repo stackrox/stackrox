@@ -55,8 +55,7 @@ type mockCentral struct {
 	setVersion  func(t *testing.T, ver *versionPair)
 	adminConfig *postgres.Config
 	// May need to run both databases if testing case of upgrading from rocks version to a postgres version
-	runBoth    bool
-	updateBoth bool
+	runBoth bool
 }
 
 // createCentral - creates a central that runs Rocks OR Postgres OR both.  Need to cover
