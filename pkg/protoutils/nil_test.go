@@ -10,7 +10,7 @@ import (
 )
 
 func TestErrorOnNilMarshal(t *testing.T) {
-	_, err := protocompat.Marshal(nil)
+	_, err := protocompat.ProtoMarshal(nil)
 	assert.Equal(t, proto.ErrNil, err)
 
 	_, err = protocompat.Marshal((*storage.Image)(nil))
@@ -18,7 +18,7 @@ func TestErrorOnNilMarshal(t *testing.T) {
 
 	var img *storage.Image
 	var msg protocompat.Message = img
-	_, err = protocompat.Marshal(msg)
+	_, err = protocompat.ProtoMarshal(msg)
 	assert.Equal(t, proto.ErrNil, err)
 
 	_, err = protocompat.Marshal(&storage.Image{})

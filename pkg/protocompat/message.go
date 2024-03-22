@@ -30,10 +30,16 @@ func Equal(a proto.Message, b proto.Message) bool {
 	return proto.Equal(a, b)
 }
 
+// ProtoMarshal takes a protocol buffer message and encodes it into
+// the wire format, returning the data. This is the main entry point.
+func ProtoMarshal(msg proto.Message) ([]byte, error) {
+	return proto.Marshal(msg)
+}
+
 // Marshal takes a protocol buffer message and encodes it into
 // the wire format, returning the data. This is the main entry point.
-func Marshal(msg proto.Message) ([]byte, error) {
-	return proto.Marshal(msg)
+func Marshal[T any, M Marshaler[T]](msg M) ([]byte, error) {
+	return msg.MarshalVT()
 }
 
 // MarshalTextString writes a given protocol buffer in text format,
@@ -50,6 +56,13 @@ func MarshalTextString(msg proto.Message) string {
 // in pb is always removed.
 func Unmarshal(dAtA []byte, msg proto.Message) error {
 	return proto.Unmarshal(dAtA, msg)
+}
+
+// Marshaler is a generic interface type wrapping around types that implement protobuf Marshaler.
+type Marshaler[T any] interface {
+	//proto.Marshaler
+	MarshalVT() ([]byte, error)
+	*T
 }
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
