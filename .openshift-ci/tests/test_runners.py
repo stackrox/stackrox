@@ -218,7 +218,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
 
     # Failure semantics
 
-    def test_initial_failure_does_not_halt_the_set(self):
+    def test_first_failure_does_not_halt_the_set(self):
         test1 = Mock()
         test1.run.side_effect = Exception("test1 oops")
         test2 = Mock()
@@ -235,6 +235,24 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
                 sets=[{"test": test1}, {"test": test2}]).run()
+
+    def test_test_failure_is_reported_over_post_failure(self):
+        test1 = Mock()
+        test1.run.side_effect = Exception("test1 oops")
+        final_post = Mock()
+        final_post.run.side_effect = Exception("final post oops")
+        with self.assertRaisesRegex(Exception, "test1 oops"):
+            ClusterTestSetsRunner(
+                sets=[{"test": test1},], final_post=final_post).run()
+
+    def test_test_failure_is_reported_over_teardown_failure(self):
+        test1 = Mock()
+        test1.run.side_effect = Exception("test1 oops")
+        cluster = Mock()
+        cluster.teardown.side_effect = Exception("teardown oops")
+        with self.assertRaisesRegex(Exception, "test1 oops"):
+            ClusterTestSetsRunner(
+                sets=[{"test": test1},], cluster=cluster).run()
 
     def test_can_skip_on_earlier_failure(self):
         test1 = Mock()
