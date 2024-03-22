@@ -7,11 +7,11 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 const (
