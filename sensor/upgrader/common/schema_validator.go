@@ -17,10 +17,18 @@ func ValidatorFromOpenAPIDoc(openAPIDoc *openapi_v2.Document) (validation.Schema
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing OpenAPI schema document into resources")
 	}
-	schemaValidator := openAPIValidation.NewSchemaValidation(openAPIResources)
+	schemaValidator := openAPIValidation.NewSchemaValidation(openAPIResourcesGetter{resources: openAPIResources})
 
 	return validation.ConjunctiveSchema{
 		schemaValidator,
 		yamlValidator{jsonValidator: validation.NoDoubleKeySchema{}},
 	}, nil
+}
+
+type openAPIResourcesGetter struct {
+	resources openapi.Resources
+}
+
+func (o openAPIResourcesGetter) OpenAPISchema() (openapi.Resources, error) {
+	return o.resources, nil
 }
