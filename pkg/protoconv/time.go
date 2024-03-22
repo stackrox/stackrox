@@ -6,6 +6,8 @@ import (
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
@@ -101,4 +103,29 @@ func ProtoTime(ts *gogoTimestamp.Timestamp) string {
 	}
 	const layout = "2006-01-02 15:04:05"
 	return t.UTC().Format(layout)
+}
+
+// NowMinus substracts a specified amount of time from the current timestamp
+func NowMinus(t time.Duration) *gogoTimestamp.Timestamp {
+	return ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+// TimeBeforeDays subtracts a specified number of days from the current timestamp
+func TimeBeforeDays(days int) *gogoTimestamp.Timestamp {
+	return NowMinus(24 * time.Duration(days) * time.Hour)
+}
+
+// RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
+func RoundTimestamp(ts *gogoTimestamp.Timestamp, d time.Duration) {
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
+	if err != nil {
+		return
+	}
+	newTS := ConvertTimeToTimestamp(t.Round(d))
+	*ts = *newTS
+}
+
+// ConvertTimestampToProtobuf converts the input microtimestamp to a (Gogo) protobuf representation.
+func ConvertTimestampToProtobuf(ts timestamp.MicroTS) *gogoTimestamp.Timestamp {
+	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
 }

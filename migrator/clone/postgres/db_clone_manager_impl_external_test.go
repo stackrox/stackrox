@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -145,7 +146,7 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 	futureVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
 		Version:       futureVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertTimestampToProtobuf(timestamp.Now()),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum() + 2),
 	}
 	migVer.SetVersionPostgres(s.ctx, externalDB, futureVersion)
@@ -180,7 +181,7 @@ func (s *PostgresExternalManagerSuite) TestExternalMigrateRocks() {
 	currVersion := &storage.Version{
 		SeqNum:        122,
 		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertTimestampToProtobuf(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, externalDB, currVersion)
 
@@ -196,7 +197,7 @@ func (s *PostgresExternalManagerSuite) TestExternalMigrateRocks() {
 	currVersion = &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertTimestampToProtobuf(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, externalDB, currVersion)
 

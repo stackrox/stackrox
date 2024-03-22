@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -108,7 +109,7 @@ func SetCurrentVersionPostgres(ctx context.Context) {
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertTimestampToProtobuf(timestamp.Now()),
 	}
 	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
 }

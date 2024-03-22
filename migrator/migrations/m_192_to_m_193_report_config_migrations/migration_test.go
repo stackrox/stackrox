@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -64,7 +65,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	ret.LastRunStatus = &storage.ReportLastRunStatus{
 		ReportStatus: storage.ReportLastRunStatus_SUCCESS,
 	}
-	ret.LastSuccessfulRunTime = timestamp.Now().GogoProtobuf()
+	ret.LastSuccessfulRunTime = protoconv.ConvertTimestampToProtobuf(timestamp.Now())
 	converted, err := newSchema.ConvertReportConfigurationFromProto(ret)
 	s.Require().NoError(err)
 	convertedReportConfigs := []*newSchema.ReportConfigurations{converted}

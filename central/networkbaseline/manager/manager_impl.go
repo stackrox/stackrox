@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -161,7 +162,7 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselines
 			Namespace:            baselineInfo.Namespace,
 			Peers:                peers,
 			ForbiddenPeers:       forbiddenPeers,
-			ObservationPeriodEnd: baselineInfo.ObservationPeriodEnd.GogoProtobuf(),
+			ObservationPeriodEnd: protoconv.ConvertTimestampToProtobuf(baselineInfo.ObservationPeriodEnd),
 			Locked:               baselineInfo.UserLocked,
 			DeploymentName:       baselineInfo.DeploymentName,
 		})
@@ -302,7 +303,7 @@ func (m *manager) processDeploymentCreate(deploymentID, _ string) error {
 		&queue.DeploymentObservation{
 			DeploymentID:   deploymentID,
 			InObservation:  true,
-			ObservationEnd: getNewObservationPeriodEnd().GogoProtobuf(),
+			ObservationEnd: protoconv.ConvertTimestampToProtobuf(getNewObservationPeriodEnd()),
 		})
 
 	return nil
@@ -561,7 +562,7 @@ func (m *manager) processNetworkPolicyUpdate(
 				&queue.DeploymentObservation{
 					DeploymentID:   deployment.GetId(),
 					InObservation:  true,
-					ObservationEnd: newObservationPeriodEnd.GogoProtobuf(),
+					ObservationEnd: protoconv.ConvertTimestampToProtobuf(newObservationPeriodEnd),
 				})
 		} else {
 			baseline.ObservationPeriodEnd = newObservationPeriodEnd
