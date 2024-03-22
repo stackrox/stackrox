@@ -242,7 +242,7 @@ message ComplianceOperatorSuiteV2 {
 // Next Tag: 3
 message ComplianceOperatorBenchmark {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
-  string name = 2; // @gotags: search:"Name,hidden"
+  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
 }
 
 // TODO: Combined primary key for benchmark_id and rule_id
