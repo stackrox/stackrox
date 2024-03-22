@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
+	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -31,7 +32,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
-	"gopkg.in/yaml.v3"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
@@ -846,36 +846,21 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
 	t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
+	k8sClient := client.MustCreateInterfaceFromRest(env.Client().RESTConfig())
 	sensorConfig := sensor.ConfigWithDefaults().
-		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
+		WithK8sClient(k8sClient).
 		WithLocalSensor(true).
 		WithCentralConnectionFactory(c.grpcFactory)
 	if cfg.RealCerts {
-		t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/sensor-cert.pem"))
-		t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/sensor-key.pem"))
-		t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/ca.pem"))
-
-		type helmConfig struct {
-			ClusterName   string `yaml:"clusterName"`
-			ClusterConfig struct {
-				FingerPrint string `yaml:"configFingerprint"`
-			} `yaml:"clusterConfig"`
+		certFetcher := certs.NewCertificateFetcher(k8sClient,
+			certs.WithOutputDir(c.config.CertFilePath),
+			certs.WithSetEnvFunc(func(key string, value string) error {
+				t.Setenv(key, value)
+				return nil
+			}))
+		if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
+			panic(err)
 		}
-
-		helmConfigFile := path.Join(c.config.CertFilePath, "/helm-config.yaml")
-		t.Setenv("ROX_HELM_CONFIG_FILE_OVERRIDE", helmConfigFile)
-		t.Setenv("ROX_HELM_CLUSTER_NAME_FILE_OVERRIDE", path.Join(c.config.CertFilePath, "/helm-name.yaml"))
-
-		var clusterC helmConfig
-		yamlFile, err := os.ReadFile(helmConfigFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := yaml.Unmarshal(yamlFile, &clusterC); err != nil {
-			t.Fatal(err)
-		}
-
-		t.Setenv("ROX_HELM_CLUSTER_CONFIG_FP", clusterC.ClusterConfig.FingerPrint)
 	} else {
 		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
 			return ctx, nil

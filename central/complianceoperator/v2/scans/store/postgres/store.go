@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -115,16 +116,16 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetScanConfigName(),
-		obj.GetScanName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
-		obj.GetProfile().GetProfileId(),
-		obj.GetScanType(),
+		pgutils.NilOrUUID(obj.GetProfile().GetProfileId()),
 		obj.GetStatus().GetResult(),
-		pgutils.NilOrTime(obj.GetLastExecutedTime()),
+		protocompat.NilOrTime(obj.GetLastExecutedTime()),
+		obj.GetScanName(),
+		pgutils.NilOrUUID(obj.GetScanRefId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ScanName, ClusterId, Profile_ProfileId, ScanType, Status_Result, LastExecutedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ScanName = EXCLUDED.ScanName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileId = EXCLUDED.Profile_ProfileId, ScanType = EXCLUDED.ScanType, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileId, Status_Result, LastExecutedTime, ScanName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileId = EXCLUDED.Profile_ProfileId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -144,12 +145,12 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 	copyCols := []string{
 		"id",
 		"scanconfigname",
-		"scanname",
 		"clusterid",
 		"profile_profileid",
-		"scantype",
 		"status_result",
 		"lastexecutedtime",
+		"scanname",
+		"scanrefid",
 		"serialized",
 	}
 
@@ -167,12 +168,12 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetScanConfigName(),
-			obj.GetScanName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetProfile().GetProfileId(),
-			obj.GetScanType(),
+			pgutils.NilOrUUID(obj.GetProfile().GetProfileId()),
 			obj.GetStatus().GetResult(),
-			pgutils.NilOrTime(obj.GetLastExecutedTime()),
+			protocompat.NilOrTime(obj.GetLastExecutedTime()),
+			obj.GetScanName(),
+			pgutils.NilOrUUID(obj.GetScanRefId()),
 			serialized,
 		})
 

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const project = "ultra-current-825"
+const project = "acs-san-stackroxci"
 
 func TestGoogle(t *testing.T) {
 	if os.Getenv("SERVICE_ACCOUNT") == "" {
@@ -38,5 +38,5 @@ func TestGoogle(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	assert.Len(t, metadata.LayerShas, 14)
+	assert.Len(t, metadata.LayerShas, 10)
 }

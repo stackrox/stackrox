@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -116,7 +117,7 @@ func insertIntoComplianceRunResults(batch *pgx.Batch, obj *storage.ComplianceRun
 		obj.GetRunMetadata().GetRunId(),
 		obj.GetRunMetadata().GetStandardId(),
 		pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
-		pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
+		protocompat.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
 		serialized,
 	}
 
@@ -160,7 +161,7 @@ func copyFromComplianceRunResults(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetRunMetadata().GetRunId(),
 			obj.GetRunMetadata().GetStandardId(),
 			pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
-			pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
+			protocompat.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
 			serialized,
 		})
 

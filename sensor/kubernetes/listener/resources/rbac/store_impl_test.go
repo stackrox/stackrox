@@ -518,7 +518,7 @@ func TestStore_DeploymentRelationship(t *testing.T) {
 			tested := NewStore().(*storeImpl)
 			fakeClient := fake.NewSimpleClientset()
 			dispatcher := NewDispatcher(tested, fakeClient)
-			var ref []resolver.DeploymentReference
+			var ref []resolver.DeploymentResolution
 			for _, update := range testCase.orderedUpdates {
 				event := dispatcher.ProcessEvent(update, nil, central.ResourceAction_CREATE_RESOURCE)
 				if len(event.DeploymentReferences) == 1 {

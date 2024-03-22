@@ -21,7 +21,7 @@ import {
     getHighestVulnerabilitySeverity,
 } from './table.utils';
 import ImageNameLink from '../components/ImageNameLink';
-import { DynamicColumnIcon } from '../components/DynamicIcon';
+import { DynamicColumnIcon } from '../../components/DynamicIcon';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,

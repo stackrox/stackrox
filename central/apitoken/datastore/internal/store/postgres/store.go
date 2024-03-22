@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -94,7 +94,7 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		pgutils.NilOrTime(obj.GetExpiration()),
+		protocompat.NilOrTime(obj.GetExpiration()),
 		obj.GetRevoked(),
 		serialized,
 	}
@@ -136,7 +136,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			pgutils.NilOrTime(obj.GetExpiration()),
+			protocompat.NilOrTime(obj.GetExpiration()),
 			obj.GetRevoked(),
 			serialized,
 		})

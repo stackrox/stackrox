@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -132,7 +133,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		obj.GetOrchestratorComponent(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		pgutils.EmptyOrMap(obj.GetPodLabels()),
-		pgutils.NilOrTime(obj.GetCreated()),
+		protocompat.NilOrTime(obj.GetCreated()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		pgutils.EmptyOrMap(obj.GetAnnotations()),
@@ -385,7 +386,7 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetOrchestratorComponent(),
 			pgutils.EmptyOrMap(obj.GetLabels()),
 			pgutils.EmptyOrMap(obj.GetPodLabels()),
-			pgutils.NilOrTime(obj.GetCreated()),
+			protocompat.NilOrTime(obj.GetCreated()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
 			pgutils.EmptyOrMap(obj.GetAnnotations()),

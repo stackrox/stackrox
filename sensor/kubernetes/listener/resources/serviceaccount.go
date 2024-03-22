@@ -54,7 +54,7 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		sa.ServiceAccount.AutomountToken = *serviceAccount.AutomountServiceAccountToken
 	}
 
-	var deploymentReference resolver.DeploymentReference
+	var deploymentReference resolver.DeploymentResolution
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		s.serviceAccountStore.Remove(sa.ServiceAccount)

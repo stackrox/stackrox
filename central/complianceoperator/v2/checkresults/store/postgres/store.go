@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -119,13 +120,13 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetStatus(),
 		obj.GetSeverity(),
-		pgutils.NilOrTime(obj.GetCreatedTime()),
-		obj.GetScanName(),
+		protocompat.NilOrTime(obj.GetCreatedTime()),
 		obj.GetScanConfigName(),
+		pgutils.NilOrUUID(obj.GetScanRefId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanName, ScanConfigName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanName = EXCLUDED.ScanName, ScanConfigName = EXCLUDED.ScanConfigName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanConfigName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanConfigName = EXCLUDED.ScanConfigName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -150,8 +151,8 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"status",
 		"severity",
 		"createdtime",
-		"scanname",
 		"scanconfigname",
+		"scanrefid",
 		"serialized",
 	}
 
@@ -173,9 +174,9 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetStatus(),
 			obj.GetSeverity(),
-			pgutils.NilOrTime(obj.GetCreatedTime()),
-			obj.GetScanName(),
+			protocompat.NilOrTime(obj.GetCreatedTime()),
 			obj.GetScanConfigName(),
+			pgutils.NilOrUUID(obj.GetScanRefId()),
 			serialized,
 		})
 

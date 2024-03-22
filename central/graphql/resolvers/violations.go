@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -104,7 +105,7 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 		return nil, err
 	}
 
-	return timestamp(alerts[0].GetTime())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(alerts[0].GetTime())
 }
 
 func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bool, error) {

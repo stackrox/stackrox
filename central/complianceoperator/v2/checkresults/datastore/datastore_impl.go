@@ -31,7 +31,9 @@ type datastoreImpl struct {
 	searcher checkResultSearch.Searcher
 }
 
-// UpsertResult adds the result to the database
+// UpsertResult adds the result to the database  If enabling the use of this
+// method from a service, the creation of the `ScanRefID` must be accounted for.  In reality this
+// method should only be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -106,6 +108,44 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
 	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByClusterScan](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return countResults, nil
+}
+
+// ComplianceProfileResultStats retrieves the profile results stats specified by query for the scan configuration
+func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByProfile, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
+
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return nil, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorProfileName).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorProfileName.String(),
+		},
+	}
+
+	if cloned.Pagination == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+	}
+	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+		{
+			Field: search.ComplianceOperatorProfileName.String(),
+		},
+	}
+
+	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
 	if err != nil {
 		return nil, err
 	}

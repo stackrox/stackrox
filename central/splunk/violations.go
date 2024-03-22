@@ -432,36 +432,34 @@ func isGenericViolation(violation *storage.Alert_Violation) bool {
 
 func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integrations.SplunkViolation_ProcessInfo {
 	var signal storage.ProcessSignal
-	var pid, uid, gid *types.UInt32Value
-	var lineage []*storage.ProcessSignal_LineageInfo
-
 	if from.GetSignal() != nil {
 		signal = *from.GetSignal()
-		pid = &types.UInt32Value{Value: signal.GetPid()}
-		uid = &types.UInt32Value{Value: signal.GetUid()}
-		gid = &types.UInt32Value{Value: signal.GetGid()}
-
-		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.GetLineageInfo()))
-		for _, x := range signal.GetLineageInfo() {
-			lineage = append(lineage, x.Clone())
-		}
-	} else {
-		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete.",
-			logging.String("ProcessIndicator.Id", from.GetId()), logging.AlertID(alertID))
 	}
-
-	return &integrations.SplunkViolation_ProcessInfo{
+	splunkProcessInfo := &integrations.SplunkViolation_ProcessInfo{
 		ProcessViolationId:  from.GetId(),
 		ProcessSignalId:     signal.GetId(),
 		ProcessCreationTime: signal.GetTime(),
 		ProcessName:         signal.GetName(),
 		ProcessArgs:         signal.GetArgs(),
 		ExecFilePath:        signal.GetExecFilePath(),
-		Pid:                 pid,
-		ProcessUid:          uid,
-		ProcessGid:          gid,
-		ProcessLineageInfo:  lineage,
 	}
+
+	if from.GetSignal() != nil {
+		splunkProcessInfo.Pid = protocompat.ProtoUInt32Value(signal.GetPid())
+		splunkProcessInfo.ProcessUid = protocompat.ProtoUInt32Value(signal.GetUid())
+		splunkProcessInfo.ProcessGid = protocompat.ProtoUInt32Value(signal.GetGid())
+
+		lineage := make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.GetLineageInfo()))
+		for _, x := range signal.GetLineageInfo() {
+			lineage = append(lineage, x.Clone())
+		}
+		splunkProcessInfo.ProcessLineageInfo = lineage
+	} else {
+		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete.",
+			logging.String("ProcessIndicator.Id", from.GetId()), logging.AlertID(alertID))
+	}
+
+	return splunkProcessInfo
 }
 
 func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkViolation_ViolationInfo) *integrations.SplunkViolation_AlertInfo {

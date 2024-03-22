@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -101,7 +102,7 @@ func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
 		obj.GetInt64(),
 		obj.GetFloat(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
-		pgutils.NilOrTime(obj.GetTimestamp()),
+		protocompat.NilOrTime(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
 		obj.GetString_(),
@@ -195,7 +196,7 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetInt64(),
 			obj.GetFloat(),
 			pgutils.EmptyOrMap(obj.GetLabels()),
-			pgutils.NilOrTime(obj.GetTimestamp()),
+			protocompat.NilOrTime(obj.GetTimestamp()),
 			obj.GetEnum(),
 			obj.GetEnums(),
 			obj.GetString_(),

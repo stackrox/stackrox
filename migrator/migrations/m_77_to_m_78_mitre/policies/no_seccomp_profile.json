@@ -1,6 +1,0 @@
-{
-  "id": "41e5153f-98d1-4830-9f80-983afcbe73c1",
-  "name": "Docker CIS 5.21: Ensure the default seccomp profile is not disabled",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

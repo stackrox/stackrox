@@ -231,6 +231,8 @@ var (
 	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
 	ComplianceOperatorScanResult             = newFieldLabel("Compliance Scan Result")
 	ComplianceOperatorScanType               = newFieldLabel("Compliance Scan Type")
+	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
+	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
@@ -330,6 +332,8 @@ var (
 	RequesterUserName           = newFieldLabel("Requester User Name")
 	ApproverUserID              = newFieldLabel("Approver User ID")
 	ApproverUserName            = newFieldLabel("Approver User Name")
+	DeferralUpdateCVEs          = newFieldLabel("Deferral Update CVEs")
+	FalsePositiveUpdateCVEs     = newFieldLabel("False Positive Update CVEs")
 
 	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
 	ComplianceRunID                = newFieldLabel("Compliance Run ID")

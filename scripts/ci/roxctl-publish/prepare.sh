@@ -40,10 +40,19 @@ for platform in Linux Darwin Windows; do
   # See https://issues.redhat.com/browse/ROX-14701.
   # We may later want to add binaries with explicit x86_64 architecture which would be roxctl-amd64[.exe].
   if [[ "${platform}" == "Linux" ]]; then
+    cp "${source_dir}/bin/${platform_lower}_arm64/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-arm64"
+    cp "${source_dir}/bin/${platform_lower}_arm64/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-arm64"
+
     cp "${source_dir}/bin/${platform_lower}_ppc64le/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-ppc64le"
     cp "${source_dir}/bin/${platform_lower}_ppc64le/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-ppc64le"
+
     cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-s390x"
     cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-s390x"
+  fi
+
+  if [[ "${platform}" == "Darwin" ]]; then
+    cp "${source_dir}/bin/${platform_lower}_arm64/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-arm64"
+    cp "${source_dir}/bin/${platform_lower}_arm64/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-arm64"
   fi
 done
 

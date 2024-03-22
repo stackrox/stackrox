@@ -18,7 +18,7 @@ var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.SecuredCluster, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
+func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.SecuredCluster, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.SecuredClusterGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile secured cluster", "expectedGVK", platform.SecuredClusterGVK, "actualGVK", u.GroupVersionKind())
@@ -43,6 +43,6 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 				return true
 			})
 		}
-		return runFn(ctx, &c, client, wrappedStatusUpdater, log)
+		return runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
 	}
 }

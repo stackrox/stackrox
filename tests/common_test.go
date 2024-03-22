@@ -203,10 +203,6 @@ func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	return &pod
 }
 
-func setupNginxLatestTagDeployment(t *testing.T) {
-	setupDeployment(t, "nginx", nginxDeploymentName)
-}
-
 func setupDeployment(t *testing.T, image, deploymentName string) {
 	setupDeploymentWithReplicas(t, image, deploymentName, 1)
 }
@@ -272,8 +268,10 @@ func teardownDeployment(t *testing.T, deploymentName string) {
 	waitForTermination(t, deploymentName)
 }
 
-func teardownNginxLatestTagDeployment(t *testing.T) {
-	teardownDeployment(t, nginxDeploymentName)
+func teardownDeploymentWithoutCheck(deploymentName string) {
+	// In cases where deployment will not impact other tests,
+	// we can trigger deletion and assume that it will be deleted eventually.
+	exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
 }
 
 func getConfig(t *testing.T) *rest.Config {

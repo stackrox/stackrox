@@ -1166,21 +1166,21 @@
         "namespace": "alpine:3.15",
         "expected_features": [
             {
-                "Name": "org.springframework.cloud:spring-cloud-function-core",
+                "Name": "org.springframework.cloud:spring-cloud-function-context",
                 "NamespaceName": "alpine:3.15",
                 "Version": "3.2.2",
                 "Arch": "",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2022-22963",
-                        "Description": "In Spring Cloud Function versions 3.1.6, 3.2.2 and older unsupported versions, when using routing functionality it is possible for a user to provide a specially crafted SpEL as a routing-expression that may result in remote code execution and access to local resources.",
+                        "Description": "Spring Cloud Function Code Injection with a specially crafted SpEL as a routing expression",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22963",
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
                                     "Score": 9.8,
-                                    "Vectors": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
                         },
@@ -1213,7 +1213,7 @@
             },
             {
                 "Name": "apt",
-                "Arch": "amd64",
+                "Arch": "s390x",
                 "NamespaceName": "ubuntu:22.04",
                 "Version": "2.4.5",
                 "AddedBy": "sha256:6fa1296f44090f6150dfb96d6ae217a58b9d66c56d7a986c35657df6bd1a89f0",
@@ -1512,7 +1512,7 @@
                 ],
                 "AddedBy": "sha256:8862c07555c9317d3dd31b6d8a755244a5e215737e45f67fa4c4ec7e03ca3b37",
                 "Location": "var/lib/dpkg/status",
-                "FixedBy": "0:3.0.2-0ubuntu1.10"
+                "FixedBy": "0:3.0.2-0ubuntu1.14"
             }
         ],
         "unexpected_features": null,
@@ -1532,8 +1532,7 @@
                 "NamespaceName": "ubuntu:22.10",
                 "Version": "3.0.5-2ubuntu2",
                 "AddedBy": "sha256:2b441754735ea7decb684ef19d54115fc309c270fe7b87ed36aa3773ce50b78b",
-                "Location": "var/lib/dpkg/status",
-                "FixedBy": "3.0.5-2ubuntu2.3"
+                "Location": "var/lib/dpkg/status"
             }
         ],
         "unexpected_features": null,

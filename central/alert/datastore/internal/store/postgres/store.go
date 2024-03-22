@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -121,7 +122,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		obj.GetPolicy().GetCategories(),
 		obj.GetPolicy().GetSeverity(),
 		obj.GetPolicy().GetEnforcementActions(),
-		pgutils.NilOrTime(obj.GetPolicy().GetLastUpdated()),
+		protocompat.NilOrTime(obj.GetPolicy().GetLastUpdated()),
 		obj.GetPolicy().GetSORTName(),
 		obj.GetPolicy().GetSORTLifecycleStage(),
 		obj.GetPolicy().GetSORTEnforcement(),
@@ -141,7 +142,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		obj.GetResource().GetResourceType(),
 		obj.GetResource().GetName(),
 		obj.GetEnforcement().GetAction(),
-		pgutils.NilOrTime(obj.GetTime()),
+		protocompat.NilOrTime(obj.GetTime()),
 		obj.GetState(),
 		serialized,
 	}
@@ -217,7 +218,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			obj.GetPolicy().GetCategories(),
 			obj.GetPolicy().GetSeverity(),
 			obj.GetPolicy().GetEnforcementActions(),
-			pgutils.NilOrTime(obj.GetPolicy().GetLastUpdated()),
+			protocompat.NilOrTime(obj.GetPolicy().GetLastUpdated()),
 			obj.GetPolicy().GetSORTName(),
 			obj.GetPolicy().GetSORTLifecycleStage(),
 			obj.GetPolicy().GetSORTEnforcement(),
@@ -237,7 +238,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			obj.GetResource().GetResourceType(),
 			obj.GetResource().GetName(),
 			obj.GetEnforcement().GetAction(),
-			pgutils.NilOrTime(obj.GetTime()),
+			protocompat.NilOrTime(obj.GetTime()),
 			obj.GetState(),
 			serialized,
 		})

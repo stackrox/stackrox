@@ -22,13 +22,13 @@ type ScannerV4BearingCustomResource interface {
 }
 
 // ReconcileScannerV4DBPassword reconciles a Scanner V4 db password
-func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
-	return reconcileScannerV4DBPassword(ctx, obj, client)
+func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client, direct ctrlClient.Reader) error {
+	return reconcileScannerV4DBPassword(ctx, obj, client, direct)
 }
 
-func reconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
+func reconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client, direct ctrlClient.Reader) error {
 	run := &reconcileScannerV4DBPasswordExtensionRun{
-		SecretReconciliator:  NewSecretReconciliator(client, obj),
+		SecretReconciliator:  NewSecretReconciliator(client, direct, obj),
 		obj:                  obj,
 		passwordResourceName: scannerV4DBPasswordResourceName,
 	}

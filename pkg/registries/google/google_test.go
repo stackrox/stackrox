@@ -11,7 +11,7 @@ import (
 )
 
 func TestGoogleMatch(t *testing.T) {
-	// Registry integrated is for us.gcr.io and ultra-current-825
+	// Registry integrated is for us.gcr.io and acs-san-stackroxci
 	cases := []struct {
 		name    *storage.ImageName
 		matches bool
@@ -26,23 +26,23 @@ func TestGoogleMatch(t *testing.T) {
 		{
 			name: &storage.ImageName{
 				Registry: "gcr.io",
-				Remote:   "ultra-current-825/nginx",
+				Remote:   "acs-san-stackroxci/nginx",
 			},
 			matches: false, // does not match gcr.io, matches us.gcr.io
 		},
 		{
 			name: &storage.ImageName{
 				Registry: "us.gcr.io",
-				Remote:   "ultra-current-825/nginx",
+				Remote:   "acs-san-stackroxci/nginx",
 			},
-			matches: true, // matches both us.gcr.io and ultra-current-825
+			matches: true, // matches both us.gcr.io and acs-san-stackroxci
 		},
 		{
 			name: &storage.ImageName{
 				Registry: "us.gcr.io",
-				Remote:   "ultra-current-825/nginx/another",
+				Remote:   "acs-san-stackroxci/nginx/another",
 			},
-			matches: true, // matches both us.gcr.io and ultra-current-825
+			matches: true, // matches both us.gcr.io and acs-san-stackroxci
 		},
 		{
 			name: &storage.ImageName{
@@ -60,7 +60,7 @@ func TestGoogleMatch(t *testing.T) {
 
 	gr := &googleRegistry{
 		Registry: reg,
-		project:  "ultra-current-825",
+		project:  "acs-san-stackroxci",
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s/%s", c.name.GetRegistry(), c.name.GetRemote()), func(t *testing.T) {

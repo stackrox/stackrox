@@ -64,6 +64,8 @@
 {{ $_ = set $state "referencedStorageClasses" list }}
 {{ $_ = set $._rox "_state" $state }}
 
+{{- include "srox.checkVersionRequirements" $ -}}
+
 {{/*
     API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not
     allow setting overrides for those when using `helm template` or `--dry-run`. Thus,

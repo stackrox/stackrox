@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -164,13 +163,13 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timest
 			obj.GetId(),
 			obj.GetType(),
 			obj.GetCveBaseInfo().GetCve(),
-			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
-			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
+			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
 		})
 

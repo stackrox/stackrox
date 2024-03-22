@@ -196,7 +196,7 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 // that the extension prevents central DB's PVC deletion on deletion of the CR.
 // Since Scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
 // through the helm uninstall if a CR is deleted.
-func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) {
+func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Reader) {
 	dbVB := NewValuesBuilder()
 	persistenceVB := NewValuesBuilder()
 
@@ -265,7 +265,7 @@ func setScannerV4DBPersistence(sv *ValuesBuilder, objKind string, persistence *p
 	sv.AddChild("persistence", &persistenceVB)
 }
 
-func shouldUseEmptyDir(ctx context.Context, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) (bool, error) {
+func shouldUseEmptyDir(ctx context.Context, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Reader) (bool, error) {
 	if objKind != v1alpha1.SecuredClusterGVK.Kind {
 		return false, nil
 	}
@@ -292,7 +292,7 @@ func shouldUseEmptyDir(ctx context.Context, db *platform.ScannerV4DB, objKind st
 	return !hasSC, nil
 }
 
-func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Client, pvcName string, namespace string) (bool, error) {
+func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Reader, pvcName string, namespace string) (bool, error) {
 	lookupPvc := pvcName
 	if lookupPvc == "" {
 		lookupPvc = defaultScannerV4PVCName
@@ -314,7 +314,7 @@ func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Client, pvcName st
 
 	return false, nil
 }
-func hasDefaultStorageClass(ctx context.Context, client ctrlClient.Client) (bool, error) {
+func hasDefaultStorageClass(ctx context.Context, client ctrlClient.Reader) (bool, error) {
 	storageClassList := storagev1.StorageClassList{}
 	if err := client.List(ctx, &storageClassList); err != nil {
 		return false, fmt.Errorf("listing available StorageClasses: %w", err)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -119,14 +118,6 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, m
 	return run, data.NodeResults(), nil
 }
 
-func timeToProto(t time.Time) *types.Timestamp {
-	if t.IsZero() {
-		return nil
-	}
-	tspb, _ := protocompat.ConvertTimeToTimestampOrError(t)
-	return tspb
-}
-
 func (r *runInstance) standardID() string {
 	return r.standard.Standard.ID
 }
@@ -148,10 +139,14 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		Id:           r.id,
 		ClusterId:    r.domain.Cluster().Cluster().GetId(),
 		StandardId:   r.standardID(),
-		StartTime:    timeToProto(r.startTime),
-		FinishTime:   timeToProto(r.finishTime),
 		State:        r.status,
 		ErrorMessage: errorMessage,
+	}
+	if !r.startTime.IsZero() {
+		proto.StartTime, _ = protocompat.ConvertTimeToTimestampOrError(r.startTime)
+	}
+	if !r.finishTime.IsZero() {
+		proto.FinishTime, _ = protocompat.ConvertTimeToTimestampOrError(r.finishTime)
 	}
 	return proto
 }

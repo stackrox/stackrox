@@ -12,6 +12,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/overlays"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/env"
@@ -80,9 +81,14 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 	}
 
 	var opts = []client.ActionClientGetterOption{
-		client.AppendPostRenderers(func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
-			return overlays.NewOverlayPostRenderer(obj, obj.GetNamespace())
-		}),
+		client.AppendPostRenderers(
+			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+				return overlays.NewOverlayPostRenderer(obj, obj.GetNamespace())
+			},
+			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+				return commonLabels.NewLabelPostRenderer(kubeClient, commonLabels.DefaultLabels())
+			},
+		),
 	}
 
 	actionClientGetter, err := client.NewActionClientGetter(actionConfigGetter, opts...)

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -96,10 +97,10 @@ func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredClust
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetMetadata().GetName(),
 		obj.GetMetadata().GetType(),
-		pgutils.NilOrTime(obj.GetMetadata().GetFirstDiscoveredAt()),
+		protocompat.NilOrTime(obj.GetMetadata().GetFirstDiscoveredAt()),
 		obj.GetStatus(),
 		pgutils.NilOrUUID(obj.GetSourceId()),
-		pgutils.NilOrTime(obj.GetLastUpdatedAt()),
+		protocompat.NilOrTime(obj.GetLastUpdatedAt()),
 		serialized,
 	}
 
@@ -146,10 +147,10 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetMetadata().GetName(),
 			obj.GetMetadata().GetType(),
-			pgutils.NilOrTime(obj.GetMetadata().GetFirstDiscoveredAt()),
+			protocompat.NilOrTime(obj.GetMetadata().GetFirstDiscoveredAt()),
 			obj.GetStatus(),
 			pgutils.NilOrUUID(obj.GetSourceId()),
-			pgutils.NilOrTime(obj.GetLastUpdatedAt()),
+			protocompat.NilOrTime(obj.GetLastUpdatedAt()),
 			serialized,
 		})
 

@@ -25,11 +25,11 @@ func (s *securedClusterWithScannerV4Bearer) IsScannerV4Enabled() bool {
 
 // ReconcileLocalScannerV4DBPasswordExtension returns an extension that takes care of creating the scanner-v4-db-password
 // secret ahead of time.
-func ReconcileLocalScannerV4DBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileScannerV4DBPassword, client)
+func ReconcileLocalScannerV4DBPasswordExtension(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileScannerV4DBPassword, client, direct)
 }
 
-func reconcileScannerV4DBPassword(ctx context.Context, s *platform.SecuredCluster, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileScannerV4DBPassword(ctx context.Context, s *platform.SecuredCluster, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	config, err := scanner.AutoSenseLocalScannerV4Config(ctx, client, *s)
 	if err != nil {
 		return err
@@ -41,5 +41,5 @@ func reconcileScannerV4DBPassword(ctx context.Context, s *platform.SecuredCluste
 		scannerV4Enabled: config.DeployScannerResources,
 	}
 
-	return commonExtensions.ReconcileScannerV4DBPassword(ctx, securedClusterWithScannerV4, client)
+	return commonExtensions.ReconcileScannerV4DBPassword(ctx, securedClusterWithScannerV4, client, direct)
 }

@@ -32,13 +32,13 @@ const (
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(client ctrlClient.Client) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, client)
+func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralTLS, client, direct)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}

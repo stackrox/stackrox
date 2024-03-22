@@ -1,6 +1,0 @@
-{
-  "id": "6abcaa13-9ed6-4109-a1a7-be2e8280e49e",
-  "name": "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

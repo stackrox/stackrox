@@ -26,13 +26,13 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 
 import {
-    CVEsDefaultSort,
     aggregateByCVSS,
     aggregateByCreatedTime,
     aggregateByImageSha,
-    defaultCVESortFields,
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
+    getWorkloadSortFields,
+    getDefaultWorkloadSortOption,
 } from '../../utils/sortUtils';
 import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -58,8 +58,8 @@ function RequestCVEsTable({
 }: RequestCVEsTableProps) {
     const { page, perPage, setPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
-        sortFields: defaultCVESortFields,
-        defaultSortOption: CVEsDefaultSort,
+        sortFields: getWorkloadSortFields('CVE'),
+        defaultSortOption: getDefaultWorkloadSortOption('CVE'),
         onSort: () => setPage(1),
     });
 

@@ -12,6 +12,11 @@ var (
 	log = logging.LoggerForModule()
 )
 
+const (
+	timeFormat         = "2006-01-02T15:04Z"
+	extendedTimeFormat = "2006-01-02T15:04:03Z"
+)
+
 // ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp.
 func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golangTimestamp.Timestamp {
 	if gogo == nil {
@@ -54,11 +59,6 @@ func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 	return t
 }
 
-// ConvertTimeToTimestampOrError converts golang time to proto timestamp.
-func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, error) {
-	return gogoTimestamp.TimestampProto(goTime)
-}
-
 // ConvertTimeToTimestampOrNil converts golang time to proto timestamp or if it fails returns nil.
 func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
 	t, err := gogoTimestamp.TimestampProto(goTime)
@@ -76,4 +76,17 @@ func MustConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 		panic(err)
 	}
 	return t
+}
+
+// ConvertTimeString converts a vulnerability time string into a proto timestamp
+func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
+	if str == "" {
+		return nil
+	}
+	if ts, err := time.Parse(timeFormat, str); err == nil {
+		return ConvertTimeToTimestamp(ts)
+	} else if ts, err := time.Parse(extendedTimeFormat, str); err == nil {
+		return ConvertTimeToTimestamp(ts)
+	}
+	return nil
 }

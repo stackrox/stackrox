@@ -1,20 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import {
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
-    Card,
-    CardBody,
-    Button,
-    Toolbar,
-    ToolbarItem,
-} from '@patternfly/react-core';
-import { useApolloClient, useQuery } from '@apollo/client';
+import { PageSection, Title, Flex, FlexItem, Card, CardBody, Button } from '@patternfly/react-core';
+import { gql, useApolloClient, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
+import { Link } from 'react-router-dom';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -29,15 +19,33 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
+import { vulnerabilityNamespaceViewPath } from 'routePaths';
+import {
+    getDefaultWorkloadSortOption,
+    getWorkloadSortFields,
+} from 'Containers/Vulnerabilities/utils/sortUtils';
+import useURLSort from 'hooks/useURLSort';
+import {
+    SearchOption,
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+} from 'Containers/Vulnerabilities/searchOptions';
 import {
     DefaultFilters,
-    EntityTab,
+    WorkloadEntityTab,
     VulnMgmtLocalStorage,
-    entityTabValues,
+    workloadEntityTabValues,
     isVulnMgmtLocalStorage,
 } from '../../types';
-import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
-import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
+import {
+    parseWorkloadQuerySearchFilter,
+    getVulnStateScopedQueryString,
+} from '../../utils/searchUtils';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
@@ -46,6 +54,26 @@ import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
+import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
+import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
+
+const searchOptions: SearchOption[] = [
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+];
+
+export const entityTypeCountsQuery = gql`
+    query getEntityTypeCounts($query: String) {
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        imageCVECount(query: $query)
+    }
+`;
 
 // Merge the default filters with the local filters.
 // - Default filters that were removed are removed from the local filters.
@@ -74,8 +102,11 @@ function mergeDefaultAndLocalFilters(
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+    const hasReadAccessForNamespaces = hasReadWriteAccess('Namespace');
+
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
@@ -85,17 +116,23 @@ function WorkloadCvesOverviewPage() {
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
+    const querySearchFilter = parseWorkloadQuerySearchFilter(searchFilter);
+    const [activeEntityTabKey] = useURLStringUnion('entityTab', workloadEntityTabValues);
 
-    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 } } = useQuery(
-        entityTypeCountsQuery,
-        {
-            variables: {
-                query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
-            },
-        }
-    );
+    const { data } = useQuery<{
+        imageCount: number;
+        imageCVECount: number;
+        deploymentCount: number;
+    }>(entityTypeCountsQuery, {
+        variables: {
+            query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
+        },
+    });
+    const entityCounts = {
+        CVE: data?.imageCVECount ?? 0,
+        Image: data?.imageCount ?? 0,
+        Deployment: data?.deploymentCount ?? 0,
+    };
 
     const defaultStorage: VulnMgmtLocalStorage = {
         preferences: {
@@ -117,6 +154,12 @@ function WorkloadCvesOverviewPage() {
 
     const pagination = useURLPagination(20);
 
+    const sort = useURLSort({
+        sortFields: getWorkloadSortFields(activeEntityTabKey),
+        defaultSortOption: getDefaultWorkloadSortOption(activeEntityTabKey),
+        onSort: () => pagination.setPage(1),
+    });
+
     function updateDefaultFilters(values: DefaultFilters) {
         pagination.setPage(1);
         setStoredValue({ preferences: { defaultFilters: values } });
@@ -129,7 +172,10 @@ function WorkloadCvesOverviewPage() {
         );
     }
 
-    function onEntityTabChange(entityTab: EntityTab) {
+    function onEntityTabChange(entityTab: WorkloadEntityTab) {
+        pagination.setPage(1);
+        sort.setSortOption(getDefaultWorkloadSortOption(entityTab));
+
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {
@@ -165,22 +211,25 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
+    const filterToolbar = (
+        <WorkloadCveFilterToolbar
+            defaultFilters={localStorageValue.preferences.defaultFilters}
+            onFilterChange={() => pagination.setPage(1)}
+            searchOptions={searchOptions}
+        />
+    );
+
+    const entityToggleGroup = (
+        <EntityTypeToggleGroup
+            entityTabs={['CVE', 'Image', 'Deployment']}
+            entityCounts={entityCounts}
+            onChange={onEntityTabChange}
+        />
+    );
+
     return (
         <>
             <PageTitle title="Workload CVEs Overview" />
-            {isFixabilityFiltersEnabled && (
-                <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                    <Toolbar>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
-                            <DefaultFilterModal
-                                defaultFilters={localStorageValue.preferences.defaultFilters}
-                                setLocalStorage={updateDefaultFilters}
-                            />
-                        </ToolbarItem>
-                    </Toolbar>
-                </PageSection>
-            )}
-            <Divider component="div" />
             <PageSection
                 className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
                 variant="light"
@@ -191,8 +240,15 @@ function WorkloadCvesOverviewPage() {
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>
                 </Flex>
-                {hasWriteAccessForWatchedImage && (
-                    <FlexItem>
+                <Flex>
+                    {hasReadAccessForNamespaces && (
+                        <Link to={vulnerabilityNamespaceViewPath}>
+                            <Button variant="secondary" onClick={() => {}}>
+                                Namespace view
+                            </Button>
+                        </Link>
+                    )}
+                    {hasWriteAccessForWatchedImage && (
                         <Button
                             variant="secondary"
                             onClick={() => {
@@ -203,8 +259,14 @@ function WorkloadCvesOverviewPage() {
                         >
                             Manage watched images
                         </Button>
-                    </FlexItem>
-                )}
+                    )}
+                    {isFixabilityFiltersEnabled && (
+                        <DefaultFilterModal
+                            defaultFilters={localStorageValue.preferences.defaultFilters}
+                            setLocalStorage={updateDefaultFilters}
+                        />
+                    )}
+                </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection
@@ -219,18 +281,21 @@ function WorkloadCvesOverviewPage() {
                         <CardBody>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
-                                    defaultFilters={localStorageValue.preferences.defaultFilters}
-                                    countsData={countsData}
+                                    filterToolbar={filterToolbar}
+                                    entityToggleGroup={entityToggleGroup}
+                                    rowCount={entityCounts.CVE}
                                     pagination={pagination}
+                                    sort={sort}
                                     vulnerabilityState={currentVulnerabilityState}
                                     isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
-                                    onEntityTabChange={onEntityTabChange}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
-                                    defaultFilters={localStorageValue.preferences.defaultFilters}
-                                    countsData={countsData}
+                                    filterToolbar={filterToolbar}
+                                    entityToggleGroup={entityToggleGroup}
+                                    rowCount={entityCounts.Image}
+                                    sort={sort}
                                     pagination={pagination}
                                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                                     vulnerabilityState={currentVulnerabilityState}
@@ -243,16 +308,16 @@ function WorkloadCvesOverviewPage() {
                                         setUnwatchImageName(imageName);
                                         unwatchImageModalToggle.openSelect();
                                     }}
-                                    onEntityTabChange={onEntityTabChange}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
-                                    defaultFilters={localStorageValue.preferences.defaultFilters}
-                                    countsData={countsData}
+                                    filterToolbar={filterToolbar}
+                                    entityToggleGroup={entityToggleGroup}
+                                    rowCount={entityCounts.Deployment}
                                     pagination={pagination}
+                                    sort={sort}
                                     vulnerabilityState={currentVulnerabilityState}
-                                    onEntityTabChange={onEntityTabChange}
                                 />
                             )}
                         </CardBody>

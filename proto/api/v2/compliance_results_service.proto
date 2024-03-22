@@ -80,7 +80,7 @@ message ComplianceScanResultsOverview {
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
 message ComplianceProfileScanStats {
-  ComplianceScanStatsShim scan_stats = 1;
+  repeated ComplianceCheckStatusCount check_stats = 1;
   string profile_name = 2;
 }
 
@@ -132,6 +132,11 @@ message ComplianceScanResultsRequest {
   RawQuery query = 2;
 }
 
+message ComplianceProfileResultsRequest {
+  string profile_name = 1;
+  RawQuery query = 2;
+}
+
 service ComplianceResultsService {
   // GetComplianceScanCheckResult returns the specific result by ID
   rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceCheckResult) {
@@ -170,8 +175,18 @@ service ComplianceResultsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
-  rpc GetComplianceProfileScanStats(RawQuery) returns (ListComplianceProfileScanStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile"};
+  rpc GetComplianceProfileStats(ComplianceProfileResultsRequest) returns (ListComplianceProfileScanStatsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profile/{profile_name}"};
+  }
+
+  // GetComplianceProfileScanStats lists current scan stats grouped by profile
+  // Optional RawQuery query fields can be combined.
+  // Commonly used ones include but are not limited to
+  // - scan: id(s) of the compliance scan
+  // - cluster: id(s) of the cluster
+  // - profile: id(s) of the profile
+  rpc GetComplianceProfilesStats(RawQuery) returns (ListComplianceProfileScanStatsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles"};
   }
 
   // GetComplianceClusterScanStats lists current scan stats grouped by cluster

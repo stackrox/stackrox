@@ -69,7 +69,6 @@ require (
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/moby/sys/mountinfo v0.7.1
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.2.0
 	github.com/np-guard/netpol-analyzer v1.0.1
 	github.com/nxadm/tail v1.4.8
@@ -317,6 +316,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
+	github.com/moby/sys/mountinfo v0.7.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -445,30 +445,38 @@ require (
 //
 // The `go mod tidy` takes care of normalizing the symbol version information (e.g. branch name) which is required
 // for Go build tools to accept the `go.mod`.
+
+// @stackrox/core-workflows
 replace (
-	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
-	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20240207122816-e936d453291c
-
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
-
-	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
-	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
-	// so dependabot is not able to check dependecies.
-	// See https://github.com/go-yaml/yaml/issues/772
-	// Therefore we point all to our fork of `go-yaml` - github.com/stackrox/yaml/v2|v3
-	// where we provide the actual `go.sum`.
-	github.com/mikefarah/yamlg/v2 => gopkg.in/yaml.v2 v2.4.0
-
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
+	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
+)
 
-	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
-	// we currently depend on.
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
+// @stackrox/draco
+// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
+// we currently depend on.
+replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
+// @stackrox/merlin
+replace (
+	// Our fork has following features:
+	// - generate MessageClone() and Clone() functions
+	// - error on nil unmarshal instead of panic
+	// - trailing comments propagation to generated code
+	github.com/gogo/protobuf => github.com/stackrox/protobuf v1.2.2-0.20240207122816-e936d453291c
+
+	// Our fork has the following changes:
+	// - fetch signatures without fetching the image manifest
+	// This has been added since we already fetch the image manifest
+	// in a previous step as a prereq.
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20231206143943-626efb842da7
 
-	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
-	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20230918235618-2bd149903d0e
+	// Our fok has following features:
+	// - console log field ordering
+	// - not verbose error logging
+	// TODO(ROX-23217): upgrade to latest version
+	go.uber.org/zap => github.com/stackrox/zap v1.18.2-0.20240314134248-5f932edd0404
+
 	// Our fork has a change exposing a method to do generic POST requests
 	// against the OAuth server in order to realize the refresh token flow.
 	// The problem is that:
@@ -479,6 +487,17 @@ replace (
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20240305225512-3737c3c758df
 
+	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum
+	// so dependabot is not able to check dependecies.
+	// See https://github.com/go-yaml/yaml/issues/772
+	// Therefore we point all to our fork of `go-yaml` - github.com/stackrox/yaml/v2|v3
+	// where we provide the actual `go.sum`.
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
+)
+
+// @stackrox/scanner
+replace (
+	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
 )
