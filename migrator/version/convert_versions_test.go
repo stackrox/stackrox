@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -20,6 +20,6 @@ func TestVersionSerialization(t *testing.T) {
 	conv, err := ConvertVersionToProto(m)
 	assert.NoError(t, err)
 	// ConvertVersionFromProto and ConvertVersionToProto rounds up ts to microseconds, so make sure obj field is also rounded up.
-	protoconv.RoundTimestamp(obj.LastPersisted, time.Microsecond)
+	protoutils.RoundTimestamp(obj.LastPersisted, time.Microsecond)
 	assert.Equal(t, obj, conv)
 }

@@ -7,7 +7,6 @@ import (
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
@@ -123,9 +122,4 @@ func RoundTimestamp(ts *gogoTimestamp.Timestamp, d time.Duration) {
 	}
 	newTS := ConvertTimeToTimestamp(t.Round(d))
 	*ts = *newTS
-}
-
-// ConvertTimestampToProtobuf converts the input microtimestamp to a (Gogo) protobuf representation.
-func ConvertTimestampToProtobuf(ts timestamp.MicroTS) *gogoTimestamp.Timestamp {
-	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
 }

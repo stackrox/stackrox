@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
@@ -66,7 +65,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
 		ScannerHealthStatus:          clusterhealth.PopulateLocalScannerStatus(sInfo),
-		LastContact:                  protoconv.ConvertTimestampToProtobuf(timestamp.Now()),
+		LastContact:                  timestamp.Now().GogoProtobuf(),
 		// When sensor health monitoring is revised update the sensor capability
 		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),
 	}

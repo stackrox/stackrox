@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -116,7 +115,7 @@ func (suite *ManagerTestSuite) TearDownTest() {
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
 	suite.ds = &fakeDS{baselines: make(map[string]*storage.NetworkBaseline)}
 	for _, baseline := range initialBaselines {
-		baseline.ObservationPeriodEnd = protoconv.ConvertTimestampToProtobuf(getNewObservationPeriodEnd())
+		baseline.ObservationPeriodEnd = getNewObservationPeriodEnd().GogoProtobuf()
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	var err error

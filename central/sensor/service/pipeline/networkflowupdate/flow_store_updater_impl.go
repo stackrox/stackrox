@@ -9,7 +9,6 @@ import (
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
@@ -94,7 +93,7 @@ func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp
 			Props: indicator.ToNetworkFlowPropertiesProto(),
 		}
 		if ts != 0 {
-			toBeUpserted.LastSeenTimestamp = protoconv.ConvertTimestampToProtobuf(ts)
+			toBeUpserted.LastSeenTimestamp = ts.GogoProtobuf()
 		}
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
 	}

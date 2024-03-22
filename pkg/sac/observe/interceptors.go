@@ -6,7 +6,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"google.golang.org/grpc"
 )
@@ -42,8 +41,8 @@ func AuthzTraceHTTPInterceptor(authzTraceSink AuthzTraceSink) httputil.HTTPInter
 
 func sendAuthzTrace(ctx context.Context, authzTraceSink AuthzTraceSink, rpcMethod string, handlerErr error, trace *AuthzTrace) {
 	traceResp := &v1.AuthorizationTraceResponse{
-		ArrivedAt:   protoconv.ConvertTimestampToProtobuf(trace.arrivedAt.LoadAtomic()),
-		ProcessedAt: protoconv.ConvertTimestampToProtobuf(timestamp.Now()),
+		ArrivedAt:   trace.arrivedAt.LoadAtomic().GogoProtobuf(),
+		ProcessedAt: timestamp.Now().GogoProtobuf(),
 		Request:     calculateRequest(ctx, rpcMethod),
 		Response:    calculateResponse(handlerErr),
 		User:        calculateUser(ctx),
