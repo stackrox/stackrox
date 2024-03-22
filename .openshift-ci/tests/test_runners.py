@@ -255,3 +255,13 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         post_skipped_test.run.assert_not_called()
         test3.run.assert_called_once()
         post_test3.run.assert_called_once()
+
+    def test_final_post_failure_is_reported_as_such(self):
+        test1 = Mock()
+        test2 = Mock()
+        final_post = Mock()
+        final_post.run.side_effect = Exception("final post oops")
+        with self.assertRaisesRegex(Exception, "final post oops"):
+            ClusterTestSetsRunner(
+                sets=[{"test": test1}, {"test": test2}],
+                final_post=final_post).run()
