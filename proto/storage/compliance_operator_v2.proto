@@ -239,10 +239,13 @@ message ComplianceOperatorSuiteV2 {
   ComplianceOperatorStatus status = 4;
 }
 
-// Next Tag: 3
+// Next Tag: 6
 message ComplianceOperatorBenchmark {
   string id = 1; // @gotags: sql:"pk,id,type(uuid)"
   string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
+  string version = 3;
+  string description = 4;
+  string profile_label = 5;
 }
 
 // TODO: Combined primary key for benchmark_id and rule_id
