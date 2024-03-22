@@ -254,7 +254,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 sets=[{"test": test1},], cluster=cluster).run()
 
-    def test_can_skip_on_earlier_failure(self):
+    def test_can_skip(self):
         test1 = Mock()
         test1.run.side_effect = Exception("test1 oops")
         skipped_test = Mock()
