@@ -132,6 +132,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
             </>
         );
     }
+    console.log('selectedNetworkPolicy', selectedNetworkPolicy);
 
     return (
         <div className="pf-v5-u-h-100 pf-v5-u-p-md">
@@ -162,31 +163,32 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         </>
                     </SelectSingle>
                 </StackItem>
-                {selectedNetworkPolicy && (
-                    <StackItem>
-                        <div className="pf-v5-u-h-100">
-                            <CodeEditor
-                                isDarkTheme={customDarkMode}
-                                customControls={
-                                    <CodeEditorDarkModeControl
-                                        isDarkMode={customDarkMode}
-                                        onToggleDarkMode={onToggleDarkMode}
-                                    />
-                                }
-                                isCopyEnabled
-                                isLineNumbersVisible
-                                isReadOnly
-                                code={selectedNetworkPolicy.yaml}
-                                language={Language.yaml}
-                                height="300px"
-                            />
-                        </div>
-                    </StackItem>
-                )}
-                {selectedNetworkPolicy && (
-                    <StackItem>
-                        <Button onClick={exportYAMLHandler}>Export YAML</Button>
-                    </StackItem>
+                {!!selectedNetworkPolicy?.yaml && (
+                    <>
+                        <StackItem>
+                            {console.log('hi')}
+                            <div className="pf-v5-u-h-100">
+                                <CodeEditor
+                                    isDarkTheme={customDarkMode}
+                                    customControls={
+                                        <CodeEditorDarkModeControl
+                                            isDarkMode={customDarkMode}
+                                            onToggleDarkMode={onToggleDarkMode}
+                                        />
+                                    }
+                                    isCopyEnabled
+                                    isLineNumbersVisible
+                                    isReadOnly
+                                    code={selectedNetworkPolicy.yaml}
+                                    language={Language.yaml}
+                                    height="300px"
+                                />
+                            </div>
+                        </StackItem>
+                        <StackItem>
+                            <Button onClick={exportYAMLHandler}>Export YAML</Button>
+                        </StackItem>
+                    </>
                 )}
             </Stack>
         </div>
