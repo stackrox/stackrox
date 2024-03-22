@@ -174,6 +174,12 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         ClusterTestSetsRunner(cluster=cluster).run()
         cluster.teardown.assert_called_once()
 
+    def test_runs_initial_pre_test(self):
+        initial_pre_test = Mock()
+        ClusterTestSetsRunner(initial_pre_test=initial_pre_test,
+                              sets=[{}]).run()
+        initial_pre_test.run.assert_called_once()
+
     def test_runs_pre_test(self):
         pre_test = Mock()
         ClusterTestSetsRunner(sets=[{"pre_test": pre_test}]).run()

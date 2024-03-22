@@ -19,10 +19,12 @@ class ClusterTestSetsRunner:
 
     def __init__(
         self,
+        initial_pre_test=NullPreTest(),
         cluster=NullCluster(),
         final_post=NullPostTest(),
         sets=None,
     ):
+        self.initial_pre_test = initial_pre_test
         self.cluster = cluster
         self.final_post = final_post
         if sets is None:
@@ -30,6 +32,14 @@ class ClusterTestSetsRunner:
         self.sets = sets
 
     def run(self):
+        try:
+            self.log_event("About to run initial pre test")
+            self.initial_pre_test.run()
+            self.log_event("initial pre test completed")
+        except Exception as err:
+            self.log_event(f"ERROR: initial pre test failed [{err}]")
+            raise err
+
         hold = None
         try:
             self.log_event("About to provision")
