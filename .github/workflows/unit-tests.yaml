@@ -65,9 +65,10 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'junit-reports'
 
@@ -116,9 +117,10 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'junit-reports'
 
@@ -192,9 +194,10 @@ jobs:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'ui/apps/platform/test-results/reports'
 
@@ -226,9 +229,10 @@ jobs:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'roxctl-test-output'
 
@@ -255,9 +259,10 @@ jobs:
         paths: 'shell-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'shell-test-output'
 
