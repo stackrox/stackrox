@@ -101,7 +101,7 @@ func (s *PostgresExternalManagerSuite) TestGetCloneFreshExternal() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(externalDB, clone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -113,7 +113,7 @@ func (s *PostgresExternalManagerSuite) TestGetRestoreFromRocksExternal() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, true)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, externalDB)
 	s.True(migrateRocks)
 	s.Nil(err)
@@ -171,7 +171,7 @@ func (s *PostgresExternalManagerSuite) TestExternalMigrateRocks() {
 	}
 
 	// No central_active exists so we return the temp clone to use and migrate to rocks
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion)
 	s.Equal(clone, externalDB)
 	s.True(migrateRocks)
 	s.Nil(err)
@@ -187,7 +187,7 @@ func (s *PostgresExternalManagerSuite) TestExternalMigrateRocks() {
 	// Need to re-scan to get the updated clone version
 	s.Nil(dbm.Scan())
 	// Need to use the Postgres database so migrateRocks will be false.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
 	s.Equal(clone, externalDB)
 	s.True(migrateRocks)
 	s.Nil(err)
@@ -203,7 +203,7 @@ func (s *PostgresExternalManagerSuite) TestExternalMigrateRocks() {
 	// Need to re-scan to get the updated clone version
 	s.Nil(dbm.Scan())
 	// Need to use the Postgres database so migrateRocks will be false.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
 	s.Equal(clone, externalDB)
 	s.False(migrateRocks)
 	s.Nil(err)
