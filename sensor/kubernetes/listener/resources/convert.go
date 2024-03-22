@@ -388,7 +388,7 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 // The image in a workload's spec may differ from what the container runtime pulls,
 // therefore the image name must be updated to accurately reflect the pulled image
 // to give downstream processes (like scanning) a better chance at completing.
-func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName *storage.ImageName, updDigest bool) {
+func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName *storage.ImageName, updateDigest bool) {
 	if !features.UnqualifiedSearchRegistries.Enabled() || image.GetName() == nil || newerImageName == nil {
 		return
 	}
@@ -399,7 +399,7 @@ func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName
 		imageName.Registry = newerImageName.GetRegistry()
 		imageName.Remote = newerImageName.GetRemote()
 
-		if updDigest {
+		if updateDigest {
 			imageUtils.NormalizeImageFullName(imageName, image.GetId())
 		} else {
 			imageUtils.NormalizeImageFullNameNoSha(imageName)
