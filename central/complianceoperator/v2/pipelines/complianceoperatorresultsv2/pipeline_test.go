@@ -157,6 +157,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Rationale:      "test rationale",
 		ValuesUsed:     []string{"var1", "var2"},
 		Warnings:       []string{"warning1", "warning2"},
-		ScanRefId:      internaltov2storage.BuildScanRefID(clusterID, mockScanName),
+		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, mockScanName),
+		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, ""),
 	}
 }

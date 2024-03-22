@@ -18,11 +18,11 @@ func BuildProfileRefID(clusterID string, profileID string, productType string) s
 	return buildDeterministicID(interimUUID, productType)
 }
 
-// BuildScanRefID returns a UUID based off cluster and scan name to simplify SQL joins in SELECT statements.
+// BuildNameRefID returns a UUID based off cluster and scan name to simplify SQL joins in SELECT statements.
 // This is necessary due to how the compliance operator objects relate to each other and the fields
 // used in those relations will have same values across clusters.
-func BuildScanRefID(clusterID string, scanName string) string {
-	return buildDeterministicID(clusterID, scanName)
+func BuildNameRefID(clusterID string, name string) string {
+	return buildDeterministicID(clusterID, name)
 }
 
 func buildDeterministicID(part1 string, part2 string) string {
