@@ -265,3 +265,16 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 sets=[{"test": test1}, {"test": test2}],
                 final_post=final_post).run()
+
+    def test_initial_pre_test_failure_ends_the_set(self):
+        initial_pre_test = Mock()
+        initial_pre_test.run.side_effect = Exception("initial pre test oops")
+        test1 = Mock()
+        final_post = Mock()
+        with self.assertRaisesRegex(Exception, "initial pre test oops"):
+            ClusterTestSetsRunner(
+                initial_pre_test=initial_pre_test,
+                sets=[{"test": test1}],
+                final_post=final_post).run()
+        test1.run.assert_not_called()
+        final_post.run.assert_not_called()
