@@ -266,15 +266,19 @@ class TestClusterTestSetsRunner(unittest.TestCase):
                 sets=[{"test": test1}, {"test": test2}],
                 final_post=final_post).run()
 
-    def test_initial_pre_test_failure_ends_the_set(self):
+    def test_initial_pre_test_failure_skips_the_set(self):
         initial_pre_test = Mock()
         initial_pre_test.run.side_effect = Exception("initial pre test oops")
+        cluster = Mock()
         test1 = Mock()
         final_post = Mock()
         with self.assertRaisesRegex(Exception, "initial pre test oops"):
             ClusterTestSetsRunner(
                 initial_pre_test=initial_pre_test,
+                cluster=cluster,
                 sets=[{"test": test1}],
                 final_post=final_post).run()
         test1.run.assert_not_called()
-        final_post.run.assert_not_called()
+        # and keeps the cluster teardown and final post
+        cluster.teardown.assert_called()
+        final_post.run.assert_called()
