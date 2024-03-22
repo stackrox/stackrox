@@ -8,6 +8,9 @@ inputs:
     description: 'Weather to report failures to jira'
     required: false
     default: 'true'
+  gcp-account:
+    description: 'Account to be used to upload tests data'
+    required: true
   jira-token:
     description: 'Token used to authenticate with Jira.'
     required: true
@@ -36,7 +39,7 @@ runs:
   - name: Check files
     shell: bash
     env:
-      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     run: |
       local extra_args=()
