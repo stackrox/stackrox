@@ -10,6 +10,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
+	"github.com/stackrox/rox/central/notifiers/validation"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
@@ -69,9 +70,11 @@ func (u *notifierUpdater) Upsert(ctx context.Context, m protocompat.Message) err
 			return errors.Errorf("Error securing declarative config notifier %s, notifications to this notifier will fail", notifierProto.GetName())
 		}
 	}
-	_, err := u.notifierDS.UpsertNotifier(ctx, notifierProto)
-	if err != nil {
-		return err
+	if err := validation.ValidateNotifierConfig(notifierProto, true); err != nil {
+		return errox.InvalidArgs.CausedBy(err)
+	}
+	if _, err := u.notifierDS.UpsertNotifier(ctx, notifierProto); err != nil {
+		return errors.Wrap(err, "storing notifier")
 	}
 	notifier, err := notifiers.CreateNotifier(notifierProto)
 	if err != nil {
