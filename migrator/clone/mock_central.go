@@ -141,7 +141,10 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) error 
 		seqNum:    migrations.CurrentDBVersionSeqNum(),
 		minSeqNum: migrations.MinimumSupportedDBVersionSeqNum()}
 
-	m.migrateWithVersion(ver, breakpoint, "")
+	if err := m.migrateWithVersion(ver, breakpoint, ""); err != nil {
+		return err
+	}
+	
 	// Re-run migrator if the previous one breaks
 	if breakpoint != "" {
 		if err := m.runMigrator("", ""); err != nil {
@@ -279,7 +282,10 @@ func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string, rocksT
 }
 
 func (m *mockCentral) rollbackCentral(ver *versionPair, breakpoint string, forceRollback string) error {
-	m.migrateWithVersion(ver, breakpoint, forceRollback)
+	if err := m.migrateWithVersion(ver, breakpoint, forceRollback); err != nil {
+		return err
+	}
+
 	if breakpoint != "" {
 		if err := m.runMigrator("", ""); err != nil {
 			return err
