@@ -3,12 +3,12 @@ package all
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperator/complianceoperatorinfo"
 	"github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperatorprofiles"
 	"github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperatorresults"
 	"github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperatorrules"
 	"github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperatorscans"
 	"github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperatorscansettingbinding"
+	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorinfo"
 	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorprofilesv2"
 	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorresultsv2"
 	"github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorrulesv2"
