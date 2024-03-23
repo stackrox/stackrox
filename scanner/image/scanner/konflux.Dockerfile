@@ -19,6 +19,7 @@ WORKDIR /src
 
 RUN scripts/konflux/fail-build-if-git-is-dirty.sh
 
+RUN env
 RUN make -C scanner NODEPS=1 CGO_ENABLED=${CGO_ENABLED} image/scanner/bin/scanner copy-scripts
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
