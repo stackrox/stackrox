@@ -7,6 +7,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -33,7 +34,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoNotificationSchedules(ctx context.Context, tx *postgres.Tx, obj *storage.NotificationSchedule) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := protocompat.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}

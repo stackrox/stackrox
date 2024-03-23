@@ -4,11 +4,12 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertBlobFromProto converts a `*storage.Blob` to Gorm model
 func ConvertBlobFromProto(obj *storage.Blob) (*Blobs, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}

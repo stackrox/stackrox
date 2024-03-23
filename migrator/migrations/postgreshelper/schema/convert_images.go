@@ -9,7 +9,7 @@ import (
 
 // ConvertImageFromProto converts a `*storage.Image` to Gorm model
 func ConvertImageFromProto(obj *storage.Image) (*Images, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
