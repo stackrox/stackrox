@@ -768,6 +768,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		return 0, err
 	}
 	queryStr := query.AsSQL()
+	log.Infof("[Cve->IsFixable] Query is %s and Vars are [%v]", queryStr, query.Data)
 
 	return pgutils.Retry2(func() (int, error) {
 		var count int
@@ -775,6 +776,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 		if err := row.Scan(&count); err != nil {
 			return 0, errors.Wrapf(err, "error executing query %s", queryStr)
 		}
+		log.Infof("[Cve->IsFixable] Count is %d", count)
 		return count, nil
 	})
 }
