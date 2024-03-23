@@ -1,0 +1,7 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "test default collection method is CORE_BPF"
+  expect: |
+   envVars(.daemonsets.collector; "collector")["COLLECTION_METHOD"] | assertThat(. == "CORE_BPF")
