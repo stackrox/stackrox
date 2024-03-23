@@ -3,7 +3,9 @@ package cscc
 import (
 	"context"
 	"net/http"
+	"time"
 
+	"cloud.google.com/go/iam/apiv1/iampb"
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
 	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/googleapis/gax-go/v2"
@@ -140,8 +142,22 @@ func (c *cscc) ProtoNotifier() *storage.Notifier {
 	return c.Notifier
 }
 
-func (c *cscc) Test(context.Context) *notifiers.NotifierError {
-	return notifiers.NewNotifierError("Test is not yet implemented for Cloud SCC", nil)
+func (c *cscc) Test(ctx context.Context) *notifiers.NotifierError {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	req := &iampb.TestIamPermissionsRequest{
+		Resource:    c.config.SourceID,
+		Permissions: []string{"securitycenter.findings.update"},
+	}
+	policy, err := c.client.TestIamPermissions(ctx, req)
+	if err != nil {
+		return notifiers.NewNotifierError("failed to get IAM policy", err)
+	}
+	if len(policy.Permissions) == 0 {
+		return notifiers.NewNotifierError("not authorized to create or update findings", err)
+	}
+	return nil
 }
 
 func (c *cscc) getCluster(id string, clusterDatastore clusterDatastore.DataStore) (*storage.Cluster, error) {
