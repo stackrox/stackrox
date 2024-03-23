@@ -29,8 +29,18 @@ func TestWriteError(t *testing.T) {
 			expectedStatus: 404,
 		},
 		{
+			name:           "HTTPError.code is propagated to response header with a message",
+			incomingErr:    errors.WithMessage(NewError(404, "Origin: HTTPError"), "with message"),
+			expectedStatus: 404,
+		},
+		{
 			name:           "gRPC's Status.code is propagated to response header",
 			incomingErr:    status.New(codes.NotFound, "Origin: gRPC Status").Err(),
+			expectedStatus: 404,
+		},
+		{
+			name:           "gRPC's Status.code is propagated to response header",
+			incomingErr:    errors.WithMessage(status.New(codes.NotFound, "Origin: gRPC Status").Err(), "with message"),
 			expectedStatus: 404,
 		},
 		{
