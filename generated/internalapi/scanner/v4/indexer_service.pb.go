@@ -504,6 +504,131 @@ func (m *GetOrCreateIndexReportRequest) Clone() *GetOrCreateIndexReportRequest {
 	return cloned
 }
 
+type DeleteIndexReportsRequest struct {
+	HashIds              []string `protobuf:"bytes,1,rep,name=hash_ids,json=hashIds,proto3" json:"hash_ids,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteIndexReportsRequest) Reset()         { *m = DeleteIndexReportsRequest{} }
+func (m *DeleteIndexReportsRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteIndexReportsRequest) ProtoMessage()    {}
+func (*DeleteIndexReportsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3b3d06b94183d906, []int{6}
+}
+func (m *DeleteIndexReportsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteIndexReportsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteIndexReportsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteIndexReportsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteIndexReportsRequest.Merge(m, src)
+}
+func (m *DeleteIndexReportsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteIndexReportsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteIndexReportsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteIndexReportsRequest proto.InternalMessageInfo
+
+func (m *DeleteIndexReportsRequest) GetHashIds() []string {
+	if m != nil {
+		return m.HashIds
+	}
+	return nil
+}
+
+func (m *DeleteIndexReportsRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DeleteIndexReportsRequest) Clone() *DeleteIndexReportsRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DeleteIndexReportsRequest)
+	*cloned = *m
+
+	if m.HashIds != nil {
+		cloned.HashIds = make([]string, len(m.HashIds))
+		copy(cloned.HashIds, m.HashIds)
+	}
+	return cloned
+}
+
+type DeleteIndexReportsResponse struct {
+	// TODO
+	Success              bool     `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteIndexReportsResponse) Reset()         { *m = DeleteIndexReportsResponse{} }
+func (m *DeleteIndexReportsResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteIndexReportsResponse) ProtoMessage()    {}
+func (*DeleteIndexReportsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3b3d06b94183d906, []int{7}
+}
+func (m *DeleteIndexReportsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteIndexReportsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteIndexReportsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteIndexReportsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteIndexReportsResponse.Merge(m, src)
+}
+func (m *DeleteIndexReportsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteIndexReportsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteIndexReportsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteIndexReportsResponse proto.InternalMessageInfo
+
+func (m *DeleteIndexReportsResponse) GetSuccess() bool {
+	if m != nil {
+		return m.Success
+	}
+	return false
+}
+
+func (m *DeleteIndexReportsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DeleteIndexReportsResponse) Clone() *DeleteIndexReportsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DeleteIndexReportsResponse)
+	*cloned = *m
+
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*ContainerImageLocator)(nil), "scanner.v4.ContainerImageLocator")
 	proto.RegisterType((*CreateIndexReportRequest)(nil), "scanner.v4.CreateIndexReportRequest")
@@ -511,6 +636,8 @@ func init() {
 	proto.RegisterType((*HasIndexReportRequest)(nil), "scanner.v4.HasIndexReportRequest")
 	proto.RegisterType((*HasIndexReportResponse)(nil), "scanner.v4.HasIndexReportResponse")
 	proto.RegisterType((*GetOrCreateIndexReportRequest)(nil), "scanner.v4.GetOrCreateIndexReportRequest")
+	proto.RegisterType((*DeleteIndexReportsRequest)(nil), "scanner.v4.DeleteIndexReportsRequest")
+	proto.RegisterType((*DeleteIndexReportsResponse)(nil), "scanner.v4.DeleteIndexReportsResponse")
 }
 
 func init() {
@@ -518,32 +645,36 @@ func init() {
 }
 
 var fileDescriptor_3b3d06b94183d906 = []byte{
-	// 393 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x53, 0xcd, 0xea, 0xd3, 0x40,
-	0x10, 0xff, 0xa7, 0x85, 0xb6, 0x8e, 0x50, 0xeb, 0x62, 0xdb, 0x10, 0x30, 0x68, 0xf0, 0x60, 0x41,
-	0x52, 0xa9, 0x7d, 0x82, 0xf6, 0xd0, 0x06, 0x0a, 0x42, 0x2e, 0x82, 0x08, 0x61, 0x4d, 0x06, 0xbb,
-	0xd0, 0xee, 0xc6, 0xdd, 0x4d, 0xec, 0x8b, 0x08, 0xe2, 0x13, 0x79, 0xf4, 0x11, 0x24, 0xbe, 0x88,
-	0x24, 0x69, 0xb5, 0xa9, 0x49, 0xa1, 0xb7, 0xff, 0x2d, 0x93, 0x99, 0xdf, 0xc7, 0x7c, 0x2c, 0xbc,
-	0x62, 0x5c, 0xa3, 0xe4, 0x74, 0x47, 0x63, 0x36, 0x55, 0x21, 0xe5, 0x1c, 0xe5, 0x34, 0x9d, 0x4f,
-	0x19, 0x8f, 0xf0, 0x80, 0x32, 0x50, 0x28, 0x53, 0x16, 0xa2, 0x1b, 0x4b, 0xa1, 0x05, 0x81, 0x63,
-	0x85, 0x9b, 0xce, 0xad, 0xc9, 0x35, 0x64, 0x20, 0x31, 0x16, 0x52, 0x97, 0x30, 0x87, 0xc2, 0x70,
-	0x29, 0xb8, 0xa6, 0x8c, 0xa3, 0xf4, 0xf6, 0xf4, 0x13, 0x6e, 0x44, 0x48, 0xb5, 0x90, 0x64, 0x00,
-	0xed, 0x44, 0xee, 0x4c, 0xe3, 0x99, 0xf1, 0xf2, 0x81, 0x9f, 0x7f, 0x12, 0x0b, 0x7a, 0x89, 0xca,
-	0x69, 0xf7, 0x68, 0xb6, 0x8a, 0xdf, 0x7f, 0xe3, 0x3c, 0x17, 0x53, 0xa5, 0xbe, 0x08, 0x19, 0x99,
-	0xed, 0x32, 0x77, 0x8a, 0x9d, 0xaf, 0x06, 0x98, 0x4b, 0x89, 0x54, 0xa3, 0x97, 0xeb, 0xfb, 0x85,
-	0xbc, 0x8f, 0x9f, 0x13, 0x54, 0x9a, 0x8c, 0xa1, 0xbb, 0xa5, 0x6a, 0x1b, 0xb0, 0xe8, 0x28, 0xd5,
-	0xc9, 0x43, 0x2f, 0x22, 0x1b, 0x78, 0x14, 0x9e, 0x8c, 0x05, 0x2c, 0x77, 0x56, 0x88, 0x3e, 0x9c,
-	0x3d, 0x77, 0xff, 0x75, 0xea, 0xd6, 0x7a, 0x5f, 0xdf, 0xf9, 0xfd, 0xb0, 0x92, 0x58, 0x10, 0x18,
-	0x48, 0x54, 0x22, 0x91, 0x21, 0x06, 0xbb, 0xb2, 0xca, 0x79, 0x0d, 0xc3, 0x15, 0xea, 0x1b, 0x3c,
-	0xe5, 0x88, 0x35, 0x55, 0xb7, 0x21, 0x46, 0x97, 0x08, 0x15, 0x0b, 0xae, 0x90, 0x8c, 0xa0, 0x83,
-	0x07, 0xa6, 0xb4, 0x2a, 0x10, 0x3d, 0xff, 0x18, 0x39, 0xdf, 0x0d, 0x78, 0xba, 0x42, 0xfd, 0x56,
-	0xde, 0xc3, 0x91, 0xcd, 0xb2, 0x16, 0x74, 0xbd, 0xf2, 0xfc, 0x88, 0x0f, 0x8f, 0xff, 0xb3, 0x48,
-	0x5e, 0x54, 0x94, 0x1a, 0x3a, 0xb0, 0xc6, 0xe7, 0x55, 0xe7, 0xf0, 0x0d, 0xf4, 0xab, 0x2b, 0x21,
-	0x15, 0xeb, 0xb5, 0xeb, 0x6a, 0x66, 0xfb, 0x00, 0xa3, 0xfa, 0x49, 0x92, 0xc9, 0x05, 0x6b, 0xf3,
-	0xb4, 0x9b, 0xd9, 0xdf, 0x41, 0xbf, 0xba, 0xda, 0xaa, 0xd7, 0xda, 0x43, 0xb1, 0x9c, 0x6b, 0x25,
-	0xe5, 0x65, 0x2c, 0x9e, 0xfc, 0xc8, 0x6c, 0xe3, 0x67, 0x66, 0x1b, 0xbf, 0x32, 0xdb, 0xf8, 0xf6,
-	0xdb, 0xbe, 0x7b, 0xdf, 0x4a, 0xe7, 0x1f, 0x3b, 0xc5, 0x7b, 0x7d, 0xf3, 0x27, 0x00, 0x00, 0xff,
-	0xff, 0x16, 0x98, 0xeb, 0x22, 0x16, 0x04, 0x00, 0x00,
+	// 458 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x54, 0xef, 0x6a, 0x13, 0x41,
+	0x10, 0xef, 0x35, 0x90, 0xa4, 0x23, 0xc4, 0xba, 0xd8, 0xf4, 0x7a, 0x60, 0xd0, 0x43, 0xa5, 0x05,
+	0x49, 0xa4, 0x86, 0x3e, 0x40, 0x2b, 0xb4, 0x81, 0x80, 0x70, 0x5f, 0x04, 0x11, 0x8e, 0x75, 0x33,
+	0xd8, 0x85, 0x74, 0xf7, 0xdc, 0xd9, 0x3b, 0xfb, 0x22, 0x82, 0xf8, 0x42, 0xfa, 0xd1, 0x47, 0x90,
+	0xf8, 0x22, 0xb2, 0xf7, 0x47, 0x73, 0xed, 0x5d, 0xa5, 0xdf, 0xfa, 0xed, 0xe6, 0x66, 0x7e, 0x33,
+	0xbf, 0xf9, 0xcd, 0x8f, 0x85, 0x17, 0x52, 0x59, 0x34, 0x8a, 0x2f, 0x79, 0x22, 0x27, 0x24, 0xb8,
+	0x52, 0x68, 0x26, 0xd9, 0x74, 0x22, 0xd5, 0x02, 0x2f, 0xd1, 0xc4, 0x84, 0x26, 0x93, 0x02, 0xc7,
+	0x89, 0xd1, 0x56, 0x33, 0x28, 0x2b, 0xc6, 0xd9, 0x34, 0x38, 0xb8, 0x09, 0x19, 0x1b, 0x4c, 0xb4,
+	0xb1, 0x05, 0x2c, 0xe4, 0xb0, 0x73, 0xa2, 0x95, 0xe5, 0x52, 0xa1, 0x99, 0x5d, 0xf0, 0x8f, 0x38,
+	0xd7, 0x82, 0x5b, 0x6d, 0xd8, 0x36, 0x74, 0x52, 0xb3, 0xf4, 0xbd, 0xc7, 0xde, 0xfe, 0x56, 0xe4,
+	0x3e, 0x59, 0x00, 0xfd, 0x94, 0x5c, 0xdb, 0x0b, 0xf4, 0x37, 0xf3, 0xdf, 0x7f, 0x63, 0x97, 0x4b,
+	0x38, 0xd1, 0x67, 0x6d, 0x16, 0x7e, 0xa7, 0xc8, 0x55, 0x71, 0xf8, 0xc5, 0x03, 0xff, 0xc4, 0x20,
+	0xb7, 0x38, 0x73, 0xf3, 0xa3, 0x7c, 0x7c, 0x84, 0x9f, 0x52, 0x24, 0xcb, 0x76, 0xa1, 0x77, 0xce,
+	0xe9, 0x3c, 0x96, 0x8b, 0x72, 0x54, 0xd7, 0x85, 0xb3, 0x05, 0x9b, 0xc3, 0x7d, 0x51, 0x11, 0x8b,
+	0xa5, 0x63, 0x96, 0x0f, 0xbd, 0x77, 0xf8, 0x64, 0xfc, 0x6f, 0xd3, 0x71, 0x23, 0xf7, 0xb3, 0x8d,
+	0x68, 0x20, 0x6a, 0x89, 0x63, 0x06, 0xdb, 0x06, 0x49, 0xa7, 0x46, 0x60, 0xbc, 0x2c, 0xaa, 0xc2,
+	0x97, 0xb0, 0x73, 0x8a, 0xf6, 0x16, 0x9c, 0x1c, 0xe2, 0x8c, 0xd3, 0xed, 0x10, 0xc3, 0xab, 0x08,
+	0x4a, 0xb4, 0x22, 0x64, 0x43, 0xe8, 0xe2, 0xa5, 0x24, 0x4b, 0x39, 0xa2, 0x1f, 0x95, 0x51, 0xf8,
+	0xcd, 0x83, 0x47, 0xa7, 0x68, 0xdf, 0x98, 0xbb, 0x28, 0xd9, 0x11, 0xec, 0xbd, 0xc6, 0x25, 0xd6,
+	0x68, 0x51, 0xc5, 0x6b, 0x0f, 0xfa, 0x25, 0x2f, 0xb7, 0x53, 0x67, 0x7f, 0x2b, 0xea, 0x15, 0xc4,
+	0x28, 0x3c, 0x82, 0xa0, 0x09, 0x57, 0x4a, 0xe1, 0x43, 0x8f, 0x52, 0x21, 0x90, 0x2a, 0x2d, 0xaa,
+	0xf0, 0xf0, 0x7b, 0x07, 0x7a, 0xb3, 0xc2, 0xee, 0x2c, 0x82, 0x07, 0xd7, 0x24, 0x61, 0x4f, 0x6b,
+	0x9b, 0xb5, 0x28, 0x16, 0xec, 0xae, 0x57, 0xad, 0xc3, 0xe7, 0x30, 0xa8, 0x5b, 0x80, 0xd5, 0xa4,
+	0x6a, 0xb4, 0x47, 0x7b, 0xb7, 0xf7, 0x30, 0x6c, 0xbe, 0x1c, 0x3b, 0xb8, 0xd2, 0xb5, 0xfd, 0xba,
+	0xed, 0xdd, 0xdf, 0xc2, 0xa0, 0x6e, 0xa5, 0x3a, 0xd7, 0x46, 0x63, 0x06, 0xe1, 0x4d, 0x25, 0xa5,
+	0xfc, 0x02, 0xd8, 0xf5, 0xe3, 0xb0, 0x67, 0xeb, 0xc8, 0xd6, 0xa3, 0x07, 0xcf, 0xff, 0x57, 0x56,
+	0x0c, 0x39, 0x7e, 0xf8, 0x63, 0x35, 0xf2, 0x7e, 0xae, 0x46, 0xde, 0xaf, 0xd5, 0xc8, 0xfb, 0xfa,
+	0x7b, 0xb4, 0xf1, 0x6e, 0x33, 0x9b, 0x7e, 0xe8, 0xe6, 0x8f, 0xd0, 0xab, 0x3f, 0x01, 0x00, 0x00,
+	0xff, 0xff, 0x51, 0xdc, 0xc9, 0xed, 0xeb, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -568,6 +699,8 @@ type IndexerClient interface {
 	GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error)
+	// DeleteIndexReports deletes the index reports associated with the given hash IDs, if they exist.
+	DeleteIndexReports(ctx context.Context, in *DeleteIndexReportsRequest, opts ...grpc.CallOption) (*DeleteIndexReportsResponse, error)
 }
 
 type indexerClient struct {
@@ -614,6 +747,15 @@ func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRe
 	return out, nil
 }
 
+func (c *indexerClient) DeleteIndexReports(ctx context.Context, in *DeleteIndexReportsRequest, opts ...grpc.CallOption) (*DeleteIndexReportsResponse, error) {
+	out := new(DeleteIndexReportsResponse)
+	err := c.cc.Invoke(ctx, "/scanner.v4.Indexer/DeleteIndexReports", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IndexerServer is the server API for Indexer service.
 type IndexerServer interface {
 	// CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -626,6 +768,8 @@ type IndexerServer interface {
 	GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
+	// DeleteIndexReports deletes the index reports associated with the given hash IDs, if they exist.
+	DeleteIndexReports(context.Context, *DeleteIndexReportsRequest) (*DeleteIndexReportsResponse, error)
 }
 
 // UnimplementedIndexerServer can be embedded to have forward compatible implementations.
@@ -643,6 +787,9 @@ func (*UnimplementedIndexerServer) GetOrCreateIndexReport(ctx context.Context, r
 }
 func (*UnimplementedIndexerServer) HasIndexReport(ctx context.Context, req *HasIndexReportRequest) (*HasIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
+}
+func (*UnimplementedIndexerServer) DeleteIndexReports(ctx context.Context, req *DeleteIndexReportsRequest) (*DeleteIndexReportsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIndexReports not implemented")
 }
 
 func RegisterIndexerServer(s *grpc.Server, srv IndexerServer) {
@@ -721,6 +868,24 @@ func _Indexer_HasIndexReport_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Indexer_DeleteIndexReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteIndexReportsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IndexerServer).DeleteIndexReports(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scanner.v4.Indexer/DeleteIndexReports",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IndexerServer).DeleteIndexReports(ctx, req.(*DeleteIndexReportsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Indexer_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "scanner.v4.Indexer",
 	HandlerType: (*IndexerServer)(nil),
@@ -740,6 +905,10 @@ var _Indexer_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HasIndexReport",
 			Handler:    _Indexer_HasIndexReport_Handler,
+		},
+		{
+			MethodName: "DeleteIndexReports",
+			Handler:    _Indexer_DeleteIndexReports_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1027,6 +1196,79 @@ func (m *GetOrCreateIndexReportRequest_ContainerImage) MarshalToSizedBuffer(dAtA
 	}
 	return len(dAtA) - i, nil
 }
+func (m *DeleteIndexReportsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteIndexReportsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteIndexReportsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.HashIds) > 0 {
+		for iNdEx := len(m.HashIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.HashIds[iNdEx])
+			copy(dAtA[i:], m.HashIds[iNdEx])
+			i = encodeVarintIndexerService(dAtA, i, uint64(len(m.HashIds[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteIndexReportsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteIndexReportsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteIndexReportsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Success {
+		i--
+		if m.Success {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintIndexerService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovIndexerService(v)
 	base := offset
@@ -1168,6 +1410,38 @@ func (m *GetOrCreateIndexReportRequest_ContainerImage) Size() (n int) {
 	if m.ContainerImage != nil {
 		l = m.ContainerImage.Size()
 		n += 1 + l + sovIndexerService(uint64(l))
+	}
+	return n
+}
+func (m *DeleteIndexReportsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.HashIds) > 0 {
+		for _, s := range m.HashIds {
+			l = len(s)
+			n += 1 + l + sovIndexerService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteIndexReportsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Success {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
@@ -1776,6 +2050,160 @@ func (m *GetOrCreateIndexReportRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.ResourceLocator = &GetOrCreateIndexReportRequest_ContainerImage{v}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexerService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteIndexReportsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexerService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteIndexReportsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteIndexReportsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HashIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIndexerService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HashIds = append(m.HashIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipIndexerService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthIndexerService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteIndexReportsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowIndexerService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteIndexReportsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteIndexReportsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Success", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowIndexerService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Success = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipIndexerService(dAtA[iNdEx:])
