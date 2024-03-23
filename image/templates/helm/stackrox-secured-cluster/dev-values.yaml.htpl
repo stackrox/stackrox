@@ -1,0 +1,67 @@
+# Recommended resource helm values for a dev environment setup of ACS
+
+sensor:
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+
+admissionControl:
+  resources:
+    requests:
+      memory: "200Mi"
+      cpu: "200m"
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+
+collector:
+  resources:
+    requests:
+      memory: "320Mi"
+      cpu: "100m"
+    limits:
+      memory: "320Mi"
+      cpu: "300m"
+
+  complianceResources:
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  nodeScanningResources:
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+    limits:
+      memory: "250Mi"
+      cpu: "500m"
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+scannerV4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 3
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  db:
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "500Gi"
+[<- end >]
