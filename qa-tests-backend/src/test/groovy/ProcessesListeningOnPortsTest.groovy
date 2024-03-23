@@ -61,6 +61,14 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8082,fork STDOUT & " +
                             "sleep 90 && pkill socat && sleep 3600)" as String,]),
                     // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
+            new Deployment()
+                    .setName(TCPCONNECTIONTARGET2)
+                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .addPort(8083, "UDP")
+                    .addLabel("app", UDPCONNECTIONTARGET1)
+                    .setExposeAsService(true)
+                    .setCommand(["/bin/sh", "-c",])
+                    .setArgs(["(socat "+SOCAT_DEBUG+" UDP-LISTEN:8083,fork STDOUT)" as String,]),
         ]
 
     def setupSpec() {
@@ -103,6 +111,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId3 = targetDeployments.find { it.name == UDPCONNECTIONTARGET1 }?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
@@ -162,6 +171,23 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         given:
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+
+        processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId3, 240)
+
+        assert processesListeningOnPorts
+
+        list = processesListeningOnPorts.listeningEndpointsList
+        assert list.size() == 1
+
+        def endpoint3 = list.find { it.endpoint.port == 8083 }
+
+        assert endpoint3
+        assert endpoint3.deploymentId
+        assert endpoint3.podId
+        assert endpoint3.containerName == UDPCONNECTIONTARGET1
+        assert endpoint3.signal.name == "socat"
+        assert endpoint3.signal.execFilePath == "/usr/bin/socat"
+        assert endpoint3.signal.args == "-d -d -v TCP-LISTEN:8083,fork STDOUT"
 
         destroyDeployments()
 
