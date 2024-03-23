@@ -17,7 +17,8 @@ var commonVulnerabilitySubResolvers = []string{
 	"cve: String!",
 	"cveBaseInfo: CVEInfo",
 	"cvss: Float!",
-	"envImpact: Float!",
+	"envImpact: Float! @deprecated(reason: \"use 'deploymentCount' or 'imageCount' for workload CVEs, 'nodeCount' for node CVEs, and 'clusterCount' for " +
+		"cluster CVEs\")",
 	"fixedByVersion: String!",
 	"id: ID!",
 	"impactScore: Float!",

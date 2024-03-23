@@ -44,7 +44,7 @@ func init() {
 			"layerIndex: Int",
 			"location(query: String): String!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
-			"topImageVulnerability: ImageVulnerability",
+			"topImageVulnerability: ImageVulnerability @deprecated(reason: \"sort 'imageVulnerabilities' by Severity or CVSS to view CVEs with most severe impact.\")",
 			"unusedVarSink(query: String): Int",
 
 			// deprecated functions
