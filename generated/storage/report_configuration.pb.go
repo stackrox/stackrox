@@ -156,7 +156,7 @@ func (*ReportConfiguration) Descriptor() ([]byte, []int) {
 func (m *ReportConfiguration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReportConfiguration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReportConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ReportConfiguration.Marshal(b, m, deterministic)
 	} else {
@@ -182,13 +182,13 @@ var xxx_messageInfo_ReportConfiguration proto.InternalMessageInfo
 
 type isReportConfiguration_Filter interface {
 	isReportConfiguration_Filter()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isReportConfiguration_Filter
 }
 type isReportConfiguration_NotifierConfig interface {
 	isReportConfiguration_NotifierConfig()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isReportConfiguration_NotifierConfig
 }
@@ -390,7 +390,7 @@ func (*ReportLastRunStatus) Descriptor() ([]byte, []int) {
 func (m *ReportLastRunStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReportLastRunStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReportLastRunStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ReportLastRunStatus.Marshal(b, m, deterministic)
 	} else {
@@ -474,7 +474,7 @@ func (*VulnerabilityReportFilters) Descriptor() ([]byte, []int) {
 func (m *VulnerabilityReportFilters) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityReportFilters) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityReportFilters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityReportFilters.Marshal(b, m, deterministic)
 	} else {
@@ -500,7 +500,7 @@ var xxx_messageInfo_VulnerabilityReportFilters proto.InternalMessageInfo
 
 type isVulnerabilityReportFilters_CvesSince interface {
 	isVulnerabilityReportFilters_CvesSince()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isVulnerabilityReportFilters_CvesSince
 }
@@ -668,7 +668,7 @@ func (*ResourceScope) Descriptor() ([]byte, []int) {
 func (m *ResourceScope) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResourceScope) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResourceScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResourceScope.Marshal(b, m, deterministic)
 	} else {
@@ -694,7 +694,7 @@ var xxx_messageInfo_ResourceScope proto.InternalMessageInfo
 
 type isResourceScope_ScopeReference interface {
 	isResourceScope_ScopeReference()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isResourceScope_ScopeReference
 }
@@ -780,7 +780,7 @@ func (*NotifierConfiguration) Descriptor() ([]byte, []int) {
 func (m *NotifierConfiguration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NotifierConfiguration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NotifierConfiguration.Marshal(b, m, deterministic)
 	} else {
@@ -806,13 +806,13 @@ var xxx_messageInfo_NotifierConfiguration proto.InternalMessageInfo
 
 type isNotifierConfiguration_NotifierConfig interface {
 	isNotifierConfiguration_NotifierConfig()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNotifierConfiguration_NotifierConfig
 }
 type isNotifierConfiguration_Ref interface {
 	isNotifierConfiguration_Ref()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNotifierConfiguration_Ref
 }
@@ -919,7 +919,7 @@ func (*EmailNotifierConfiguration) Descriptor() ([]byte, []int) {
 func (m *EmailNotifierConfiguration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EmailNotifierConfiguration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *EmailNotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EmailNotifierConfiguration.Marshal(b, m, deterministic)
 	} else {
@@ -1077,7 +1077,7 @@ var fileDescriptor_541201f82fe9caab = []byte{
 	0xe7, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0xcd, 0x65, 0x69, 0x48, 0x09, 0x09, 0x00, 0x00,
 }
 
-func (m *ReportConfiguration) MarshalVT() (dAtA []byte, err error) {
+func (m *ReportConfiguration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1087,7 +1087,7 @@ func (m *ReportConfiguration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReportConfiguration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ReportConfiguration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1184,7 +1184,7 @@ func (m *ReportConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.NotifierConfig.Size()
 			i -= size
-			if _, err := m.NotifierConfig.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.NotifierConfig.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1200,7 +1200,7 @@ func (m *ReportConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Filter.Size()
 			i -= size
-			if _, err := m.Filter.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Filter.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1234,7 +1234,7 @@ func (m *ReportConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ReportConfiguration_VulnReportFilters) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ReportConfiguration_VulnReportFilters) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1255,7 +1255,7 @@ func (m *ReportConfiguration_VulnReportFilters) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ReportConfiguration_EmailConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ReportConfiguration_EmailConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1276,7 +1276,7 @@ func (m *ReportConfiguration_EmailConfig) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ReportLastRunStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ReportLastRunStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1286,7 +1286,7 @@ func (m *ReportLastRunStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReportLastRunStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ReportLastRunStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1327,7 +1327,7 @@ func (m *ReportLastRunStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityReportFilters) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1337,7 +1337,7 @@ func (m *VulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityReportFilters) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityReportFilters) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1369,7 +1369,7 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, err
 		{
 			size := m.CvesSince.Size()
 			i -= size
-			if _, err := m.CvesSince.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.CvesSince.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1428,7 +1428,7 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityReportFilters_AllVuln) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityReportFilters_AllVuln) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1445,7 +1445,7 @@ func (m *VulnerabilityReportFilters_AllVuln) MarshalToSizedBuffer(dAtA []byte) (
 	dAtA[i] = 0x28
 	return len(dAtA) - i, nil
 }
-func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1462,7 +1462,7 @@ func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalToSized
 	dAtA[i] = 0x30
 	return len(dAtA) - i, nil
 }
-func (m *VulnerabilityReportFilters_SinceStartDate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityReportFilters_SinceStartDate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1483,7 +1483,7 @@ func (m *VulnerabilityReportFilters_SinceStartDate) MarshalToSizedBuffer(dAtA []
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ResourceScope) MarshalVT() (dAtA []byte, err error) {
+func (m *ResourceScope) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1493,7 +1493,7 @@ func (m *ResourceScope) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResourceScope) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ResourceScope) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1511,7 +1511,7 @@ func (m *ResourceScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.ScopeReference.Size()
 			i -= size
-			if _, err := m.ScopeReference.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.ScopeReference.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1519,7 +1519,7 @@ func (m *ResourceScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ResourceScope_CollectionId) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ResourceScope_CollectionId) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1533,7 +1533,7 @@ func (m *ResourceScope_CollectionId) MarshalToSizedBuffer(dAtA []byte) (int, err
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
-func (m *NotifierConfiguration) MarshalVT() (dAtA []byte, err error) {
+func (m *NotifierConfiguration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1543,7 +1543,7 @@ func (m *NotifierConfiguration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NotifierConfiguration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NotifierConfiguration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1561,7 +1561,7 @@ func (m *NotifierConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Ref.Size()
 			i -= size
-			if _, err := m.Ref.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Ref.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1570,7 +1570,7 @@ func (m *NotifierConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.NotifierConfig.Size()
 			i -= size
-			if _, err := m.NotifierConfig.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.NotifierConfig.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1578,7 +1578,7 @@ func (m *NotifierConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NotifierConfiguration_EmailConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NotifierConfiguration_EmailConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1599,7 +1599,7 @@ func (m *NotifierConfiguration_EmailConfig) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *NotifierConfiguration_Id) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NotifierConfiguration_Id) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1613,7 +1613,7 @@ func (m *NotifierConfiguration_Id) MarshalToSizedBuffer(dAtA []byte) (int, error
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *EmailNotifierConfiguration) MarshalVT() (dAtA []byte, err error) {
+func (m *EmailNotifierConfiguration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1623,7 +1623,7 @@ func (m *EmailNotifierConfiguration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EmailNotifierConfiguration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *EmailNotifierConfiguration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

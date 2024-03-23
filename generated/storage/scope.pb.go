@@ -40,7 +40,7 @@ func (*Scope) Descriptor() ([]byte, []int) {
 func (m *Scope) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Scope) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Scope.Marshal(b, m, deterministic)
 	} else {
@@ -116,7 +116,7 @@ func (*Scope_Label) Descriptor() ([]byte, []int) {
 func (m *Scope_Label) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Scope_Label) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Scope_Label) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Scope_Label.Marshal(b, m, deterministic)
 	} else {
@@ -191,7 +191,7 @@ var fileDescriptor_7c72a373e2c7b3ae = []byte{
 	0x65, 0x3f, 0x53, 0xfb, 0x00, 0x00, 0x00,
 }
 
-func (m *Scope) MarshalVT() (dAtA []byte, err error) {
+func (m *Scope) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -201,7 +201,7 @@ func (m *Scope) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Scope) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Scope) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -244,7 +244,7 @@ func (m *Scope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Scope_Label) MarshalVT() (dAtA []byte, err error) {
+func (m *Scope_Label) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -254,7 +254,7 @@ func (m *Scope_Label) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Scope_Label) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Scope_Label) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

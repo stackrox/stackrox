@@ -153,7 +153,7 @@ func (*Notifier) Descriptor() ([]byte, []int) {
 func (m *Notifier) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Notifier) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Notifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Notifier.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ var xxx_messageInfo_Notifier proto.InternalMessageInfo
 
 type isNotifier_Config interface {
 	isNotifier_Config()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNotifier_Config
 }
@@ -488,7 +488,7 @@ func (*AWSSecurityHub) Descriptor() ([]byte, []int) {
 func (m *AWSSecurityHub) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AWSSecurityHub) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AWSSecurityHub) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AWSSecurityHub.Marshal(b, m, deterministic)
 	} else {
@@ -565,7 +565,7 @@ func (*AWSSecurityHub_Credentials) Descriptor() ([]byte, []int) {
 func (m *AWSSecurityHub_Credentials) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AWSSecurityHub_Credentials) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AWSSecurityHub_Credentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AWSSecurityHub_Credentials.Marshal(b, m, deterministic)
 	} else {
@@ -642,7 +642,7 @@ func (*CSCC) Descriptor() ([]byte, []int) {
 func (m *CSCC) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CSCC) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CSCC) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CSCC.Marshal(b, m, deterministic)
 	} else {
@@ -723,7 +723,7 @@ func (*Jira) Descriptor() ([]byte, []int) {
 func (m *Jira) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Jira) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Jira) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Jira.Marshal(b, m, deterministic)
 	} else {
@@ -832,7 +832,7 @@ func (*Jira_PriorityMapping) Descriptor() ([]byte, []int) {
 func (m *Jira_PriorityMapping) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Jira_PriorityMapping) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Jira_PriorityMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Jira_PriorityMapping.Marshal(b, m, deterministic)
 	} else {
@@ -909,7 +909,7 @@ func (*Email) Descriptor() ([]byte, []int) {
 func (m *Email) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Email) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Email) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Email.Marshal(b, m, deterministic)
 	} else {
@@ -1034,7 +1034,7 @@ func (*Splunk) Descriptor() ([]byte, []int) {
 func (m *Splunk) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Splunk) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Splunk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Splunk.Marshal(b, m, deterministic)
 	} else {
@@ -1060,7 +1060,7 @@ var xxx_messageInfo_Splunk proto.InternalMessageInfo
 
 type isSplunk_DerivedSourceTypeDeprecated interface {
 	isSplunk_DerivedSourceTypeDeprecated()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isSplunk_DerivedSourceTypeDeprecated
 }
@@ -1183,7 +1183,7 @@ func (*PagerDuty) Descriptor() ([]byte, []int) {
 func (m *PagerDuty) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PagerDuty) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PagerDuty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PagerDuty.Marshal(b, m, deterministic)
 	} else {
@@ -1251,7 +1251,7 @@ func (*Generic) Descriptor() ([]byte, []int) {
 func (m *Generic) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Generic) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Generic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Generic.Marshal(b, m, deterministic)
 	} else {
@@ -1373,7 +1373,7 @@ func (*SumoLogic) Descriptor() ([]byte, []int) {
 func (m *SumoLogic) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SumoLogic) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SumoLogic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SumoLogic.Marshal(b, m, deterministic)
 	} else {
@@ -1448,7 +1448,7 @@ func (*Syslog) Descriptor() ([]byte, []int) {
 func (m *Syslog) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Syslog) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Syslog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Syslog.Marshal(b, m, deterministic)
 	} else {
@@ -1474,7 +1474,7 @@ var xxx_messageInfo_Syslog proto.InternalMessageInfo
 
 type isSyslog_Endpoint interface {
 	isSyslog_Endpoint()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isSyslog_Endpoint
 }
@@ -1578,7 +1578,7 @@ func (*Syslog_TCPConfig) Descriptor() ([]byte, []int) {
 func (m *Syslog_TCPConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Syslog_TCPConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Syslog_TCPConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Syslog_TCPConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1769,7 +1769,7 @@ var fileDescriptor_2e3e7b397b1162ec = []byte{
 	0xff, 0x64, 0x8c, 0xea, 0xe0, 0x87, 0x0d, 0x00, 0x00,
 }
 
-func (m *Notifier) MarshalVT() (dAtA []byte, err error) {
+func (m *Notifier) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1779,7 +1779,7 @@ func (m *Notifier) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Notifier) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1820,7 +1820,7 @@ func (m *Notifier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Config.Size()
 			i -= size
-			if _, err := m.Config.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Config.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1870,7 +1870,7 @@ func (m *Notifier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Notifier_Jira) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Jira) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1891,7 +1891,7 @@ func (m *Notifier_Jira) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Email) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Email) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1912,7 +1912,7 @@ func (m *Notifier_Email) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Cscc) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Cscc) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1933,7 +1933,7 @@ func (m *Notifier_Cscc) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Splunk) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Splunk) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1954,7 +1954,7 @@ func (m *Notifier_Splunk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Pagerduty) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Pagerduty) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1975,7 +1975,7 @@ func (m *Notifier_Pagerduty) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Generic) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Generic) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1996,7 +1996,7 @@ func (m *Notifier_Generic) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Sumologic) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Sumologic) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2019,7 +2019,7 @@ func (m *Notifier_Sumologic) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_AwsSecurityHub) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_AwsSecurityHub) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2042,7 +2042,7 @@ func (m *Notifier_AwsSecurityHub) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Notifier_Syslog) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Notifier_Syslog) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2065,7 +2065,7 @@ func (m *Notifier_Syslog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *AWSSecurityHub) MarshalVT() (dAtA []byte, err error) {
+func (m *AWSSecurityHub) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2075,7 +2075,7 @@ func (m *AWSSecurityHub) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AWSSecurityHub) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AWSSecurityHub) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2118,7 +2118,7 @@ func (m *AWSSecurityHub) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AWSSecurityHub_Credentials) MarshalVT() (dAtA []byte, err error) {
+func (m *AWSSecurityHub_Credentials) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2128,7 +2128,7 @@ func (m *AWSSecurityHub_Credentials) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AWSSecurityHub_Credentials) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AWSSecurityHub_Credentials) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2169,7 +2169,7 @@ func (m *AWSSecurityHub_Credentials) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *CSCC) MarshalVT() (dAtA []byte, err error) {
+func (m *CSCC) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2179,7 +2179,7 @@ func (m *CSCC) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CSCC) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CSCC) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2220,7 +2220,7 @@ func (m *CSCC) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Jira) MarshalVT() (dAtA []byte, err error) {
+func (m *Jira) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2230,7 +2230,7 @@ func (m *Jira) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Jira) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Jira) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2306,7 +2306,7 @@ func (m *Jira) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Jira_PriorityMapping) MarshalVT() (dAtA []byte, err error) {
+func (m *Jira_PriorityMapping) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2316,7 +2316,7 @@ func (m *Jira_PriorityMapping) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Jira_PriorityMapping) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Jira_PriorityMapping) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2345,7 +2345,7 @@ func (m *Jira_PriorityMapping) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Email) MarshalVT() (dAtA []byte, err error) {
+func (m *Email) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2355,7 +2355,7 @@ func (m *Email) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Email) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Email) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2442,7 +2442,7 @@ func (m *Email) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Splunk) MarshalVT() (dAtA []byte, err error) {
+func (m *Splunk) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2452,7 +2452,7 @@ func (m *Splunk) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Splunk) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Splunk) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2489,7 +2489,7 @@ func (m *Splunk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.DerivedSourceTypeDeprecated.Size()
 			i -= size
-			if _, err := m.DerivedSourceTypeDeprecated.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.DerivedSourceTypeDeprecated.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2536,7 +2536,7 @@ func (m *Splunk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Splunk_DerivedSourceType) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Splunk_DerivedSourceType) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2553,7 +2553,7 @@ func (m *Splunk_DerivedSourceType) MarshalToSizedBuffer(dAtA []byte) (int, error
 	dAtA[i] = 0x30
 	return len(dAtA) - i, nil
 }
-func (m *PagerDuty) MarshalVT() (dAtA []byte, err error) {
+func (m *PagerDuty) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2563,7 +2563,7 @@ func (m *PagerDuty) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PagerDuty) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PagerDuty) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2587,7 +2587,7 @@ func (m *PagerDuty) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Generic) MarshalVT() (dAtA []byte, err error) {
+func (m *Generic) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2597,7 +2597,7 @@ func (m *Generic) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Generic) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Generic) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2690,7 +2690,7 @@ func (m *Generic) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SumoLogic) MarshalVT() (dAtA []byte, err error) {
+func (m *SumoLogic) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2700,7 +2700,7 @@ func (m *SumoLogic) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SumoLogic) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SumoLogic) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2734,7 +2734,7 @@ func (m *SumoLogic) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Syslog) MarshalVT() (dAtA []byte, err error) {
+func (m *Syslog) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2744,7 +2744,7 @@ func (m *Syslog) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Syslog) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Syslog) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2781,7 +2781,7 @@ func (m *Syslog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Endpoint.Size()
 			i -= size
-			if _, err := m.Endpoint.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Endpoint.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2794,7 +2794,7 @@ func (m *Syslog) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Syslog_TcpConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Syslog_TcpConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2815,7 +2815,7 @@ func (m *Syslog_TcpConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Syslog_TCPConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *Syslog_TCPConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2825,7 +2825,7 @@ func (m *Syslog_TCPConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Syslog_TCPConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Syslog_TCPConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

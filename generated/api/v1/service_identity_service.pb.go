@@ -43,7 +43,7 @@ func (*ServiceIdentityResponse) Descriptor() ([]byte, []int) {
 func (m *ServiceIdentityResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ServiceIdentityResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ServiceIdentityResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ServiceIdentityResponse.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ func (*CreateServiceIdentityRequest) Descriptor() ([]byte, []int) {
 func (m *CreateServiceIdentityRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateServiceIdentityRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateServiceIdentityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateServiceIdentityRequest.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ func (*CreateServiceIdentityResponse) Descriptor() ([]byte, []int) {
 func (m *CreateServiceIdentityResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateServiceIdentityResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateServiceIdentityResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateServiceIdentityResponse.Marshal(b, m, deterministic)
 	} else {
@@ -262,7 +262,7 @@ func (*Authority) Descriptor() ([]byte, []int) {
 func (m *Authority) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Authority) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Authority) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Authority.Marshal(b, m, deterministic)
 	} else {
@@ -326,7 +326,7 @@ func (*Authorities) Descriptor() ([]byte, []int) {
 func (m *Authorities) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Authorities) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Authorities) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Authorities.Marshal(b, m, deterministic)
 	} else {
@@ -580,7 +580,7 @@ var _ServiceIdentityService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/service_identity_service.proto",
 }
 
-func (m *ServiceIdentityResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ServiceIdentityResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -590,7 +590,7 @@ func (m *ServiceIdentityResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ServiceIdentityResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceIdentityResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -621,7 +621,7 @@ func (m *ServiceIdentityResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateServiceIdentityRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateServiceIdentityRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -631,7 +631,7 @@ func (m *CreateServiceIdentityRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateServiceIdentityRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateServiceIdentityRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -660,7 +660,7 @@ func (m *CreateServiceIdentityRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateServiceIdentityResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateServiceIdentityResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -670,7 +670,7 @@ func (m *CreateServiceIdentityResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateServiceIdentityResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateServiceIdentityResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -713,7 +713,7 @@ func (m *CreateServiceIdentityResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *Authority) MarshalVT() (dAtA []byte, err error) {
+func (m *Authority) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -723,7 +723,7 @@ func (m *Authority) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Authority) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Authority) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -747,7 +747,7 @@ func (m *Authority) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Authorities) MarshalVT() (dAtA []byte, err error) {
+func (m *Authorities) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -757,7 +757,7 @@ func (m *Authorities) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Authorities) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Authorities) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

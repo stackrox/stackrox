@@ -40,7 +40,7 @@ func (*ServiceCertAuth) Descriptor() ([]byte, []int) {
 func (m *ServiceCertAuth) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ServiceCertAuth) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ServiceCertAuth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ServiceCertAuth.Marshal(b, m, deterministic)
 	} else {
@@ -119,7 +119,7 @@ var fileDescriptor_3741e540de35f9a1 = []byte{
 	0x00, 0x00, 0x00,
 }
 
-func (m *ServiceCertAuth) MarshalVT() (dAtA []byte, err error) {
+func (m *ServiceCertAuth) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -129,7 +129,7 @@ func (m *ServiceCertAuth) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ServiceCertAuth) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceCertAuth) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

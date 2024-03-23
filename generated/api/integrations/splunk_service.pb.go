@@ -80,7 +80,7 @@ func (*SplunkViolationsResponse) Descriptor() ([]byte, []int) {
 func (m *SplunkViolationsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolationsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolationsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -170,7 +170,7 @@ func (*SplunkViolation) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation.Marshal(b, m, deterministic)
 	} else {
@@ -196,7 +196,7 @@ var xxx_messageInfo_SplunkViolation proto.InternalMessageInfo
 
 type isSplunkViolation_EntityInfo interface {
 	isSplunkViolation_EntityInfo()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isSplunkViolation_EntityInfo
 }
@@ -348,7 +348,7 @@ func (*SplunkViolation_ViolationInfo) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation_ViolationInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation_ViolationInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation_ViolationInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation_ViolationInfo.Marshal(b, m, deterministic)
 	} else {
@@ -482,7 +482,7 @@ func (*SplunkViolation_AlertInfo) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation_AlertInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation_AlertInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation_AlertInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation_AlertInfo.Marshal(b, m, deterministic)
 	} else {
@@ -568,7 +568,7 @@ func (*SplunkViolation_ProcessInfo) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation_ProcessInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation_ProcessInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation_ProcessInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation_ProcessInfo.Marshal(b, m, deterministic)
 	} else {
@@ -715,7 +715,7 @@ func (*SplunkViolation_DeploymentInfo) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation_DeploymentInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation_DeploymentInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation_DeploymentInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation_DeploymentInfo.Marshal(b, m, deterministic)
 	} else {
@@ -870,7 +870,7 @@ func (*SplunkViolation_ResourceInfo) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation_ResourceInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation_ResourceInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation_ResourceInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation_ResourceInfo.Marshal(b, m, deterministic)
 	} else {
@@ -966,7 +966,7 @@ func (*SplunkViolation_PolicyInfo) Descriptor() ([]byte, []int) {
 func (m *SplunkViolation_PolicyInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SplunkViolation_PolicyInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SplunkViolation_PolicyInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SplunkViolation_PolicyInfo.Marshal(b, m, deterministic)
 	} else {
@@ -1182,7 +1182,7 @@ var fileDescriptor_363fda14f8180d4f = []byte{
 	0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0xd0, 0x8a, 0x1d, 0x93, 0xfb, 0x0e, 0x00, 0x00,
 }
 
-func (m *SplunkViolationsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolationsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1192,7 +1192,7 @@ func (m *SplunkViolationsResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolationsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolationsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1230,7 +1230,7 @@ func (m *SplunkViolationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1240,7 +1240,7 @@ func (m *SplunkViolation) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1258,7 +1258,7 @@ func (m *SplunkViolation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.EntityInfo.Size()
 			i -= size
-			if _, err := m.EntityInfo.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.EntityInfo.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1326,7 +1326,7 @@ func (m *SplunkViolation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation_DeploymentInfo_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_DeploymentInfo_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1347,7 +1347,7 @@ func (m *SplunkViolation_DeploymentInfo_) MarshalToSizedBuffer(dAtA []byte) (int
 	}
 	return len(dAtA) - i, nil
 }
-func (m *SplunkViolation_ResourceInfo_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_ResourceInfo_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1368,7 +1368,7 @@ func (m *SplunkViolation_ResourceInfo_) MarshalToSizedBuffer(dAtA []byte) (int, 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *SplunkViolation_ViolationInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation_ViolationInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1378,7 +1378,7 @@ func (m *SplunkViolation_ViolationInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation_ViolationInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_ViolationInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1490,7 +1490,7 @@ func (m *SplunkViolation_ViolationInfo) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation_AlertInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation_AlertInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1500,7 +1500,7 @@ func (m *SplunkViolation_AlertInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation_AlertInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_AlertInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1541,7 +1541,7 @@ func (m *SplunkViolation_AlertInfo) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation_ProcessInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation_ProcessInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1551,7 +1551,7 @@ func (m *SplunkViolation_ProcessInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation_ProcessInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_ProcessInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1685,7 +1685,7 @@ func (m *SplunkViolation_ProcessInfo) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation_DeploymentInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation_DeploymentInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1695,7 +1695,7 @@ func (m *SplunkViolation_DeploymentInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation_DeploymentInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_DeploymentInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1847,7 +1847,7 @@ func (m *SplunkViolation_DeploymentInfo) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation_ResourceInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation_ResourceInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1857,7 +1857,7 @@ func (m *SplunkViolation_ResourceInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation_ResourceInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_ResourceInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1909,7 +1909,7 @@ func (m *SplunkViolation_ResourceInfo) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *SplunkViolation_PolicyInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *SplunkViolation_PolicyInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1919,7 +1919,7 @@ func (m *SplunkViolation_PolicyInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SplunkViolation_PolicyInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SplunkViolation_PolicyInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

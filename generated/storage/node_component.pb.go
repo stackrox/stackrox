@@ -47,7 +47,7 @@ func (*NodeComponent) Descriptor() ([]byte, []int) {
 func (m *NodeComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeComponent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeComponent.Marshal(b, m, deterministic)
 	} else {
@@ -73,7 +73,7 @@ var xxx_messageInfo_NodeComponent proto.InternalMessageInfo
 
 type isNodeComponent_SetTopCvss interface {
 	isNodeComponent_SetTopCvss()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNodeComponent_SetTopCvss
 }
@@ -199,7 +199,7 @@ var fileDescriptor_1117c2b5f2ac051c = []byte{
 	0x59, 0x6b, 0x48, 0x01, 0x00, 0x00,
 }
 
-func (m *NodeComponent) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeComponent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -209,7 +209,7 @@ func (m *NodeComponent) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeComponent) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeComponent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -234,7 +234,7 @@ func (m *NodeComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetTopCvss.Size()
 			i -= size
-			if _, err := m.SetTopCvss.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.SetTopCvss.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -274,7 +274,7 @@ func (m *NodeComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeComponent_TopCvss) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeComponent_TopCvss) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

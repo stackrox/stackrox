@@ -41,7 +41,7 @@ func (*ClusterMetrics) Descriptor() ([]byte, []int) {
 func (m *ClusterMetrics) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterMetrics) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterMetrics) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterMetrics.Marshal(b, m, deterministic)
 	} else {
@@ -115,7 +115,7 @@ var fileDescriptor_cf4a2b5a7271bdbd = []byte{
 	0x00, 0x00,
 }
 
-func (m *ClusterMetrics) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterMetrics) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -125,7 +125,7 @@ func (m *ClusterMetrics) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterMetrics) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterMetrics) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

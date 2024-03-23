@@ -562,7 +562,7 @@ func (*CVE) Descriptor() ([]byte, []int) {
 func (m *CVE) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVE) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVE.Marshal(b, m, deterministic)
 	} else {
@@ -775,7 +775,7 @@ func (*CVE_DistroSpecific) Descriptor() ([]byte, []int) {
 func (m *CVE_DistroSpecific) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVE_DistroSpecific) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVE_DistroSpecific) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVE_DistroSpecific.Marshal(b, m, deterministic)
 	} else {
@@ -866,7 +866,7 @@ func (*CVE_Reference) Descriptor() ([]byte, []int) {
 func (m *CVE_Reference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVE_Reference) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVE_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVE_Reference.Marshal(b, m, deterministic)
 	} else {
@@ -948,7 +948,7 @@ func (*CVEInfo) Descriptor() ([]byte, []int) {
 func (m *CVEInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVEInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVEInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVEInfo.Marshal(b, m, deterministic)
 	} else {
@@ -1083,7 +1083,7 @@ func (*CVEInfo_Reference) Descriptor() ([]byte, []int) {
 func (m *CVEInfo_Reference) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVEInfo_Reference) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVEInfo_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVEInfo_Reference.Marshal(b, m, deterministic)
 	} else {
@@ -1162,7 +1162,7 @@ func (*ImageCVE) Descriptor() ([]byte, []int) {
 func (m *ImageCVE) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageCVE) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageCVE.Marshal(b, m, deterministic)
 	} else {
@@ -1292,7 +1292,7 @@ func (*NodeCVE) Descriptor() ([]byte, []int) {
 func (m *NodeCVE) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeCVE) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeCVE.Marshal(b, m, deterministic)
 	} else {
@@ -1419,7 +1419,7 @@ func (*ClusterCVE) Descriptor() ([]byte, []int) {
 func (m *ClusterCVE) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterCVE) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterCVE.Marshal(b, m, deterministic)
 	} else {
@@ -1548,7 +1548,7 @@ func (*CVSSV2) Descriptor() ([]byte, []int) {
 func (m *CVSSV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVSSV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVSSV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVSSV2.Marshal(b, m, deterministic)
 	} else {
@@ -1690,7 +1690,7 @@ func (*CVSSV3) Descriptor() ([]byte, []int) {
 func (m *CVSSV3) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CVSSV3) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CVSSV3) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CVSSV3.Marshal(b, m, deterministic)
 	} else {
@@ -1972,7 +1972,7 @@ var fileDescriptor_d7bf0cfd04430357 = []byte{
 	0x00, 0x00,
 }
 
-func (m *CVE) MarshalVT() (dAtA []byte, err error) {
+func (m *CVE) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1982,7 +1982,7 @@ func (m *CVE) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVE) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVE) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2209,7 +2209,7 @@ func (m *CVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVE_DistroSpecific) MarshalVT() (dAtA []byte, err error) {
+func (m *CVE_DistroSpecific) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2219,7 +2219,7 @@ func (m *CVE_DistroSpecific) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVE_DistroSpecific) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVE_DistroSpecific) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2276,7 +2276,7 @@ func (m *CVE_DistroSpecific) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVE_Reference) MarshalVT() (dAtA []byte, err error) {
+func (m *CVE_Reference) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2286,7 +2286,7 @@ func (m *CVE_Reference) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVE_Reference) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVE_Reference) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2319,7 +2319,7 @@ func (m *CVE_Reference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVEInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *CVEInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2329,7 +2329,7 @@ func (m *CVEInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVEInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVEInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2446,7 +2446,7 @@ func (m *CVEInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVEInfo_Reference) MarshalVT() (dAtA []byte, err error) {
+func (m *CVEInfo_Reference) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2456,7 +2456,7 @@ func (m *CVEInfo_Reference) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVEInfo_Reference) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVEInfo_Reference) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2489,7 +2489,7 @@ func (m *CVEInfo_Reference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageCVE) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageCVE) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2499,7 +2499,7 @@ func (m *ImageCVE) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageCVE) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageCVE) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2593,7 +2593,7 @@ func (m *ImageCVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeCVE) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeCVE) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2603,7 +2603,7 @@ func (m *NodeCVE) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeCVE) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeCVE) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2697,7 +2697,7 @@ func (m *NodeCVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterCVE) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterCVE) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2707,7 +2707,7 @@ func (m *ClusterCVE) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterCVE) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterCVE) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2799,7 +2799,7 @@ func (m *ClusterCVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVSSV2) MarshalVT() (dAtA []byte, err error) {
+func (m *CVSSV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2809,7 +2809,7 @@ func (m *CVSSV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVSSV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVSSV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2886,7 +2886,7 @@ func (m *CVSSV2) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVSSV3) MarshalVT() (dAtA []byte, err error) {
+func (m *CVSSV3) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2896,7 +2896,7 @@ func (m *CVSSV3) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CVSSV3) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CVSSV3) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

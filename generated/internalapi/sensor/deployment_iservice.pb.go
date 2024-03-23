@@ -44,7 +44,7 @@ func (*GetDeploymentForPodRequest) Descriptor() ([]byte, []int) {
 func (m *GetDeploymentForPodRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDeploymentForPodRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDeploymentForPodRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDeploymentForPodRequest.Marshal(b, m, deterministic)
 	} else {
@@ -201,7 +201,7 @@ var _DeploymentService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/sensor/deployment_iservice.proto",
 }
 
-func (m *GetDeploymentForPodRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetDeploymentForPodRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -211,7 +211,7 @@ func (m *GetDeploymentForPodRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetDeploymentForPodRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetDeploymentForPodRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

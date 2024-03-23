@@ -14,6 +14,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -85,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoTestGrandChild1(batch *pgx.Batch, obj *storage.TestGrandChild1) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := protocompat.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -130,7 +131,7 @@ func copyFromTestGrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}

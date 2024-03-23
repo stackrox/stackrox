@@ -43,7 +43,7 @@ func (*NetworkFlowUpdate) Descriptor() ([]byte, []int) {
 func (m *NetworkFlowUpdate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkFlowUpdate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkFlowUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkFlowUpdate.Marshal(b, m, deterministic)
 	} else {
@@ -131,7 +131,7 @@ func (*PushNetworkEntitiesRequest) Descriptor() ([]byte, []int) {
 func (m *PushNetworkEntitiesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PushNetworkEntitiesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PushNetworkEntitiesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PushNetworkEntitiesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -220,7 +220,7 @@ var fileDescriptor_82ca8b583996f885 = []byte{
 	0xa7, 0xaf, 0xf1, 0x40, 0xba, 0x01, 0x00, 0x00,
 }
 
-func (m *NetworkFlowUpdate) MarshalVT() (dAtA []byte, err error) {
+func (m *NetworkFlowUpdate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -230,7 +230,7 @@ func (m *NetworkFlowUpdate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkFlowUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NetworkFlowUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -287,7 +287,7 @@ func (m *NetworkFlowUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PushNetworkEntitiesRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *PushNetworkEntitiesRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -297,7 +297,7 @@ func (m *PushNetworkEntitiesRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PushNetworkEntitiesRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PushNetworkEntitiesRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

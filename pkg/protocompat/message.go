@@ -39,7 +39,7 @@ func ProtoMarshal(msg proto.Message) ([]byte, error) {
 // Marshal takes a protocol buffer message and encodes it into
 // the wire format, returning the data. This is the main entry point.
 func Marshal[T any, M Marshaler[T]](msg M) ([]byte, error) {
-	return msg.MarshalVT()
+	return msg.Marshal()
 }
 
 // MarshalTextString writes a given protocol buffer in text format,
@@ -60,8 +60,7 @@ func Unmarshal(dAtA []byte, msg proto.Message) error {
 
 // Marshaler is a generic interface type wrapping around types that implement protobuf Marshaler.
 type Marshaler[T any] interface {
-	//proto.Marshaler
-	MarshalVT() ([]byte, error)
+	proto.Marshaler
 	*T
 }
 

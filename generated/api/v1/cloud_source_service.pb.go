@@ -80,7 +80,7 @@ func (*CloudSource) Descriptor() ([]byte, []int) {
 func (m *CloudSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CloudSource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CloudSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CloudSource.Marshal(b, m, deterministic)
 	} else {
@@ -106,7 +106,7 @@ var xxx_messageInfo_CloudSource proto.InternalMessageInfo
 
 type isCloudSource_Config interface {
 	isCloudSource_Config()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isCloudSource_Config
 }
@@ -238,7 +238,7 @@ func (*CloudSource_Credentials) Descriptor() ([]byte, []int) {
 func (m *CloudSource_Credentials) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CloudSource_Credentials) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CloudSource_Credentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CloudSource_Credentials.Marshal(b, m, deterministic)
 	} else {
@@ -302,7 +302,7 @@ func (*PaladinCloudConfig) Descriptor() ([]byte, []int) {
 func (m *PaladinCloudConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PaladinCloudConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PaladinCloudConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PaladinCloudConfig.Marshal(b, m, deterministic)
 	} else {
@@ -366,7 +366,7 @@ func (*OCMConfig) Descriptor() ([]byte, []int) {
 func (m *OCMConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *OCMConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *OCMConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_OCMConfig.Marshal(b, m, deterministic)
 	} else {
@@ -429,7 +429,7 @@ func (*CloudSourcesFilter) Descriptor() ([]byte, []int) {
 func (m *CloudSourcesFilter) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CloudSourcesFilter) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CloudSourcesFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CloudSourcesFilter.Marshal(b, m, deterministic)
 	} else {
@@ -505,7 +505,7 @@ func (*CountCloudSourcesRequest) Descriptor() ([]byte, []int) {
 func (m *CountCloudSourcesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountCloudSourcesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountCloudSourcesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountCloudSourcesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -566,7 +566,7 @@ func (*CountCloudSourcesResponse) Descriptor() ([]byte, []int) {
 func (m *CountCloudSourcesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountCloudSourcesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountCloudSourcesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountCloudSourcesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -626,7 +626,7 @@ func (*GetCloudSourceRequest) Descriptor() ([]byte, []int) {
 func (m *GetCloudSourceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCloudSourceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCloudSourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCloudSourceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -686,7 +686,7 @@ func (*GetCloudSourceResponse) Descriptor() ([]byte, []int) {
 func (m *GetCloudSourceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCloudSourceResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCloudSourceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCloudSourceResponse.Marshal(b, m, deterministic)
 	} else {
@@ -750,7 +750,7 @@ func (*ListCloudSourcesRequest) Descriptor() ([]byte, []int) {
 func (m *ListCloudSourcesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListCloudSourcesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListCloudSourcesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListCloudSourcesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -819,7 +819,7 @@ func (*ListCloudSourcesResponse) Descriptor() ([]byte, []int) {
 func (m *ListCloudSourcesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListCloudSourcesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListCloudSourcesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListCloudSourcesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -885,7 +885,7 @@ func (*CreateCloudSourceRequest) Descriptor() ([]byte, []int) {
 func (m *CreateCloudSourceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateCloudSourceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateCloudSourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateCloudSourceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -946,7 +946,7 @@ func (*CreateCloudSourceResponse) Descriptor() ([]byte, []int) {
 func (m *CreateCloudSourceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateCloudSourceResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateCloudSourceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateCloudSourceResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1011,7 +1011,7 @@ func (*UpdateCloudSourceRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateCloudSourceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateCloudSourceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateCloudSourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateCloudSourceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1079,7 +1079,7 @@ func (*DeleteCloudSourceRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteCloudSourceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteCloudSourceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteCloudSourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteCloudSourceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1143,7 +1143,7 @@ func (*TestCloudSourceRequest) Descriptor() ([]byte, []int) {
 func (m *TestCloudSourceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestCloudSourceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestCloudSourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestCloudSourceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1588,7 +1588,7 @@ var _CloudSourcesService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/cloud_source_service.proto",
 }
 
-func (m *CloudSource) MarshalVT() (dAtA []byte, err error) {
+func (m *CloudSource) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1598,7 +1598,7 @@ func (m *CloudSource) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CloudSource) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1616,7 +1616,7 @@ func (m *CloudSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Config.Size()
 			i -= size
-			if _, err := m.Config.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Config.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1665,7 +1665,7 @@ func (m *CloudSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CloudSource_PaladinCloud) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource_PaladinCloud) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1686,7 +1686,7 @@ func (m *CloudSource_PaladinCloud) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CloudSource_Ocm) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource_Ocm) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1707,7 +1707,7 @@ func (m *CloudSource_Ocm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CloudSource_Credentials) MarshalVT() (dAtA []byte, err error) {
+func (m *CloudSource_Credentials) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1717,7 +1717,7 @@ func (m *CloudSource_Credentials) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CloudSource_Credentials) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource_Credentials) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1741,7 +1741,7 @@ func (m *CloudSource_Credentials) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *PaladinCloudConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *PaladinCloudConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1751,7 +1751,7 @@ func (m *PaladinCloudConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PaladinCloudConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PaladinCloudConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1775,7 +1775,7 @@ func (m *PaladinCloudConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *OCMConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *OCMConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1785,7 +1785,7 @@ func (m *OCMConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *OCMConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *OCMConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1809,7 +1809,7 @@ func (m *OCMConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CloudSourcesFilter) MarshalVT() (dAtA []byte, err error) {
+func (m *CloudSourcesFilter) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1819,7 +1819,7 @@ func (m *CloudSourcesFilter) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CloudSourcesFilter) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSourcesFilter) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1863,7 +1863,7 @@ func (m *CloudSourcesFilter) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CountCloudSourcesRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CountCloudSourcesRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1873,7 +1873,7 @@ func (m *CountCloudSourcesRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountCloudSourcesRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CountCloudSourcesRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1902,7 +1902,7 @@ func (m *CountCloudSourcesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CountCloudSourcesResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CountCloudSourcesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1912,7 +1912,7 @@ func (m *CountCloudSourcesResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CountCloudSourcesResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CountCloudSourcesResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1934,7 +1934,7 @@ func (m *CountCloudSourcesResponse) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetCloudSourceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1944,7 +1944,7 @@ func (m *GetCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCloudSourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetCloudSourceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1968,7 +1968,7 @@ func (m *GetCloudSourceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCloudSourceResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetCloudSourceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1978,7 +1978,7 @@ func (m *GetCloudSourceResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCloudSourceResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetCloudSourceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2007,7 +2007,7 @@ func (m *GetCloudSourceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ListCloudSourcesRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ListCloudSourcesRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2017,7 +2017,7 @@ func (m *ListCloudSourcesRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListCloudSourcesRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListCloudSourcesRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2058,7 +2058,7 @@ func (m *ListCloudSourcesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *ListCloudSourcesResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListCloudSourcesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2068,7 +2068,7 @@ func (m *ListCloudSourcesResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListCloudSourcesResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListCloudSourcesResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2099,7 +2099,7 @@ func (m *ListCloudSourcesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateCloudSourceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2109,7 +2109,7 @@ func (m *CreateCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateCloudSourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateCloudSourceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2138,7 +2138,7 @@ func (m *CreateCloudSourceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateCloudSourceResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateCloudSourceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2148,7 +2148,7 @@ func (m *CreateCloudSourceResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateCloudSourceResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateCloudSourceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2177,7 +2177,7 @@ func (m *CreateCloudSourceResponse) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateCloudSourceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2187,7 +2187,7 @@ func (m *UpdateCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateCloudSourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateCloudSourceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2226,7 +2226,7 @@ func (m *UpdateCloudSourceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DeleteCloudSourceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2236,7 +2236,7 @@ func (m *DeleteCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeleteCloudSourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeleteCloudSourceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2260,7 +2260,7 @@ func (m *DeleteCloudSourceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *TestCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *TestCloudSourceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2270,7 +2270,7 @@ func (m *TestCloudSourceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestCloudSourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TestCloudSourceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

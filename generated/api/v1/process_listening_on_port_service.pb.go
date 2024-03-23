@@ -43,7 +43,7 @@ func (*GetProcessesListeningOnPortsRequest) Descriptor() ([]byte, []int) {
 func (m *GetProcessesListeningOnPortsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProcessesListeningOnPortsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProcessesListeningOnPortsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetProcessesListeningOnPortsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -103,7 +103,7 @@ func (*GetProcessesListeningOnPortsResponse) Descriptor() ([]byte, []int) {
 func (m *GetProcessesListeningOnPortsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetProcessesListeningOnPortsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetProcessesListeningOnPortsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetProcessesListeningOnPortsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -269,7 +269,7 @@ var _ListeningEndpointsService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/process_listening_on_port_service.proto",
 }
 
-func (m *GetProcessesListeningOnPortsRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetProcessesListeningOnPortsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -279,7 +279,7 @@ func (m *GetProcessesListeningOnPortsRequest) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *GetProcessesListeningOnPortsRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetProcessesListeningOnPortsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -303,7 +303,7 @@ func (m *GetProcessesListeningOnPortsRequest) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetProcessesListeningOnPortsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetProcessesListeningOnPortsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -313,7 +313,7 @@ func (m *GetProcessesListeningOnPortsResponse) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *GetProcessesListeningOnPortsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetProcessesListeningOnPortsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

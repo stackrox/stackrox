@@ -43,7 +43,7 @@ func (*GetAuthProviderRequest) Descriptor() ([]byte, []int) {
 func (m *GetAuthProviderRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAuthProviderRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAuthProviderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAuthProviderRequest.Marshal(b, m, deterministic)
 	} else {
@@ -104,7 +104,7 @@ func (*GetAuthProvidersRequest) Descriptor() ([]byte, []int) {
 func (m *GetAuthProvidersRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAuthProvidersRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAuthProvidersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAuthProvidersRequest.Marshal(b, m, deterministic)
 	} else {
@@ -171,7 +171,7 @@ func (*GetLoginAuthProvidersResponse) Descriptor() ([]byte, []int) {
 func (m *GetLoginAuthProvidersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetLoginAuthProvidersResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetLoginAuthProvidersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetLoginAuthProvidersResponse.Marshal(b, m, deterministic)
 	} else {
@@ -244,7 +244,7 @@ func (*GetLoginAuthProvidersResponse_LoginAuthProvider) Descriptor() ([]byte, []
 func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetLoginAuthProvidersResponse_LoginAuthProvider.Marshal(b, m, deterministic)
 	} else {
@@ -325,7 +325,7 @@ func (*GetAuthProvidersResponse) Descriptor() ([]byte, []int) {
 func (m *GetAuthProvidersResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAuthProvidersResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAuthProvidersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAuthProvidersResponse.Marshal(b, m, deterministic)
 	} else {
@@ -391,7 +391,7 @@ func (*PostAuthProviderRequest) Descriptor() ([]byte, []int) {
 func (m *PostAuthProviderRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PostAuthProviderRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PostAuthProviderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PostAuthProviderRequest.Marshal(b, m, deterministic)
 	} else {
@@ -458,7 +458,7 @@ func (*UpdateAuthProviderRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateAuthProviderRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateAuthProviderRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateAuthProviderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateAuthProviderRequest.Marshal(b, m, deterministic)
 	} else {
@@ -484,13 +484,13 @@ var xxx_messageInfo_UpdateAuthProviderRequest proto.InternalMessageInfo
 
 type isUpdateAuthProviderRequest_NameOpt interface {
 	isUpdateAuthProviderRequest_NameOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isUpdateAuthProviderRequest_NameOpt
 }
 type isUpdateAuthProviderRequest_EnabledOpt interface {
 	isUpdateAuthProviderRequest_EnabledOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isUpdateAuthProviderRequest_EnabledOpt
 }
@@ -603,7 +603,7 @@ func (*ExchangeTokenRequest) Descriptor() ([]byte, []int) {
 func (m *ExchangeTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExchangeTokenRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExchangeTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExchangeTokenRequest.Marshal(b, m, deterministic)
 	} else {
@@ -680,7 +680,7 @@ func (*ExchangeTokenResponse) Descriptor() ([]byte, []int) {
 func (m *ExchangeTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExchangeTokenResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExchangeTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExchangeTokenResponse.Marshal(b, m, deterministic)
 	} else {
@@ -762,7 +762,7 @@ func (*AvailableProviderTypesResponse) Descriptor() ([]byte, []int) {
 func (m *AvailableProviderTypesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AvailableProviderTypesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AvailableProviderTypesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AvailableProviderTypesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -833,7 +833,7 @@ func (*AvailableProviderTypesResponse_AuthProviderType) Descriptor() ([]byte, []
 func (m *AvailableProviderTypesResponse_AuthProviderType) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AvailableProviderTypesResponse_AuthProviderType) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AvailableProviderTypesResponse_AuthProviderType) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AvailableProviderTypesResponse_AuthProviderType.Marshal(b, m, deterministic)
 	} else {
@@ -1330,7 +1330,7 @@ var _AuthProviderService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/authprovider_service.proto",
 }
 
-func (m *GetAuthProviderRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetAuthProviderRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1340,7 +1340,7 @@ func (m *GetAuthProviderRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAuthProviderRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAuthProviderRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1364,7 +1364,7 @@ func (m *GetAuthProviderRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAuthProvidersRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetAuthProvidersRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1374,7 +1374,7 @@ func (m *GetAuthProvidersRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAuthProvidersRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAuthProvidersRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1405,7 +1405,7 @@ func (m *GetAuthProvidersRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *GetLoginAuthProvidersResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetLoginAuthProvidersResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1415,7 +1415,7 @@ func (m *GetLoginAuthProvidersResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetLoginAuthProvidersResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetLoginAuthProvidersResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1446,7 +1446,7 @@ func (m *GetLoginAuthProvidersResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) MarshalVT() (dAtA []byte, err error) {
+func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1456,7 +1456,7 @@ func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) MarshalVT() (dAtA []by
 	return dAtA[:n], nil
 }
 
-func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1501,7 +1501,7 @@ func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) MarshalToSizedBuffer(d
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAuthProvidersResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetAuthProvidersResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1511,7 +1511,7 @@ func (m *GetAuthProvidersResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAuthProvidersResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAuthProvidersResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1542,7 +1542,7 @@ func (m *GetAuthProvidersResponse) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *PostAuthProviderRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *PostAuthProviderRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1552,7 +1552,7 @@ func (m *PostAuthProviderRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PostAuthProviderRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PostAuthProviderRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1581,7 +1581,7 @@ func (m *PostAuthProviderRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateAuthProviderRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateAuthProviderRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1591,7 +1591,7 @@ func (m *UpdateAuthProviderRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateAuthProviderRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateAuthProviderRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1609,7 +1609,7 @@ func (m *UpdateAuthProviderRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		{
 			size := m.EnabledOpt.Size()
 			i -= size
-			if _, err := m.EnabledOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.EnabledOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1618,7 +1618,7 @@ func (m *UpdateAuthProviderRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		{
 			size := m.NameOpt.Size()
 			i -= size
-			if _, err := m.NameOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.NameOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1633,7 +1633,7 @@ func (m *UpdateAuthProviderRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateAuthProviderRequest_Name) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateAuthProviderRequest_Name) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1647,7 +1647,7 @@ func (m *UpdateAuthProviderRequest_Name) MarshalToSizedBuffer(dAtA []byte) (int,
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *UpdateAuthProviderRequest_Enabled) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateAuthProviderRequest_Enabled) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1664,7 +1664,7 @@ func (m *UpdateAuthProviderRequest_Enabled) MarshalToSizedBuffer(dAtA []byte) (i
 	dAtA[i] = 0x18
 	return len(dAtA) - i, nil
 }
-func (m *ExchangeTokenRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ExchangeTokenRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1674,7 +1674,7 @@ func (m *ExchangeTokenRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExchangeTokenRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ExchangeTokenRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1712,7 +1712,7 @@ func (m *ExchangeTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExchangeTokenResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ExchangeTokenResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1722,7 +1722,7 @@ func (m *ExchangeTokenResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExchangeTokenResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ExchangeTokenResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1775,7 +1775,7 @@ func (m *ExchangeTokenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AvailableProviderTypesResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *AvailableProviderTypesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1785,7 +1785,7 @@ func (m *AvailableProviderTypesResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AvailableProviderTypesResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AvailableProviderTypesResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1816,7 +1816,7 @@ func (m *AvailableProviderTypesResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *AvailableProviderTypesResponse_AuthProviderType) MarshalVT() (dAtA []byte, err error) {
+func (m *AvailableProviderTypesResponse_AuthProviderType) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1826,7 +1826,7 @@ func (m *AvailableProviderTypesResponse_AuthProviderType) MarshalVT() (dAtA []by
 	return dAtA[:n], nil
 }
 
-func (m *AvailableProviderTypesResponse_AuthProviderType) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AvailableProviderTypesResponse_AuthProviderType) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

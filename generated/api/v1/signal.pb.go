@@ -43,7 +43,7 @@ func (*Signal) Descriptor() ([]byte, []int) {
 func (m *Signal) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Signal) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Signal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Signal.Marshal(b, m, deterministic)
 	} else {
@@ -69,7 +69,7 @@ var xxx_messageInfo_Signal proto.InternalMessageInfo
 
 type isSignal_Signal interface {
 	isSignal_Signal()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isSignal_Signal
 }
@@ -148,7 +148,7 @@ var fileDescriptor_8621ed45343b7ffd = []byte{
 	0x58, 0xd0, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0x88, 0x22, 0x6f, 0x4c, 0xca, 0x00, 0x00, 0x00,
 }
 
-func (m *Signal) MarshalVT() (dAtA []byte, err error) {
+func (m *Signal) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -158,7 +158,7 @@ func (m *Signal) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Signal) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Signal) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -176,7 +176,7 @@ func (m *Signal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Signal.Size()
 			i -= size
-			if _, err := m.Signal.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Signal.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -184,7 +184,7 @@ func (m *Signal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Signal_ProcessSignal) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Signal_ProcessSignal) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

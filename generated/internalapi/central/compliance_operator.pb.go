@@ -133,7 +133,7 @@ func (*ComplianceOperatorInfo) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorInfo.Marshal(b, m, deterministic)
 	} else {
@@ -159,13 +159,13 @@ var xxx_messageInfo_ComplianceOperatorInfo proto.InternalMessageInfo
 
 type isComplianceOperatorInfo_TotalDesiredPodsOpt interface {
 	isComplianceOperatorInfo_TotalDesiredPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceOperatorInfo_TotalDesiredPodsOpt
 }
 type isComplianceOperatorInfo_TotalReadyPodsOpt interface {
 	isComplianceOperatorInfo_TotalReadyPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceOperatorInfo_TotalReadyPodsOpt
 }
@@ -296,7 +296,7 @@ func (*EnableComplianceRequest) Descriptor() ([]byte, []int) {
 func (m *EnableComplianceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EnableComplianceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *EnableComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EnableComplianceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -356,7 +356,7 @@ func (*DisableComplianceRequest) Descriptor() ([]byte, []int) {
 func (m *DisableComplianceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DisableComplianceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DisableComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DisableComplianceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -424,7 +424,7 @@ func (*ApplyComplianceScanConfigRequest) Descriptor() ([]byte, []int) {
 func (m *ApplyComplianceScanConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest.Marshal(b, m, deterministic)
 	} else {
@@ -450,7 +450,7 @@ var xxx_messageInfo_ApplyComplianceScanConfigRequest proto.InternalMessageInfo
 
 type isApplyComplianceScanConfigRequest_ScanRequest interface {
 	isApplyComplianceScanConfigRequest_ScanRequest()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isApplyComplianceScanConfigRequest_ScanRequest
 }
@@ -633,7 +633,7 @@ func (*ApplyComplianceScanConfigRequest_BaseScanSettings) Descriptor() ([]byte, 
 func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_BaseScanSettings.Marshal(b, m, deterministic)
 	} else {
@@ -743,7 +743,7 @@ func (*ApplyComplianceScanConfigRequest_OneTimeScan) Descriptor() ([]byte, []int
 func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_OneTimeScan.Marshal(b, m, deterministic)
 	} else {
@@ -809,7 +809,7 @@ func (*ApplyComplianceScanConfigRequest_ScheduledScan) Descriptor() ([]byte, []i
 func (m *ApplyComplianceScanConfigRequest_ScheduledScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_ScheduledScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_ScheduledScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_ScheduledScan.Marshal(b, m, deterministic)
 	} else {
@@ -881,7 +881,7 @@ func (*ApplyComplianceScanConfigRequest_RerunScheduledScan) Descriptor() ([]byte
 func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_RerunScheduledScan.Marshal(b, m, deterministic)
 	} else {
@@ -945,7 +945,7 @@ func (*ApplyComplianceScanConfigRequest_SuspendScheduledScan) Descriptor() ([]by
 func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_SuspendScheduledScan.Marshal(b, m, deterministic)
 	} else {
@@ -1009,7 +1009,7 @@ func (*ApplyComplianceScanConfigRequest_ResumeScheduledScan) Descriptor() ([]byt
 func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_ResumeScheduledScan.Marshal(b, m, deterministic)
 	} else {
@@ -1074,7 +1074,7 @@ func (*ApplyComplianceScanConfigRequest_UpdateScheduledScan) Descriptor() ([]byt
 func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApplyComplianceScanConfigRequest_UpdateScheduledScan.Marshal(b, m, deterministic)
 	} else {
@@ -1144,7 +1144,7 @@ func (*DeleteComplianceScanConfigRequest) Descriptor() ([]byte, []int) {
 func (m *DeleteComplianceScanConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeleteComplianceScanConfigRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeleteComplianceScanConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeleteComplianceScanConfigRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1217,7 +1217,7 @@ func (*ComplianceRequest) Descriptor() ([]byte, []int) {
 func (m *ComplianceRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1243,7 +1243,7 @@ var xxx_messageInfo_ComplianceRequest proto.InternalMessageInfo
 
 type isComplianceRequest_Request interface {
 	isComplianceRequest_Request()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceRequest_Request
 }
@@ -1389,7 +1389,7 @@ func (*ComplianceResponse) Descriptor() ([]byte, []int) {
 func (m *ComplianceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1415,7 +1415,7 @@ var xxx_messageInfo_ComplianceResponse proto.InternalMessageInfo
 
 type isComplianceResponse_Response interface {
 	isComplianceResponse_Response()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceResponse_Response
 }
@@ -1562,7 +1562,7 @@ func (*ComplianceResponse_EnableComplianceResponse) Descriptor() ([]byte, []int)
 func (m *ComplianceResponse_EnableComplianceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceResponse_EnableComplianceResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceResponse_EnableComplianceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceResponse_EnableComplianceResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1588,7 +1588,7 @@ var xxx_messageInfo_ComplianceResponse_EnableComplianceResponse proto.InternalMe
 
 type isComplianceResponse_EnableComplianceResponse_Payload interface {
 	isComplianceResponse_EnableComplianceResponse_Payload()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceResponse_EnableComplianceResponse_Payload
 }
@@ -1676,7 +1676,7 @@ func (*ComplianceResponse_DisableComplianceResponse) Descriptor() ([]byte, []int
 func (m *ComplianceResponse_DisableComplianceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceResponse_DisableComplianceResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceResponse_DisableComplianceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceResponse_DisableComplianceResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1702,7 +1702,7 @@ var xxx_messageInfo_ComplianceResponse_DisableComplianceResponse proto.InternalM
 
 type isComplianceResponse_DisableComplianceResponse_Payload interface {
 	isComplianceResponse_DisableComplianceResponse_Payload()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceResponse_DisableComplianceResponse_Payload
 }
@@ -1790,7 +1790,7 @@ func (*ComplianceResponse_ApplyComplianceScanConfigResponse) Descriptor() ([]byt
 func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceResponse_ApplyComplianceScanConfigResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1816,7 +1816,7 @@ var xxx_messageInfo_ComplianceResponse_ApplyComplianceScanConfigResponse proto.I
 
 type isComplianceResponse_ApplyComplianceScanConfigResponse_Payload interface {
 	isComplianceResponse_ApplyComplianceScanConfigResponse_Payload()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceResponse_ApplyComplianceScanConfigResponse_Payload
 }
@@ -1904,7 +1904,7 @@ func (*ComplianceResponse_DeleteComplianceScanConfigResponse) Descriptor() ([]by
 func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceResponse_DeleteComplianceScanConfigResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1930,7 +1930,7 @@ var xxx_messageInfo_ComplianceResponse_DeleteComplianceScanConfigResponse proto.
 
 type isComplianceResponse_DeleteComplianceScanConfigResponse_Payload interface {
 	isComplianceResponse_DeleteComplianceScanConfigResponse_Payload()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isComplianceResponse_DeleteComplianceScanConfigResponse_Payload
 }
@@ -2028,7 +2028,7 @@ func (*ComplianceOperatorCheckResultV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorCheckResultV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorCheckResultV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorCheckResultV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorCheckResultV2.Marshal(b, m, deterministic)
 	} else {
@@ -2225,7 +2225,7 @@ func (*ComplianceOperatorProfileV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorProfileV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorProfileV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorProfileV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorProfileV2.Marshal(b, m, deterministic)
 	} else {
@@ -2370,7 +2370,7 @@ func (*ComplianceOperatorProfileV2_Rule) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorProfileV2_Rule) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorProfileV2_Rule) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorProfileV2_Rule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorProfileV2_Rule.Marshal(b, m, deterministic)
 	} else {
@@ -2443,7 +2443,7 @@ func (*ComplianceOperatorRuleV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorRuleV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorRuleV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorRuleV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorRuleV2.Marshal(b, m, deterministic)
 	} else {
@@ -2599,7 +2599,7 @@ func (*ComplianceOperatorRuleV2_Fix) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorRuleV2_Fix) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorRuleV2_Fix) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorRuleV2_Fix) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorRuleV2_Fix.Marshal(b, m, deterministic)
 	} else {
@@ -2672,7 +2672,7 @@ func (*ComplianceOperatorScanV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorScanV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorScanV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorScanV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorScanV2.Marshal(b, m, deterministic)
 	} else {
@@ -2794,7 +2794,7 @@ func (*ComplianceOperatorScanStatusV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorScanStatusV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorScanStatusV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorScanStatusV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorScanStatusV2.Marshal(b, m, deterministic)
 	} else {
@@ -2913,7 +2913,7 @@ func (*ComplianceOperatorScanSettingBindingV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorScanSettingBindingV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorScanSettingBindingV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorScanSettingBindingV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorScanSettingBindingV2.Marshal(b, m, deterministic)
 	} else {
@@ -3036,7 +3036,7 @@ func (*ComplianceOperatorCondition) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorCondition) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorCondition) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorCondition) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorCondition.Marshal(b, m, deterministic)
 	} else {
@@ -3128,7 +3128,7 @@ func (*ComplianceOperatorStatus) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorStatus.Marshal(b, m, deterministic)
 	} else {
@@ -3217,7 +3217,7 @@ func (*ComplianceOperatorSuiteV2) Descriptor() ([]byte, []int) {
 func (m *ComplianceOperatorSuiteV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceOperatorSuiteV2) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceOperatorSuiteV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceOperatorSuiteV2.Marshal(b, m, deterministic)
 	} else {
@@ -3470,7 +3470,7 @@ var fileDescriptor_b16c1ba535ff8dc9 = []byte{
 	0x00,
 }
 
-func (m *ComplianceOperatorInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3480,7 +3480,7 @@ func (m *ComplianceOperatorInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3515,7 +3515,7 @@ func (m *ComplianceOperatorInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		{
 			size := m.TotalReadyPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalReadyPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalReadyPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3524,7 +3524,7 @@ func (m *ComplianceOperatorInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		{
 			size := m.TotalDesiredPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalDesiredPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalDesiredPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3546,7 +3546,7 @@ func (m *ComplianceOperatorInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorInfo_TotalDesiredPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorInfo_TotalDesiredPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3558,7 +3558,7 @@ func (m *ComplianceOperatorInfo_TotalDesiredPods) MarshalToSizedBuffer(dAtA []by
 	dAtA[i] = 0x18
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceOperatorInfo_TotalReadyPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorInfo_TotalReadyPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3570,7 +3570,7 @@ func (m *ComplianceOperatorInfo_TotalReadyPods) MarshalToSizedBuffer(dAtA []byte
 	dAtA[i] = 0x20
 	return len(dAtA) - i, nil
 }
-func (m *EnableComplianceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *EnableComplianceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3580,7 +3580,7 @@ func (m *EnableComplianceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EnableComplianceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *EnableComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3604,7 +3604,7 @@ func (m *EnableComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *DisableComplianceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DisableComplianceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3614,7 +3614,7 @@ func (m *DisableComplianceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DisableComplianceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DisableComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3638,7 +3638,7 @@ func (m *DisableComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3648,7 +3648,7 @@ func (m *ApplyComplianceScanConfigRequest) MarshalVT() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3666,7 +3666,7 @@ func (m *ApplyComplianceScanConfigRequest) MarshalToSizedBuffer(dAtA []byte) (in
 		{
 			size := m.ScanRequest.Size()
 			i -= size
-			if _, err := m.ScanRequest.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.ScanRequest.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3681,7 +3681,7 @@ func (m *ApplyComplianceScanConfigRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ScheduledScan_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_ScheduledScan_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3702,7 +3702,7 @@ func (m *ApplyComplianceScanConfigRequest_ScheduledScan_) MarshalToSizedBuffer(d
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ApplyComplianceScanConfigRequest_RerunScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_RerunScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3723,7 +3723,7 @@ func (m *ApplyComplianceScanConfigRequest_RerunScan) MarshalToSizedBuffer(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ApplyComplianceScanConfigRequest_SuspendScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_SuspendScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3744,7 +3744,7 @@ func (m *ApplyComplianceScanConfigRequest_SuspendScan) MarshalToSizedBuffer(dAtA
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ApplyComplianceScanConfigRequest_ResumeScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_ResumeScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3765,7 +3765,7 @@ func (m *ApplyComplianceScanConfigRequest_ResumeScan) MarshalToSizedBuffer(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ApplyComplianceScanConfigRequest_UpdateScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_UpdateScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3786,7 +3786,7 @@ func (m *ApplyComplianceScanConfigRequest_UpdateScan) MarshalToSizedBuffer(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3796,7 +3796,7 @@ func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalVT() (dAtA []
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3876,7 +3876,7 @@ func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalToSizedBuffer
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3886,7 +3886,7 @@ func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalVT() (dAtA []byte,
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3915,7 +3915,7 @@ func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalToSizedBuffer(dAtA
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ScheduledScan) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_ScheduledScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3925,7 +3925,7 @@ func (m *ApplyComplianceScanConfigRequest_ScheduledScan) MarshalVT() (dAtA []byt
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ScheduledScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_ScheduledScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3961,7 +3961,7 @@ func (m *ApplyComplianceScanConfigRequest_ScheduledScan) MarshalToSizedBuffer(dA
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3971,7 +3971,7 @@ func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) MarshalVT() (dAtA 
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3995,7 +3995,7 @@ func (m *ApplyComplianceScanConfigRequest_RerunScheduledScan) MarshalToSizedBuff
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4005,7 +4005,7 @@ func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) MarshalVT() (dAt
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4029,7 +4029,7 @@ func (m *ApplyComplianceScanConfigRequest_SuspendScheduledScan) MarshalToSizedBu
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4039,7 +4039,7 @@ func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) MarshalVT() (dAtA
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4063,7 +4063,7 @@ func (m *ApplyComplianceScanConfigRequest_ResumeScheduledScan) MarshalToSizedBuf
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4073,7 +4073,7 @@ func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) MarshalVT() (dAtA
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4109,7 +4109,7 @@ func (m *ApplyComplianceScanConfigRequest_UpdateScheduledScan) MarshalToSizedBuf
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteComplianceScanConfigRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DeleteComplianceScanConfigRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4119,7 +4119,7 @@ func (m *DeleteComplianceScanConfigRequest) MarshalVT() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *DeleteComplianceScanConfigRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeleteComplianceScanConfigRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4150,7 +4150,7 @@ func (m *DeleteComplianceScanConfigRequest) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4160,7 +4160,7 @@ func (m *ComplianceRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4178,7 +4178,7 @@ func (m *ComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Request.Size()
 			i -= size
-			if _, err := m.Request.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Request.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4186,7 +4186,7 @@ func (m *ComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceRequest_EnableCompliance) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceRequest_EnableCompliance) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4207,7 +4207,7 @@ func (m *ComplianceRequest_EnableCompliance) MarshalToSizedBuffer(dAtA []byte) (
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceRequest_DisableCompliance) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceRequest_DisableCompliance) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4228,7 +4228,7 @@ func (m *ComplianceRequest_DisableCompliance) MarshalToSizedBuffer(dAtA []byte) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceRequest_ApplyScanConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceRequest_ApplyScanConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4249,7 +4249,7 @@ func (m *ComplianceRequest_ApplyScanConfig) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceRequest_DeleteScanConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceRequest_DeleteScanConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4270,7 +4270,7 @@ func (m *ComplianceRequest_DeleteScanConfig) MarshalToSizedBuffer(dAtA []byte) (
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4280,7 +4280,7 @@ func (m *ComplianceResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4298,7 +4298,7 @@ func (m *ComplianceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Response.Size()
 			i -= size
-			if _, err := m.Response.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Response.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4306,7 +4306,7 @@ func (m *ComplianceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceResponse_EnableComplianceResponse_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_EnableComplianceResponse_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4327,7 +4327,7 @@ func (m *ComplianceResponse_EnableComplianceResponse_) MarshalToSizedBuffer(dAtA
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_DisableComplianceResponse_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_DisableComplianceResponse_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4348,7 +4348,7 @@ func (m *ComplianceResponse_DisableComplianceResponse_) MarshalToSizedBuffer(dAt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4369,7 +4369,7 @@ func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) MarshalToSizedBu
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4390,7 +4390,7 @@ func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) MarshalToSizedB
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_EnableComplianceResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceResponse_EnableComplianceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4400,7 +4400,7 @@ func (m *ComplianceResponse_EnableComplianceResponse) MarshalVT() (dAtA []byte, 
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceResponse_EnableComplianceResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_EnableComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4418,7 +4418,7 @@ func (m *ComplianceResponse_EnableComplianceResponse) MarshalToSizedBuffer(dAtA 
 		{
 			size := m.Payload.Size()
 			i -= size
-			if _, err := m.Payload.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4433,7 +4433,7 @@ func (m *ComplianceResponse_EnableComplianceResponse) MarshalToSizedBuffer(dAtA 
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceResponse_EnableComplianceResponse_Error) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_EnableComplianceResponse_Error) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4447,7 +4447,7 @@ func (m *ComplianceResponse_EnableComplianceResponse_Error) MarshalToSizedBuffer
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_DisableComplianceResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceResponse_DisableComplianceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4457,7 +4457,7 @@ func (m *ComplianceResponse_DisableComplianceResponse) MarshalVT() (dAtA []byte,
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceResponse_DisableComplianceResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_DisableComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4475,7 +4475,7 @@ func (m *ComplianceResponse_DisableComplianceResponse) MarshalToSizedBuffer(dAtA
 		{
 			size := m.Payload.Size()
 			i -= size
-			if _, err := m.Payload.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4490,7 +4490,7 @@ func (m *ComplianceResponse_DisableComplianceResponse) MarshalToSizedBuffer(dAtA
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceResponse_DisableComplianceResponse_Error) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_DisableComplianceResponse_Error) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4504,7 +4504,7 @@ func (m *ComplianceResponse_DisableComplianceResponse_Error) MarshalToSizedBuffe
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4514,7 +4514,7 @@ func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalVT() (dAtA
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4532,7 +4532,7 @@ func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalToSizedBuf
 		{
 			size := m.Payload.Size()
 			i -= size
-			if _, err := m.Payload.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4547,7 +4547,7 @@ func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalToSizedBuf
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4561,7 +4561,7 @@ func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) MarshalToSi
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4571,7 +4571,7 @@ func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalVT() (dAt
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4589,7 +4589,7 @@ func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalToSizedBu
 		{
 			size := m.Payload.Size()
 			i -= size
-			if _, err := m.Payload.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4604,7 +4604,7 @@ func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalToSizedBu
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4618,7 +4618,7 @@ func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) MarshalToS
 	dAtA[i] = 0x12
 	return len(dAtA) - i, nil
 }
-func (m *ComplianceOperatorCheckResultV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorCheckResultV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4628,7 +4628,7 @@ func (m *ComplianceOperatorCheckResultV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorCheckResultV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorCheckResultV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4792,7 +4792,7 @@ func (m *ComplianceOperatorCheckResultV2) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorProfileV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorProfileV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4802,7 +4802,7 @@ func (m *ComplianceOperatorProfileV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorProfileV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorProfileV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4922,7 +4922,7 @@ func (m *ComplianceOperatorProfileV2) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorProfileV2_Rule) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorProfileV2_Rule) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4932,7 +4932,7 @@ func (m *ComplianceOperatorProfileV2_Rule) MarshalVT() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorProfileV2_Rule) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorProfileV2_Rule) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4956,7 +4956,7 @@ func (m *ComplianceOperatorProfileV2_Rule) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorRuleV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorRuleV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4966,7 +4966,7 @@ func (m *ComplianceOperatorRuleV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorRuleV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorRuleV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5096,7 +5096,7 @@ func (m *ComplianceOperatorRuleV2) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorRuleV2_Fix) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorRuleV2_Fix) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5106,7 +5106,7 @@ func (m *ComplianceOperatorRuleV2_Fix) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorRuleV2_Fix) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorRuleV2_Fix) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5137,7 +5137,7 @@ func (m *ComplianceOperatorRuleV2_Fix) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorScanV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorScanV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5147,7 +5147,7 @@ func (m *ComplianceOperatorScanV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorScanV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorScanV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5242,7 +5242,7 @@ func (m *ComplianceOperatorScanV2) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorScanStatusV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorScanStatusV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5252,7 +5252,7 @@ func (m *ComplianceOperatorScanStatusV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorScanStatusV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorScanStatusV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5331,7 +5331,7 @@ func (m *ComplianceOperatorScanStatusV2) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorScanSettingBindingV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorScanSettingBindingV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5341,7 +5341,7 @@ func (m *ComplianceOperatorScanSettingBindingV2) MarshalVT() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorScanSettingBindingV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorScanSettingBindingV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5438,7 +5438,7 @@ func (m *ComplianceOperatorScanSettingBindingV2) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorCondition) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorCondition) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5448,7 +5448,7 @@ func (m *ComplianceOperatorCondition) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorCondition) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorCondition) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5505,7 +5505,7 @@ func (m *ComplianceOperatorCondition) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5515,7 +5515,7 @@ func (m *ComplianceOperatorStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5567,7 +5567,7 @@ func (m *ComplianceOperatorStatus) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceOperatorSuiteV2) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceOperatorSuiteV2) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5577,7 +5577,7 @@ func (m *ComplianceOperatorSuiteV2) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceOperatorSuiteV2) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceOperatorSuiteV2) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

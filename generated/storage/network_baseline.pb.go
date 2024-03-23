@@ -46,7 +46,7 @@ func (*NetworkBaselineConnectionProperties) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselineConnectionProperties) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselineConnectionProperties) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselineConnectionProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselineConnectionProperties.Marshal(b, m, deterministic)
 	} else {
@@ -124,7 +124,7 @@ func (*NetworkBaselinePeer) Descriptor() ([]byte, []int) {
 func (m *NetworkBaselinePeer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaselinePeer) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaselinePeer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaselinePeer.Marshal(b, m, deterministic)
 	} else {
@@ -217,7 +217,7 @@ func (*NetworkBaseline) Descriptor() ([]byte, []int) {
 func (m *NetworkBaseline) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NetworkBaseline) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NetworkBaseline) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NetworkBaseline.Marshal(b, m, deterministic)
 	} else {
@@ -365,7 +365,7 @@ var fileDescriptor_39bee8d8b4e8019b = []byte{
 	0x45, 0x03, 0x00, 0x00,
 }
 
-func (m *NetworkBaselineConnectionProperties) MarshalVT() (dAtA []byte, err error) {
+func (m *NetworkBaselineConnectionProperties) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -375,7 +375,7 @@ func (m *NetworkBaselineConnectionProperties) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselineConnectionProperties) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselineConnectionProperties) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -412,7 +412,7 @@ func (m *NetworkBaselineConnectionProperties) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkBaselinePeer) MarshalVT() (dAtA []byte, err error) {
+func (m *NetworkBaselinePeer) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -422,7 +422,7 @@ func (m *NetworkBaselinePeer) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaselinePeer) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NetworkBaselinePeer) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -465,7 +465,7 @@ func (m *NetworkBaselinePeer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkBaseline) MarshalVT() (dAtA []byte, err error) {
+func (m *NetworkBaseline) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -475,7 +475,7 @@ func (m *NetworkBaseline) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkBaseline) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NetworkBaseline) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

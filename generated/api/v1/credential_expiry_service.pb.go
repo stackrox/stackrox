@@ -73,7 +73,7 @@ func (*GetCertExpiry) Descriptor() ([]byte, []int) {
 func (m *GetCertExpiry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCertExpiry) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCertExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCertExpiry.Marshal(b, m, deterministic)
 	} else {
@@ -126,7 +126,7 @@ func (*GetCertExpiry_Request) Descriptor() ([]byte, []int) {
 func (m *GetCertExpiry_Request) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCertExpiry_Request) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCertExpiry_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCertExpiry_Request.Marshal(b, m, deterministic)
 	} else {
@@ -186,7 +186,7 @@ func (*GetCertExpiry_Response) Descriptor() ([]byte, []int) {
 func (m *GetCertExpiry_Response) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetCertExpiry_Response) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetCertExpiry_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetCertExpiry_Response.Marshal(b, m, deterministic)
 	} else {
@@ -351,7 +351,7 @@ var _CredentialExpiryService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/credential_expiry_service.proto",
 }
 
-func (m *GetCertExpiry) MarshalVT() (dAtA []byte, err error) {
+func (m *GetCertExpiry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -361,7 +361,7 @@ func (m *GetCertExpiry) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCertExpiry) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetCertExpiry) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -378,7 +378,7 @@ func (m *GetCertExpiry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCertExpiry_Request) MarshalVT() (dAtA []byte, err error) {
+func (m *GetCertExpiry_Request) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -388,7 +388,7 @@ func (m *GetCertExpiry_Request) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCertExpiry_Request) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetCertExpiry_Request) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -410,7 +410,7 @@ func (m *GetCertExpiry_Request) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCertExpiry_Response) MarshalVT() (dAtA []byte, err error) {
+func (m *GetCertExpiry_Response) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -420,7 +420,7 @@ func (m *GetCertExpiry_Response) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetCertExpiry_Response) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetCertExpiry_Response) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

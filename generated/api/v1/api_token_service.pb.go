@@ -47,7 +47,7 @@ func (*GenerateTokenRequest) Descriptor() ([]byte, []int) {
 func (m *GenerateTokenRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GenerateTokenRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GenerateTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenerateTokenRequest.Marshal(b, m, deterministic)
 	} else {
@@ -135,7 +135,7 @@ func (*GenerateTokenResponse) Descriptor() ([]byte, []int) {
 func (m *GenerateTokenResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GenerateTokenResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GenerateTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GenerateTokenResponse.Marshal(b, m, deterministic)
 	} else {
@@ -205,7 +205,7 @@ func (*GetAPITokensRequest) Descriptor() ([]byte, []int) {
 func (m *GetAPITokensRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAPITokensRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAPITokensRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAPITokensRequest.Marshal(b, m, deterministic)
 	} else {
@@ -231,7 +231,7 @@ var xxx_messageInfo_GetAPITokensRequest proto.InternalMessageInfo
 
 type isGetAPITokensRequest_RevokedOneof interface {
 	isGetAPITokensRequest_RevokedOneof()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isGetAPITokensRequest_RevokedOneof
 }
@@ -304,7 +304,7 @@ func (*GetAPITokensResponse) Descriptor() ([]byte, []int) {
 func (m *GetAPITokensResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAPITokensResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAPITokensResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAPITokensResponse.Marshal(b, m, deterministic)
 	} else {
@@ -370,7 +370,7 @@ func (*ListAllowedTokenRolesResponse) Descriptor() ([]byte, []int) {
 func (m *ListAllowedTokenRolesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAllowedTokenRolesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAllowedTokenRolesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAllowedTokenRolesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -703,7 +703,7 @@ var _APITokenService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/api_token_service.proto",
 }
 
-func (m *GenerateTokenRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GenerateTokenRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -713,7 +713,7 @@ func (m *GenerateTokenRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GenerateTokenRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GenerateTokenRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -765,7 +765,7 @@ func (m *GenerateTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GenerateTokenResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GenerateTokenResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -775,7 +775,7 @@ func (m *GenerateTokenResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GenerateTokenResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GenerateTokenResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -811,7 +811,7 @@ func (m *GenerateTokenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAPITokensRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetAPITokensRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -821,7 +821,7 @@ func (m *GetAPITokensRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAPITokensRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAPITokensRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -839,7 +839,7 @@ func (m *GetAPITokensRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.RevokedOneof.Size()
 			i -= size
-			if _, err := m.RevokedOneof.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.RevokedOneof.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -847,7 +847,7 @@ func (m *GetAPITokensRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAPITokensRequest_Revoked) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAPITokensRequest_Revoked) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -864,7 +864,7 @@ func (m *GetAPITokensRequest_Revoked) MarshalToSizedBuffer(dAtA []byte) (int, er
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
-func (m *GetAPITokensResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetAPITokensResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -874,7 +874,7 @@ func (m *GetAPITokensResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAPITokensResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAPITokensResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -905,7 +905,7 @@ func (m *GetAPITokensResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAllowedTokenRolesResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListAllowedTokenRolesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -915,7 +915,7 @@ func (m *ListAllowedTokenRolesResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAllowedTokenRolesResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListAllowedTokenRolesResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -38,7 +38,7 @@ func (*HelmCluster) Descriptor() ([]byte, []int) {
 func (m *HelmCluster) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *HelmCluster) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *HelmCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_HelmCluster.Marshal(b, m, deterministic)
 	} else {
@@ -102,7 +102,7 @@ var fileDescriptor_7f81ae797eb53a22 = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x29, 0x98, 0x59, 0x11, 0xb5, 0x00, 0x00, 0x00,
 }
 
-func (m *HelmCluster) MarshalVT() (dAtA []byte, err error) {
+func (m *HelmCluster) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -112,7 +112,7 @@ func (m *HelmCluster) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *HelmCluster) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *HelmCluster) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

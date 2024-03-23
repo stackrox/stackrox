@@ -47,7 +47,7 @@ func (*SignalStreamMessage) Descriptor() ([]byte, []int) {
 func (m *SignalStreamMessage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SignalStreamMessage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignalStreamMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SignalStreamMessage.Marshal(b, m, deterministic)
 	} else {
@@ -73,7 +73,7 @@ var xxx_messageInfo_SignalStreamMessage proto.InternalMessageInfo
 
 type isSignalStreamMessage_Msg interface {
 	isSignalStreamMessage_Msg()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isSignalStreamMessage_Msg
 }
@@ -299,7 +299,7 @@ var _SignalService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/sensor/signal_iservice.proto",
 }
 
-func (m *SignalStreamMessage) MarshalVT() (dAtA []byte, err error) {
+func (m *SignalStreamMessage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -309,7 +309,7 @@ func (m *SignalStreamMessage) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SignalStreamMessage) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SignalStreamMessage) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -327,7 +327,7 @@ func (m *SignalStreamMessage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Msg.Size()
 			i -= size
-			if _, err := m.Msg.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -335,7 +335,7 @@ func (m *SignalStreamMessage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SignalStreamMessage_CollectorRegisterRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SignalStreamMessage_CollectorRegisterRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -356,7 +356,7 @@ func (m *SignalStreamMessage_CollectorRegisterRequest) MarshalToSizedBuffer(dAtA
 	}
 	return len(dAtA) - i, nil
 }
-func (m *SignalStreamMessage_Signal) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SignalStreamMessage_Signal) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -44,7 +44,7 @@ func (*OrchestratorIntegration) Descriptor() ([]byte, []int) {
 func (m *OrchestratorIntegration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *OrchestratorIntegration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *OrchestratorIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_OrchestratorIntegration.Marshal(b, m, deterministic)
 	} else {
@@ -70,7 +70,7 @@ var xxx_messageInfo_OrchestratorIntegration proto.InternalMessageInfo
 
 type isOrchestratorIntegration_IntegrationConfig interface {
 	isOrchestratorIntegration_IntegrationConfig()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isOrchestratorIntegration_IntegrationConfig
 }
@@ -175,7 +175,7 @@ var fileDescriptor_7ec4a06d39fb9cc0 = []byte{
 	0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x69, 0x18, 0x9d, 0xc6, 0x30, 0x01, 0x00, 0x00,
 }
 
-func (m *OrchestratorIntegration) MarshalVT() (dAtA []byte, err error) {
+func (m *OrchestratorIntegration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -185,7 +185,7 @@ func (m *OrchestratorIntegration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *OrchestratorIntegration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *OrchestratorIntegration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -203,7 +203,7 @@ func (m *OrchestratorIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		{
 			size := m.IntegrationConfig.Size()
 			i -= size
-			if _, err := m.IntegrationConfig.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.IntegrationConfig.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -232,7 +232,7 @@ func (m *OrchestratorIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *OrchestratorIntegration_Clairify) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *OrchestratorIntegration_Clairify) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

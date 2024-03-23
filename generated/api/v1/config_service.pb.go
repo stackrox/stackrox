@@ -43,7 +43,7 @@ func (*PutConfigRequest) Descriptor() ([]byte, []int) {
 func (m *PutConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PutConfigRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PutConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PutConfigRequest.Marshal(b, m, deterministic)
 	} else {
@@ -105,7 +105,7 @@ func (*DayOption) Descriptor() ([]byte, []int) {
 func (m *DayOption) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DayOption) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DayOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DayOption.Marshal(b, m, deterministic)
 	} else {
@@ -172,7 +172,7 @@ func (*VulnerabilityExceptionConfig) Descriptor() ([]byte, []int) {
 func (m *VulnerabilityExceptionConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityExceptionConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityExceptionConfig.Marshal(b, m, deterministic)
 	} else {
@@ -242,7 +242,7 @@ func (*VulnerabilityExceptionConfig_FixableCVEOptions) Descriptor() ([]byte, []i
 func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityExceptionConfig_FixableCVEOptions.Marshal(b, m, deterministic)
 	} else {
@@ -319,7 +319,7 @@ func (*VulnerabilityExceptionConfig_ExpiryOptions) Descriptor() ([]byte, []int) 
 func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityExceptionConfig_ExpiryOptions.Marshal(b, m, deterministic)
 	} else {
@@ -409,7 +409,7 @@ func (*GetVulnerabilityExceptionConfigResponse) Descriptor() ([]byte, []int) {
 func (m *GetVulnerabilityExceptionConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetVulnerabilityExceptionConfigResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetVulnerabilityExceptionConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetVulnerabilityExceptionConfigResponse.Marshal(b, m, deterministic)
 	} else {
@@ -474,7 +474,7 @@ func (*UpdateVulnerabilityExceptionConfigRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateVulnerabilityExceptionConfigRequest.Marshal(b, m, deterministic)
 	} else {
@@ -539,7 +539,7 @@ func (*UpdateVulnerabilityExceptionConfigResponse) Descriptor() ([]byte, []int) 
 func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateVulnerabilityExceptionConfigResponse.Marshal(b, m, deterministic)
 	} else {
@@ -903,7 +903,7 @@ var _ConfigService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/config_service.proto",
 }
 
-func (m *PutConfigRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *PutConfigRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -913,7 +913,7 @@ func (m *PutConfigRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PutConfigRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PutConfigRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -942,7 +942,7 @@ func (m *PutConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DayOption) MarshalVT() (dAtA []byte, err error) {
+func (m *DayOption) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -952,7 +952,7 @@ func (m *DayOption) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DayOption) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DayOption) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -984,7 +984,7 @@ func (m *DayOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityExceptionConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -994,7 +994,7 @@ func (m *VulnerabilityExceptionConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityExceptionConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1023,7 +1023,7 @@ func (m *VulnerabilityExceptionConfig) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1033,7 +1033,7 @@ func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVT() (dAtA []byt
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1070,7 +1070,7 @@ func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalToSizedBuffer(dA
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1080,7 +1080,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVT() (dAtA []byte, e
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1143,7 +1143,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalToSizedBuffer(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *GetVulnerabilityExceptionConfigResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetVulnerabilityExceptionConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1153,7 +1153,7 @@ func (m *GetVulnerabilityExceptionConfigResponse) MarshalVT() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *GetVulnerabilityExceptionConfigResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetVulnerabilityExceptionConfigResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1182,7 +1182,7 @@ func (m *GetVulnerabilityExceptionConfigResponse) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1192,7 +1192,7 @@ func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalVT() (dAtA []byte, er
 	return dAtA[:n], nil
 }
 
-func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1221,7 +1221,7 @@ func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalToSizedBuffer(dAtA []
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1231,7 +1231,7 @@ func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalVT() (dAtA []byte, e
 	return dAtA[:n], nil
 }
 
-func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

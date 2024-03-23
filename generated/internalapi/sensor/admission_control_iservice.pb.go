@@ -42,7 +42,7 @@ func (*MsgFromAdmissionControl) Descriptor() ([]byte, []int) {
 func (m *MsgFromAdmissionControl) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgFromAdmissionControl) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgFromAdmissionControl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MsgFromAdmissionControl.Marshal(b, m, deterministic)
 	} else {
@@ -98,7 +98,7 @@ func (*MsgToAdmissionControl) Descriptor() ([]byte, []int) {
 func (m *MsgToAdmissionControl) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *MsgToAdmissionControl) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *MsgToAdmissionControl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_MsgToAdmissionControl.Marshal(b, m, deterministic)
 	} else {
@@ -124,7 +124,7 @@ var xxx_messageInfo_MsgToAdmissionControl proto.InternalMessageInfo
 
 type isMsgToAdmissionControl_Msg interface {
 	isMsgToAdmissionControl_Msg()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isMsgToAdmissionControl_Msg
 }
@@ -388,7 +388,7 @@ var _AdmissionControlManagementService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/sensor/admission_control_iservice.proto",
 }
 
-func (m *MsgFromAdmissionControl) MarshalVT() (dAtA []byte, err error) {
+func (m *MsgFromAdmissionControl) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -398,7 +398,7 @@ func (m *MsgFromAdmissionControl) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgFromAdmissionControl) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *MsgFromAdmissionControl) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -415,7 +415,7 @@ func (m *MsgFromAdmissionControl) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgToAdmissionControl) MarshalVT() (dAtA []byte, err error) {
+func (m *MsgToAdmissionControl) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -425,7 +425,7 @@ func (m *MsgToAdmissionControl) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MsgToAdmissionControl) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *MsgToAdmissionControl) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -443,7 +443,7 @@ func (m *MsgToAdmissionControl) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Msg.Size()
 			i -= size
-			if _, err := m.Msg.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -451,7 +451,7 @@ func (m *MsgToAdmissionControl) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgToAdmissionControl_SettingsPush) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *MsgToAdmissionControl_SettingsPush) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -472,7 +472,7 @@ func (m *MsgToAdmissionControl_SettingsPush) MarshalToSizedBuffer(dAtA []byte) (
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToAdmissionControl_UpdateResourceRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *MsgToAdmissionControl_UpdateResourceRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

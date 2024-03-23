@@ -44,7 +44,7 @@ func (*GetImageIntegrationsRequest) Descriptor() ([]byte, []int) {
 func (m *GetImageIntegrationsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetImageIntegrationsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetImageIntegrationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetImageIntegrationsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -111,7 +111,7 @@ func (*GetImageIntegrationsResponse) Descriptor() ([]byte, []int) {
 func (m *GetImageIntegrationsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetImageIntegrationsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetImageIntegrationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetImageIntegrationsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ func (*UpdateImageIntegrationRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateImageIntegrationRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateImageIntegrationRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateImageIntegrationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateImageIntegrationRequest.Marshal(b, m, deterministic)
 	} else {
@@ -627,7 +627,7 @@ var _ImageIntegrationService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/image_integration_service.proto",
 }
 
-func (m *GetImageIntegrationsRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetImageIntegrationsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -637,7 +637,7 @@ func (m *GetImageIntegrationsRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetImageIntegrationsRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetImageIntegrationsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -668,7 +668,7 @@ func (m *GetImageIntegrationsRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *GetImageIntegrationsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetImageIntegrationsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -678,7 +678,7 @@ func (m *GetImageIntegrationsResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetImageIntegrationsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetImageIntegrationsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -709,7 +709,7 @@ func (m *GetImageIntegrationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateImageIntegrationRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateImageIntegrationRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -719,7 +719,7 @@ func (m *UpdateImageIntegrationRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpdateImageIntegrationRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateImageIntegrationRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

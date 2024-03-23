@@ -52,7 +52,7 @@ func (*ServiceAccount) Descriptor() ([]byte, []int) {
 func (m *ServiceAccount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ServiceAccount) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ServiceAccount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ServiceAccount.Marshal(b, m, deterministic)
 	} else {
@@ -226,7 +226,7 @@ var fileDescriptor_7a2dd3acd1a2d3c1 = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x4d, 0xca, 0x0f, 0x60, 0xce, 0x02, 0x00, 0x00,
 }
 
-func (m *ServiceAccount) MarshalVT() (dAtA []byte, err error) {
+func (m *ServiceAccount) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -236,7 +236,7 @@ func (m *ServiceAccount) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ServiceAccount) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceAccount) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -99,7 +99,7 @@ func (*Taint) Descriptor() ([]byte, []int) {
 func (m *Taint) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Taint) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Taint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Taint.Marshal(b, m, deterministic)
 	} else {
@@ -176,7 +176,7 @@ func (*Toleration) Descriptor() ([]byte, []int) {
 func (m *Toleration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Toleration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Toleration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Toleration.Marshal(b, m, deterministic)
 	} else {
@@ -277,7 +277,7 @@ var fileDescriptor_ecc716fc97bf932b = []byte{
 	0xd9, 0x68, 0x02, 0x00, 0x00,
 }
 
-func (m *Taint) MarshalVT() (dAtA []byte, err error) {
+func (m *Taint) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -287,7 +287,7 @@ func (m *Taint) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Taint) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Taint) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -323,7 +323,7 @@ func (m *Taint) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Toleration) MarshalVT() (dAtA []byte, err error) {
+func (m *Toleration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -333,7 +333,7 @@ func (m *Toleration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Toleration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Toleration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

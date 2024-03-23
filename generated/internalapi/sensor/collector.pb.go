@@ -42,7 +42,7 @@ func (*CollectorRegisterRequest) Descriptor() ([]byte, []int) {
 func (m *CollectorRegisterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CollectorRegisterRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CollectorRegisterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CollectorRegisterRequest.Marshal(b, m, deterministic)
 	} else {
@@ -116,7 +116,7 @@ var fileDescriptor_71453edf4e1b15cc = []byte{
 	0x00,
 }
 
-func (m *CollectorRegisterRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CollectorRegisterRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -126,7 +126,7 @@ func (m *CollectorRegisterRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectorRegisterRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CollectorRegisterRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

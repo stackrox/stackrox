@@ -170,7 +170,7 @@ func (*Node) Descriptor() ([]byte, []int) {
 func (m *Node) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Node) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Node) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Node.Marshal(b, m, deterministic)
 	} else {
@@ -196,25 +196,25 @@ var xxx_messageInfo_Node proto.InternalMessageInfo
 
 type isNode_SetComponents interface {
 	isNode_SetComponents()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNode_SetComponents
 }
 type isNode_SetCves interface {
 	isNode_SetCves()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNode_SetCves
 }
 type isNode_SetFixable interface {
 	isNode_SetFixable()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNode_SetFixable
 }
 type isNode_SetTopCvss interface {
 	isNode_SetTopCvss()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNode_SetTopCvss
 }
@@ -578,7 +578,7 @@ func (*NodeScan) Descriptor() ([]byte, []int) {
 func (m *NodeScan) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeScan) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeScan.Marshal(b, m, deterministic)
 	} else {
@@ -681,7 +681,7 @@ func (*NodeInventory) Descriptor() ([]byte, []int) {
 func (m *NodeInventory) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeInventory) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeInventory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeInventory.Marshal(b, m, deterministic)
 	} else {
@@ -777,7 +777,7 @@ func (*NodeInventory_Components) Descriptor() ([]byte, []int) {
 func (m *NodeInventory_Components) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeInventory_Components) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeInventory_Components) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeInventory_Components.Marshal(b, m, deterministic)
 	} else {
@@ -870,7 +870,7 @@ func (*NodeInventory_Components_RHELComponent) Descriptor() ([]byte, []int) {
 func (m *NodeInventory_Components_RHELComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeInventory_Components_RHELComponent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeInventory_Components_RHELComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeInventory_Components_RHELComponent.Marshal(b, m, deterministic)
 	} else {
@@ -990,7 +990,7 @@ func (*NodeInventory_Components_RHELComponent_Executable) Descriptor() ([]byte, 
 func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeInventory_Components_RHELComponent_Executable) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable.Marshal(b, m, deterministic)
 	} else {
@@ -1068,7 +1068,7 @@ func (*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Des
 func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion.Marshal(b, m, deterministic)
 	} else {
@@ -1144,7 +1144,7 @@ func (*EmbeddedNodeScanComponent) Descriptor() ([]byte, []int) {
 func (m *EmbeddedNodeScanComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EmbeddedNodeScanComponent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *EmbeddedNodeScanComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_EmbeddedNodeScanComponent.Marshal(b, m, deterministic)
 	} else {
@@ -1170,7 +1170,7 @@ var xxx_messageInfo_EmbeddedNodeScanComponent proto.InternalMessageInfo
 
 type isEmbeddedNodeScanComponent_SetTopCvss interface {
 	isEmbeddedNodeScanComponent_SetTopCvss()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isEmbeddedNodeScanComponent_SetTopCvss
 }
@@ -1390,7 +1390,7 @@ var fileDescriptor_107f6eed651900c7 = []byte{
 	0x00, 0x00,
 }
 
-func (m *Node) MarshalVT() (dAtA []byte, err error) {
+func (m *Node) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1400,7 +1400,7 @@ func (m *Node) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Node) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Node) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1466,7 +1466,7 @@ func (m *Node) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetTopCvss.Size()
 			i -= size
-			if _, err := m.SetTopCvss.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.SetTopCvss.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1490,7 +1490,7 @@ func (m *Node) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetFixable.Size()
 			i -= size
-			if _, err := m.SetFixable.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.SetFixable.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1499,7 +1499,7 @@ func (m *Node) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetCves.Size()
 			i -= size
-			if _, err := m.SetCves.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.SetCves.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1508,7 +1508,7 @@ func (m *Node) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.SetComponents.Size()
 			i -= size
-			if _, err := m.SetComponents.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.SetComponents.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1698,7 +1698,7 @@ func (m *Node) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Node_Components) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Node_Components) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1712,7 +1712,7 @@ func (m *Node_Components) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x98
 	return len(dAtA) - i, nil
 }
-func (m *Node_Cves) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Node_Cves) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1726,7 +1726,7 @@ func (m *Node_Cves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0xa0
 	return len(dAtA) - i, nil
 }
-func (m *Node_FixableCves) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Node_FixableCves) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1740,7 +1740,7 @@ func (m *Node_FixableCves) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0xa8
 	return len(dAtA) - i, nil
 }
-func (m *Node_TopCvss) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Node_TopCvss) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1755,7 +1755,7 @@ func (m *Node_TopCvss) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0xc5
 	return len(dAtA) - i, nil
 }
-func (m *NodeScan) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeScan) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1765,7 +1765,7 @@ func (m *NodeScan) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeScan) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeScan) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1833,7 +1833,7 @@ func (m *NodeScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeInventory) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeInventory) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1843,7 +1843,7 @@ func (m *NodeInventory) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeInventory) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeInventory) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1916,7 +1916,7 @@ func (m *NodeInventory) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeInventory_Components) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeInventory_Components) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1926,7 +1926,7 @@ func (m *NodeInventory_Components) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeInventory_Components) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeInventory_Components) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1973,7 +1973,7 @@ func (m *NodeInventory_Components) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeInventory_Components_RHELComponent) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeInventory_Components_RHELComponent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1983,7 +1983,7 @@ func (m *NodeInventory_Components_RHELComponent) MarshalVT() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *NodeInventory_Components_RHELComponent) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeInventory_Components_RHELComponent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2061,7 +2061,7 @@ func (m *NodeInventory_Components_RHELComponent) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeInventory_Components_RHELComponent_Executable) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeInventory_Components_RHELComponent_Executable) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2071,7 +2071,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable) MarshalVT() (dAtA []
 	return dAtA[:n], nil
 }
 
-func (m *NodeInventory_Components_RHELComponent_Executable) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeInventory_Components_RHELComponent_Executable) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2109,7 +2109,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable) MarshalToSizedBuffer
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2119,7 +2119,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) M
 	return dAtA[:n], nil
 }
 
-func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2150,7 +2150,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) M
 	return len(dAtA) - i, nil
 }
 
-func (m *EmbeddedNodeScanComponent) MarshalVT() (dAtA []byte, err error) {
+func (m *EmbeddedNodeScanComponent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2160,7 +2160,7 @@ func (m *EmbeddedNodeScanComponent) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EmbeddedNodeScanComponent) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *EmbeddedNodeScanComponent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2198,7 +2198,7 @@ func (m *EmbeddedNodeScanComponent) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		{
 			size := m.SetTopCvss.Size()
 			i -= size
-			if _, err := m.SetTopCvss.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.SetTopCvss.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2239,7 +2239,7 @@ func (m *EmbeddedNodeScanComponent) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *EmbeddedNodeScanComponent_TopCvss) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *EmbeddedNodeScanComponent_TopCvss) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

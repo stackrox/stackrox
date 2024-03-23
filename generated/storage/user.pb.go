@@ -39,7 +39,7 @@ func (*SlimUser) Descriptor() ([]byte, []int) {
 func (m *SlimUser) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SlimUser) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SlimUser) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SlimUser.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ func (*User) Descriptor() ([]byte, []int) {
 func (m *User) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *User) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_User.Marshal(b, m, deterministic)
 	} else {
@@ -198,7 +198,7 @@ func (*UserAttribute) Descriptor() ([]byte, []int) {
 func (m *UserAttribute) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UserAttribute) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UserAttribute) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UserAttribute.Marshal(b, m, deterministic)
 	} else {
@@ -268,7 +268,7 @@ func (*UserInfo) Descriptor() ([]byte, []int) {
 func (m *UserInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UserInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UserInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UserInfo.Marshal(b, m, deterministic)
 	} else {
@@ -359,7 +359,7 @@ func (*UserInfo_Role) Descriptor() ([]byte, []int) {
 func (m *UserInfo_Role) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UserInfo_Role) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UserInfo_Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UserInfo_Role.Marshal(b, m, deterministic)
 	} else {
@@ -435,7 +435,7 @@ func (*UserInfo_ResourceToAccess) Descriptor() ([]byte, []int) {
 func (m *UserInfo_ResourceToAccess) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UserInfo_ResourceToAccess) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UserInfo_ResourceToAccess) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UserInfo_ResourceToAccess.Marshal(b, m, deterministic)
 	} else {
@@ -531,7 +531,7 @@ var fileDescriptor_07f0ee709dd55f7c = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x0c, 0xfc, 0x78, 0x0a, 0xec, 0x03, 0x00, 0x00,
 }
 
-func (m *SlimUser) MarshalVT() (dAtA []byte, err error) {
+func (m *SlimUser) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -541,7 +541,7 @@ func (m *SlimUser) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SlimUser) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SlimUser) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -572,7 +572,7 @@ func (m *SlimUser) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *User) MarshalVT() (dAtA []byte, err error) {
+func (m *User) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -582,7 +582,7 @@ func (m *User) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *User) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *User) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -634,7 +634,7 @@ func (m *User) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UserAttribute) MarshalVT() (dAtA []byte, err error) {
+func (m *UserAttribute) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -644,7 +644,7 @@ func (m *UserAttribute) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UserAttribute) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UserAttribute) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -675,7 +675,7 @@ func (m *UserAttribute) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UserInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *UserInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -685,7 +685,7 @@ func (m *UserInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UserInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UserInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -742,7 +742,7 @@ func (m *UserInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UserInfo_Role) MarshalVT() (dAtA []byte, err error) {
+func (m *UserInfo_Role) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -752,7 +752,7 @@ func (m *UserInfo_Role) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UserInfo_Role) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UserInfo_Role) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -793,7 +793,7 @@ func (m *UserInfo_Role) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UserInfo_ResourceToAccess) MarshalVT() (dAtA []byte, err error) {
+func (m *UserInfo_ResourceToAccess) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -803,7 +803,7 @@ func (m *UserInfo_ResourceToAccess) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UserInfo_ResourceToAccess) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UserInfo_ResourceToAccess) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

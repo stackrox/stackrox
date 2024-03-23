@@ -43,7 +43,7 @@ func (*ListMitreAttackVectorsResponse) Descriptor() ([]byte, []int) {
 func (m *ListMitreAttackVectorsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListMitreAttackVectorsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListMitreAttackVectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListMitreAttackVectorsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -109,7 +109,7 @@ func (*GetMitreVectorResponse) Descriptor() ([]byte, []int) {
 func (m *GetMitreVectorResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetMitreVectorResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetMitreVectorResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetMitreVectorResponse.Marshal(b, m, deterministic)
 	} else {
@@ -307,7 +307,7 @@ var _MitreAttackService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/mitre_service.proto",
 }
 
-func (m *ListMitreAttackVectorsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListMitreAttackVectorsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -317,7 +317,7 @@ func (m *ListMitreAttackVectorsResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListMitreAttackVectorsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListMitreAttackVectorsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -348,7 +348,7 @@ func (m *ListMitreAttackVectorsResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *GetMitreVectorResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetMitreVectorResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -358,7 +358,7 @@ func (m *GetMitreVectorResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetMitreVectorResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetMitreVectorResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

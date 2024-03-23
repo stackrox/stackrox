@@ -41,7 +41,7 @@ func (*GZIPDataChunk) Descriptor() ([]byte, []int) {
 func (m *GZIPDataChunk) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GZIPDataChunk) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GZIPDataChunk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GZIPDataChunk.Marshal(b, m, deterministic)
 	} else {
@@ -114,7 +114,7 @@ func (*File) Descriptor() ([]byte, []int) {
 func (m *File) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *File) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_File.Marshal(b, m, deterministic)
 	} else {
@@ -242,7 +242,7 @@ func (*CommandLine) Descriptor() ([]byte, []int) {
 func (m *CommandLine) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CommandLine) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CommandLine) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CommandLine.Marshal(b, m, deterministic)
 	} else {
@@ -317,7 +317,7 @@ func (*CommandLine_Args) Descriptor() ([]byte, []int) {
 func (m *CommandLine_Args) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CommandLine_Args) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CommandLine_Args) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CommandLine_Args.Marshal(b, m, deterministic)
 	} else {
@@ -397,7 +397,7 @@ func (*InsecureRegistriesConfig) Descriptor() ([]byte, []int) {
 func (m *InsecureRegistriesConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *InsecureRegistriesConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *InsecureRegistriesConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_InsecureRegistriesConfig.Marshal(b, m, deterministic)
 	} else {
@@ -472,7 +472,7 @@ func (*ContainerRuntimeInfo) Descriptor() ([]byte, []int) {
 func (m *ContainerRuntimeInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ContainerRuntimeInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ContainerRuntimeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ContainerRuntimeInfo.Marshal(b, m, deterministic)
 	} else {
@@ -534,7 +534,7 @@ func (*ComplianceStandardResult) Descriptor() ([]byte, []int) {
 func (m *ComplianceStandardResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceStandardResult) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceStandardResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceStandardResult.Marshal(b, m, deterministic)
 	} else {
@@ -622,7 +622,7 @@ func (*ComplianceReturn) Descriptor() ([]byte, []int) {
 func (m *ComplianceReturn) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ComplianceReturn) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ComplianceReturn) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ComplianceReturn.Marshal(b, m, deterministic)
 	} else {
@@ -823,7 +823,7 @@ var fileDescriptor_0141493472fe6290 = []byte{
 	0xd2, 0x0f, 0xfe, 0x09, 0x00, 0x00, 0xff, 0xff, 0x06, 0x64, 0xc3, 0xee, 0x6c, 0x08, 0x00, 0x00,
 }
 
-func (m *GZIPDataChunk) MarshalVT() (dAtA []byte, err error) {
+func (m *GZIPDataChunk) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -833,7 +833,7 @@ func (m *GZIPDataChunk) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GZIPDataChunk) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GZIPDataChunk) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -857,7 +857,7 @@ func (m *GZIPDataChunk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *File) MarshalVT() (dAtA []byte, err error) {
+func (m *File) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -867,7 +867,7 @@ func (m *File) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *File) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *File) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -951,7 +951,7 @@ func (m *File) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CommandLine) MarshalVT() (dAtA []byte, err error) {
+func (m *CommandLine) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -961,7 +961,7 @@ func (m *CommandLine) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CommandLine) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CommandLine) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -999,7 +999,7 @@ func (m *CommandLine) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CommandLine_Args) MarshalVT() (dAtA []byte, err error) {
+func (m *CommandLine_Args) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1009,7 +1009,7 @@ func (m *CommandLine_Args) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CommandLine_Args) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CommandLine_Args) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1054,7 +1054,7 @@ func (m *CommandLine_Args) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *InsecureRegistriesConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *InsecureRegistriesConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1064,7 +1064,7 @@ func (m *InsecureRegistriesConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *InsecureRegistriesConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *InsecureRegistriesConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1099,7 +1099,7 @@ func (m *InsecureRegistriesConfig) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ContainerRuntimeInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *ContainerRuntimeInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1109,7 +1109,7 @@ func (m *ContainerRuntimeInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ContainerRuntimeInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ContainerRuntimeInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1138,7 +1138,7 @@ func (m *ContainerRuntimeInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceStandardResult) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceStandardResult) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1148,7 +1148,7 @@ func (m *ComplianceStandardResult) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceStandardResult) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceStandardResult) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1217,7 +1217,7 @@ func (m *ComplianceStandardResult) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ComplianceReturn) MarshalVT() (dAtA []byte, err error) {
+func (m *ComplianceReturn) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1227,7 +1227,7 @@ func (m *ComplianceReturn) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ComplianceReturn) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ComplianceReturn) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

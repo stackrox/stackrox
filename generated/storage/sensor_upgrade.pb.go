@@ -40,7 +40,7 @@ func (*SensorUpgradeConfig) Descriptor() ([]byte, []int) {
 func (m *SensorUpgradeConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SensorUpgradeConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SensorUpgradeConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SensorUpgradeConfig.Marshal(b, m, deterministic)
 	} else {
@@ -104,7 +104,7 @@ var fileDescriptor_e0148125d586f21a = []byte{
 	0xe5, 0x9c, 0x5c, 0xe0, 0xac, 0x00, 0x00, 0x00,
 }
 
-func (m *SensorUpgradeConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *SensorUpgradeConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -114,7 +114,7 @@ func (m *SensorUpgradeConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SensorUpgradeConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SensorUpgradeConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

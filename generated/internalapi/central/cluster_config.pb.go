@@ -39,7 +39,7 @@ func (*ClusterConfig) Descriptor() ([]byte, []int) {
 func (m *ClusterConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterConfig.Marshal(b, m, deterministic)
 	} else {
@@ -106,7 +106,7 @@ var fileDescriptor_842fd1351745032d = []byte{
 	0x8e, 0x11, 0xb5, 0x00, 0x00, 0x00,
 }
 
-func (m *ClusterConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -116,7 +116,7 @@ func (m *ClusterConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

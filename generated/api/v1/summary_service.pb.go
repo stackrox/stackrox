@@ -47,7 +47,7 @@ func (*SummaryCountsResponse) Descriptor() ([]byte, []int) {
 func (m *SummaryCountsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SummaryCountsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SummaryCountsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SummaryCountsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -238,7 +238,7 @@ var _SummaryService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/summary_service.proto",
 }
 
-func (m *SummaryCountsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *SummaryCountsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -248,7 +248,7 @@ func (m *SummaryCountsResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SummaryCountsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SummaryCountsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

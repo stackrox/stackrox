@@ -40,7 +40,7 @@ func (*PolicyCategory) Descriptor() ([]byte, []int) {
 func (m *PolicyCategory) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PolicyCategory) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PolicyCategory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PolicyCategory.Marshal(b, m, deterministic)
 	} else {
@@ -119,7 +119,7 @@ var fileDescriptor_0b38511e664e6e6a = []byte{
 	0xff, 0x3c, 0xa3, 0xcc, 0xdb, 0xbd, 0x00, 0x00, 0x00,
 }
 
-func (m *PolicyCategory) MarshalVT() (dAtA []byte, err error) {
+func (m *PolicyCategory) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -129,7 +129,7 @@ func (m *PolicyCategory) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PolicyCategory) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PolicyCategory) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

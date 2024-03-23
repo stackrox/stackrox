@@ -44,7 +44,7 @@ func (*NodeIntegration) Descriptor() ([]byte, []int) {
 func (m *NodeIntegration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NodeIntegration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NodeIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NodeIntegration.Marshal(b, m, deterministic)
 	} else {
@@ -70,7 +70,7 @@ var xxx_messageInfo_NodeIntegration proto.InternalMessageInfo
 
 type isNodeIntegration_IntegrationConfig interface {
 	isNodeIntegration_IntegrationConfig()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isNodeIntegration_IntegrationConfig
 }
@@ -173,7 +173,7 @@ var fileDescriptor_554ffd999e2aaa13 = []byte{
 	0x60, 0x4b, 0x20, 0x01, 0x00, 0x00,
 }
 
-func (m *NodeIntegration) MarshalVT() (dAtA []byte, err error) {
+func (m *NodeIntegration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -183,7 +183,7 @@ func (m *NodeIntegration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NodeIntegration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeIntegration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -201,7 +201,7 @@ func (m *NodeIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.IntegrationConfig.Size()
 			i -= size
-			if _, err := m.IntegrationConfig.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.IntegrationConfig.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -230,7 +230,7 @@ func (m *NodeIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NodeIntegration_Clairify) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NodeIntegration_Clairify) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -355,7 +355,7 @@ func (*ClusterMetadata) Descriptor() ([]byte, []int) {
 func (m *ClusterMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -431,7 +431,7 @@ func (*GoogleProviderMetadata) Descriptor() ([]byte, []int) {
 func (m *GoogleProviderMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GoogleProviderMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GoogleProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GoogleProviderMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -499,7 +499,7 @@ func (*AWSProviderMetadata) Descriptor() ([]byte, []int) {
 func (m *AWSProviderMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AWSProviderMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AWSProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AWSProviderMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -559,7 +559,7 @@ func (*AzureProviderMetadata) Descriptor() ([]byte, []int) {
 func (m *AzureProviderMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AzureProviderMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AzureProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AzureProviderMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -627,7 +627,7 @@ func (*ProviderMetadata) Descriptor() ([]byte, []int) {
 func (m *ProviderMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProviderMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProviderMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -653,7 +653,7 @@ var xxx_messageInfo_ProviderMetadata proto.InternalMessageInfo
 
 type isProviderMetadata_Provider interface {
 	isProviderMetadata_Provider()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isProviderMetadata_Provider
 }
@@ -805,7 +805,7 @@ func (*OrchestratorMetadata) Descriptor() ([]byte, []int) {
 func (m *OrchestratorMetadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *OrchestratorMetadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *OrchestratorMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_OrchestratorMetadata.Marshal(b, m, deterministic)
 	} else {
@@ -831,7 +831,7 @@ var xxx_messageInfo_OrchestratorMetadata proto.InternalMessageInfo
 
 type isOrchestratorMetadata_IsOpenshift interface {
 	isOrchestratorMetadata_IsOpenshift()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isOrchestratorMetadata_IsOpenshift
 }
@@ -934,7 +934,7 @@ func (*AdmissionControllerConfig) Descriptor() ([]byte, []int) {
 func (m *AdmissionControllerConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdmissionControllerConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdmissionControllerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdmissionControllerConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1022,7 +1022,7 @@ func (*TolerationsConfig) Descriptor() ([]byte, []int) {
 func (m *TolerationsConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TolerationsConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TolerationsConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TolerationsConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1092,7 +1092,7 @@ func (*StaticClusterConfig) Descriptor() ([]byte, []int) {
 func (m *StaticClusterConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *StaticClusterConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *StaticClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_StaticClusterConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1219,7 +1219,7 @@ func (*DynamicClusterConfig) Descriptor() ([]byte, []int) {
 func (m *DynamicClusterConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DynamicClusterConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DynamicClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DynamicClusterConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1299,7 +1299,7 @@ func (*CompleteClusterConfig) Descriptor() ([]byte, []int) {
 func (m *CompleteClusterConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CompleteClusterConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CompleteClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CompleteClusterConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1396,7 +1396,7 @@ func (*SensorDeploymentIdentification) Descriptor() ([]byte, []int) {
 func (m *SensorDeploymentIdentification) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SensorDeploymentIdentification) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SensorDeploymentIdentification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SensorDeploymentIdentification.Marshal(b, m, deterministic)
 	} else {
@@ -1516,7 +1516,7 @@ func (*Cluster) Descriptor() ([]byte, []int) {
 func (m *Cluster) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Cluster) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Cluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Cluster.Marshal(b, m, deterministic)
 	} else {
@@ -1750,7 +1750,7 @@ func (*ClusterCertExpiryStatus) Descriptor() ([]byte, []int) {
 func (m *ClusterCertExpiryStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterCertExpiryStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterCertExpiryStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterCertExpiryStatus.Marshal(b, m, deterministic)
 	} else {
@@ -1825,7 +1825,7 @@ func (*ClusterStatus) Descriptor() ([]byte, []int) {
 func (m *ClusterStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterStatus.Marshal(b, m, deterministic)
 	} else {
@@ -1931,7 +1931,7 @@ func (*ClusterUpgradeStatus) Descriptor() ([]byte, []int) {
 func (m *ClusterUpgradeStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterUpgradeStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterUpgradeStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterUpgradeStatus.Marshal(b, m, deterministic)
 	} else {
@@ -2016,7 +2016,7 @@ func (*ClusterUpgradeStatus_UpgradeProcessStatus) Descriptor() ([]byte, []int) {
 func (m *ClusterUpgradeStatus_UpgradeProcessStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterUpgradeStatus_UpgradeProcessStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterUpgradeStatus_UpgradeProcessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterUpgradeStatus_UpgradeProcessStatus.Marshal(b, m, deterministic)
 	} else {
@@ -2122,7 +2122,7 @@ func (*UpgradeProgress) Descriptor() ([]byte, []int) {
 func (m *UpgradeProgress) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpgradeProgress) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpgradeProgress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpgradeProgress.Marshal(b, m, deterministic)
 	} else {
@@ -2200,7 +2200,7 @@ func (*AuditLogFileState) Descriptor() ([]byte, []int) {
 func (m *AuditLogFileState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuditLogFileState) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuditLogFileState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuditLogFileState.Marshal(b, m, deterministic)
 	} else {
@@ -2284,7 +2284,7 @@ func (*ClusterHealthStatus) Descriptor() ([]byte, []int) {
 func (m *ClusterHealthStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterHealthStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterHealthStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterHealthStatus.Marshal(b, m, deterministic)
 	} else {
@@ -2436,7 +2436,7 @@ func (*CollectorHealthInfo) Descriptor() ([]byte, []int) {
 func (m *CollectorHealthInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CollectorHealthInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CollectorHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CollectorHealthInfo.Marshal(b, m, deterministic)
 	} else {
@@ -2462,19 +2462,19 @@ var xxx_messageInfo_CollectorHealthInfo proto.InternalMessageInfo
 
 type isCollectorHealthInfo_TotalDesiredPodsOpt interface {
 	isCollectorHealthInfo_TotalDesiredPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isCollectorHealthInfo_TotalDesiredPodsOpt
 }
 type isCollectorHealthInfo_TotalReadyPodsOpt interface {
 	isCollectorHealthInfo_TotalReadyPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isCollectorHealthInfo_TotalReadyPodsOpt
 }
 type isCollectorHealthInfo_TotalRegisteredNodesOpt interface {
 	isCollectorHealthInfo_TotalRegisteredNodesOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isCollectorHealthInfo_TotalRegisteredNodesOpt
 }
@@ -2638,7 +2638,7 @@ func (*AdmissionControlHealthInfo) Descriptor() ([]byte, []int) {
 func (m *AdmissionControlHealthInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdmissionControlHealthInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdmissionControlHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdmissionControlHealthInfo.Marshal(b, m, deterministic)
 	} else {
@@ -2664,13 +2664,13 @@ var xxx_messageInfo_AdmissionControlHealthInfo proto.InternalMessageInfo
 
 type isAdmissionControlHealthInfo_TotalDesiredPodsOpt interface {
 	isAdmissionControlHealthInfo_TotalDesiredPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isAdmissionControlHealthInfo_TotalDesiredPodsOpt
 }
 type isAdmissionControlHealthInfo_TotalReadyPodsOpt interface {
 	isAdmissionControlHealthInfo_TotalReadyPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isAdmissionControlHealthInfo_TotalReadyPodsOpt
 }
@@ -2808,7 +2808,7 @@ func (*ScannerHealthInfo) Descriptor() ([]byte, []int) {
 func (m *ScannerHealthInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScannerHealthInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScannerHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScannerHealthInfo.Marshal(b, m, deterministic)
 	} else {
@@ -2834,25 +2834,25 @@ var xxx_messageInfo_ScannerHealthInfo proto.InternalMessageInfo
 
 type isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt interface {
 	isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt
 }
 type isScannerHealthInfo_TotalReadyAnalyzerPodsOpt interface {
 	isScannerHealthInfo_TotalReadyAnalyzerPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isScannerHealthInfo_TotalReadyAnalyzerPodsOpt
 }
 type isScannerHealthInfo_TotalDesiredDbPodsOpt interface {
 	isScannerHealthInfo_TotalDesiredDbPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isScannerHealthInfo_TotalDesiredDbPodsOpt
 }
 type isScannerHealthInfo_TotalReadyDbPodsOpt interface {
 	isScannerHealthInfo_TotalReadyDbPodsOpt()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isScannerHealthInfo_TotalReadyDbPodsOpt
 }
@@ -3252,7 +3252,7 @@ var fileDescriptor_bd4108636841f8d0 = []byte{
 	0xef, 0xfd, 0x37, 0x00, 0x00, 0xff, 0xff, 0x75, 0x3e, 0x34, 0xb0, 0xd1, 0x21, 0x00, 0x00,
 }
 
-func (m *ClusterMetadata) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3262,7 +3262,7 @@ func (m *ClusterMetadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterMetadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterMetadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3298,7 +3298,7 @@ func (m *ClusterMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GoogleProviderMetadata) MarshalVT() (dAtA []byte, err error) {
+func (m *GoogleProviderMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3308,7 +3308,7 @@ func (m *GoogleProviderMetadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GoogleProviderMetadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GoogleProviderMetadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3339,7 +3339,7 @@ func (m *GoogleProviderMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *AWSProviderMetadata) MarshalVT() (dAtA []byte, err error) {
+func (m *AWSProviderMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3349,7 +3349,7 @@ func (m *AWSProviderMetadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AWSProviderMetadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AWSProviderMetadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3373,7 +3373,7 @@ func (m *AWSProviderMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AzureProviderMetadata) MarshalVT() (dAtA []byte, err error) {
+func (m *AzureProviderMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3383,7 +3383,7 @@ func (m *AzureProviderMetadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AzureProviderMetadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AzureProviderMetadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3407,7 +3407,7 @@ func (m *AzureProviderMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProviderMetadata) MarshalVT() (dAtA []byte, err error) {
+func (m *ProviderMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3417,7 +3417,7 @@ func (m *ProviderMetadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProviderMetadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ProviderMetadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3459,7 +3459,7 @@ func (m *ProviderMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Provider.Size()
 			i -= size
-			if _, err := m.Provider.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Provider.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3481,7 +3481,7 @@ func (m *ProviderMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProviderMetadata_Google) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ProviderMetadata_Google) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3502,7 +3502,7 @@ func (m *ProviderMetadata_Google) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ProviderMetadata_Aws) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ProviderMetadata_Aws) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3523,7 +3523,7 @@ func (m *ProviderMetadata_Aws) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ProviderMetadata_Azure) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ProviderMetadata_Azure) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3544,7 +3544,7 @@ func (m *ProviderMetadata_Azure) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *OrchestratorMetadata) MarshalVT() (dAtA []byte, err error) {
+func (m *OrchestratorMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3554,7 +3554,7 @@ func (m *OrchestratorMetadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *OrchestratorMetadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *OrchestratorMetadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3572,7 +3572,7 @@ func (m *OrchestratorMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.IsOpenshift.Size()
 			i -= size
-			if _, err := m.IsOpenshift.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.IsOpenshift.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3608,7 +3608,7 @@ func (m *OrchestratorMetadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *OrchestratorMetadata_OpenshiftVersion) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *OrchestratorMetadata_OpenshiftVersion) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3622,7 +3622,7 @@ func (m *OrchestratorMetadata_OpenshiftVersion) MarshalToSizedBuffer(dAtA []byte
 	dAtA[i] = 0x22
 	return len(dAtA) - i, nil
 }
-func (m *AdmissionControllerConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *AdmissionControllerConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3632,7 +3632,7 @@ func (m *AdmissionControllerConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdmissionControllerConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdmissionControllerConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3694,7 +3694,7 @@ func (m *AdmissionControllerConfig) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *TolerationsConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *TolerationsConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3704,7 +3704,7 @@ func (m *TolerationsConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TolerationsConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TolerationsConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3731,7 +3731,7 @@ func (m *TolerationsConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *StaticClusterConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *StaticClusterConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3741,7 +3741,7 @@ func (m *StaticClusterConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *StaticClusterConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *StaticClusterConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3841,7 +3841,7 @@ func (m *StaticClusterConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DynamicClusterConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *DynamicClusterConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3851,7 +3851,7 @@ func (m *DynamicClusterConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DynamicClusterConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DynamicClusterConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3897,7 +3897,7 @@ func (m *DynamicClusterConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CompleteClusterConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *CompleteClusterConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3907,7 +3907,7 @@ func (m *CompleteClusterConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CompleteClusterConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CompleteClusterConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3974,7 +3974,7 @@ func (m *CompleteClusterConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SensorDeploymentIdentification) MarshalVT() (dAtA []byte, err error) {
+func (m *SensorDeploymentIdentification) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3984,7 +3984,7 @@ func (m *SensorDeploymentIdentification) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SensorDeploymentIdentification) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SensorDeploymentIdentification) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4043,7 +4043,7 @@ func (m *SensorDeploymentIdentification) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *Cluster) MarshalVT() (dAtA []byte, err error) {
+func (m *Cluster) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4053,7 +4053,7 @@ func (m *Cluster) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Cluster) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Cluster) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4329,7 +4329,7 @@ func (m *Cluster) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterCertExpiryStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterCertExpiryStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4339,7 +4339,7 @@ func (m *ClusterCertExpiryStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterCertExpiryStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterCertExpiryStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4380,7 +4380,7 @@ func (m *ClusterCertExpiryStatus) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4390,7 +4390,7 @@ func (m *ClusterStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4474,7 +4474,7 @@ func (m *ClusterStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterUpgradeStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterUpgradeStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4484,7 +4484,7 @@ func (m *ClusterUpgradeStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterUpgradeStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterUpgradeStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4525,7 +4525,7 @@ func (m *ClusterUpgradeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterUpgradeStatus_UpgradeProcessStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4535,7 +4535,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) MarshalVT() (dAtA []byte, er
 	return dAtA[:n], nil
 }
 
-func (m *ClusterUpgradeStatus_UpgradeProcessStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterUpgradeStatus_UpgradeProcessStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4612,7 +4612,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) MarshalToSizedBuffer(dAtA []
 	return len(dAtA) - i, nil
 }
 
-func (m *UpgradeProgress) MarshalVT() (dAtA []byte, err error) {
+func (m *UpgradeProgress) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4622,7 +4622,7 @@ func (m *UpgradeProgress) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UpgradeProgress) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpgradeProgress) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4663,7 +4663,7 @@ func (m *UpgradeProgress) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AuditLogFileState) MarshalVT() (dAtA []byte, err error) {
+func (m *AuditLogFileState) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4673,7 +4673,7 @@ func (m *AuditLogFileState) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuditLogFileState) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuditLogFileState) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4709,7 +4709,7 @@ func (m *AuditLogFileState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterHealthStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterHealthStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4719,7 +4719,7 @@ func (m *ClusterHealthStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterHealthStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterHealthStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4826,7 +4826,7 @@ func (m *ClusterHealthStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorHealthInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *CollectorHealthInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4836,7 +4836,7 @@ func (m *CollectorHealthInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectorHealthInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CollectorHealthInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4863,7 +4863,7 @@ func (m *CollectorHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalRegisteredNodesOpt.Size()
 			i -= size
-			if _, err := m.TotalRegisteredNodesOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalRegisteredNodesOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4872,7 +4872,7 @@ func (m *CollectorHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalReadyPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalReadyPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalReadyPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4881,7 +4881,7 @@ func (m *CollectorHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalDesiredPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalDesiredPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalDesiredPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4896,7 +4896,7 @@ func (m *CollectorHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorHealthInfo_TotalDesiredPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CollectorHealthInfo_TotalDesiredPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4908,7 +4908,7 @@ func (m *CollectorHealthInfo_TotalDesiredPods) MarshalToSizedBuffer(dAtA []byte)
 	dAtA[i] = 0x10
 	return len(dAtA) - i, nil
 }
-func (m *CollectorHealthInfo_TotalReadyPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CollectorHealthInfo_TotalReadyPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4920,7 +4920,7 @@ func (m *CollectorHealthInfo_TotalReadyPods) MarshalToSizedBuffer(dAtA []byte) (
 	dAtA[i] = 0x18
 	return len(dAtA) - i, nil
 }
-func (m *CollectorHealthInfo_TotalRegisteredNodes) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CollectorHealthInfo_TotalRegisteredNodes) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4932,7 +4932,7 @@ func (m *CollectorHealthInfo_TotalRegisteredNodes) MarshalToSizedBuffer(dAtA []b
 	dAtA[i] = 0x20
 	return len(dAtA) - i, nil
 }
-func (m *AdmissionControlHealthInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *AdmissionControlHealthInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4942,7 +4942,7 @@ func (m *AdmissionControlHealthInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdmissionControlHealthInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdmissionControlHealthInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4969,7 +4969,7 @@ func (m *AdmissionControlHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, err
 		{
 			size := m.TotalReadyPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalReadyPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalReadyPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4978,7 +4978,7 @@ func (m *AdmissionControlHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, err
 		{
 			size := m.TotalDesiredPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalDesiredPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalDesiredPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -4986,7 +4986,7 @@ func (m *AdmissionControlHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *AdmissionControlHealthInfo_TotalDesiredPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdmissionControlHealthInfo_TotalDesiredPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -4998,7 +4998,7 @@ func (m *AdmissionControlHealthInfo_TotalDesiredPods) MarshalToSizedBuffer(dAtA 
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
-func (m *AdmissionControlHealthInfo_TotalReadyPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdmissionControlHealthInfo_TotalReadyPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5010,7 +5010,7 @@ func (m *AdmissionControlHealthInfo_TotalReadyPods) MarshalToSizedBuffer(dAtA []
 	dAtA[i] = 0x10
 	return len(dAtA) - i, nil
 }
-func (m *ScannerHealthInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *ScannerHealthInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -5020,7 +5020,7 @@ func (m *ScannerHealthInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScannerHealthInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScannerHealthInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5047,7 +5047,7 @@ func (m *ScannerHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalReadyDbPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalReadyDbPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalReadyDbPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -5056,7 +5056,7 @@ func (m *ScannerHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalDesiredDbPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalDesiredDbPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalDesiredDbPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -5065,7 +5065,7 @@ func (m *ScannerHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalReadyAnalyzerPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalReadyAnalyzerPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalReadyAnalyzerPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -5074,7 +5074,7 @@ func (m *ScannerHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.TotalDesiredAnalyzerPodsOpt.Size()
 			i -= size
-			if _, err := m.TotalDesiredAnalyzerPodsOpt.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.TotalDesiredAnalyzerPodsOpt.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -5082,7 +5082,7 @@ func (m *ScannerHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ScannerHealthInfo_TotalDesiredAnalyzerPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScannerHealthInfo_TotalDesiredAnalyzerPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5094,7 +5094,7 @@ func (m *ScannerHealthInfo_TotalDesiredAnalyzerPods) MarshalToSizedBuffer(dAtA [
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
-func (m *ScannerHealthInfo_TotalReadyAnalyzerPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScannerHealthInfo_TotalReadyAnalyzerPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5106,7 +5106,7 @@ func (m *ScannerHealthInfo_TotalReadyAnalyzerPods) MarshalToSizedBuffer(dAtA []b
 	dAtA[i] = 0x10
 	return len(dAtA) - i, nil
 }
-func (m *ScannerHealthInfo_TotalDesiredDbPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScannerHealthInfo_TotalDesiredDbPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -5118,7 +5118,7 @@ func (m *ScannerHealthInfo_TotalDesiredDbPods) MarshalToSizedBuffer(dAtA []byte)
 	dAtA[i] = 0x18
 	return len(dAtA) - i, nil
 }
-func (m *ScannerHealthInfo_TotalReadyDbPods) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScannerHealthInfo_TotalReadyDbPods) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

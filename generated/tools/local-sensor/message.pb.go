@@ -39,7 +39,7 @@ func (*LocalSensorPolicies) Descriptor() ([]byte, []int) {
 func (m *LocalSensorPolicies) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LocalSensorPolicies) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *LocalSensorPolicies) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LocalSensorPolicies.Marshal(b, m, deterministic)
 	} else {
@@ -109,7 +109,7 @@ var fileDescriptor_16761c5ea3753077 = []byte{
 	0x00,
 }
 
-func (m *LocalSensorPolicies) MarshalVT() (dAtA []byte, err error) {
+func (m *LocalSensorPolicies) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -119,7 +119,7 @@ func (m *LocalSensorPolicies) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LocalSensorPolicies) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *LocalSensorPolicies) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

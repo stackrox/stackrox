@@ -132,7 +132,7 @@ func (*Audit) Descriptor() ([]byte, []int) {
 func (m *Audit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Audit) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Audit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Audit.Marshal(b, m, deterministic)
 	} else {
@@ -191,7 +191,7 @@ func (*Audit_Message) Descriptor() ([]byte, []int) {
 func (m *Audit_Message) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Audit_Message) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Audit_Message) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Audit_Message.Marshal(b, m, deterministic)
 	} else {
@@ -320,7 +320,7 @@ func (*Audit_Message_Request) Descriptor() ([]byte, []int) {
 func (m *Audit_Message_Request) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Audit_Message_Request) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Audit_Message_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Audit_Message_Request.Marshal(b, m, deterministic)
 	} else {
@@ -417,7 +417,7 @@ func (*Audit_Message_Request_SourceHeaders) Descriptor() ([]byte, []int) {
 func (m *Audit_Message_Request_SourceHeaders) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Audit_Message_Request_SourceHeaders) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Audit_Message_Request_SourceHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Audit_Message_Request_SourceHeaders.Marshal(b, m, deterministic)
 	} else {
@@ -532,7 +532,7 @@ var fileDescriptor_368902fc694e7fed = []byte{
 	0x39, 0xfc, 0x15, 0x00, 0x00, 0xff, 0xff, 0xa8, 0x5d, 0xd4, 0x9c, 0x46, 0x04, 0x00, 0x00,
 }
 
-func (m *Audit) MarshalVT() (dAtA []byte, err error) {
+func (m *Audit) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -542,7 +542,7 @@ func (m *Audit) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Audit) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Audit) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -559,7 +559,7 @@ func (m *Audit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Audit_Message) MarshalVT() (dAtA []byte, err error) {
+func (m *Audit_Message) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -569,7 +569,7 @@ func (m *Audit_Message) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Audit_Message) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Audit_Message) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -644,7 +644,7 @@ func (m *Audit_Message) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Audit_Message_Request) MarshalVT() (dAtA []byte, err error) {
+func (m *Audit_Message_Request) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -654,7 +654,7 @@ func (m *Audit_Message_Request) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Audit_Message_Request) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Audit_Message_Request) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -716,7 +716,7 @@ func (m *Audit_Message_Request) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Audit_Message_Request_SourceHeaders) MarshalVT() (dAtA []byte, err error) {
+func (m *Audit_Message_Request_SourceHeaders) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -726,7 +726,7 @@ func (m *Audit_Message_Request_SourceHeaders) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *Audit_Message_Request_SourceHeaders) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Audit_Message_Request_SourceHeaders) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

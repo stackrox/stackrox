@@ -47,7 +47,7 @@ func (*ScanImage) Descriptor() ([]byte, []int) {
 func (m *ScanImage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScanImage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScanImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScanImage.Marshal(b, m, deterministic)
 	} else {
@@ -131,7 +131,7 @@ func (*ImageIntegrations) Descriptor() ([]byte, []int) {
 func (m *ImageIntegrations) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageIntegrations) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageIntegrations) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageIntegrations.Marshal(b, m, deterministic)
 	} else {
@@ -220,7 +220,7 @@ var fileDescriptor_c86f5e4b32c3c8e1 = []byte{
 	0xae, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x4c, 0x88, 0xa5, 0x1f, 0x89, 0x01, 0x00, 0x00,
 }
 
-func (m *ScanImage) MarshalVT() (dAtA []byte, err error) {
+func (m *ScanImage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -230,7 +230,7 @@ func (m *ScanImage) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScanImage) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScanImage) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -278,7 +278,7 @@ func (m *ScanImage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageIntegrations) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageIntegrations) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -288,7 +288,7 @@ func (m *ImageIntegrations) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageIntegrations) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegrations) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -68,7 +68,7 @@ func (*TestCloneSubMessage) Descriptor() ([]byte, []int) {
 func (m *TestCloneSubMessage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestCloneSubMessage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestCloneSubMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestCloneSubMessage.Marshal(b, m, deterministic)
 	} else {
@@ -152,7 +152,7 @@ func (*TestClone) Descriptor() ([]byte, []int) {
 func (m *TestClone) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TestClone) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TestClone) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TestClone.Marshal(b, m, deterministic)
 	} else {
@@ -178,7 +178,7 @@ var xxx_messageInfo_TestClone proto.InternalMessageInfo
 
 type isTestClone_Primitive interface {
 	isTestClone_Primitive()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isTestClone_Primitive
 }
@@ -465,7 +465,7 @@ var fileDescriptor_84eb23d74a64bdab = []byte{
 	0x56, 0x89, 0x04, 0x00, 0x00,
 }
 
-func (m *TestCloneSubMessage) MarshalVT() (dAtA []byte, err error) {
+func (m *TestCloneSubMessage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -475,7 +475,7 @@ func (m *TestCloneSubMessage) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestCloneSubMessage) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TestCloneSubMessage) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -504,7 +504,7 @@ func (m *TestCloneSubMessage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestClone) MarshalVT() (dAtA []byte, err error) {
+func (m *TestClone) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -514,7 +514,7 @@ func (m *TestClone) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TestClone) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TestClone) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -593,7 +593,7 @@ func (m *TestClone) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Primitive.Size()
 			i -= size
-			if _, err := m.Primitive.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Primitive.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -718,7 +718,7 @@ func (m *TestClone) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TestClone_Int32) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TestClone_Int32) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -730,7 +730,7 @@ func (m *TestClone_Int32) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x40
 	return len(dAtA) - i, nil
 }
-func (m *TestClone_String_) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TestClone_String_) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -744,7 +744,7 @@ func (m *TestClone_String_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x4a
 	return len(dAtA) - i, nil
 }
-func (m *TestClone_Msg) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TestClone_Msg) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

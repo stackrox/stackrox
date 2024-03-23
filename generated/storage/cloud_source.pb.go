@@ -74,7 +74,7 @@ func (*CloudSource) Descriptor() ([]byte, []int) {
 func (m *CloudSource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CloudSource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CloudSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CloudSource.Marshal(b, m, deterministic)
 	} else {
@@ -100,7 +100,7 @@ var xxx_messageInfo_CloudSource proto.InternalMessageInfo
 
 type isCloudSource_Config interface {
 	isCloudSource_Config()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isCloudSource_Config
 }
@@ -232,7 +232,7 @@ func (*CloudSource_Credentials) Descriptor() ([]byte, []int) {
 func (m *CloudSource_Credentials) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CloudSource_Credentials) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CloudSource_Credentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CloudSource_Credentials.Marshal(b, m, deterministic)
 	} else {
@@ -292,7 +292,7 @@ func (*PaladinCloudConfig) Descriptor() ([]byte, []int) {
 func (m *PaladinCloudConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PaladinCloudConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PaladinCloudConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PaladinCloudConfig.Marshal(b, m, deterministic)
 	} else {
@@ -352,7 +352,7 @@ func (*OCMConfig) Descriptor() ([]byte, []int) {
 func (m *OCMConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *OCMConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *OCMConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_OCMConfig.Marshal(b, m, deterministic)
 	} else {
@@ -436,7 +436,7 @@ var fileDescriptor_d0f224372f8cbe44 = []byte{
 	0x5b, 0x5a, 0xbf, 0x7a, 0x02, 0x00, 0x00,
 }
 
-func (m *CloudSource) MarshalVT() (dAtA []byte, err error) {
+func (m *CloudSource) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -446,7 +446,7 @@ func (m *CloudSource) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CloudSource) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -464,7 +464,7 @@ func (m *CloudSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Config.Size()
 			i -= size
-			if _, err := m.Config.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Config.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -513,7 +513,7 @@ func (m *CloudSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CloudSource_PaladinCloud) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource_PaladinCloud) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -534,7 +534,7 @@ func (m *CloudSource_PaladinCloud) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CloudSource_Ocm) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource_Ocm) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -555,7 +555,7 @@ func (m *CloudSource_Ocm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CloudSource_Credentials) MarshalVT() (dAtA []byte, err error) {
+func (m *CloudSource_Credentials) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -565,7 +565,7 @@ func (m *CloudSource_Credentials) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CloudSource_Credentials) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CloudSource_Credentials) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -589,7 +589,7 @@ func (m *CloudSource_Credentials) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *PaladinCloudConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *PaladinCloudConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -599,7 +599,7 @@ func (m *PaladinCloudConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PaladinCloudConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PaladinCloudConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -623,7 +623,7 @@ func (m *PaladinCloudConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *OCMConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *OCMConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -633,7 +633,7 @@ func (m *OCMConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *OCMConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *OCMConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

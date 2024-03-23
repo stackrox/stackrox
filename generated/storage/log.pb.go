@@ -41,7 +41,7 @@ func (*LogImbue) Descriptor() ([]byte, []int) {
 func (m *LogImbue) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LogImbue) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *LogImbue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LogImbue.Marshal(b, m, deterministic)
 	} else {
@@ -126,7 +126,7 @@ var fileDescriptor_876ba64878915077 = []byte{
 	0x10, 0x00, 0x00, 0xff, 0xff, 0x72, 0x42, 0xa0, 0x87, 0xe3, 0x00, 0x00, 0x00,
 }
 
-func (m *LogImbue) MarshalVT() (dAtA []byte, err error) {
+func (m *LogImbue) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -136,7 +136,7 @@ func (m *LogImbue) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LogImbue) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *LogImbue) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

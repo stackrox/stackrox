@@ -106,7 +106,7 @@ func (*AuthProvider) Descriptor() ([]byte, []int) {
 func (m *AuthProvider) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthProvider) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthProvider) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthProvider.Marshal(b, m, deterministic)
 	} else {
@@ -287,7 +287,7 @@ func (*AuthProvider_RequiredAttribute) Descriptor() ([]byte, []int) {
 func (m *AuthProvider_RequiredAttribute) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthProvider_RequiredAttribute) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthProvider_RequiredAttribute) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthProvider_RequiredAttribute.Marshal(b, m, deterministic)
 	} else {
@@ -385,7 +385,7 @@ var fileDescriptor_4ed6b69aa5a381c8 = []byte{
 	0x67, 0xb0, 0x30, 0xd2, 0x03, 0x00, 0x00,
 }
 
-func (m *AuthProvider) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthProvider) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -395,7 +395,7 @@ func (m *AuthProvider) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuthProvider) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthProvider) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -562,7 +562,7 @@ func (m *AuthProvider) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthProvider_RequiredAttribute) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthProvider_RequiredAttribute) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -572,7 +572,7 @@ func (m *AuthProvider_RequiredAttribute) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuthProvider_RequiredAttribute) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthProvider_RequiredAttribute) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

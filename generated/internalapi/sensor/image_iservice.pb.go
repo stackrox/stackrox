@@ -45,7 +45,7 @@ func (*GetImageRequest) Descriptor() ([]byte, []int) {
 func (m *GetImageRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetImageRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetImageRequest.Marshal(b, m, deterministic)
 	} else {
@@ -120,7 +120,7 @@ func (*GetImageResponse) Descriptor() ([]byte, []int) {
 func (m *GetImageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetImageResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetImageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetImageResponse.Marshal(b, m, deterministic)
 	} else {
@@ -276,7 +276,7 @@ var _ImageService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/sensor/image_iservice.proto",
 }
 
-func (m *GetImageRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetImageRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -286,7 +286,7 @@ func (m *GetImageRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetImageRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetImageRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -332,7 +332,7 @@ func (m *GetImageRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetImageResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetImageResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -342,7 +342,7 @@ func (m *GetImageResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetImageResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetImageResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

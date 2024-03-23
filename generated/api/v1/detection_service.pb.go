@@ -52,7 +52,7 @@ func (*BuildDetectionRequest) Descriptor() ([]byte, []int) {
 func (m *BuildDetectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BuildDetectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *BuildDetectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BuildDetectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -78,7 +78,7 @@ var xxx_messageInfo_BuildDetectionRequest proto.InternalMessageInfo
 
 type isBuildDetectionRequest_Resource interface {
 	isBuildDetectionRequest_Resource()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isBuildDetectionRequest_Resource
 }
@@ -212,7 +212,7 @@ func (*BuildDetectionResponse) Descriptor() ([]byte, []int) {
 func (m *BuildDetectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BuildDetectionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *BuildDetectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BuildDetectionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -284,7 +284,7 @@ func (*DeployDetectionRequest) Descriptor() ([]byte, []int) {
 func (m *DeployDetectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeployDetectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeployDetectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeployDetectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -310,7 +310,7 @@ var xxx_messageInfo_DeployDetectionRequest proto.InternalMessageInfo
 
 type isDeployDetectionRequest_Resource interface {
 	isDeployDetectionRequest_Resource()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isDeployDetectionRequest_Resource
 }
@@ -412,7 +412,7 @@ func (*DeployYAMLDetectionRequest) Descriptor() ([]byte, []int) {
 func (m *DeployYAMLDetectionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeployYAMLDetectionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeployYAMLDetectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeployYAMLDetectionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -521,7 +521,7 @@ func (*DeployDetectionResponse) Descriptor() ([]byte, []int) {
 func (m *DeployDetectionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeployDetectionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeployDetectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeployDetectionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -613,7 +613,7 @@ func (*DeployDetectionResponse_Run) Descriptor() ([]byte, []int) {
 func (m *DeployDetectionResponse_Run) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeployDetectionResponse_Run) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeployDetectionResponse_Run) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeployDetectionResponse_Run.Marshal(b, m, deterministic)
 	} else {
@@ -695,7 +695,7 @@ func (*DeployDetectionRemark) Descriptor() ([]byte, []int) {
 func (m *DeployDetectionRemark) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeployDetectionRemark) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeployDetectionRemark) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeployDetectionRemark.Marshal(b, m, deterministic)
 	} else {
@@ -775,7 +775,7 @@ func (*ResultAggregation) Descriptor() ([]byte, []int) {
 func (m *ResultAggregation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ResultAggregation) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ResultAggregation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ResultAggregation.Marshal(b, m, deterministic)
 	} else {
@@ -1066,7 +1066,7 @@ var _DetectionService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/detection_service.proto",
 }
 
-func (m *BuildDetectionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *BuildDetectionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1076,7 +1076,7 @@ func (m *BuildDetectionRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BuildDetectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *BuildDetectionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1130,7 +1130,7 @@ func (m *BuildDetectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Resource.Size()
 			i -= size
-			if _, err := m.Resource.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Resource.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1148,7 +1148,7 @@ func (m *BuildDetectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BuildDetectionRequest_Image) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *BuildDetectionRequest_Image) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1169,7 +1169,7 @@ func (m *BuildDetectionRequest_Image) MarshalToSizedBuffer(dAtA []byte) (int, er
 	}
 	return len(dAtA) - i, nil
 }
-func (m *BuildDetectionRequest_ImageName) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *BuildDetectionRequest_ImageName) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1183,7 +1183,7 @@ func (m *BuildDetectionRequest_ImageName) MarshalToSizedBuffer(dAtA []byte) (int
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
-func (m *BuildDetectionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *BuildDetectionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1193,7 +1193,7 @@ func (m *BuildDetectionResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BuildDetectionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *BuildDetectionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1224,7 +1224,7 @@ func (m *BuildDetectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DeployDetectionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DeployDetectionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1234,7 +1234,7 @@ func (m *DeployDetectionRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeployDetectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeployDetectionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1279,7 +1279,7 @@ func (m *DeployDetectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		{
 			size := m.Resource.Size()
 			i -= size
-			if _, err := m.Resource.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Resource.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1287,7 +1287,7 @@ func (m *DeployDetectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *DeployDetectionRequest_Deployment) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeployDetectionRequest_Deployment) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1308,7 +1308,7 @@ func (m *DeployDetectionRequest_Deployment) MarshalToSizedBuffer(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *DeployYAMLDetectionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DeployYAMLDetectionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1318,7 +1318,7 @@ func (m *DeployYAMLDetectionRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeployYAMLDetectionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeployYAMLDetectionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1395,7 +1395,7 @@ func (m *DeployYAMLDetectionRequest) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *DeployDetectionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *DeployDetectionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1405,7 +1405,7 @@ func (m *DeployDetectionResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeployDetectionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeployDetectionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1459,7 +1459,7 @@ func (m *DeployDetectionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *DeployDetectionResponse_Run) MarshalVT() (dAtA []byte, err error) {
+func (m *DeployDetectionResponse_Run) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1469,7 +1469,7 @@ func (m *DeployDetectionResponse_Run) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeployDetectionResponse_Run) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeployDetectionResponse_Run) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1514,7 +1514,7 @@ func (m *DeployDetectionResponse_Run) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *DeployDetectionRemark) MarshalVT() (dAtA []byte, err error) {
+func (m *DeployDetectionRemark) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1524,7 +1524,7 @@ func (m *DeployDetectionRemark) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeployDetectionRemark) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeployDetectionRemark) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1564,7 +1564,7 @@ func (m *DeployDetectionRemark) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ResultAggregation) MarshalVT() (dAtA []byte, err error) {
+func (m *ResultAggregation) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1574,7 +1574,7 @@ func (m *ResultAggregation) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ResultAggregation) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ResultAggregation) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

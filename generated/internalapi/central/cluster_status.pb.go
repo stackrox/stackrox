@@ -39,7 +39,7 @@ func (*DeploymentEnvironmentUpdate) Descriptor() ([]byte, []int) {
 func (m *DeploymentEnvironmentUpdate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeploymentEnvironmentUpdate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeploymentEnvironmentUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeploymentEnvironmentUpdate.Marshal(b, m, deterministic)
 	} else {
@@ -108,7 +108,7 @@ func (*ClusterStatusUpdate) Descriptor() ([]byte, []int) {
 func (m *ClusterStatusUpdate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterStatusUpdate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterStatusUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterStatusUpdate.Marshal(b, m, deterministic)
 	} else {
@@ -134,7 +134,7 @@ var xxx_messageInfo_ClusterStatusUpdate proto.InternalMessageInfo
 
 type isClusterStatusUpdate_Msg interface {
 	isClusterStatusUpdate_Msg()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isClusterStatusUpdate_Msg
 }
@@ -232,7 +232,7 @@ func (*RawClusterHealthInfo) Descriptor() ([]byte, []int) {
 func (m *RawClusterHealthInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RawClusterHealthInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *RawClusterHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RawClusterHealthInfo.Marshal(b, m, deterministic)
 	} else {
@@ -308,7 +308,7 @@ func (*ClusterHealthResponse) Descriptor() ([]byte, []int) {
 func (m *ClusterHealthResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClusterHealthResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClusterHealthResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClusterHealthResponse.Marshal(b, m, deterministic)
 	} else {
@@ -383,7 +383,7 @@ var fileDescriptor_fc7c40b05e2d7c6f = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x31, 0x9e, 0x1d, 0x20, 0x95, 0x02, 0x00, 0x00,
 }
 
-func (m *DeploymentEnvironmentUpdate) MarshalVT() (dAtA []byte, err error) {
+func (m *DeploymentEnvironmentUpdate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -393,7 +393,7 @@ func (m *DeploymentEnvironmentUpdate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeploymentEnvironmentUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeploymentEnvironmentUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -419,7 +419,7 @@ func (m *DeploymentEnvironmentUpdate) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterStatusUpdate) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterStatusUpdate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -429,7 +429,7 @@ func (m *ClusterStatusUpdate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterStatusUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterStatusUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -447,7 +447,7 @@ func (m *ClusterStatusUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Msg.Size()
 			i -= size
-			if _, err := m.Msg.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Msg.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -455,7 +455,7 @@ func (m *ClusterStatusUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterStatusUpdate_Status) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterStatusUpdate_Status) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -476,7 +476,7 @@ func (m *ClusterStatusUpdate_Status) MarshalToSizedBuffer(dAtA []byte) (int, err
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ClusterStatusUpdate_DeploymentEnvUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterStatusUpdate_DeploymentEnvUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -497,7 +497,7 @@ func (m *ClusterStatusUpdate_DeploymentEnvUpdate) MarshalToSizedBuffer(dAtA []by
 	}
 	return len(dAtA) - i, nil
 }
-func (m *RawClusterHealthInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *RawClusterHealthInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -507,7 +507,7 @@ func (m *RawClusterHealthInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RawClusterHealthInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *RawClusterHealthInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -560,7 +560,7 @@ func (m *RawClusterHealthInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClusterHealthResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ClusterHealthResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -570,7 +570,7 @@ func (m *ClusterHealthResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClusterHealthResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClusterHealthResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -42,7 +42,7 @@ func (*SensorUpgradeTrigger) Descriptor() ([]byte, []int) {
 func (m *SensorUpgradeTrigger) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SensorUpgradeTrigger) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SensorUpgradeTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SensorUpgradeTrigger.Marshal(b, m, deterministic)
 	} else {
@@ -135,7 +135,7 @@ func (*SensorUpgradeTrigger_EnvVarDef) Descriptor() ([]byte, []int) {
 func (m *SensorUpgradeTrigger_EnvVarDef) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SensorUpgradeTrigger_EnvVarDef) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SensorUpgradeTrigger_EnvVarDef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SensorUpgradeTrigger_EnvVarDef.Marshal(b, m, deterministic)
 	} else {
@@ -224,7 +224,7 @@ var fileDescriptor_20d0901c1423daa1 = []byte{
 	0xff, 0xff, 0x3c, 0x65, 0xe6, 0xdf, 0x7d, 0x01, 0x00, 0x00,
 }
 
-func (m *SensorUpgradeTrigger) MarshalVT() (dAtA []byte, err error) {
+func (m *SensorUpgradeTrigger) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -234,7 +234,7 @@ func (m *SensorUpgradeTrigger) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SensorUpgradeTrigger) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SensorUpgradeTrigger) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -288,7 +288,7 @@ func (m *SensorUpgradeTrigger) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SensorUpgradeTrigger_EnvVarDef) MarshalVT() (dAtA []byte, err error) {
+func (m *SensorUpgradeTrigger_EnvVarDef) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -298,7 +298,7 @@ func (m *SensorUpgradeTrigger_EnvVarDef) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SensorUpgradeTrigger_EnvVarDef) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SensorUpgradeTrigger_EnvVarDef) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

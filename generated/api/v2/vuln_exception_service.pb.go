@@ -110,7 +110,7 @@ func (*Comment) Descriptor() ([]byte, []int) {
 func (m *Comment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Comment) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Comment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Comment.Marshal(b, m, deterministic)
 	} else {
@@ -199,7 +199,7 @@ func (*ExceptionExpiry) Descriptor() ([]byte, []int) {
 func (m *ExceptionExpiry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExceptionExpiry) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExceptionExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ExceptionExpiry.Marshal(b, m, deterministic)
 	} else {
@@ -267,7 +267,7 @@ func (*DeferralRequest) Descriptor() ([]byte, []int) {
 func (m *DeferralRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeferralRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeferralRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeferralRequest.Marshal(b, m, deterministic)
 	} else {
@@ -327,7 +327,7 @@ func (*FalsePositiveRequest) Descriptor() ([]byte, []int) {
 func (m *FalsePositiveRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FalsePositiveRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *FalsePositiveRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_FalsePositiveRequest.Marshal(b, m, deterministic)
 	} else {
@@ -407,7 +407,7 @@ func (*VulnerabilityException) Descriptor() ([]byte, []int) {
 func (m *VulnerabilityException) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityException) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityException) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityException.Marshal(b, m, deterministic)
 	} else {
@@ -433,13 +433,13 @@ var xxx_messageInfo_VulnerabilityException proto.InternalMessageInfo
 
 type isVulnerabilityException_Req interface {
 	isVulnerabilityException_Req()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isVulnerabilityException_Req
 }
 type isVulnerabilityException_UpdatedReq interface {
 	isVulnerabilityException_UpdatedReq()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isVulnerabilityException_UpdatedReq
 }
@@ -693,7 +693,7 @@ func (*VulnerabilityException_Scope) Descriptor() ([]byte, []int) {
 func (m *VulnerabilityException_Scope) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityException_Scope) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityException_Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityException_Scope.Marshal(b, m, deterministic)
 	} else {
@@ -756,7 +756,7 @@ func (*VulnerabilityException_Scope_Image) Descriptor() ([]byte, []int) {
 func (m *VulnerabilityException_Scope_Image) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityException_Scope_Image) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityException_Scope_Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityException_Scope_Image.Marshal(b, m, deterministic)
 	} else {
@@ -833,7 +833,7 @@ func (*DeferralUpdate) Descriptor() ([]byte, []int) {
 func (m *DeferralUpdate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeferralUpdate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeferralUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeferralUpdate.Marshal(b, m, deterministic)
 	} else {
@@ -906,7 +906,7 @@ func (*FalsePositiveUpdate) Descriptor() ([]byte, []int) {
 func (m *FalsePositiveUpdate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *FalsePositiveUpdate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *FalsePositiveUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_FalsePositiveUpdate.Marshal(b, m, deterministic)
 	} else {
@@ -970,7 +970,7 @@ func (*GetVulnerabilityExceptionResponse) Descriptor() ([]byte, []int) {
 func (m *GetVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1031,7 +1031,7 @@ func (*ListVulnerabilityExceptionsResponse) Descriptor() ([]byte, []int) {
 func (m *ListVulnerabilityExceptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListVulnerabilityExceptionsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListVulnerabilityExceptionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListVulnerabilityExceptionsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1107,7 +1107,7 @@ func (*CreateDeferVulnerabilityExceptionRequest) Descriptor() ([]byte, []int) {
 func (m *CreateDeferVulnerabilityExceptionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateDeferVulnerabilityExceptionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateDeferVulnerabilityExceptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateDeferVulnerabilityExceptionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1198,7 +1198,7 @@ func (*CreateDeferVulnerabilityExceptionResponse) Descriptor() ([]byte, []int) {
 func (m *CreateDeferVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateDeferVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateDeferVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateDeferVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1268,7 +1268,7 @@ func (*CreateFalsePositiveVulnerabilityExceptionRequest) Descriptor() ([]byte, [
 func (m *CreateFalsePositiveVulnerabilityExceptionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateFalsePositiveVulnerabilityExceptionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateFalsePositiveVulnerabilityExceptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateFalsePositiveVulnerabilityExceptionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1351,7 +1351,7 @@ func (*CreateFalsePositiveVulnerabilityExceptionResponse) Descriptor() ([]byte, 
 func (m *CreateFalsePositiveVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateFalsePositiveVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateFalsePositiveVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateFalsePositiveVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1415,7 +1415,7 @@ func (*ApproveVulnerabilityExceptionRequest) Descriptor() ([]byte, []int) {
 func (m *ApproveVulnerabilityExceptionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApproveVulnerabilityExceptionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApproveVulnerabilityExceptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApproveVulnerabilityExceptionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1482,7 +1482,7 @@ func (*ApproveVulnerabilityExceptionResponse) Descriptor() ([]byte, []int) {
 func (m *ApproveVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ApproveVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ApproveVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ApproveVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1546,7 +1546,7 @@ func (*DenyVulnerabilityExceptionRequest) Descriptor() ([]byte, []int) {
 func (m *DenyVulnerabilityExceptionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DenyVulnerabilityExceptionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DenyVulnerabilityExceptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DenyVulnerabilityExceptionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1613,7 +1613,7 @@ func (*DenyVulnerabilityExceptionResponse) Descriptor() ([]byte, []int) {
 func (m *DenyVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DenyVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DenyVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DenyVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1682,7 +1682,7 @@ func (*UpdateVulnerabilityExceptionRequest) Descriptor() ([]byte, []int) {
 func (m *UpdateVulnerabilityExceptionRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateVulnerabilityExceptionRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateVulnerabilityExceptionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateVulnerabilityExceptionRequest.Marshal(b, m, deterministic)
 	} else {
@@ -1708,7 +1708,7 @@ var xxx_messageInfo_UpdateVulnerabilityExceptionRequest proto.InternalMessageInf
 
 type isUpdateVulnerabilityExceptionRequest_Update interface {
 	isUpdateVulnerabilityExceptionRequest_Update()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isUpdateVulnerabilityExceptionRequest_Update
 }
@@ -1820,7 +1820,7 @@ func (*UpdateVulnerabilityExceptionResponse) Descriptor() ([]byte, []int) {
 func (m *UpdateVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_UpdateVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1881,7 +1881,7 @@ func (*CancelVulnerabilityExceptionResponse) Descriptor() ([]byte, []int) {
 func (m *CancelVulnerabilityExceptionResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CancelVulnerabilityExceptionResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CancelVulnerabilityExceptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CancelVulnerabilityExceptionResponse.Marshal(b, m, deterministic)
 	} else {
@@ -2466,7 +2466,7 @@ var _VulnerabilityExceptionService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v2/vuln_exception_service.proto",
 }
 
-func (m *Comment) MarshalVT() (dAtA []byte, err error) {
+func (m *Comment) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2476,7 +2476,7 @@ func (m *Comment) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Comment) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Comment) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2531,7 +2531,7 @@ func (m *Comment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExceptionExpiry) MarshalVT() (dAtA []byte, err error) {
+func (m *ExceptionExpiry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2541,7 +2541,7 @@ func (m *ExceptionExpiry) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExceptionExpiry) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ExceptionExpiry) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2575,7 +2575,7 @@ func (m *ExceptionExpiry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DeferralRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DeferralRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2585,7 +2585,7 @@ func (m *DeferralRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeferralRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeferralRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2614,7 +2614,7 @@ func (m *DeferralRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *FalsePositiveRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *FalsePositiveRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2624,7 +2624,7 @@ func (m *FalsePositiveRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FalsePositiveRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *FalsePositiveRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2641,7 +2641,7 @@ func (m *FalsePositiveRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityException) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityException) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2651,7 +2651,7 @@ func (m *VulnerabilityException) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityException) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2669,7 +2669,7 @@ func (m *VulnerabilityException) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		{
 			size := m.UpdatedReq.Size()
 			i -= size
-			if _, err := m.UpdatedReq.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.UpdatedReq.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2687,7 +2687,7 @@ func (m *VulnerabilityException) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		{
 			size := m.Req.Size()
 			i -= size
-			if _, err := m.Req.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Req.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -2805,7 +2805,7 @@ func (m *VulnerabilityException) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityException_DeferralRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException_DeferralRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2826,7 +2826,7 @@ func (m *VulnerabilityException_DeferralRequest) MarshalToSizedBuffer(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *VulnerabilityException_FalsePositiveRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException_FalsePositiveRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2847,7 +2847,7 @@ func (m *VulnerabilityException_FalsePositiveRequest) MarshalToSizedBuffer(dAtA 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *VulnerabilityException_DeferralUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException_DeferralUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2868,7 +2868,7 @@ func (m *VulnerabilityException_DeferralUpdate) MarshalToSizedBuffer(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
-func (m *VulnerabilityException_FalsePositiveUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException_FalsePositiveUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2891,7 +2891,7 @@ func (m *VulnerabilityException_FalsePositiveUpdate) MarshalToSizedBuffer(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
-func (m *VulnerabilityException_Scope) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityException_Scope) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2901,7 +2901,7 @@ func (m *VulnerabilityException_Scope) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityException_Scope) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException_Scope) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2930,7 +2930,7 @@ func (m *VulnerabilityException_Scope) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityException_Scope_Image) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityException_Scope_Image) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2940,7 +2940,7 @@ func (m *VulnerabilityException_Scope_Image) MarshalVT() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityException_Scope_Image) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityException_Scope_Image) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2978,7 +2978,7 @@ func (m *VulnerabilityException_Scope_Image) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *DeferralUpdate) MarshalVT() (dAtA []byte, err error) {
+func (m *DeferralUpdate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2988,7 +2988,7 @@ func (m *DeferralUpdate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeferralUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeferralUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3026,7 +3026,7 @@ func (m *DeferralUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *FalsePositiveUpdate) MarshalVT() (dAtA []byte, err error) {
+func (m *FalsePositiveUpdate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3036,7 +3036,7 @@ func (m *FalsePositiveUpdate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *FalsePositiveUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *FalsePositiveUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3062,7 +3062,7 @@ func (m *FalsePositiveUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GetVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3072,7 +3072,7 @@ func (m *GetVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *GetVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3101,7 +3101,7 @@ func (m *GetVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *ListVulnerabilityExceptionsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListVulnerabilityExceptionsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3111,7 +3111,7 @@ func (m *ListVulnerabilityExceptionsResponse) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *ListVulnerabilityExceptionsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListVulnerabilityExceptionsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3142,7 +3142,7 @@ func (m *ListVulnerabilityExceptionsResponse) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateDeferVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateDeferVulnerabilityExceptionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3152,7 +3152,7 @@ func (m *CreateDeferVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err
 	return dAtA[:n], nil
 }
 
-func (m *CreateDeferVulnerabilityExceptionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateDeferVulnerabilityExceptionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3209,7 +3209,7 @@ func (m *CreateDeferVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateDeferVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateDeferVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3219,7 +3219,7 @@ func (m *CreateDeferVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, er
 	return dAtA[:n], nil
 }
 
-func (m *CreateDeferVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateDeferVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3248,7 +3248,7 @@ func (m *CreateDeferVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateFalsePositiveVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateFalsePositiveVulnerabilityExceptionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3258,7 +3258,7 @@ func (m *CreateFalsePositiveVulnerabilityExceptionRequest) MarshalVT() (dAtA []b
 	return dAtA[:n], nil
 }
 
-func (m *CreateFalsePositiveVulnerabilityExceptionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateFalsePositiveVulnerabilityExceptionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3303,7 +3303,7 @@ func (m *CreateFalsePositiveVulnerabilityExceptionRequest) MarshalToSizedBuffer(
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateFalsePositiveVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3313,7 +3313,7 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalVT() (dAtA []
 	return dAtA[:n], nil
 }
 
-func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3342,7 +3342,7 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalToSizedBuffer
 	return len(dAtA) - i, nil
 }
 
-func (m *ApproveVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ApproveVulnerabilityExceptionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3352,7 +3352,7 @@ func (m *ApproveVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *ApproveVulnerabilityExceptionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApproveVulnerabilityExceptionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3383,7 +3383,7 @@ func (m *ApproveVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *ApproveVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ApproveVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3393,7 +3393,7 @@ func (m *ApproveVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err er
 	return dAtA[:n], nil
 }
 
-func (m *ApproveVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ApproveVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3422,7 +3422,7 @@ func (m *ApproveVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte
 	return len(dAtA) - i, nil
 }
 
-func (m *DenyVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DenyVulnerabilityExceptionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3432,7 +3432,7 @@ func (m *DenyVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *DenyVulnerabilityExceptionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DenyVulnerabilityExceptionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3463,7 +3463,7 @@ func (m *DenyVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *DenyVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *DenyVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3473,7 +3473,7 @@ func (m *DenyVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *DenyVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DenyVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3502,7 +3502,7 @@ func (m *DenyVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateVulnerabilityExceptionRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3512,7 +3512,7 @@ func (m *UpdateVulnerabilityExceptionRequest) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *UpdateVulnerabilityExceptionRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3530,7 +3530,7 @@ func (m *UpdateVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []byte) 
 		{
 			size := m.Update.Size()
 			i -= size
-			if _, err := m.Update.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Update.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -3552,7 +3552,7 @@ func (m *UpdateVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateVulnerabilityExceptionRequest_DeferralUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionRequest_DeferralUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3573,7 +3573,7 @@ func (m *UpdateVulnerabilityExceptionRequest_DeferralUpdate) MarshalToSizedBuffe
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3594,7 +3594,7 @@ func (m *UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate) MarshalToSized
 	}
 	return len(dAtA) - i, nil
 }
-func (m *UpdateVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *UpdateVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3604,7 +3604,7 @@ func (m *UpdateVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *UpdateVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -3633,7 +3633,7 @@ func (m *UpdateVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *CancelVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CancelVulnerabilityExceptionResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3643,7 +3643,7 @@ func (m *CancelVulnerabilityExceptionResponse) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *CancelVulnerabilityExceptionResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CancelVulnerabilityExceptionResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

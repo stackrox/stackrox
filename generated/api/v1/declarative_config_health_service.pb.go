@@ -43,7 +43,7 @@ func (*GetDeclarativeConfigHealthsResponse) Descriptor() ([]byte, []int) {
 func (m *GetDeclarativeConfigHealthsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetDeclarativeConfigHealthsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetDeclarativeConfigHealthsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetDeclarativeConfigHealthsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -203,7 +203,7 @@ var _DeclarativeConfigHealthService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/declarative_config_health_service.proto",
 }
 
-func (m *GetDeclarativeConfigHealthsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetDeclarativeConfigHealthsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -213,7 +213,7 @@ func (m *GetDeclarativeConfigHealthsResponse) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *GetDeclarativeConfigHealthsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetDeclarativeConfigHealthsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

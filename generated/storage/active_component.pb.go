@@ -45,7 +45,7 @@ func (*ActiveComponent) Descriptor() ([]byte, []int) {
 func (m *ActiveComponent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ActiveComponent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ActiveComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ActiveComponent.Marshal(b, m, deterministic)
 	} else {
@@ -147,7 +147,7 @@ func (*ActiveComponent_ActiveContext) Descriptor() ([]byte, []int) {
 func (m *ActiveComponent_ActiveContext) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ActiveComponent_ActiveContext) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ActiveComponent_ActiveContext) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ActiveComponent_ActiveContext.Marshal(b, m, deterministic)
 	} else {
@@ -232,7 +232,7 @@ var fileDescriptor_6f1d8b746a926c5c = []byte{
 	0xff, 0xff, 0x26, 0x8a, 0xe9, 0x7f, 0x6d, 0x02, 0x00, 0x00,
 }
 
-func (m *ActiveComponent) MarshalVT() (dAtA []byte, err error) {
+func (m *ActiveComponent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -242,7 +242,7 @@ func (m *ActiveComponent) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ActiveComponent) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ActiveComponent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -320,7 +320,7 @@ func (m *ActiveComponent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ActiveComponent_ActiveContext) MarshalVT() (dAtA []byte, err error) {
+func (m *ActiveComponent_ActiveContext) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -330,7 +330,7 @@ func (m *ActiveComponent_ActiveContext) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ActiveComponent_ActiveContext) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ActiveComponent_ActiveContext) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

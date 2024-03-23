@@ -140,7 +140,7 @@ func (*Metadata) Descriptor() ([]byte, []int) {
 func (m *Metadata) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Metadata) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Metadata.Marshal(b, m, deterministic)
 	} else {
@@ -229,7 +229,7 @@ func (*TrustInfo) Descriptor() ([]byte, []int) {
 func (m *TrustInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TrustInfo) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TrustInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TrustInfo.Marshal(b, m, deterministic)
 	} else {
@@ -326,7 +326,7 @@ func (*TLSChallengeResponse) Descriptor() ([]byte, []int) {
 func (m *TLSChallengeResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TLSChallengeResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TLSChallengeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TLSChallengeResponse.Marshal(b, m, deterministic)
 	} else {
@@ -402,7 +402,7 @@ func (*TLSChallengeRequest) Descriptor() ([]byte, []int) {
 func (m *TLSChallengeRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TLSChallengeRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TLSChallengeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TLSChallengeRequest.Marshal(b, m, deterministic)
 	} else {
@@ -467,7 +467,7 @@ func (*DatabaseStatus) Descriptor() ([]byte, []int) {
 func (m *DatabaseStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DatabaseStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DatabaseStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DatabaseStatus.Marshal(b, m, deterministic)
 	} else {
@@ -541,7 +541,7 @@ func (*DatabaseBackupStatus) Descriptor() ([]byte, []int) {
 func (m *DatabaseBackupStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DatabaseBackupStatus) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DatabaseBackupStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DatabaseBackupStatus.Marshal(b, m, deterministic)
 	} else {
@@ -617,7 +617,7 @@ func (*CentralServicesCapabilities) Descriptor() ([]byte, []int) {
 func (m *CentralServicesCapabilities) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CentralServicesCapabilities) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CentralServicesCapabilities) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CentralServicesCapabilities.Marshal(b, m, deterministic)
 	} else {
@@ -1002,7 +1002,7 @@ var _MetadataService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/metadata_service.proto",
 }
 
-func (m *Metadata) MarshalVT() (dAtA []byte, err error) {
+func (m *Metadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1012,7 +1012,7 @@ func (m *Metadata) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Metadata) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Metadata) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1058,7 +1058,7 @@ func (m *Metadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TrustInfo) MarshalVT() (dAtA []byte, err error) {
+func (m *TrustInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1068,7 +1068,7 @@ func (m *TrustInfo) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TrustInfo) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TrustInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1117,7 +1117,7 @@ func (m *TrustInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TLSChallengeResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *TLSChallengeResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1127,7 +1127,7 @@ func (m *TLSChallengeResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TLSChallengeResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TLSChallengeResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1158,7 +1158,7 @@ func (m *TLSChallengeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TLSChallengeRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *TLSChallengeRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1168,7 +1168,7 @@ func (m *TLSChallengeRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TLSChallengeRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TLSChallengeRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1192,7 +1192,7 @@ func (m *TLSChallengeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DatabaseStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *DatabaseStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1202,7 +1202,7 @@ func (m *DatabaseStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DatabaseStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DatabaseStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1241,7 +1241,7 @@ func (m *DatabaseStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DatabaseBackupStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *DatabaseBackupStatus) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1251,7 +1251,7 @@ func (m *DatabaseBackupStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DatabaseBackupStatus) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DatabaseBackupStatus) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1280,7 +1280,7 @@ func (m *DatabaseBackupStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CentralServicesCapabilities) MarshalVT() (dAtA []byte, err error) {
+func (m *CentralServicesCapabilities) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1290,7 +1290,7 @@ func (m *CentralServicesCapabilities) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CentralServicesCapabilities) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CentralServicesCapabilities) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

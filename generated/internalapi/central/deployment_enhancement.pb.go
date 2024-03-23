@@ -40,7 +40,7 @@ func (*DeploymentEnhancementMessage) Descriptor() ([]byte, []int) {
 func (m *DeploymentEnhancementMessage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeploymentEnhancementMessage) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeploymentEnhancementMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeploymentEnhancementMessage.Marshal(b, m, deterministic)
 	} else {
@@ -113,7 +113,7 @@ func (*DeploymentEnhancementRequest) Descriptor() ([]byte, []int) {
 func (m *DeploymentEnhancementRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeploymentEnhancementRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeploymentEnhancementRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeploymentEnhancementRequest.Marshal(b, m, deterministic)
 	} else {
@@ -174,7 +174,7 @@ func (*DeploymentEnhancementResponse) Descriptor() ([]byte, []int) {
 func (m *DeploymentEnhancementResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DeploymentEnhancementResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DeploymentEnhancementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DeploymentEnhancementResponse.Marshal(b, m, deterministic)
 	} else {
@@ -247,7 +247,7 @@ var fileDescriptor_481d8d3bdf1f6bc6 = []byte{
 	0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0x21, 0x35, 0x1d, 0xf5, 0x92, 0x01, 0x00, 0x00,
 }
 
-func (m *DeploymentEnhancementMessage) MarshalVT() (dAtA []byte, err error) {
+func (m *DeploymentEnhancementMessage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -257,7 +257,7 @@ func (m *DeploymentEnhancementMessage) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeploymentEnhancementMessage) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeploymentEnhancementMessage) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -295,7 +295,7 @@ func (m *DeploymentEnhancementMessage) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *DeploymentEnhancementRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DeploymentEnhancementRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -305,7 +305,7 @@ func (m *DeploymentEnhancementRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeploymentEnhancementRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeploymentEnhancementRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -334,7 +334,7 @@ func (m *DeploymentEnhancementRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *DeploymentEnhancementResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *DeploymentEnhancementResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -344,7 +344,7 @@ func (m *DeploymentEnhancementResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DeploymentEnhancementResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DeploymentEnhancementResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

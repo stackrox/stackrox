@@ -71,7 +71,7 @@ func (*LoginNotice) Descriptor() ([]byte, []int) {
 func (m *LoginNotice) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LoginNotice) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *LoginNotice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LoginNotice.Marshal(b, m, deterministic)
 	} else {
@@ -142,7 +142,7 @@ func (*BannerConfig) Descriptor() ([]byte, []int) {
 func (m *BannerConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BannerConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *BannerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BannerConfig.Marshal(b, m, deterministic)
 	} else {
@@ -233,7 +233,7 @@ func (*PublicConfig) Descriptor() ([]byte, []int) {
 func (m *PublicConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PublicConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PublicConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PublicConfig.Marshal(b, m, deterministic)
 	} else {
@@ -326,7 +326,7 @@ func (*AlertRetentionConfig) Descriptor() ([]byte, []int) {
 func (m *AlertRetentionConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AlertRetentionConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AlertRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AlertRetentionConfig.Marshal(b, m, deterministic)
 	} else {
@@ -418,7 +418,7 @@ func (*DecommissionedClusterRetentionConfig) Descriptor() ([]byte, []int) {
 func (m *DecommissionedClusterRetentionConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DecommissionedClusterRetentionConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DecommissionedClusterRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DecommissionedClusterRetentionConfig.Marshal(b, m, deterministic)
 	} else {
@@ -510,7 +510,7 @@ func (*ReportRetentionConfig) Descriptor() ([]byte, []int) {
 func (m *ReportRetentionConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ReportRetentionConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ReportRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ReportRetentionConfig.Marshal(b, m, deterministic)
 	} else {
@@ -594,7 +594,7 @@ func (*PrivateConfig) Descriptor() ([]byte, []int) {
 func (m *PrivateConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PrivateConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *PrivateConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_PrivateConfig.Marshal(b, m, deterministic)
 	} else {
@@ -620,7 +620,7 @@ var xxx_messageInfo_PrivateConfig proto.InternalMessageInfo
 
 type isPrivateConfig_AlertRetention interface {
 	isPrivateConfig_AlertRetention()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isPrivateConfig_AlertRetention
 }
@@ -762,7 +762,7 @@ func (*Config) Descriptor() ([]byte, []int) {
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Config) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Config.Marshal(b, m, deterministic)
 	} else {
@@ -831,7 +831,7 @@ func (*VulnerabilityExceptionConfig) Descriptor() ([]byte, []int) {
 func (m *VulnerabilityExceptionConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityExceptionConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityExceptionConfig.Marshal(b, m, deterministic)
 	} else {
@@ -897,7 +897,7 @@ func (*VulnerabilityExceptionConfig_FixableCVEOptions) Descriptor() ([]byte, []i
 func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityExceptionConfig_FixableCVEOptions.Marshal(b, m, deterministic)
 	} else {
@@ -971,7 +971,7 @@ func (*VulnerabilityExceptionConfig_ExpiryOptions) Descriptor() ([]byte, []int) 
 func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_VulnerabilityExceptionConfig_ExpiryOptions.Marshal(b, m, deterministic)
 	} else {
@@ -1059,7 +1059,7 @@ func (*AdministrationEventsConfig) Descriptor() ([]byte, []int) {
 func (m *AdministrationEventsConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdministrationEventsConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdministrationEventsConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdministrationEventsConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1120,7 +1120,7 @@ func (*DayOption) Descriptor() ([]byte, []int) {
 func (m *DayOption) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DayOption) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DayOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DayOption.Marshal(b, m, deterministic)
 	} else {
@@ -1274,7 +1274,7 @@ var fileDescriptor_33903d79f8815efc = []byte{
 	0x00, 0x00,
 }
 
-func (m *LoginNotice) MarshalVT() (dAtA []byte, err error) {
+func (m *LoginNotice) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1284,7 +1284,7 @@ func (m *LoginNotice) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LoginNotice) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *LoginNotice) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1318,7 +1318,7 @@ func (m *LoginNotice) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BannerConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *BannerConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1328,7 +1328,7 @@ func (m *BannerConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BannerConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *BannerConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1381,7 +1381,7 @@ func (m *BannerConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PublicConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *PublicConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1391,7 +1391,7 @@ func (m *PublicConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PublicConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PublicConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1456,7 +1456,7 @@ func (m *PublicConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AlertRetentionConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *AlertRetentionConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1466,7 +1466,7 @@ func (m *AlertRetentionConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AlertRetentionConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AlertRetentionConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1508,7 +1508,7 @@ func (m *AlertRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DecommissionedClusterRetentionConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *DecommissionedClusterRetentionConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1518,7 +1518,7 @@ func (m *DecommissionedClusterRetentionConfig) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *DecommissionedClusterRetentionConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DecommissionedClusterRetentionConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1583,7 +1583,7 @@ func (m *DecommissionedClusterRetentionConfig) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *ReportRetentionConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *ReportRetentionConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1593,7 +1593,7 @@ func (m *ReportRetentionConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ReportRetentionConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ReportRetentionConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1625,7 +1625,7 @@ func (m *ReportRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PrivateConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *PrivateConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1635,7 +1635,7 @@ func (m *PrivateConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PrivateConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PrivateConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1706,7 +1706,7 @@ func (m *PrivateConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.AlertRetention.Size()
 			i -= size
-			if _, err := m.AlertRetention.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.AlertRetention.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1719,7 +1719,7 @@ func (m *PrivateConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PrivateConfig_DEPRECATEDAlertRetentionDurationDays) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PrivateConfig_DEPRECATEDAlertRetentionDurationDays) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1731,7 +1731,7 @@ func (m *PrivateConfig_DEPRECATEDAlertRetentionDurationDays) MarshalToSizedBuffe
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
-func (m *PrivateConfig_AlertConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *PrivateConfig_AlertConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1752,7 +1752,7 @@ func (m *PrivateConfig_AlertConfig) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Config) MarshalVT() (dAtA []byte, err error) {
+func (m *Config) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1762,7 +1762,7 @@ func (m *Config) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Config) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Config) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1803,7 +1803,7 @@ func (m *Config) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityExceptionConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1813,7 +1813,7 @@ func (m *VulnerabilityExceptionConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityExceptionConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1842,7 +1842,7 @@ func (m *VulnerabilityExceptionConfig) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1852,7 +1852,7 @@ func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVT() (dAtA []byt
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1889,7 +1889,7 @@ func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalToSizedBuffer(dA
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVT() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1899,7 +1899,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVT() (dAtA []byte, e
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1962,7 +1962,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalToSizedBuffer(dAtA [
 	return len(dAtA) - i, nil
 }
 
-func (m *AdministrationEventsConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *AdministrationEventsConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1972,7 +1972,7 @@ func (m *AdministrationEventsConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdministrationEventsConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdministrationEventsConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1994,7 +1994,7 @@ func (m *AdministrationEventsConfig) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *DayOption) MarshalVT() (dAtA []byte, err error) {
+func (m *DayOption) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2004,7 +2004,7 @@ func (m *DayOption) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DayOption) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DayOption) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

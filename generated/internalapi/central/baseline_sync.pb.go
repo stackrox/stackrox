@@ -39,7 +39,7 @@ func (*BaselineSync) Descriptor() ([]byte, []int) {
 func (m *BaselineSync) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BaselineSync) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *BaselineSync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_BaselineSync.Marshal(b, m, deterministic)
 	} else {
@@ -111,7 +111,7 @@ var fileDescriptor_fb100b68bc4abe1f = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x28, 0xaf, 0xd0, 0x66, 0xbd, 0x00, 0x00, 0x00,
 }
 
-func (m *BaselineSync) MarshalVT() (dAtA []byte, err error) {
+func (m *BaselineSync) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -121,7 +121,7 @@ func (m *BaselineSync) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BaselineSync) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *BaselineSync) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

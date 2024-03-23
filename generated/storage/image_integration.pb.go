@@ -90,7 +90,7 @@ func (*ImageIntegration) Descriptor() ([]byte, []int) {
 func (m *ImageIntegration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageIntegration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageIntegration.Marshal(b, m, deterministic)
 	} else {
@@ -116,7 +116,7 @@ var xxx_messageInfo_ImageIntegration proto.InternalMessageInfo
 
 type isImageIntegration_IntegrationConfig interface {
 	isImageIntegration_IntegrationConfig()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isImageIntegration_IntegrationConfig
 }
@@ -451,7 +451,7 @@ func (*ImageIntegration_Source) Descriptor() ([]byte, []int) {
 func (m *ImageIntegration_Source) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ImageIntegration_Source) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ImageIntegration_Source) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ImageIntegration_Source.Marshal(b, m, deterministic)
 	} else {
@@ -527,7 +527,7 @@ func (*IBMRegistryConfig) Descriptor() ([]byte, []int) {
 func (m *IBMRegistryConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *IBMRegistryConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *IBMRegistryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_IBMRegistryConfig.Marshal(b, m, deterministic)
 	} else {
@@ -599,7 +599,7 @@ func (*QuayConfig) Descriptor() ([]byte, []int) {
 func (m *QuayConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuayConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuayConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QuayConfig.Marshal(b, m, deterministic)
 	} else {
@@ -685,7 +685,7 @@ func (*QuayConfig_RobotAccount) Descriptor() ([]byte, []int) {
 func (m *QuayConfig_RobotAccount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuayConfig_RobotAccount) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuayConfig_RobotAccount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_QuayConfig_RobotAccount.Marshal(b, m, deterministic)
 	} else {
@@ -753,7 +753,7 @@ func (*ClairConfig) Descriptor() ([]byte, []int) {
 func (m *ClairConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClairConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClairConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClairConfig.Marshal(b, m, deterministic)
 	} else {
@@ -821,7 +821,7 @@ func (*ClairV4Config) Descriptor() ([]byte, []int) {
 func (m *ClairV4Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClairV4Config) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClairV4Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClairV4Config.Marshal(b, m, deterministic)
 	} else {
@@ -890,7 +890,7 @@ func (*ClairifyConfig) Descriptor() ([]byte, []int) {
 func (m *ClairifyConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ClairifyConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClairifyConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ClairifyConfig.Marshal(b, m, deterministic)
 	} else {
@@ -968,7 +968,7 @@ func (*DockerConfig) Descriptor() ([]byte, []int) {
 func (m *DockerConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DockerConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *DockerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_DockerConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1060,7 +1060,7 @@ func (*ECRConfig) Descriptor() ([]byte, []int) {
 func (m *ECRConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ECRConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ECRConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ECRConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1189,7 +1189,7 @@ func (*ECRConfig_AuthorizationData) Descriptor() ([]byte, []int) {
 func (m *ECRConfig_AuthorizationData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ECRConfig_AuthorizationData) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ECRConfig_AuthorizationData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ECRConfig_AuthorizationData.Marshal(b, m, deterministic)
 	} else {
@@ -1268,7 +1268,7 @@ func (*GoogleConfig) Descriptor() ([]byte, []int) {
 func (m *GoogleConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GoogleConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GoogleConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GoogleConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1351,7 +1351,7 @@ func (*ScannerV4Config) Descriptor() ([]byte, []int) {
 func (m *ScannerV4Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ScannerV4Config) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScannerV4Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ScannerV4Config.Marshal(b, m, deterministic)
 	} else {
@@ -1429,7 +1429,7 @@ func (*AzureConfig) Descriptor() ([]byte, []int) {
 func (m *AzureConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AzureConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AzureConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AzureConfig.Marshal(b, m, deterministic)
 	} else {
@@ -1595,7 +1595,7 @@ var fileDescriptor_9e3766be4a43c581 = []byte{
 	0xff, 0xf0, 0x80, 0xe2, 0x43, 0x82, 0x0b, 0x00, 0x00,
 }
 
-func (m *ImageIntegration) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageIntegration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1605,7 +1605,7 @@ func (m *ImageIntegration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageIntegration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1623,7 +1623,7 @@ func (m *ImageIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.IntegrationConfig.Size()
 			i -= size
-			if _, err := m.IntegrationConfig.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.IntegrationConfig.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1715,7 +1715,7 @@ func (m *ImageIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageIntegration_Clairify) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Clairify) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1736,7 +1736,7 @@ func (m *ImageIntegration_Clairify) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Docker) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Docker) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1757,7 +1757,7 @@ func (m *ImageIntegration_Docker) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Quay) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Quay) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1778,7 +1778,7 @@ func (m *ImageIntegration_Quay) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Ecr) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Ecr) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1799,7 +1799,7 @@ func (m *ImageIntegration_Ecr) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Google) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Google) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1820,7 +1820,7 @@ func (m *ImageIntegration_Google) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Clair) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Clair) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1841,7 +1841,7 @@ func (m *ImageIntegration_Clair) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Ibm) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Ibm) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1864,7 +1864,7 @@ func (m *ImageIntegration_Ibm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_ClairV4) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_ClairV4) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1887,7 +1887,7 @@ func (m *ImageIntegration_ClairV4) MarshalToSizedBuffer(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_ScannerV4) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_ScannerV4) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1910,7 +1910,7 @@ func (m *ImageIntegration_ScannerV4) MarshalToSizedBuffer(dAtA []byte) (int, err
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Azure) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Azure) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1933,7 +1933,7 @@ func (m *ImageIntegration_Azure) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ImageIntegration_Source) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageIntegration_Source) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1943,7 +1943,7 @@ func (m *ImageIntegration_Source) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageIntegration_Source) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ImageIntegration_Source) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1981,7 +1981,7 @@ func (m *ImageIntegration_Source) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *IBMRegistryConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *IBMRegistryConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1991,7 +1991,7 @@ func (m *IBMRegistryConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *IBMRegistryConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *IBMRegistryConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2022,7 +2022,7 @@ func (m *IBMRegistryConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuayConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *QuayConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2032,7 +2032,7 @@ func (m *QuayConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuayConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *QuayConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2085,7 +2085,7 @@ func (m *QuayConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuayConfig_RobotAccount) MarshalVT() (dAtA []byte, err error) {
+func (m *QuayConfig_RobotAccount) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2095,7 +2095,7 @@ func (m *QuayConfig_RobotAccount) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuayConfig_RobotAccount) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *QuayConfig_RobotAccount) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2126,7 +2126,7 @@ func (m *QuayConfig_RobotAccount) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *ClairConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *ClairConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2136,7 +2136,7 @@ func (m *ClairConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClairConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClairConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2170,7 +2170,7 @@ func (m *ClairConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClairV4Config) MarshalVT() (dAtA []byte, err error) {
+func (m *ClairV4Config) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2180,7 +2180,7 @@ func (m *ClairV4Config) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClairV4Config) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClairV4Config) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2214,7 +2214,7 @@ func (m *ClairV4Config) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ClairifyConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *ClairifyConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2224,7 +2224,7 @@ func (m *ClairifyConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ClairifyConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ClairifyConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2260,7 +2260,7 @@ func (m *ClairifyConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *DockerConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *DockerConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2270,7 +2270,7 @@ func (m *DockerConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DockerConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *DockerConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2318,7 +2318,7 @@ func (m *DockerConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ECRConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *ECRConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2328,7 +2328,7 @@ func (m *ECRConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ECRConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ECRConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2426,7 +2426,7 @@ func (m *ECRConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ECRConfig_AuthorizationData) MarshalVT() (dAtA []byte, err error) {
+func (m *ECRConfig_AuthorizationData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2436,7 +2436,7 @@ func (m *ECRConfig_AuthorizationData) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ECRConfig_AuthorizationData) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ECRConfig_AuthorizationData) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2479,7 +2479,7 @@ func (m *ECRConfig_AuthorizationData) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *GoogleConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *GoogleConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2489,7 +2489,7 @@ func (m *GoogleConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GoogleConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GoogleConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2537,7 +2537,7 @@ func (m *GoogleConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ScannerV4Config) MarshalVT() (dAtA []byte, err error) {
+func (m *ScannerV4Config) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2547,7 +2547,7 @@ func (m *ScannerV4Config) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ScannerV4Config) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ScannerV4Config) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -2583,7 +2583,7 @@ func (m *ScannerV4Config) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AzureConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *AzureConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2593,7 +2593,7 @@ func (m *AzureConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AzureConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AzureConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

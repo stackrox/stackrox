@@ -89,7 +89,7 @@ func (*Risk) Descriptor() ([]byte, []int) {
 func (m *Risk) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Risk) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Risk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Risk.Marshal(b, m, deterministic)
 	} else {
@@ -179,7 +179,7 @@ func (*Risk_Result) Descriptor() ([]byte, []int) {
 func (m *Risk_Result) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Risk_Result) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Risk_Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Risk_Result.Marshal(b, m, deterministic)
 	} else {
@@ -260,7 +260,7 @@ func (*Risk_Result_Factor) Descriptor() ([]byte, []int) {
 func (m *Risk_Result_Factor) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Risk_Result_Factor) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Risk_Result_Factor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Risk_Result_Factor.Marshal(b, m, deterministic)
 	} else {
@@ -330,7 +330,7 @@ func (*RiskSubject) Descriptor() ([]byte, []int) {
 func (m *RiskSubject) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RiskSubject) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *RiskSubject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_RiskSubject.Marshal(b, m, deterministic)
 	} else {
@@ -437,7 +437,7 @@ var fileDescriptor_76ed3b6b4b68c2b1 = []byte{
 	0xfe, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x73, 0xba, 0xa0, 0xb1, 0xb6, 0x02, 0x00, 0x00,
 }
 
-func (m *Risk) MarshalVT() (dAtA []byte, err error) {
+func (m *Risk) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -447,7 +447,7 @@ func (m *Risk) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Risk) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Risk) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -503,7 +503,7 @@ func (m *Risk) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Risk_Result) MarshalVT() (dAtA []byte, err error) {
+func (m *Risk_Result) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -513,7 +513,7 @@ func (m *Risk_Result) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Risk_Result) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Risk_Result) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -557,7 +557,7 @@ func (m *Risk_Result) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Risk_Result_Factor) MarshalVT() (dAtA []byte, err error) {
+func (m *Risk_Result_Factor) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -567,7 +567,7 @@ func (m *Risk_Result_Factor) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Risk_Result_Factor) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Risk_Result_Factor) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -598,7 +598,7 @@ func (m *Risk_Result_Factor) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RiskSubject) MarshalVT() (dAtA []byte, err error) {
+func (m *RiskSubject) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -608,7 +608,7 @@ func (m *RiskSubject) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RiskSubject) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *RiskSubject) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

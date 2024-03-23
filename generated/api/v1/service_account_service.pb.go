@@ -45,7 +45,7 @@ func (*ListServiceAccountResponse) Descriptor() ([]byte, []int) {
 func (m *ListServiceAccountResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListServiceAccountResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListServiceAccountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListServiceAccountResponse.Marshal(b, m, deterministic)
 	} else {
@@ -116,7 +116,7 @@ func (*ServiceAccountAndRoles) Descriptor() ([]byte, []int) {
 func (m *ServiceAccountAndRoles) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ServiceAccountAndRoles) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ServiceAccountAndRoles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ServiceAccountAndRoles.Marshal(b, m, deterministic)
 	} else {
@@ -218,7 +218,7 @@ func (*GetServiceAccountResponse) Descriptor() ([]byte, []int) {
 func (m *GetServiceAccountResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetServiceAccountResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetServiceAccountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetServiceAccountResponse.Marshal(b, m, deterministic)
 	} else {
@@ -284,7 +284,7 @@ func (*SADeploymentRelationship) Descriptor() ([]byte, []int) {
 func (m *SADeploymentRelationship) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SADeploymentRelationship) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SADeploymentRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SADeploymentRelationship.Marshal(b, m, deterministic)
 	} else {
@@ -498,7 +498,7 @@ var _ServiceAccountService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/service_account_service.proto",
 }
 
-func (m *ListServiceAccountResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListServiceAccountResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -508,7 +508,7 @@ func (m *ListServiceAccountResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListServiceAccountResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListServiceAccountResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -539,7 +539,7 @@ func (m *ListServiceAccountResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ServiceAccountAndRoles) MarshalVT() (dAtA []byte, err error) {
+func (m *ServiceAccountAndRoles) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -549,7 +549,7 @@ func (m *ServiceAccountAndRoles) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ServiceAccountAndRoles) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceAccountAndRoles) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -620,7 +620,7 @@ func (m *ServiceAccountAndRoles) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetServiceAccountResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetServiceAccountResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -630,7 +630,7 @@ func (m *GetServiceAccountResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetServiceAccountResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetServiceAccountResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -659,7 +659,7 @@ func (m *GetServiceAccountResponse) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *SADeploymentRelationship) MarshalVT() (dAtA []byte, err error) {
+func (m *SADeploymentRelationship) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -669,7 +669,7 @@ func (m *SADeploymentRelationship) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SADeploymentRelationship) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SADeploymentRelationship) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

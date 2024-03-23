@@ -39,7 +39,7 @@ func (*NotifierEncConfig) Descriptor() ([]byte, []int) {
 func (m *NotifierEncConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NotifierEncConfig) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *NotifierEncConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_NotifierEncConfig.Marshal(b, m, deterministic)
 	} else {
@@ -103,7 +103,7 @@ var fileDescriptor_bbaa982fa5b997e2 = []byte{
 	0x04, 0x00, 0x00, 0xff, 0xff, 0x87, 0x30, 0x0c, 0x10, 0xa9, 0x00, 0x00, 0x00,
 }
 
-func (m *NotifierEncConfig) MarshalVT() (dAtA []byte, err error) {
+func (m *NotifierEncConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -113,7 +113,7 @@ func (m *NotifierEncConfig) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NotifierEncConfig) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *NotifierEncConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

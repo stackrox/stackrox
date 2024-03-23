@@ -112,7 +112,7 @@ func (*ServiceIdentity) Descriptor() ([]byte, []int) {
 func (m *ServiceIdentity) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ServiceIdentity) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ServiceIdentity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ServiceIdentity.Marshal(b, m, deterministic)
 	} else {
@@ -138,7 +138,7 @@ var xxx_messageInfo_ServiceIdentity proto.InternalMessageInfo
 
 type isServiceIdentity_Srl interface {
 	isServiceIdentity_Srl()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isServiceIdentity_Srl
 }
@@ -241,7 +241,7 @@ func (*ServiceCertificate) Descriptor() ([]byte, []int) {
 func (m *ServiceCertificate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ServiceCertificate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ServiceCertificate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ServiceCertificate.Marshal(b, m, deterministic)
 	} else {
@@ -317,7 +317,7 @@ func (*TypedServiceCertificate) Descriptor() ([]byte, []int) {
 func (m *TypedServiceCertificate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TypedServiceCertificate) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TypedServiceCertificate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TypedServiceCertificate.Marshal(b, m, deterministic)
 	} else {
@@ -386,7 +386,7 @@ func (*TypedServiceCertificateSet) Descriptor() ([]byte, []int) {
 func (m *TypedServiceCertificateSet) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TypedServiceCertificateSet) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *TypedServiceCertificateSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_TypedServiceCertificateSet.Marshal(b, m, deterministic)
 	} else {
@@ -497,7 +497,7 @@ var fileDescriptor_a988b93c2073ff63 = []byte{
 	0xf5, 0xda, 0xe5, 0xf3, 0x0f, 0x04, 0x00, 0x00,
 }
 
-func (m *ServiceIdentity) MarshalVT() (dAtA []byte, err error) {
+func (m *ServiceIdentity) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -507,7 +507,7 @@ func (m *ServiceIdentity) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ServiceIdentity) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceIdentity) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -551,7 +551,7 @@ func (m *ServiceIdentity) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		{
 			size := m.Srl.Size()
 			i -= size
-			if _, err := m.Srl.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Srl.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -559,7 +559,7 @@ func (m *ServiceIdentity) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ServiceIdentity_Serial) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceIdentity_Serial) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -571,7 +571,7 @@ func (m *ServiceIdentity_Serial) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	dAtA[i] = 0x8
 	return len(dAtA) - i, nil
 }
-func (m *ServiceCertificate) MarshalVT() (dAtA []byte, err error) {
+func (m *ServiceCertificate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -581,7 +581,7 @@ func (m *ServiceCertificate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ServiceCertificate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ServiceCertificate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -612,7 +612,7 @@ func (m *ServiceCertificate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TypedServiceCertificate) MarshalVT() (dAtA []byte, err error) {
+func (m *TypedServiceCertificate) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -622,7 +622,7 @@ func (m *TypedServiceCertificate) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TypedServiceCertificate) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TypedServiceCertificate) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -656,7 +656,7 @@ func (m *TypedServiceCertificate) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *TypedServiceCertificateSet) MarshalVT() (dAtA []byte, err error) {
+func (m *TypedServiceCertificateSet) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -666,7 +666,7 @@ func (m *TypedServiceCertificateSet) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TypedServiceCertificateSet) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *TypedServiceCertificateSet) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

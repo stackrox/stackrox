@@ -42,7 +42,7 @@ func (*ProbeUploadManifest) Descriptor() ([]byte, []int) {
 func (m *ProbeUploadManifest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProbeUploadManifest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProbeUploadManifest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProbeUploadManifest.Marshal(b, m, deterministic)
 	} else {
@@ -110,7 +110,7 @@ func (*ProbeUploadManifest_File) Descriptor() ([]byte, []int) {
 func (m *ProbeUploadManifest_File) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ProbeUploadManifest_File) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ProbeUploadManifest_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ProbeUploadManifest_File.Marshal(b, m, deterministic)
 	} else {
@@ -184,7 +184,7 @@ func (*GetExistingProbesRequest) Descriptor() ([]byte, []int) {
 func (m *GetExistingProbesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetExistingProbesRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetExistingProbesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetExistingProbesRequest.Marshal(b, m, deterministic)
 	} else {
@@ -248,7 +248,7 @@ func (*GetExistingProbesResponse) Descriptor() ([]byte, []int) {
 func (m *GetExistingProbesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetExistingProbesResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetExistingProbesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetExistingProbesResponse.Marshal(b, m, deterministic)
 	} else {
@@ -414,7 +414,7 @@ var _ProbeUploadService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/probe_upload_service.proto",
 }
 
-func (m *ProbeUploadManifest) MarshalVT() (dAtA []byte, err error) {
+func (m *ProbeUploadManifest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -424,7 +424,7 @@ func (m *ProbeUploadManifest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProbeUploadManifest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ProbeUploadManifest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -455,7 +455,7 @@ func (m *ProbeUploadManifest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ProbeUploadManifest_File) MarshalVT() (dAtA []byte, err error) {
+func (m *ProbeUploadManifest_File) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -465,7 +465,7 @@ func (m *ProbeUploadManifest_File) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProbeUploadManifest_File) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ProbeUploadManifest_File) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -499,7 +499,7 @@ func (m *ProbeUploadManifest_File) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *GetExistingProbesRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetExistingProbesRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -509,7 +509,7 @@ func (m *GetExistingProbesRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetExistingProbesRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetExistingProbesRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -535,7 +535,7 @@ func (m *GetExistingProbesRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *GetExistingProbesResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetExistingProbesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -545,7 +545,7 @@ func (m *GetExistingProbesResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetExistingProbesResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetExistingProbesResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

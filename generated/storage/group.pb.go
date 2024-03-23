@@ -43,7 +43,7 @@ func (*Group) Descriptor() ([]byte, []int) {
 func (m *Group) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Group) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *Group) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Group.Marshal(b, m, deterministic)
 	} else {
@@ -124,7 +124,7 @@ func (*GroupProperties) Descriptor() ([]byte, []int) {
 func (m *GroupProperties) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GroupProperties) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GroupProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GroupProperties.Marshal(b, m, deterministic)
 	} else {
@@ -225,7 +225,7 @@ var fileDescriptor_a11bdb88fa982b85 = []byte{
 	0x01, 0x00, 0x00, 0xff, 0xff, 0x4b, 0x4e, 0x45, 0x9d, 0x67, 0x01, 0x00, 0x00,
 }
 
-func (m *Group) MarshalVT() (dAtA []byte, err error) {
+func (m *Group) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -235,7 +235,7 @@ func (m *Group) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Group) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *Group) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -271,7 +271,7 @@ func (m *Group) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *GroupProperties) MarshalVT() (dAtA []byte, err error) {
+func (m *GroupProperties) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -281,7 +281,7 @@ func (m *GroupProperties) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GroupProperties) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GroupProperties) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

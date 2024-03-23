@@ -72,7 +72,7 @@ func (*GetLogLevelRequest) Descriptor() ([]byte, []int) {
 func (m *GetLogLevelRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetLogLevelRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetLogLevelRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetLogLevelRequest.Marshal(b, m, deterministic)
 	} else {
@@ -137,7 +137,7 @@ func (*LogLevelRequest) Descriptor() ([]byte, []int) {
 func (m *LogLevelRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LogLevelRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *LogLevelRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LogLevelRequest.Marshal(b, m, deterministic)
 	} else {
@@ -209,7 +209,7 @@ func (*ModuleLevel) Descriptor() ([]byte, []int) {
 func (m *ModuleLevel) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ModuleLevel) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ModuleLevel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ModuleLevel.Marshal(b, m, deterministic)
 	} else {
@@ -277,7 +277,7 @@ func (*LogLevelResponse) Descriptor() ([]byte, []int) {
 func (m *LogLevelResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LogLevelResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *LogLevelResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_LogLevelResponse.Marshal(b, m, deterministic)
 	} else {
@@ -355,7 +355,7 @@ func (*AuthorizationTraceResponse) Descriptor() ([]byte, []int) {
 func (m *AuthorizationTraceResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse.Marshal(b, m, deterministic)
 	} else {
@@ -457,7 +457,7 @@ func (*AuthorizationTraceResponse_Request) Descriptor() ([]byte, []int) {
 func (m *AuthorizationTraceResponse_Request) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse_Request) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse_Request.Marshal(b, m, deterministic)
 	} else {
@@ -525,7 +525,7 @@ func (*AuthorizationTraceResponse_Response) Descriptor() ([]byte, []int) {
 func (m *AuthorizationTraceResponse_Response) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse_Response) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse_Response.Marshal(b, m, deterministic)
 	} else {
@@ -595,7 +595,7 @@ func (*AuthorizationTraceResponse_User) Descriptor() ([]byte, []int) {
 func (m *AuthorizationTraceResponse_User) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse_User) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse_User.Marshal(b, m, deterministic)
 	} else {
@@ -691,7 +691,7 @@ func (*AuthorizationTraceResponse_User_Role) Descriptor() ([]byte, []int) {
 func (m *AuthorizationTraceResponse_User_Role) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse_User_Role) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse_User_Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse_User_Role.Marshal(b, m, deterministic)
 	} else {
@@ -783,7 +783,7 @@ func (*AuthorizationTraceResponse_Trace) Descriptor() ([]byte, []int) {
 func (m *AuthorizationTraceResponse_Trace) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse_Trace) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse_Trace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse_Trace.Marshal(b, m, deterministic)
 	} else {
@@ -809,7 +809,7 @@ var xxx_messageInfo_AuthorizationTraceResponse_Trace proto.InternalMessageInfo
 
 type isAuthorizationTraceResponse_Trace_Authorizer interface {
 	isAuthorizationTraceResponse_Trace_Authorizer()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isAuthorizationTraceResponse_Trace_Authorizer
 }
@@ -898,7 +898,7 @@ func (*AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Descriptor() ([]byte,
 func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AuthorizationTraceResponse_Trace_BuiltInAuthorizer.Marshal(b, m, deterministic)
 	} else {
@@ -1312,7 +1312,7 @@ var _DebugService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/debug_service.proto",
 }
 
-func (m *GetLogLevelRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetLogLevelRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1322,7 +1322,7 @@ func (m *GetLogLevelRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetLogLevelRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetLogLevelRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1348,7 +1348,7 @@ func (m *GetLogLevelRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *LogLevelRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *LogLevelRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1358,7 +1358,7 @@ func (m *LogLevelRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LogLevelRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *LogLevelRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1391,7 +1391,7 @@ func (m *LogLevelRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ModuleLevel) MarshalVT() (dAtA []byte, err error) {
+func (m *ModuleLevel) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1401,7 +1401,7 @@ func (m *ModuleLevel) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ModuleLevel) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ModuleLevel) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1432,7 +1432,7 @@ func (m *ModuleLevel) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *LogLevelResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *LogLevelResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1442,7 +1442,7 @@ func (m *LogLevelResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *LogLevelResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *LogLevelResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1480,7 +1480,7 @@ func (m *LogLevelResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1490,7 +1490,7 @@ func (m *AuthorizationTraceResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1579,7 +1579,7 @@ func (m *AuthorizationTraceResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse_Request) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse_Request) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1589,7 +1589,7 @@ func (m *AuthorizationTraceResponse_Request) MarshalVT() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse_Request) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_Request) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1620,7 +1620,7 @@ func (m *AuthorizationTraceResponse_Request) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse_Response) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse_Response) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1630,7 +1630,7 @@ func (m *AuthorizationTraceResponse_Response) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse_Response) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_Response) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1659,7 +1659,7 @@ func (m *AuthorizationTraceResponse_Response) MarshalToSizedBuffer(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse_User) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse_User) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1669,7 +1669,7 @@ func (m *AuthorizationTraceResponse_User) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse_User) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_User) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1731,7 +1731,7 @@ func (m *AuthorizationTraceResponse_User) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse_User_Role) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse_User_Role) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1741,7 +1741,7 @@ func (m *AuthorizationTraceResponse_User_Role) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse_User_Role) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_User_Role) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1801,7 +1801,7 @@ func (m *AuthorizationTraceResponse_User_Role) MarshalToSizedBuffer(dAtA []byte)
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse_Trace) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse_Trace) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1811,7 +1811,7 @@ func (m *AuthorizationTraceResponse_Trace) MarshalVT() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse_Trace) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_Trace) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1829,7 +1829,7 @@ func (m *AuthorizationTraceResponse_Trace) MarshalToSizedBuffer(dAtA []byte) (in
 		{
 			size := m.Authorizer.Size()
 			i -= size
-			if _, err := m.Authorizer.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.Authorizer.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1844,7 +1844,7 @@ func (m *AuthorizationTraceResponse_Trace) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthorizationTraceResponse_Trace_BuiltIn) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_Trace_BuiltIn) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1865,7 +1865,7 @@ func (m *AuthorizationTraceResponse_Trace_BuiltIn) MarshalToSizedBuffer(dAtA []b
 	}
 	return len(dAtA) - i, nil
 }
-func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalVT() (dAtA []byte, err error) {
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1875,7 +1875,7 @@ func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalVT() (dAtA [
 	return dAtA[:n], nil
 }
 
-func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

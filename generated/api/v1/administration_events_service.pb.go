@@ -135,7 +135,7 @@ func (*AdministrationEvent) Descriptor() ([]byte, []int) {
 func (m *AdministrationEvent) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdministrationEvent) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdministrationEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdministrationEvent.Marshal(b, m, deterministic)
 	} else {
@@ -272,7 +272,7 @@ func (*AdministrationEvent_Resource) Descriptor() ([]byte, []int) {
 func (m *AdministrationEvent_Resource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdministrationEvent_Resource) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdministrationEvent_Resource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdministrationEvent_Resource.Marshal(b, m, deterministic)
 	} else {
@@ -357,7 +357,7 @@ func (*AdministrationEventsFilter) Descriptor() ([]byte, []int) {
 func (m *AdministrationEventsFilter) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AdministrationEventsFilter) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *AdministrationEventsFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_AdministrationEventsFilter.Marshal(b, m, deterministic)
 	} else {
@@ -471,7 +471,7 @@ func (*CountAdministrationEventsRequest) Descriptor() ([]byte, []int) {
 func (m *CountAdministrationEventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountAdministrationEventsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountAdministrationEventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountAdministrationEventsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -533,7 +533,7 @@ func (*CountAdministrationEventsResponse) Descriptor() ([]byte, []int) {
 func (m *CountAdministrationEventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CountAdministrationEventsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CountAdministrationEventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CountAdministrationEventsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -593,7 +593,7 @@ func (*GetAdministrationEventResponse) Descriptor() ([]byte, []int) {
 func (m *GetAdministrationEventResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetAdministrationEventResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetAdministrationEventResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetAdministrationEventResponse.Marshal(b, m, deterministic)
 	} else {
@@ -657,7 +657,7 @@ func (*ListAdministrationEventsRequest) Descriptor() ([]byte, []int) {
 func (m *ListAdministrationEventsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAdministrationEventsRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAdministrationEventsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAdministrationEventsRequest.Marshal(b, m, deterministic)
 	} else {
@@ -726,7 +726,7 @@ func (*ListAdministrationEventsResponse) Descriptor() ([]byte, []int) {
 func (m *ListAdministrationEventsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ListAdministrationEventsResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ListAdministrationEventsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ListAdministrationEventsResponse.Marshal(b, m, deterministic)
 	} else {
@@ -1012,7 +1012,7 @@ var _AdministrationEventService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/administration_events_service.proto",
 }
 
-func (m *AdministrationEvent) MarshalVT() (dAtA []byte, err error) {
+func (m *AdministrationEvent) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1022,7 +1022,7 @@ func (m *AdministrationEvent) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdministrationEvent) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdministrationEvent) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1118,7 +1118,7 @@ func (m *AdministrationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AdministrationEvent_Resource) MarshalVT() (dAtA []byte, err error) {
+func (m *AdministrationEvent_Resource) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1128,7 +1128,7 @@ func (m *AdministrationEvent_Resource) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdministrationEvent_Resource) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdministrationEvent_Resource) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1166,7 +1166,7 @@ func (m *AdministrationEvent_Resource) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *AdministrationEventsFilter) MarshalVT() (dAtA []byte, err error) {
+func (m *AdministrationEventsFilter) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1176,7 +1176,7 @@ func (m *AdministrationEventsFilter) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AdministrationEventsFilter) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *AdministrationEventsFilter) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1271,7 +1271,7 @@ func (m *AdministrationEventsFilter) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *CountAdministrationEventsRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CountAdministrationEventsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1281,7 +1281,7 @@ func (m *CountAdministrationEventsRequest) MarshalVT() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *CountAdministrationEventsRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CountAdministrationEventsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1310,7 +1310,7 @@ func (m *CountAdministrationEventsRequest) MarshalToSizedBuffer(dAtA []byte) (in
 	return len(dAtA) - i, nil
 }
 
-func (m *CountAdministrationEventsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *CountAdministrationEventsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1320,7 +1320,7 @@ func (m *CountAdministrationEventsResponse) MarshalVT() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *CountAdministrationEventsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CountAdministrationEventsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1342,7 +1342,7 @@ func (m *CountAdministrationEventsResponse) MarshalToSizedBuffer(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *GetAdministrationEventResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetAdministrationEventResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1352,7 +1352,7 @@ func (m *GetAdministrationEventResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAdministrationEventResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetAdministrationEventResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1381,7 +1381,7 @@ func (m *GetAdministrationEventResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAdministrationEventsRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *ListAdministrationEventsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1391,7 +1391,7 @@ func (m *ListAdministrationEventsRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAdministrationEventsRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListAdministrationEventsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -1432,7 +1432,7 @@ func (m *ListAdministrationEventsRequest) MarshalToSizedBuffer(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAdministrationEventsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ListAdministrationEventsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1442,7 +1442,7 @@ func (m *ListAdministrationEventsResponse) MarshalVT() (dAtA []byte, err error) 
 	return dAtA[:n], nil
 }
 
-func (m *ListAdministrationEventsResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ListAdministrationEventsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

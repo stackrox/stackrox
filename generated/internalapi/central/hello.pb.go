@@ -71,7 +71,7 @@ func (*HelmManagedConfigInit) Descriptor() ([]byte, []int) {
 func (m *HelmManagedConfigInit) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *HelmManagedConfigInit) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *HelmManagedConfigInit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_HelmManagedConfigInit.Marshal(b, m, deterministic)
 	} else {
@@ -170,7 +170,7 @@ func (*SensorHello) Descriptor() ([]byte, []int) {
 func (m *SensorHello) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SensorHello) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SensorHello) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SensorHello.Marshal(b, m, deterministic)
 	} else {
@@ -283,7 +283,7 @@ func (*CentralHello) Descriptor() ([]byte, []int) {
 func (m *CentralHello) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CentralHello) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CentralHello) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CentralHello.Marshal(b, m, deterministic)
 	} else {
@@ -427,7 +427,7 @@ var fileDescriptor_ce25d1bd48ec88b4 = []byte{
 	0x00,
 }
 
-func (m *HelmManagedConfigInit) MarshalVT() (dAtA []byte, err error) {
+func (m *HelmManagedConfigInit) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -437,7 +437,7 @@ func (m *HelmManagedConfigInit) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *HelmManagedConfigInit) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *HelmManagedConfigInit) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -495,7 +495,7 @@ func (m *HelmManagedConfigInit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SensorHello) MarshalVT() (dAtA []byte, err error) {
+func (m *SensorHello) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -505,7 +505,7 @@ func (m *SensorHello) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SensorHello) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SensorHello) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -584,7 +584,7 @@ func (m *SensorHello) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CentralHello) MarshalVT() (dAtA []byte, err error) {
+func (m *CentralHello) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -594,7 +594,7 @@ func (m *CentralHello) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CentralHello) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CentralHello) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

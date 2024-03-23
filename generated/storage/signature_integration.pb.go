@@ -40,7 +40,7 @@ func (*SignatureIntegration) Descriptor() ([]byte, []int) {
 func (m *SignatureIntegration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SignatureIntegration) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *SignatureIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_SignatureIntegration.Marshal(b, m, deterministic)
 	} else {
@@ -115,7 +115,7 @@ func (*CosignPublicKeyVerification) Descriptor() ([]byte, []int) {
 func (m *CosignPublicKeyVerification) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CosignPublicKeyVerification) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CosignPublicKeyVerification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CosignPublicKeyVerification.Marshal(b, m, deterministic)
 	} else {
@@ -182,7 +182,7 @@ func (*CosignPublicKeyVerification_PublicKey) Descriptor() ([]byte, []int) {
 func (m *CosignPublicKeyVerification_PublicKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CosignPublicKeyVerification_PublicKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CosignPublicKeyVerification_PublicKey.Marshal(b, m, deterministic)
 	} else {
@@ -264,7 +264,7 @@ var fileDescriptor_b3165e7a4c19e14a = []byte{
 	0x00, 0x00, 0xff, 0xff, 0x8d, 0xc3, 0x49, 0x33, 0xa5, 0x01, 0x00, 0x00,
 }
 
-func (m *SignatureIntegration) MarshalVT() (dAtA []byte, err error) {
+func (m *SignatureIntegration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -274,7 +274,7 @@ func (m *SignatureIntegration) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SignatureIntegration) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *SignatureIntegration) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -317,7 +317,7 @@ func (m *SignatureIntegration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CosignPublicKeyVerification) MarshalVT() (dAtA []byte, err error) {
+func (m *CosignPublicKeyVerification) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -327,7 +327,7 @@ func (m *CosignPublicKeyVerification) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CosignPublicKeyVerification) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CosignPublicKeyVerification) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -358,7 +358,7 @@ func (m *CosignPublicKeyVerification) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) MarshalVT() (dAtA []byte, err error) {
+func (m *CosignPublicKeyVerification_PublicKey) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -368,7 +368,7 @@ func (m *CosignPublicKeyVerification_PublicKey) MarshalVT() (dAtA []byte, err er
 	return dAtA[:n], nil
 }
 
-func (m *CosignPublicKeyVerification_PublicKey) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CosignPublicKeyVerification_PublicKey) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }

@@ -45,7 +45,7 @@ func (*ContainerImageLocator) Descriptor() ([]byte, []int) {
 func (m *ContainerImageLocator) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ContainerImageLocator) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *ContainerImageLocator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ContainerImageLocator.Marshal(b, m, deterministic)
 	} else {
@@ -122,7 +122,7 @@ func (*CreateIndexReportRequest) Descriptor() ([]byte, []int) {
 func (m *CreateIndexReportRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CreateIndexReportRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *CreateIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_CreateIndexReportRequest.Marshal(b, m, deterministic)
 	} else {
@@ -148,7 +148,7 @@ var xxx_messageInfo_CreateIndexReportRequest proto.InternalMessageInfo
 
 type isCreateIndexReportRequest_ResourceLocator interface {
 	isCreateIndexReportRequest_ResourceLocator()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isCreateIndexReportRequest_ResourceLocator
 }
@@ -229,7 +229,7 @@ func (*GetIndexReportRequest) Descriptor() ([]byte, []int) {
 func (m *GetIndexReportRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetIndexReportRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetIndexReportRequest.Marshal(b, m, deterministic)
 	} else {
@@ -289,7 +289,7 @@ func (*HasIndexReportRequest) Descriptor() ([]byte, []int) {
 func (m *HasIndexReportRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *HasIndexReportRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *HasIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_HasIndexReportRequest.Marshal(b, m, deterministic)
 	} else {
@@ -349,7 +349,7 @@ func (*HasIndexReportResponse) Descriptor() ([]byte, []int) {
 func (m *HasIndexReportResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *HasIndexReportResponse) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *HasIndexReportResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_HasIndexReportResponse.Marshal(b, m, deterministic)
 	} else {
@@ -412,7 +412,7 @@ func (*GetOrCreateIndexReportRequest) Descriptor() ([]byte, []int) {
 func (m *GetOrCreateIndexReportRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetOrCreateIndexReportRequest) XXX_MarshalVT(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetOrCreateIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_GetOrCreateIndexReportRequest.Marshal(b, m, deterministic)
 	} else {
@@ -438,7 +438,7 @@ var xxx_messageInfo_GetOrCreateIndexReportRequest proto.InternalMessageInfo
 
 type isGetOrCreateIndexReportRequest_ResourceLocator interface {
 	isGetOrCreateIndexReportRequest_ResourceLocator()
-	MarshalVTTo([]byte) (int, error)
+	MarshalTo([]byte) (int, error)
 	Size() int
 	Clone() isGetOrCreateIndexReportRequest_ResourceLocator
 }
@@ -746,7 +746,7 @@ var _Indexer_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internalapi/scanner/v4/indexer_service.proto",
 }
 
-func (m *ContainerImageLocator) MarshalVT() (dAtA []byte, err error) {
+func (m *ContainerImageLocator) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -756,7 +756,7 @@ func (m *ContainerImageLocator) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ContainerImageLocator) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *ContainerImageLocator) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -794,7 +794,7 @@ func (m *ContainerImageLocator) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *CreateIndexReportRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -804,7 +804,7 @@ func (m *CreateIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CreateIndexReportRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateIndexReportRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -822,7 +822,7 @@ func (m *CreateIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 		{
 			size := m.ResourceLocator.Size()
 			i -= size
-			if _, err := m.ResourceLocator.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.ResourceLocator.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -837,7 +837,7 @@ func (m *CreateIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CreateIndexReportRequest_ContainerImage) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *CreateIndexReportRequest_ContainerImage) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -858,7 +858,7 @@ func (m *CreateIndexReportRequest_ContainerImage) MarshalToSizedBuffer(dAtA []by
 	}
 	return len(dAtA) - i, nil
 }
-func (m *GetIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetIndexReportRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -868,7 +868,7 @@ func (m *GetIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetIndexReportRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetIndexReportRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -892,7 +892,7 @@ func (m *GetIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *HasIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *HasIndexReportRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -902,7 +902,7 @@ func (m *HasIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *HasIndexReportRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *HasIndexReportRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -926,7 +926,7 @@ func (m *HasIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *HasIndexReportResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *HasIndexReportResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -936,7 +936,7 @@ func (m *HasIndexReportResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *HasIndexReportResponse) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *HasIndexReportResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -963,7 +963,7 @@ func (m *HasIndexReportResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetOrCreateIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *GetOrCreateIndexReportRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -973,7 +973,7 @@ func (m *GetOrCreateIndexReportRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetOrCreateIndexReportRequest) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetOrCreateIndexReportRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
@@ -991,7 +991,7 @@ func (m *GetOrCreateIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 		{
 			size := m.ResourceLocator.Size()
 			i -= size
-			if _, err := m.ResourceLocator.MarshalVTTo(dAtA[i:]); err != nil {
+			if _, err := m.ResourceLocator.MarshalTo(dAtA[i:]); err != nil {
 				return 0, err
 			}
 		}
@@ -1006,7 +1006,7 @@ func (m *GetOrCreateIndexReportRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 	return len(dAtA) - i, nil
 }
 
-func (m *GetOrCreateIndexReportRequest_ContainerImage) MarshalVTTo(dAtA []byte) (int, error) {
+func (m *GetOrCreateIndexReportRequest_ContainerImage) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
