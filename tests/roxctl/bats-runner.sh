@@ -23,5 +23,4 @@ else
 fi
 
 # Running all bats test suites found in the directory
-echo "Running Bats with parameters: " "${BATS_FLAGS[@]}"
-bats "${BATS_FLAGS[@]}" "${BATS_TESTS}"
+(set -x; bats "${BATS_FLAGS[@]}" "${BATS_TESTS}")
