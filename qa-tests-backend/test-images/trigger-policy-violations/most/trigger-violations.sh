@@ -76,4 +76,7 @@ test_exec systemd
 echo "For: Ubuntu Package Manager Execution"
 test_exec apt
 
+echo "For: Wget Execution"
+test_exec wget
+
 sleep 36000
