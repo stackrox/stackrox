@@ -153,7 +153,7 @@ CLUSTER_NAME="my-secured-cluster"
 Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
 ```sh
 helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-  -f simon-test-cluster-init-bundle.yaml \
+  -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
   --set centralEndpoint="central.stackrox.svc:443"
 ```
