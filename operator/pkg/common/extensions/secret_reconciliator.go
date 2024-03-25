@@ -24,13 +24,6 @@ const (
 	OwnershipStrategyLabel OwnershipStrategy = "label"
 )
 
-const (
-	// managedByOperatorLabel is the label used to manage the ownership of a secret.
-	managedByOperatorLabel = "app.kubernetes.io/managed-by"
-	// managedByOperatorValue is the value of the label used to manage the ownership of a secret.
-	managedByOperatorValue = "rhacs-operator"
-)
-
 // validateSecretDataFunc validates a secret to determine if the generation should run. The boolean parameter is true if the
 // secret is managed by the running operator.
 type validateSecretDataFunc func(types.SecretDataMap, bool) error
@@ -44,17 +37,19 @@ type generateSecretDataFunc func(types.SecretDataMap) (types.SecretDataMap, erro
 // The obj parameter is the owner object (i.e. a custom resource).
 func NewSecretReconciliator(client ctrlClient.Client, direct ctrlClient.Reader, obj types.K8sObject, ownershipStrategy OwnershipStrategy) *SecretReconciliator {
 	return &SecretReconciliator{
-		client: client,
-		obj:    obj,
-		direct: direct,
+		client:            client,
+		obj:               obj,
+		direct:            direct,
+		ownershipStrategy: ownershipStrategy,
 	}
 }
 
 // SecretReconciliator reconciles a secret.
 type SecretReconciliator struct {
-	client ctrlClient.Client
-	obj    types.K8sObject
-	direct ctrlClient.Reader
+	client            ctrlClient.Client
+	obj               types.K8sObject
+	direct            ctrlClient.Reader
+	ownershipStrategy OwnershipStrategy
 }
 
 // Client returns the (cached) controller-runtime client used by the extension.
@@ -120,10 +115,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: r.obj.GetNamespace(),
-			Labels: map[string]string{
-				managedByOperatorLabel: managedByOperatorValue,
-			},
-			Labels: commonLabels.DefaultLabels(),
+			Labels:    commonLabels.DefaultLabels(),
 		},
 		Data: data,
 	}
@@ -142,7 +134,7 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 	if validateErr == nil {
 		if needsUpdate {
 			if err := r.Client().Update(ctx, secret); err != nil {
-				return errors.Wrapf(err, "updating %s secret", name)
+				return errors.Wrapf(err, "updating %s secret", secret.Name)
 			}
 		}
 		return nil // validation of existing secret successful - no reconciliation needed
@@ -192,11 +184,11 @@ func (r *SecretReconciliator) applyOwnershipStrategy(secret *coreV1.Secret) bool
 	// We always want managed secrets to have the label/value pair.
 	// Secrets created in previous versions will only have the ownerReference set.
 	// So we need to migrate them to also have the label/value pair.
-	if secret.Labels == nil || secret.Labels[managedByOperatorLabel] != managedByOperatorValue {
+	if secret.Labels == nil || secret.Labels[commonLabels.ManagedByLabel] != commonLabels.ManagedByValue {
 		if secret.Labels == nil {
 			secret.Labels = make(map[string]string)
 		}
-		secret.Labels[managedByOperatorLabel] = managedByOperatorValue
+		secret.Labels[commonLabels.ManagedByLabel] = commonLabels.ManagedByValue
 		shouldUpdate = true
 	}
 
@@ -223,10 +215,10 @@ func getIsManagedByOwnerRef(secret *coreV1.Secret, obj types.K8sObject) bool {
 	return metav1.IsControlledBy(secret, obj)
 }
 
-func getIsManagedByAnnotation(secret *coreV1.Secret) bool {
-	return secret.Labels != nil && secret.Labels[managedByOperatorLabel] == managedByOperatorValue
+func getIsManagedByLabel(secret *coreV1.Secret) bool {
+	return secret.Labels != nil && secret.Labels[commonLabels.ManagedByLabel] == commonLabels.ManagedByValue
 }
 
 func isSecretManaged(secret *coreV1.Secret, obj types.K8sObject) bool {
-	return getIsManagedByOwnerRef(secret, obj) || getIsManagedByAnnotation(secret)
+	return getIsManagedByOwnerRef(secret, obj) || getIsManagedByLabel(secret)
 }

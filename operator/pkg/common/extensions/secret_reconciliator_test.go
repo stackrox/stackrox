@@ -468,28 +468,28 @@ label              hasOwnerRef,hasWrongLabel                      x
 				}
 				if hasLabel {
 					secret.Labels = map[string]string{
-						managedByOperatorLabel: managedByOperatorValue,
+						labels.ManagedByLabel: labels.ManagedByValue,
 					}
 				}
 				if hasWrongLabel {
 					secret.Labels = map[string]string{
-						managedByOperatorLabel: "wrong",
+						labels.ManagedByLabel: "wrong",
 					}
 				}
 				objects = append(objects, secret)
 			}
 			client := fake.NewClientBuilder().WithObjects(objects...).Build()
 			ctx := context.Background()
-			err := NewSecretReconciliator(client, central, tt.strategy).EnsureSecret(ctx, secretName, validate, generate)
+			err := NewSecretReconciliator(client, client, central, tt.strategy).EnsureSecret(ctx, secretName, validate, generate)
 			require.NoError(t, err)
 
 			var secret v1.Secret
 			require.NoError(t, client.Get(ctx, k8sTypes.NamespacedName{Name: secretName, Namespace: testutils.TestNamespace}, &secret))
 
 			if tt.expectedLabel {
-				assert.Equal(t, managedByOperatorValue, secret.Labels[managedByOperatorLabel])
+				assert.Equal(t, labels.ManagedByLabel, secret.Labels[labels.ManagedByValue])
 			} else {
-				assert.NotEqual(t, managedByOperatorValue, secret.Labels[managedByOperatorLabel])
+				assert.NotEqual(t, labels.ManagedByLabel, secret.Labels[labels.ManagedByValue])
 			}
 
 			if tt.expectedOwnerRef {
