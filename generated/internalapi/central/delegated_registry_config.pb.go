@@ -72,8 +72,8 @@ func (*DelegatedRegistryConfig) ProtoMessage()    {}
 func (*DelegatedRegistryConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30d07a7caba3ce27, []int{0}
 }
-func (m *DelegatedRegistryConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DelegatedRegistryConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DelegatedRegistryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -149,8 +149,8 @@ func (*DelegatedRegistryConfig_DelegatedRegistry) ProtoMessage() {}
 func (*DelegatedRegistryConfig_DelegatedRegistry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30d07a7caba3ce27, []int{0, 0}
 }
-func (m *DelegatedRegistryConfig_DelegatedRegistry) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DelegatedRegistryConfig_DelegatedRegistry) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DelegatedRegistryConfig_DelegatedRegistry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -360,7 +360,7 @@ func sovDelegatedRegistryConfig(x uint64) (n int) {
 func sozDelegatedRegistryConfig(x uint64) (n int) {
 	return sovDelegatedRegistryConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DelegatedRegistryConfig) Unmarshal(dAtA []byte) error {
+func (m *DelegatedRegistryConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -438,7 +438,7 @@ func (m *DelegatedRegistryConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Registries = append(m.Registries, &DelegatedRegistryConfig_DelegatedRegistry{})
-			if err := m.Registries[len(m.Registries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Registries[len(m.Registries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -464,7 +464,7 @@ func (m *DelegatedRegistryConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DelegatedRegistryConfig_DelegatedRegistry) Unmarshal(dAtA []byte) error {
+func (m *DelegatedRegistryConfig_DelegatedRegistry) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

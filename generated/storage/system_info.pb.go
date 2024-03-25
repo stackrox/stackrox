@@ -38,8 +38,8 @@ func (*BackupInfo) ProtoMessage()    {}
 func (*BackupInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aea16395861e483e, []int{0}
 }
-func (m *BackupInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BackupInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BackupInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -114,8 +114,8 @@ func (*SystemInfo) ProtoMessage()    {}
 func (*SystemInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aea16395861e483e, []int{1}
 }
-func (m *SystemInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SystemInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SystemInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -343,7 +343,7 @@ func sovSystemInfo(x uint64) (n int) {
 func sozSystemInfo(x uint64) (n int) {
 	return sovSystemInfo(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *BackupInfo) Unmarshal(dAtA []byte) error {
+func (m *BackupInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -459,7 +459,7 @@ func (m *BackupInfo) Unmarshal(dAtA []byte) error {
 			if m.Requestor == nil {
 				m.Requestor = &SlimUser{}
 			}
-			if err := m.Requestor.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Requestor.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -485,7 +485,7 @@ func (m *BackupInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SystemInfo) Unmarshal(dAtA []byte) error {
+func (m *SystemInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -546,7 +546,7 @@ func (m *SystemInfo) Unmarshal(dAtA []byte) error {
 			if m.BackupInfo == nil {
 				m.BackupInfo = &BackupInfo{}
 			}
-			if err := m.BackupInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.BackupInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

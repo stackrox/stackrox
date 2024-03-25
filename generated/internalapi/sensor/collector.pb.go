@@ -39,8 +39,8 @@ func (*CollectorRegisterRequest) ProtoMessage()    {}
 func (*CollectorRegisterRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_71453edf4e1b15cc, []int{0}
 }
-func (m *CollectorRegisterRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CollectorRegisterRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CollectorRegisterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -194,7 +194,7 @@ func sovCollector(x uint64) (n int) {
 func sozCollector(x uint64) (n int) {
 	return sovCollector(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *CollectorRegisterRequest) Unmarshal(dAtA []byte) error {
+func (m *CollectorRegisterRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -40,8 +40,8 @@ func (*GetExternalBackupsResponse) ProtoMessage()    {}
 func (*GetExternalBackupsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_87b5f012147a9d12, []int{0}
 }
-func (m *GetExternalBackupsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetExternalBackupsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetExternalBackupsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -108,8 +108,8 @@ func (*UpdateExternalBackupRequest) ProtoMessage()    {}
 func (*UpdateExternalBackupRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_87b5f012147a9d12, []int{1}
 }
-func (m *UpdateExternalBackupRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpdateExternalBackupRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpdateExternalBackupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -737,7 +737,7 @@ func sovBackupService(x uint64) (n int) {
 func sozBackupService(x uint64) (n int) {
 	return sovBackupService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetExternalBackupsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetExternalBackupsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -796,7 +796,7 @@ func (m *GetExternalBackupsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExternalBackups = append(m.ExternalBackups, &storage.ExternalBackup{})
-			if err := m.ExternalBackups[len(m.ExternalBackups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExternalBackups[len(m.ExternalBackups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -822,7 +822,7 @@ func (m *GetExternalBackupsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateExternalBackupRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateExternalBackupRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -883,7 +883,7 @@ func (m *UpdateExternalBackupRequest) Unmarshal(dAtA []byte) error {
 			if m.ExternalBackup == nil {
 				m.ExternalBackup = &storage.ExternalBackup{}
 			}
-			if err := m.ExternalBackup.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExternalBackup.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

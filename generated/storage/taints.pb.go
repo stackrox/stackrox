@@ -96,8 +96,8 @@ func (*Taint) ProtoMessage()    {}
 func (*Taint) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ecc716fc97bf932b, []int{0}
 }
-func (m *Taint) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Taint) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Taint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -173,8 +173,8 @@ func (*Toleration) ProtoMessage()    {}
 func (*Toleration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ecc716fc97bf932b, []int{1}
 }
-func (m *Toleration) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Toleration) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Toleration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -440,7 +440,7 @@ func sovTaints(x uint64) (n int) {
 func sozTaints(x uint64) (n int) {
 	return sovTaints(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Taint) Unmarshal(dAtA []byte) error {
+func (m *Taint) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -574,7 +574,7 @@ func (m *Taint) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Toleration) Unmarshal(dAtA []byte) error {
+func (m *Toleration) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

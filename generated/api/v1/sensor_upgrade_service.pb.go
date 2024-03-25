@@ -65,8 +65,8 @@ func (*UpdateSensorUpgradeConfigRequest) ProtoMessage()    {}
 func (*UpdateSensorUpgradeConfigRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_35a4744ac589f88a, []int{0}
 }
-func (m *UpdateSensorUpgradeConfigRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpdateSensorUpgradeConfigRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpdateSensorUpgradeConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -126,8 +126,8 @@ func (*GetSensorUpgradeConfigResponse) ProtoMessage()    {}
 func (*GetSensorUpgradeConfigResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_35a4744ac589f88a, []int{1}
 }
-func (m *GetSensorUpgradeConfigResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetSensorUpgradeConfigResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetSensorUpgradeConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -192,8 +192,8 @@ func (*GetSensorUpgradeConfigResponse_UpgradeConfig) ProtoMessage() {}
 func (*GetSensorUpgradeConfigResponse_UpgradeConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_35a4744ac589f88a, []int{1, 0}
 }
-func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -668,7 +668,7 @@ func sovSensorUpgradeService(x uint64) (n int) {
 func sozSensorUpgradeService(x uint64) (n int) {
 	return sovSensorUpgradeService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *UpdateSensorUpgradeConfigRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateSensorUpgradeConfigRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -729,7 +729,7 @@ func (m *UpdateSensorUpgradeConfigRequest) Unmarshal(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.SensorUpgradeConfig{}
 			}
-			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -755,7 +755,7 @@ func (m *UpdateSensorUpgradeConfigRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetSensorUpgradeConfigResponse) Unmarshal(dAtA []byte) error {
+func (m *GetSensorUpgradeConfigResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -816,7 +816,7 @@ func (m *GetSensorUpgradeConfigResponse) Unmarshal(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &GetSensorUpgradeConfigResponse_UpgradeConfig{}
 			}
-			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -842,7 +842,7 @@ func (m *GetSensorUpgradeConfigResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) Unmarshal(dAtA []byte) error {
+func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

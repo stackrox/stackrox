@@ -111,8 +111,8 @@ func (*LabelSelector) ProtoMessage()    {}
 func (*LabelSelector) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a13142881b5e7a12, []int{0}
 }
-func (m *LabelSelector) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *LabelSelector) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *LabelSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -193,8 +193,8 @@ func (*LabelSelector_Requirement) ProtoMessage()    {}
 func (*LabelSelector_Requirement) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a13142881b5e7a12, []int{0, 0}
 }
-func (m *LabelSelector_Requirement) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *LabelSelector_Requirement) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *LabelSelector_Requirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -274,8 +274,8 @@ func (*SetBasedLabelSelector) ProtoMessage()    {}
 func (*SetBasedLabelSelector) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a13142881b5e7a12, []int{1}
 }
-func (m *SetBasedLabelSelector) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SetBasedLabelSelector) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SetBasedLabelSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -343,8 +343,8 @@ func (*SetBasedLabelSelector_Requirement) ProtoMessage()    {}
 func (*SetBasedLabelSelector_Requirement) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a13142881b5e7a12, []int{1, 0}
 }
-func (m *SetBasedLabelSelector_Requirement) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SetBasedLabelSelector_Requirement) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SetBasedLabelSelector_Requirement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -756,7 +756,7 @@ func sovLabels(x uint64) (n int) {
 func sozLabels(x uint64) (n int) {
 	return sovLabels(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *LabelSelector) Unmarshal(dAtA []byte) error {
+func (m *LabelSelector) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -942,7 +942,7 @@ func (m *LabelSelector) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Requirements = append(m.Requirements, &LabelSelector_Requirement{})
-			if err := m.Requirements[len(m.Requirements)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Requirements[len(m.Requirements)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -968,7 +968,7 @@ func (m *LabelSelector) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LabelSelector_Requirement) Unmarshal(dAtA []byte) error {
+func (m *LabelSelector_Requirement) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1102,7 +1102,7 @@ func (m *LabelSelector_Requirement) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SetBasedLabelSelector) Unmarshal(dAtA []byte) error {
+func (m *SetBasedLabelSelector) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1161,7 +1161,7 @@ func (m *SetBasedLabelSelector) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Requirements = append(m.Requirements, &SetBasedLabelSelector_Requirement{})
-			if err := m.Requirements[len(m.Requirements)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Requirements[len(m.Requirements)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1187,7 +1187,7 @@ func (m *SetBasedLabelSelector) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SetBasedLabelSelector_Requirement) Unmarshal(dAtA []byte) error {
+func (m *SetBasedLabelSelector_Requirement) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -40,8 +40,8 @@ func (*GetReportConfigurationsResponse) ProtoMessage()    {}
 func (*GetReportConfigurationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d908ae451b889f35, []int{0}
 }
-func (m *GetReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetReportConfigurationsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -106,8 +106,8 @@ func (*GetReportConfigurationResponse) ProtoMessage()    {}
 func (*GetReportConfigurationResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d908ae451b889f35, []int{1}
 }
-func (m *GetReportConfigurationResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetReportConfigurationResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetReportConfigurationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -167,8 +167,8 @@ func (*PostReportConfigurationResponse) ProtoMessage()    {}
 func (*PostReportConfigurationResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d908ae451b889f35, []int{2}
 }
-func (m *PostReportConfigurationResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PostReportConfigurationResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PostReportConfigurationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -228,8 +228,8 @@ func (*PostReportConfigurationRequest) ProtoMessage()    {}
 func (*PostReportConfigurationRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d908ae451b889f35, []int{3}
 }
-func (m *PostReportConfigurationRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PostReportConfigurationRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PostReportConfigurationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -290,8 +290,8 @@ func (*UpdateReportConfigurationRequest) ProtoMessage()    {}
 func (*UpdateReportConfigurationRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d908ae451b889f35, []int{4}
 }
-func (m *UpdateReportConfigurationRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpdateReportConfigurationRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpdateReportConfigurationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -358,8 +358,8 @@ func (*CountReportConfigurationsResponse) ProtoMessage()    {}
 func (*CountReportConfigurationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d908ae451b889f35, []int{5}
 }
-func (m *CountReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CountReportConfigurationsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CountReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1077,7 +1077,7 @@ func sovReportConfigurationService(x uint64) (n int) {
 func sozReportConfigurationService(x uint64) (n int) {
 	return sovReportConfigurationService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetReportConfigurationsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1136,7 +1136,7 @@ func (m *GetReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ReportConfigs = append(m.ReportConfigs, &storage.ReportConfiguration{})
-			if err := m.ReportConfigs[len(m.ReportConfigs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportConfigs[len(m.ReportConfigs)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1162,7 +1162,7 @@ func (m *GetReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetReportConfigurationResponse) Unmarshal(dAtA []byte) error {
+func (m *GetReportConfigurationResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1223,7 +1223,7 @@ func (m *GetReportConfigurationResponse) Unmarshal(dAtA []byte) error {
 			if m.ReportConfig == nil {
 				m.ReportConfig = &storage.ReportConfiguration{}
 			}
-			if err := m.ReportConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1249,7 +1249,7 @@ func (m *GetReportConfigurationResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PostReportConfigurationResponse) Unmarshal(dAtA []byte) error {
+func (m *PostReportConfigurationResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1310,7 +1310,7 @@ func (m *PostReportConfigurationResponse) Unmarshal(dAtA []byte) error {
 			if m.ReportConfig == nil {
 				m.ReportConfig = &storage.ReportConfiguration{}
 			}
-			if err := m.ReportConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1336,7 +1336,7 @@ func (m *PostReportConfigurationResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PostReportConfigurationRequest) Unmarshal(dAtA []byte) error {
+func (m *PostReportConfigurationRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1397,7 +1397,7 @@ func (m *PostReportConfigurationRequest) Unmarshal(dAtA []byte) error {
 			if m.ReportConfig == nil {
 				m.ReportConfig = &storage.ReportConfiguration{}
 			}
-			if err := m.ReportConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1423,7 +1423,7 @@ func (m *PostReportConfigurationRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateReportConfigurationRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateReportConfigurationRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1516,7 +1516,7 @@ func (m *UpdateReportConfigurationRequest) Unmarshal(dAtA []byte) error {
 			if m.ReportConfig == nil {
 				m.ReportConfig = &storage.ReportConfiguration{}
 			}
-			if err := m.ReportConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1542,7 +1542,7 @@ func (m *UpdateReportConfigurationRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
+func (m *CountReportConfigurationsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

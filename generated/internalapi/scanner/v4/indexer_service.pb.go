@@ -42,8 +42,8 @@ func (*ContainerImageLocator) ProtoMessage()    {}
 func (*ContainerImageLocator) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b3d06b94183d906, []int{0}
 }
-func (m *ContainerImageLocator) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ContainerImageLocator) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ContainerImageLocator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -119,8 +119,8 @@ func (*CreateIndexReportRequest) ProtoMessage()    {}
 func (*CreateIndexReportRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b3d06b94183d906, []int{1}
 }
-func (m *CreateIndexReportRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CreateIndexReportRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CreateIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -226,8 +226,8 @@ func (*GetIndexReportRequest) ProtoMessage()    {}
 func (*GetIndexReportRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b3d06b94183d906, []int{2}
 }
-func (m *GetIndexReportRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetIndexReportRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -286,8 +286,8 @@ func (*HasIndexReportRequest) ProtoMessage()    {}
 func (*HasIndexReportRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b3d06b94183d906, []int{3}
 }
-func (m *HasIndexReportRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *HasIndexReportRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *HasIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -346,8 +346,8 @@ func (*HasIndexReportResponse) ProtoMessage()    {}
 func (*HasIndexReportResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b3d06b94183d906, []int{4}
 }
-func (m *HasIndexReportResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *HasIndexReportResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *HasIndexReportResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -409,8 +409,8 @@ func (*GetOrCreateIndexReportRequest) ProtoMessage()    {}
 func (*GetOrCreateIndexReportRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b3d06b94183d906, []int{5}
 }
-func (m *GetOrCreateIndexReportRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetOrCreateIndexReportRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetOrCreateIndexReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1178,7 +1178,7 @@ func sovIndexerService(x uint64) (n int) {
 func sozIndexerService(x uint64) (n int) {
 	return sovIndexerService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ContainerImageLocator) Unmarshal(dAtA []byte) error {
+func (m *ContainerImageLocator) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1325,7 +1325,7 @@ func (m *ContainerImageLocator) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreateIndexReportRequest) Unmarshal(dAtA []byte) error {
+func (m *CreateIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1416,7 +1416,7 @@ func (m *CreateIndexReportRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ContainerImageLocator{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.ResourceLocator = &CreateIndexReportRequest_ContainerImage{v}
@@ -1443,7 +1443,7 @@ func (m *CreateIndexReportRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetIndexReportRequest) Unmarshal(dAtA []byte) error {
+func (m *GetIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1526,7 +1526,7 @@ func (m *GetIndexReportRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *HasIndexReportRequest) Unmarshal(dAtA []byte) error {
+func (m *HasIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1609,7 +1609,7 @@ func (m *HasIndexReportRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *HasIndexReportResponse) Unmarshal(dAtA []byte) error {
+func (m *HasIndexReportResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1680,7 +1680,7 @@ func (m *HasIndexReportResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetOrCreateIndexReportRequest) Unmarshal(dAtA []byte) error {
+func (m *GetOrCreateIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1771,7 +1771,7 @@ func (m *GetOrCreateIndexReportRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ContainerImageLocator{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.ResourceLocator = &GetOrCreateIndexReportRequest_ContainerImage{v}

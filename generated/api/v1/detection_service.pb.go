@@ -49,8 +49,8 @@ func (*BuildDetectionRequest) ProtoMessage()    {}
 func (*BuildDetectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{0}
 }
-func (m *BuildDetectionRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BuildDetectionRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BuildDetectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -209,8 +209,8 @@ func (*BuildDetectionResponse) ProtoMessage()    {}
 func (*BuildDetectionResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{1}
 }
-func (m *BuildDetectionResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BuildDetectionResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BuildDetectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -281,8 +281,8 @@ func (*DeployDetectionRequest) ProtoMessage()    {}
 func (*DeployDetectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{2}
 }
-func (m *DeployDetectionRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeployDetectionRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeployDetectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -409,8 +409,8 @@ func (*DeployYAMLDetectionRequest) ProtoMessage()    {}
 func (*DeployYAMLDetectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{3}
 }
-func (m *DeployYAMLDetectionRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeployYAMLDetectionRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeployYAMLDetectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -518,8 +518,8 @@ func (*DeployDetectionResponse) ProtoMessage()    {}
 func (*DeployDetectionResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{4}
 }
-func (m *DeployDetectionResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeployDetectionResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeployDetectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -610,8 +610,8 @@ func (*DeployDetectionResponse_Run) ProtoMessage()    {}
 func (*DeployDetectionResponse_Run) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{4, 0}
 }
-func (m *DeployDetectionResponse_Run) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeployDetectionResponse_Run) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeployDetectionResponse_Run) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -692,8 +692,8 @@ func (*DeployDetectionRemark) ProtoMessage()    {}
 func (*DeployDetectionRemark) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{5}
 }
-func (m *DeployDetectionRemark) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeployDetectionRemark) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeployDetectionRemark) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -772,8 +772,8 @@ func (*ResultAggregation) ProtoMessage()    {}
 func (*ResultAggregation) Descriptor() ([]byte, []int) {
 	return fileDescriptor_19377923b2f3baac, []int{6}
 }
-func (m *ResultAggregation) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ResultAggregation) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ResultAggregation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1892,7 +1892,7 @@ func sovDetectionService(x uint64) (n int) {
 func sozDetectionService(x uint64) (n int) {
 	return sovDetectionService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *BuildDetectionRequest) Unmarshal(dAtA []byte) error {
+func (m *BuildDetectionRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1951,7 +1951,7 @@ func (m *BuildDetectionRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.ContainerImage{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Resource = &BuildDetectionRequest_Image{v}
@@ -2134,7 +2134,7 @@ func (m *BuildDetectionRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BuildDetectionResponse) Unmarshal(dAtA []byte) error {
+func (m *BuildDetectionResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2193,7 +2193,7 @@ func (m *BuildDetectionResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if err := m.Alerts[len(m.Alerts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Alerts[len(m.Alerts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2219,7 +2219,7 @@ func (m *BuildDetectionResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeployDetectionRequest) Unmarshal(dAtA []byte) error {
+func (m *DeployDetectionRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2278,7 +2278,7 @@ func (m *DeployDetectionRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.Deployment{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Resource = &DeployDetectionRequest_Deployment{v}
@@ -2377,7 +2377,7 @@ func (m *DeployDetectionRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeployYAMLDetectionRequest) Unmarshal(dAtA []byte) error {
+func (m *DeployYAMLDetectionRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2616,7 +2616,7 @@ func (m *DeployYAMLDetectionRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeployDetectionResponse) Unmarshal(dAtA []byte) error {
+func (m *DeployDetectionResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2675,7 +2675,7 @@ func (m *DeployDetectionResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Runs = append(m.Runs, &DeployDetectionResponse_Run{})
-			if err := m.Runs[len(m.Runs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Runs[len(m.Runs)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2741,7 +2741,7 @@ func (m *DeployDetectionResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Remarks = append(m.Remarks, &DeployDetectionRemark{})
-			if err := m.Remarks[len(m.Remarks)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Remarks[len(m.Remarks)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2767,7 +2767,7 @@ func (m *DeployDetectionResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeployDetectionResponse_Run) Unmarshal(dAtA []byte) error {
+func (m *DeployDetectionResponse_Run) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2890,7 +2890,7 @@ func (m *DeployDetectionResponse_Run) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if err := m.Alerts[len(m.Alerts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Alerts[len(m.Alerts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2916,7 +2916,7 @@ func (m *DeployDetectionResponse_Run) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeployDetectionRemark) Unmarshal(dAtA []byte) error {
+func (m *DeployDetectionRemark) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3063,7 +3063,7 @@ func (m *DeployDetectionRemark) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ResultAggregation) Unmarshal(dAtA []byte) error {
+func (m *ResultAggregation) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3122,7 +3122,7 @@ func (m *ResultAggregation) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if err := m.Alerts[len(m.Alerts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Alerts[len(m.Alerts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3156,7 +3156,7 @@ func (m *ResultAggregation) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Remarks = append(m.Remarks, &DeployDetectionRemark{})
-			if err := m.Remarks[len(m.Remarks)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Remarks[len(m.Remarks)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

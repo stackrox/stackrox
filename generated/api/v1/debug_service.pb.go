@@ -69,8 +69,8 @@ func (*GetLogLevelRequest) ProtoMessage()    {}
 func (*GetLogLevelRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{0}
 }
-func (m *GetLogLevelRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetLogLevelRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetLogLevelRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -134,8 +134,8 @@ func (*LogLevelRequest) ProtoMessage()    {}
 func (*LogLevelRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{1}
 }
-func (m *LogLevelRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *LogLevelRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *LogLevelRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -206,8 +206,8 @@ func (*ModuleLevel) ProtoMessage()    {}
 func (*ModuleLevel) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{2}
 }
-func (m *ModuleLevel) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ModuleLevel) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ModuleLevel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -274,8 +274,8 @@ func (*LogLevelResponse) ProtoMessage()    {}
 func (*LogLevelResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{3}
 }
-func (m *LogLevelResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *LogLevelResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *LogLevelResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -352,8 +352,8 @@ func (*AuthorizationTraceResponse) ProtoMessage()    {}
 func (*AuthorizationTraceResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4}
 }
-func (m *AuthorizationTraceResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -454,8 +454,8 @@ func (*AuthorizationTraceResponse_Request) ProtoMessage()    {}
 func (*AuthorizationTraceResponse_Request) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4, 0}
 }
-func (m *AuthorizationTraceResponse_Request) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse_Request) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -522,8 +522,8 @@ func (*AuthorizationTraceResponse_Response) ProtoMessage()    {}
 func (*AuthorizationTraceResponse_Response) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4, 1}
 }
-func (m *AuthorizationTraceResponse_Response) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse_Response) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -592,8 +592,8 @@ func (*AuthorizationTraceResponse_User) ProtoMessage()    {}
 func (*AuthorizationTraceResponse_User) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4, 2}
 }
-func (m *AuthorizationTraceResponse_User) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse_User) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -688,8 +688,8 @@ func (*AuthorizationTraceResponse_User_Role) ProtoMessage()    {}
 func (*AuthorizationTraceResponse_User_Role) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4, 2, 0}
 }
-func (m *AuthorizationTraceResponse_User_Role) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse_User_Role) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse_User_Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -780,8 +780,8 @@ func (*AuthorizationTraceResponse_Trace) ProtoMessage()    {}
 func (*AuthorizationTraceResponse_Trace) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4, 3}
 }
-func (m *AuthorizationTraceResponse_Trace) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse_Trace) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse_Trace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -895,8 +895,8 @@ func (*AuthorizationTraceResponse_Trace_BuiltInAuthorizer) ProtoMessage() {}
 func (*AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a3778505c13ee937, []int{4, 3, 0}
 }
-func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2268,7 +2268,7 @@ func sovDebugService(x uint64) (n int) {
 func sozDebugService(x uint64) (n int) {
 	return sovDebugService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetLogLevelRequest) Unmarshal(dAtA []byte) error {
+func (m *GetLogLevelRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2351,7 +2351,7 @@ func (m *GetLogLevelRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LogLevelRequest) Unmarshal(dAtA []byte) error {
+func (m *LogLevelRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2466,7 +2466,7 @@ func (m *LogLevelRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ModuleLevel) Unmarshal(dAtA []byte) error {
+func (m *ModuleLevel) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2581,7 +2581,7 @@ func (m *ModuleLevel) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LogLevelResponse) Unmarshal(dAtA []byte) error {
+func (m *LogLevelResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2672,7 +2672,7 @@ func (m *LogLevelResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ModuleLevels = append(m.ModuleLevels, &ModuleLevel{})
-			if err := m.ModuleLevels[len(m.ModuleLevels)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ModuleLevels[len(m.ModuleLevels)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2698,7 +2698,7 @@ func (m *LogLevelResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2831,7 +2831,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 			if m.Request == nil {
 				m.Request = &AuthorizationTraceResponse_Request{}
 			}
-			if err := m.Request.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Request.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2867,7 +2867,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 			if m.Response == nil {
 				m.Response = &AuthorizationTraceResponse_Response{}
 			}
-			if err := m.Response.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Response.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2903,7 +2903,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &AuthorizationTraceResponse_User{}
 			}
-			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.User.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2939,7 +2939,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 			if m.Trace == nil {
 				m.Trace = &AuthorizationTraceResponse_Trace{}
 			}
-			if err := m.Trace.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Trace.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2965,7 +2965,7 @@ func (m *AuthorizationTraceResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse_Request) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse_Request) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3080,7 +3080,7 @@ func (m *AuthorizationTraceResponse_Request) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse_Response) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse_Response) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3182,7 +3182,7 @@ func (m *AuthorizationTraceResponse_Response) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse_User) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse_User) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3418,7 +3418,7 @@ func (m *AuthorizationTraceResponse_User) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &AuthorizationTraceResponse_User_Role{})
-			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Roles[len(m.Roles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3444,7 +3444,7 @@ func (m *AuthorizationTraceResponse_User) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse_User_Role) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse_User_Role) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3682,7 +3682,7 @@ func (m *AuthorizationTraceResponse_User_Role) Unmarshal(dAtA []byte) error {
 			if m.AccessScope == nil {
 				m.AccessScope = &storage.SimpleAccessScope_Rules{}
 			}
-			if err := m.AccessScope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AccessScope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3708,7 +3708,7 @@ func (m *AuthorizationTraceResponse_User_Role) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse_Trace) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse_Trace) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3799,7 +3799,7 @@ func (m *AuthorizationTraceResponse_Trace) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AuthorizationTraceResponse_Trace_BuiltInAuthorizer{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Authorizer = &AuthorizationTraceResponse_Trace_BuiltIn{v}
@@ -3826,7 +3826,7 @@ func (m *AuthorizationTraceResponse_Trace) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) Unmarshal(dAtA []byte) error {
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

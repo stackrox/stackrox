@@ -51,8 +51,8 @@ func (*GetGroupsRequest) ProtoMessage()    {}
 func (*GetGroupsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f3629ea30e241992, []int{0}
 }
-func (m *GetGroupsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetGroupsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetGroupsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -260,8 +260,8 @@ func (*GetGroupsResponse) ProtoMessage()    {}
 func (*GetGroupsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f3629ea30e241992, []int{1}
 }
-func (m *GetGroupsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetGroupsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetGroupsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -336,8 +336,8 @@ func (*GroupBatchUpdateRequest) ProtoMessage()    {}
 func (*GroupBatchUpdateRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f3629ea30e241992, []int{2}
 }
-func (m *GroupBatchUpdateRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GroupBatchUpdateRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GroupBatchUpdateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -427,8 +427,8 @@ func (*DeleteGroupRequest) ProtoMessage()    {}
 func (*DeleteGroupRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f3629ea30e241992, []int{3}
 }
-func (m *DeleteGroupRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeleteGroupRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeleteGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -516,8 +516,8 @@ func (*UpdateGroupRequest) ProtoMessage()    {}
 func (*UpdateGroupRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f3629ea30e241992, []int{4}
 }
-func (m *UpdateGroupRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpdateGroupRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpdateGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1398,7 +1398,7 @@ func sovGroupService(x uint64) (n int) {
 func sozGroupService(x uint64) (n int) {
 	return sovGroupService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetGroupsRequest) Unmarshal(dAtA []byte) error {
+func (m *GetGroupsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1577,7 +1577,7 @@ func (m *GetGroupsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetGroupsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetGroupsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1636,7 +1636,7 @@ func (m *GetGroupsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Groups = append(m.Groups, &storage.Group{})
-			if err := m.Groups[len(m.Groups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Groups[len(m.Groups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1662,7 +1662,7 @@ func (m *GetGroupsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GroupBatchUpdateRequest) Unmarshal(dAtA []byte) error {
+func (m *GroupBatchUpdateRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1721,7 +1721,7 @@ func (m *GroupBatchUpdateRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PreviousGroups = append(m.PreviousGroups, &storage.Group{})
-			if err := m.PreviousGroups[len(m.PreviousGroups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PreviousGroups[len(m.PreviousGroups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1755,7 +1755,7 @@ func (m *GroupBatchUpdateRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RequiredGroups = append(m.RequiredGroups, &storage.Group{})
-			if err := m.RequiredGroups[len(m.RequiredGroups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RequiredGroups[len(m.RequiredGroups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1801,7 +1801,7 @@ func (m *GroupBatchUpdateRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteGroupRequest) Unmarshal(dAtA []byte) error {
+func (m *DeleteGroupRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2000,7 +2000,7 @@ func (m *DeleteGroupRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateGroupRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateGroupRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2061,7 +2061,7 @@ func (m *UpdateGroupRequest) Unmarshal(dAtA []byte) error {
 			if m.Group == nil {
 				m.Group = &storage.Group{}
 			}
-			if err := m.Group.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Group.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -39,8 +39,8 @@ func (*PongMessage) ProtoMessage()    {}
 func (*PongMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e11869b18a72c24a, []int{0}
 }
-func (m *PongMessage) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PongMessage) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PongMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -257,7 +257,7 @@ func sovPingService(x uint64) (n int) {
 func sozPingService(x uint64) (n int) {
 	return sovPingService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *PongMessage) Unmarshal(dAtA []byte) error {
+func (m *PongMessage) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

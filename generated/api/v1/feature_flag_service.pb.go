@@ -41,8 +41,8 @@ func (*FeatureFlag) ProtoMessage()    {}
 func (*FeatureFlag) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e50adfbe4756afe, []int{0}
 }
-func (m *FeatureFlag) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *FeatureFlag) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *FeatureFlag) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -115,8 +115,8 @@ func (*GetFeatureFlagsResponse) ProtoMessage()    {}
 func (*GetFeatureFlagsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e50adfbe4756afe, []int{1}
 }
-func (m *GetFeatureFlagsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetFeatureFlagsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetFeatureFlagsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -428,7 +428,7 @@ func sovFeatureFlagService(x uint64) (n int) {
 func sozFeatureFlagService(x uint64) (n int) {
 	return sovFeatureFlagService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *FeatureFlag) Unmarshal(dAtA []byte) error {
+func (m *FeatureFlag) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -563,7 +563,7 @@ func (m *FeatureFlag) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetFeatureFlagsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetFeatureFlagsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -622,7 +622,7 @@ func (m *GetFeatureFlagsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.FeatureFlags = append(m.FeatureFlags, &FeatureFlag{})
-			if err := m.FeatureFlags[len(m.FeatureFlags)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.FeatureFlags[len(m.FeatureFlags)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

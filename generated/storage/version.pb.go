@@ -44,8 +44,8 @@ func (*Version) ProtoMessage()    {}
 func (*Version) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e6abc271df6a8e78, []int{0}
 }
-func (m *Version) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Version) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Version) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -237,7 +237,7 @@ func sovVersion(x uint64) (n int) {
 func sozVersion(x uint64) (n int) {
 	return sovVersion(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Version) Unmarshal(dAtA []byte) error {
+func (m *Version) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

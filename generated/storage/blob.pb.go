@@ -42,8 +42,8 @@ func (*Blob) ProtoMessage()    {}
 func (*Blob) Descriptor() ([]byte, []int) {
 	return fileDescriptor_93b63e008eb8666f, []int{0}
 }
-func (m *Blob) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Blob) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Blob) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -279,7 +279,7 @@ func sovBlob(x uint64) (n int) {
 func sozBlob(x uint64) (n int) {
 	return sovBlob(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Blob) Unmarshal(dAtA []byte) error {
+func (m *Blob) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

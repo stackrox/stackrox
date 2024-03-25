@@ -35,8 +35,8 @@ func (*HelmCluster) ProtoMessage()    {}
 func (*HelmCluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7f81ae797eb53a22, []int{0}
 }
-func (m *HelmCluster) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *HelmCluster) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *HelmCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -174,7 +174,7 @@ func sovHelmCluster(x uint64) (n int) {
 func sozHelmCluster(x uint64) (n int) {
 	return sovHelmCluster(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *HelmCluster) Unmarshal(dAtA []byte) error {
+func (m *HelmCluster) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -235,7 +235,7 @@ func (m *HelmCluster) Unmarshal(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &Cluster{}
 			}
-			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

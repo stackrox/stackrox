@@ -37,8 +37,8 @@ func (*ServiceCertAuth) ProtoMessage()    {}
 func (*ServiceCertAuth) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3741e540de35f9a1, []int{0}
 }
-func (m *ServiceCertAuth) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ServiceCertAuth) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ServiceCertAuth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -202,7 +202,7 @@ func sovAuth(x uint64) (n int) {
 func sozAuth(x uint64) (n int) {
 	return sovAuth(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ServiceCertAuth) Unmarshal(dAtA []byte) error {
+func (m *ServiceCertAuth) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

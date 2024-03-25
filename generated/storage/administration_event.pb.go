@@ -118,8 +118,8 @@ func (*AdministrationEvent) ProtoMessage()    {}
 func (*AdministrationEvent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b517965aab4cb00c, []int{0}
 }
-func (m *AdministrationEvent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AdministrationEvent) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AdministrationEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -246,8 +246,8 @@ func (*AdministrationEvent_Resource) ProtoMessage()    {}
 func (*AdministrationEvent_Resource) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b517965aab4cb00c, []int{0, 0}
 }
-func (m *AdministrationEvent_Resource) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AdministrationEvent_Resource) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AdministrationEvent_Resource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -599,7 +599,7 @@ func sovAdministrationEvent(x uint64) (n int) {
 func sozAdministrationEvent(x uint64) (n int) {
 	return sovAdministrationEvent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
+func (m *AdministrationEvent) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -826,7 +826,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 			if m.Resource == nil {
 				m.Resource = &AdministrationEvent_Resource{}
 			}
-			if err := m.Resource.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Resource.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -943,7 +943,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AdministrationEvent_Resource) Unmarshal(dAtA []byte) error {
+func (m *AdministrationEvent_Resource) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

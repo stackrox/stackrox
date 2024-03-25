@@ -104,8 +104,8 @@ func (*IntegrationHealth) ProtoMessage()    {}
 func (*IntegrationHealth) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2c35f22f95df38b9, []int{0}
 }
-func (m *IntegrationHealth) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *IntegrationHealth) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *IntegrationHealth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -346,7 +346,7 @@ func sovIntegrationHealth(x uint64) (n int) {
 func sozIntegrationHealth(x uint64) (n int) {
 	return sovIntegrationHealth(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *IntegrationHealth) Unmarshal(dAtA []byte) error {
+func (m *IntegrationHealth) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

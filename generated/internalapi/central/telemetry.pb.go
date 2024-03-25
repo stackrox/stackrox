@@ -67,8 +67,8 @@ func (*CancelPullTelemetryDataRequest) ProtoMessage()    {}
 func (*CancelPullTelemetryDataRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{0}
 }
-func (m *CancelPullTelemetryDataRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CancelPullTelemetryDataRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CancelPullTelemetryDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -130,8 +130,8 @@ func (*PullTelemetryDataRequest) ProtoMessage()    {}
 func (*PullTelemetryDataRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{1}
 }
-func (m *PullTelemetryDataRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PullTelemetryDataRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PullTelemetryDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -217,8 +217,8 @@ func (*TelemetryResponsePayload) ProtoMessage()    {}
 func (*TelemetryResponsePayload) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{2}
 }
-func (m *TelemetryResponsePayload) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TelemetryResponsePayload) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TelemetryResponsePayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -383,8 +383,8 @@ func (*TelemetryResponsePayload_EndOfStream) ProtoMessage()    {}
 func (*TelemetryResponsePayload_EndOfStream) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{2, 0}
 }
-func (m *TelemetryResponsePayload_EndOfStream) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TelemetryResponsePayload_EndOfStream) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TelemetryResponsePayload_EndOfStream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -445,8 +445,8 @@ func (*TelemetryResponsePayload_KubernetesInfo) ProtoMessage()    {}
 func (*TelemetryResponsePayload_KubernetesInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{2, 1}
 }
-func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TelemetryResponsePayload_KubernetesInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TelemetryResponsePayload_KubernetesInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -516,8 +516,8 @@ func (*TelemetryResponsePayload_KubernetesInfo_File) ProtoMessage() {}
 func (*TelemetryResponsePayload_KubernetesInfo_File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{2, 1, 0}
 }
-func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TelemetryResponsePayload_KubernetesInfo_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -587,8 +587,8 @@ func (*TelemetryResponsePayload_ClusterInfo) ProtoMessage()    {}
 func (*TelemetryResponsePayload_ClusterInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{2, 2}
 }
-func (m *TelemetryResponsePayload_ClusterInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TelemetryResponsePayload_ClusterInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TelemetryResponsePayload_ClusterInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -652,8 +652,8 @@ func (*PullTelemetryDataResponse) ProtoMessage()    {}
 func (*PullTelemetryDataResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{3}
 }
-func (m *PullTelemetryDataResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PullTelemetryDataResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PullTelemetryDataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -725,8 +725,8 @@ func (*TelemetryConfig) ProtoMessage()    {}
 func (*TelemetryConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a73660af6899d9c4, []int{4}
 }
-func (m *TelemetryConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TelemetryConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TelemetryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1539,7 +1539,7 @@ func sovTelemetry(x uint64) (n int) {
 func sozTelemetry(x uint64) (n int) {
 	return sovTelemetry(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *CancelPullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
+func (m *CancelPullTelemetryDataRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1622,7 +1622,7 @@ func (m *CancelPullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
+func (m *PullTelemetryDataRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1779,7 +1779,7 @@ func (m *PullTelemetryDataRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
+func (m *TelemetryResponsePayload) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1838,7 +1838,7 @@ func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TelemetryResponsePayload_EndOfStream{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Payload = &TelemetryResponsePayload_EndOfStream_{v}
@@ -1873,7 +1873,7 @@ func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TelemetryResponsePayload_KubernetesInfo{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Payload = &TelemetryResponsePayload_KubernetesInfo_{v}
@@ -1908,7 +1908,7 @@ func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TelemetryResponsePayload_ClusterInfo{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Payload = &TelemetryResponsePayload_ClusterInfo_{v}
@@ -1943,7 +1943,7 @@ func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TelemetryResponsePayload_KubernetesInfo{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Payload = &TelemetryResponsePayload_MetricsInfo{v}
@@ -1970,7 +1970,7 @@ func (m *TelemetryResponsePayload) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TelemetryResponsePayload_EndOfStream) Unmarshal(dAtA []byte) error {
+func (m *TelemetryResponsePayload_EndOfStream) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2053,7 +2053,7 @@ func (m *TelemetryResponsePayload_EndOfStream) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TelemetryResponsePayload_KubernetesInfo) Unmarshal(dAtA []byte) error {
+func (m *TelemetryResponsePayload_KubernetesInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2112,7 +2112,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Files = append(m.Files, &TelemetryResponsePayload_KubernetesInfo_File{})
-			if err := m.Files[len(m.Files)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Files[len(m.Files)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2138,7 +2138,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TelemetryResponsePayload_KubernetesInfo_File) Unmarshal(dAtA []byte) error {
+func (m *TelemetryResponsePayload_KubernetesInfo_File) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2255,7 +2255,7 @@ func (m *TelemetryResponsePayload_KubernetesInfo_File) Unmarshal(dAtA []byte) er
 	}
 	return nil
 }
-func (m *TelemetryResponsePayload_ClusterInfo) Unmarshal(dAtA []byte) error {
+func (m *TelemetryResponsePayload_ClusterInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2340,7 +2340,7 @@ func (m *TelemetryResponsePayload_ClusterInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PullTelemetryDataResponse) Unmarshal(dAtA []byte) error {
+func (m *PullTelemetryDataResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2433,7 +2433,7 @@ func (m *PullTelemetryDataResponse) Unmarshal(dAtA []byte) error {
 			if m.Payload == nil {
 				m.Payload = &TelemetryResponsePayload{}
 			}
-			if err := m.Payload.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Payload.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2459,7 +2459,7 @@ func (m *PullTelemetryDataResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TelemetryConfig) Unmarshal(dAtA []byte) error {
+func (m *TelemetryConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

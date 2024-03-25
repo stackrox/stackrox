@@ -263,8 +263,8 @@ func (*Policy) ProtoMessage()    {}
 func (*Policy) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{0}
 }
-func (m *Policy) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Policy) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Policy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -526,8 +526,8 @@ func (*Policy_MitreAttackVectors) ProtoMessage()    {}
 func (*Policy_MitreAttackVectors) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{0, 0}
 }
-func (m *Policy_MitreAttackVectors) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Policy_MitreAttackVectors) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Policy_MitreAttackVectors) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -598,8 +598,8 @@ func (*PolicySection) ProtoMessage()    {}
 func (*PolicySection) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{1}
 }
-func (m *PolicySection) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicySection) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicySection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -674,8 +674,8 @@ func (*PolicyGroup) ProtoMessage()    {}
 func (*PolicyGroup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{2}
 }
-func (m *PolicyGroup) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyGroup) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -761,8 +761,8 @@ func (*PolicyValue) ProtoMessage()    {}
 func (*PolicyValue) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{3}
 }
-func (m *PolicyValue) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyValue) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -821,8 +821,8 @@ func (*PolicyList) ProtoMessage()    {}
 func (*PolicyList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{4}
 }
-func (m *PolicyList) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyList) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -896,8 +896,8 @@ func (*ListPolicy) ProtoMessage()    {}
 func (*ListPolicy) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{5}
 }
-func (m *ListPolicy) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListPolicy) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1031,8 +1031,8 @@ func (*Exclusion) ProtoMessage()    {}
 func (*Exclusion) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{6}
 }
-func (m *Exclusion) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Exclusion) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Exclusion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1115,8 +1115,8 @@ func (*Exclusion_Container) ProtoMessage()    {}
 func (*Exclusion_Container) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{6, 0}
 }
-func (m *Exclusion_Container) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Exclusion_Container) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Exclusion_Container) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1177,8 +1177,8 @@ func (*Exclusion_Deployment) ProtoMessage()    {}
 func (*Exclusion_Deployment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{6, 1}
 }
-func (m *Exclusion_Deployment) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Exclusion_Deployment) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Exclusion_Deployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1245,8 +1245,8 @@ func (*Exclusion_Image) ProtoMessage()    {}
 func (*Exclusion_Image) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{6, 2}
 }
-func (m *Exclusion_Image) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Exclusion_Image) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Exclusion_Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1307,8 +1307,8 @@ func (*ExportPoliciesResponse) ProtoMessage()    {}
 func (*ExportPoliciesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e41152b9b8342fa, []int{7}
 }
-func (m *ExportPoliciesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExportPoliciesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExportPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2733,7 +2733,7 @@ func sovPolicy(x uint64) (n int) {
 func sozPolicy(x uint64) (n int) {
 	return sovPolicy(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Policy) Unmarshal(dAtA []byte) error {
+func (m *Policy) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3073,7 +3073,7 @@ func (m *Policy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Scope = append(m.Scope, &Scope{})
-			if err := m.Scope[len(m.Scope)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scope[len(m.Scope)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3379,7 +3379,7 @@ func (m *Policy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PolicySections = append(m.PolicySections, &PolicySection{})
-			if err := m.PolicySections[len(m.PolicySections)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PolicySections[len(m.PolicySections)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3413,7 +3413,7 @@ func (m *Policy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Exclusions = append(m.Exclusions, &Exclusion{})
-			if err := m.Exclusions[len(m.Exclusions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exclusions[len(m.Exclusions)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3466,7 +3466,7 @@ func (m *Policy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MitreAttackVectors = append(m.MitreAttackVectors, &Policy_MitreAttackVectors{})
-			if err := m.MitreAttackVectors[len(m.MitreAttackVectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MitreAttackVectors[len(m.MitreAttackVectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3552,7 +3552,7 @@ func (m *Policy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Policy_MitreAttackVectors) Unmarshal(dAtA []byte) error {
+func (m *Policy_MitreAttackVectors) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3667,7 +3667,7 @@ func (m *Policy_MitreAttackVectors) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicySection) Unmarshal(dAtA []byte) error {
+func (m *PolicySection) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3758,7 +3758,7 @@ func (m *PolicySection) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PolicyGroups = append(m.PolicyGroups, &PolicyGroup{})
-			if err := m.PolicyGroups[len(m.PolicyGroups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PolicyGroups[len(m.PolicyGroups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3784,7 +3784,7 @@ func (m *PolicySection) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyGroup) Unmarshal(dAtA []byte) error {
+func (m *PolicyGroup) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3914,7 +3914,7 @@ func (m *PolicyGroup) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Values = append(m.Values, &PolicyValue{})
-			if err := m.Values[len(m.Values)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Values[len(m.Values)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3940,7 +3940,7 @@ func (m *PolicyGroup) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyValue) Unmarshal(dAtA []byte) error {
+func (m *PolicyValue) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4023,7 +4023,7 @@ func (m *PolicyValue) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyList) Unmarshal(dAtA []byte) error {
+func (m *PolicyList) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4082,7 +4082,7 @@ func (m *PolicyList) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &Policy{})
-			if err := m.Policies[len(m.Policies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policies[len(m.Policies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4108,7 +4108,7 @@ func (m *PolicyList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListPolicy) Unmarshal(dAtA []byte) error {
+func (m *ListPolicy) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4470,7 +4470,7 @@ func (m *ListPolicy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Exclusion) Unmarshal(dAtA []byte) error {
+func (m *Exclusion) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4563,7 +4563,7 @@ func (m *Exclusion) Unmarshal(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &Exclusion_Deployment{}
 			}
-			if err := m.Deployment.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Deployment.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4635,7 +4635,7 @@ func (m *Exclusion) Unmarshal(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &Exclusion_Image{}
 			}
-			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4661,7 +4661,7 @@ func (m *Exclusion) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Exclusion_Container) Unmarshal(dAtA []byte) error {
+func (m *Exclusion_Container) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4722,7 +4722,7 @@ func (m *Exclusion_Container) Unmarshal(dAtA []byte) error {
 			if m.ImageName == nil {
 				m.ImageName = &ImageName{}
 			}
-			if err := m.ImageName.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageName.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4748,7 +4748,7 @@ func (m *Exclusion_Container) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Exclusion_Deployment) Unmarshal(dAtA []byte) error {
+func (m *Exclusion_Deployment) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4841,7 +4841,7 @@ func (m *Exclusion_Deployment) Unmarshal(dAtA []byte) error {
 			if m.Scope == nil {
 				m.Scope = &Scope{}
 			}
-			if err := m.Scope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4867,7 +4867,7 @@ func (m *Exclusion_Deployment) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Exclusion_Image) Unmarshal(dAtA []byte) error {
+func (m *Exclusion_Image) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4950,7 +4950,7 @@ func (m *Exclusion_Image) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPoliciesResponse) Unmarshal(dAtA []byte) error {
+func (m *ExportPoliciesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5009,7 +5009,7 @@ func (m *ExportPoliciesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &Policy{})
-			if err := m.Policies[len(m.Policies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policies[len(m.Policies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -37,8 +37,8 @@ func (*MitreTactic) ProtoMessage()    {}
 func (*MitreTactic) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6622b189ba02caab, []int{0}
 }
-func (m *MitreTactic) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MitreTactic) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MitreTactic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -113,8 +113,8 @@ func (*MitreTechnique) ProtoMessage()    {}
 func (*MitreTechnique) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6622b189ba02caab, []int{1}
 }
-func (m *MitreTechnique) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MitreTechnique) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MitreTechnique) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -188,8 +188,8 @@ func (*MitreAttackVector) ProtoMessage()    {}
 func (*MitreAttackVector) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6622b189ba02caab, []int{2}
 }
-func (m *MitreAttackVector) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MitreAttackVector) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MitreAttackVector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -263,8 +263,8 @@ func (*MitreAttackMatrix) ProtoMessage()    {}
 func (*MitreAttackMatrix) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6622b189ba02caab, []int{3}
 }
-func (m *MitreAttackMatrix) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MitreAttackMatrix) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MitreAttackMatrix) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -338,8 +338,8 @@ func (*MitreAttackMatrix_MatrixInfo) ProtoMessage()    {}
 func (*MitreAttackMatrix_MatrixInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6622b189ba02caab, []int{3, 0}
 }
-func (m *MitreAttackMatrix_MatrixInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MitreAttackMatrix_MatrixInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MitreAttackMatrix_MatrixInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -406,8 +406,8 @@ func (*MitreAttackBundle) ProtoMessage()    {}
 func (*MitreAttackBundle) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6622b189ba02caab, []int{4}
 }
-func (m *MitreAttackBundle) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MitreAttackBundle) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MitreAttackBundle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -946,7 +946,7 @@ func sovMitre(x uint64) (n int) {
 func sozMitre(x uint64) (n int) {
 	return sovMitre(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *MitreTactic) Unmarshal(dAtA []byte) error {
+func (m *MitreTactic) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1093,7 +1093,7 @@ func (m *MitreTactic) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MitreTechnique) Unmarshal(dAtA []byte) error {
+func (m *MitreTechnique) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1240,7 +1240,7 @@ func (m *MitreTechnique) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MitreAttackVector) Unmarshal(dAtA []byte) error {
+func (m *MitreAttackVector) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1301,7 +1301,7 @@ func (m *MitreAttackVector) Unmarshal(dAtA []byte) error {
 			if m.Tactic == nil {
 				m.Tactic = &MitreTactic{}
 			}
-			if err := m.Tactic.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Tactic.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1335,7 +1335,7 @@ func (m *MitreAttackVector) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Techniques = append(m.Techniques, &MitreTechnique{})
-			if err := m.Techniques[len(m.Techniques)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Techniques[len(m.Techniques)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1361,7 +1361,7 @@ func (m *MitreAttackVector) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MitreAttackMatrix) Unmarshal(dAtA []byte) error {
+func (m *MitreAttackMatrix) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1422,7 +1422,7 @@ func (m *MitreAttackMatrix) Unmarshal(dAtA []byte) error {
 			if m.MatrixInfo == nil {
 				m.MatrixInfo = &MitreAttackMatrix_MatrixInfo{}
 			}
-			if err := m.MatrixInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MatrixInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1456,7 +1456,7 @@ func (m *MitreAttackMatrix) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Vectors = append(m.Vectors, &MitreAttackVector{})
-			if err := m.Vectors[len(m.Vectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Vectors[len(m.Vectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1482,7 +1482,7 @@ func (m *MitreAttackMatrix) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MitreAttackMatrix_MatrixInfo) Unmarshal(dAtA []byte) error {
+func (m *MitreAttackMatrix_MatrixInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1597,7 +1597,7 @@ func (m *MitreAttackMatrix_MatrixInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MitreAttackBundle) Unmarshal(dAtA []byte) error {
+func (m *MitreAttackBundle) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1688,7 +1688,7 @@ func (m *MitreAttackBundle) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Matrices = append(m.Matrices, &MitreAttackMatrix{})
-			if err := m.Matrices[len(m.Matrices)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Matrices[len(m.Matrices)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

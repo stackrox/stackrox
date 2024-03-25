@@ -68,8 +68,8 @@ func (*HelmManagedConfigInit) ProtoMessage()    {}
 func (*HelmManagedConfigInit) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ce25d1bd48ec88b4, []int{0}
 }
-func (m *HelmManagedConfigInit) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *HelmManagedConfigInit) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *HelmManagedConfigInit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -167,8 +167,8 @@ func (*SensorHello) ProtoMessage()    {}
 func (*SensorHello) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ce25d1bd48ec88b4, []int{1}
 }
-func (m *SensorHello) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SensorHello) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SensorHello) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -280,8 +280,8 @@ func (*CentralHello) ProtoMessage()    {}
 func (*CentralHello) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ce25d1bd48ec88b4, []int{2}
 }
-func (m *CentralHello) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CentralHello) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CentralHello) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -800,7 +800,7 @@ func sovHello(x uint64) (n int) {
 func sozHello(x uint64) (n int) {
 	return sovHello(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *HelmManagedConfigInit) Unmarshal(dAtA []byte) error {
+func (m *HelmManagedConfigInit) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -861,7 +861,7 @@ func (m *HelmManagedConfigInit) Unmarshal(dAtA []byte) error {
 			if m.ClusterConfig == nil {
 				m.ClusterConfig = &storage.CompleteClusterConfig{}
 			}
-			if err := m.ClusterConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ClusterConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -990,7 +990,7 @@ func (m *HelmManagedConfigInit) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SensorHello) Unmarshal(dAtA []byte) error {
+func (m *SensorHello) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1115,7 +1115,7 @@ func (m *SensorHello) Unmarshal(dAtA []byte) error {
 			if m.HelmManagedConfigInit == nil {
 				m.HelmManagedConfigInit = &HelmManagedConfigInit{}
 			}
-			if err := m.HelmManagedConfigInit.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.HelmManagedConfigInit.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1183,7 +1183,7 @@ func (m *SensorHello) Unmarshal(dAtA []byte) error {
 			if m.DeploymentIdentification == nil {
 				m.DeploymentIdentification = &storage.SensorDeploymentIdentification{}
 			}
-			if err := m.DeploymentIdentification.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DeploymentIdentification.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1248,7 +1248,7 @@ func (m *SensorHello) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CentralHello) Unmarshal(dAtA []byte) error {
+func (m *CentralHello) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

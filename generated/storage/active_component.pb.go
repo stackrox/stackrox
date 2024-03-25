@@ -42,8 +42,8 @@ func (*ActiveComponent) ProtoMessage()    {}
 func (*ActiveComponent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6f1d8b746a926c5c, []int{0}
 }
-func (m *ActiveComponent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ActiveComponent) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ActiveComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -144,8 +144,8 @@ func (*ActiveComponent_ActiveContext) ProtoMessage()    {}
 func (*ActiveComponent_ActiveContext) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6f1d8b746a926c5c, []int{0, 0}
 }
-func (m *ActiveComponent_ActiveContext) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ActiveComponent_ActiveContext) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ActiveComponent_ActiveContext) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -441,7 +441,7 @@ func sovActiveComponent(x uint64) (n int) {
 func sozActiveComponent(x uint64) (n int) {
 	return sovActiveComponent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ActiveComponent) Unmarshal(dAtA []byte) error {
+func (m *ActiveComponent) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -610,7 +610,7 @@ func (m *ActiveComponent) Unmarshal(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &ActiveComponent_ActiveContext{}
-					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -725,7 +725,7 @@ func (m *ActiveComponent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ActiveContextsSlice = append(m.ActiveContextsSlice, &ActiveComponent_ActiveContext{})
-			if err := m.ActiveContextsSlice[len(m.ActiveContextsSlice)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ActiveContextsSlice[len(m.ActiveContextsSlice)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -751,7 +751,7 @@ func (m *ActiveComponent) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ActiveComponent_ActiveContext) Unmarshal(dAtA []byte) error {
+func (m *ActiveComponent_ActiveContext) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -40,8 +40,8 @@ func (*GetAuthProviderRequest) ProtoMessage()    {}
 func (*GetAuthProviderRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{0}
 }
-func (m *GetAuthProviderRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetAuthProviderRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetAuthProviderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -101,8 +101,8 @@ func (*GetAuthProvidersRequest) ProtoMessage()    {}
 func (*GetAuthProvidersRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{1}
 }
-func (m *GetAuthProvidersRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetAuthProvidersRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetAuthProvidersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -168,8 +168,8 @@ func (*GetLoginAuthProvidersResponse) ProtoMessage()    {}
 func (*GetLoginAuthProvidersResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{2}
 }
-func (m *GetLoginAuthProvidersResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetLoginAuthProvidersResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetLoginAuthProvidersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -241,8 +241,8 @@ func (*GetLoginAuthProvidersResponse_LoginAuthProvider) ProtoMessage() {}
 func (*GetLoginAuthProvidersResponse_LoginAuthProvider) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{2, 0}
 }
-func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -322,8 +322,8 @@ func (*GetAuthProvidersResponse) ProtoMessage()    {}
 func (*GetAuthProvidersResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{3}
 }
-func (m *GetAuthProvidersResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetAuthProvidersResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetAuthProvidersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -388,8 +388,8 @@ func (*PostAuthProviderRequest) ProtoMessage()    {}
 func (*PostAuthProviderRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{4}
 }
-func (m *PostAuthProviderRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PostAuthProviderRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PostAuthProviderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -455,8 +455,8 @@ func (*UpdateAuthProviderRequest) ProtoMessage()    {}
 func (*UpdateAuthProviderRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{5}
 }
-func (m *UpdateAuthProviderRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpdateAuthProviderRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpdateAuthProviderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -600,8 +600,8 @@ func (*ExchangeTokenRequest) ProtoMessage()    {}
 func (*ExchangeTokenRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{6}
 }
-func (m *ExchangeTokenRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExchangeTokenRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExchangeTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -677,8 +677,8 @@ func (*ExchangeTokenResponse) ProtoMessage()    {}
 func (*ExchangeTokenResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{7}
 }
-func (m *ExchangeTokenResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExchangeTokenResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExchangeTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -759,8 +759,8 @@ func (*AvailableProviderTypesResponse) ProtoMessage()    {}
 func (*AvailableProviderTypesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{8}
 }
-func (m *AvailableProviderTypesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AvailableProviderTypesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AvailableProviderTypesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -830,8 +830,8 @@ func (*AvailableProviderTypesResponse_AuthProviderType) ProtoMessage() {}
 func (*AvailableProviderTypesResponse_AuthProviderType) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f38c1bdc0bfe3549, []int{8, 0}
 }
-func (m *AvailableProviderTypesResponse_AuthProviderType) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AvailableProviderTypesResponse_AuthProviderType) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AvailableProviderTypesResponse_AuthProviderType) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2124,7 +2124,7 @@ func sovAuthproviderService(x uint64) (n int) {
 func sozAuthproviderService(x uint64) (n int) {
 	return sovAuthproviderService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetAuthProviderRequest) Unmarshal(dAtA []byte) error {
+func (m *GetAuthProviderRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2207,7 +2207,7 @@ func (m *GetAuthProviderRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAuthProvidersRequest) Unmarshal(dAtA []byte) error {
+func (m *GetAuthProvidersRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2322,7 +2322,7 @@ func (m *GetAuthProvidersRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetLoginAuthProvidersResponse) Unmarshal(dAtA []byte) error {
+func (m *GetLoginAuthProvidersResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2381,7 +2381,7 @@ func (m *GetLoginAuthProvidersResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AuthProviders = append(m.AuthProviders, &GetLoginAuthProvidersResponse_LoginAuthProvider{})
-			if err := m.AuthProviders[len(m.AuthProviders)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AuthProviders[len(m.AuthProviders)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2407,7 +2407,7 @@ func (m *GetLoginAuthProvidersResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) Unmarshal(dAtA []byte) error {
+func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2586,7 +2586,7 @@ func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) Unmarshal(dAtA []byte)
 	}
 	return nil
 }
-func (m *GetAuthProvidersResponse) Unmarshal(dAtA []byte) error {
+func (m *GetAuthProvidersResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2645,7 +2645,7 @@ func (m *GetAuthProvidersResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AuthProviders = append(m.AuthProviders, &storage.AuthProvider{})
-			if err := m.AuthProviders[len(m.AuthProviders)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AuthProviders[len(m.AuthProviders)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2671,7 +2671,7 @@ func (m *GetAuthProvidersResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PostAuthProviderRequest) Unmarshal(dAtA []byte) error {
+func (m *PostAuthProviderRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2732,7 +2732,7 @@ func (m *PostAuthProviderRequest) Unmarshal(dAtA []byte) error {
 			if m.Provider == nil {
 				m.Provider = &storage.AuthProvider{}
 			}
-			if err := m.Provider.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Provider.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2758,7 +2758,7 @@ func (m *PostAuthProviderRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateAuthProviderRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateAuthProviderRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2894,7 +2894,7 @@ func (m *UpdateAuthProviderRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExchangeTokenRequest) Unmarshal(dAtA []byte) error {
+func (m *ExchangeTokenRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3041,7 +3041,7 @@ func (m *ExchangeTokenRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExchangeTokenResponse) Unmarshal(dAtA []byte) error {
+func (m *ExchangeTokenResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3186,7 +3186,7 @@ func (m *ExchangeTokenResponse) Unmarshal(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &AuthStatus{}
 			}
-			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.User.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3212,7 +3212,7 @@ func (m *ExchangeTokenResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AvailableProviderTypesResponse) Unmarshal(dAtA []byte) error {
+func (m *AvailableProviderTypesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3271,7 +3271,7 @@ func (m *AvailableProviderTypesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AuthProviderTypes = append(m.AuthProviderTypes, &AvailableProviderTypesResponse_AuthProviderType{})
-			if err := m.AuthProviderTypes[len(m.AuthProviderTypes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AuthProviderTypes[len(m.AuthProviderTypes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3297,7 +3297,7 @@ func (m *AvailableProviderTypesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AvailableProviderTypesResponse_AuthProviderType) Unmarshal(dAtA []byte) error {
+func (m *AvailableProviderTypesResponse_AuthProviderType) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

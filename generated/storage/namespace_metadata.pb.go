@@ -43,8 +43,8 @@ func (*NamespaceMetadata) ProtoMessage()    {}
 func (*NamespaceMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cbfd70053cb23bf, []int{0}
 }
-func (m *NamespaceMetadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NamespaceMetadata) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NamespaceMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -366,7 +366,7 @@ func sovNamespaceMetadata(x uint64) (n int) {
 func sozNamespaceMetadata(x uint64) (n int) {
 	return sovNamespaceMetadata(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NamespaceMetadata) Unmarshal(dAtA []byte) error {
+func (m *NamespaceMetadata) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

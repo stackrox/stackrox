@@ -48,8 +48,8 @@ func (*ImageComponent) ProtoMessage()    {}
 func (*ImageComponent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f72cea254a8774ea, []int{0}
 }
-func (m *ImageComponent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageComponent) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -417,7 +417,7 @@ func sovImageComponent(x uint64) (n int) {
 func sozImageComponent(x uint64) (n int) {
 	return sovImageComponent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ImageComponent) Unmarshal(dAtA []byte) error {
+func (m *ImageComponent) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -574,7 +574,7 @@ func (m *ImageComponent) Unmarshal(dAtA []byte) error {
 			if m.License == nil {
 				m.License = &License{}
 			}
-			if err := m.License.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.License.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

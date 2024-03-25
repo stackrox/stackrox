@@ -38,8 +38,8 @@ func (*ProcessListeningOnPortsUpdate) ProtoMessage()    {}
 func (*ProcessListeningOnPortsUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4d79a6d2a351caaa, []int{0}
 }
-func (m *ProcessListeningOnPortsUpdate) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ProcessListeningOnPortsUpdate) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ProcessListeningOnPortsUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -219,7 +219,7 @@ func sovProcessListeningOnPortsUpdate(x uint64) (n int) {
 func sozProcessListeningOnPortsUpdate(x uint64) (n int) {
 	return sovProcessListeningOnPortsUpdate(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ProcessListeningOnPortsUpdate) Unmarshal(dAtA []byte) error {
+func (m *ProcessListeningOnPortsUpdate) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -278,7 +278,7 @@ func (m *ProcessListeningOnPortsUpdate) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProcessesListeningOnPorts = append(m.ProcessesListeningOnPorts, &storage.ProcessListeningOnPortFromSensor{})
-			if err := m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

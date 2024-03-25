@@ -68,8 +68,8 @@ func (*LoginNotice) ProtoMessage()    {}
 func (*LoginNotice) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{0}
 }
-func (m *LoginNotice) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *LoginNotice) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *LoginNotice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -139,8 +139,8 @@ func (*BannerConfig) ProtoMessage()    {}
 func (*BannerConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{1}
 }
-func (m *BannerConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BannerConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BannerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -230,8 +230,8 @@ func (*PublicConfig) ProtoMessage()    {}
 func (*PublicConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{2}
 }
-func (m *PublicConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PublicConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PublicConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -323,8 +323,8 @@ func (*AlertRetentionConfig) ProtoMessage()    {}
 func (*AlertRetentionConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{3}
 }
-func (m *AlertRetentionConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AlertRetentionConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AlertRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -415,8 +415,8 @@ func (*DecommissionedClusterRetentionConfig) ProtoMessage()    {}
 func (*DecommissionedClusterRetentionConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{4}
 }
-func (m *DecommissionedClusterRetentionConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DecommissionedClusterRetentionConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DecommissionedClusterRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -507,8 +507,8 @@ func (*ReportRetentionConfig) ProtoMessage()    {}
 func (*ReportRetentionConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{5}
 }
-func (m *ReportRetentionConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportRetentionConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -591,8 +591,8 @@ func (*PrivateConfig) ProtoMessage()    {}
 func (*PrivateConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{6}
 }
-func (m *PrivateConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PrivateConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PrivateConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -759,8 +759,8 @@ func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{7}
 }
-func (m *Config) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Config) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -828,8 +828,8 @@ func (*VulnerabilityExceptionConfig) ProtoMessage()    {}
 func (*VulnerabilityExceptionConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{8}
 }
-func (m *VulnerabilityExceptionConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityExceptionConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityExceptionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -894,8 +894,8 @@ func (*VulnerabilityExceptionConfig_FixableCVEOptions) ProtoMessage() {}
 func (*VulnerabilityExceptionConfig_FixableCVEOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{8, 0}
 }
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -968,8 +968,8 @@ func (*VulnerabilityExceptionConfig_ExpiryOptions) ProtoMessage() {}
 func (*VulnerabilityExceptionConfig_ExpiryOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{8, 1}
 }
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1056,8 +1056,8 @@ func (*AdministrationEventsConfig) ProtoMessage()    {}
 func (*AdministrationEventsConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{9}
 }
-func (m *AdministrationEventsConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AdministrationEventsConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AdministrationEventsConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1117,8 +1117,8 @@ func (*DayOption) ProtoMessage()    {}
 func (*DayOption) Descriptor() ([]byte, []int) {
 	return fileDescriptor_33903d79f8815efc, []int{10}
 }
-func (m *DayOption) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DayOption) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DayOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2382,7 +2382,7 @@ func sovConfig(x uint64) (n int) {
 func sozConfig(x uint64) (n int) {
 	return sovConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *LoginNotice) Unmarshal(dAtA []byte) error {
+func (m *LoginNotice) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2485,7 +2485,7 @@ func (m *LoginNotice) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BannerConfig) Unmarshal(dAtA []byte) error {
+func (m *BannerConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2671,7 +2671,7 @@ func (m *BannerConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PublicConfig) Unmarshal(dAtA []byte) error {
+func (m *PublicConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2732,7 +2732,7 @@ func (m *PublicConfig) Unmarshal(dAtA []byte) error {
 			if m.LoginNotice == nil {
 				m.LoginNotice = &LoginNotice{}
 			}
-			if err := m.LoginNotice.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LoginNotice.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2768,7 +2768,7 @@ func (m *PublicConfig) Unmarshal(dAtA []byte) error {
 			if m.Header == nil {
 				m.Header = &BannerConfig{}
 			}
-			if err := m.Header.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Header.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2804,7 +2804,7 @@ func (m *PublicConfig) Unmarshal(dAtA []byte) error {
 			if m.Footer == nil {
 				m.Footer = &BannerConfig{}
 			}
-			if err := m.Footer.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Footer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2840,7 +2840,7 @@ func (m *PublicConfig) Unmarshal(dAtA []byte) error {
 			if m.Telemetry == nil {
 				m.Telemetry = &TelemetryConfiguration{}
 			}
-			if err := m.Telemetry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Telemetry.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2866,7 +2866,7 @@ func (m *PublicConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AlertRetentionConfig) Unmarshal(dAtA []byte) error {
+func (m *AlertRetentionConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3012,7 +3012,7 @@ func (m *AlertRetentionConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DecommissionedClusterRetentionConfig) Unmarshal(dAtA []byte) error {
+func (m *DecommissionedClusterRetentionConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3281,7 +3281,7 @@ func (m *DecommissionedClusterRetentionConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportRetentionConfig) Unmarshal(dAtA []byte) error {
+func (m *ReportRetentionConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3389,7 +3389,7 @@ func (m *ReportRetentionConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
+func (m *PrivateConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3487,7 +3487,7 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AlertRetentionConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.AlertRetention = &PrivateConfig_AlertConfig{v}
@@ -3543,7 +3543,7 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 			if m.DecommissionedClusterRetention == nil {
 				m.DecommissionedClusterRetention = &DecommissionedClusterRetentionConfig{}
 			}
-			if err := m.DecommissionedClusterRetention.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DecommissionedClusterRetention.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3579,7 +3579,7 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 			if m.ReportRetentionConfig == nil {
 				m.ReportRetentionConfig = &ReportRetentionConfig{}
 			}
-			if err := m.ReportRetentionConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportRetentionConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3615,7 +3615,7 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 			if m.VulnerabilityExceptionConfig == nil {
 				m.VulnerabilityExceptionConfig = &VulnerabilityExceptionConfig{}
 			}
-			if err := m.VulnerabilityExceptionConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.VulnerabilityExceptionConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3651,7 +3651,7 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 			if m.AdministrationEventsConfig == nil {
 				m.AdministrationEventsConfig = &AdministrationEventsConfig{}
 			}
-			if err := m.AdministrationEventsConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AdministrationEventsConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3677,7 +3677,7 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Config) Unmarshal(dAtA []byte) error {
+func (m *Config) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3738,7 +3738,7 @@ func (m *Config) Unmarshal(dAtA []byte) error {
 			if m.PublicConfig == nil {
 				m.PublicConfig = &PublicConfig{}
 			}
-			if err := m.PublicConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PublicConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3774,7 +3774,7 @@ func (m *Config) Unmarshal(dAtA []byte) error {
 			if m.PrivateConfig == nil {
 				m.PrivateConfig = &PrivateConfig{}
 			}
-			if err := m.PrivateConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PrivateConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3800,7 +3800,7 @@ func (m *Config) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityExceptionConfig) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityExceptionConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3861,7 +3861,7 @@ func (m *VulnerabilityExceptionConfig) Unmarshal(dAtA []byte) error {
 			if m.ExpiryOptions == nil {
 				m.ExpiryOptions = &VulnerabilityExceptionConfig_ExpiryOptions{}
 			}
-			if err := m.ExpiryOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExpiryOptions.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3887,7 +3887,7 @@ func (m *VulnerabilityExceptionConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3978,7 +3978,7 @@ func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Unmarshal(dAtA []byte) 
 	}
 	return nil
 }
-func (m *VulnerabilityExceptionConfig_ExpiryOptions) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4037,7 +4037,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) Unmarshal(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			m.DayOptions = append(m.DayOptions, &DayOption{})
-			if err := m.DayOptions[len(m.DayOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DayOptions[len(m.DayOptions)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4073,7 +4073,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) Unmarshal(dAtA []byte) erro
 			if m.FixableCveOptions == nil {
 				m.FixableCveOptions = &VulnerabilityExceptionConfig_FixableCVEOptions{}
 			}
-			if err := m.FixableCveOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.FixableCveOptions.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4139,7 +4139,7 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) Unmarshal(dAtA []byte) erro
 	}
 	return nil
 }
-func (m *AdministrationEventsConfig) Unmarshal(dAtA []byte) error {
+func (m *AdministrationEventsConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4209,7 +4209,7 @@ func (m *AdministrationEventsConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DayOption) Unmarshal(dAtA []byte) error {
+func (m *DayOption) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

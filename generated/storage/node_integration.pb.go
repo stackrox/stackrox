@@ -41,8 +41,8 @@ func (*NodeIntegration) ProtoMessage()    {}
 func (*NodeIntegration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_554ffd999e2aaa13, []int{0}
 }
-func (m *NodeIntegration) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NodeIntegration) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NodeIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -308,7 +308,7 @@ func sovNodeIntegration(x uint64) (n int) {
 func sozNodeIntegration(x uint64) (n int) {
 	return sovNodeIntegration(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NodeIntegration) Unmarshal(dAtA []byte) error {
+func (m *NodeIntegration) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -463,7 +463,7 @@ func (m *NodeIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClairifyConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &NodeIntegration_Clairify{v}

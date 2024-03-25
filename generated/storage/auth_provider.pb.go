@@ -103,8 +103,8 @@ func (*AuthProvider) ProtoMessage()    {}
 func (*AuthProvider) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4ed6b69aa5a381c8, []int{0}
 }
-func (m *AuthProvider) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthProvider) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthProvider) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -284,8 +284,8 @@ func (*AuthProvider_RequiredAttribute) ProtoMessage()    {}
 func (*AuthProvider_RequiredAttribute) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4ed6b69aa5a381c8, []int{0, 1}
 }
-func (m *AuthProvider_RequiredAttribute) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthProvider_RequiredAttribute) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthProvider_RequiredAttribute) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -717,7 +717,7 @@ func sovAuthProvider(x uint64) (n int) {
 func sozAuthProvider(x uint64) (n int) {
 	return sovAuthProvider(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *AuthProvider) Unmarshal(dAtA []byte) error {
+func (m *AuthProvider) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1155,7 +1155,7 @@ func (m *AuthProvider) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RequiredAttributes = append(m.RequiredAttributes, &AuthProvider_RequiredAttribute{})
-			if err := m.RequiredAttributes[len(m.RequiredAttributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RequiredAttributes[len(m.RequiredAttributes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1191,7 +1191,7 @@ func (m *AuthProvider) Unmarshal(dAtA []byte) error {
 			if m.Traits == nil {
 				m.Traits = &Traits{}
 			}
-			if err := m.Traits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1380,7 +1380,7 @@ func (m *AuthProvider) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthProvider_RequiredAttribute) Unmarshal(dAtA []byte) error {
+func (m *AuthProvider_RequiredAttribute) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

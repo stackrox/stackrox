@@ -150,8 +150,8 @@ func (*Notifier) ProtoMessage()    {}
 func (*Notifier) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{0}
 }
-func (m *Notifier) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Notifier) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Notifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -485,8 +485,8 @@ func (*AWSSecurityHub) ProtoMessage()    {}
 func (*AWSSecurityHub) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{1}
 }
-func (m *AWSSecurityHub) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AWSSecurityHub) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AWSSecurityHub) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -562,8 +562,8 @@ func (*AWSSecurityHub_Credentials) ProtoMessage()    {}
 func (*AWSSecurityHub_Credentials) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{1, 0}
 }
-func (m *AWSSecurityHub_Credentials) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AWSSecurityHub_Credentials) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AWSSecurityHub_Credentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -639,8 +639,8 @@ func (*CSCC) ProtoMessage()    {}
 func (*CSCC) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{2}
 }
-func (m *CSCC) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CSCC) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CSCC) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -720,8 +720,8 @@ func (*Jira) ProtoMessage()    {}
 func (*Jira) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{3}
 }
-func (m *Jira) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Jira) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Jira) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -829,8 +829,8 @@ func (*Jira_PriorityMapping) ProtoMessage()    {}
 func (*Jira_PriorityMapping) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{3, 0}
 }
-func (m *Jira_PriorityMapping) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Jira_PriorityMapping) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Jira_PriorityMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -906,8 +906,8 @@ func (*Email) ProtoMessage()    {}
 func (*Email) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{4}
 }
-func (m *Email) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Email) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Email) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1031,8 +1031,8 @@ func (*Splunk) ProtoMessage()    {}
 func (*Splunk) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{5}
 }
-func (m *Splunk) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Splunk) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Splunk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1180,8 +1180,8 @@ func (*PagerDuty) ProtoMessage()    {}
 func (*PagerDuty) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{6}
 }
-func (m *PagerDuty) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PagerDuty) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PagerDuty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1248,8 +1248,8 @@ func (*Generic) ProtoMessage()    {}
 func (*Generic) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{7}
 }
-func (m *Generic) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Generic) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Generic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1370,8 +1370,8 @@ func (*SumoLogic) ProtoMessage()    {}
 func (*SumoLogic) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{8}
 }
-func (m *SumoLogic) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SumoLogic) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SumoLogic) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1445,8 +1445,8 @@ func (*Syslog) ProtoMessage()    {}
 func (*Syslog) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{9}
 }
-func (m *Syslog) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Syslog) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Syslog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1575,8 +1575,8 @@ func (*Syslog_TCPConfig) ProtoMessage()    {}
 func (*Syslog_TCPConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e3e7b397b1162ec, []int{9, 0}
 }
-func (m *Syslog_TCPConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Syslog_TCPConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Syslog_TCPConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3414,7 +3414,7 @@ func sovNotifier(x uint64) (n int) {
 func sozNotifier(x uint64) (n int) {
 	return sovNotifier(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Notifier) Unmarshal(dAtA []byte) error {
+func (m *Notifier) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3665,7 +3665,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Jira{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Jira{v}
@@ -3700,7 +3700,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Email{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Email{v}
@@ -3735,7 +3735,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CSCC{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Cscc{v}
@@ -3770,7 +3770,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Splunk{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Splunk{v}
@@ -3805,7 +3805,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &PagerDuty{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Pagerduty{v}
@@ -3840,7 +3840,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Generic{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Generic{v}
@@ -3875,7 +3875,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SumoLogic{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Sumologic{v}
@@ -3910,7 +3910,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AWSSecurityHub{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_AwsSecurityHub{v}
@@ -3945,7 +3945,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Syslog{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &Notifier_Syslog{v}
@@ -4014,7 +4014,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 			if m.Traits == nil {
 				m.Traits = &Traits{}
 			}
-			if err := m.Traits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4040,7 +4040,7 @@ func (m *Notifier) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AWSSecurityHub) Unmarshal(dAtA []byte) error {
+func (m *AWSSecurityHub) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4133,7 +4133,7 @@ func (m *AWSSecurityHub) Unmarshal(dAtA []byte) error {
 			if m.Credentials == nil {
 				m.Credentials = &AWSSecurityHub_Credentials{}
 			}
-			if err := m.Credentials.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Credentials.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4191,7 +4191,7 @@ func (m *AWSSecurityHub) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AWSSecurityHub_Credentials) Unmarshal(dAtA []byte) error {
+func (m *AWSSecurityHub_Credentials) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4326,7 +4326,7 @@ func (m *AWSSecurityHub_Credentials) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CSCC) Unmarshal(dAtA []byte) error {
+func (m *CSCC) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4461,7 +4461,7 @@ func (m *CSCC) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Jira) Unmarshal(dAtA []byte) error {
+func (m *Jira) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4648,7 +4648,7 @@ func (m *Jira) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PriorityMappings = append(m.PriorityMappings, &Jira_PriorityMapping{})
-			if err := m.PriorityMappings[len(m.PriorityMappings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PriorityMappings[len(m.PriorityMappings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4726,7 +4726,7 @@ func (m *Jira) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Jira_PriorityMapping) Unmarshal(dAtA []byte) error {
+func (m *Jira_PriorityMapping) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4828,7 +4828,7 @@ func (m *Jira_PriorityMapping) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Email) Unmarshal(dAtA []byte) error {
+func (m *Email) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5118,7 +5118,7 @@ func (m *Email) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Splunk) Unmarshal(dAtA []byte) error {
+func (m *Splunk) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5440,7 +5440,7 @@ func (m *Splunk) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PagerDuty) Unmarshal(dAtA []byte) error {
+func (m *PagerDuty) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5523,7 +5523,7 @@ func (m *PagerDuty) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Generic) Unmarshal(dAtA []byte) error {
+func (m *Generic) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5730,7 +5730,7 @@ func (m *Generic) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Headers = append(m.Headers, &KeyValuePair{})
-			if err := m.Headers[len(m.Headers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Headers[len(m.Headers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5764,7 +5764,7 @@ func (m *Generic) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExtraFields = append(m.ExtraFields, &KeyValuePair{})
-			if err := m.ExtraFields[len(m.ExtraFields)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExtraFields[len(m.ExtraFields)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5810,7 +5810,7 @@ func (m *Generic) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SumoLogic) Unmarshal(dAtA []byte) error {
+func (m *SumoLogic) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5913,7 +5913,7 @@ func (m *SumoLogic) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Syslog) Unmarshal(dAtA []byte) error {
+func (m *Syslog) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5991,7 +5991,7 @@ func (m *Syslog) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Syslog_TCPConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Endpoint = &Syslog_TcpConfig{v}
@@ -6026,7 +6026,7 @@ func (m *Syslog) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExtraFields = append(m.ExtraFields, &KeyValuePair{})
-			if err := m.ExtraFields[len(m.ExtraFields)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExtraFields[len(m.ExtraFields)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6071,7 +6071,7 @@ func (m *Syslog) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Syslog_TCPConfig) Unmarshal(dAtA []byte) error {
+func (m *Syslog_TCPConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -36,8 +36,8 @@ func (*SlimUser) ProtoMessage()    {}
 func (*SlimUser) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1d828e80cf5bea46, []int{0}
 }
-func (m *SlimUser) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SlimUser) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SlimUser) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -187,7 +187,7 @@ func sovUser(x uint64) (n int) {
 func sozUser(x uint64) (n int) {
 	return sovUser(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SlimUser) Unmarshal(dAtA []byte) error {
+func (m *SlimUser) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

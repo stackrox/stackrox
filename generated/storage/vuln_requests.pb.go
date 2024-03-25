@@ -104,8 +104,8 @@ func (*RequestComment) ProtoMessage()    {}
 func (*RequestComment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{0}
 }
-func (m *RequestComment) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RequestComment) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RequestComment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -197,8 +197,8 @@ func (*RequestExpiry) ProtoMessage()    {}
 func (*RequestExpiry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{1}
 }
-func (m *RequestExpiry) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RequestExpiry) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RequestExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -325,8 +325,8 @@ func (*DeferralRequest) ProtoMessage()    {}
 func (*DeferralRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{2}
 }
-func (m *DeferralRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeferralRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeferralRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -385,8 +385,8 @@ func (*FalsePositiveRequest) ProtoMessage()    {}
 func (*FalsePositiveRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{3}
 }
-func (m *FalsePositiveRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *FalsePositiveRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *FalsePositiveRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -439,8 +439,8 @@ func (*DeferralUpdate) ProtoMessage()    {}
 func (*DeferralUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{4}
 }
-func (m *DeferralUpdate) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeferralUpdate) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeferralUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -511,8 +511,8 @@ func (*FalsePositiveUpdate) ProtoMessage()    {}
 func (*FalsePositiveUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{5}
 }
-func (m *FalsePositiveUpdate) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *FalsePositiveUpdate) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *FalsePositiveUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -576,8 +576,8 @@ func (*Requester) ProtoMessage()    {}
 func (*Requester) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{6}
 }
-func (m *Requester) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Requester) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Requester) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -644,8 +644,8 @@ func (*Approver) ProtoMessage()    {}
 func (*Approver) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{7}
 }
-func (m *Approver) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Approver) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Approver) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -747,8 +747,8 @@ func (*VulnerabilityRequest) ProtoMessage()    {}
 func (*VulnerabilityRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{8}
 }
-func (m *VulnerabilityRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1106,8 +1106,8 @@ func (*VulnerabilityRequest_CVEs) ProtoMessage()    {}
 func (*VulnerabilityRequest_CVEs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{8, 0}
 }
-func (m *VulnerabilityRequest_CVEs) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityRequest_CVEs) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityRequest_CVEs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1173,8 +1173,8 @@ func (*VulnerabilityRequest_Scope) ProtoMessage()    {}
 func (*VulnerabilityRequest_Scope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{8, 1}
 }
-func (m *VulnerabilityRequest_Scope) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityRequest_Scope) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityRequest_Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1298,8 +1298,8 @@ func (*VulnerabilityRequest_Scope_Image) ProtoMessage()    {}
 func (*VulnerabilityRequest_Scope_Image) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{8, 1, 0}
 }
-func (m *VulnerabilityRequest_Scope_Image) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityRequest_Scope_Image) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityRequest_Scope_Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1371,8 +1371,8 @@ func (*VulnerabilityRequest_Scope_Global) ProtoMessage()    {}
 func (*VulnerabilityRequest_Scope_Global) Descriptor() ([]byte, []int) {
 	return fileDescriptor_878c2c8004fa26b3, []int{8, 1, 1}
 }
-func (m *VulnerabilityRequest_Scope_Global) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityRequest_Scope_Global) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityRequest_Scope_Global) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2829,7 +2829,7 @@ func sovVulnRequests(x uint64) (n int) {
 func sozVulnRequests(x uint64) (n int) {
 	return sovVulnRequests(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *RequestComment) Unmarshal(dAtA []byte) error {
+func (m *RequestComment) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2954,7 +2954,7 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &SlimUser{}
 			}
-			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.User.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3016,7 +3016,7 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RequestExpiry) Unmarshal(dAtA []byte) error {
+func (m *RequestExpiry) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3142,7 +3142,7 @@ func (m *RequestExpiry) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeferralRequest) Unmarshal(dAtA []byte) error {
+func (m *DeferralRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3203,7 +3203,7 @@ func (m *DeferralRequest) Unmarshal(dAtA []byte) error {
 			if m.Expiry == nil {
 				m.Expiry = &RequestExpiry{}
 			}
-			if err := m.Expiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Expiry.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3229,7 +3229,7 @@ func (m *DeferralRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *FalsePositiveRequest) Unmarshal(dAtA []byte) error {
+func (m *FalsePositiveRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3280,7 +3280,7 @@ func (m *FalsePositiveRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeferralUpdate) Unmarshal(dAtA []byte) error {
+func (m *DeferralUpdate) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3373,7 +3373,7 @@ func (m *DeferralUpdate) Unmarshal(dAtA []byte) error {
 			if m.Expiry == nil {
 				m.Expiry = &RequestExpiry{}
 			}
-			if err := m.Expiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Expiry.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3399,7 +3399,7 @@ func (m *DeferralUpdate) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *FalsePositiveUpdate) Unmarshal(dAtA []byte) error {
+func (m *FalsePositiveUpdate) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3482,7 +3482,7 @@ func (m *FalsePositiveUpdate) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Requester) Unmarshal(dAtA []byte) error {
+func (m *Requester) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3597,7 +3597,7 @@ func (m *Requester) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Approver) Unmarshal(dAtA []byte) error {
+func (m *Approver) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3712,7 +3712,7 @@ func (m *Approver) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3863,7 +3863,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			if m.Requestor == nil {
 				m.Requestor = &SlimUser{}
 			}
-			if err := m.Requestor.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Requestor.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3897,7 +3897,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Approvers = append(m.Approvers, &SlimUser{})
-			if err := m.Approvers[len(m.Approvers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Approvers[len(m.Approvers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4003,7 +4003,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Comments = append(m.Comments, &RequestComment{})
-			if err := m.Comments[len(m.Comments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Comments[len(m.Comments)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4039,7 +4039,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			if m.Scope == nil {
 				m.Scope = &VulnerabilityRequest_Scope{}
 			}
-			if err := m.Scope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4073,7 +4073,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeferralRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Req = &VulnerabilityRequest_DeferralReq{v}
@@ -4108,7 +4108,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &FalsePositiveRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Req = &VulnerabilityRequest_FpRequest{v}
@@ -4143,7 +4143,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &VulnerabilityRequest_CVEs{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Entities = &VulnerabilityRequest_Cves{v}
@@ -4178,7 +4178,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeferralRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.UpdatedReq = &VulnerabilityRequest_UpdatedDeferralReq{v}
@@ -4213,7 +4213,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeferralUpdate{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.UpdatedReq = &VulnerabilityRequest_DeferralUpdate{v}
@@ -4248,7 +4248,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &FalsePositiveUpdate{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.UpdatedReq = &VulnerabilityRequest_FalsePositiveUpdate{v}
@@ -4317,7 +4317,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 			if m.RequesterV2 == nil {
 				m.RequesterV2 = &Requester{}
 			}
-			if err := m.RequesterV2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RequesterV2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4351,7 +4351,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ApproversV2 = append(m.ApproversV2, &Approver{})
-			if err := m.ApproversV2[len(m.ApproversV2)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ApproversV2[len(m.ApproversV2)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4377,7 +4377,7 @@ func (m *VulnerabilityRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityRequest_CVEs) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_CVEs) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4460,7 +4460,7 @@ func (m *VulnerabilityRequest_CVEs) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_Scope) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4519,7 +4519,7 @@ func (m *VulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &VulnerabilityRequest_Scope_Image{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Info = &VulnerabilityRequest_Scope_ImageScope{v}
@@ -4554,7 +4554,7 @@ func (m *VulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &VulnerabilityRequest_Scope_Global{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Info = &VulnerabilityRequest_Scope_GlobalScope{v}
@@ -4581,7 +4581,7 @@ func (m *VulnerabilityRequest_Scope) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityRequest_Scope_Image) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_Scope_Image) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4728,7 +4728,7 @@ func (m *VulnerabilityRequest_Scope_Image) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityRequest_Scope_Global) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityRequest_Scope_Global) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

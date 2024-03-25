@@ -70,8 +70,8 @@ func (*AuthMachineToMachineConfig) ProtoMessage()    {}
 func (*AuthMachineToMachineConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ce5f143e8b019d79, []int{0}
 }
-func (m *AuthMachineToMachineConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthMachineToMachineConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthMachineToMachineConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -166,8 +166,8 @@ func (*AuthMachineToMachineConfig_Mapping) ProtoMessage()    {}
 func (*AuthMachineToMachineConfig_Mapping) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ce5f143e8b019d79, []int{0, 0}
 }
-func (m *AuthMachineToMachineConfig_Mapping) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuthMachineToMachineConfig_Mapping) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuthMachineToMachineConfig_Mapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -452,7 +452,7 @@ func sovAuthMachineToMachine(x uint64) (n int) {
 func sozAuthMachineToMachine(x uint64) (n int) {
 	return sovAuthMachineToMachine(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
+func (m *AuthMachineToMachineConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -594,7 +594,7 @@ func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Mappings = append(m.Mappings, &AuthMachineToMachineConfig_Mapping{})
-			if err := m.Mappings[len(m.Mappings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Mappings[len(m.Mappings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -652,7 +652,7 @@ func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthMachineToMachineConfig_Mapping) Unmarshal(dAtA []byte) error {
+func (m *AuthMachineToMachineConfig_Mapping) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

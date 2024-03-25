@@ -38,8 +38,8 @@ func (*ClusterMetrics) ProtoMessage()    {}
 func (*ClusterMetrics) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cf4a2b5a7271bdbd, []int{0}
 }
-func (m *ClusterMetrics) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ClusterMetrics) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ClusterMetrics) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -187,7 +187,7 @@ func sovClusterMetrics(x uint64) (n int) {
 func sozClusterMetrics(x uint64) (n int) {
 	return sovClusterMetrics(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ClusterMetrics) Unmarshal(dAtA []byte) error {
+func (m *ClusterMetrics) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

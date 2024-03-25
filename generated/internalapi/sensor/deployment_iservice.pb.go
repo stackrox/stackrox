@@ -41,8 +41,8 @@ func (*GetDeploymentForPodRequest) ProtoMessage()    {}
 func (*GetDeploymentForPodRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_79e5898dd478d161, []int{0}
 }
-func (m *GetDeploymentForPodRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetDeploymentForPodRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetDeploymentForPodRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -279,7 +279,7 @@ func sovDeploymentIservice(x uint64) (n int) {
 func sozDeploymentIservice(x uint64) (n int) {
 	return sovDeploymentIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetDeploymentForPodRequest) Unmarshal(dAtA []byte) error {
+func (m *GetDeploymentForPodRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -36,8 +36,8 @@ func (*ComplianceConfig) ProtoMessage()    {}
 func (*ComplianceConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_49cb46a3a17bbb25, []int{0}
 }
-func (m *ComplianceConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -191,7 +191,7 @@ func sovComplianceConfig(x uint64) (n int) {
 func sozComplianceConfig(x uint64) (n int) {
 	return sovComplianceConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ComplianceConfig) Unmarshal(dAtA []byte) error {
+func (m *ComplianceConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

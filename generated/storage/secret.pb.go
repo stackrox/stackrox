@@ -107,8 +107,8 @@ func (*Secret) ProtoMessage()    {}
 func (*Secret) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{0}
 }
-func (m *Secret) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Secret) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Secret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -263,8 +263,8 @@ func (*ListSecret) ProtoMessage()    {}
 func (*ListSecret) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{1}
 }
-func (m *ListSecret) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListSecret) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListSecret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -377,8 +377,8 @@ func (*SecretRelationship) ProtoMessage()    {}
 func (*SecretRelationship) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{2}
 }
-func (m *SecretRelationship) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SecretRelationship) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SecretRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -468,8 +468,8 @@ func (*SecretDeploymentRelationship) ProtoMessage()    {}
 func (*SecretDeploymentRelationship) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{3}
 }
-func (m *SecretDeploymentRelationship) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SecretDeploymentRelationship) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SecretDeploymentRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -540,8 +540,8 @@ func (*SecretContainerRelationship) ProtoMessage()    {}
 func (*SecretContainerRelationship) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{4}
 }
-func (m *SecretContainerRelationship) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SecretContainerRelationship) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SecretContainerRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -607,8 +607,8 @@ func (*ImagePullSecret) ProtoMessage()    {}
 func (*ImagePullSecret) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{5}
 }
-func (m *ImagePullSecret) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImagePullSecret) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImagePullSecret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -674,8 +674,8 @@ func (*ImagePullSecret_Registry) ProtoMessage()    {}
 func (*ImagePullSecret_Registry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{5, 0}
 }
-func (m *ImagePullSecret_Registry) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImagePullSecret_Registry) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImagePullSecret_Registry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -749,8 +749,8 @@ func (*SecretDataFile) ProtoMessage()    {}
 func (*SecretDataFile) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{6}
 }
-func (m *SecretDataFile) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SecretDataFile) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SecretDataFile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -890,8 +890,8 @@ func (*Cert) ProtoMessage()    {}
 func (*Cert) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{7}
 }
-func (m *Cert) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Cert) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Cert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1001,8 +1001,8 @@ func (*CertName) ProtoMessage()    {}
 func (*CertName) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4b7da2d1fc45954, []int{8}
 }
-func (m *CertName) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CertName) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CertName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2301,7 +2301,7 @@ func sovSecret(x uint64) (n int) {
 func sozSecret(x uint64) (n int) {
 	return sovSecret(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Secret) Unmarshal(dAtA []byte) error {
+func (m *Secret) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2842,7 +2842,7 @@ func (m *Secret) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Files = append(m.Files, &SecretDataFile{})
-			if err := m.Files[len(m.Files)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Files[len(m.Files)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2878,7 +2878,7 @@ func (m *Secret) Unmarshal(dAtA []byte) error {
 			if m.Relationship == nil {
 				m.Relationship = &SecretRelationship{}
 			}
-			if err := m.Relationship.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Relationship.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2904,7 +2904,7 @@ func (m *Secret) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListSecret) Unmarshal(dAtA []byte) error {
+func (m *ListSecret) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3220,7 +3220,7 @@ func (m *ListSecret) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecretRelationship) Unmarshal(dAtA []byte) error {
+func (m *SecretRelationship) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3311,7 +3311,7 @@ func (m *SecretRelationship) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ContainerRelationships = append(m.ContainerRelationships, &SecretContainerRelationship{})
-			if err := m.ContainerRelationships[len(m.ContainerRelationships)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ContainerRelationships[len(m.ContainerRelationships)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3345,7 +3345,7 @@ func (m *SecretRelationship) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentRelationships = append(m.DeploymentRelationships, &SecretDeploymentRelationship{})
-			if err := m.DeploymentRelationships[len(m.DeploymentRelationships)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DeploymentRelationships[len(m.DeploymentRelationships)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3371,7 +3371,7 @@ func (m *SecretRelationship) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecretDeploymentRelationship) Unmarshal(dAtA []byte) error {
+func (m *SecretDeploymentRelationship) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3486,7 +3486,7 @@ func (m *SecretDeploymentRelationship) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecretContainerRelationship) Unmarshal(dAtA []byte) error {
+func (m *SecretContainerRelationship) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3601,7 +3601,7 @@ func (m *SecretContainerRelationship) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImagePullSecret) Unmarshal(dAtA []byte) error {
+func (m *ImagePullSecret) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3660,7 +3660,7 @@ func (m *ImagePullSecret) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Registries = append(m.Registries, &ImagePullSecret_Registry{})
-			if err := m.Registries[len(m.Registries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Registries[len(m.Registries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3686,7 +3686,7 @@ func (m *ImagePullSecret) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImagePullSecret_Registry) Unmarshal(dAtA []byte) error {
+func (m *ImagePullSecret_Registry) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3801,7 +3801,7 @@ func (m *ImagePullSecret_Registry) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecretDataFile) Unmarshal(dAtA []byte) error {
+func (m *SecretDataFile) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3911,7 +3911,7 @@ func (m *SecretDataFile) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Cert{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Metadata = &SecretDataFile_Cert{v}
@@ -3946,7 +3946,7 @@ func (m *SecretDataFile) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ImagePullSecret{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Metadata = &SecretDataFile_ImagePullSecret{v}
@@ -3973,7 +3973,7 @@ func (m *SecretDataFile) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Cert) Unmarshal(dAtA []byte) error {
+func (m *Cert) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4034,7 +4034,7 @@ func (m *Cert) Unmarshal(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &CertName{}
 			}
-			if err := m.Subject.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Subject.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4070,7 +4070,7 @@ func (m *Cert) Unmarshal(dAtA []byte) error {
 			if m.Issuer == nil {
 				m.Issuer = &CertName{}
 			}
-			if err := m.Issuer.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Issuer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4232,7 +4232,7 @@ func (m *Cert) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CertName) Unmarshal(dAtA []byte) error {
+func (m *CertName) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

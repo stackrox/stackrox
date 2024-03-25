@@ -308,8 +308,8 @@ func (*RawQuery) ProtoMessage()    {}
 func (*RawQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{0}
 }
-func (m *RawQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RawQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RawQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -379,8 +379,8 @@ func (*RawSearchRequest) ProtoMessage()    {}
 func (*RawSearchRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{1}
 }
-func (m *RawSearchRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RawSearchRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RawSearchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -455,8 +455,8 @@ func (*QuerySortOption) ProtoMessage()    {}
 func (*QuerySortOption) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{2}
 }
-func (m *QuerySortOption) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QuerySortOption) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QuerySortOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -578,8 +578,8 @@ func (*QueryField) ProtoMessage()    {}
 func (*QueryField) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{3}
 }
-func (m *QueryField) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QueryField) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QueryField) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -653,8 +653,8 @@ func (*QuerySelectFilter) ProtoMessage()    {}
 func (*QuerySelectFilter) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{4}
 }
-func (m *QuerySelectFilter) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QuerySelectFilter) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QuerySelectFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -722,8 +722,8 @@ func (*QuerySelect) ProtoMessage()    {}
 func (*QuerySelect) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{5}
 }
-func (m *QuerySelect) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QuerySelect) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QuerySelect) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -791,8 +791,8 @@ func (*QueryGroupBy) ProtoMessage()    {}
 func (*QueryGroupBy) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{6}
 }
-func (m *QueryGroupBy) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QueryGroupBy) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QueryGroupBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -857,8 +857,8 @@ func (*QueryPagination) ProtoMessage()    {}
 func (*QueryPagination) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{7}
 }
-func (m *QueryPagination) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QueryPagination) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QueryPagination) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -938,8 +938,8 @@ func (*BooleanQuery) ProtoMessage()    {}
 func (*BooleanQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{8}
 }
-func (m *BooleanQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BooleanQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BooleanQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1016,8 +1016,8 @@ func (*Query) ProtoMessage()    {}
 func (*Query) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{9}
 }
-func (m *Query) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Query) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Query) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1213,8 +1213,8 @@ func (*StringQuery) ProtoMessage()    {}
 func (*StringQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{10}
 }
-func (m *StringQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *StringQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *StringQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1277,8 +1277,8 @@ func (*MatchFieldQuery) ProtoMessage()    {}
 func (*MatchFieldQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{11}
 }
-func (m *MatchFieldQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MatchFieldQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MatchFieldQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1353,8 +1353,8 @@ func (*MatchLinkedFieldsQuery) ProtoMessage()    {}
 func (*MatchLinkedFieldsQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{12}
 }
-func (m *MatchLinkedFieldsQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MatchLinkedFieldsQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MatchLinkedFieldsQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1420,8 +1420,8 @@ func (*DocIDQuery) ProtoMessage()    {}
 func (*DocIDQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{13}
 }
-func (m *DocIDQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DocIDQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DocIDQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1489,8 +1489,8 @@ func (*BaseQuery) ProtoMessage()    {}
 func (*BaseQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{14}
 }
-func (m *BaseQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BaseQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BaseQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1655,8 +1655,8 @@ func (*ConjunctionQuery) ProtoMessage()    {}
 func (*ConjunctionQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{15}
 }
-func (m *ConjunctionQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ConjunctionQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ConjunctionQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1721,8 +1721,8 @@ func (*DisjunctionQuery) ProtoMessage()    {}
 func (*DisjunctionQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{16}
 }
-func (m *DisjunctionQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DisjunctionQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DisjunctionQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1786,8 +1786,8 @@ func (*MatchNoneQuery) ProtoMessage()    {}
 func (*MatchNoneQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{17}
 }
-func (m *MatchNoneQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MatchNoneQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MatchNoneQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1849,8 +1849,8 @@ func (*SearchResult) ProtoMessage()    {}
 func (*SearchResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{18}
 }
-func (m *SearchResult) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SearchResult) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SearchResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1950,8 +1950,8 @@ func (*SearchResult_Matches) ProtoMessage()    {}
 func (*SearchResult_Matches) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{18, 0}
 }
-func (m *SearchResult_Matches) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SearchResult_Matches) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SearchResult_Matches) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2015,8 +2015,8 @@ func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{19}
 }
-func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SearchResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SearchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2095,8 +2095,8 @@ func (*SearchResponse_Count) ProtoMessage()    {}
 func (*SearchResponse_Count) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{19, 0}
 }
-func (m *SearchResponse_Count) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SearchResponse_Count) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SearchResponse_Count) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2162,8 +2162,8 @@ func (*SearchOptionsRequest) ProtoMessage()    {}
 func (*SearchOptionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{20}
 }
-func (m *SearchOptionsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SearchOptionsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SearchOptionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2226,8 +2226,8 @@ func (*SearchOptionsResponse) ProtoMessage()    {}
 func (*SearchOptionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{21}
 }
-func (m *SearchOptionsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SearchOptionsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SearchOptionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2290,8 +2290,8 @@ func (*AutocompleteResponse) ProtoMessage()    {}
 func (*AutocompleteResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c4215e5dded92b40, []int{22}
 }
-func (m *AutocompleteResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AutocompleteResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AutocompleteResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -4646,7 +4646,7 @@ func sovSearchService(x uint64) (n int) {
 func sozSearchService(x uint64) (n int) {
 	return sovSearchService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *RawQuery) Unmarshal(dAtA []byte) error {
+func (m *RawQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4739,7 +4739,7 @@ func (m *RawQuery) Unmarshal(dAtA []byte) error {
 			if m.Pagination == nil {
 				m.Pagination = &Pagination{}
 			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4765,7 +4765,7 @@ func (m *RawQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RawSearchRequest) Unmarshal(dAtA []byte) error {
+func (m *RawSearchRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4917,7 +4917,7 @@ func (m *RawSearchRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QuerySortOption) Unmarshal(dAtA []byte) error {
+func (m *QuerySortOption) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5062,7 +5062,7 @@ func (m *QuerySortOption) Unmarshal(dAtA []byte) error {
 			if m.AggregateBy == nil {
 				m.AggregateBy = &AggregateBy{}
 			}
-			if err := m.AggregateBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AggregateBy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5088,7 +5088,7 @@ func (m *QuerySortOption) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryField) Unmarshal(dAtA []byte) error {
+func (m *QueryField) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5223,7 +5223,7 @@ func (m *QueryField) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QuerySelectFilter) Unmarshal(dAtA []byte) error {
+func (m *QuerySelectFilter) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5316,7 +5316,7 @@ func (m *QuerySelectFilter) Unmarshal(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &Query{}
 			}
-			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5342,7 +5342,7 @@ func (m *QuerySelectFilter) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QuerySelect) Unmarshal(dAtA []byte) error {
+func (m *QuerySelect) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5403,7 +5403,7 @@ func (m *QuerySelect) Unmarshal(dAtA []byte) error {
 			if m.Field == nil {
 				m.Field = &QueryField{}
 			}
-			if err := m.Field.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Field.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5439,7 +5439,7 @@ func (m *QuerySelect) Unmarshal(dAtA []byte) error {
 			if m.Filter == nil {
 				m.Filter = &QuerySelectFilter{}
 			}
-			if err := m.Filter.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Filter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5465,7 +5465,7 @@ func (m *QuerySelect) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryGroupBy) Unmarshal(dAtA []byte) error {
+func (m *QueryGroupBy) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5548,7 +5548,7 @@ func (m *QueryGroupBy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryPagination) Unmarshal(dAtA []byte) error {
+func (m *QueryPagination) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5645,7 +5645,7 @@ func (m *QueryPagination) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SortOptions = append(m.SortOptions, &QuerySortOption{})
-			if err := m.SortOptions[len(m.SortOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SortOptions[len(m.SortOptions)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5671,7 +5671,7 @@ func (m *QueryPagination) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BooleanQuery) Unmarshal(dAtA []byte) error {
+func (m *BooleanQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5732,7 +5732,7 @@ func (m *BooleanQuery) Unmarshal(dAtA []byte) error {
 			if m.Must == nil {
 				m.Must = &ConjunctionQuery{}
 			}
-			if err := m.Must.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Must.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5768,7 +5768,7 @@ func (m *BooleanQuery) Unmarshal(dAtA []byte) error {
 			if m.MustNot == nil {
 				m.MustNot = &DisjunctionQuery{}
 			}
-			if err := m.MustNot.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MustNot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5794,7 +5794,7 @@ func (m *BooleanQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Query) Unmarshal(dAtA []byte) error {
+func (m *Query) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5853,7 +5853,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ConjunctionQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &Query_Conjunction{v}
@@ -5888,7 +5888,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DisjunctionQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &Query_Disjunction{v}
@@ -5923,7 +5923,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &BaseQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &Query_BaseQuery{v}
@@ -5960,7 +5960,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 			if m.Pagination == nil {
 				m.Pagination = &QueryPagination{}
 			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5994,7 +5994,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &BooleanQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &Query_BooleanQuery{v}
@@ -6031,7 +6031,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 			if m.GroupBy == nil {
 				m.GroupBy = &QueryGroupBy{}
 			}
-			if err := m.GroupBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.GroupBy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6065,7 +6065,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Selects = append(m.Selects, &QuerySelect{})
-			if err := m.Selects[len(m.Selects)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Selects[len(m.Selects)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6091,7 +6091,7 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StringQuery) Unmarshal(dAtA []byte) error {
+func (m *StringQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6174,7 +6174,7 @@ func (m *StringQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MatchFieldQuery) Unmarshal(dAtA []byte) error {
+func (m *MatchFieldQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6309,7 +6309,7 @@ func (m *MatchFieldQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MatchLinkedFieldsQuery) Unmarshal(dAtA []byte) error {
+func (m *MatchLinkedFieldsQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6368,7 +6368,7 @@ func (m *MatchLinkedFieldsQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Query = append(m.Query, &MatchFieldQuery{})
-			if err := m.Query[len(m.Query)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query[len(m.Query)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6394,7 +6394,7 @@ func (m *MatchLinkedFieldsQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DocIDQuery) Unmarshal(dAtA []byte) error {
+func (m *DocIDQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6477,7 +6477,7 @@ func (m *DocIDQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BaseQuery) Unmarshal(dAtA []byte) error {
+func (m *BaseQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6536,7 +6536,7 @@ func (m *BaseQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MatchFieldQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &BaseQuery_MatchFieldQuery{v}
@@ -6571,7 +6571,7 @@ func (m *BaseQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MatchLinkedFieldsQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &BaseQuery_MatchLinkedFieldsQuery{v}
@@ -6606,7 +6606,7 @@ func (m *BaseQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DocIDQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &BaseQuery_DocIdQuery{v}
@@ -6641,7 +6641,7 @@ func (m *BaseQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MatchNoneQuery{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Query = &BaseQuery_MatchNoneQuery{v}
@@ -6668,7 +6668,7 @@ func (m *BaseQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ConjunctionQuery) Unmarshal(dAtA []byte) error {
+func (m *ConjunctionQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6727,7 +6727,7 @@ func (m *ConjunctionQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Queries = append(m.Queries, &Query{})
-			if err := m.Queries[len(m.Queries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Queries[len(m.Queries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6753,7 +6753,7 @@ func (m *ConjunctionQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DisjunctionQuery) Unmarshal(dAtA []byte) error {
+func (m *DisjunctionQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6812,7 +6812,7 @@ func (m *DisjunctionQuery) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Queries = append(m.Queries, &Query{})
-			if err := m.Queries[len(m.Queries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Queries[len(m.Queries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6838,7 +6838,7 @@ func (m *DisjunctionQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MatchNoneQuery) Unmarshal(dAtA []byte) error {
+func (m *MatchNoneQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6889,7 +6889,7 @@ func (m *MatchNoneQuery) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SearchResult) Unmarshal(dAtA []byte) error {
+func (m *SearchResult) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7109,7 +7109,7 @@ func (m *SearchResult) Unmarshal(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &SearchResult_Matches{}
-					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -7195,7 +7195,7 @@ func (m *SearchResult) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SearchResult_Matches) Unmarshal(dAtA []byte) error {
+func (m *SearchResult_Matches) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7278,7 +7278,7 @@ func (m *SearchResult_Matches) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SearchResponse) Unmarshal(dAtA []byte) error {
+func (m *SearchResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7337,7 +7337,7 @@ func (m *SearchResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Results = append(m.Results, &SearchResult{})
-			if err := m.Results[len(m.Results)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Results[len(m.Results)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7371,7 +7371,7 @@ func (m *SearchResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Counts = append(m.Counts, &SearchResponse_Count{})
-			if err := m.Counts[len(m.Counts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Counts[len(m.Counts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7397,7 +7397,7 @@ func (m *SearchResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SearchResponse_Count) Unmarshal(dAtA []byte) error {
+func (m *SearchResponse_Count) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7486,7 +7486,7 @@ func (m *SearchResponse_Count) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SearchOptionsRequest) Unmarshal(dAtA []byte) error {
+func (m *SearchOptionsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7606,7 +7606,7 @@ func (m *SearchOptionsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SearchOptionsResponse) Unmarshal(dAtA []byte) error {
+func (m *SearchOptionsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7689,7 +7689,7 @@ func (m *SearchOptionsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AutocompleteResponse) Unmarshal(dAtA []byte) error {
+func (m *AutocompleteResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -67,8 +67,8 @@ func (*GetScrapeConfigRequest) ProtoMessage()    {}
 func (*GetScrapeConfigRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{0}
 }
-func (m *GetScrapeConfigRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetScrapeConfigRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetScrapeConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -135,8 +135,8 @@ func (*AuditEvents) ProtoMessage()    {}
 func (*AuditEvents) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{1}
 }
-func (m *AuditEvents) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AuditEvents) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AuditEvents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -206,8 +206,8 @@ func (*MsgFromCompliance) ProtoMessage()    {}
 func (*MsgFromCompliance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{2}
 }
-func (m *MsgFromCompliance) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgFromCompliance) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgFromCompliance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -362,8 +362,8 @@ func (*MsgToCompliance) ProtoMessage()    {}
 func (*MsgToCompliance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3}
 }
-func (m *MsgToCompliance) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -529,8 +529,8 @@ func (*MsgToCompliance_ScrapeConfig) ProtoMessage()    {}
 func (*MsgToCompliance_ScrapeConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3, 0}
 }
-func (m *MsgToCompliance_ScrapeConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance_ScrapeConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance_ScrapeConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -597,8 +597,8 @@ func (*MsgToCompliance_TriggerRun) ProtoMessage()    {}
 func (*MsgToCompliance_TriggerRun) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3, 1}
 }
-func (m *MsgToCompliance_TriggerRun) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance_TriggerRun) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance_TriggerRun) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -675,8 +675,8 @@ func (*MsgToCompliance_AuditLogCollectionRequest) ProtoMessage() {}
 func (*MsgToCompliance_AuditLogCollectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3, 2}
 }
-func (m *MsgToCompliance_AuditLogCollectionRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance_AuditLogCollectionRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance_AuditLogCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -804,8 +804,8 @@ func (*MsgToCompliance_AuditLogCollectionRequest_StartRequest) ProtoMessage() {}
 func (*MsgToCompliance_AuditLogCollectionRequest_StartRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3, 2, 0}
 }
-func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -875,8 +875,8 @@ func (*MsgToCompliance_AuditLogCollectionRequest_StopRequest) ProtoMessage() {}
 func (*MsgToCompliance_AuditLogCollectionRequest_StopRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3, 2, 1}
 }
-func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -928,8 +928,8 @@ func (*MsgToCompliance_NodeInventoryACK) ProtoMessage()    {}
 func (*MsgToCompliance_NodeInventoryACK) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9b20c44efbf676a9, []int{3, 3}
 }
-func (m *MsgToCompliance_NodeInventoryACK) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MsgToCompliance_NodeInventoryACK) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MsgToCompliance_NodeInventoryACK) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2034,7 +2034,7 @@ func sovComplianceIservice(x uint64) (n int) {
 func sozComplianceIservice(x uint64) (n int) {
 	return sovComplianceIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetScrapeConfigRequest) Unmarshal(dAtA []byte) error {
+func (m *GetScrapeConfigRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2149,7 +2149,7 @@ func (m *GetScrapeConfigRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuditEvents) Unmarshal(dAtA []byte) error {
+func (m *AuditEvents) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2208,7 +2208,7 @@ func (m *AuditEvents) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Events = append(m.Events, &storage.KubernetesEvent{})
-			if err := m.Events[len(m.Events)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Events[len(m.Events)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2234,7 +2234,7 @@ func (m *AuditEvents) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgFromCompliance) Unmarshal(dAtA []byte) error {
+func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2325,7 +2325,7 @@ func (m *MsgFromCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &compliance.ComplianceReturn{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromCompliance_Return{v}
@@ -2360,7 +2360,7 @@ func (m *MsgFromCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AuditEvents{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromCompliance_AuditEvents{v}
@@ -2395,7 +2395,7 @@ func (m *MsgFromCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.NodeInventory{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromCompliance_NodeInventory{v}
@@ -2422,7 +2422,7 @@ func (m *MsgFromCompliance) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgToCompliance) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2481,7 +2481,7 @@ func (m *MsgToCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MsgToCompliance_ScrapeConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToCompliance_Config{v}
@@ -2516,7 +2516,7 @@ func (m *MsgToCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MsgToCompliance_TriggerRun{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToCompliance_Trigger{v}
@@ -2551,7 +2551,7 @@ func (m *MsgToCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MsgToCompliance_AuditLogCollectionRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToCompliance_AuditLogCollectionRequest_{v}
@@ -2586,7 +2586,7 @@ func (m *MsgToCompliance) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &MsgToCompliance_NodeInventoryACK{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToCompliance_Ack{v}
@@ -2613,7 +2613,7 @@ func (m *MsgToCompliance) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgToCompliance_ScrapeConfig) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance_ScrapeConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2703,7 +2703,7 @@ func (m *MsgToCompliance_ScrapeConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgToCompliance_TriggerRun) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance_TriggerRun) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2818,7 +2818,7 @@ func (m *MsgToCompliance_TriggerRun) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgToCompliance_AuditLogCollectionRequest) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance_AuditLogCollectionRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2877,7 +2877,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			v := &MsgToCompliance_AuditLogCollectionRequest_StartRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Req = &MsgToCompliance_AuditLogCollectionRequest_StartReq{v}
@@ -2912,7 +2912,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			v := &MsgToCompliance_AuditLogCollectionRequest_StopRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Req = &MsgToCompliance_AuditLogCollectionRequest_StopReq{v}
@@ -2939,7 +2939,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest) Unmarshal(dAtA []byte) error
 	}
 	return nil
 }
-func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3032,7 +3032,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Unmarshal(dAtA 
 			if m.CollectStartState == nil {
 				m.CollectStartState = &storage.AuditLogFileState{}
 			}
-			if err := m.CollectStartState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CollectStartState.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3058,7 +3058,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Unmarshal(dAtA 
 	}
 	return nil
 }
-func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3109,7 +3109,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StopRequest) Unmarshal(dAtA [
 	}
 	return nil
 }
-func (m *MsgToCompliance_NodeInventoryACK) Unmarshal(dAtA []byte) error {
+func (m *MsgToCompliance_NodeInventoryACK) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

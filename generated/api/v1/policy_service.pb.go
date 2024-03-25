@@ -40,8 +40,8 @@ func (*DryRunResponse) ProtoMessage()    {}
 func (*DryRunResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{0}
 }
-func (m *DryRunResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DryRunResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DryRunResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -107,8 +107,8 @@ func (*DryRunResponse_Alert) ProtoMessage()    {}
 func (*DryRunResponse_Alert) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{0, 0}
 }
-func (m *DryRunResponse_Alert) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DryRunResponse_Alert) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DryRunResponse_Alert) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -178,8 +178,8 @@ func (*JobId) ProtoMessage()    {}
 func (*JobId) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{1}
 }
-func (m *JobId) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *JobId) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *JobId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -239,8 +239,8 @@ func (*DryRunJobStatusResponse) ProtoMessage()    {}
 func (*DryRunJobStatusResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{2}
 }
-func (m *DryRunJobStatusResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DryRunJobStatusResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DryRunJobStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -307,8 +307,8 @@ func (*PolicyCategoriesResponse) ProtoMessage()    {}
 func (*PolicyCategoriesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{3}
 }
-func (m *PolicyCategoriesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyCategoriesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyCategoriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -375,8 +375,8 @@ func (*EnableDisablePolicyNotificationRequest) ProtoMessage()    {}
 func (*EnableDisablePolicyNotificationRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{4}
 }
-func (m *EnableDisablePolicyNotificationRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *EnableDisablePolicyNotificationRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *EnableDisablePolicyNotificationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -453,8 +453,8 @@ func (*ListPoliciesResponse) ProtoMessage()    {}
 func (*ListPoliciesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{5}
 }
-func (m *ListPoliciesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListPoliciesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -520,8 +520,8 @@ func (*PostPolicyRequest) ProtoMessage()    {}
 func (*PostPolicyRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{6}
 }
-func (m *PostPolicyRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PostPolicyRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PostPolicyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -591,8 +591,8 @@ func (*PatchPolicyRequest) ProtoMessage()    {}
 func (*PatchPolicyRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{7}
 }
-func (m *PatchPolicyRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PatchPolicyRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PatchPolicyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -697,8 +697,8 @@ func (*ExportPoliciesRequest) ProtoMessage()    {}
 func (*ExportPoliciesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{8}
 }
-func (m *ExportPoliciesRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExportPoliciesRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExportPoliciesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -761,8 +761,8 @@ func (*PolicyError) ProtoMessage()    {}
 func (*PolicyError) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{9}
 }
-func (m *PolicyError) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyError) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -822,8 +822,8 @@ func (*ExportPolicyError) ProtoMessage()    {}
 func (*ExportPolicyError) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{10}
 }
-func (m *ExportPolicyError) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExportPolicyError) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExportPolicyError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -890,8 +890,8 @@ func (*ExportPoliciesErrorList) ProtoMessage()    {}
 func (*ExportPoliciesErrorList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{11}
 }
-func (m *ExportPoliciesErrorList) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExportPoliciesErrorList) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExportPoliciesErrorList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -956,8 +956,8 @@ func (*PolicyFromSearchRequest) ProtoMessage()    {}
 func (*PolicyFromSearchRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{12}
 }
-func (m *PolicyFromSearchRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyFromSearchRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyFromSearchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1016,8 +1016,8 @@ func (*ImportPoliciesMetadata) ProtoMessage()    {}
 func (*ImportPoliciesMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{13}
 }
-func (m *ImportPoliciesMetadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImportPoliciesMetadata) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImportPoliciesMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1077,8 +1077,8 @@ func (*ImportPoliciesRequest) ProtoMessage()    {}
 func (*ImportPoliciesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{14}
 }
-func (m *ImportPoliciesRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImportPoliciesRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImportPoliciesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1156,8 +1156,8 @@ func (*ImportPolicyError) ProtoMessage()    {}
 func (*ImportPolicyError) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{15}
 }
-func (m *ImportPolicyError) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImportPolicyError) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImportPolicyError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1292,8 +1292,8 @@ func (*ImportPolicyResponse) ProtoMessage()    {}
 func (*ImportPolicyResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{16}
 }
-func (m *ImportPolicyResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImportPolicyResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImportPolicyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1374,8 +1374,8 @@ func (*ImportPoliciesResponse) ProtoMessage()    {}
 func (*ImportPoliciesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{17}
 }
-func (m *ImportPoliciesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImportPoliciesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImportPoliciesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1449,8 +1449,8 @@ func (*PolicyFromSearchResponse) ProtoMessage()    {}
 func (*PolicyFromSearchResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{18}
 }
-func (m *PolicyFromSearchResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyFromSearchResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyFromSearchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1529,8 +1529,8 @@ func (*GetPolicyMitreVectorsRequest) ProtoMessage()    {}
 func (*GetPolicyMitreVectorsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{19}
 }
-func (m *GetPolicyMitreVectorsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetPolicyMitreVectorsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetPolicyMitreVectorsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1598,8 +1598,8 @@ func (*GetPolicyMitreVectorsRequest_Options) ProtoMessage()    {}
 func (*GetPolicyMitreVectorsRequest_Options) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{19, 0}
 }
-func (m *GetPolicyMitreVectorsRequest_Options) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetPolicyMitreVectorsRequest_Options) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetPolicyMitreVectorsRequest_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1659,8 +1659,8 @@ func (*GetPolicyMitreVectorsResponse) ProtoMessage()    {}
 func (*GetPolicyMitreVectorsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aa86ef403afe5233, []int{20}
 }
-func (m *GetPolicyMitreVectorsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetPolicyMitreVectorsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetPolicyMitreVectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -4098,7 +4098,7 @@ func sovPolicyService(x uint64) (n int) {
 func sozPolicyService(x uint64) (n int) {
 	return sovPolicyService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DryRunResponse) Unmarshal(dAtA []byte) error {
+func (m *DryRunResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4157,7 +4157,7 @@ func (m *DryRunResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &DryRunResponse_Alert{})
-			if err := m.Alerts[len(m.Alerts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Alerts[len(m.Alerts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4183,7 +4183,7 @@ func (m *DryRunResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DryRunResponse_Alert) Unmarshal(dAtA []byte) error {
+func (m *DryRunResponse_Alert) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4298,7 +4298,7 @@ func (m *DryRunResponse_Alert) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *JobId) Unmarshal(dAtA []byte) error {
+func (m *JobId) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4381,7 +4381,7 @@ func (m *JobId) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DryRunJobStatusResponse) Unmarshal(dAtA []byte) error {
+func (m *DryRunJobStatusResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4462,7 +4462,7 @@ func (m *DryRunJobStatusResponse) Unmarshal(dAtA []byte) error {
 			if m.Result == nil {
 				m.Result = &DryRunResponse{}
 			}
-			if err := m.Result.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Result.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4488,7 +4488,7 @@ func (m *DryRunJobStatusResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyCategoriesResponse) Unmarshal(dAtA []byte) error {
+func (m *PolicyCategoriesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4571,7 +4571,7 @@ func (m *PolicyCategoriesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EnableDisablePolicyNotificationRequest) Unmarshal(dAtA []byte) error {
+func (m *EnableDisablePolicyNotificationRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4706,7 +4706,7 @@ func (m *EnableDisablePolicyNotificationRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListPoliciesResponse) Unmarshal(dAtA []byte) error {
+func (m *ListPoliciesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4765,7 +4765,7 @@ func (m *ListPoliciesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &storage.ListPolicy{})
-			if err := m.Policies[len(m.Policies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policies[len(m.Policies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4791,7 +4791,7 @@ func (m *ListPoliciesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PostPolicyRequest) Unmarshal(dAtA []byte) error {
+func (m *PostPolicyRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4852,7 +4852,7 @@ func (m *PostPolicyRequest) Unmarshal(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.Policy{}
 			}
-			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4898,7 +4898,7 @@ func (m *PostPolicyRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PatchPolicyRequest) Unmarshal(dAtA []byte) error {
+func (m *PatchPolicyRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5002,7 +5002,7 @@ func (m *PatchPolicyRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPoliciesRequest) Unmarshal(dAtA []byte) error {
+func (m *ExportPoliciesRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5085,7 +5085,7 @@ func (m *ExportPoliciesRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyError) Unmarshal(dAtA []byte) error {
+func (m *PolicyError) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5168,7 +5168,7 @@ func (m *PolicyError) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPolicyError) Unmarshal(dAtA []byte) error {
+func (m *ExportPolicyError) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5261,7 +5261,7 @@ func (m *ExportPolicyError) Unmarshal(dAtA []byte) error {
 			if m.Error == nil {
 				m.Error = &PolicyError{}
 			}
-			if err := m.Error.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Error.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5287,7 +5287,7 @@ func (m *ExportPolicyError) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPoliciesErrorList) Unmarshal(dAtA []byte) error {
+func (m *ExportPoliciesErrorList) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5346,7 +5346,7 @@ func (m *ExportPoliciesErrorList) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Errors = append(m.Errors, &ExportPolicyError{})
-			if err := m.Errors[len(m.Errors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Errors[len(m.Errors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5372,7 +5372,7 @@ func (m *ExportPoliciesErrorList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyFromSearchRequest) Unmarshal(dAtA []byte) error {
+func (m *PolicyFromSearchRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5455,7 +5455,7 @@ func (m *PolicyFromSearchRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImportPoliciesMetadata) Unmarshal(dAtA []byte) error {
+func (m *ImportPoliciesMetadata) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5526,7 +5526,7 @@ func (m *ImportPoliciesMetadata) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImportPoliciesRequest) Unmarshal(dAtA []byte) error {
+func (m *ImportPoliciesRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5587,7 +5587,7 @@ func (m *ImportPoliciesRequest) Unmarshal(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &ImportPoliciesMetadata{}
 			}
-			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5621,7 +5621,7 @@ func (m *ImportPoliciesRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &storage.Policy{})
-			if err := m.Policies[len(m.Policies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policies[len(m.Policies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5647,7 +5647,7 @@ func (m *ImportPoliciesRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImportPolicyError) Unmarshal(dAtA []byte) error {
+func (m *ImportPolicyError) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5826,7 +5826,7 @@ func (m *ImportPolicyError) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImportPolicyResponse) Unmarshal(dAtA []byte) error {
+func (m *ImportPolicyResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5907,7 +5907,7 @@ func (m *ImportPolicyResponse) Unmarshal(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.Policy{}
 			}
-			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5941,7 +5941,7 @@ func (m *ImportPolicyResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Errors = append(m.Errors, &ImportPolicyError{})
-			if err := m.Errors[len(m.Errors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Errors[len(m.Errors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5967,7 +5967,7 @@ func (m *ImportPolicyResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImportPoliciesResponse) Unmarshal(dAtA []byte) error {
+func (m *ImportPoliciesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6026,7 +6026,7 @@ func (m *ImportPoliciesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Responses = append(m.Responses, &ImportPolicyResponse{})
-			if err := m.Responses[len(m.Responses)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Responses[len(m.Responses)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6072,7 +6072,7 @@ func (m *ImportPoliciesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyFromSearchResponse) Unmarshal(dAtA []byte) error {
+func (m *PolicyFromSearchResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6133,7 +6133,7 @@ func (m *PolicyFromSearchResponse) Unmarshal(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.Policy{}
 			}
-			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6211,7 +6211,7 @@ func (m *PolicyFromSearchResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetPolicyMitreVectorsRequest) Unmarshal(dAtA []byte) error {
+func (m *GetPolicyMitreVectorsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6304,7 +6304,7 @@ func (m *GetPolicyMitreVectorsRequest) Unmarshal(dAtA []byte) error {
 			if m.Options == nil {
 				m.Options = &GetPolicyMitreVectorsRequest_Options{}
 			}
-			if err := m.Options.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Options.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6330,7 +6330,7 @@ func (m *GetPolicyMitreVectorsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetPolicyMitreVectorsRequest_Options) Unmarshal(dAtA []byte) error {
+func (m *GetPolicyMitreVectorsRequest_Options) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6401,7 +6401,7 @@ func (m *GetPolicyMitreVectorsRequest_Options) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetPolicyMitreVectorsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetPolicyMitreVectorsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6462,7 +6462,7 @@ func (m *GetPolicyMitreVectorsResponse) Unmarshal(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.Policy{}
 			}
-			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6496,7 +6496,7 @@ func (m *GetPolicyMitreVectorsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Vectors = append(m.Vectors, &storage.MitreAttackVector{})
-			if err := m.Vectors[len(m.Vectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Vectors[len(m.Vectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

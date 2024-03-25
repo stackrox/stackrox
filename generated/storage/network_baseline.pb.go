@@ -43,8 +43,8 @@ func (*NetworkBaselineConnectionProperties) ProtoMessage()    {}
 func (*NetworkBaselineConnectionProperties) Descriptor() ([]byte, []int) {
 	return fileDescriptor_39bee8d8b4e8019b, []int{0}
 }
-func (m *NetworkBaselineConnectionProperties) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkBaselineConnectionProperties) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkBaselineConnectionProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -121,8 +121,8 @@ func (*NetworkBaselinePeer) ProtoMessage()    {}
 func (*NetworkBaselinePeer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_39bee8d8b4e8019b, []int{1}
 }
-func (m *NetworkBaselinePeer) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkBaselinePeer) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkBaselinePeer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -214,8 +214,8 @@ func (*NetworkBaseline) ProtoMessage()    {}
 func (*NetworkBaseline) Descriptor() ([]byte, []int) {
 	return fileDescriptor_39bee8d8b4e8019b, []int{2}
 }
-func (m *NetworkBaseline) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkBaseline) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkBaseline) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -677,7 +677,7 @@ func sovNetworkBaseline(x uint64) (n int) {
 func sozNetworkBaseline(x uint64) (n int) {
 	return sovNetworkBaseline(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkBaselineConnectionProperties) Unmarshal(dAtA []byte) error {
+func (m *NetworkBaselineConnectionProperties) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -786,7 +786,7 @@ func (m *NetworkBaselineConnectionProperties) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkBaselinePeer) Unmarshal(dAtA []byte) error {
+func (m *NetworkBaselinePeer) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -847,7 +847,7 @@ func (m *NetworkBaselinePeer) Unmarshal(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &NetworkEntity{}
 			}
-			if err := m.Entity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -881,7 +881,7 @@ func (m *NetworkBaselinePeer) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Properties = append(m.Properties, &NetworkBaselineConnectionProperties{})
-			if err := m.Properties[len(m.Properties)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Properties[len(m.Properties)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -907,7 +907,7 @@ func (m *NetworkBaselinePeer) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkBaseline) Unmarshal(dAtA []byte) error {
+func (m *NetworkBaseline) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1062,7 +1062,7 @@ func (m *NetworkBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Peers = append(m.Peers, &NetworkBaselinePeer{})
-			if err := m.Peers[len(m.Peers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Peers[len(m.Peers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1096,7 +1096,7 @@ func (m *NetworkBaseline) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ForbiddenPeers = append(m.ForbiddenPeers, &NetworkBaselinePeer{})
-			if err := m.ForbiddenPeers[len(m.ForbiddenPeers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ForbiddenPeers[len(m.ForbiddenPeers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -43,8 +43,8 @@ func (*NetworkConnectionInfo) ProtoMessage()    {}
 func (*NetworkConnectionInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d36d90689c926f7f, []int{0}
 }
-func (m *NetworkConnectionInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkConnectionInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkConnectionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -139,8 +139,8 @@ func (*NetworkConnection) ProtoMessage()    {}
 func (*NetworkConnection) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d36d90689c926f7f, []int{1}
 }
-func (m *NetworkConnection) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkConnection) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkConnection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -252,8 +252,8 @@ func (*NetworkEndpoint) ProtoMessage()    {}
 func (*NetworkEndpoint) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d36d90689c926f7f, []int{2}
 }
-func (m *NetworkEndpoint) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEndpoint) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEndpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -355,8 +355,8 @@ func (*NetworkAddress) ProtoMessage()    {}
 func (*NetworkAddress) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d36d90689c926f7f, []int{3}
 }
-func (m *NetworkAddress) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkAddress) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -893,7 +893,7 @@ func sovNetworkConnectionInfo(x uint64) (n int) {
 func sozNetworkConnectionInfo(x uint64) (n int) {
 	return sovNetworkConnectionInfo(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkConnectionInfo) Unmarshal(dAtA []byte) error {
+func (m *NetworkConnectionInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -952,7 +952,7 @@ func (m *NetworkConnectionInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedConnections = append(m.UpdatedConnections, &NetworkConnection{})
-			if err := m.UpdatedConnections[len(m.UpdatedConnections)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpdatedConnections[len(m.UpdatedConnections)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1022,7 +1022,7 @@ func (m *NetworkConnectionInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedEndpoints = append(m.UpdatedEndpoints, &NetworkEndpoint{})
-			if err := m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1048,7 +1048,7 @@ func (m *NetworkConnectionInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkConnection) Unmarshal(dAtA []byte) error {
+func (m *NetworkConnection) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1128,7 +1128,7 @@ func (m *NetworkConnection) Unmarshal(dAtA []byte) error {
 			if m.LocalAddress == nil {
 				m.LocalAddress = &NetworkAddress{}
 			}
-			if err := m.LocalAddress.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LocalAddress.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1164,7 +1164,7 @@ func (m *NetworkConnection) Unmarshal(dAtA []byte) error {
 			if m.RemoteAddress == nil {
 				m.RemoteAddress = &NetworkAddress{}
 			}
-			if err := m.RemoteAddress.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RemoteAddress.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1296,7 +1296,7 @@ func (m *NetworkConnection) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
+func (m *NetworkEndpoint) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1395,7 +1395,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 			if m.ListenAddress == nil {
 				m.ListenAddress = &NetworkAddress{}
 			}
-			if err := m.ListenAddress.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ListenAddress.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1499,7 +1499,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 			if m.Originator == nil {
 				m.Originator = &storage.NetworkProcessUniqueKey{}
 			}
-			if err := m.Originator.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Originator.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1525,7 +1525,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkAddress) Unmarshal(dAtA []byte) error {
+func (m *NetworkAddress) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

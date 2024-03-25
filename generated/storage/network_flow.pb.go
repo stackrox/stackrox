@@ -117,8 +117,8 @@ func (*NetworkFlow) ProtoMessage()    {}
 func (*NetworkFlow) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{0}
 }
-func (m *NetworkFlow) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkFlow) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkFlow) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -199,8 +199,8 @@ func (*NetworkFlowProperties) ProtoMessage()    {}
 func (*NetworkFlowProperties) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{1}
 }
-func (m *NetworkFlowProperties) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkFlowProperties) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkFlowProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -283,8 +283,8 @@ func (*NetworkEndpoint) ProtoMessage()    {}
 func (*NetworkEndpoint) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{2}
 }
-func (m *NetworkEndpoint) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEndpoint) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEndpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -354,8 +354,8 @@ func (*NetworkEndpointProperties) ProtoMessage()    {}
 func (*NetworkEndpointProperties) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{3}
 }
-func (m *NetworkEndpointProperties) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEndpointProperties) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEndpointProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -433,8 +433,8 @@ func (*NetworkEntity) ProtoMessage()    {}
 func (*NetworkEntity) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{4}
 }
-func (m *NetworkEntity) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEntity) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEntity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -502,8 +502,8 @@ func (*NetworkEntity_Scope) ProtoMessage()    {}
 func (*NetworkEntity_Scope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{4, 0}
 }
-func (m *NetworkEntity_Scope) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEntity_Scope) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEntity_Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -567,8 +567,8 @@ func (*NetworkEntityInfo) ProtoMessage()    {}
 func (*NetworkEntityInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{5}
 }
-func (m *NetworkEntityInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEntityInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEntityInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -706,8 +706,8 @@ func (*NetworkEntityInfo_Deployment) ProtoMessage()    {}
 func (*NetworkEntityInfo_Deployment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{5, 0}
 }
-func (m *NetworkEntityInfo_Deployment) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEntityInfo_Deployment) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEntityInfo_Deployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -797,8 +797,8 @@ func (*NetworkEntityInfo_Deployment_ListenPort) ProtoMessage()    {}
 func (*NetworkEntityInfo_Deployment_ListenPort) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{5, 0, 0}
 }
-func (m *NetworkEntityInfo_Deployment_ListenPort) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEntityInfo_Deployment_ListenPort) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEntityInfo_Deployment_ListenPort) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -870,8 +870,8 @@ func (*NetworkEntityInfo_ExternalSource) ProtoMessage()    {}
 func (*NetworkEntityInfo_ExternalSource) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a6317ef286eb605d, []int{5, 1}
 }
-func (m *NetworkEntityInfo_ExternalSource) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkEntityInfo_ExternalSource) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkEntityInfo_ExternalSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1877,7 +1877,7 @@ func sovNetworkFlow(x uint64) (n int) {
 func sozNetworkFlow(x uint64) (n int) {
 	return sovNetworkFlow(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkFlow) Unmarshal(dAtA []byte) error {
+func (m *NetworkFlow) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1938,7 +1938,7 @@ func (m *NetworkFlow) Unmarshal(dAtA []byte) error {
 			if m.Props == nil {
 				m.Props = &NetworkFlowProperties{}
 			}
-			if err := m.Props.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Props.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2032,7 +2032,7 @@ func (m *NetworkFlow) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkFlowProperties) Unmarshal(dAtA []byte) error {
+func (m *NetworkFlowProperties) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2093,7 +2093,7 @@ func (m *NetworkFlowProperties) Unmarshal(dAtA []byte) error {
 			if m.SrcEntity == nil {
 				m.SrcEntity = &NetworkEntityInfo{}
 			}
-			if err := m.SrcEntity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SrcEntity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2129,7 +2129,7 @@ func (m *NetworkFlowProperties) Unmarshal(dAtA []byte) error {
 			if m.DstEntity == nil {
 				m.DstEntity = &NetworkEntityInfo{}
 			}
-			if err := m.DstEntity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DstEntity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2193,7 +2193,7 @@ func (m *NetworkFlowProperties) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
+func (m *NetworkEndpoint) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2254,7 +2254,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 			if m.Props == nil {
 				m.Props = &NetworkEndpointProperties{}
 			}
-			if err := m.Props.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Props.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2316,7 +2316,7 @@ func (m *NetworkEndpoint) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEndpointProperties) Unmarshal(dAtA []byte) error {
+func (m *NetworkEndpointProperties) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2377,7 +2377,7 @@ func (m *NetworkEndpointProperties) Unmarshal(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &NetworkEntityInfo{}
 			}
-			if err := m.Entity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2441,7 +2441,7 @@ func (m *NetworkEndpointProperties) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEntity) Unmarshal(dAtA []byte) error {
+func (m *NetworkEntity) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2502,7 +2502,7 @@ func (m *NetworkEntity) Unmarshal(dAtA []byte) error {
 			if m.Info == nil {
 				m.Info = &NetworkEntityInfo{}
 			}
-			if err := m.Info.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Info.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2538,7 +2538,7 @@ func (m *NetworkEntity) Unmarshal(dAtA []byte) error {
 			if m.Scope == nil {
 				m.Scope = &NetworkEntity_Scope{}
 			}
-			if err := m.Scope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2564,7 +2564,7 @@ func (m *NetworkEntity) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEntity_Scope) Unmarshal(dAtA []byte) error {
+func (m *NetworkEntity_Scope) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2647,7 +2647,7 @@ func (m *NetworkEntity_Scope) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEntityInfo) Unmarshal(dAtA []byte) error {
+func (m *NetworkEntityInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2757,7 +2757,7 @@ func (m *NetworkEntityInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkEntityInfo_Deployment{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Desc = &NetworkEntityInfo_Deployment_{v}
@@ -2792,7 +2792,7 @@ func (m *NetworkEntityInfo) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkEntityInfo_ExternalSource{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Desc = &NetworkEntityInfo_ExternalSource_{v}
@@ -2819,7 +2819,7 @@ func (m *NetworkEntityInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEntityInfo_Deployment) Unmarshal(dAtA []byte) error {
+func (m *NetworkEntityInfo_Deployment) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2974,7 +2974,7 @@ func (m *NetworkEntityInfo_Deployment) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ListenPorts = append(m.ListenPorts, &NetworkEntityInfo_Deployment_ListenPort{})
-			if err := m.ListenPorts[len(m.ListenPorts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ListenPorts[len(m.ListenPorts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3000,7 +3000,7 @@ func (m *NetworkEntityInfo_Deployment) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEntityInfo_Deployment_ListenPort) Unmarshal(dAtA []byte) error {
+func (m *NetworkEntityInfo_Deployment_ListenPort) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3089,7 +3089,7 @@ func (m *NetworkEntityInfo_Deployment_ListenPort) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEntityInfo_ExternalSource) Unmarshal(dAtA []byte) error {
+func (m *NetworkEntityInfo_ExternalSource) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -42,8 +42,8 @@ func (*TimeRange) ProtoMessage()    {}
 func (*TimeRange) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4e7d8a93856728d1, []int{0}
 }
-func (m *TimeRange) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *TimeRange) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *TimeRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -114,8 +114,8 @@ func (*SecuredUnitsUsageResponse) ProtoMessage()    {}
 func (*SecuredUnitsUsageResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4e7d8a93856728d1, []int{1}
 }
-func (m *SecuredUnitsUsageResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SecuredUnitsUsageResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SecuredUnitsUsageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -187,8 +187,8 @@ func (*MaxSecuredUnitsUsageResponse) ProtoMessage()    {}
 func (*MaxSecuredUnitsUsageResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4e7d8a93856728d1, []int{2}
 }
-func (m *MaxSecuredUnitsUsageResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *MaxSecuredUnitsUsageResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *MaxSecuredUnitsUsageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -677,7 +677,7 @@ func sovAdministrationUsageService(x uint64) (n int) {
 func sozAdministrationUsageService(x uint64) (n int) {
 	return sovAdministrationUsageService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *TimeRange) Unmarshal(dAtA []byte) error {
+func (m *TimeRange) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -800,7 +800,7 @@ func (m *TimeRange) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecuredUnitsUsageResponse) Unmarshal(dAtA []byte) error {
+func (m *SecuredUnitsUsageResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -889,7 +889,7 @@ func (m *SecuredUnitsUsageResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MaxSecuredUnitsUsageResponse) Unmarshal(dAtA []byte) error {
+func (m *MaxSecuredUnitsUsageResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

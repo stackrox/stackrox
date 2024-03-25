@@ -73,8 +73,8 @@ func (*Schedule) ProtoMessage()    {}
 func (*Schedule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_50417c3585ef67fa, []int{0}
 }
-func (m *Schedule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -238,8 +238,8 @@ func (*Schedule_WeeklyInterval) ProtoMessage()    {}
 func (*Schedule_WeeklyInterval) Descriptor() ([]byte, []int) {
 	return fileDescriptor_50417c3585ef67fa, []int{0, 0}
 }
-func (m *Schedule_WeeklyInterval) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule_WeeklyInterval) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule_WeeklyInterval) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -299,8 +299,8 @@ func (*Schedule_DaysOfWeek) ProtoMessage()    {}
 func (*Schedule_DaysOfWeek) Descriptor() ([]byte, []int) {
 	return fileDescriptor_50417c3585ef67fa, []int{0, 1}
 }
-func (m *Schedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule_DaysOfWeek) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -364,8 +364,8 @@ func (*Schedule_DaysOfMonth) ProtoMessage()    {}
 func (*Schedule_DaysOfMonth) Descriptor() ([]byte, []int) {
 	return fileDescriptor_50417c3585ef67fa, []int{0, 2}
 }
-func (m *Schedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule_DaysOfMonth) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -821,7 +821,7 @@ func sovSchedule(x uint64) (n int) {
 func sozSchedule(x uint64) (n int) {
 	return sovSchedule(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Schedule) Unmarshal(dAtA []byte) error {
+func (m *Schedule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -937,7 +937,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Schedule_WeeklyInterval{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &Schedule_Weekly{v}
@@ -972,7 +972,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Schedule_DaysOfWeek{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &Schedule_DaysOfWeek_{v}
@@ -1007,7 +1007,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Schedule_DaysOfMonth{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &Schedule_DaysOfMonth_{v}
@@ -1034,7 +1034,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_WeeklyInterval) Unmarshal(dAtA []byte) error {
+func (m *Schedule_WeeklyInterval) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1104,7 +1104,7 @@ func (m *Schedule_WeeklyInterval) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
+func (m *Schedule_DaysOfWeek) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1231,7 +1231,7 @@ func (m *Schedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
+func (m *Schedule_DaysOfMonth) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

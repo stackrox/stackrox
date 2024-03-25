@@ -44,8 +44,8 @@ func (*SignalStreamMessage) ProtoMessage()    {}
 func (*SignalStreamMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2d317c19f583202f, []int{0}
 }
-func (m *SignalStreamMessage) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SignalStreamMessage) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SignalStreamMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -434,7 +434,7 @@ func sovSignalIservice(x uint64) (n int) {
 func sozSignalIservice(x uint64) (n int) {
 	return sovSignalIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SignalStreamMessage) Unmarshal(dAtA []byte) error {
+func (m *SignalStreamMessage) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -493,7 +493,7 @@ func (m *SignalStreamMessage) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CollectorRegisterRequest{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &SignalStreamMessage_CollectorRegisterRequest{v}
@@ -528,7 +528,7 @@ func (m *SignalStreamMessage) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &v1.Signal{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &SignalStreamMessage_Signal{v}

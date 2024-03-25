@@ -270,8 +270,8 @@ func (*ReportConfiguration) ProtoMessage()    {}
 func (*ReportConfiguration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{0}
 }
-func (m *ReportConfiguration) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportConfiguration) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -434,8 +434,8 @@ func (*VulnerabilityReportFilters) ProtoMessage()    {}
 func (*VulnerabilityReportFilters) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{1}
 }
-func (m *VulnerabilityReportFilters) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnerabilityReportFilters) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnerabilityReportFilters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -612,8 +612,8 @@ func (*ReportSchedule) ProtoMessage()    {}
 func (*ReportSchedule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{2}
 }
-func (m *ReportSchedule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportSchedule) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportSchedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -756,8 +756,8 @@ func (*ReportSchedule_DaysOfWeek) ProtoMessage()    {}
 func (*ReportSchedule_DaysOfWeek) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{2, 0}
 }
-func (m *ReportSchedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportSchedule_DaysOfWeek) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportSchedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -821,8 +821,8 @@ func (*ReportSchedule_DaysOfMonth) ProtoMessage()    {}
 func (*ReportSchedule_DaysOfMonth) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{2, 1}
 }
-func (m *ReportSchedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportSchedule_DaysOfMonth) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportSchedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -887,8 +887,8 @@ func (*ResourceScope) ProtoMessage()    {}
 func (*ResourceScope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{3}
 }
-func (m *ResourceScope) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ResourceScope) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ResourceScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -988,8 +988,8 @@ func (*CollectionReference) ProtoMessage()    {}
 func (*CollectionReference) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{4}
 }
-func (m *CollectionReference) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CollectionReference) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CollectionReference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1058,8 +1058,8 @@ func (*NotifierConfiguration) ProtoMessage()    {}
 func (*NotifierConfiguration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{5}
 }
-func (m *NotifierConfiguration) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NotifierConfiguration) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1168,8 +1168,8 @@ func (*EmailNotifierConfiguration) ProtoMessage()    {}
 func (*EmailNotifierConfiguration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{6}
 }
-func (m *EmailNotifierConfiguration) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *EmailNotifierConfiguration) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *EmailNotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1253,8 +1253,8 @@ func (*ListReportConfigurationsResponse) ProtoMessage()    {}
 func (*ListReportConfigurationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{7}
 }
-func (m *ListReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListReportConfigurationsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1319,8 +1319,8 @@ func (*CountReportConfigurationsResponse) ProtoMessage()    {}
 func (*CountReportConfigurationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{8}
 }
-func (m *CountReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CountReportConfigurationsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CountReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1380,8 +1380,8 @@ func (*GetReportHistoryRequest) ProtoMessage()    {}
 func (*GetReportHistoryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{9}
 }
-func (m *GetReportHistoryRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetReportHistoryRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetReportHistoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1448,8 +1448,8 @@ func (*ReportHistoryResponse) ProtoMessage()    {}
 func (*ReportHistoryResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{10}
 }
-func (m *ReportHistoryResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportHistoryResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportHistoryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1514,8 +1514,8 @@ func (*ReportStatusResponse) ProtoMessage()    {}
 func (*ReportStatusResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{11}
 }
-func (m *ReportStatusResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportStatusResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1576,8 +1576,8 @@ func (*CollectionSnapshot) ProtoMessage()    {}
 func (*CollectionSnapshot) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{12}
 }
-func (m *CollectionSnapshot) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CollectionSnapshot) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CollectionSnapshot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1655,8 +1655,8 @@ func (*ReportSnapshot) ProtoMessage()    {}
 func (*ReportSnapshot) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{13}
 }
-func (m *ReportSnapshot) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportSnapshot) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportSnapshot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1839,8 +1839,8 @@ func (*ReportStatus) ProtoMessage()    {}
 func (*ReportStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{14}
 }
-func (m *ReportStatus) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ReportStatus) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ReportStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1929,8 +1929,8 @@ func (*RunReportRequest) ProtoMessage()    {}
 func (*RunReportRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{15}
 }
-func (m *RunReportRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RunReportRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RunReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1997,8 +1997,8 @@ func (*RunReportResponse) ProtoMessage()    {}
 func (*RunReportResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{16}
 }
-func (m *RunReportResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RunReportResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RunReportResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2064,8 +2064,8 @@ func (*DeleteReportRequest) ProtoMessage()    {}
 func (*DeleteReportRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{17}
 }
-func (m *DeleteReportRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeleteReportRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeleteReportRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -4599,7 +4599,7 @@ func sovReportService(x uint64) (n int) {
 func sozReportService(x uint64) (n int) {
 	return sovReportService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
+func (m *ReportConfiguration) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4773,7 +4773,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &VulnerabilityReportFilters{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Filter = &ReportConfiguration_VulnReportFilters{v}
@@ -4810,7 +4810,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 			if m.Schedule == nil {
 				m.Schedule = &ReportSchedule{}
 			}
-			if err := m.Schedule.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Schedule.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4846,7 +4846,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 			if m.ResourceScope == nil {
 				m.ResourceScope = &ResourceScope{}
 			}
-			if err := m.ResourceScope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResourceScope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4880,7 +4880,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Notifiers = append(m.Notifiers, &NotifierConfiguration{})
-			if err := m.Notifiers[len(m.Notifiers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Notifiers[len(m.Notifiers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4906,7 +4906,7 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5191,7 +5191,7 @@ func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportSchedule) Unmarshal(dAtA []byte) error {
+func (m *ReportSchedule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5307,7 +5307,7 @@ func (m *ReportSchedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ReportSchedule_DaysOfWeek{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &ReportSchedule_DaysOfWeek_{v}
@@ -5342,7 +5342,7 @@ func (m *ReportSchedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ReportSchedule_DaysOfMonth{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &ReportSchedule_DaysOfMonth_{v}
@@ -5369,7 +5369,7 @@ func (m *ReportSchedule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportSchedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
+func (m *ReportSchedule_DaysOfWeek) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5496,7 +5496,7 @@ func (m *ReportSchedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportSchedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
+func (m *ReportSchedule_DaysOfMonth) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5623,7 +5623,7 @@ func (m *ReportSchedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ResourceScope) Unmarshal(dAtA []byte) error {
+func (m *ResourceScope) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5682,7 +5682,7 @@ func (m *ResourceScope) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CollectionReference{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.ScopeReference = &ResourceScope_CollectionScope{v}
@@ -5709,7 +5709,7 @@ func (m *ResourceScope) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectionReference) Unmarshal(dAtA []byte) error {
+func (m *CollectionReference) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5824,7 +5824,7 @@ func (m *CollectionReference) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NotifierConfiguration) Unmarshal(dAtA []byte) error {
+func (m *NotifierConfiguration) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5883,7 +5883,7 @@ func (m *NotifierConfiguration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &EmailNotifierConfiguration{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.NotifierConfig = &NotifierConfiguration_EmailConfig{v}
@@ -5942,7 +5942,7 @@ func (m *NotifierConfiguration) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EmailNotifierConfiguration) Unmarshal(dAtA []byte) error {
+func (m *EmailNotifierConfiguration) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6121,7 +6121,7 @@ func (m *EmailNotifierConfiguration) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListReportConfigurationsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6180,7 +6180,7 @@ func (m *ListReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ReportConfigs = append(m.ReportConfigs, &ReportConfiguration{})
-			if err := m.ReportConfigs[len(m.ReportConfigs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportConfigs[len(m.ReportConfigs)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6206,7 +6206,7 @@ func (m *ListReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
+func (m *CountReportConfigurationsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6276,7 +6276,7 @@ func (m *CountReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetReportHistoryRequest) Unmarshal(dAtA []byte) error {
+func (m *GetReportHistoryRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6369,7 +6369,7 @@ func (m *GetReportHistoryRequest) Unmarshal(dAtA []byte) error {
 			if m.ReportParamQuery == nil {
 				m.ReportParamQuery = &RawQuery{}
 			}
-			if err := m.ReportParamQuery.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportParamQuery.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6395,7 +6395,7 @@ func (m *GetReportHistoryRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportHistoryResponse) Unmarshal(dAtA []byte) error {
+func (m *ReportHistoryResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6454,7 +6454,7 @@ func (m *ReportHistoryResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ReportSnapshots = append(m.ReportSnapshots, &ReportSnapshot{})
-			if err := m.ReportSnapshots[len(m.ReportSnapshots)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportSnapshots[len(m.ReportSnapshots)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6480,7 +6480,7 @@ func (m *ReportHistoryResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportStatusResponse) Unmarshal(dAtA []byte) error {
+func (m *ReportStatusResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6541,7 +6541,7 @@ func (m *ReportStatusResponse) Unmarshal(dAtA []byte) error {
 			if m.Status == nil {
 				m.Status = &ReportStatus{}
 			}
-			if err := m.Status.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Status.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6567,7 +6567,7 @@ func (m *ReportStatusResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectionSnapshot) Unmarshal(dAtA []byte) error {
+func (m *CollectionSnapshot) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6682,7 +6682,7 @@ func (m *CollectionSnapshot) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
+func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6869,7 +6869,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &VulnerabilityReportFilters{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Filter = &ReportSnapshot_VulnReportFilters{v}
@@ -6906,7 +6906,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 			if m.CollectionSnapshot == nil {
 				m.CollectionSnapshot = &CollectionSnapshot{}
 			}
-			if err := m.CollectionSnapshot.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CollectionSnapshot.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6942,7 +6942,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 			if m.Schedule == nil {
 				m.Schedule = &ReportSchedule{}
 			}
-			if err := m.Schedule.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Schedule.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6978,7 +6978,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 			if m.ReportStatus == nil {
 				m.ReportStatus = &ReportStatus{}
 			}
-			if err := m.ReportStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReportStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7012,7 +7012,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Notifiers = append(m.Notifiers, &NotifierConfiguration{})
-			if err := m.Notifiers[len(m.Notifiers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Notifiers[len(m.Notifiers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7048,7 +7048,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &SlimUser{}
 			}
-			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.User.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7094,7 +7094,7 @@ func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReportStatus) Unmarshal(dAtA []byte) error {
+func (m *ReportStatus) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7270,7 +7270,7 @@ func (m *ReportStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RunReportRequest) Unmarshal(dAtA []byte) error {
+func (m *RunReportRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7372,7 +7372,7 @@ func (m *RunReportRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RunReportResponse) Unmarshal(dAtA []byte) error {
+func (m *RunReportResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7487,7 +7487,7 @@ func (m *RunReportResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteReportRequest) Unmarshal(dAtA []byte) error {
+func (m *DeleteReportRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

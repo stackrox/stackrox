@@ -40,8 +40,8 @@ func (*GetProcessesListeningOnPortsRequest) ProtoMessage()    {}
 func (*GetProcessesListeningOnPortsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d8bf40985da37317, []int{0}
 }
-func (m *GetProcessesListeningOnPortsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetProcessesListeningOnPortsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetProcessesListeningOnPortsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -100,8 +100,8 @@ func (*GetProcessesListeningOnPortsResponse) ProtoMessage()    {}
 func (*GetProcessesListeningOnPortsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d8bf40985da37317, []int{1}
 }
-func (m *GetProcessesListeningOnPortsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetProcessesListeningOnPortsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetProcessesListeningOnPortsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -395,7 +395,7 @@ func sovProcessListeningOnPortService(x uint64) (n int) {
 func sozProcessListeningOnPortService(x uint64) (n int) {
 	return sovProcessListeningOnPortService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetProcessesListeningOnPortsRequest) Unmarshal(dAtA []byte) error {
+func (m *GetProcessesListeningOnPortsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -478,7 +478,7 @@ func (m *GetProcessesListeningOnPortsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetProcessesListeningOnPortsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetProcessesListeningOnPortsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -537,7 +537,7 @@ func (m *GetProcessesListeningOnPortsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ListeningEndpoints = append(m.ListeningEndpoints, &storage.ProcessListeningOnPort{})
-			if err := m.ListeningEndpoints[len(m.ListeningEndpoints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ListeningEndpoints[len(m.ListeningEndpoints)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

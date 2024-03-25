@@ -36,8 +36,8 @@ func (*BaselineSync) ProtoMessage()    {}
 func (*BaselineSync) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb100b68bc4abe1f, []int{0}
 }
-func (m *BaselineSync) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *BaselineSync) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *BaselineSync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -187,7 +187,7 @@ func sovBaselineSync(x uint64) (n int) {
 func sozBaselineSync(x uint64) (n int) {
 	return sovBaselineSync(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *BaselineSync) Unmarshal(dAtA []byte) error {
+func (m *BaselineSync) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -246,7 +246,7 @@ func (m *BaselineSync) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if err := m.Baselines[len(m.Baselines)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Baselines[len(m.Baselines)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

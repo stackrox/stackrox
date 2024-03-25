@@ -47,8 +47,8 @@ func (*UpgradeCheckInFromUpgraderRequest) ProtoMessage()    {}
 func (*UpgradeCheckInFromUpgraderRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{0}
 }
-func (m *UpgradeCheckInFromUpgraderRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInFromUpgraderRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInFromUpgraderRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -135,8 +135,8 @@ func (*UpgradeCheckInFromUpgraderResponse) ProtoMessage()    {}
 func (*UpgradeCheckInFromUpgraderResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{1}
 }
-func (m *UpgradeCheckInFromUpgraderResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInFromUpgraderResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInFromUpgraderResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -201,8 +201,8 @@ func (*UpgradeCheckInFromSensorRequest) ProtoMessage()    {}
 func (*UpgradeCheckInFromSensorRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{2}
 }
-func (m *UpgradeCheckInFromSensorRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInFromSensorRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInFromSensorRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -362,8 +362,8 @@ func (*UpgradeCheckInFromSensorRequest_PodErrorCondition) ProtoMessage() {}
 func (*UpgradeCheckInFromSensorRequest_PodErrorCondition) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{2, 0}
 }
-func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -435,8 +435,8 @@ func (*UpgradeCheckInFromSensorRequest_UpgraderPodState) ProtoMessage() {}
 func (*UpgradeCheckInFromSensorRequest_UpgraderPodState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{2, 1}
 }
-func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -514,8 +514,8 @@ func (*UpgradeCheckInFromSensorRequest_UpgraderPodStates) ProtoMessage() {}
 func (*UpgradeCheckInFromSensorRequest_UpgraderPodStates) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{2, 2}
 }
-func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -581,8 +581,8 @@ func (*UpgradeCheckInResponseDetails) ProtoMessage()    {}
 func (*UpgradeCheckInResponseDetails) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{3}
 }
-func (m *UpgradeCheckInResponseDetails) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInResponseDetails) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInResponseDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -637,8 +637,8 @@ func (*UpgradeCheckInResponseDetails_NoUpgradeInProgress) ProtoMessage() {}
 func (*UpgradeCheckInResponseDetails_NoUpgradeInProgress) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c23719610e3bb4d, []int{3, 0}
 }
-func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1447,7 +1447,7 @@ func sovSensorUpgradeCtrlIservice(x uint64) (n int) {
 func sozSensorUpgradeCtrlIservice(x uint64) (n int) {
 	return sovSensorUpgradeCtrlIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *UpgradeCheckInFromUpgraderRequest) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInFromUpgraderRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1658,7 +1658,7 @@ func (m *UpgradeCheckInFromUpgraderRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpgradeCheckInFromUpgraderResponse) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInFromUpgraderResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1741,7 +1741,7 @@ func (m *UpgradeCheckInFromUpgraderResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpgradeCheckInFromSensorRequest) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInFromSensorRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1864,7 +1864,7 @@ func (m *UpgradeCheckInFromSensorRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &UpgradeCheckInFromSensorRequest_UpgraderPodStates{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.State = &UpgradeCheckInFromSensorRequest_PodStates{v}
@@ -1944,7 +1944,7 @@ func (m *UpgradeCheckInFromSensorRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2047,7 +2047,7 @@ func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) Unmarshal(dAtA []byt
 	}
 	return nil
 }
-func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2160,7 +2160,7 @@ func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) Unmarshal(dAtA []byte
 			if m.Error == nil {
 				m.Error = &UpgradeCheckInFromSensorRequest_PodErrorCondition{}
 			}
-			if err := m.Error.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Error.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2186,7 +2186,7 @@ func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) Unmarshal(dAtA []byte
 	}
 	return nil
 }
-func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2245,7 +2245,7 @@ func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) Unmarshal(dAtA []byt
 				return io.ErrUnexpectedEOF
 			}
 			m.States = append(m.States, &UpgradeCheckInFromSensorRequest_UpgraderPodState{})
-			if err := m.States[len(m.States)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.States[len(m.States)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2271,7 +2271,7 @@ func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) Unmarshal(dAtA []byt
 	}
 	return nil
 }
-func (m *UpgradeCheckInResponseDetails) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInResponseDetails) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2322,7 +2322,7 @@ func (m *UpgradeCheckInResponseDetails) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) Unmarshal(dAtA []byte) error {
+func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

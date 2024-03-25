@@ -40,8 +40,8 @@ func (*Group) ProtoMessage()    {}
 func (*Group) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a11bdb88fa982b85, []int{0}
 }
-func (m *Group) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Group) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Group) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -121,8 +121,8 @@ func (*GroupProperties) ProtoMessage()    {}
 func (*GroupProperties) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a11bdb88fa982b85, []int{1}
 }
-func (m *GroupProperties) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GroupProperties) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GroupProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -407,7 +407,7 @@ func sovGroup(x uint64) (n int) {
 func sozGroup(x uint64) (n int) {
 	return sovGroup(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Group) Unmarshal(dAtA []byte) error {
+func (m *Group) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -468,7 +468,7 @@ func (m *Group) Unmarshal(dAtA []byte) error {
 			if m.Props == nil {
 				m.Props = &GroupProperties{}
 			}
-			if err := m.Props.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Props.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -526,7 +526,7 @@ func (m *Group) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GroupProperties) Unmarshal(dAtA []byte) error {
+func (m *GroupProperties) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -715,7 +715,7 @@ func (m *GroupProperties) Unmarshal(dAtA []byte) error {
 			if m.Traits == nil {
 				m.Traits = &Traits{}
 			}
-			if err := m.Traits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

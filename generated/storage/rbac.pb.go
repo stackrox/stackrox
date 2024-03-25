@@ -118,8 +118,8 @@ func (*K8SRole) ProtoMessage()    {}
 func (*K8SRole) Descriptor() ([]byte, []int) {
 	return fileDescriptor_385316e6bc10731c, []int{0}
 }
-func (m *K8SRole) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *K8SRole) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *K8SRole) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -266,8 +266,8 @@ func (*PolicyRule) ProtoMessage()    {}
 func (*PolicyRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_385316e6bc10731c, []int{1}
 }
-func (m *PolicyRule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PolicyRule) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PolicyRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -389,8 +389,8 @@ func (*K8SRoleBinding) ProtoMessage()    {}
 func (*K8SRoleBinding) Descriptor() ([]byte, []int) {
 	return fileDescriptor_385316e6bc10731c, []int{2}
 }
-func (m *K8SRoleBinding) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *K8SRoleBinding) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *K8SRoleBinding) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -545,8 +545,8 @@ func (*Subject) ProtoMessage()    {}
 func (*Subject) Descriptor() ([]byte, []int) {
 	return fileDescriptor_385316e6bc10731c, []int{3}
 }
-func (m *Subject) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Subject) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Subject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1331,7 +1331,7 @@ func sovRbac(x uint64) (n int) {
 func sozRbac(x uint64) (n int) {
 	return sovRbac(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *K8SRole) Unmarshal(dAtA []byte) error {
+func (m *K8SRole) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1860,7 +1860,7 @@ func (m *K8SRole) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Rules = append(m.Rules, &PolicyRule{})
-			if err := m.Rules[len(m.Rules)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Rules[len(m.Rules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1886,7 +1886,7 @@ func (m *K8SRole) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyRule) Unmarshal(dAtA []byte) error {
+func (m *PolicyRule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2097,7 +2097,7 @@ func (m *PolicyRule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *K8SRoleBinding) Unmarshal(dAtA []byte) error {
+func (m *K8SRoleBinding) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2626,7 +2626,7 @@ func (m *K8SRoleBinding) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Subjects = append(m.Subjects, &Subject{})
-			if err := m.Subjects[len(m.Subjects)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Subjects[len(m.Subjects)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2684,7 +2684,7 @@ func (m *K8SRoleBinding) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Subject) Unmarshal(dAtA []byte) error {
+func (m *Subject) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

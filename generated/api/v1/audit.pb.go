@@ -129,8 +129,8 @@ func (*Audit) ProtoMessage()    {}
 func (*Audit) Descriptor() ([]byte, []int) {
 	return fileDescriptor_368902fc694e7fed, []int{0}
 }
-func (m *Audit) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Audit) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Audit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -188,8 +188,8 @@ func (*Audit_Message) ProtoMessage()    {}
 func (*Audit_Message) Descriptor() ([]byte, []int) {
 	return fileDescriptor_368902fc694e7fed, []int{0, 0}
 }
-func (m *Audit_Message) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Audit_Message) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Audit_Message) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -317,8 +317,8 @@ func (*Audit_Message_Request) ProtoMessage()    {}
 func (*Audit_Message_Request) Descriptor() ([]byte, []int) {
 	return fileDescriptor_368902fc694e7fed, []int{0, 0, 0}
 }
-func (m *Audit_Message_Request) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Audit_Message_Request) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Audit_Message_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -414,8 +414,8 @@ func (*Audit_Message_Request_SourceHeaders) ProtoMessage()    {}
 func (*Audit_Message_Request_SourceHeaders) Descriptor() ([]byte, []int) {
 	return fileDescriptor_368902fc694e7fed, []int{0, 0, 0, 0}
 }
-func (m *Audit_Message_Request_SourceHeaders) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Audit_Message_Request_SourceHeaders) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Audit_Message_Request_SourceHeaders) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -886,7 +886,7 @@ func sovAudit(x uint64) (n int) {
 func sozAudit(x uint64) (n int) {
 	return sovAudit(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Audit) Unmarshal(dAtA []byte) error {
+func (m *Audit) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -937,7 +937,7 @@ func (m *Audit) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Audit_Message) Unmarshal(dAtA []byte) error {
+func (m *Audit_Message) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1085,7 +1085,7 @@ func (m *Audit_Message) Unmarshal(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &storage.UserInfo{}
 			}
-			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.User.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1121,7 +1121,7 @@ func (m *Audit_Message) Unmarshal(dAtA []byte) error {
 			if m.Request == nil {
 				m.Request = &Audit_Message_Request{}
 			}
-			if err := m.Request.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Request.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1185,7 +1185,7 @@ func (m *Audit_Message) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Audit_Message_Request) Unmarshal(dAtA []byte) error {
+func (m *Audit_Message_Request) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1346,7 +1346,7 @@ func (m *Audit_Message_Request) Unmarshal(dAtA []byte) error {
 			if m.SourceHeaders == nil {
 				m.SourceHeaders = &Audit_Message_Request_SourceHeaders{}
 			}
-			if err := m.SourceHeaders.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SourceHeaders.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1404,7 +1404,7 @@ func (m *Audit_Message_Request) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Audit_Message_Request_SourceHeaders) Unmarshal(dAtA []byte) error {
+func (m *Audit_Message_Request_SourceHeaders) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -43,8 +43,8 @@ func (*SuppressCVERequest) ProtoMessage()    {}
 func (*SuppressCVERequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_257c48a61826e50f, []int{0}
 }
-func (m *SuppressCVERequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SuppressCVERequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SuppressCVERequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -117,8 +117,8 @@ func (*UnsuppressCVERequest) ProtoMessage()    {}
 func (*UnsuppressCVERequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_257c48a61826e50f, []int{1}
 }
-func (m *UnsuppressCVERequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UnsuppressCVERequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UnsuppressCVERequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -690,7 +690,7 @@ func sovCveService(x uint64) (n int) {
 func sozCveService(x uint64) (n int) {
 	return sovCveService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SuppressCVERequest) Unmarshal(dAtA []byte) error {
+func (m *SuppressCVERequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -809,7 +809,7 @@ func (m *SuppressCVERequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnsuppressCVERequest) Unmarshal(dAtA []byte) error {
+func (m *UnsuppressCVERequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

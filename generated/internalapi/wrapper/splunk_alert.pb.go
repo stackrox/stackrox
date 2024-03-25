@@ -40,8 +40,8 @@ func (*SplunkEvent) ProtoMessage()    {}
 func (*SplunkEvent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_02f414752d1f1082, []int{0}
 }
-func (m *SplunkEvent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SplunkEvent) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SplunkEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -220,7 +220,7 @@ func sovSplunkAlert(x uint64) (n int) {
 func sozSplunkAlert(x uint64) (n int) {
 	return sovSplunkAlert(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SplunkEvent) Unmarshal(dAtA []byte) error {
+func (m *SplunkEvent) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

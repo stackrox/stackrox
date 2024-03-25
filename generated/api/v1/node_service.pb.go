@@ -40,8 +40,8 @@ func (*ListNodesRequest) ProtoMessage()    {}
 func (*ListNodesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bc3747bf289f5ecf, []int{0}
 }
-func (m *ListNodesRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListNodesRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListNodesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -100,8 +100,8 @@ func (*ListNodesResponse) ProtoMessage()    {}
 func (*ListNodesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bc3747bf289f5ecf, []int{1}
 }
-func (m *ListNodesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListNodesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListNodesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -167,8 +167,8 @@ func (*GetNodeRequest) ProtoMessage()    {}
 func (*GetNodeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bc3747bf289f5ecf, []int{2}
 }
-func (m *GetNodeRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetNodeRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -235,8 +235,8 @@ func (*ExportNodeRequest) ProtoMessage()    {}
 func (*ExportNodeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bc3747bf289f5ecf, []int{3}
 }
-func (m *ExportNodeRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExportNodeRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExportNodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -302,8 +302,8 @@ func (*ExportNodeResponse) ProtoMessage()    {}
 func (*ExportNodeResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bc3747bf289f5ecf, []int{4}
 }
-func (m *ExportNodeResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ExportNodeResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ExportNodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -870,7 +870,7 @@ func sovNodeService(x uint64) (n int) {
 func sozNodeService(x uint64) (n int) {
 	return sovNodeService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListNodesRequest) Unmarshal(dAtA []byte) error {
+func (m *ListNodesRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -953,7 +953,7 @@ func (m *ListNodesRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListNodesResponse) Unmarshal(dAtA []byte) error {
+func (m *ListNodesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1012,7 +1012,7 @@ func (m *ListNodesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nodes = append(m.Nodes, &storage.Node{})
-			if err := m.Nodes[len(m.Nodes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nodes[len(m.Nodes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1038,7 +1038,7 @@ func (m *ListNodesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNodeRequest) Unmarshal(dAtA []byte) error {
+func (m *GetNodeRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1153,7 +1153,7 @@ func (m *GetNodeRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportNodeRequest) Unmarshal(dAtA []byte) error {
+func (m *ExportNodeRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1255,7 +1255,7 @@ func (m *ExportNodeRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportNodeResponse) Unmarshal(dAtA []byte) error {
+func (m *ExportNodeResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1316,7 +1316,7 @@ func (m *ExportNodeResponse) Unmarshal(dAtA []byte) error {
 			if m.Node == nil {
 				m.Node = &storage.Node{}
 			}
-			if err := m.Node.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Node.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

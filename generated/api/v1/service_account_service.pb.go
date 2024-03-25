@@ -42,8 +42,8 @@ func (*ListServiceAccountResponse) ProtoMessage()    {}
 func (*ListServiceAccountResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7ddf1e7223a6d354, []int{0}
 }
-func (m *ListServiceAccountResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListServiceAccountResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListServiceAccountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -113,8 +113,8 @@ func (*ServiceAccountAndRoles) ProtoMessage()    {}
 func (*ServiceAccountAndRoles) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7ddf1e7223a6d354, []int{1}
 }
-func (m *ServiceAccountAndRoles) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ServiceAccountAndRoles) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ServiceAccountAndRoles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -215,8 +215,8 @@ func (*GetServiceAccountResponse) ProtoMessage()    {}
 func (*GetServiceAccountResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7ddf1e7223a6d354, []int{2}
 }
-func (m *GetServiceAccountResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetServiceAccountResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetServiceAccountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -281,8 +281,8 @@ func (*SADeploymentRelationship) ProtoMessage()    {}
 func (*SADeploymentRelationship) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7ddf1e7223a6d354, []int{3}
 }
-func (m *SADeploymentRelationship) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *SADeploymentRelationship) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *SADeploymentRelationship) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -805,7 +805,7 @@ func sovServiceAccountService(x uint64) (n int) {
 func sozServiceAccountService(x uint64) (n int) {
 	return sovServiceAccountService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListServiceAccountResponse) Unmarshal(dAtA []byte) error {
+func (m *ListServiceAccountResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -864,7 +864,7 @@ func (m *ListServiceAccountResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SaAndRoles = append(m.SaAndRoles, &ServiceAccountAndRoles{})
-			if err := m.SaAndRoles[len(m.SaAndRoles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SaAndRoles[len(m.SaAndRoles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -890,7 +890,7 @@ func (m *ListServiceAccountResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ServiceAccountAndRoles) Unmarshal(dAtA []byte) error {
+func (m *ServiceAccountAndRoles) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -951,7 +951,7 @@ func (m *ServiceAccountAndRoles) Unmarshal(dAtA []byte) error {
 			if m.ServiceAccount == nil {
 				m.ServiceAccount = &storage.ServiceAccount{}
 			}
-			if err := m.ServiceAccount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ServiceAccount.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -985,7 +985,7 @@ func (m *ServiceAccountAndRoles) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterRoles = append(m.ClusterRoles, &storage.K8SRole{})
-			if err := m.ClusterRoles[len(m.ClusterRoles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ClusterRoles[len(m.ClusterRoles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1019,7 +1019,7 @@ func (m *ServiceAccountAndRoles) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScopedRoles = append(m.ScopedRoles, &ScopedRoles{})
-			if err := m.ScopedRoles[len(m.ScopedRoles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScopedRoles[len(m.ScopedRoles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1053,7 +1053,7 @@ func (m *ServiceAccountAndRoles) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentRelationships = append(m.DeploymentRelationships, &SADeploymentRelationship{})
-			if err := m.DeploymentRelationships[len(m.DeploymentRelationships)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DeploymentRelationships[len(m.DeploymentRelationships)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1079,7 +1079,7 @@ func (m *ServiceAccountAndRoles) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetServiceAccountResponse) Unmarshal(dAtA []byte) error {
+func (m *GetServiceAccountResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1140,7 +1140,7 @@ func (m *GetServiceAccountResponse) Unmarshal(dAtA []byte) error {
 			if m.SaAndRole == nil {
 				m.SaAndRole = &ServiceAccountAndRoles{}
 			}
-			if err := m.SaAndRole.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SaAndRole.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1166,7 +1166,7 @@ func (m *GetServiceAccountResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SADeploymentRelationship) Unmarshal(dAtA []byte) error {
+func (m *SADeploymentRelationship) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

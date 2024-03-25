@@ -66,8 +66,8 @@ func (*GetIntegrationHealthResponse) ProtoMessage()    {}
 func (*GetIntegrationHealthResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c40da462e693fb8, []int{0}
 }
-func (m *GetIntegrationHealthResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetIntegrationHealthResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetIntegrationHealthResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -132,8 +132,8 @@ func (*VulnDefinitionsInfoRequest) ProtoMessage()    {}
 func (*VulnDefinitionsInfoRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c40da462e693fb8, []int{1}
 }
-func (m *VulnDefinitionsInfoRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnDefinitionsInfoRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnDefinitionsInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -192,8 +192,8 @@ func (*VulnDefinitionsInfo) ProtoMessage()    {}
 func (*VulnDefinitionsInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c40da462e693fb8, []int{2}
 }
-func (m *VulnDefinitionsInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *VulnDefinitionsInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *VulnDefinitionsInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -691,7 +691,7 @@ func sovIntegrationHealthService(x uint64) (n int) {
 func sozIntegrationHealthService(x uint64) (n int) {
 	return sovIntegrationHealthService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetIntegrationHealthResponse) Unmarshal(dAtA []byte) error {
+func (m *GetIntegrationHealthResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -750,7 +750,7 @@ func (m *GetIntegrationHealthResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.IntegrationHealth = append(m.IntegrationHealth, &storage.IntegrationHealth{})
-			if err := m.IntegrationHealth[len(m.IntegrationHealth)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.IntegrationHealth[len(m.IntegrationHealth)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -776,7 +776,7 @@ func (m *GetIntegrationHealthResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnDefinitionsInfoRequest) Unmarshal(dAtA []byte) error {
+func (m *VulnDefinitionsInfoRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -846,7 +846,7 @@ func (m *VulnDefinitionsInfoRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnDefinitionsInfo) Unmarshal(dAtA []byte) error {
+func (m *VulnDefinitionsInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

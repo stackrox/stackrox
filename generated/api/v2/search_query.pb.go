@@ -42,8 +42,8 @@ func (*RawQuery) ProtoMessage()    {}
 func (*RawQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1c361d25c2071008, []int{0}
 }
-func (m *RawQuery) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *RawQuery) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *RawQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -201,7 +201,7 @@ func sovSearchQuery(x uint64) (n int) {
 func sozSearchQuery(x uint64) (n int) {
 	return sovSearchQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *RawQuery) Unmarshal(dAtA []byte) error {
+func (m *RawQuery) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -294,7 +294,7 @@ func (m *RawQuery) Unmarshal(dAtA []byte) error {
 			if m.Pagination == nil {
 				m.Pagination = &Pagination{}
 			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

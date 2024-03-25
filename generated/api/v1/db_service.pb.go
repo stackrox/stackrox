@@ -111,8 +111,8 @@ func (*DBRestoreRequestHeader) ProtoMessage()    {}
 func (*DBRestoreRequestHeader) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{0}
 }
-func (m *DBRestoreRequestHeader) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBRestoreRequestHeader) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBRestoreRequestHeader) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -192,8 +192,8 @@ func (*DBRestoreRequestHeader_LocalFileInfo) ProtoMessage()    {}
 func (*DBRestoreRequestHeader_LocalFileInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{0, 0}
 }
-func (m *DBRestoreRequestHeader_LocalFileInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBRestoreRequestHeader_LocalFileInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBRestoreRequestHeader_LocalFileInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -268,8 +268,8 @@ func (*DBRestoreProcessMetadata) ProtoMessage()    {}
 func (*DBRestoreProcessMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{1}
 }
-func (m *DBRestoreProcessMetadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBRestoreProcessMetadata) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBRestoreProcessMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -357,8 +357,8 @@ func (*DBRestoreProcessStatus) ProtoMessage()    {}
 func (*DBRestoreProcessStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{2}
 }
-func (m *DBRestoreProcessStatus) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBRestoreProcessStatus) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBRestoreProcessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -461,8 +461,8 @@ func (*DBRestoreProcessStatus_ResumeInfo) ProtoMessage()    {}
 func (*DBRestoreProcessStatus_ResumeInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{2, 0}
 }
-func (m *DBRestoreProcessStatus_ResumeInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBRestoreProcessStatus_ResumeInfo) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBRestoreProcessStatus_ResumeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -524,8 +524,8 @@ func (*DBExportManifest) ProtoMessage()    {}
 func (*DBExportManifest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{3}
 }
-func (m *DBExportManifest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBExportManifest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBExportManifest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -598,8 +598,8 @@ func (*DBExportManifest_File) ProtoMessage()    {}
 func (*DBExportManifest_File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{3, 0}
 }
-func (m *DBExportManifest_File) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBExportManifest_File) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBExportManifest_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -688,8 +688,8 @@ func (*DBExportFormat) ProtoMessage()    {}
 func (*DBExportFormat) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{4}
 }
-func (m *DBExportFormat) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBExportFormat) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBExportFormat) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -762,8 +762,8 @@ func (*DBExportFormat_File) ProtoMessage()    {}
 func (*DBExportFormat_File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{4, 0}
 }
-func (m *DBExportFormat_File) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DBExportFormat_File) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DBExportFormat_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -830,8 +830,8 @@ func (*GetDBExportCapabilitiesResponse) ProtoMessage()    {}
 func (*GetDBExportCapabilitiesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{5}
 }
-func (m *GetDBExportCapabilitiesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetDBExportCapabilitiesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetDBExportCapabilitiesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -907,8 +907,8 @@ func (*GetActiveDBRestoreProcessResponse) ProtoMessage()    {}
 func (*GetActiveDBRestoreProcessResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{6}
 }
-func (m *GetActiveDBRestoreProcessResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetActiveDBRestoreProcessResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetActiveDBRestoreProcessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -969,8 +969,8 @@ func (*InterruptDBRestoreProcessRequest) ProtoMessage()    {}
 func (*InterruptDBRestoreProcessRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{7}
 }
-func (m *InterruptDBRestoreProcessRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *InterruptDBRestoreProcessRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *InterruptDBRestoreProcessRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1036,8 +1036,8 @@ func (*InterruptDBRestoreProcessResponse) ProtoMessage()    {}
 func (*InterruptDBRestoreProcessResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2ae290324bc1c2e8, []int{8}
 }
-func (m *InterruptDBRestoreProcessResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *InterruptDBRestoreProcessResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *InterruptDBRestoreProcessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2312,7 +2312,7 @@ func sovDbService(x uint64) (n int) {
 func sozDbService(x uint64) (n int) {
 	return sovDbService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DBRestoreRequestHeader) Unmarshal(dAtA []byte) error {
+func (m *DBRestoreRequestHeader) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2405,7 +2405,7 @@ func (m *DBRestoreRequestHeader) Unmarshal(dAtA []byte) error {
 			if m.Manifest == nil {
 				m.Manifest = &DBExportManifest{}
 			}
-			if err := m.Manifest.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Manifest.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2441,7 +2441,7 @@ func (m *DBRestoreRequestHeader) Unmarshal(dAtA []byte) error {
 			if m.LocalFile == nil {
 				m.LocalFile = &DBRestoreRequestHeader_LocalFileInfo{}
 			}
-			if err := m.LocalFile.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LocalFile.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2467,7 +2467,7 @@ func (m *DBRestoreRequestHeader) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBRestoreRequestHeader_LocalFileInfo) Unmarshal(dAtA []byte) error {
+func (m *DBRestoreRequestHeader_LocalFileInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2569,7 +2569,7 @@ func (m *DBRestoreRequestHeader_LocalFileInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBRestoreProcessMetadata) Unmarshal(dAtA []byte) error {
+func (m *DBRestoreProcessMetadata) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2662,7 +2662,7 @@ func (m *DBRestoreProcessMetadata) Unmarshal(dAtA []byte) error {
 			if m.Header == nil {
 				m.Header = &DBRestoreRequestHeader{}
 			}
-			if err := m.Header.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Header.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2756,7 +2756,7 @@ func (m *DBRestoreProcessMetadata) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBRestoreProcessStatus) Unmarshal(dAtA []byte) error {
+func (m *DBRestoreProcessStatus) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2817,7 +2817,7 @@ func (m *DBRestoreProcessStatus) Unmarshal(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &DBRestoreProcessMetadata{}
 			}
-			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2904,7 +2904,7 @@ func (m *DBRestoreProcessStatus) Unmarshal(dAtA []byte) error {
 			if m.ResumeInfo == nil {
 				m.ResumeInfo = &DBRestoreProcessStatus_ResumeInfo{}
 			}
-			if err := m.ResumeInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResumeInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3000,7 +3000,7 @@ func (m *DBRestoreProcessStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBRestoreProcessStatus_ResumeInfo) Unmarshal(dAtA []byte) error {
+func (m *DBRestoreProcessStatus_ResumeInfo) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3070,7 +3070,7 @@ func (m *DBRestoreProcessStatus_ResumeInfo) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBExportManifest) Unmarshal(dAtA []byte) error {
+func (m *DBExportManifest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3129,7 +3129,7 @@ func (m *DBExportManifest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Files = append(m.Files, &DBExportManifest_File{})
-			if err := m.Files[len(m.Files)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Files[len(m.Files)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3155,7 +3155,7 @@ func (m *DBExportManifest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBExportManifest_File) Unmarshal(dAtA []byte) error {
+func (m *DBExportManifest_File) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3305,7 +3305,7 @@ func (m *DBExportManifest_File) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBExportFormat) Unmarshal(dAtA []byte) error {
+func (m *DBExportFormat) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3396,7 +3396,7 @@ func (m *DBExportFormat) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Files = append(m.Files, &DBExportFormat_File{})
-			if err := m.Files[len(m.Files)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Files[len(m.Files)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3422,7 +3422,7 @@ func (m *DBExportFormat) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DBExportFormat_File) Unmarshal(dAtA []byte) error {
+func (m *DBExportFormat_File) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3525,7 +3525,7 @@ func (m *DBExportFormat_File) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetDBExportCapabilitiesResponse) Unmarshal(dAtA []byte) error {
+func (m *GetDBExportCapabilitiesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3584,7 +3584,7 @@ func (m *GetDBExportCapabilitiesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Formats = append(m.Formats, &DBExportFormat{})
-			if err := m.Formats[len(m.Formats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Formats[len(m.Formats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3679,7 +3679,7 @@ func (m *GetDBExportCapabilitiesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetActiveDBRestoreProcessResponse) Unmarshal(dAtA []byte) error {
+func (m *GetActiveDBRestoreProcessResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3740,7 +3740,7 @@ func (m *GetActiveDBRestoreProcessResponse) Unmarshal(dAtA []byte) error {
 			if m.ActiveStatus == nil {
 				m.ActiveStatus = &DBRestoreProcessStatus{}
 			}
-			if err := m.ActiveStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ActiveStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3766,7 +3766,7 @@ func (m *GetActiveDBRestoreProcessResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InterruptDBRestoreProcessRequest) Unmarshal(dAtA []byte) error {
+func (m *InterruptDBRestoreProcessRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3881,7 +3881,7 @@ func (m *InterruptDBRestoreProcessRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InterruptDBRestoreProcessResponse) Unmarshal(dAtA []byte) error {
+func (m *InterruptDBRestoreProcessResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3942,7 +3942,7 @@ func (m *InterruptDBRestoreProcessResponse) Unmarshal(dAtA []byte) error {
 			if m.ResumeInfo == nil {
 				m.ResumeInfo = &DBRestoreProcessStatus_ResumeInfo{}
 			}
-			if err := m.ResumeInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResumeInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

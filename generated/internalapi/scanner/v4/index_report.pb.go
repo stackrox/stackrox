@@ -39,8 +39,8 @@ func (*IndexReport) ProtoMessage()    {}
 func (*IndexReport) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a3455143a5a0b61, []int{0}
 }
-func (m *IndexReport) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *IndexReport) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *IndexReport) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -260,7 +260,7 @@ func sovIndexReport(x uint64) (n int) {
 func sozIndexReport(x uint64) (n int) {
 	return sovIndexReport(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *IndexReport) Unmarshal(dAtA []byte) error {
+func (m *IndexReport) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -437,7 +437,7 @@ func (m *IndexReport) Unmarshal(dAtA []byte) error {
 			if m.Contents == nil {
 				m.Contents = &Contents{}
 			}
-			if err := m.Contents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Contents.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

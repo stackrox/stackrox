@@ -69,8 +69,8 @@ func (*Permission) ProtoMessage()    {}
 func (*Permission) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{0}
 }
-func (m *Permission) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Permission) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Permission) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -136,8 +136,8 @@ func (*GetRolesResponse) ProtoMessage()    {}
 func (*GetRolesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{1}
 }
-func (m *GetRolesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetRolesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetRolesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -204,8 +204,8 @@ func (*GetPermissionsResponse) ProtoMessage()    {}
 func (*GetPermissionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{2}
 }
-func (m *GetPermissionsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetPermissionsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -270,8 +270,8 @@ func (*GetResourcesResponse) ProtoMessage()    {}
 func (*GetResourcesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{3}
 }
-func (m *GetResourcesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetResourcesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetResourcesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -334,8 +334,8 @@ func (*ListPermissionSetsResponse) ProtoMessage()    {}
 func (*ListPermissionSetsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{4}
 }
-func (m *ListPermissionSetsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListPermissionSetsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListPermissionSetsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -400,8 +400,8 @@ func (*ListSimpleAccessScopesResponse) ProtoMessage()    {}
 func (*ListSimpleAccessScopesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{5}
 }
-func (m *ListSimpleAccessScopesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListSimpleAccessScopesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListSimpleAccessScopesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -469,8 +469,8 @@ func (*ScopeObject) ProtoMessage()    {}
 func (*ScopeObject) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{6}
 }
-func (m *ScopeObject) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ScopeObject) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ScopeObject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -536,8 +536,8 @@ func (*GetClustersForPermissionsResponse) ProtoMessage()    {}
 func (*GetClustersForPermissionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{7}
 }
-func (m *GetClustersForPermissionsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetClustersForPermissionsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetClustersForPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -606,8 +606,8 @@ func (*GetNamespacesForClusterAndPermissionsResponse) ProtoMessage() {}
 func (*GetNamespacesForClusterAndPermissionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{8}
 }
-func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetNamespacesForClusterAndPermissionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -673,8 +673,8 @@ func (*ComputeEffectiveAccessScopeRequest) ProtoMessage()    {}
 func (*ComputeEffectiveAccessScopeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{9}
 }
-func (m *ComputeEffectiveAccessScopeRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComputeEffectiveAccessScopeRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComputeEffectiveAccessScopeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -750,8 +750,8 @@ func (*ComputeEffectiveAccessScopeRequest_Payload) ProtoMessage() {}
 func (*ComputeEffectiveAccessScopeRequest_Payload) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{9, 0}
 }
-func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComputeEffectiveAccessScopeRequest_Payload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -854,8 +854,8 @@ func (*CreateRoleRequest) ProtoMessage()    {}
 func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{10}
 }
-func (m *CreateRoleRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CreateRoleRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CreateRoleRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -923,8 +923,8 @@ func (*GetClustersForPermissionsRequest) ProtoMessage()    {}
 func (*GetClustersForPermissionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{11}
 }
-func (m *GetClustersForPermissionsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetClustersForPermissionsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetClustersForPermissionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1000,8 +1000,8 @@ func (*GetNamespaceForClusterAndPermissionsRequest) ProtoMessage() {}
 func (*GetNamespaceForClusterAndPermissionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f2751be16bbd500c, []int{12}
 }
-func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetNamespaceForClusterAndPermissionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2939,7 +2939,7 @@ func sovRoleService(x uint64) (n int) {
 func sozRoleService(x uint64) (n int) {
 	return sovRoleService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Permission) Unmarshal(dAtA []byte) error {
+func (m *Permission) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3041,7 +3041,7 @@ func (m *Permission) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetRolesResponse) Unmarshal(dAtA []byte) error {
+func (m *GetRolesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3100,7 +3100,7 @@ func (m *GetRolesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.Role{})
-			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Roles[len(m.Roles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3126,7 +3126,7 @@ func (m *GetRolesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetPermissionsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetPermissionsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3290,7 +3290,7 @@ func (m *GetPermissionsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetResourcesResponse) Unmarshal(dAtA []byte) error {
+func (m *GetResourcesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3373,7 +3373,7 @@ func (m *GetResourcesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListPermissionSetsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListPermissionSetsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3432,7 +3432,7 @@ func (m *ListPermissionSetsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PermissionSets = append(m.PermissionSets, &storage.PermissionSet{})
-			if err := m.PermissionSets[len(m.PermissionSets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PermissionSets[len(m.PermissionSets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3458,7 +3458,7 @@ func (m *ListPermissionSetsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListSimpleAccessScopesResponse) Unmarshal(dAtA []byte) error {
+func (m *ListSimpleAccessScopesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3517,7 +3517,7 @@ func (m *ListSimpleAccessScopesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AccessScopes = append(m.AccessScopes, &storage.SimpleAccessScope{})
-			if err := m.AccessScopes[len(m.AccessScopes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AccessScopes[len(m.AccessScopes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3543,7 +3543,7 @@ func (m *ListSimpleAccessScopesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScopeObject) Unmarshal(dAtA []byte) error {
+func (m *ScopeObject) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3658,7 +3658,7 @@ func (m *ScopeObject) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetClustersForPermissionsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetClustersForPermissionsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3717,7 +3717,7 @@ func (m *GetClustersForPermissionsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &ScopeObject{})
-			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Clusters[len(m.Clusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3743,7 +3743,7 @@ func (m *GetClustersForPermissionsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNamespacesForClusterAndPermissionsResponse) Unmarshal(dAtA []byte) error {
+func (m *GetNamespacesForClusterAndPermissionsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3802,7 +3802,7 @@ func (m *GetNamespacesForClusterAndPermissionsResponse) Unmarshal(dAtA []byte) e
 				return io.ErrUnexpectedEOF
 			}
 			m.Namespaces = append(m.Namespaces, &ScopeObject{})
-			if err := m.Namespaces[len(m.Namespaces)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Namespaces[len(m.Namespaces)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3828,7 +3828,7 @@ func (m *GetNamespacesForClusterAndPermissionsResponse) Unmarshal(dAtA []byte) e
 	}
 	return nil
 }
-func (m *ComputeEffectiveAccessScopeRequest) Unmarshal(dAtA []byte) error {
+func (m *ComputeEffectiveAccessScopeRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3908,7 +3908,7 @@ func (m *ComputeEffectiveAccessScopeRequest) Unmarshal(dAtA []byte) error {
 			if m.AccessScope == nil {
 				m.AccessScope = &ComputeEffectiveAccessScopeRequest_Payload{}
 			}
-			if err := m.AccessScope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AccessScope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3934,7 +3934,7 @@ func (m *ComputeEffectiveAccessScopeRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComputeEffectiveAccessScopeRequest_Payload) Unmarshal(dAtA []byte) error {
+func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3993,7 +3993,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) Unmarshal(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.SimpleAccessScope_Rules{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.RulesOpt = &ComputeEffectiveAccessScopeRequest_Payload_SimpleRules{v}
@@ -4020,7 +4020,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) Unmarshal(dAtA []byte) erro
 	}
 	return nil
 }
-func (m *CreateRoleRequest) Unmarshal(dAtA []byte) error {
+func (m *CreateRoleRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4113,7 +4113,7 @@ func (m *CreateRoleRequest) Unmarshal(dAtA []byte) error {
 			if m.Role == nil {
 				m.Role = &storage.Role{}
 			}
-			if err := m.Role.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Role.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4139,7 +4139,7 @@ func (m *CreateRoleRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetClustersForPermissionsRequest) Unmarshal(dAtA []byte) error {
+func (m *GetClustersForPermissionsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4200,7 +4200,7 @@ func (m *GetClustersForPermissionsRequest) Unmarshal(dAtA []byte) error {
 			if m.Pagination == nil {
 				m.Pagination = &Pagination{}
 			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4258,7 +4258,7 @@ func (m *GetClustersForPermissionsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNamespaceForClusterAndPermissionsRequest) Unmarshal(dAtA []byte) error {
+func (m *GetNamespaceForClusterAndPermissionsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

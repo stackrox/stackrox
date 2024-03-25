@@ -71,8 +71,8 @@ func (*CloudSource) ProtoMessage()    {}
 func (*CloudSource) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d0f224372f8cbe44, []int{0}
 }
-func (m *CloudSource) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CloudSource) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CloudSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -229,8 +229,8 @@ func (*CloudSource_Credentials) ProtoMessage()    {}
 func (*CloudSource_Credentials) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d0f224372f8cbe44, []int{0, 0}
 }
-func (m *CloudSource_Credentials) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CloudSource_Credentials) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CloudSource_Credentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -289,8 +289,8 @@ func (*PaladinCloudConfig) ProtoMessage()    {}
 func (*PaladinCloudConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d0f224372f8cbe44, []int{1}
 }
-func (m *PaladinCloudConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *PaladinCloudConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *PaladinCloudConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -349,8 +349,8 @@ func (*OCMConfig) ProtoMessage()    {}
 func (*OCMConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d0f224372f8cbe44, []int{2}
 }
-func (m *OCMConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *OCMConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *OCMConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -779,7 +779,7 @@ func sovCloudSource(x uint64) (n int) {
 func sozCloudSource(x uint64) (n int) {
 	return sovCloudSource(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *CloudSource) Unmarshal(dAtA []byte) error {
+func (m *CloudSource) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -923,7 +923,7 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 			if m.Credentials == nil {
 				m.Credentials = &CloudSource_Credentials{}
 			}
-			if err := m.Credentials.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Credentials.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -977,7 +977,7 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &PaladinCloudConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &CloudSource_PaladinCloud{v}
@@ -1012,7 +1012,7 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &OCMConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &CloudSource_Ocm{v}
@@ -1039,7 +1039,7 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CloudSource_Credentials) Unmarshal(dAtA []byte) error {
+func (m *CloudSource_Credentials) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1122,7 +1122,7 @@ func (m *CloudSource_Credentials) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PaladinCloudConfig) Unmarshal(dAtA []byte) error {
+func (m *PaladinCloudConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1205,7 +1205,7 @@ func (m *PaladinCloudConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *OCMConfig) Unmarshal(dAtA []byte) error {
+func (m *OCMConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -84,8 +84,8 @@ func (*ComplianceScanCluster) ProtoMessage()    {}
 func (*ComplianceScanCluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{0}
 }
-func (m *ComplianceScanCluster) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceScanCluster) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceScanCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -162,8 +162,8 @@ func (*ComplianceCheckResult) ProtoMessage()    {}
 func (*ComplianceCheckResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{1}
 }
-func (m *ComplianceCheckResult) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceCheckResult) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceCheckResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -305,8 +305,8 @@ func (*ComplianceCheckResult_ClusterCheckStatus) ProtoMessage()    {}
 func (*ComplianceCheckResult_ClusterCheckStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{1, 0}
 }
-func (m *ComplianceCheckResult_ClusterCheckStatus) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceCheckResult_ClusterCheckStatus) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceCheckResult_ClusterCheckStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -392,8 +392,8 @@ func (*ComplianceScanResult) ProtoMessage()    {}
 func (*ComplianceScanResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{2}
 }
-func (m *ComplianceScanResult) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceScanResult) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceScanResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -481,8 +481,8 @@ func (*ComplianceCheckStatusCount) ProtoMessage()    {}
 func (*ComplianceCheckStatusCount) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{3}
 }
-func (m *ComplianceCheckStatusCount) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceCheckStatusCount) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceCheckStatusCount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -552,8 +552,8 @@ func (*ComplianceScanStatsShim) ProtoMessage()    {}
 func (*ComplianceScanStatsShim) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{4}
 }
-func (m *ComplianceScanStatsShim) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceScanStatsShim) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceScanStatsShim) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -643,8 +643,8 @@ func (*ComplianceScanResultsOverview) ProtoMessage()    {}
 func (*ComplianceScanResultsOverview) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{5}
 }
-func (m *ComplianceScanResultsOverview) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceScanResultsOverview) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceScanResultsOverview) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -730,8 +730,8 @@ func (*ComplianceProfileScanStats) ProtoMessage()    {}
 func (*ComplianceProfileScanStats) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{6}
 }
-func (m *ComplianceProfileScanStats) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceProfileScanStats) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceProfileScanStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -805,8 +805,8 @@ func (*ComplianceClusterScanStats) ProtoMessage()    {}
 func (*ComplianceClusterScanStats) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{7}
 }
-func (m *ComplianceClusterScanStats) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceClusterScanStats) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceClusterScanStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -877,8 +877,8 @@ func (*ComplianceClusterOverallStats) ProtoMessage()    {}
 func (*ComplianceClusterOverallStats) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{8}
 }
-func (m *ComplianceClusterOverallStats) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceClusterOverallStats) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceClusterOverallStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -967,8 +967,8 @@ func (*ListComplianceScanResultsOverviewResponse) ProtoMessage() {}
 func (*ListComplianceScanResultsOverviewResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{9}
 }
-func (m *ListComplianceScanResultsOverviewResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListComplianceScanResultsOverviewResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListComplianceScanResultsOverviewResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1036,8 +1036,8 @@ func (*ListComplianceProfileScanStatsResponse) ProtoMessage()    {}
 func (*ListComplianceProfileScanStatsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{10}
 }
-func (m *ListComplianceProfileScanStatsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListComplianceProfileScanStatsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListComplianceProfileScanStatsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1105,8 +1105,8 @@ func (*ListComplianceClusterScanStatsResponse) ProtoMessage()    {}
 func (*ListComplianceClusterScanStatsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{11}
 }
-func (m *ListComplianceClusterScanStatsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListComplianceClusterScanStatsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListComplianceClusterScanStatsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1172,8 +1172,8 @@ func (*ListComplianceScanResultsResponse) ProtoMessage()    {}
 func (*ListComplianceScanResultsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{12}
 }
-func (m *ListComplianceScanResultsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListComplianceScanResultsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListComplianceScanResultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1243,8 +1243,8 @@ func (*ListComplianceClusterOverallStatsResponse) ProtoMessage() {}
 func (*ListComplianceClusterOverallStatsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{13}
 }
-func (m *ListComplianceClusterOverallStatsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListComplianceClusterOverallStatsResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListComplianceClusterOverallStatsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1310,8 +1310,8 @@ func (*CountComplianceScanResults) ProtoMessage()    {}
 func (*CountComplianceScanResults) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{14}
 }
-func (m *CountComplianceScanResults) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CountComplianceScanResults) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CountComplianceScanResults) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1371,8 +1371,8 @@ func (*ComplianceScanResultsRequest) ProtoMessage()    {}
 func (*ComplianceScanResultsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{15}
 }
-func (m *ComplianceScanResultsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceScanResultsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceScanResultsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1440,8 +1440,8 @@ func (*ComplianceProfileResultsRequest) ProtoMessage()    {}
 func (*ComplianceProfileResultsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fb98f7f6563d14bb, []int{16}
 }
-func (m *ComplianceProfileResultsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ComplianceProfileResultsRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ComplianceProfileResultsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3493,7 +3493,7 @@ func sovComplianceResultsService(x uint64) (n int) {
 func sozComplianceResultsService(x uint64) (n int) {
 	return sovComplianceResultsService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ComplianceScanCluster) Unmarshal(dAtA []byte) error {
+func (m *ComplianceScanCluster) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3608,7 +3608,7 @@ func (m *ComplianceScanCluster) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceCheckResult) Unmarshal(dAtA []byte) error {
+func (m *ComplianceCheckResult) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3731,7 +3731,7 @@ func (m *ComplianceCheckResult) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &ComplianceCheckResult_ClusterCheckStatus{})
-			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Clusters[len(m.Clusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3981,7 +3981,7 @@ func (m *ComplianceCheckResult) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceCheckResult_ClusterCheckStatus) Unmarshal(dAtA []byte) error {
+func (m *ComplianceCheckResult_ClusterCheckStatus) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4042,7 +4042,7 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Unmarshal(dAtA []byte) error 
 			if m.Cluster == nil {
 				m.Cluster = &ComplianceScanCluster{}
 			}
-			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4155,7 +4155,7 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Unmarshal(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *ComplianceScanResult) Unmarshal(dAtA []byte) error {
+func (m *ComplianceScanResult) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4278,7 +4278,7 @@ func (m *ComplianceScanResult) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CheckResults = append(m.CheckResults, &ComplianceCheckResult{})
-			if err := m.CheckResults[len(m.CheckResults)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CheckResults[len(m.CheckResults)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4336,7 +4336,7 @@ func (m *ComplianceScanResult) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceCheckStatusCount) Unmarshal(dAtA []byte) error {
+func (m *ComplianceCheckStatusCount) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4425,7 +4425,7 @@ func (m *ComplianceCheckStatusCount) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceScanStatsShim) Unmarshal(dAtA []byte) error {
+func (m *ComplianceScanStatsShim) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4516,7 +4516,7 @@ func (m *ComplianceScanStatsShim) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CheckStats = append(m.CheckStats, &ComplianceCheckStatusCount{})
-			if err := m.CheckStats[len(m.CheckStats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CheckStats[len(m.CheckStats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4610,7 +4610,7 @@ func (m *ComplianceScanStatsShim) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceScanResultsOverview) Unmarshal(dAtA []byte) error {
+func (m *ComplianceScanResultsOverview) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4671,7 +4671,7 @@ func (m *ComplianceScanResultsOverview) Unmarshal(dAtA []byte) error {
 			if m.ScanStats == nil {
 				m.ScanStats = &ComplianceScanStatsShim{}
 			}
-			if err := m.ScanStats.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanStats.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4737,7 +4737,7 @@ func (m *ComplianceScanResultsOverview) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Cluster = append(m.Cluster, &ComplianceScanCluster{})
-			if err := m.Cluster[len(m.Cluster)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster[len(m.Cluster)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4763,7 +4763,7 @@ func (m *ComplianceScanResultsOverview) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceProfileScanStats) Unmarshal(dAtA []byte) error {
+func (m *ComplianceProfileScanStats) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4822,7 +4822,7 @@ func (m *ComplianceProfileScanStats) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CheckStats = append(m.CheckStats, &ComplianceCheckStatusCount{})
-			if err := m.CheckStats[len(m.CheckStats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CheckStats[len(m.CheckStats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4880,7 +4880,7 @@ func (m *ComplianceProfileScanStats) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceClusterScanStats) Unmarshal(dAtA []byte) error {
+func (m *ComplianceClusterScanStats) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4941,7 +4941,7 @@ func (m *ComplianceClusterScanStats) Unmarshal(dAtA []byte) error {
 			if m.ScanStats == nil {
 				m.ScanStats = &ComplianceScanStatsShim{}
 			}
-			if err := m.ScanStats.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanStats.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4977,7 +4977,7 @@ func (m *ComplianceClusterScanStats) Unmarshal(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &ComplianceScanCluster{}
 			}
-			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5003,7 +5003,7 @@ func (m *ComplianceClusterScanStats) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceClusterOverallStats) Unmarshal(dAtA []byte) error {
+func (m *ComplianceClusterOverallStats) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5064,7 +5064,7 @@ func (m *ComplianceClusterOverallStats) Unmarshal(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &ComplianceScanCluster{}
 			}
-			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5098,7 +5098,7 @@ func (m *ComplianceClusterOverallStats) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CheckStats = append(m.CheckStats, &ComplianceCheckStatusCount{})
-			if err := m.CheckStats[len(m.CheckStats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CheckStats[len(m.CheckStats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5156,7 +5156,7 @@ func (m *ComplianceClusterOverallStats) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListComplianceScanResultsOverviewResponse) Unmarshal(dAtA []byte) error {
+func (m *ListComplianceScanResultsOverviewResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5215,7 +5215,7 @@ func (m *ListComplianceScanResultsOverviewResponse) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			m.ScanOverviews = append(m.ScanOverviews, &ComplianceScanResultsOverview{})
-			if err := m.ScanOverviews[len(m.ScanOverviews)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanOverviews[len(m.ScanOverviews)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5241,7 +5241,7 @@ func (m *ListComplianceScanResultsOverviewResponse) Unmarshal(dAtA []byte) error
 	}
 	return nil
 }
-func (m *ListComplianceProfileScanStatsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListComplianceProfileScanStatsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5300,7 +5300,7 @@ func (m *ListComplianceProfileScanStatsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScanStats = append(m.ScanStats, &ComplianceProfileScanStats{})
-			if err := m.ScanStats[len(m.ScanStats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanStats[len(m.ScanStats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5326,7 +5326,7 @@ func (m *ListComplianceProfileScanStatsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListComplianceClusterScanStatsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListComplianceClusterScanStatsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5385,7 +5385,7 @@ func (m *ListComplianceClusterScanStatsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScanStats = append(m.ScanStats, &ComplianceClusterScanStats{})
-			if err := m.ScanStats[len(m.ScanStats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanStats[len(m.ScanStats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5411,7 +5411,7 @@ func (m *ListComplianceClusterScanStatsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListComplianceScanResultsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListComplianceScanResultsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5470,7 +5470,7 @@ func (m *ListComplianceScanResultsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScanResults = append(m.ScanResults, &ComplianceScanResult{})
-			if err := m.ScanResults[len(m.ScanResults)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanResults[len(m.ScanResults)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5496,7 +5496,7 @@ func (m *ListComplianceScanResultsResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListComplianceClusterOverallStatsResponse) Unmarshal(dAtA []byte) error {
+func (m *ListComplianceClusterOverallStatsResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5555,7 +5555,7 @@ func (m *ListComplianceClusterOverallStatsResponse) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			m.ScanStats = append(m.ScanStats, &ComplianceClusterOverallStats{})
-			if err := m.ScanStats[len(m.ScanStats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScanStats[len(m.ScanStats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5581,7 +5581,7 @@ func (m *ListComplianceClusterOverallStatsResponse) Unmarshal(dAtA []byte) error
 	}
 	return nil
 }
-func (m *CountComplianceScanResults) Unmarshal(dAtA []byte) error {
+func (m *CountComplianceScanResults) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5651,7 +5651,7 @@ func (m *CountComplianceScanResults) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceScanResultsRequest) Unmarshal(dAtA []byte) error {
+func (m *ComplianceScanResultsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5744,7 +5744,7 @@ func (m *ComplianceScanResultsRequest) Unmarshal(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5770,7 +5770,7 @@ func (m *ComplianceScanResultsRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceProfileResultsRequest) Unmarshal(dAtA []byte) error {
+func (m *ComplianceProfileResultsRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5863,7 +5863,7 @@ func (m *ComplianceProfileResultsRequest) Unmarshal(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

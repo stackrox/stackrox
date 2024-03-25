@@ -87,8 +87,8 @@ func (*ImageIntegration) ProtoMessage()    {}
 func (*ImageIntegration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{0}
 }
-func (m *ImageIntegration) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageIntegration) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -448,8 +448,8 @@ func (*ImageIntegration_Source) ProtoMessage()    {}
 func (*ImageIntegration_Source) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{0, 0}
 }
-func (m *ImageIntegration_Source) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageIntegration_Source) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageIntegration_Source) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -524,8 +524,8 @@ func (*IBMRegistryConfig) ProtoMessage()    {}
 func (*IBMRegistryConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{1}
 }
-func (m *IBMRegistryConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *IBMRegistryConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *IBMRegistryConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -596,8 +596,8 @@ func (*QuayConfig) ProtoMessage()    {}
 func (*QuayConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{2}
 }
-func (m *QuayConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QuayConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QuayConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -682,8 +682,8 @@ func (*QuayConfig_RobotAccount) ProtoMessage()    {}
 func (*QuayConfig_RobotAccount) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{2, 0}
 }
-func (m *QuayConfig_RobotAccount) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *QuayConfig_RobotAccount) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *QuayConfig_RobotAccount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -750,8 +750,8 @@ func (*ClairConfig) ProtoMessage()    {}
 func (*ClairConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{3}
 }
-func (m *ClairConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ClairConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ClairConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -818,8 +818,8 @@ func (*ClairV4Config) ProtoMessage()    {}
 func (*ClairV4Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{4}
 }
-func (m *ClairV4Config) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ClairV4Config) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ClairV4Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -887,8 +887,8 @@ func (*ClairifyConfig) ProtoMessage()    {}
 func (*ClairifyConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{5}
 }
-func (m *ClairifyConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ClairifyConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ClairifyConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -965,8 +965,8 @@ func (*DockerConfig) ProtoMessage()    {}
 func (*DockerConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{6}
 }
-func (m *DockerConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DockerConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DockerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1057,8 +1057,8 @@ func (*ECRConfig) ProtoMessage()    {}
 func (*ECRConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{7}
 }
-func (m *ECRConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ECRConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ECRConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1186,8 +1186,8 @@ func (*ECRConfig_AuthorizationData) ProtoMessage()    {}
 func (*ECRConfig_AuthorizationData) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{7, 0}
 }
-func (m *ECRConfig_AuthorizationData) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ECRConfig_AuthorizationData) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ECRConfig_AuthorizationData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1265,8 +1265,8 @@ func (*GoogleConfig) ProtoMessage()    {}
 func (*GoogleConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{8}
 }
-func (m *GoogleConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GoogleConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GoogleConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1348,8 +1348,8 @@ func (*ScannerV4Config) ProtoMessage()    {}
 func (*ScannerV4Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{9}
 }
-func (m *ScannerV4Config) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ScannerV4Config) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ScannerV4Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1426,8 +1426,8 @@ func (*AzureConfig) ProtoMessage()    {}
 func (*AzureConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{10}
 }
-func (m *AzureConfig) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *AzureConfig) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *AzureConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3156,7 +3156,7 @@ func sovImageIntegration(x uint64) (n int) {
 func sozImageIntegration(x uint64) (n int) {
 	return sovImageIntegration(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
+func (m *ImageIntegration) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3380,7 +3380,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClairifyConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Clairify{v}
@@ -3415,7 +3415,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DockerConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Docker{v}
@@ -3450,7 +3450,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &QuayConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Quay{v}
@@ -3485,7 +3485,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ECRConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Ecr{v}
@@ -3520,7 +3520,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &GoogleConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Google{v}
@@ -3555,7 +3555,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClairConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Clair{v}
@@ -3662,7 +3662,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &IBMRegistryConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Ibm{v}
@@ -3699,7 +3699,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 			if m.Source == nil {
 				m.Source = &ImageIntegration_Source{}
 			}
-			if err := m.Source.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3733,7 +3733,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClairV4Config{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_ClairV4{v}
@@ -3768,7 +3768,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ScannerV4Config{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_ScannerV4{v}
@@ -3803,7 +3803,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AzureConfig{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.IntegrationConfig = &ImageIntegration_Azure{v}
@@ -3830,7 +3830,7 @@ func (m *ImageIntegration) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageIntegration_Source) Unmarshal(dAtA []byte) error {
+func (m *ImageIntegration_Source) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3977,7 +3977,7 @@ func (m *ImageIntegration_Source) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IBMRegistryConfig) Unmarshal(dAtA []byte) error {
+func (m *IBMRegistryConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4092,7 +4092,7 @@ func (m *IBMRegistryConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QuayConfig) Unmarshal(dAtA []byte) error {
+func (m *QuayConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4237,7 +4237,7 @@ func (m *QuayConfig) Unmarshal(dAtA []byte) error {
 			if m.RegistryRobotCredentials == nil {
 				m.RegistryRobotCredentials = &QuayConfig_RobotAccount{}
 			}
-			if err := m.RegistryRobotCredentials.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RegistryRobotCredentials.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4263,7 +4263,7 @@ func (m *QuayConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QuayConfig_RobotAccount) Unmarshal(dAtA []byte) error {
+func (m *QuayConfig_RobotAccount) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4378,7 +4378,7 @@ func (m *QuayConfig_RobotAccount) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClairConfig) Unmarshal(dAtA []byte) error {
+func (m *ClairConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4481,7 +4481,7 @@ func (m *ClairConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClairV4Config) Unmarshal(dAtA []byte) error {
+func (m *ClairV4Config) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4584,7 +4584,7 @@ func (m *ClairV4Config) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClairifyConfig) Unmarshal(dAtA []byte) error {
+func (m *ClairifyConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4718,7 +4718,7 @@ func (m *ClairifyConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DockerConfig) Unmarshal(dAtA []byte) error {
+func (m *DockerConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4885,7 +4885,7 @@ func (m *DockerConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ECRConfig) Unmarshal(dAtA []byte) error {
+func (m *ECRConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5210,7 +5210,7 @@ func (m *ECRConfig) Unmarshal(dAtA []byte) error {
 			if m.AuthorizationData == nil {
 				m.AuthorizationData = &ECRConfig_AuthorizationData{}
 			}
-			if err := m.AuthorizationData.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AuthorizationData.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5236,7 +5236,7 @@ func (m *ECRConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ECRConfig_AuthorizationData) Unmarshal(dAtA []byte) error {
+func (m *ECRConfig_AuthorizationData) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5387,7 +5387,7 @@ func (m *ECRConfig_AuthorizationData) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GoogleConfig) Unmarshal(dAtA []byte) error {
+func (m *GoogleConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5554,7 +5554,7 @@ func (m *GoogleConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScannerV4Config) Unmarshal(dAtA []byte) error {
+func (m *ScannerV4Config) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5688,7 +5688,7 @@ func (m *ScannerV4Config) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AzureConfig) Unmarshal(dAtA []byte) error {
+func (m *AzureConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

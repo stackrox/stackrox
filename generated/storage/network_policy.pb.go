@@ -105,8 +105,8 @@ func (*NetworkPolicy) ProtoMessage()    {}
 func (*NetworkPolicy) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{0}
 }
-func (m *NetworkPolicy) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicy) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -252,8 +252,8 @@ func (*NetworkPolicySpec) ProtoMessage()    {}
 func (*NetworkPolicySpec) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{1}
 }
-func (m *NetworkPolicySpec) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicySpec) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicySpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -351,8 +351,8 @@ func (*NetworkPolicyEgressRule) ProtoMessage()    {}
 func (*NetworkPolicyEgressRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{2}
 }
-func (m *NetworkPolicyEgressRule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyEgressRule) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyEgressRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -432,8 +432,8 @@ func (*NetworkPolicyPeer) ProtoMessage()    {}
 func (*NetworkPolicyPeer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{3}
 }
-func (m *NetworkPolicyPeer) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyPeer) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyPeer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -510,8 +510,8 @@ func (*IPBlock) ProtoMessage()    {}
 func (*IPBlock) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{4}
 }
-func (m *IPBlock) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *IPBlock) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *IPBlock) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -585,8 +585,8 @@ func (*NetworkPolicyPort) ProtoMessage()    {}
 func (*NetworkPolicyPort) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{5}
 }
-func (m *NetworkPolicyPort) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyPort) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyPort) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -713,8 +713,8 @@ func (*NetworkPolicyIngressRule) ProtoMessage()    {}
 func (*NetworkPolicyIngressRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{6}
 }
-func (m *NetworkPolicyIngressRule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyIngressRule) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyIngressRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -794,8 +794,8 @@ func (*NetworkPolicyReference) ProtoMessage()    {}
 func (*NetworkPolicyReference) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{7}
 }
-func (m *NetworkPolicyReference) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyReference) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyReference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -863,8 +863,8 @@ func (*NetworkPolicyModification) ProtoMessage()    {}
 func (*NetworkPolicyModification) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{8}
 }
-func (m *NetworkPolicyModification) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyModification) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyModification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -940,8 +940,8 @@ func (*NetworkPolicyApplicationUndoRecord) ProtoMessage()    {}
 func (*NetworkPolicyApplicationUndoRecord) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{9}
 }
-func (m *NetworkPolicyApplicationUndoRecord) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyApplicationUndoRecord) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyApplicationUndoRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1039,8 +1039,8 @@ func (*NetworkPolicyApplicationUndoDeploymentRecord) ProtoMessage() {}
 func (*NetworkPolicyApplicationUndoDeploymentRecord) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d39ddeaa4e89803b, []int{10}
 }
-func (m *NetworkPolicyApplicationUndoDeploymentRecord) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *NetworkPolicyApplicationUndoDeploymentRecord) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *NetworkPolicyApplicationUndoDeploymentRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2279,7 +2279,7 @@ func sovNetworkPolicy(x uint64) (n int) {
 func sozNetworkPolicy(x uint64) (n int) {
 	return sovNetworkPolicy(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkPolicy) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicy) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2754,7 +2754,7 @@ func (m *NetworkPolicy) Unmarshal(dAtA []byte) error {
 			if m.Spec == nil {
 				m.Spec = &NetworkPolicySpec{}
 			}
-			if err := m.Spec.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Spec.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2880,7 +2880,7 @@ func (m *NetworkPolicy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicySpec) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicySpec) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2941,7 +2941,7 @@ func (m *NetworkPolicySpec) Unmarshal(dAtA []byte) error {
 			if m.PodSelector == nil {
 				m.PodSelector = &LabelSelector{}
 			}
-			if err := m.PodSelector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PodSelector.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2975,7 +2975,7 @@ func (m *NetworkPolicySpec) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Ingress = append(m.Ingress, &NetworkPolicyIngressRule{})
-			if err := m.Ingress[len(m.Ingress)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Ingress[len(m.Ingress)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3009,7 +3009,7 @@ func (m *NetworkPolicySpec) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Egress = append(m.Egress, &NetworkPolicyEgressRule{})
-			if err := m.Egress[len(m.Egress)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Egress[len(m.Egress)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3104,7 +3104,7 @@ func (m *NetworkPolicySpec) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyEgressRule) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyEgressRule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3163,7 +3163,7 @@ func (m *NetworkPolicyEgressRule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Ports = append(m.Ports, &NetworkPolicyPort{})
-			if err := m.Ports[len(m.Ports)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Ports[len(m.Ports)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3197,7 +3197,7 @@ func (m *NetworkPolicyEgressRule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.To = append(m.To, &NetworkPolicyPeer{})
-			if err := m.To[len(m.To)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.To[len(m.To)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3223,7 +3223,7 @@ func (m *NetworkPolicyEgressRule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyPeer) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyPeer) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3284,7 +3284,7 @@ func (m *NetworkPolicyPeer) Unmarshal(dAtA []byte) error {
 			if m.PodSelector == nil {
 				m.PodSelector = &LabelSelector{}
 			}
-			if err := m.PodSelector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PodSelector.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3320,7 +3320,7 @@ func (m *NetworkPolicyPeer) Unmarshal(dAtA []byte) error {
 			if m.NamespaceSelector == nil {
 				m.NamespaceSelector = &LabelSelector{}
 			}
-			if err := m.NamespaceSelector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.NamespaceSelector.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3356,7 +3356,7 @@ func (m *NetworkPolicyPeer) Unmarshal(dAtA []byte) error {
 			if m.IpBlock == nil {
 				m.IpBlock = &IPBlock{}
 			}
-			if err := m.IpBlock.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.IpBlock.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3382,7 +3382,7 @@ func (m *NetworkPolicyPeer) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IPBlock) Unmarshal(dAtA []byte) error {
+func (m *IPBlock) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3497,7 +3497,7 @@ func (m *IPBlock) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyPort) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyPort) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3619,7 +3619,7 @@ func (m *NetworkPolicyPort) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyIngressRule) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyIngressRule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3678,7 +3678,7 @@ func (m *NetworkPolicyIngressRule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Ports = append(m.Ports, &NetworkPolicyPort{})
-			if err := m.Ports[len(m.Ports)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Ports[len(m.Ports)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3712,7 +3712,7 @@ func (m *NetworkPolicyIngressRule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.From = append(m.From, &NetworkPolicyPeer{})
-			if err := m.From[len(m.From)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.From[len(m.From)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3738,7 +3738,7 @@ func (m *NetworkPolicyIngressRule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyReference) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyReference) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3853,7 +3853,7 @@ func (m *NetworkPolicyReference) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyModification) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyModification) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3944,7 +3944,7 @@ func (m *NetworkPolicyModification) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ToDelete = append(m.ToDelete, &NetworkPolicyReference{})
-			if err := m.ToDelete[len(m.ToDelete)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ToDelete[len(m.ToDelete)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3970,7 +3970,7 @@ func (m *NetworkPolicyModification) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyApplicationUndoRecord) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyApplicationUndoRecord) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4099,7 +4099,7 @@ func (m *NetworkPolicyApplicationUndoRecord) Unmarshal(dAtA []byte) error {
 			if m.OriginalModification == nil {
 				m.OriginalModification = &NetworkPolicyModification{}
 			}
-			if err := m.OriginalModification.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.OriginalModification.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4135,7 +4135,7 @@ func (m *NetworkPolicyApplicationUndoRecord) Unmarshal(dAtA []byte) error {
 			if m.UndoModification == nil {
 				m.UndoModification = &NetworkPolicyModification{}
 			}
-			if err := m.UndoModification.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UndoModification.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4193,7 +4193,7 @@ func (m *NetworkPolicyApplicationUndoRecord) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkPolicyApplicationUndoDeploymentRecord) Unmarshal(dAtA []byte) error {
+func (m *NetworkPolicyApplicationUndoDeploymentRecord) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4350,7 +4350,7 @@ func (m *NetworkPolicyApplicationUndoDeploymentRecord) Unmarshal(dAtA []byte) er
 			if m.UndoRecord == nil {
 				m.UndoRecord = &NetworkPolicyApplicationUndoRecord{}
 			}
-			if err := m.UndoRecord.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UndoRecord.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

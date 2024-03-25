@@ -150,8 +150,8 @@ func (*KubernetesEvent) ProtoMessage()    {}
 func (*KubernetesEvent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a09c1108cf9e6345, []int{0}
 }
-func (m *KubernetesEvent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *KubernetesEvent) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *KubernetesEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -354,8 +354,8 @@ func (*KubernetesEvent_Object) ProtoMessage()    {}
 func (*KubernetesEvent_Object) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a09c1108cf9e6345, []int{0, 0}
 }
-func (m *KubernetesEvent_Object) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *KubernetesEvent_Object) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *KubernetesEvent_Object) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -436,8 +436,8 @@ func (*KubernetesEvent_PodExecArgs) ProtoMessage()    {}
 func (*KubernetesEvent_PodExecArgs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a09c1108cf9e6345, []int{0, 1}
 }
-func (m *KubernetesEvent_PodExecArgs) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *KubernetesEvent_PodExecArgs) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *KubernetesEvent_PodExecArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -507,8 +507,8 @@ func (*KubernetesEvent_PodPortForwardArgs) ProtoMessage()    {}
 func (*KubernetesEvent_PodPortForwardArgs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a09c1108cf9e6345, []int{0, 2}
 }
-func (m *KubernetesEvent_PodPortForwardArgs) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *KubernetesEvent_PodPortForwardArgs) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *KubernetesEvent_PodPortForwardArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -572,8 +572,8 @@ func (*KubernetesEvent_ResponseStatus) ProtoMessage()    {}
 func (*KubernetesEvent_ResponseStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a09c1108cf9e6345, []int{0, 3}
 }
-func (m *KubernetesEvent_ResponseStatus) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *KubernetesEvent_ResponseStatus) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *KubernetesEvent_ResponseStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -640,8 +640,8 @@ func (*KubernetesEvent_User) ProtoMessage()    {}
 func (*KubernetesEvent_User) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a09c1108cf9e6345, []int{0, 4}
 }
-func (m *KubernetesEvent_User) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *KubernetesEvent_User) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *KubernetesEvent_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1383,7 +1383,7 @@ func sovKubeEvent(x uint64) (n int) {
 func sozKubeEvent(x uint64) (n int) {
 	return sovKubeEvent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
+func (m *KubernetesEvent) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1476,7 +1476,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 			if m.Object == nil {
 				m.Object = &KubernetesEvent_Object{}
 			}
-			if err := m.Object.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Object.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1565,7 +1565,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &KubernetesEvent_PodExecArgs{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.ObjectArgs = &KubernetesEvent_PodExecArgs_{v}
@@ -1600,7 +1600,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &KubernetesEvent_PodPortForwardArgs{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.ObjectArgs = &KubernetesEvent_PodPortForwardArgs_{v}
@@ -1637,7 +1637,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &KubernetesEvent_User{}
 			}
-			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.User.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1673,7 +1673,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 			if m.ImpersonatedUser == nil {
 				m.ImpersonatedUser = &KubernetesEvent_User{}
 			}
-			if err := m.ImpersonatedUser.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImpersonatedUser.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1773,7 +1773,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 			if m.ResponseStatus == nil {
 				m.ResponseStatus = &KubernetesEvent_ResponseStatus{}
 			}
-			if err := m.ResponseStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResponseStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1831,7 +1831,7 @@ func (m *KubernetesEvent) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KubernetesEvent_Object) Unmarshal(dAtA []byte) error {
+func (m *KubernetesEvent_Object) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1997,7 +1997,7 @@ func (m *KubernetesEvent_Object) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KubernetesEvent_PodExecArgs) Unmarshal(dAtA []byte) error {
+func (m *KubernetesEvent_PodExecArgs) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2112,7 +2112,7 @@ func (m *KubernetesEvent_PodExecArgs) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KubernetesEvent_PodPortForwardArgs) Unmarshal(dAtA []byte) error {
+func (m *KubernetesEvent_PodPortForwardArgs) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2239,7 +2239,7 @@ func (m *KubernetesEvent_PodPortForwardArgs) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KubernetesEvent_ResponseStatus) Unmarshal(dAtA []byte) error {
+func (m *KubernetesEvent_ResponseStatus) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2341,7 +2341,7 @@ func (m *KubernetesEvent_ResponseStatus) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KubernetesEvent_User) Unmarshal(dAtA []byte) error {
+func (m *KubernetesEvent_User) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

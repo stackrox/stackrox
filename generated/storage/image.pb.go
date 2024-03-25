@@ -223,8 +223,8 @@ func (*Image) ProtoMessage()    {}
 func (*Image) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{0}
 }
-func (m *Image) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Image) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Image) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -539,8 +539,8 @@ func (*DataSource) ProtoMessage()    {}
 func (*DataSource) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{1}
 }
-func (m *DataSource) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DataSource) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DataSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -623,8 +623,8 @@ func (*ImageScan) ProtoMessage()    {}
 func (*ImageScan) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{2}
 }
-func (m *ImageScan) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageScan) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -776,8 +776,8 @@ func (*ImageSignatureVerificationData) ProtoMessage()    {}
 func (*ImageSignatureVerificationData) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{3}
 }
-func (m *ImageSignatureVerificationData) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageSignatureVerificationData) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageSignatureVerificationData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -850,8 +850,8 @@ func (*ImageSignatureVerificationResult) ProtoMessage()    {}
 func (*ImageSignatureVerificationResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{4}
 }
-func (m *ImageSignatureVerificationResult) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageSignatureVerificationResult) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageSignatureVerificationResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -961,8 +961,8 @@ func (*EmbeddedImageScanComponent) ProtoMessage()    {}
 func (*EmbeddedImageScanComponent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{5}
 }
-func (m *EmbeddedImageScanComponent) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *EmbeddedImageScanComponent) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *EmbeddedImageScanComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1180,8 +1180,8 @@ func (*EmbeddedImageScanComponent_Executable) ProtoMessage()    {}
 func (*EmbeddedImageScanComponent_Executable) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{5, 0}
 }
-func (m *EmbeddedImageScanComponent_Executable) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *EmbeddedImageScanComponent_Executable) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *EmbeddedImageScanComponent_Executable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1253,8 +1253,8 @@ func (*License) ProtoMessage()    {}
 func (*License) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{6}
 }
-func (m *License) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *License) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *License) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1342,8 +1342,8 @@ func (*ImageMetadata) ProtoMessage()    {}
 func (*ImageMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{7}
 }
-func (m *ImageMetadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageMetadata) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1438,8 +1438,8 @@ func (*ImageSignature) ProtoMessage()    {}
 func (*ImageSignature) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{8}
 }
-func (m *ImageSignature) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageSignature) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageSignature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1514,8 +1514,8 @@ func (*Signature) ProtoMessage()    {}
 func (*Signature) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{9}
 }
-func (m *Signature) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Signature) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Signature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1615,8 +1615,8 @@ func (*CosignSignature) ProtoMessage()    {}
 func (*CosignSignature) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{10}
 }
-func (m *CosignSignature) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *CosignSignature) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *CosignSignature) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1690,8 +1690,8 @@ func (*V2Metadata) ProtoMessage()    {}
 func (*V2Metadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{11}
 }
-func (m *V2Metadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *V2Metadata) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *V2Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1758,8 +1758,8 @@ func (*V1Metadata) ProtoMessage()    {}
 func (*V1Metadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{12}
 }
-func (m *V1Metadata) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *V1Metadata) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *V1Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1903,8 +1903,8 @@ func (*ImageLayer) ProtoMessage()    {}
 func (*ImageLayer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{13}
 }
-func (m *ImageLayer) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageLayer) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageLayer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1995,8 +1995,8 @@ func (*ImageName) ProtoMessage()    {}
 func (*ImageName) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{14}
 }
-func (m *ImageName) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ImageName) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ImageName) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2092,8 +2092,8 @@ func (*ListImage) ProtoMessage()    {}
 func (*ListImage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{15}
 }
-func (m *ListImage) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ListImage) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ListImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2300,8 +2300,8 @@ func (*WatchedImage) ProtoMessage()    {}
 func (*WatchedImage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{16}
 }
-func (m *WatchedImage) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *WatchedImage) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *WatchedImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -4654,7 +4654,7 @@ func sovImage(x uint64) (n int) {
 func sozImage(x uint64) (n int) {
 	return sovImage(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Image) Unmarshal(dAtA []byte) error {
+func (m *Image) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4715,7 +4715,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			if m.Name == nil {
 				m.Name = &ImageName{}
 			}
-			if err := m.Name.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Name.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4751,7 +4751,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &ImageMetadata{}
 			}
-			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4787,7 +4787,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			if m.Scan == nil {
 				m.Scan = &ImageScan{}
 			}
-			if err := m.Scan.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scan.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5081,7 +5081,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			if m.SignatureVerificationData == nil {
 				m.SignatureVerificationData = &ImageSignatureVerificationData{}
 			}
-			if err := m.SignatureVerificationData.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SignatureVerificationData.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5117,7 +5117,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 			if m.Signature == nil {
 				m.Signature = &ImageSignature{}
 			}
-			if err := m.Signature.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Signature.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5171,7 +5171,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Names = append(m.Names, &ImageName{})
-			if err := m.Names[len(m.Names)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Names[len(m.Names)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5197,7 +5197,7 @@ func (m *Image) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DataSource) Unmarshal(dAtA []byte) error {
+func (m *DataSource) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5344,7 +5344,7 @@ func (m *DataSource) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageScan) Unmarshal(dAtA []byte) error {
+func (m *ImageScan) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5439,7 +5439,7 @@ func (m *ImageScan) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Components = append(m.Components, &EmbeddedImageScanComponent{})
-			if err := m.Components[len(m.Components)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Components[len(m.Components)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5475,7 +5475,7 @@ func (m *ImageScan) Unmarshal(dAtA []byte) error {
 			if m.DataSource == nil {
 				m.DataSource = &DataSource{}
 			}
-			if err := m.DataSource.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DataSource.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5654,7 +5654,7 @@ func (m *ImageScan) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageSignatureVerificationData) Unmarshal(dAtA []byte) error {
+func (m *ImageSignatureVerificationData) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5713,7 +5713,7 @@ func (m *ImageSignatureVerificationData) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Results = append(m.Results, &ImageSignatureVerificationResult{})
-			if err := m.Results[len(m.Results)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Results[len(m.Results)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5739,7 +5739,7 @@ func (m *ImageSignatureVerificationData) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageSignatureVerificationResult) Unmarshal(dAtA []byte) error {
+func (m *ImageSignatureVerificationResult) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5941,7 +5941,7 @@ func (m *ImageSignatureVerificationResult) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EmbeddedImageScanComponent) Unmarshal(dAtA []byte) error {
+func (m *EmbeddedImageScanComponent) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6066,7 +6066,7 @@ func (m *EmbeddedImageScanComponent) Unmarshal(dAtA []byte) error {
 			if m.License == nil {
 				m.License = &License{}
 			}
-			if err := m.License.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.License.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6100,7 +6100,7 @@ func (m *EmbeddedImageScanComponent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Vulns = append(m.Vulns, &EmbeddedVulnerability{})
-			if err := m.Vulns[len(m.Vulns)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Vulns[len(m.Vulns)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6278,7 +6278,7 @@ func (m *EmbeddedImageScanComponent) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Executables = append(m.Executables, &EmbeddedImageScanComponent_Executable{})
-			if err := m.Executables[len(m.Executables)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Executables[len(m.Executables)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6304,7 +6304,7 @@ func (m *EmbeddedImageScanComponent) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EmbeddedImageScanComponent_Executable) Unmarshal(dAtA []byte) error {
+func (m *EmbeddedImageScanComponent_Executable) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6419,7 +6419,7 @@ func (m *EmbeddedImageScanComponent_Executable) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *License) Unmarshal(dAtA []byte) error {
+func (m *License) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6566,7 +6566,7 @@ func (m *License) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageMetadata) Unmarshal(dAtA []byte) error {
+func (m *ImageMetadata) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6627,7 +6627,7 @@ func (m *ImageMetadata) Unmarshal(dAtA []byte) error {
 			if m.V1 == nil {
 				m.V1 = &V1Metadata{}
 			}
-			if err := m.V1.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.V1.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6663,7 +6663,7 @@ func (m *ImageMetadata) Unmarshal(dAtA []byte) error {
 			if m.V2 == nil {
 				m.V2 = &V2Metadata{}
 			}
-			if err := m.V2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.V2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6731,7 +6731,7 @@ func (m *ImageMetadata) Unmarshal(dAtA []byte) error {
 			if m.DataSource == nil {
 				m.DataSource = &DataSource{}
 			}
-			if err := m.DataSource.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DataSource.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6776,7 +6776,7 @@ func (m *ImageMetadata) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageSignature) Unmarshal(dAtA []byte) error {
+func (m *ImageSignature) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6835,7 +6835,7 @@ func (m *ImageSignature) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Signatures = append(m.Signatures, &Signature{})
-			if err := m.Signatures[len(m.Signatures)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Signatures[len(m.Signatures)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6897,7 +6897,7 @@ func (m *ImageSignature) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Signature) Unmarshal(dAtA []byte) error {
+func (m *Signature) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6956,7 +6956,7 @@ func (m *Signature) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CosignSignature{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Signature = &Signature_Cosign{v}
@@ -6983,7 +6983,7 @@ func (m *Signature) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CosignSignature) Unmarshal(dAtA []byte) error {
+func (m *CosignSignature) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7102,7 +7102,7 @@ func (m *CosignSignature) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *V2Metadata) Unmarshal(dAtA []byte) error {
+func (m *V2Metadata) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7185,7 +7185,7 @@ func (m *V2Metadata) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *V1Metadata) Unmarshal(dAtA []byte) error {
+func (m *V1Metadata) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7344,7 +7344,7 @@ func (m *V1Metadata) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Layers = append(m.Layers, &ImageLayer{})
-			if err := m.Layers[len(m.Layers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Layers[len(m.Layers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7625,7 +7625,7 @@ func (m *V1Metadata) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageLayer) Unmarshal(dAtA []byte) error {
+func (m *ImageLayer) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7828,7 +7828,7 @@ func (m *ImageLayer) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageName) Unmarshal(dAtA []byte) error {
+func (m *ImageName) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8007,7 +8007,7 @@ func (m *ImageName) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListImage) Unmarshal(dAtA []byte) error {
+func (m *ListImage) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8273,7 +8273,7 @@ func (m *ListImage) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *WatchedImage) Unmarshal(dAtA []byte) error {
+func (m *WatchedImage) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

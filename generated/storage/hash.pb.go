@@ -36,8 +36,8 @@ func (*Hash) ProtoMessage()    {}
 func (*Hash) Descriptor() ([]byte, []int) {
 	return fileDescriptor_899ccb266c1186a2, []int{0}
 }
-func (m *Hash) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Hash) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Hash) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -212,7 +212,7 @@ func sovHash(x uint64) (n int) {
 func sozHash(x uint64) (n int) {
 	return sovHash(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Hash) Unmarshal(dAtA []byte) error {
+func (m *Hash) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

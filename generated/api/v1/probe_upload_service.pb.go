@@ -39,8 +39,8 @@ func (*ProbeUploadManifest) ProtoMessage()    {}
 func (*ProbeUploadManifest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b730ffd5769ce00f, []int{0}
 }
-func (m *ProbeUploadManifest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ProbeUploadManifest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ProbeUploadManifest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -107,8 +107,8 @@ func (*ProbeUploadManifest_File) ProtoMessage()    {}
 func (*ProbeUploadManifest_File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b730ffd5769ce00f, []int{0, 0}
 }
-func (m *ProbeUploadManifest_File) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ProbeUploadManifest_File) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ProbeUploadManifest_File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -181,8 +181,8 @@ func (*GetExistingProbesRequest) ProtoMessage()    {}
 func (*GetExistingProbesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b730ffd5769ce00f, []int{1}
 }
-func (m *GetExistingProbesRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetExistingProbesRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetExistingProbesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -245,8 +245,8 @@ func (*GetExistingProbesResponse) ProtoMessage()    {}
 func (*GetExistingProbesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b730ffd5769ce00f, []int{2}
 }
-func (m *GetExistingProbesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetExistingProbesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetExistingProbesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -669,7 +669,7 @@ func sovProbeUploadService(x uint64) (n int) {
 func sozProbeUploadService(x uint64) (n int) {
 	return sovProbeUploadService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ProbeUploadManifest) Unmarshal(dAtA []byte) error {
+func (m *ProbeUploadManifest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -728,7 +728,7 @@ func (m *ProbeUploadManifest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Files = append(m.Files, &ProbeUploadManifest_File{})
-			if err := m.Files[len(m.Files)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Files[len(m.Files)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -754,7 +754,7 @@ func (m *ProbeUploadManifest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProbeUploadManifest_File) Unmarshal(dAtA []byte) error {
+func (m *ProbeUploadManifest_File) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -875,7 +875,7 @@ func (m *ProbeUploadManifest_File) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetExistingProbesRequest) Unmarshal(dAtA []byte) error {
+func (m *GetExistingProbesRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -958,7 +958,7 @@ func (m *GetExistingProbesRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetExistingProbesResponse) Unmarshal(dAtA []byte) error {
+func (m *GetExistingProbesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1017,7 +1017,7 @@ func (m *GetExistingProbesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExistingFiles = append(m.ExistingFiles, &ProbeUploadManifest_File{})
-			if err := m.ExistingFiles[len(m.ExistingFiles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExistingFiles[len(m.ExistingFiles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

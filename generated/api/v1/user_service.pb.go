@@ -41,8 +41,8 @@ func (*GetUsersResponse) ProtoMessage()    {}
 func (*GetUsersResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c5a2f35b9340512, []int{0}
 }
-func (m *GetUsersResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetUsersResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetUsersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -111,8 +111,8 @@ func (*UserAttributeTuple) ProtoMessage()    {}
 func (*UserAttributeTuple) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c5a2f35b9340512, []int{1}
 }
-func (m *UserAttributeTuple) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *UserAttributeTuple) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *UserAttributeTuple) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -186,8 +186,8 @@ func (*GetUsersAttributesResponse) ProtoMessage()    {}
 func (*GetUsersAttributesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c5a2f35b9340512, []int{2}
 }
-func (m *GetUsersAttributesResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *GetUsersAttributesResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *GetUsersAttributesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -637,7 +637,7 @@ func sovUserService(x uint64) (n int) {
 func sozUserService(x uint64) (n int) {
 	return sovUserService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetUsersResponse) Unmarshal(dAtA []byte) error {
+func (m *GetUsersResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -696,7 +696,7 @@ func (m *GetUsersResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Users = append(m.Users, &storage.User{})
-			if err := m.Users[len(m.Users)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Users[len(m.Users)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -722,7 +722,7 @@ func (m *GetUsersResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UserAttributeTuple) Unmarshal(dAtA []byte) error {
+func (m *UserAttributeTuple) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -869,7 +869,7 @@ func (m *UserAttributeTuple) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetUsersAttributesResponse) Unmarshal(dAtA []byte) error {
+func (m *GetUsersAttributesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -928,7 +928,7 @@ func (m *GetUsersAttributesResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UsersAttributes = append(m.UsersAttributes, &UserAttributeTuple{})
-			if err := m.UsersAttributes[len(m.UsersAttributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UsersAttributes[len(m.UsersAttributes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

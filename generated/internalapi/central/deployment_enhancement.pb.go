@@ -37,8 +37,8 @@ func (*DeploymentEnhancementMessage) ProtoMessage()    {}
 func (*DeploymentEnhancementMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_481d8d3bdf1f6bc6, []int{0}
 }
-func (m *DeploymentEnhancementMessage) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeploymentEnhancementMessage) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeploymentEnhancementMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -110,8 +110,8 @@ func (*DeploymentEnhancementRequest) ProtoMessage()    {}
 func (*DeploymentEnhancementRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_481d8d3bdf1f6bc6, []int{1}
 }
-func (m *DeploymentEnhancementRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeploymentEnhancementRequest) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeploymentEnhancementRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -171,8 +171,8 @@ func (*DeploymentEnhancementResponse) ProtoMessage()    {}
 func (*DeploymentEnhancementResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_481d8d3bdf1f6bc6, []int{2}
 }
-func (m *DeploymentEnhancementResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *DeploymentEnhancementResponse) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *DeploymentEnhancementResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -444,7 +444,7 @@ func sovDeploymentEnhancement(x uint64) (n int) {
 func sozDeploymentEnhancement(x uint64) (n int) {
 	return sovDeploymentEnhancement(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DeploymentEnhancementMessage) Unmarshal(dAtA []byte) error {
+func (m *DeploymentEnhancementMessage) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -535,7 +535,7 @@ func (m *DeploymentEnhancementMessage) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.Deployment{})
-			if err := m.Deployments[len(m.Deployments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Deployments[len(m.Deployments)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -561,7 +561,7 @@ func (m *DeploymentEnhancementMessage) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeploymentEnhancementRequest) Unmarshal(dAtA []byte) error {
+func (m *DeploymentEnhancementRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -622,7 +622,7 @@ func (m *DeploymentEnhancementRequest) Unmarshal(dAtA []byte) error {
 			if m.Msg == nil {
 				m.Msg = &DeploymentEnhancementMessage{}
 			}
-			if err := m.Msg.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Msg.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -648,7 +648,7 @@ func (m *DeploymentEnhancementRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeploymentEnhancementResponse) Unmarshal(dAtA []byte) error {
+func (m *DeploymentEnhancementResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -709,7 +709,7 @@ func (m *DeploymentEnhancementResponse) Unmarshal(dAtA []byte) error {
 			if m.Msg == nil {
 				m.Msg = &DeploymentEnhancementMessage{}
 			}
-			if err := m.Msg.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Msg.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

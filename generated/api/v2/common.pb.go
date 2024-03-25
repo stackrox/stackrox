@@ -66,8 +66,8 @@ func (*ResourceByID) ProtoMessage()    {}
 func (*ResourceByID) Descriptor() ([]byte, []int) {
 	return fileDescriptor_367f5c41779aa91b, []int{0}
 }
-func (m *ResourceByID) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *ResourceByID) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *ResourceByID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -125,8 +125,8 @@ func (*Empty) ProtoMessage()    {}
 func (*Empty) Descriptor() ([]byte, []int) {
 	return fileDescriptor_367f5c41779aa91b, []int{1}
 }
-func (m *Empty) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Empty) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -185,8 +185,8 @@ func (*Schedule) ProtoMessage()    {}
 func (*Schedule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_367f5c41779aa91b, []int{2}
 }
-func (m *Schedule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -329,8 +329,8 @@ func (*Schedule_DaysOfWeek) ProtoMessage()    {}
 func (*Schedule_DaysOfWeek) Descriptor() ([]byte, []int) {
 	return fileDescriptor_367f5c41779aa91b, []int{2, 0}
 }
-func (m *Schedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule_DaysOfWeek) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -394,8 +394,8 @@ func (*Schedule_DaysOfMonth) ProtoMessage()    {}
 func (*Schedule_DaysOfMonth) Descriptor() ([]byte, []int) {
 	return fileDescriptor_367f5c41779aa91b, []int{2, 1}
 }
-func (m *Schedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
+func (m *Schedule_DaysOfMonth) XXX_UnmarshalVT(b []byte) error {
+	return m.UnmarshalVT(b)
 }
 func (m *Schedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -861,7 +861,7 @@ func sovCommon(x uint64) (n int) {
 func sozCommon(x uint64) (n int) {
 	return sovCommon(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ResourceByID) Unmarshal(dAtA []byte) error {
+func (m *ResourceByID) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -944,7 +944,7 @@ func (m *ResourceByID) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Empty) Unmarshal(dAtA []byte) error {
+func (m *Empty) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -995,7 +995,7 @@ func (m *Empty) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule) Unmarshal(dAtA []byte) error {
+func (m *Schedule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1111,7 +1111,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Schedule_DaysOfWeek{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &Schedule_DaysOfWeek_{v}
@@ -1146,7 +1146,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &Schedule_DaysOfMonth{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Interval = &Schedule_DaysOfMonth_{v}
@@ -1173,7 +1173,7 @@ func (m *Schedule) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
+func (m *Schedule_DaysOfWeek) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1300,7 +1300,7 @@ func (m *Schedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Schedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
+func (m *Schedule_DaysOfMonth) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
