@@ -45,7 +45,7 @@ main() {
     local_port=9090
     local="localhost:${local_port}"
 
-    pods="$(kubectl -n $namespace get pods -l app=$service --no-headers -o custom-columns=:metadata.name)"
+    pods="$(kubectl -n "$namespace" get pods -l "app=$service" --no-headers -o custom-columns=:metadata.name)"
     if [[ -z "${pods}" ]]; then
         echo "No pods found for $service service"
         exit 0
