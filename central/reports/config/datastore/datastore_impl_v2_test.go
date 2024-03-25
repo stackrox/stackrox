@@ -169,7 +169,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 func (s *ReportConfigurationDatastoreV2Tests) storeNotifier(name string) *storage.NotifierConfiguration_Id {
 	allCtx := sac.WithAllAccess(context.Background())
 
-	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name, Type: "email", UiEndpoint: "http://localhost"})
+	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
 	s.Require().NoError(err)
 	return &storage.NotifierConfiguration_Id{Id: id}
 }
