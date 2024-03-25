@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -222,86 +218,6 @@ var fileDescriptor_6e4bd547a0084fea = []byte{
 	0xc9, 0x19, 0x2e, 0x15, 0xa5, 0xd6, 0x41, 0x75, 0x64, 0xe8, 0x7d, 0x57, 0xab, 0x14, 0x1a, 0x95,
 	0xfa, 0xfc, 0x20, 0xf2, 0xf9, 0x2b, 0x36, 0x3e, 0x1f, 0x66, 0x0f, 0xfe, 0x04, 0x00, 0x00, 0xff,
 	0xff, 0xe3, 0x2c, 0x9d, 0x0b, 0xc7, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// CentralHealthServiceClient is the client API for CentralHealthService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type CentralHealthServiceClient interface {
-	GetUpgradeStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetUpgradeStatusResponse, error)
-}
-
-type centralHealthServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewCentralHealthServiceClient(cc grpc.ClientConnInterface) CentralHealthServiceClient {
-	return &centralHealthServiceClient{cc}
-}
-
-func (c *centralHealthServiceClient) GetUpgradeStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetUpgradeStatusResponse, error) {
-	out := new(GetUpgradeStatusResponse)
-	err := c.cc.Invoke(ctx, "/v1.CentralHealthService/GetUpgradeStatus", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// CentralHealthServiceServer is the server API for CentralHealthService service.
-type CentralHealthServiceServer interface {
-	GetUpgradeStatus(context.Context, *Empty) (*GetUpgradeStatusResponse, error)
-}
-
-// UnimplementedCentralHealthServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedCentralHealthServiceServer struct {
-}
-
-func (*UnimplementedCentralHealthServiceServer) GetUpgradeStatus(ctx context.Context, req *Empty) (*GetUpgradeStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUpgradeStatus not implemented")
-}
-
-func RegisterCentralHealthServiceServer(s *grpc.Server, srv CentralHealthServiceServer) {
-	s.RegisterService(&_CentralHealthService_serviceDesc, srv)
-}
-
-func _CentralHealthService_GetUpgradeStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CentralHealthServiceServer).GetUpgradeStatus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.CentralHealthService/GetUpgradeStatus",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CentralHealthServiceServer).GetUpgradeStatus(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _CentralHealthService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.CentralHealthService",
-	HandlerType: (*CentralHealthServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetUpgradeStatus",
-			Handler:    _CentralHealthService_GetUpgradeStatus_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/central_health_service.proto",
 }
 
 func (m *GetUpgradeStatusResponse) Marshal() (dAtA []byte, err error) {

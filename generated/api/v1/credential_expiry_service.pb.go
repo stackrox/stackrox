@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -267,88 +263,6 @@ var fileDescriptor_bd0d8e0eb298005f = []byte{
 	0x70, 0xe1, 0x07, 0xb7, 0x31, 0x1b, 0x4b, 0x7c, 0xe2, 0x47, 0x94, 0x24, 0xd6, 0xb5, 0x9a, 0x58,
 	0x57, 0xb9, 0x6e, 0x3e, 0xfd, 0xb6, 0xf7, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x7d, 0xc7, 0x21, 0x57,
 	0x02, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// CredentialExpiryServiceClient is the client API for CredentialExpiryService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type CredentialExpiryServiceClient interface {
-	// GetCertExpiry returns information related to the expiry component mTLS certificate.
-	GetCertExpiry(ctx context.Context, in *GetCertExpiry_Request, opts ...grpc.CallOption) (*GetCertExpiry_Response, error)
-}
-
-type credentialExpiryServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewCredentialExpiryServiceClient(cc grpc.ClientConnInterface) CredentialExpiryServiceClient {
-	return &credentialExpiryServiceClient{cc}
-}
-
-func (c *credentialExpiryServiceClient) GetCertExpiry(ctx context.Context, in *GetCertExpiry_Request, opts ...grpc.CallOption) (*GetCertExpiry_Response, error) {
-	out := new(GetCertExpiry_Response)
-	err := c.cc.Invoke(ctx, "/v1.CredentialExpiryService/GetCertExpiry", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// CredentialExpiryServiceServer is the server API for CredentialExpiryService service.
-type CredentialExpiryServiceServer interface {
-	// GetCertExpiry returns information related to the expiry component mTLS certificate.
-	GetCertExpiry(context.Context, *GetCertExpiry_Request) (*GetCertExpiry_Response, error)
-}
-
-// UnimplementedCredentialExpiryServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedCredentialExpiryServiceServer struct {
-}
-
-func (*UnimplementedCredentialExpiryServiceServer) GetCertExpiry(ctx context.Context, req *GetCertExpiry_Request) (*GetCertExpiry_Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCertExpiry not implemented")
-}
-
-func RegisterCredentialExpiryServiceServer(s *grpc.Server, srv CredentialExpiryServiceServer) {
-	s.RegisterService(&_CredentialExpiryService_serviceDesc, srv)
-}
-
-func _CredentialExpiryService_GetCertExpiry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCertExpiry_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CredentialExpiryServiceServer).GetCertExpiry(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.CredentialExpiryService/GetCertExpiry",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CredentialExpiryServiceServer).GetCertExpiry(ctx, req.(*GetCertExpiry_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _CredentialExpiryService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.CredentialExpiryService",
-	HandlerType: (*CredentialExpiryServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetCertExpiry",
-			Handler:    _CredentialExpiryService_GetCertExpiry_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/credential_expiry_service.proto",
 }
 
 func (m *GetCertExpiry) Marshal() (dAtA []byte, err error) {

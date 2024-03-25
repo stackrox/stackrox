@@ -162,24 +162,14 @@ func (s *notifierDataStoreTestSuite) TestAllowsAdd() {
 	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
-	})
+	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, &storage.Notifier{})
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnAdd() {
 	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil)
 
-	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
-	})
+	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, &storage.Notifier{})
 	s.Error(err)
 }
 
@@ -197,24 +187,14 @@ func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
-	})
+	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnUpdate() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
-	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
-	})
+	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
 	s.Error(err)
 }
 
@@ -238,20 +218,16 @@ func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
 
 func (s *notifierDataStoreTestSuite) TestUpdateMutableToImmutable() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			MutabilityMode: storage.Traits_ALLOW_MUTATE,
 		},
 	}, true, nil).Times(1)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{
-		Id:         "id",
-		Name:       "new name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "new name",
 		Traits: &storage.Traits{
 			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
 		},
@@ -261,10 +237,8 @@ func (s *notifierDataStoreTestSuite) TestUpdateMutableToImmutable() {
 
 func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeViaAPI() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -276,10 +250,8 @@ func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeViaAPI() {
 
 func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeSuccess() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -292,10 +264,8 @@ func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeSuccess() {
 
 func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 	ap := &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -308,10 +278,8 @@ func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 
 func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeSuccess() {
 	ap := &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -325,10 +293,8 @@ func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeSuccess() {
 
 func (s *notifierDataStoreTestSuite) TestRemoveImperativeDeclaratively() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_IMPERATIVE,
 		},
@@ -340,10 +306,8 @@ func (s *notifierDataStoreTestSuite) TestRemoveImperativeDeclaratively() {
 
 func (s *notifierDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
 	ap := &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_IMPERATIVE,
 		},
@@ -356,10 +320,8 @@ func (s *notifierDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
 
 func (s *notifierDataStoreTestSuite) TestAddDeclarativeViaAPI() {
 	ap := &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -371,10 +333,8 @@ func (s *notifierDataStoreTestSuite) TestAddDeclarativeViaAPI() {
 
 func (s *notifierDataStoreTestSuite) TestAddDeclarativeSuccess() {
 	ap := &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DECLARATIVE,
 		},
@@ -388,10 +348,8 @@ func (s *notifierDataStoreTestSuite) TestAddDeclarativeSuccess() {
 
 func (s *notifierDataStoreTestSuite) TestAddImperativeDeclaratively() {
 	ap := &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		Type:       "notifier",
-		UiEndpoint: "test",
+		Id:   "id",
+		Name: "name",
 		Traits: &storage.Traits{
 			Origin: storage.Traits_IMPERATIVE,
 		},

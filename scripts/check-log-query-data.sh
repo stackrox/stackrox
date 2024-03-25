@@ -3,10 +3,7 @@
 regex="log\.(Error|Debug|Info|Warn|Panic|Fatal)f*\(.*(query.Data).*\)"
 
 tmpfile="$(mktemp)"
-function delete_tmpfile() {
-	rm -f "$tmpfile"
-}
-trap delete_tmpfile EXIT
+trap 'rm -f "${tmpfile}"' EXIT
 
 git grep -inE "$regex" >"$tmpfile"
 

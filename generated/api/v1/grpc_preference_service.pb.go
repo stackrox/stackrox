@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -113,86 +109,6 @@ var fileDescriptor_a9b372bab2d89b6f = []byte{
 	0xaf, 0xb8, 0x24, 0x31, 0x39, 0xbb, 0x28, 0xbf, 0x02, 0xe2, 0x19, 0xbd, 0xc4, 0x82, 0x4c, 0xbd,
 	0x32, 0xc3, 0x28, 0xa6, 0x32, 0xc3, 0x08, 0xc6, 0x24, 0x36, 0xb0, 0x98, 0x31, 0x20, 0x00, 0x00,
 	0xff, 0xff, 0xce, 0x4c, 0x3e, 0x9e, 0x3e, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// GRPCPreferencesServiceClient is the client API for GRPCPreferencesService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type GRPCPreferencesServiceClient interface {
-	Get(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Preferences, error)
-}
-
-type gRPCPreferencesServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewGRPCPreferencesServiceClient(cc grpc.ClientConnInterface) GRPCPreferencesServiceClient {
-	return &gRPCPreferencesServiceClient{cc}
-}
-
-func (c *gRPCPreferencesServiceClient) Get(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Preferences, error) {
-	out := new(Preferences)
-	err := c.cc.Invoke(ctx, "/v1.GRPCPreferencesService/Get", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// GRPCPreferencesServiceServer is the server API for GRPCPreferencesService service.
-type GRPCPreferencesServiceServer interface {
-	Get(context.Context, *Empty) (*Preferences, error)
-}
-
-// UnimplementedGRPCPreferencesServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedGRPCPreferencesServiceServer struct {
-}
-
-func (*UnimplementedGRPCPreferencesServiceServer) Get(ctx context.Context, req *Empty) (*Preferences, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
-}
-
-func RegisterGRPCPreferencesServiceServer(s *grpc.Server, srv GRPCPreferencesServiceServer) {
-	s.RegisterService(&_GRPCPreferencesService_serviceDesc, srv)
-}
-
-func _GRPCPreferencesService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GRPCPreferencesServiceServer).Get(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.GRPCPreferencesService/Get",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GRPCPreferencesServiceServer).Get(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _GRPCPreferencesService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.GRPCPreferencesService",
-	HandlerType: (*GRPCPreferencesServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Get",
-			Handler:    _GRPCPreferencesService_Get_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/grpc_preference_service.proto",
 }
 
 func (m *Preferences) Marshal() (dAtA []byte, err error) {
