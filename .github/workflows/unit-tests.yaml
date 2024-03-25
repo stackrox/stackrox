@@ -261,6 +261,22 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'shell-test-output'
 
+  openshift-ci-unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.62
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+
+      - name: OpenShift CI Wrapper Unit Tests
+        run: make -C .openshift-ci test
+
   slack-on-unit-tests-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -278,6 +294,7 @@ jobs:
       - go-bench
       - go-postgres
       - local-roxctl-tests
+      - openshift-ci-unit-tests
       - shell-unit-tests
       - ui
     permissions:
