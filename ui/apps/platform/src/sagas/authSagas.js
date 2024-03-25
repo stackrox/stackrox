@@ -43,30 +43,20 @@ function* getUserPermissions() {
 
 function* evaluateUserAccess() {
     const authStatus = yield select(selectors.getAuthStatus);
-    const token = yield call(AuthService.getAccessToken);
-    const tokenExists = !!token;
-
-    // No token but validated providers present? Log out the user since they
-    // can't have access.
-    if (!tokenExists && authStatus !== AUTH_STATUS.LOGGED_OUT) {
-        // it can happen if user had ANONYMOUS access before, but now auth provider was added to the system
-        yield put(actions.logout());
+    // When the token was stored in local storage, we eagerly tried a logout / login
+    // based on its existence.
+    // The token has been moved to be stored in-memory, hence the logic changed to
+    // only do an explicit login / logout iff we aren't already logged out.
+    if (authStatus === AUTH_STATUS.LOGGED_OUT) {
         return;
     }
 
-    // We have a token and some auth providers exist? Need to login if possible,
-    // this will cause one of our providers to be authenticated, or, failing
-    // that, remove the token since it is worthless.
-    if (tokenExists && authStatus !== AUTH_STATUS.LOGGED_IN) {
-        // typical situation if token was stored before and then auth providers were loaded
-        try {
-            const result = yield call(AuthService.getAuthStatus);
-            // call didn't fail, meaning that the token is fine (should we check the returned result?)
-            yield put(actions.login(result));
-        } catch (e) {
-            // call failed, assuming that the token is invalid
-            yield put(actions.logout());
-        }
+    try {
+        const result = yield call(AuthService.getAuthStatus);
+        // call didn't fail, meaning that the token is fine (should we check the returned result?)
+        yield put(actions.login(result));
+    } catch (e) {
+        yield put(actions.logout());
     }
 }
 

@@ -3,6 +3,7 @@ import differenceInMilliSeconds from 'date-fns/difference_in_milliseconds';
 import subSeconds from 'date-fns/sub_seconds';
 /* eslint-enable import/no-duplicates */
 import EventEmitter from 'events';
+import store from 'store';
 
 import RefreshTokenTimeout from './RefreshTokenTimeout';
 
@@ -58,6 +59,8 @@ export default class AccessTokenManager {
         this.refreshTokenOpPromise = null;
         this.refreshTokenSymbol = Symbol('Refresh Token');
         this.eventEmitter = new EventEmitter();
+        this.token = store.get('access_token');
+        store.remove('access_token');
     }
 
     /**

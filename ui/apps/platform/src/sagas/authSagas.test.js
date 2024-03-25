@@ -24,6 +24,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -43,6 +44,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), null],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), throwError(new Error('no auth'))],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -85,7 +87,7 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.logout), dynamic(logout)],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
@@ -106,6 +108,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
@@ -135,6 +138,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -172,6 +176,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.storeAccessToken, token), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -214,6 +219,7 @@ describe('Auth Sagas', () => {
                     dynamic(storeLocationMock),
                 ],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -240,6 +246,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.logout), null],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
             ])
@@ -254,6 +261,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.getAuthStatus), 'ok'],
                 [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(AuthService.fetchAvailableProviderTypes), { response: [] }],

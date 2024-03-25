@@ -313,7 +313,12 @@ export function loginWithBasicAuth(
     const basicAuthPseudoToken = queryString.stringify({ username, password });
     return exchangeAuthToken(basicAuthPseudoToken, authProvider.type, authProvider.id).then(
         ({ token }) => {
-            storeAccessToken(token);
+            // We need to temporarily store the token in-browser to be persistent
+            // in-between redirects.
+            // It will be automatically removed once the access token manager is reloaded.
+            // This is only required during the basic auth login flow due to its nature of
+            // calling `window.location`.
+            store.set('access_token', token);
             // window.location.href might be better, however
             // @ts-ignore 2322
             window.location = getAndClearRequestedLocation() || '/';
