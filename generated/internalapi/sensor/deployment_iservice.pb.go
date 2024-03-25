@@ -4,13 +4,9 @@
 package sensor
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	_ "github.com/stackrox/rox/generated/storage"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -119,86 +115,6 @@ var fileDescriptor_79e5898dd478d161 = []byte{
 	0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe3, 0xb1, 0x1c, 0x43,
 	0x14, 0xd4, 0xbf, 0x49, 0x6c, 0x60, 0xcf, 0x19, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x49, 0x3c,
 	0x37, 0x2c, 0x2e, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// DeploymentServiceClient is the client API for DeploymentService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type DeploymentServiceClient interface {
-	GetDeploymentForPod(ctx context.Context, in *GetDeploymentForPodRequest, opts ...grpc.CallOption) (*storage.Deployment, error)
-}
-
-type deploymentServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewDeploymentServiceClient(cc grpc.ClientConnInterface) DeploymentServiceClient {
-	return &deploymentServiceClient{cc}
-}
-
-func (c *deploymentServiceClient) GetDeploymentForPod(ctx context.Context, in *GetDeploymentForPodRequest, opts ...grpc.CallOption) (*storage.Deployment, error) {
-	out := new(storage.Deployment)
-	err := c.cc.Invoke(ctx, "/sensor.DeploymentService/GetDeploymentForPod", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// DeploymentServiceServer is the server API for DeploymentService service.
-type DeploymentServiceServer interface {
-	GetDeploymentForPod(context.Context, *GetDeploymentForPodRequest) (*storage.Deployment, error)
-}
-
-// UnimplementedDeploymentServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedDeploymentServiceServer struct {
-}
-
-func (*UnimplementedDeploymentServiceServer) GetDeploymentForPod(ctx context.Context, req *GetDeploymentForPodRequest) (*storage.Deployment, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetDeploymentForPod not implemented")
-}
-
-func RegisterDeploymentServiceServer(s *grpc.Server, srv DeploymentServiceServer) {
-	s.RegisterService(&_DeploymentService_serviceDesc, srv)
-}
-
-func _DeploymentService_GetDeploymentForPod_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetDeploymentForPodRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DeploymentServiceServer).GetDeploymentForPod(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/sensor.DeploymentService/GetDeploymentForPod",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DeploymentServiceServer).GetDeploymentForPod(ctx, req.(*GetDeploymentForPodRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _DeploymentService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.DeploymentService",
-	HandlerType: (*DeploymentServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetDeploymentForPod",
-			Handler:    _DeploymentService_GetDeploymentForPod_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/sensor/deployment_iservice.proto",
 }
 
 func (m *GetDeploymentForPodRequest) Marshal() (dAtA []byte, err error) {

@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -156,86 +152,6 @@ var fileDescriptor_7f191278ca02d609 = []byte{
 	0x45, 0x82, 0x42, 0xc6, 0xa8, 0x59, 0x7e, 0xa5, 0xe4, 0x75, 0x53, 0x77, 0xcc, 0xaa, 0x22, 0xae,
 	0xd3, 0x73, 0xbf, 0x4e, 0xcf, 0xbc, 0x8b, 0xb6, 0x63, 0xbb, 0x6f, 0x01, 0x00, 0x00, 0xff, 0xff,
 	0xf4, 0x4f, 0xef, 0x5a, 0xd8, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// SummaryServiceClient is the client API for SummaryService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type SummaryServiceClient interface {
-	GetSummaryCounts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SummaryCountsResponse, error)
-}
-
-type summaryServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewSummaryServiceClient(cc grpc.ClientConnInterface) SummaryServiceClient {
-	return &summaryServiceClient{cc}
-}
-
-func (c *summaryServiceClient) GetSummaryCounts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SummaryCountsResponse, error) {
-	out := new(SummaryCountsResponse)
-	err := c.cc.Invoke(ctx, "/v1.SummaryService/GetSummaryCounts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// SummaryServiceServer is the server API for SummaryService service.
-type SummaryServiceServer interface {
-	GetSummaryCounts(context.Context, *Empty) (*SummaryCountsResponse, error)
-}
-
-// UnimplementedSummaryServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedSummaryServiceServer struct {
-}
-
-func (*UnimplementedSummaryServiceServer) GetSummaryCounts(ctx context.Context, req *Empty) (*SummaryCountsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSummaryCounts not implemented")
-}
-
-func RegisterSummaryServiceServer(s *grpc.Server, srv SummaryServiceServer) {
-	s.RegisterService(&_SummaryService_serviceDesc, srv)
-}
-
-func _SummaryService_GetSummaryCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SummaryServiceServer).GetSummaryCounts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.SummaryService/GetSummaryCounts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SummaryServiceServer).GetSummaryCounts(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _SummaryService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.SummaryService",
-	HandlerType: (*SummaryServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetSummaryCounts",
-			Handler:    _SummaryService_GetSummaryCounts_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/summary_service.proto",
 }
 
 func (m *SummaryCountsResponse) Marshal() (dAtA []byte, err error) {

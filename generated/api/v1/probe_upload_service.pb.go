@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -332,86 +328,6 @@ var fileDescriptor_b730ffd5769ce00f = []byte{
 	0x80, 0xb7, 0xa9, 0x01, 0x9e, 0xde, 0x8d, 0x0a, 0xd4, 0x19, 0xc7, 0x42, 0x92, 0x70, 0x94, 0xf1,
 	0x49, 0x19, 0x34, 0x26, 0x29, 0xc3, 0xb9, 0x7b, 0xae, 0xe5, 0xee, 0x59, 0x65, 0xf0, 0x4f, 0x61,
 	0xbd, 0xcf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe3, 0x13, 0xe7, 0xe7, 0x43, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// ProbeUploadServiceClient is the client API for ProbeUploadService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type ProbeUploadServiceClient interface {
-	GetExistingProbes(ctx context.Context, in *GetExistingProbesRequest, opts ...grpc.CallOption) (*GetExistingProbesResponse, error)
-}
-
-type probeUploadServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewProbeUploadServiceClient(cc grpc.ClientConnInterface) ProbeUploadServiceClient {
-	return &probeUploadServiceClient{cc}
-}
-
-func (c *probeUploadServiceClient) GetExistingProbes(ctx context.Context, in *GetExistingProbesRequest, opts ...grpc.CallOption) (*GetExistingProbesResponse, error) {
-	out := new(GetExistingProbesResponse)
-	err := c.cc.Invoke(ctx, "/v1.ProbeUploadService/GetExistingProbes", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ProbeUploadServiceServer is the server API for ProbeUploadService service.
-type ProbeUploadServiceServer interface {
-	GetExistingProbes(context.Context, *GetExistingProbesRequest) (*GetExistingProbesResponse, error)
-}
-
-// UnimplementedProbeUploadServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedProbeUploadServiceServer struct {
-}
-
-func (*UnimplementedProbeUploadServiceServer) GetExistingProbes(ctx context.Context, req *GetExistingProbesRequest) (*GetExistingProbesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetExistingProbes not implemented")
-}
-
-func RegisterProbeUploadServiceServer(s *grpc.Server, srv ProbeUploadServiceServer) {
-	s.RegisterService(&_ProbeUploadService_serviceDesc, srv)
-}
-
-func _ProbeUploadService_GetExistingProbes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetExistingProbesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProbeUploadServiceServer).GetExistingProbes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.ProbeUploadService/GetExistingProbes",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProbeUploadServiceServer).GetExistingProbes(ctx, req.(*GetExistingProbesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ProbeUploadService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.ProbeUploadService",
-	HandlerType: (*ProbeUploadServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetExistingProbes",
-			Handler:    _ProbeUploadService_GetExistingProbes_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/probe_upload_service.proto",
 }
 
 func (m *ProbeUploadManifest) Marshal() (dAtA []byte, err error) {

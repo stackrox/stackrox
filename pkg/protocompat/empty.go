@@ -1,7 +1,7 @@
 package protocompat
 
 import (
-	"github.com/gogo/protobuf/types"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Empty is a generic empty message that you can re-use to avoid defining duplicated empty messages
@@ -13,7 +13,7 @@ import (
 //	}
 //
 // The JSON representation for `Empty` is empty JSON object `{}`.
-type Empty = types.Empty
+type Empty = emptypb.Empty
 
 // ProtoEmpty returns a pointer to an instance of the generic empty type.
 func ProtoEmpty() *Empty { return &Empty{} }

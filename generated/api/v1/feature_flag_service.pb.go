@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -196,86 +192,6 @@ var fileDescriptor_2e50adfbe4756afe = []byte{
 	0xec, 0xbd, 0x0c, 0xd9, 0xf3, 0x47, 0xf8, 0x8f, 0x8b, 0x54, 0x4b, 0x63, 0x71, 0x75, 0x5b, 0xe8,
 	0xfb, 0xe6, 0x6c, 0x12, 0xf3, 0x54, 0xba, 0xe8, 0x3a, 0x70, 0xd1, 0x15, 0x5b, 0xb6, 0x6b, 0xed,
 	0xe8, 0x2b, 0x00, 0x00, 0xff, 0xff, 0x8a, 0x69, 0x6a, 0x93, 0xa5, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// FeatureFlagServiceClient is the client API for FeatureFlagService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type FeatureFlagServiceClient interface {
-	GetFeatureFlags(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetFeatureFlagsResponse, error)
-}
-
-type featureFlagServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewFeatureFlagServiceClient(cc grpc.ClientConnInterface) FeatureFlagServiceClient {
-	return &featureFlagServiceClient{cc}
-}
-
-func (c *featureFlagServiceClient) GetFeatureFlags(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetFeatureFlagsResponse, error) {
-	out := new(GetFeatureFlagsResponse)
-	err := c.cc.Invoke(ctx, "/v1.FeatureFlagService/GetFeatureFlags", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// FeatureFlagServiceServer is the server API for FeatureFlagService service.
-type FeatureFlagServiceServer interface {
-	GetFeatureFlags(context.Context, *Empty) (*GetFeatureFlagsResponse, error)
-}
-
-// UnimplementedFeatureFlagServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedFeatureFlagServiceServer struct {
-}
-
-func (*UnimplementedFeatureFlagServiceServer) GetFeatureFlags(ctx context.Context, req *Empty) (*GetFeatureFlagsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureFlags not implemented")
-}
-
-func RegisterFeatureFlagServiceServer(s *grpc.Server, srv FeatureFlagServiceServer) {
-	s.RegisterService(&_FeatureFlagService_serviceDesc, srv)
-}
-
-func _FeatureFlagService_GetFeatureFlags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FeatureFlagServiceServer).GetFeatureFlags(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.FeatureFlagService/GetFeatureFlags",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FeatureFlagServiceServer).GetFeatureFlags(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _FeatureFlagService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.FeatureFlagService",
-	HandlerType: (*FeatureFlagServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetFeatureFlags",
-			Handler:    _FeatureFlagService_GetFeatureFlags_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/feature_flag_service.proto",
 }
 
 func (m *FeatureFlag) Marshal() (dAtA []byte, err error) {

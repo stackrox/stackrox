@@ -4,13 +4,9 @@
 package sensor
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -194,86 +190,6 @@ var fileDescriptor_1ca15d5344f9a7ff = []byte{
 	0xef, 0x6d, 0x4a, 0x3e, 0xda, 0x94, 0x7c, 0xb6, 0x29, 0x79, 0xfb, 0x4a, 0x37, 0xee, 0x96, 0x95,
 	0xde, 0xf7, 0x42, 0x55, 0x67, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x7d, 0xd6, 0x39, 0xfe, 0x8c,
 	0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// ImageServiceClient is the client API for ImageService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type ImageServiceClient interface {
-	GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*GetImageResponse, error)
-}
-
-type imageServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewImageServiceClient(cc grpc.ClientConnInterface) ImageServiceClient {
-	return &imageServiceClient{cc}
-}
-
-func (c *imageServiceClient) GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*GetImageResponse, error) {
-	out := new(GetImageResponse)
-	err := c.cc.Invoke(ctx, "/sensor.ImageService/GetImage", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ImageServiceServer is the server API for ImageService service.
-type ImageServiceServer interface {
-	GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error)
-}
-
-// UnimplementedImageServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedImageServiceServer struct {
-}
-
-func (*UnimplementedImageServiceServer) GetImage(ctx context.Context, req *GetImageRequest) (*GetImageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetImage not implemented")
-}
-
-func RegisterImageServiceServer(s *grpc.Server, srv ImageServiceServer) {
-	s.RegisterService(&_ImageService_serviceDesc, srv)
-}
-
-func _ImageService_GetImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetImageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ImageServiceServer).GetImage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/sensor.ImageService/GetImage",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ImageServiceServer).GetImage(ctx, req.(*GetImageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ImageService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.ImageService",
-	HandlerType: (*ImageServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetImage",
-			Handler:    _ImageService_GetImage_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/sensor/image_iservice.proto",
 }
 
 func (m *GetImageRequest) Marshal() (dAtA []byte, err error) {
