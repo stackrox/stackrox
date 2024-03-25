@@ -166,7 +166,6 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {!!selectedNetworkPolicy?.yaml && (
                     <>
                         <StackItem>
-                            {console.log('hi')}
                             <div className="pf-v5-u-h-100">
                                 <CodeEditor
                                     isDarkTheme={customDarkMode}
