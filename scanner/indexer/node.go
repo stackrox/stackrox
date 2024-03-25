@@ -109,27 +109,14 @@ func NewNodeIndexer(ctx context.Context, cfg config.NodeIndexerConfig) (NodeInde
 }
 
 func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *http.Client, mountPath string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	o := ccindexer.Options{
-		Client: nil,
-		ScannerConfig: struct {
-			Package, Dist, Repo, File map[string]func(interface{}) error
-		}{},
-		Store:        nil,
-		LayerScanner: nil, // FIXME: Use Nodescanner here
-		FetchArena:   nil, // FIXME: Use NodeArena here
-		Ecosystems:   nil,
-		Resolvers:    nil,
-		Vscnrs:       nil,
-	}
-
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           NewNodeArena(client, mountPath), // FIXME: Actually implement FetchArena
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
+		FetchArena:           libindex.NewRemoteFetchArena(client, ""), // FIXME: Unused, but required
 		LayerScanConcurrency: 1,
 		NoLayerValidation:    true,
-		ControllerFactory:    nil,
+		ControllerFactory:    nil, // TODO: We could go for a custom factory here as well
 		Ecosystems:           ecosystems(ctx),
 		ScannerConfig: struct {
 			Package, Dist, Repo, File map[string]func(interface{}) error
@@ -137,9 +124,7 @@ func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *ht
 		Resolvers: nil,
 	}
 
-	// FIXME: Cannot use libindex.New here, instead we need to build this ourselves,
-	// as we need to set custom indexer options that .New doesn't expose
-	indexer, err := libindex.New(ctx, &opts, client)
+	indexer, err := libindex.NewNodeScan(ctx, &opts, client)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
@@ -149,9 +134,8 @@ func newNodeLibindex(ctx context.Context, _ config.NodeIndexerConfig, client *ht
 
 // IndexNode indexes a live fs.FS at the container mountpoint given in the basePath.
 func (l *localNodeIndexer) IndexNode(ctx context.Context, basePath string) (*claircore.IndexReport, error) {
-	//FIXME: implement me
 	zlog.Info(ctx).Str("basePath", basePath).Msg("Would call index node now")
-	return nil, errors.New("not implemented")
+	return l.libIndex.IndexNode(ctx)
 }
 
 // Close closes the NodeIndexer.
