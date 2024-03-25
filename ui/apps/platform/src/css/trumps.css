@@ -56,12 +56,6 @@ body {
     border-top: var(--pf-v5-global--BorderColor--100) var(--pf-v5-global--BorderWidth--sm) solid;
 }
 
-/* overrides for forms, until we remove Tailwind */
-.pf-v5-c-check__input {
-    height: var(--pf-v5-c-check__input--Height);
-    width: var(--pf-v5-c-check__input--Height);
-}
-
 .pf-v5-c-form-control {
     border-top-color: var(--pf-v5-global--BorderColor--300);
     border-right-color: var(--pf-v5-global--BorderColor--300);
