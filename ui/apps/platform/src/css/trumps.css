@@ -4,6 +4,11 @@
    We should have a goal of eventually being able to delete this file.
  */
 
+body {
+    /* Overrides the tailwind default font-family that clashes with the upgrade to PF 5 */
+    font-family: var(--pf-v5-global--FontFamily--text);
+}
+
 .ReactModal__Content,
 #main-page-container > div > :not(.pf-v5-c-page__main-section) {
   font-size: 0.875rem;
