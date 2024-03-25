@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +104,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
 					assert.False(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					_, err := passwordFromSecretData(secret.Data)
 					assert.NoError(t, err)
 				},
@@ -116,7 +117,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
 					assert.False(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw1, pw)
@@ -130,7 +131,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
 					assert.False(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					_, err := passwordFromSecretData(secret.Data)
 					assert.NoError(t, err)
 				},
@@ -152,7 +153,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
 					assert.False(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw1, pw)
@@ -167,7 +168,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
 					assert.False(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw1, pw)
@@ -182,7 +183,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				canonicalCentralDBPasswordSecretName: func(t *testing.T, central *v1alpha1.Central, secret *v1.Secret) {
 					assert.False(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					pw, err := passwordFromSecretData(secret.Data)
 					require.NoError(t, err)
 					assert.Equal(t, pw2, pw)

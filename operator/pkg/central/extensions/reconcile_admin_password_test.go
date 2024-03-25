@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
@@ -53,7 +54,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-htpasswd": func(t *testing.T, central *platform.Central, secret *v1.Secret) {
 					assert.True(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 
 					plaintextPW := string(secret.Data[adminPasswordKey])
 					require.NotEmpty(t, plaintextPW)
@@ -102,7 +103,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-htpasswd": func(t *testing.T, central *platform.Central, secret *v1.Secret) {
 					assert.True(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 
 					htpasswdBytes := secret.Data[htpasswdKey]
 					hf, err := htpasswd.ReadHashFile(bytes.NewReader(htpasswdBytes))
@@ -131,7 +132,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-htpasswd": func(t *testing.T, central *platform.Central, secret *v1.Secret) {
 					assert.True(t, metav1.IsControlledBy(secret, central))
-					assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+					assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 					require.NotNil(t, secret.Data)
 				},
 			},

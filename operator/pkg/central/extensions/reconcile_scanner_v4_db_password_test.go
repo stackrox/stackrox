@@ -5,6 +5,7 @@ import (
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/common/extensions"
+	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -13,7 +14,7 @@ import (
 
 func verifyScannerV4DBPassword(t *testing.T, central *platform.Central, secret *v1.Secret) {
 	assert.True(t, metav1.IsControlledBy(secret, central))
-	assert.Equal(t, "rhacs-operator", secret.Labels["app.kubernetes.io/managed-by"])
+	assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 	assert.NotEmpty(t, secret.Data[extensions.ScannerV4DBPasswordKey])
 }
 
