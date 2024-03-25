@@ -4,13 +4,9 @@
 package sensor
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -181,122 +177,6 @@ var fileDescriptor_2d317c19f583202f = []byte{
 	0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf1, 0x58, 0x8e, 0x21, 0x0a, 0x1a, 0xb2, 0x3f, 0x18, 0x19, 0x93,
 	0xd8, 0xc0, 0xc1, 0x62, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x97, 0x23, 0x7a, 0x38, 0x97, 0x01,
 	0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// SignalServiceClient is the client API for SignalService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type SignalServiceClient interface {
-	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-	// send anything via this stream.
-	PushSignals(ctx context.Context, opts ...grpc.CallOption) (SignalService_PushSignalsClient, error)
-}
-
-type signalServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewSignalServiceClient(cc grpc.ClientConnInterface) SignalServiceClient {
-	return &signalServiceClient{cc}
-}
-
-func (c *signalServiceClient) PushSignals(ctx context.Context, opts ...grpc.CallOption) (SignalService_PushSignalsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_SignalService_serviceDesc.Streams[0], "/sensor.SignalService/PushSignals", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &signalServicePushSignalsClient{stream}
-	return x, nil
-}
-
-type SignalService_PushSignalsClient interface {
-	Send(*SignalStreamMessage) error
-	Recv() (*v1.Empty, error)
-	grpc.ClientStream
-}
-
-type signalServicePushSignalsClient struct {
-	grpc.ClientStream
-}
-
-func (x *signalServicePushSignalsClient) Send(m *SignalStreamMessage) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *signalServicePushSignalsClient) Recv() (*v1.Empty, error) {
-	m := new(v1.Empty)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// SignalServiceServer is the server API for SignalService service.
-type SignalServiceServer interface {
-	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-	// send anything via this stream.
-	PushSignals(SignalService_PushSignalsServer) error
-}
-
-// UnimplementedSignalServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedSignalServiceServer struct {
-}
-
-func (*UnimplementedSignalServiceServer) PushSignals(srv SignalService_PushSignalsServer) error {
-	return status.Errorf(codes.Unimplemented, "method PushSignals not implemented")
-}
-
-func RegisterSignalServiceServer(s *grpc.Server, srv SignalServiceServer) {
-	s.RegisterService(&_SignalService_serviceDesc, srv)
-}
-
-func _SignalService_PushSignals_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SignalServiceServer).PushSignals(&signalServicePushSignalsServer{stream})
-}
-
-type SignalService_PushSignalsServer interface {
-	Send(*v1.Empty) error
-	Recv() (*SignalStreamMessage, error)
-	grpc.ServerStream
-}
-
-type signalServicePushSignalsServer struct {
-	grpc.ServerStream
-}
-
-func (x *signalServicePushSignalsServer) Send(m *v1.Empty) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *signalServicePushSignalsServer) Recv() (*SignalStreamMessage, error) {
-	m := new(SignalStreamMessage)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-var _SignalService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.SignalService",
-	HandlerType: (*SignalServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "PushSignals",
-			Handler:       _SignalService_PushSignals_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
-	Metadata: "internalapi/sensor/signal_iservice.proto",
 }
 
 func (m *SignalStreamMessage) Marshal() (dAtA []byte, err error) {

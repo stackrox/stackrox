@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -185,88 +181,6 @@ var fileDescriptor_d8bf40985da37317 = []byte{
 	0x5f, 0xbc, 0x02, 0x2f, 0x29, 0x94, 0x8e, 0xa2, 0xde, 0x89, 0xc5, 0x41, 0x76, 0xb1, 0xd1, 0x5f,
 	0x91, 0x69, 0x70, 0x54, 0x4c, 0x83, 0xc3, 0xc2, 0xf1, 0xec, 0xbb, 0xb6, 0xf1, 0x16, 0x00, 0x00,
 	0xff, 0xff, 0x42, 0x49, 0x2e, 0xa5, 0x42, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// ListeningEndpointsServiceClient is the client API for ListeningEndpointsService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type ListeningEndpointsServiceClient interface {
-	// GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
-	GetListeningEndpoints(ctx context.Context, in *GetProcessesListeningOnPortsRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error)
-}
-
-type listeningEndpointsServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewListeningEndpointsServiceClient(cc grpc.ClientConnInterface) ListeningEndpointsServiceClient {
-	return &listeningEndpointsServiceClient{cc}
-}
-
-func (c *listeningEndpointsServiceClient) GetListeningEndpoints(ctx context.Context, in *GetProcessesListeningOnPortsRequest, opts ...grpc.CallOption) (*GetProcessesListeningOnPortsResponse, error) {
-	out := new(GetProcessesListeningOnPortsResponse)
-	err := c.cc.Invoke(ctx, "/v1.ListeningEndpointsService/GetListeningEndpoints", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ListeningEndpointsServiceServer is the server API for ListeningEndpointsService service.
-type ListeningEndpointsServiceServer interface {
-	// GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
-	GetListeningEndpoints(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error)
-}
-
-// UnimplementedListeningEndpointsServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedListeningEndpointsServiceServer struct {
-}
-
-func (*UnimplementedListeningEndpointsServiceServer) GetListeningEndpoints(ctx context.Context, req *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetListeningEndpoints not implemented")
-}
-
-func RegisterListeningEndpointsServiceServer(s *grpc.Server, srv ListeningEndpointsServiceServer) {
-	s.RegisterService(&_ListeningEndpointsService_serviceDesc, srv)
-}
-
-func _ListeningEndpointsService_GetListeningEndpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProcessesListeningOnPortsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ListeningEndpointsServiceServer).GetListeningEndpoints(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.ListeningEndpointsService/GetListeningEndpoints",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ListeningEndpointsServiceServer).GetListeningEndpoints(ctx, req.(*GetProcessesListeningOnPortsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ListeningEndpointsService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.ListeningEndpointsService",
-	HandlerType: (*ListeningEndpointsServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetListeningEndpoints",
-			Handler:    _ListeningEndpointsService_GetListeningEndpoints_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/process_listening_on_port_service.proto",
 }
 
 func (m *GetProcessesListeningOnPortsRequest) Marshal() (dAtA []byte, err error) {

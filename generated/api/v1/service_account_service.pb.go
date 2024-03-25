@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -380,122 +376,6 @@ var fileDescriptor_7ddf1e7223a6d354 = []byte{
 	0xe0, 0x06, 0xf2, 0xb8, 0x8c, 0x40, 0x13, 0xfa, 0x4e, 0xc9, 0x0f, 0xf5, 0xf7, 0x88, 0x48, 0xc1,
 	0xa3, 0x32, 0x3e, 0x77, 0xcb, 0xf8, 0x75, 0xe3, 0xe2, 0xa6, 0xc1, 0xee, 0xfd, 0x0b, 0x00, 0x00,
 	0xff, 0xff, 0xe2, 0xa4, 0xaa, 0x76, 0xfc, 0x03, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// ServiceAccountServiceClient is the client API for ServiceAccountService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type ServiceAccountServiceClient interface {
-	GetServiceAccount(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetServiceAccountResponse, error)
-	ListServiceAccounts(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListServiceAccountResponse, error)
-}
-
-type serviceAccountServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewServiceAccountServiceClient(cc grpc.ClientConnInterface) ServiceAccountServiceClient {
-	return &serviceAccountServiceClient{cc}
-}
-
-func (c *serviceAccountServiceClient) GetServiceAccount(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetServiceAccountResponse, error) {
-	out := new(GetServiceAccountResponse)
-	err := c.cc.Invoke(ctx, "/v1.ServiceAccountService/GetServiceAccount", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *serviceAccountServiceClient) ListServiceAccounts(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListServiceAccountResponse, error) {
-	out := new(ListServiceAccountResponse)
-	err := c.cc.Invoke(ctx, "/v1.ServiceAccountService/ListServiceAccounts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ServiceAccountServiceServer is the server API for ServiceAccountService service.
-type ServiceAccountServiceServer interface {
-	GetServiceAccount(context.Context, *ResourceByID) (*GetServiceAccountResponse, error)
-	ListServiceAccounts(context.Context, *RawQuery) (*ListServiceAccountResponse, error)
-}
-
-// UnimplementedServiceAccountServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedServiceAccountServiceServer struct {
-}
-
-func (*UnimplementedServiceAccountServiceServer) GetServiceAccount(ctx context.Context, req *ResourceByID) (*GetServiceAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetServiceAccount not implemented")
-}
-func (*UnimplementedServiceAccountServiceServer) ListServiceAccounts(ctx context.Context, req *RawQuery) (*ListServiceAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListServiceAccounts not implemented")
-}
-
-func RegisterServiceAccountServiceServer(s *grpc.Server, srv ServiceAccountServiceServer) {
-	s.RegisterService(&_ServiceAccountService_serviceDesc, srv)
-}
-
-func _ServiceAccountService_GetServiceAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResourceByID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServiceAccountServiceServer).GetServiceAccount(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.ServiceAccountService/GetServiceAccount",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceAccountServiceServer).GetServiceAccount(ctx, req.(*ResourceByID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ServiceAccountService_ListServiceAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ServiceAccountServiceServer).ListServiceAccounts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.ServiceAccountService/ListServiceAccounts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceAccountServiceServer).ListServiceAccounts(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ServiceAccountService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.ServiceAccountService",
-	HandlerType: (*ServiceAccountServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetServiceAccount",
-			Handler:    _ServiceAccountService_GetServiceAccount_Handler,
-		},
-		{
-			MethodName: "ListServiceAccounts",
-			Handler:    _ServiceAccountService_ListServiceAccounts_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/service_account_service.proto",
 }
 
 func (m *ListServiceAccountResponse) Marshal() (dAtA []byte, err error) {
