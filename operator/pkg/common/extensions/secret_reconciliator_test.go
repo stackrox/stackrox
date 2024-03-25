@@ -480,16 +480,17 @@ label              hasOwnerRef,hasWrongLabel                      x
 			}
 			client := fake.NewClientBuilder().WithObjects(objects...).Build()
 			ctx := context.Background()
-			err := NewSecretReconciliator(client, client, central, tt.strategy).EnsureSecret(ctx, secretName, validate, generate)
+			reconciler := NewSecretReconciliator(client, client, central, tt.strategy)
+			err := reconciler.EnsureSecret(ctx, secretName, validate, generate)
 			require.NoError(t, err)
 
 			var secret v1.Secret
 			require.NoError(t, client.Get(ctx, k8sTypes.NamespacedName{Name: secretName, Namespace: testutils.TestNamespace}, &secret))
 
 			if tt.expectedLabel {
-				assert.Equal(t, labels.ManagedByLabel, secret.Labels[labels.ManagedByValue])
+				assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 			} else {
-				assert.NotEqual(t, labels.ManagedByLabel, secret.Labels[labels.ManagedByValue])
+				assert.NotEqual(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
 			}
 
 			if tt.expectedOwnerRef {

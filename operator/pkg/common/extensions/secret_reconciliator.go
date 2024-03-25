@@ -157,9 +157,6 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		needsUpdate = true
 	}
 
-	labels, needsLabelUpdate := commonLabels.WithDefaults(secret.Labels)
-	secret.Labels = labels
-	needsUpdate = needsUpdate || needsLabelUpdate
 	if !needsUpdate || !isManaged {
 		return nil
 	}
