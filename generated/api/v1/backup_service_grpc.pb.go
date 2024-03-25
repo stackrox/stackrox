@@ -145,7 +145,7 @@ func (c *externalBackupServiceClient) TestUpdatedExternalBackup(ctx context.Cont
 }
 
 // ExternalBackupServiceServer is the server API for ExternalBackupService service.
-// All implementations should embed UnimplementedExternalBackupServiceServer
+// All implementations must embed UnimplementedExternalBackupServiceServer
 // for forward compatibility
 type ExternalBackupServiceServer interface {
 	// GetExternalBackup returns the external backup configuration given its ID.
@@ -166,9 +166,10 @@ type ExternalBackupServiceServer interface {
 	UpdateExternalBackup(context.Context, *UpdateExternalBackupRequest) (*storage.ExternalBackup, error)
 	// TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.
 	TestUpdatedExternalBackup(context.Context, *UpdateExternalBackupRequest) (*Empty, error)
+	mustEmbedUnimplementedExternalBackupServiceServer()
 }
 
-// UnimplementedExternalBackupServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedExternalBackupServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedExternalBackupServiceServer struct {
 }
 
@@ -199,6 +200,7 @@ func (UnimplementedExternalBackupServiceServer) UpdateExternalBackup(context.Con
 func (UnimplementedExternalBackupServiceServer) TestUpdatedExternalBackup(context.Context, *UpdateExternalBackupRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TestUpdatedExternalBackup not implemented")
 }
+func (UnimplementedExternalBackupServiceServer) mustEmbedUnimplementedExternalBackupServiceServer() {}
 
 // UnsafeExternalBackupServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ExternalBackupServiceServer will

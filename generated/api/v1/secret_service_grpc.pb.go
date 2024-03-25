@@ -73,7 +73,7 @@ func (c *secretServiceClient) ListSecrets(ctx context.Context, in *RawQuery, opt
 }
 
 // SecretServiceServer is the server API for SecretService service.
-// All implementations should embed UnimplementedSecretServiceServer
+// All implementations must embed UnimplementedSecretServiceServer
 // for forward compatibility
 type SecretServiceServer interface {
 	// GetSecret returns a secret given its ID.
@@ -82,9 +82,10 @@ type SecretServiceServer interface {
 	CountSecrets(context.Context, *RawQuery) (*CountSecretsResponse, error)
 	// ListSecrets returns the list of secrets.
 	ListSecrets(context.Context, *RawQuery) (*ListSecretsResponse, error)
+	mustEmbedUnimplementedSecretServiceServer()
 }
 
-// UnimplementedSecretServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedSecretServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedSecretServiceServer struct {
 }
 
@@ -97,6 +98,7 @@ func (UnimplementedSecretServiceServer) CountSecrets(context.Context, *RawQuery)
 func (UnimplementedSecretServiceServer) ListSecrets(context.Context, *RawQuery) (*ListSecretsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSecrets not implemented")
 }
+func (UnimplementedSecretServiceServer) mustEmbedUnimplementedSecretServiceServer() {}
 
 // UnsafeSecretServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to SecretServiceServer will

@@ -7,7 +7,7 @@ package scanner.v4;
 
 import "internalapi/scanner/v4/common.proto";
 
-option go_package = "v4";
+option go_package = "./;v4";
 
 message IndexReport {
   string hash_id = 1;

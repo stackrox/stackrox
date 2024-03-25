@@ -48,19 +48,22 @@ func (c *credentialExpiryServiceClient) GetCertExpiry(ctx context.Context, in *G
 }
 
 // CredentialExpiryServiceServer is the server API for CredentialExpiryService service.
-// All implementations should embed UnimplementedCredentialExpiryServiceServer
+// All implementations must embed UnimplementedCredentialExpiryServiceServer
 // for forward compatibility
 type CredentialExpiryServiceServer interface {
 	// GetCertExpiry returns information related to the expiry component mTLS certificate.
 	GetCertExpiry(context.Context, *GetCertExpiry_Request) (*GetCertExpiry_Response, error)
+	mustEmbedUnimplementedCredentialExpiryServiceServer()
 }
 
-// UnimplementedCredentialExpiryServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedCredentialExpiryServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedCredentialExpiryServiceServer struct {
 }
 
 func (UnimplementedCredentialExpiryServiceServer) GetCertExpiry(context.Context, *GetCertExpiry_Request) (*GetCertExpiry_Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCertExpiry not implemented")
+}
+func (UnimplementedCredentialExpiryServiceServer) mustEmbedUnimplementedCredentialExpiryServiceServer() {
 }
 
 // UnsafeCredentialExpiryServiceServer may be embedded to opt out of forward compatibility for this service.

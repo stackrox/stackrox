@@ -5,7 +5,7 @@ package v1;
 import "storage/process_indicator.proto";
 
 option cc_enable_arenas = true;
-option go_package = "v1";
+option go_package = "./;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 // Signal message tracks process and network activity.

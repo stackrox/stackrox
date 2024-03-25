@@ -121,7 +121,7 @@ func (c *complianceScanConfigurationServiceClient) GetComplianceScanConfiguratio
 }
 
 // ComplianceScanConfigurationServiceServer is the server API for ComplianceScanConfigurationService service.
-// All implementations should embed UnimplementedComplianceScanConfigurationServiceServer
+// All implementations must embed UnimplementedComplianceScanConfigurationServiceServer
 // for forward compatibility
 type ComplianceScanConfigurationServiceServer interface {
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
@@ -139,9 +139,10 @@ type ComplianceScanConfigurationServiceServer interface {
 	// profiles across the configured clusters.
 	RunComplianceScanConfiguration(context.Context, *ResourceByID) (*Empty, error)
 	GetComplianceScanConfigurationsCount(context.Context, *RawQuery) (*ComplianceScanConfigurationsCount, error)
+	mustEmbedUnimplementedComplianceScanConfigurationServiceServer()
 }
 
-// UnimplementedComplianceScanConfigurationServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedComplianceScanConfigurationServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedComplianceScanConfigurationServiceServer struct {
 }
 
@@ -165,6 +166,8 @@ func (UnimplementedComplianceScanConfigurationServiceServer) RunComplianceScanCo
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) GetComplianceScanConfigurationsCount(context.Context, *RawQuery) (*ComplianceScanConfigurationsCount, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanConfigurationsCount not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) mustEmbedUnimplementedComplianceScanConfigurationServiceServer() {
 }
 
 // UnsafeComplianceScanConfigurationServiceServer may be embedded to opt out of forward compatibility for this service.

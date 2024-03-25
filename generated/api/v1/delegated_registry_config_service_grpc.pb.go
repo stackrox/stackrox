@@ -73,7 +73,7 @@ func (c *delegatedRegistryConfigServiceClient) UpdateConfig(ctx context.Context,
 }
 
 // DelegatedRegistryConfigServiceServer is the server API for DelegatedRegistryConfigService service.
-// All implementations should embed UnimplementedDelegatedRegistryConfigServiceServer
+// All implementations must embed UnimplementedDelegatedRegistryConfigServiceServer
 // for forward compatibility
 type DelegatedRegistryConfigServiceServer interface {
 	// GetConfig returns the current delegated registry configuration
@@ -83,9 +83,10 @@ type DelegatedRegistryConfigServiceServer interface {
 	GetClusters(context.Context, *Empty) (*DelegatedRegistryClustersResponse, error)
 	// UpdateConfig updates the stored delegated registry configuration
 	UpdateConfig(context.Context, *DelegatedRegistryConfig) (*DelegatedRegistryConfig, error)
+	mustEmbedUnimplementedDelegatedRegistryConfigServiceServer()
 }
 
-// UnimplementedDelegatedRegistryConfigServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDelegatedRegistryConfigServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDelegatedRegistryConfigServiceServer struct {
 }
 
@@ -97,6 +98,8 @@ func (UnimplementedDelegatedRegistryConfigServiceServer) GetClusters(context.Con
 }
 func (UnimplementedDelegatedRegistryConfigServiceServer) UpdateConfig(context.Context, *DelegatedRegistryConfig) (*DelegatedRegistryConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateConfig not implemented")
+}
+func (UnimplementedDelegatedRegistryConfigServiceServer) mustEmbedUnimplementedDelegatedRegistryConfigServiceServer() {
 }
 
 // UnsafeDelegatedRegistryConfigServiceServer may be embedded to opt out of forward compatibility for this service.

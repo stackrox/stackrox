@@ -136,7 +136,7 @@ func (c *authProviderServiceClient) ExchangeToken(ctx context.Context, in *Excha
 }
 
 // AuthProviderServiceServer is the server API for AuthProviderService service.
-// All implementations should embed UnimplementedAuthProviderServiceServer
+// All implementations must embed UnimplementedAuthProviderServiceServer
 // for forward compatibility
 type AuthProviderServiceServer interface {
 	ListAvailableProviderTypes(context.Context, *Empty) (*AvailableProviderTypesResponse, error)
@@ -148,9 +148,10 @@ type AuthProviderServiceServer interface {
 	PutAuthProvider(context.Context, *storage.AuthProvider) (*storage.AuthProvider, error)
 	DeleteAuthProvider(context.Context, *DeleteByIDWithForce) (*Empty, error)
 	ExchangeToken(context.Context, *ExchangeTokenRequest) (*ExchangeTokenResponse, error)
+	mustEmbedUnimplementedAuthProviderServiceServer()
 }
 
-// UnimplementedAuthProviderServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedAuthProviderServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedAuthProviderServiceServer struct {
 }
 
@@ -181,6 +182,7 @@ func (UnimplementedAuthProviderServiceServer) DeleteAuthProvider(context.Context
 func (UnimplementedAuthProviderServiceServer) ExchangeToken(context.Context, *ExchangeTokenRequest) (*ExchangeTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExchangeToken not implemented")
 }
+func (UnimplementedAuthProviderServiceServer) mustEmbedUnimplementedAuthProviderServiceServer() {}
 
 // UnsafeAuthProviderServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to AuthProviderServiceServer will

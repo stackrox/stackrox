@@ -58,14 +58,15 @@ func (c *serviceAccountServiceClient) ListServiceAccounts(ctx context.Context, i
 }
 
 // ServiceAccountServiceServer is the server API for ServiceAccountService service.
-// All implementations should embed UnimplementedServiceAccountServiceServer
+// All implementations must embed UnimplementedServiceAccountServiceServer
 // for forward compatibility
 type ServiceAccountServiceServer interface {
 	GetServiceAccount(context.Context, *ResourceByID) (*GetServiceAccountResponse, error)
 	ListServiceAccounts(context.Context, *RawQuery) (*ListServiceAccountResponse, error)
+	mustEmbedUnimplementedServiceAccountServiceServer()
 }
 
-// UnimplementedServiceAccountServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedServiceAccountServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedServiceAccountServiceServer struct {
 }
 
@@ -75,6 +76,7 @@ func (UnimplementedServiceAccountServiceServer) GetServiceAccount(context.Contex
 func (UnimplementedServiceAccountServiceServer) ListServiceAccounts(context.Context, *RawQuery) (*ListServiceAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListServiceAccounts not implemented")
 }
+func (UnimplementedServiceAccountServiceServer) mustEmbedUnimplementedServiceAccountServiceServer() {}
 
 // UnsafeServiceAccountServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ServiceAccountServiceServer will

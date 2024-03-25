@@ -299,7 +299,7 @@ dev: install-dev-tools
 ## Generated Code and Dependencies ##
 #####################################
 
-PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
+PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_VT_SRCS) $(GENERATED_API_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
@@ -633,7 +633,6 @@ ifdef CI
 	cp bin/linux_ppc64le/roxctl image/rhel/bin/roxctl-linux-ppc64le
 	cp bin/linux_s390x/roxctl image/rhel/bin/roxctl-linux-s390x
 	cp bin/darwin_amd64/roxctl image/rhel/bin/roxctl-darwin-amd64
-	cp bin/darwin_arm64/roxctl image/rhel/bin/roxctl-darwin-arm64
 	cp bin/windows_amd64/roxctl.exe image/rhel/bin/roxctl-windows-amd64.exe
 else
 ifneq ($(HOST_OS),linux)
