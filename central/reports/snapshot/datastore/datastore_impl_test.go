@@ -164,7 +164,7 @@ func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 func (s *ReportSnapshotDatastoreTestSuite) storeNotifier(name string) *storage.NotifierConfiguration_Id {
 	allCtx := sac.WithAllAccess(context.Background())
 
-	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name, Type: "generic", UiEndpoint: "http://localhost"})
+	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
 	s.Require().NoError(err)
 	return &storage.NotifierConfiguration_Id{Id: id}
 }
