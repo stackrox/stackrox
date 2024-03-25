@@ -290,7 +290,9 @@ refresh_gke_token() {
         sleep 900 &
         pid="$!"
         kill_sleep() {
+            # shellcheck disable=SC2317
             echo "refresh_gke_token() terminated, killing the background sleep ($pid)"
+            # shellcheck disable=SC2317
             kill "$pid"
         }
         trap kill_sleep SIGINT SIGTERM

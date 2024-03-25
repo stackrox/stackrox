@@ -6,11 +6,15 @@ load "../../../scripts/test_helpers.bats"
 function setup() {
     source "${BATS_TEST_DIRNAME}/../lib.sh"
     function mock_check_script() {
+        # shellcheck disable=SC2317
         >&2 echo "check called with: $*<<"
+        # shellcheck disable=SC2317
         true
     }
     function save_junit_success() {
+        # shellcheck disable=SC2317
         >&2 echo "save_junit_success called with: $*<<"
+        # shellcheck disable=SC2317
         true
     }
 }

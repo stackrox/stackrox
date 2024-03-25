@@ -35,7 +35,7 @@ function generate_k8s_events() {
   $EXEC -record -record-out="$K8S_EVENTS_FILE" -with-fakeworkload="$FAKE_WORKLOAD_FILE" -central-out=/dev/null -no-cpu-prof -no-mem-prof > "$OUTPUT_DIR"/generate.log 2>&1 &
   PID=$!
   [[ "$VERBOSE" == "false" ]] || echo "$LOCAL_SENSOR_BIN PID: $PID"
-  sleep $GENERATE_TIMEOUT
+  sleep "$GENERATE_TIMEOUT"
   kill $PID
   [[ "$VERBOSE" == "false" ]] || echo "Generation done"
 }
@@ -48,8 +48,8 @@ function run_test() {
   SENSOR_PID=$(pgrep -P $TIME_PID)
   [[ "$VERBOSE" == "false" ]] || echo "time PID: $TIME_PID"
   [[ "$VERBOSE" == "false" ]] || echo "$LOCAL_SENSOR_BIN PID: $SENSOR_PID"
-  sleep $TEST_TIMEOUT
-  curl -s $PROMETHEUS_ENDPOINT/api/v1/query?query=$PROMETHEUS_QUERY > "$PROMETHEUS_DUMP" || true
+  sleep "$TEST_TIMEOUT"
+  curl -s "$PROMETHEUS_ENDPOINT/api/v1/query?query=$PROMETHEUS_QUERY" > "$PROMETHEUS_DUMP" || true
   kill "$SENSOR_PID"
   [[ "$VERBOSE" == "false" ]] || echo "Test done"
 }
