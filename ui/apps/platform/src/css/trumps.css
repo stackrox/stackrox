@@ -61,7 +61,6 @@ body {
     border-right-color: var(--pf-v5-global--BorderColor--300);
     border-bottom-color: var(--pf-v5-global--BorderColor--200);
     border-left-color: var(--pf-v5-global--BorderColor--300);
-    padding: var(--pf-v5-c-form-control--PaddingTop) var(--pf-v5-c-form-control--PaddingRight) var(--pf-v5-c-form-control--PaddingBottom) var(--pf-v5-c-form-control--PaddingLeft);
 }
 
 .pf-v5-c-form-control:disabled {
