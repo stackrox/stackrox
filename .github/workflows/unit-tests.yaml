@@ -294,6 +294,7 @@ jobs:
       - go-bench
       - go-postgres
       - local-roxctl-tests
+      - openshift-ci-unit-tests
       - shell-unit-tests
       - ui
     permissions:
