@@ -48,14 +48,24 @@ func MarshalTextString(msg proto.Message) string {
 	return proto.MarshalTextString(msg)
 }
 
+// ProtoUnmarshal parses the protocol buffer representation in buf and places
+// the decoded result in pb. If the struct underlying pb does not match
+// the data in buf, the results can be unpredictable.
+//
+// Unmarshal resets pb before starting to unmarshal, so any existing data
+// in pb is always removed.
+func ProtoUnmarshal(dAtA []byte, msg proto.Message) error {
+	return proto.Unmarshal(dAtA, msg)
+}
+
 // Unmarshal parses the protocol buffer representation in buf and places
 // the decoded result in pb. If the struct underlying pb does not match
 // the data in buf, the results can be unpredictable.
 //
 // Unmarshal resets pb before starting to unmarshal, so any existing data
 // in pb is always removed.
-func Unmarshal(dAtA []byte, msg proto.Message) error {
-	return proto.Unmarshal(dAtA, msg)
+func Unmarshal[T any, U Unmarshaler[T]](dAtA []byte, msg U) error {
+	return msg.UnmarshalVT(dAtA)
 }
 
 // Marshaler is a generic interface type wrapping around types that implement protobuf Marshaler.
@@ -66,7 +76,8 @@ type Marshaler[T any] interface {
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	proto.Unmarshaler
+	// proto.Unmarshaler
+	UnmarshalVT([]byte) error
 	*T
 }
 
@@ -74,6 +85,7 @@ type Unmarshaler[T any] interface {
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
 	Clone() *T
-	proto.Unmarshaler
+	// proto.Unmarshaler
+	UnmarshalVT([]byte) error
 	*T
 }

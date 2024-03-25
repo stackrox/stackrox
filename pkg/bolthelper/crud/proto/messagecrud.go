@@ -68,7 +68,7 @@ func NewMessageCrudForBucket(
 	allocFunc func() protocompat.Message) MessageCrud {
 	deserializeFunc := func(_, bytes []byte) (interface{}, error) {
 		msg := allocFunc()
-		err := protocompat.Unmarshal(bytes, msg)
+		err := protocompat.ProtoUnmarshal(bytes, msg)
 		if err != nil {
 			return nil, err
 		}

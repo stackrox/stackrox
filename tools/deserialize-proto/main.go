@@ -10,14 +10,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
 )
 
 var protobufType *string = flag.String("type", "", "name of protobuf, e.g., storage.Alert")
 
-func unmarshalProto[T proto.Unmarshaler](t T, b []byte) error {
-	return t.Unmarshal(b)
+func unmarshalProto[T unmarshaler](t T, b []byte) error {
+	return t.UnmarshalVT(b)
 }
 
 func main() {

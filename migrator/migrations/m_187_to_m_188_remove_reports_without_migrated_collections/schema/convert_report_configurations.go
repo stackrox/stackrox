@@ -27,7 +27,7 @@ func ConvertReportConfigurationFromProto(obj *storage.ReportConfiguration) (*Rep
 // ConvertReportConfigurationToProto converts Gorm model `ReportConfigurations` to its protobuf type object
 func ConvertReportConfigurationToProto(m *ReportConfigurations) (*storage.ReportConfiguration, error) {
 	var msg storage.ReportConfiguration
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := protocompat.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil

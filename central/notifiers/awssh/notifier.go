@@ -173,7 +173,7 @@ func (c *configuration) getCredentials() (string, string, error) {
 		return "", "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
 	}
 	creds := &storage.AWSSecurityHub_Credentials{}
-	err = creds.Unmarshal([]byte(decCredsStr))
+	err = protocompat.Unmarshal([]byte(decCredsStr), creds)
 	if err != nil {
 		return "", "", errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
 	}

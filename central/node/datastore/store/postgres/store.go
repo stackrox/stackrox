@@ -674,7 +674,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 
 	var node storage.Node
-	if err := node.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &node); err != nil {
 		return nil, false, err
 	}
 	if err := s.populateNode(ctx, tx, &node); err != nil {
@@ -698,7 +698,7 @@ func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) 
 			return nil, err
 		}
 		msg := &storage.NodeComponentEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
@@ -721,7 +721,7 @@ func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []stri
 			return nil, err
 		}
 		msg := &storage.NodeComponent{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -744,7 +744,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 			return nil, err
 		}
 		msg := &storage.NodeComponentCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
@@ -934,7 +934,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 	}
 
 	var msg storage.Node
-	if err := msg.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -1062,7 +1062,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.NodeCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

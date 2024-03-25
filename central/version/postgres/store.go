@@ -167,7 +167,7 @@ func (s *storeImpl) retryableGetPrevious(ctx context.Context) (*storage.Version,
 	}
 
 	var msg storage.Version
-	if err := msg.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

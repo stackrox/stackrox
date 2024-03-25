@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -28,7 +29,7 @@ func (tr *NetworkFlowTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	message := &sensor.NetworkConnectionInfoMessage{}
-	if err := message.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, message); err != nil {
 		return 0, err
 	}
 	select {
@@ -59,7 +60,7 @@ func (tr *ProcessIndicatorTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	message := &sensor.SignalStreamMessage{}
-	if err := message.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, message); err != nil {
 		return 0, err
 	}
 	select {
