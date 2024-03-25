@@ -176,30 +176,42 @@ func (r *SecretReconciliator) applyOwnershipStrategy(secret *coreV1.Secret) bool
 	// Secrets created in previous versions will only have the ownerReference set.
 	// So we need to migrate them to also have the label/value pair.
 	if secret.Labels == nil || secret.Labels[commonLabels.ManagedByLabel] != commonLabels.ManagedByValue {
-		if secret.Labels == nil {
-			secret.Labels = make(map[string]string)
-		}
-		secret.Labels[commonLabels.ManagedByLabel] = commonLabels.ManagedByValue
+		setSecretLabels(secret)
 		shouldUpdate = true
 	}
 
-	if r.ownershipStrategy == OwnershipStrategyLabel && metav1.IsControlledBy(secret, r.obj) {
+	if r.ownershipStrategy == OwnershipStrategyLabel && getIsManagedByOwnerRef(secret, r.obj) {
 		// Secret should be using label, but is using ownerReference, so remove it
-		var newOwnerReferences []metav1.OwnerReference
-		for _, ref := range secret.GetOwnerReferences() {
-			if ref.UID != r.obj.GetUID() {
-				newOwnerReferences = append(newOwnerReferences, ref)
-			}
-		}
-		secret.SetOwnerReferences(newOwnerReferences)
+		removeOwnerReference(secret, r.obj)
 		shouldUpdate = true
-	} else if r.ownershipStrategy == OwnershipStrategyOwnerReference && !metav1.IsControlledBy(secret, r.obj) {
+	} else if r.ownershipStrategy == OwnershipStrategyOwnerReference && !getIsManagedByOwnerRef(secret, r.obj) {
 		// Secret should be using ownerReference, but doesn't have one, so set it
-		ownerRef := metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind())
-		secret.SetOwnerReferences([]metav1.OwnerReference{*ownerRef})
+		addOwnerReference(secret, r.obj)
 		shouldUpdate = true
 	}
 	return shouldUpdate
+}
+
+func setSecretLabels(secret *coreV1.Secret) {
+	if secret.Labels == nil {
+		secret.Labels = make(map[string]string)
+	}
+	secret.Labels[commonLabels.ManagedByLabel] = commonLabels.ManagedByValue
+}
+
+func removeOwnerReference(secret *coreV1.Secret, obj types.K8sObject) {
+	var newOwnerReferences []metav1.OwnerReference
+	for _, ref := range secret.GetOwnerReferences() {
+		if ref.UID != obj.GetUID() {
+			newOwnerReferences = append(newOwnerReferences, ref)
+		}
+	}
+	secret.SetOwnerReferences(newOwnerReferences)
+}
+
+func addOwnerReference(secret *coreV1.Secret, obj types.K8sObject) {
+	ownerRef := metav1.NewControllerRef(obj, obj.GroupVersionKind())
+	secret.SetOwnerReferences(append(secret.GetOwnerReferences(), *ownerRef))
 }
 
 func getIsManagedByOwnerRef(secret *coreV1.Secret, obj types.K8sObject) bool {
