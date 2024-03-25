@@ -1,7 +1,8 @@
 package clusterentities
 
 import (
-	"github.com/gogo/protobuf/types"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -19,7 +20,7 @@ type ContainerMetadata struct {
 	ContainerName string
 	ContainerID   string
 	Namespace     string
-	StartTime     *types.Timestamp
+	StartTime     *time.Time
 	ImageID       string
 }
 

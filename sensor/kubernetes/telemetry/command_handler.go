@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/batcher"
@@ -208,7 +207,7 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 	var err error
 	switch req.GetDataType() {
 	case central.PullTelemetryDataRequest_KUBERNETES_INFO:
-		err = h.handleKubernetesInfoRequest(ctx, sendMsg, req.Since)
+		err = h.handleKubernetesInfoRequest(ctx, sendMsg, req)
 	case central.PullTelemetryDataRequest_CLUSTER_INFO:
 		err = h.handleClusterInfoRequest(ctx, sendMsg)
 	case central.PullTelemetryDataRequest_METRICS:
@@ -257,7 +256,7 @@ func createKubernetesPayload(file k8sintrospect.File) *central.TelemetryResponse
 
 func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error,
-	since *types.Timestamp) error {
+	req *central.PullTelemetryDataRequest) error {
 	subCtx, cancel := context.WithTimeout(ctx, diagnosticBundleTimeout)
 	defer cancel()
 
@@ -270,7 +269,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		return sendMsgCb(ctx, createKubernetesPayload(file))
 	}
 
-	sinceTs, err := protocompat.ConvertTimestampToTimeOrError(since)
+	sinceTs, err := protocompat.ConvertTimestampToTimeOrError(req.Since)
 	if err != nil {
 		return errors.Wrap(err, "error parsing since timestamp")
 	}
