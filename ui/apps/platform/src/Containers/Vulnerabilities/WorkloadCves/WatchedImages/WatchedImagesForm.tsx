@@ -55,14 +55,6 @@ function WatchedImagesForm({
     return (
         <Form onSubmit={handleSubmit}>
             <FormGroup label="Image name" fieldId="imageName" isRequired>
-                <FormHelperText>
-                    <HelperText>
-                        <HelperTextItem variant={nameFieldValidated}>
-                            {errors.imageName ||
-                                'The fully-qualified image name, beginning with the registry, and ending with the tag.'}
-                        </HelperTextItem>
-                    </HelperText>
-                </FormHelperText>
                 <TextInput
                     id="imageName"
                     type="text"
@@ -73,6 +65,14 @@ function WatchedImagesForm({
                     placeholder="registry.example.com/namespace/image-name:tag"
                     isRequired
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameFieldValidated}>
+                            {errors.imageName ||
+                                'The fully-qualified image name, beginning with the registry, and ending with the tag.'}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <div>
                 <Button
