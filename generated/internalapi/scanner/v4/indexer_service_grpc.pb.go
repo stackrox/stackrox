@@ -90,7 +90,7 @@ func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRe
 }
 
 // IndexerServer is the server API for Indexer service.
-// All implementations should embed UnimplementedIndexerServer
+// All implementations must embed UnimplementedIndexerServer
 // for forward compatibility
 type IndexerServer interface {
 	// CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -103,9 +103,10 @@ type IndexerServer interface {
 	GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
+	mustEmbedUnimplementedIndexerServer()
 }
 
-// UnimplementedIndexerServer should be embedded to have forward compatible implementations.
+// UnimplementedIndexerServer must be embedded to have forward compatible implementations.
 type UnimplementedIndexerServer struct {
 }
 
@@ -121,6 +122,7 @@ func (UnimplementedIndexerServer) GetOrCreateIndexReport(context.Context, *GetOr
 func (UnimplementedIndexerServer) HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
 }
+func (UnimplementedIndexerServer) mustEmbedUnimplementedIndexerServer() {}
 
 // UnsafeIndexerServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to IndexerServer will

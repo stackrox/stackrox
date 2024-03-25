@@ -202,7 +202,7 @@ func (c *networkPolicyServiceClient) GetDiffFlowsFromUndoModificationForDeployme
 }
 
 // NetworkPolicyServiceServer is the server API for NetworkPolicyService service.
-// All implementations should embed UnimplementedNetworkPolicyServiceServer
+// All implementations must embed UnimplementedNetworkPolicyServiceServer
 // for forward compatibility
 type NetworkPolicyServiceServer interface {
 	GetNetworkPolicy(context.Context, *ResourceByID) (*storage.NetworkPolicy, error)
@@ -220,9 +220,10 @@ type NetworkPolicyServiceServer interface {
 	GetUndoModificationForDeployment(context.Context, *ResourceByID) (*GetUndoModificationForDeploymentResponse, error)
 	GetDiffFlowsBetweenPolicyAndBaselineForDeployment(context.Context, *ResourceByID) (*GetDiffFlowsResponse, error)
 	GetDiffFlowsFromUndoModificationForDeployment(context.Context, *ResourceByID) (*GetDiffFlowsResponse, error)
+	mustEmbedUnimplementedNetworkPolicyServiceServer()
 }
 
-// UnimplementedNetworkPolicyServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNetworkPolicyServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNetworkPolicyServiceServer struct {
 }
 
@@ -271,6 +272,7 @@ func (UnimplementedNetworkPolicyServiceServer) GetDiffFlowsBetweenPolicyAndBasel
 func (UnimplementedNetworkPolicyServiceServer) GetDiffFlowsFromUndoModificationForDeployment(context.Context, *ResourceByID) (*GetDiffFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDiffFlowsFromUndoModificationForDeployment not implemented")
 }
+func (UnimplementedNetworkPolicyServiceServer) mustEmbedUnimplementedNetworkPolicyServiceServer() {}
 
 // UnsafeNetworkPolicyServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to NetworkPolicyServiceServer will

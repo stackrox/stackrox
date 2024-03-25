@@ -93,15 +93,16 @@ func (x *nodeServiceExportNodesClient) Recv() (*ExportNodeResponse, error) {
 }
 
 // NodeServiceServer is the server API for NodeService service.
-// All implementations should embed UnimplementedNodeServiceServer
+// All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility
 type NodeServiceServer interface {
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
 	GetNode(context.Context, *GetNodeRequest) (*storage.Node, error)
 	ExportNodes(*ExportNodeRequest, NodeService_ExportNodesServer) error
+	mustEmbedUnimplementedNodeServiceServer()
 }
 
-// UnimplementedNodeServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNodeServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNodeServiceServer struct {
 }
 
@@ -114,6 +115,7 @@ func (UnimplementedNodeServiceServer) GetNode(context.Context, *GetNodeRequest) 
 func (UnimplementedNodeServiceServer) ExportNodes(*ExportNodeRequest, NodeService_ExportNodesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNodes not implemented")
 }
+func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 
 // UnsafeNodeServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to NodeServiceServer will

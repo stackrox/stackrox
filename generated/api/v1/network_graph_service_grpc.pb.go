@@ -114,7 +114,7 @@ func (c *networkGraphServiceClient) PutNetworkGraphConfig(ctx context.Context, i
 }
 
 // NetworkGraphServiceServer is the server API for NetworkGraphService service.
-// All implementations should embed UnimplementedNetworkGraphServiceServer
+// All implementations must embed UnimplementedNetworkGraphServiceServer
 // for forward compatibility
 type NetworkGraphServiceServer interface {
 	GetNetworkGraph(context.Context, *NetworkGraphRequest) (*NetworkGraph, error)
@@ -124,9 +124,10 @@ type NetworkGraphServiceServer interface {
 	DeleteExternalNetworkEntity(context.Context, *ResourceByID) (*Empty, error)
 	GetNetworkGraphConfig(context.Context, *Empty) (*storage.NetworkGraphConfig, error)
 	PutNetworkGraphConfig(context.Context, *PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error)
+	mustEmbedUnimplementedNetworkGraphServiceServer()
 }
 
-// UnimplementedNetworkGraphServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNetworkGraphServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNetworkGraphServiceServer struct {
 }
 
@@ -151,6 +152,7 @@ func (UnimplementedNetworkGraphServiceServer) GetNetworkGraphConfig(context.Cont
 func (UnimplementedNetworkGraphServiceServer) PutNetworkGraphConfig(context.Context, *PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutNetworkGraphConfig not implemented")
 }
+func (UnimplementedNetworkGraphServiceServer) mustEmbedUnimplementedNetworkGraphServiceServer() {}
 
 // UnsafeNetworkGraphServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to NetworkGraphServiceServer will

@@ -72,7 +72,7 @@ func (c *discoveredClustersServiceClient) ListDiscoveredClusters(ctx context.Con
 }
 
 // DiscoveredClustersServiceServer is the server API for DiscoveredClustersService service.
-// All implementations should embed UnimplementedDiscoveredClustersServiceServer
+// All implementations must embed UnimplementedDiscoveredClustersServiceServer
 // for forward compatibility
 type DiscoveredClustersServiceServer interface {
 	// CountDiscoveredClusters returns the number of discovered clusters after filtering by requested fields.
@@ -81,9 +81,10 @@ type DiscoveredClustersServiceServer interface {
 	GetDiscoveredCluster(context.Context, *GetDiscoveredClusterRequest) (*GetDiscoveredClusterResponse, error)
 	// ListDiscoveredClusters returns the list of discovered clusters after filtered by requested fields.
 	ListDiscoveredClusters(context.Context, *ListDiscoveredClustersRequest) (*ListDiscoveredClustersResponse, error)
+	mustEmbedUnimplementedDiscoveredClustersServiceServer()
 }
 
-// UnimplementedDiscoveredClustersServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDiscoveredClustersServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDiscoveredClustersServiceServer struct {
 }
 
@@ -95,6 +96,8 @@ func (UnimplementedDiscoveredClustersServiceServer) GetDiscoveredCluster(context
 }
 func (UnimplementedDiscoveredClustersServiceServer) ListDiscoveredClusters(context.Context, *ListDiscoveredClustersRequest) (*ListDiscoveredClustersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDiscoveredClusters not implemented")
+}
+func (UnimplementedDiscoveredClustersServiceServer) mustEmbedUnimplementedDiscoveredClustersServiceServer() {
 }
 
 // UnsafeDiscoveredClustersServiceServer may be embedded to opt out of forward compatibility for this service.

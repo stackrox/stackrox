@@ -96,7 +96,7 @@ func (c *metadataServiceClient) GetCentralCapabilities(ctx context.Context, in *
 }
 
 // MetadataServiceServer is the server API for MetadataService service.
-// All implementations should embed UnimplementedMetadataServiceServer
+// All implementations must embed UnimplementedMetadataServiceServer
 // for forward compatibility
 type MetadataServiceServer interface {
 	GetMetadata(context.Context, *Empty) (*Metadata, error)
@@ -109,9 +109,10 @@ type MetadataServiceServer interface {
 	GetDatabaseStatus(context.Context, *Empty) (*DatabaseStatus, error)
 	GetDatabaseBackupStatus(context.Context, *Empty) (*DatabaseBackupStatus, error)
 	GetCentralCapabilities(context.Context, *Empty) (*CentralServicesCapabilities, error)
+	mustEmbedUnimplementedMetadataServiceServer()
 }
 
-// UnimplementedMetadataServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedMetadataServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedMetadataServiceServer struct {
 }
 
@@ -130,6 +131,7 @@ func (UnimplementedMetadataServiceServer) GetDatabaseBackupStatus(context.Contex
 func (UnimplementedMetadataServiceServer) GetCentralCapabilities(context.Context, *Empty) (*CentralServicesCapabilities, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCentralCapabilities not implemented")
 }
+func (UnimplementedMetadataServiceServer) mustEmbedUnimplementedMetadataServiceServer() {}
 
 // UnsafeMetadataServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to MetadataServiceServer will

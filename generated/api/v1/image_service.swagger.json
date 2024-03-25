@@ -4,6 +4,11 @@
     "title": "api/v1/image_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ImageService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -24,7 +29,7 @@
                   "$ref": "#/definitions/v1ExportImageResponse"
                 },
                 "error": {
-                  "$ref": "#/definitions/runtimeStreamError"
+                  "$ref": "#/definitions/googlerpcStatus"
                 }
               },
               "title": "Stream result of v1ExportImageResponse"
@@ -33,7 +38,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -71,7 +76,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -145,7 +150,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -227,7 +232,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -250,7 +255,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -283,7 +288,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -326,7 +331,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -402,7 +407,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -423,7 +428,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -453,7 +458,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -509,6 +514,14 @@
       ],
       "default": "PRIVILEGE_NONE"
     },
+    "CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
     "CVSSV3UserInteraction": {
       "type": "string",
       "enum": [
@@ -535,7 +548,25 @@
         "environments": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v4Environment"
+          }
+        }
+      }
+    },
+    "ScanImageInternalRequestSource": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }
@@ -550,27 +581,9 @@
       ],
       "default": "NO_ERROR"
     },
-    "protobufAny": {
+    "googlerpcStatus": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
-        }
-      },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "runtimeError": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -581,35 +594,20 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
       }
     },
-    "runtimeStreamError": {
+    "protobufAny": {
       "type": "object",
       "properties": {
-        "grpcCode": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "httpCode": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
+        "@type": {
           "type": "string"
-        },
-        "httpStatus": {
-          "type": "string"
-        },
-        "details": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/protobufAny"
-          }
         }
-      }
+      },
+      "additionalProperties": {}
     },
     "scannerV1Components": {
       "type": "object",
@@ -620,18 +618,21 @@
         "osComponents": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/scannerV1OSComponent"
           }
         },
         "rhelComponents": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/scannerV1RHELComponent"
           }
         },
         "languageComponents": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/scannerV1LanguageComponent"
           }
         },
@@ -652,6 +653,7 @@
         "requiredFeatures": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/scannerV1FeatureNameVersion"
           }
         }
@@ -745,6 +747,7 @@
         "executables": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/scannerV1Executable"
           }
         }
@@ -804,6 +807,7 @@
         "executables": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/scannerV1Executable"
           }
         }
@@ -917,7 +921,7 @@
           "$ref": "#/definitions/CVSSV3UserInteraction"
         },
         "scope": {
-          "$ref": "#/definitions/storageCVSSV3Scope"
+          "$ref": "#/definitions/CVSSV3Scope"
         },
         "confidentiality": {
           "$ref": "#/definitions/storageCVSSV3Impact"
@@ -956,14 +960,6 @@
       ],
       "default": "IMPACT_NONE"
     },
-    "storageCVSSV3Scope": {
-      "type": "string",
-      "enum": [
-        "UNCHANGED",
-        "CHANGED"
-      ],
-      "default": "UNCHANGED"
-    },
     "storageCVSSV3Severity": {
       "type": "string",
       "enum": [
@@ -980,7 +976,8 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Sha,store,hidden\" sql:\"fk(Image:id),no-fk-constraint,index=hash\""
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -1025,10 +1022,12 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Component,store\""
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Component Version,store\""
         },
         "license": {
           "$ref": "#/definitions/storageLicense"
@@ -1036,8 +1035,10 @@
         "vulns": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageEmbeddedVulnerability"
-          }
+          },
+          "title": "@gotags: hash:\"set\""
         },
         "layerIndex": {
           "type": "integer",
@@ -1045,7 +1046,8 @@
         },
         "priority": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "@gotags: hash:\"ignore\""
         },
         "source": {
           "$ref": "#/definitions/storageSourceType"
@@ -1059,7 +1061,8 @@
         },
         "riskScore": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"Component Risk Score,hidden\""
         },
         "fixedBy": {
           "type": "string",
@@ -1068,8 +1071,10 @@
         "executables": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
+          "description": "@gotags: json:\"-\"",
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         }
       },
@@ -1093,11 +1098,13 @@
       "type": "object",
       "properties": {
         "cve": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"CVE,store\""
         },
         "cvss": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"CVSS,store\""
         },
         "summary": {
           "type": "string"
@@ -1106,7 +1113,8 @@
           "type": "string"
         },
         "fixedBy": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Fixed By,store,hidden\""
         },
         "scoreVersion": {
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
@@ -1119,7 +1127,8 @@
         },
         "publishedOn": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"CVE Published On\""
         },
         "lastModified": {
           "type": "string",
@@ -1133,10 +1142,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
-          }
+          },
+          "title": "@gotags: hash:\"ignore\""
         },
         "suppressed": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "@gotags: search:\"CVE Snoozed\""
         },
         "suppressActivation": {
           "type": "string",
@@ -1149,18 +1160,20 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+          "description": "Time when the CVE was first seen, for this specific distro, in the system.\n\n@gotags: policy:\"First System Occurrence Timestamp\" hash:\"ignore\""
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in this image."
+          "description": "Time when the CVE was first seen in this image.\n\n@gotags: policy:\"First Image Occurrence Timestamp\" hash:\"ignore\""
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity"
+          "$ref": "#/definitions/storageVulnerabilitySeverity",
+          "title": "@gotags: policy:\"Severity\""
         },
         "state": {
-          "$ref": "#/definitions/storageVulnerabilityState"
+          "$ref": "#/definitions/storageVulnerabilityState",
+          "title": "@gotags: search:\"Vulnerability State\""
         }
       },
       "title": "Next Tag: 21"
@@ -1171,13 +1184,15 @@
         "V2",
         "V3"
       ],
-      "default": "V2"
+      "default": "V2",
+      "title": "- V2: No unset for automatic backwards compatibility"
     },
     "storageImage": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Sha,store,hidden\" sql:\"pk\""
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -1185,15 +1200,17 @@
         "names": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageImageName"
           },
-          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise.\n\n@gotags: search:\"-\""
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
         },
         "scan": {
-          "$ref": "#/definitions/storageImageScan"
+          "$ref": "#/definitions/storageImageScan",
+          "title": "@gotags: policy:\"Image Scan\""
         },
         "signatureVerificationData": {
           "$ref": "#/definitions/storageImageSignatureVerificationData"
@@ -1203,19 +1220,23 @@
         },
         "components": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "@gotags: search:\"Component Count,store,hidden\""
         },
         "cves": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "@gotags: search:\"CVE Count,store,hidden\""
         },
         "fixableCves": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "@gotags: search:\"Fixable CVE Count,store,hidden\""
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Last Updated,hidden\""
         },
         "notPullable": {
           "type": "boolean"
@@ -1225,15 +1246,18 @@
         },
         "priority": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "@gotags: search:\"Image Risk Priority,hidden\""
         },
         "riskScore": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"Image Risk Score,hidden\""
         },
         "topCvss": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"Image Top CVSS,store\""
         },
         "notes": {
           "type": "array",
@@ -1248,10 +1272,12 @@
       "type": "object",
       "properties": {
         "instruction": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Dockerfile Instruction Keyword,store\""
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Dockerfile Instruction Value,store\""
         },
         "created": {
           "type": "string",
@@ -1299,16 +1325,20 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Registry,store\""
         },
         "remote": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Remote,store\""
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Tag,store\""
         },
         "fullName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image,store,analyzer=standard\""
         }
       }
     },
@@ -1330,16 +1360,20 @@
         },
         "scanTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Image Scan Time,store\""
         },
         "components": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageEmbeddedImageScanComponent"
-          }
+          },
+          "title": "@gotags: sql:\"-\""
         },
         "operatingSystem": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image OS,store\""
         },
         "dataSource": {
           "$ref": "#/definitions/storageDataSource",
@@ -1377,12 +1411,14 @@
         "signatures": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageSignature"
           }
         },
         "fetched": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Image Signature Fetched Time,hidden\""
         }
       }
     },
@@ -1392,6 +1428,7 @@
         "results": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageImageSignatureVerificationResult"
           }
         }
@@ -1517,7 +1554,8 @@
         },
         "created": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Image Created Time,store\""
         },
         "author": {
           "type": "string"
@@ -1525,35 +1563,41 @@
         "layers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageImageLayer"
           }
         },
         "user": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image User\""
         },
         "command": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Image Command\""
         },
         "entrypoint": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Image Entrypoint\""
         },
         "volumes": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Image Volumes\""
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Image Label,store\""
         }
       }
     },
@@ -1584,13 +1628,14 @@
         "FALSE_POSITIVE"
       ],
       "default": "OBSERVED",
-      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
     },
     "storageWatchedImage": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: sql:\"pk\""
         }
       }
     },
@@ -1653,6 +1698,7 @@
         "watchedImages": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageWatchedImage"
           }
         }
@@ -1664,6 +1710,7 @@
         "images": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageListImage"
           }
         }
@@ -1686,6 +1733,7 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."
@@ -1703,23 +1751,6 @@
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
-    },
-    "v1ScanImageInternalRequestSource": {
-      "type": "object",
-      "properties": {
-        "clusterId": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "imagePullSecrets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
     },
     "v1ScanImageInternalResponse": {
       "type": "object",
@@ -1793,18 +1824,21 @@
         "packages": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v4Package"
           }
         },
         "distributions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v4Distribution"
           }
         },
         "repositories": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v4Repository"
           }
         },

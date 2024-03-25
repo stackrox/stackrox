@@ -237,7 +237,7 @@ func (c *policyServiceClient) ImportPolicies(ctx context.Context, in *ImportPoli
 }
 
 // PolicyServiceServer is the server API for PolicyService service.
-// All implementations should embed UnimplementedPolicyServiceServer
+// All implementations must embed UnimplementedPolicyServiceServer
 // for forward compatibility
 type PolicyServiceServer interface {
 	// GetPolicy returns the requested policy by ID.
@@ -270,9 +270,10 @@ type PolicyServiceServer interface {
 	PolicyFromSearch(context.Context, *PolicyFromSearchRequest) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error)
+	mustEmbedUnimplementedPolicyServiceServer()
 }
 
-// UnimplementedPolicyServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedPolicyServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedPolicyServiceServer struct {
 }
 
@@ -327,6 +328,7 @@ func (UnimplementedPolicyServiceServer) PolicyFromSearch(context.Context, *Polic
 func (UnimplementedPolicyServiceServer) ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPolicies not implemented")
 }
+func (UnimplementedPolicyServiceServer) mustEmbedUnimplementedPolicyServiceServer() {}
 
 // UnsafePolicyServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PolicyServiceServer will

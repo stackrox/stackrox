@@ -80,16 +80,17 @@ func (c *dBServiceClient) CancelRestoreProcess(ctx context.Context, in *Resource
 }
 
 // DBServiceServer is the server API for DBService service.
-// All implementations should embed UnimplementedDBServiceServer
+// All implementations must embed UnimplementedDBServiceServer
 // for forward compatibility
 type DBServiceServer interface {
 	GetExportCapabilities(context.Context, *Empty) (*GetDBExportCapabilitiesResponse, error)
 	GetActiveRestoreProcess(context.Context, *Empty) (*GetActiveDBRestoreProcessResponse, error)
 	InterruptRestoreProcess(context.Context, *InterruptDBRestoreProcessRequest) (*InterruptDBRestoreProcessResponse, error)
 	CancelRestoreProcess(context.Context, *ResourceByID) (*Empty, error)
+	mustEmbedUnimplementedDBServiceServer()
 }
 
-// UnimplementedDBServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDBServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDBServiceServer struct {
 }
 
@@ -105,6 +106,7 @@ func (UnimplementedDBServiceServer) InterruptRestoreProcess(context.Context, *In
 func (UnimplementedDBServiceServer) CancelRestoreProcess(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelRestoreProcess not implemented")
 }
+func (UnimplementedDBServiceServer) mustEmbedUnimplementedDBServiceServer() {}
 
 // UnsafeDBServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to DBServiceServer will

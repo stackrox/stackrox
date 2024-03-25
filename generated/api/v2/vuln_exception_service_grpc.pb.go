@@ -158,7 +158,7 @@ func (c *vulnerabilityExceptionServiceClient) DeleteVulnerabilityException(ctx c
 }
 
 // VulnerabilityExceptionServiceServer is the server API for VulnerabilityExceptionService service.
-// All implementations should embed UnimplementedVulnerabilityExceptionServiceServer
+// All implementations must embed UnimplementedVulnerabilityExceptionServiceServer
 // for forward compatibility
 type VulnerabilityExceptionServiceServer interface {
 	// GetVulnerabilityException returns the vulnerability exception with specified ID.
@@ -193,9 +193,10 @@ type VulnerabilityExceptionServiceServer interface {
 	// to an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained
 	// in the system according to the retention configuration.
 	DeleteVulnerabilityException(context.Context, *ResourceByID) (*Empty, error)
+	mustEmbedUnimplementedVulnerabilityExceptionServiceServer()
 }
 
-// UnimplementedVulnerabilityExceptionServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedVulnerabilityExceptionServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedVulnerabilityExceptionServiceServer struct {
 }
 
@@ -225,6 +226,8 @@ func (UnimplementedVulnerabilityExceptionServiceServer) CancelVulnerabilityExcep
 }
 func (UnimplementedVulnerabilityExceptionServiceServer) DeleteVulnerabilityException(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVulnerabilityException not implemented")
+}
+func (UnimplementedVulnerabilityExceptionServiceServer) mustEmbedUnimplementedVulnerabilityExceptionServiceServer() {
 }
 
 // UnsafeVulnerabilityExceptionServiceServer may be embedded to opt out of forward compatibility for this service.

@@ -4,7 +4,7 @@ package central;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "central";
+option go_package = "./;central";
 
 // ComplianceOperatorInfo has basic info and status about the compliance operator.
 message ComplianceOperatorInfo {

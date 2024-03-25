@@ -69,19 +69,21 @@ func (x *sensorServiceCommunicateClient) Recv() (*MsgToSensor, error) {
 }
 
 // SensorServiceServer is the server API for SensorService service.
-// All implementations should embed UnimplementedSensorServiceServer
+// All implementations must embed UnimplementedSensorServiceServer
 // for forward compatibility
 type SensorServiceServer interface {
 	Communicate(SensorService_CommunicateServer) error
+	mustEmbedUnimplementedSensorServiceServer()
 }
 
-// UnimplementedSensorServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedSensorServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedSensorServiceServer struct {
 }
 
 func (UnimplementedSensorServiceServer) Communicate(SensorService_CommunicateServer) error {
 	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
 }
+func (UnimplementedSensorServiceServer) mustEmbedUnimplementedSensorServiceServer() {}
 
 // UnsafeSensorServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to SensorServiceServer will

@@ -48,19 +48,21 @@ func (c *deploymentServiceClient) GetDeploymentForPod(ctx context.Context, in *G
 }
 
 // DeploymentServiceServer is the server API for DeploymentService service.
-// All implementations should embed UnimplementedDeploymentServiceServer
+// All implementations must embed UnimplementedDeploymentServiceServer
 // for forward compatibility
 type DeploymentServiceServer interface {
 	GetDeploymentForPod(context.Context, *GetDeploymentForPodRequest) (*storage.Deployment, error)
+	mustEmbedUnimplementedDeploymentServiceServer()
 }
 
-// UnimplementedDeploymentServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDeploymentServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDeploymentServiceServer struct {
 }
 
 func (UnimplementedDeploymentServiceServer) GetDeploymentForPod(context.Context, *GetDeploymentForPodRequest) (*storage.Deployment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeploymentForPod not implemented")
 }
+func (UnimplementedDeploymentServiceServer) mustEmbedUnimplementedDeploymentServiceServer() {}
 
 // UnsafeDeploymentServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to DeploymentServiceServer will

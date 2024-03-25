@@ -103,7 +103,7 @@ func (c *groupServiceClient) DeleteGroup(ctx context.Context, in *DeleteGroupReq
 }
 
 // GroupServiceServer is the server API for GroupService service.
-// All implementations should embed UnimplementedGroupServiceServer
+// All implementations must embed UnimplementedGroupServiceServer
 // for forward compatibility
 type GroupServiceServer interface {
 	GetGroups(context.Context, *GetGroupsRequest) (*GetGroupsResponse, error)
@@ -112,9 +112,10 @@ type GroupServiceServer interface {
 	CreateGroup(context.Context, *storage.Group) (*Empty, error)
 	UpdateGroup(context.Context, *UpdateGroupRequest) (*Empty, error)
 	DeleteGroup(context.Context, *DeleteGroupRequest) (*Empty, error)
+	mustEmbedUnimplementedGroupServiceServer()
 }
 
-// UnimplementedGroupServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedGroupServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedGroupServiceServer struct {
 }
 
@@ -136,6 +137,7 @@ func (UnimplementedGroupServiceServer) UpdateGroup(context.Context, *UpdateGroup
 func (UnimplementedGroupServiceServer) DeleteGroup(context.Context, *DeleteGroupRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGroup not implemented")
 }
+func (UnimplementedGroupServiceServer) mustEmbedUnimplementedGroupServiceServer() {}
 
 // UnsafeGroupServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to GroupServiceServer will

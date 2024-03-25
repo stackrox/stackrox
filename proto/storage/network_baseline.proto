@@ -5,7 +5,7 @@ package storage;
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 
-option go_package = "storage";
+option go_package = "./;storage";
 option java_package = "io.stackrox.proto.storage";
 
 // NetworkBaselineConnectionProperties represents information about a baseline connection

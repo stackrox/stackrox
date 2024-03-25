@@ -4,6 +4,11 @@
     "title": "api/v1/node_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "NodeService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -24,7 +29,7 @@
                   "$ref": "#/definitions/v1ExportNodeResponse"
                 },
                 "error": {
-                  "$ref": "#/definitions/runtimeStreamError"
+                  "$ref": "#/definitions/rpcStatus"
                 }
               },
               "title": "Stream result of v1ExportNodeResponse"
@@ -33,7 +38,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -70,7 +75,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -100,7 +105,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -160,6 +165,14 @@
       ],
       "default": "PRIVILEGE_NONE"
     },
+    "CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
     "CVSSV3UserInteraction": {
       "type": "string",
       "enum": [
@@ -183,24 +196,15 @@
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        "@type": {
+          "type": "string"
         }
       },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "additionalProperties": {}
     },
-    "runtimeError": {
+    "rpcStatus": {
       "type": "object",
       "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -211,31 +215,7 @@
         "details": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/protobufAny"
-          }
-        }
-      }
-    },
-    "runtimeStreamError": {
-      "type": "object",
-      "properties": {
-        "grpcCode": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "httpCode": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
-          "type": "string"
-        },
-        "httpStatus": {
-          "type": "string"
-        },
-        "details": {
-          "type": "array",
-          "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -245,7 +225,8 @@
       "type": "object",
       "properties": {
         "cve": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"CVE,store\" sql:\"index=hash\""
         },
         "summary": {
           "type": "string"
@@ -256,12 +237,12 @@
         "publishedOn": {
           "type": "string",
           "format": "date-time",
-          "description": "This indicates the timestamp when the cve was first published in the cve feeds."
+          "description": "This indicates the timestamp when the cve was first published in the cve feeds.\n\n@gotags: search:\"CVE Published On\""
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the system."
+          "description": "Time when the CVE was first seen in the system.\n\n@gotags: search:\"CVE Created Time\""
         },
         "lastModified": {
           "type": "string",
@@ -279,6 +260,7 @@
         "references": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageCVEInfoReference"
           }
         }
@@ -305,7 +287,8 @@
         "V3",
         "UNKNOWN"
       ],
-      "default": "V2"
+      "default": "V2",
+      "title": "- V2: No unset for automatic backwards compatibility"
     },
     "storageCVSSV2": {
       "type": "object",
@@ -403,7 +386,7 @@
           "$ref": "#/definitions/CVSSV3UserInteraction"
         },
         "scope": {
-          "$ref": "#/definitions/storageCVSSV3Scope"
+          "$ref": "#/definitions/CVSSV3Scope"
         },
         "confidentiality": {
           "$ref": "#/definitions/storageCVSSV3Impact"
@@ -442,14 +425,6 @@
       ],
       "default": "IMPACT_NONE"
     },
-    "storageCVSSV3Scope": {
-      "type": "string",
-      "enum": [
-        "UNCHANGED",
-        "CHANGED"
-      ],
-      "default": "UNCHANGED"
-    },
     "storageCVSSV3Severity": {
       "type": "string",
       "enum": [
@@ -478,7 +453,8 @@
           "$ref": "#/definitions/storageContainerRuntime"
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Container Runtime,store\""
         }
       }
     },
@@ -486,20 +462,24 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Component,store\""
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Component Version,store\""
         },
         "vulns": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageEmbeddedVulnerability"
           }
         },
         "vulnerabilities": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageNodeVulnerability"
           }
         },
@@ -521,11 +501,13 @@
       "type": "object",
       "properties": {
         "cve": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"CVE,store\""
         },
         "cvss": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"CVSS,store\""
         },
         "summary": {
           "type": "string"
@@ -534,7 +516,8 @@
           "type": "string"
         },
         "fixedBy": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Fixed By,store,hidden\""
         },
         "scoreVersion": {
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
@@ -547,7 +530,8 @@
         },
         "publishedOn": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"CVE Published On\""
         },
         "lastModified": {
           "type": "string",
@@ -561,10 +545,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
-          }
+          },
+          "title": "@gotags: hash:\"ignore\""
         },
         "suppressed": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "@gotags: search:\"CVE Snoozed\""
         },
         "suppressActivation": {
           "type": "string",
@@ -577,18 +563,20 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+          "description": "Time when the CVE was first seen, for this specific distro, in the system.\n\n@gotags: policy:\"First System Occurrence Timestamp\" hash:\"ignore\""
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in this image."
+          "description": "Time when the CVE was first seen in this image.\n\n@gotags: policy:\"First Image Occurrence Timestamp\" hash:\"ignore\""
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity"
+          "$ref": "#/definitions/storageVulnerabilitySeverity",
+          "title": "@gotags: policy:\"Severity\""
         },
         "state": {
-          "$ref": "#/definitions/storageVulnerabilityState"
+          "$ref": "#/definitions/storageVulnerabilityState",
+          "title": "@gotags: search:\"Vulnerability State\""
         }
       },
       "title": "Next Tag: 21"
@@ -599,47 +587,54 @@
         "V2",
         "V3"
       ],
-      "default": "V2"
+      "default": "V2",
+      "title": "- V2: No unset for automatic backwards compatibility"
     },
     "storageNode": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "A unique ID identifying this node."
+          "description": "A unique ID identifying this node.\n\n@gotags: search:\"Node ID,store\" sql:\"pk,type(uuid)\""
         },
         "name": {
           "type": "string",
-          "description": "The (host)name of the node. Might or might not be the same as ID."
+          "description": "The (host)name of the node. Might or might not be the same as ID.\n\n@gotags: search:\"Node,store\""
         },
         "taints": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageTaint"
           },
           "title": "Taints on the host"
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster ID,store\" sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster,store\""
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Node Label\""
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Node Annotation\""
         },
         "joinedAt": {
           "type": "string",
           "format": "date-time",
+          "description": "@gotags: search:\"Node Join Time,store\"",
           "title": "When the cluster reported the node was added"
         },
         "internalIpAddresses": {
@@ -658,6 +653,7 @@
         },
         "containerRuntimeVersion": {
           "type": "string",
+          "description": "Use container_runtime.version",
           "title": "From NodeInfo"
         },
         "containerRuntime": {
@@ -672,7 +668,7 @@
         },
         "osImage": {
           "type": "string",
-          "description": "From NodeInfo. OS image reported by the node from /etc/os-release."
+          "description": "From NodeInfo. OS image reported by the node from /etc/os-release.\n\n@gotags: search:\"Operating System,store\""
         },
         "kubeletVersion": {
           "type": "string"
@@ -682,39 +678,47 @@
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Last Updated,hidden\""
         },
         "k8sUpdated": {
           "type": "string",
           "format": "date-time",
-          "description": "Time we received an update from Kubernetes."
+          "description": "Time we received an update from Kubernetes.\n\n@gotags: sensorhash:\"ignore\""
         },
         "scan": {
-          "$ref": "#/definitions/storageNodeScan"
+          "$ref": "#/definitions/storageNodeScan",
+          "title": "@gotags: policy:\"Node Scan\""
         },
         "components": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "@gotags: search:\"Component Count,store,hidden\""
         },
         "cves": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "@gotags: search:\"CVE Count,store,hidden\""
         },
         "fixableCves": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "@gotags: search:\"Fixable CVE Count,store,hidden\""
         },
         "priority": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "@gotags: search:\"Node Risk Priority,hidden\""
         },
         "riskScore": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"Node Risk Score,hidden\""
         },
         "topCvss": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: search:\"Node Top CVSS,store\""
         },
         "notes": {
           "type": "array",
@@ -737,7 +741,8 @@
       "properties": {
         "scanTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Node Scan Time,store\""
         },
         "operatingSystem": {
           "type": "string"
@@ -745,8 +750,10 @@
         "components": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageEmbeddedNodeScanComponent"
-          }
+          },
+          "title": "@gotags: sql:\"-\""
         },
         "notes": {
           "type": "array",
@@ -775,16 +782,20 @@
         },
         "cvss": {
           "type": "number",
-          "format": "float"
+          "format": "float",
+          "title": "@gotags: policy:\"CVSS\""
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity"
+          "$ref": "#/definitions/storageVulnerabilitySeverity",
+          "title": "@gotags: policy:\"Severity\""
         },
         "fixedBy": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: policy:\"Fixed By\""
         },
         "snoozed": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "@gotags: policy:\"CVE Snoozed\""
         },
         "snoozeStart": {
           "type": "string",
@@ -800,13 +811,16 @@
       "type": "object",
       "properties": {
         "key": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Taint Key\""
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Taint Value\""
         },
         "taintEffect": {
-          "$ref": "#/definitions/storageTaintEffect"
+          "$ref": "#/definitions/storageTaintEffect",
+          "title": "@gotags: search:\"Taint Effect\""
         }
       }
     },
@@ -839,7 +853,7 @@
         "FALSE_POSITIVE"
       ],
       "default": "OBSERVED",
-      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed."
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
     },
     "v1ExportNodeResponse": {
       "type": "object",
@@ -855,6 +869,7 @@
         "nodes": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageNode"
           }
         }

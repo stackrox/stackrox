@@ -106,7 +106,7 @@ func (c *reportConfigurationServiceClient) CountReportConfigurations(ctx context
 }
 
 // ReportConfigurationServiceServer is the server API for ReportConfigurationService service.
-// All implementations should embed UnimplementedReportConfigurationServiceServer
+// All implementations must embed UnimplementedReportConfigurationServiceServer
 // for forward compatibility
 type ReportConfigurationServiceServer interface {
 	GetReportConfigurations(context.Context, *RawQuery) (*GetReportConfigurationsResponse, error)
@@ -119,9 +119,10 @@ type ReportConfigurationServiceServer interface {
 	DeleteReportConfiguration(context.Context, *ResourceByID) (*Empty, error)
 	// CountReportConfigurations returns the number of report configurations.
 	CountReportConfigurations(context.Context, *RawQuery) (*CountReportConfigurationsResponse, error)
+	mustEmbedUnimplementedReportConfigurationServiceServer()
 }
 
-// UnimplementedReportConfigurationServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedReportConfigurationServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedReportConfigurationServiceServer struct {
 }
 
@@ -142,6 +143,8 @@ func (UnimplementedReportConfigurationServiceServer) DeleteReportConfiguration(c
 }
 func (UnimplementedReportConfigurationServiceServer) CountReportConfigurations(context.Context, *RawQuery) (*CountReportConfigurationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CountReportConfigurations not implemented")
+}
+func (UnimplementedReportConfigurationServiceServer) mustEmbedUnimplementedReportConfigurationServiceServer() {
 }
 
 // UnsafeReportConfigurationServiceServer may be embedded to opt out of forward compatibility for this service.

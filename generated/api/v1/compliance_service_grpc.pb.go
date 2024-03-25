@@ -92,7 +92,7 @@ func (c *complianceServiceClient) UpdateComplianceStandardConfig(ctx context.Con
 }
 
 // ComplianceServiceServer is the server API for ComplianceService service.
-// All implementations should embed UnimplementedComplianceServiceServer
+// All implementations must embed UnimplementedComplianceServiceServer
 // for forward compatibility
 type ComplianceServiceServer interface {
 	GetStandards(context.Context, *Empty) (*GetComplianceStandardsResponse, error)
@@ -100,9 +100,10 @@ type ComplianceServiceServer interface {
 	GetRunResults(context.Context, *GetComplianceRunResultsRequest) (*GetComplianceRunResultsResponse, error)
 	GetAggregatedResults(context.Context, *ComplianceAggregationRequest) (*storage.ComplianceAggregation_Response, error)
 	UpdateComplianceStandardConfig(context.Context, *UpdateComplianceRequest) (*Empty, error)
+	mustEmbedUnimplementedComplianceServiceServer()
 }
 
-// UnimplementedComplianceServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedComplianceServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedComplianceServiceServer struct {
 }
 
@@ -121,6 +122,7 @@ func (UnimplementedComplianceServiceServer) GetAggregatedResults(context.Context
 func (UnimplementedComplianceServiceServer) UpdateComplianceStandardConfig(context.Context, *UpdateComplianceRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateComplianceStandardConfig not implemented")
 }
+func (UnimplementedComplianceServiceServer) mustEmbedUnimplementedComplianceServiceServer() {}
 
 // UnsafeComplianceServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ComplianceServiceServer will

@@ -108,7 +108,7 @@ func (c *debugServiceClient) ResetDBStats(ctx context.Context, in *Empty, opts .
 }
 
 // DebugServiceServer is the server API for DebugService service.
-// All implementations should embed UnimplementedDebugServiceServer
+// All implementations must embed UnimplementedDebugServiceServer
 // for forward compatibility
 type DebugServiceServer interface {
 	// Get the current logging level for StackRox services.
@@ -119,9 +119,10 @@ type DebugServiceServer interface {
 	StreamAuthzTraces(*Empty, DebugService_StreamAuthzTracesServer) error
 	// Reset database debugging statistics.
 	ResetDBStats(context.Context, *Empty) (*Empty, error)
+	mustEmbedUnimplementedDebugServiceServer()
 }
 
-// UnimplementedDebugServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDebugServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDebugServiceServer struct {
 }
 
@@ -137,6 +138,7 @@ func (UnimplementedDebugServiceServer) StreamAuthzTraces(*Empty, DebugService_St
 func (UnimplementedDebugServiceServer) ResetDBStats(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetDBStats not implemented")
 }
+func (UnimplementedDebugServiceServer) mustEmbedUnimplementedDebugServiceServer() {}
 
 // UnsafeDebugServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to DebugServiceServer will

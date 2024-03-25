@@ -27,7 +27,8 @@ MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
-GENERATED_API_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.go)
+GENERATED_VT_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_vtproto.pb.go)
+GENERATED_API_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 GENERATED_API_SWAGGER_SPECS_V2 = $(API_SERVICE_PROTOS_V2:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
@@ -39,10 +40,11 @@ ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
 ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
 endif
 
-$(call go-tool, PROTOC_GEN_GO_BIN, github.com/gogo/protobuf/protoc-gen-gofast)
+$(call go-tool, PROTOC_GEN_GO_BIN, google.golang.org/protobuf/cmd/protoc-gen-go)
 $(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
-$(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger, tools/proto)
-$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway, tools/proto)
+$(call go-tool, VTPROTO_BIN, github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto, tools/proto)
+$(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2, tools/proto)
+$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway, tools/proto)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
 
 ##############
@@ -101,21 +103,16 @@ $(MODFILE_DIR)/%/UPDATE_CHECK: go.sum
 	$(SILENT)go list -m -json $* | jq '.Dir' >"$@.tmp"
 	$(SILENT)(cmp -s "$@.tmp" "$@" && rm "$@.tmp") || mv "$@.tmp" "$@"
 
-GOGO_M_STR := Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
-
 # The --go_out=M... argument specifies the go package to use for an imported proto file.
 # Here, we instruct protoc-gen-go to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
 ROX_M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+
 # Here, we instruct protoc-gen-go to import the go source for proto file github.com/stackrox/scanner/proto/<path>/*.proto to
 # "github.com/stackrox/scanner/generated/<path>".
 SCANNER_M_ARGS = $(foreach proto,$(ALL_SCANNER_PROTOS_REL),M$(proto)=github.com/stackrox/scanner/generated/$(patsubst %/,%,$(dir $(proto))))
 # Combine the *_M_ARGS.
 M_ARGS = $(ROX_M_ARGS) $(SCANNER_M_ARGS)
-# This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
-# - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
-# - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
-GATEWAY_M_ARGS = $(foreach proto,$(STORAGE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
 
 # Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
 # trick.
@@ -124,8 +121,6 @@ space := $(null) $(null)
 comma := ,
 
 M_ARGS_STR := $(subst $(space),$(comma),$(strip $(M_ARGS)))
-GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
-
 
 $(PROTOC_INCLUDES): $(PROTOC)
 
@@ -184,10 +179,8 @@ inject-proto-tags: $(PROTOC_GO_INJECT_TAG_BIN)
 	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*.pb.go"
 	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*/*.pb.go"
 
-# Generate all of the proto messages with one invocation of
-# protoc when any of the .pb.go sources don't exist or when any of the .proto
-# files change.
-$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS) $(PROTOC)
+# Generate proto messages
+$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_GRPC_BIN) $(ALL_PROTOS) $(PROTOC) $(VTPROTO_BIN)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
@@ -197,31 +190,51 @@ endif
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
+		--go_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
+		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--gofast_out=$(GOGO_M_STR:%=%,)$(M_ARGS_STR:%=%,):$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
+		--plugin protoc-gen-go="${PROTOC_GEN_GO_BIN}" \
+		--plugin protoc-gen-go-vtproto="${VTPROTO_BIN}" \
+		$<
 
 # Generate gRPC services.
-$(GENERATED_BASE_PATH)/%_grpc.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GO_GRPC_BIN) $(ALL_PROTOS) $(PROTOC)
+$(GENERATED_BASE_PATH)/%_grpc.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(PROTOC_GEN_GO_GRPC_BIN) $(ALL_PROTOS) $(PROTOC) $(VTPROTO_BIN)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
+		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated,require_unimplemented_servers=false:$(GENERATED_BASE_PATH) \
 		--plugin protoc-gen-go-grpc="${PROTOC_GEN_GO_GRPC_BIN}" \
+		$<
+
+# Generate all of the vt proto extensions
+$(GENERATED_BASE_PATH)/%_vtproto.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS) $(PROTOC) $(VTPROTO_BIN)
+	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
+	$(SILENT)mkdir -p $(dir $@)
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		-I$(PROTOC_INCLUDES) \
+		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_PROTO_BASE_PATH) \
+		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
+		--plugin protoc-gen-go="${PROTOC_GEN_GO_BIN}" \
+		--plugin protoc-gen-go-vtproto="${VTPROTO_BIN}" \
+		--go-vtproto_opt=features=marshal+unmarshal+size+equal+clone+pool \
 		$<
 
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
 # protoc when any of the .pb.gw.go sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(GENERATED_BASE_PATH)/%_service_grpc.pb.go $(ALL_PROTOS) $(PROTOC)
+$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
@@ -232,8 +245,8 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
+		--grpc-gateway_out=$(M_ARGS_STR:%=%,)logtostderr=true:$(GENERATED_BASE_PATH) \
+		$<
 
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
@@ -248,8 +261,8 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
+		--openapiv2_out=$(M_ARGS_STR:%=%,)logtostderr=true:$(GENERATED_BASE_PATH) \
+		$<
 
 
 $(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
@@ -262,7 +275,7 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
+		--openapiv2_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$<
 
 # Generate the docs from the merged swagger specs.

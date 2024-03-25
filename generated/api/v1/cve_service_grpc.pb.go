@@ -60,16 +60,17 @@ func (c *imageCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsuppre
 }
 
 // ImageCVEServiceServer is the server API for ImageCVEService service.
-// All implementations should embed UnimplementedImageCVEServiceServer
+// All implementations must embed UnimplementedImageCVEServiceServer
 // for forward compatibility
 type ImageCVEServiceServer interface {
 	// SuppressCVE suppresses image cves.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
 	// UnsuppressCVE unsuppresses image cves.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
+	mustEmbedUnimplementedImageCVEServiceServer()
 }
 
-// UnimplementedImageCVEServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedImageCVEServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedImageCVEServiceServer struct {
 }
 
@@ -79,6 +80,7 @@ func (UnimplementedImageCVEServiceServer) SuppressCVEs(context.Context, *Suppres
 func (UnimplementedImageCVEServiceServer) UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsuppressCVEs not implemented")
 }
+func (UnimplementedImageCVEServiceServer) mustEmbedUnimplementedImageCVEServiceServer() {}
 
 // UnsafeImageCVEServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ImageCVEServiceServer will
@@ -189,16 +191,17 @@ func (c *nodeCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsuppres
 }
 
 // NodeCVEServiceServer is the server API for NodeCVEService service.
-// All implementations should embed UnimplementedNodeCVEServiceServer
+// All implementations must embed UnimplementedNodeCVEServiceServer
 // for forward compatibility
 type NodeCVEServiceServer interface {
 	// SuppressCVE suppresses node cves.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
 	// UnsuppressCVE unsuppresses node cves.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
+	mustEmbedUnimplementedNodeCVEServiceServer()
 }
 
-// UnimplementedNodeCVEServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNodeCVEServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNodeCVEServiceServer struct {
 }
 
@@ -208,6 +211,7 @@ func (UnimplementedNodeCVEServiceServer) SuppressCVEs(context.Context, *Suppress
 func (UnimplementedNodeCVEServiceServer) UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsuppressCVEs not implemented")
 }
+func (UnimplementedNodeCVEServiceServer) mustEmbedUnimplementedNodeCVEServiceServer() {}
 
 // UnsafeNodeCVEServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to NodeCVEServiceServer will
@@ -318,16 +322,17 @@ func (c *clusterCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsupp
 }
 
 // ClusterCVEServiceServer is the server API for ClusterCVEService service.
-// All implementations should embed UnimplementedClusterCVEServiceServer
+// All implementations must embed UnimplementedClusterCVEServiceServer
 // for forward compatibility
 type ClusterCVEServiceServer interface {
 	// SuppressCVE suppresses cluster cves.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
 	// UnsuppressCVE unsuppresses cluster cves.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
+	mustEmbedUnimplementedClusterCVEServiceServer()
 }
 
-// UnimplementedClusterCVEServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedClusterCVEServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedClusterCVEServiceServer struct {
 }
 
@@ -337,6 +342,7 @@ func (UnimplementedClusterCVEServiceServer) SuppressCVEs(context.Context, *Suppr
 func (UnimplementedClusterCVEServiceServer) UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsuppressCVEs not implemented")
 }
+func (UnimplementedClusterCVEServiceServer) mustEmbedUnimplementedClusterCVEServiceServer() {}
 
 // UnsafeClusterCVEServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ClusterCVEServiceServer will

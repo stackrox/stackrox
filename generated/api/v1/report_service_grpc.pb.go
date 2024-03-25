@@ -47,19 +47,21 @@ func (c *reportServiceClient) RunReport(ctx context.Context, in *ResourceByID, o
 }
 
 // ReportServiceServer is the server API for ReportService service.
-// All implementations should embed UnimplementedReportServiceServer
+// All implementations must embed UnimplementedReportServiceServer
 // for forward compatibility
 type ReportServiceServer interface {
 	RunReport(context.Context, *ResourceByID) (*Empty, error)
+	mustEmbedUnimplementedReportServiceServer()
 }
 
-// UnimplementedReportServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedReportServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedReportServiceServer struct {
 }
 
 func (UnimplementedReportServiceServer) RunReport(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunReport not implemented")
 }
+func (UnimplementedReportServiceServer) mustEmbedUnimplementedReportServiceServer() {}
 
 // UnsafeReportServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ReportServiceServer will

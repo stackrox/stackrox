@@ -47,18 +47,21 @@ func (c *certDistributionServiceClient) FetchCertificate(ctx context.Context, in
 }
 
 // CertDistributionServiceServer is the server API for CertDistributionService service.
-// All implementations should embed UnimplementedCertDistributionServiceServer
+// All implementations must embed UnimplementedCertDistributionServiceServer
 // for forward compatibility
 type CertDistributionServiceServer interface {
 	FetchCertificate(context.Context, *FetchCertificateRequest) (*FetchCertificateResponse, error)
+	mustEmbedUnimplementedCertDistributionServiceServer()
 }
 
-// UnimplementedCertDistributionServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedCertDistributionServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedCertDistributionServiceServer struct {
 }
 
 func (UnimplementedCertDistributionServiceServer) FetchCertificate(context.Context, *FetchCertificateRequest) (*FetchCertificateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchCertificate not implemented")
+}
+func (UnimplementedCertDistributionServiceServer) mustEmbedUnimplementedCertDistributionServiceServer() {
 }
 
 // UnsafeCertDistributionServiceServer may be embedded to opt out of forward compatibility for this service.

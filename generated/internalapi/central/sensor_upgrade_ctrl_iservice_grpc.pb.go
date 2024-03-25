@@ -59,14 +59,15 @@ func (c *sensorUpgradeControlServiceClient) UpgradeCheckInFromSensor(ctx context
 }
 
 // SensorUpgradeControlServiceServer is the server API for SensorUpgradeControlService service.
-// All implementations should embed UnimplementedSensorUpgradeControlServiceServer
+// All implementations must embed UnimplementedSensorUpgradeControlServiceServer
 // for forward compatibility
 type SensorUpgradeControlServiceServer interface {
 	UpgradeCheckInFromUpgrader(context.Context, *UpgradeCheckInFromUpgraderRequest) (*UpgradeCheckInFromUpgraderResponse, error)
 	UpgradeCheckInFromSensor(context.Context, *UpgradeCheckInFromSensorRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedSensorUpgradeControlServiceServer()
 }
 
-// UnimplementedSensorUpgradeControlServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedSensorUpgradeControlServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedSensorUpgradeControlServiceServer struct {
 }
 
@@ -75,6 +76,8 @@ func (UnimplementedSensorUpgradeControlServiceServer) UpgradeCheckInFromUpgrader
 }
 func (UnimplementedSensorUpgradeControlServiceServer) UpgradeCheckInFromSensor(context.Context, *UpgradeCheckInFromSensorRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpgradeCheckInFromSensor not implemented")
+}
+func (UnimplementedSensorUpgradeControlServiceServer) mustEmbedUnimplementedSensorUpgradeControlServiceServer() {
 }
 
 // UnsafeSensorUpgradeControlServiceServer may be embedded to opt out of forward compatibility for this service.

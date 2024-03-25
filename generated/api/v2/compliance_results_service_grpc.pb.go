@@ -203,7 +203,7 @@ func (c *complianceResultsServiceClient) GetComplianceScanConfigurationResultsCo
 }
 
 // ComplianceResultsServiceServer is the server API for ComplianceResultsService service.
-// All implementations should embed UnimplementedComplianceResultsServiceServer
+// All implementations must embed UnimplementedComplianceResultsServiceServer
 // for forward compatibility
 type ComplianceResultsServiceServer interface {
 	// GetComplianceScanCheckResult returns the specific result by ID
@@ -253,9 +253,10 @@ type ComplianceResultsServiceServer interface {
 	GetComplianceOverallClusterCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
 	GetComplianceScanResultsCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
 	GetComplianceScanConfigurationResultsCount(context.Context, *ComplianceScanResultsRequest) (*CountComplianceScanResults, error)
+	mustEmbedUnimplementedComplianceResultsServiceServer()
 }
 
-// UnimplementedComplianceResultsServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedComplianceResultsServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedComplianceResultsServiceServer struct {
 }
 
@@ -294,6 +295,8 @@ func (UnimplementedComplianceResultsServiceServer) GetComplianceScanResultsCount
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceScanConfigurationResultsCount(context.Context, *ComplianceScanResultsRequest) (*CountComplianceScanResults, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanConfigurationResultsCount not implemented")
+}
+func (UnimplementedComplianceResultsServiceServer) mustEmbedUnimplementedComplianceResultsServiceServer() {
 }
 
 // UnsafeComplianceResultsServiceServer may be embedded to opt out of forward compatibility for this service.

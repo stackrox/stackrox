@@ -47,19 +47,21 @@ func (c *probeUploadServiceClient) GetExistingProbes(ctx context.Context, in *Ge
 }
 
 // ProbeUploadServiceServer is the server API for ProbeUploadService service.
-// All implementations should embed UnimplementedProbeUploadServiceServer
+// All implementations must embed UnimplementedProbeUploadServiceServer
 // for forward compatibility
 type ProbeUploadServiceServer interface {
 	GetExistingProbes(context.Context, *GetExistingProbesRequest) (*GetExistingProbesResponse, error)
+	mustEmbedUnimplementedProbeUploadServiceServer()
 }
 
-// UnimplementedProbeUploadServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedProbeUploadServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedProbeUploadServiceServer struct {
 }
 
 func (UnimplementedProbeUploadServiceServer) GetExistingProbes(context.Context, *GetExistingProbesRequest) (*GetExistingProbesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExistingProbes not implemented")
 }
+func (UnimplementedProbeUploadServiceServer) mustEmbedUnimplementedProbeUploadServiceServer() {}
 
 // UnsafeProbeUploadServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ProbeUploadServiceServer will

@@ -72,7 +72,7 @@ func (c *detectionServiceClient) DetectDeployTimeFromYAML(ctx context.Context, i
 }
 
 // DetectionServiceServer is the server API for DetectionService service.
-// All implementations should embed UnimplementedDetectionServiceServer
+// All implementations must embed UnimplementedDetectionServiceServer
 // for forward compatibility
 type DetectionServiceServer interface {
 	// DetectBuildTime checks if any images violate build time policies.
@@ -81,9 +81,10 @@ type DetectionServiceServer interface {
 	DetectDeployTime(context.Context, *DeployDetectionRequest) (*DeployDetectionResponse, error)
 	// DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.
 	DetectDeployTimeFromYAML(context.Context, *DeployYAMLDetectionRequest) (*DeployDetectionResponse, error)
+	mustEmbedUnimplementedDetectionServiceServer()
 }
 
-// UnimplementedDetectionServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDetectionServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDetectionServiceServer struct {
 }
 
@@ -96,6 +97,7 @@ func (UnimplementedDetectionServiceServer) DetectDeployTime(context.Context, *De
 func (UnimplementedDetectionServiceServer) DetectDeployTimeFromYAML(context.Context, *DeployYAMLDetectionRequest) (*DeployDetectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DetectDeployTimeFromYAML not implemented")
 }
+func (UnimplementedDetectionServiceServer) mustEmbedUnimplementedDetectionServiceServer() {}
 
 // UnsafeDetectionServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to DetectionServiceServer will

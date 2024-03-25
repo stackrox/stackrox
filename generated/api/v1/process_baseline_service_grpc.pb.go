@@ -88,7 +88,7 @@ func (c *processBaselineServiceClient) DeleteProcessBaselines(ctx context.Contex
 }
 
 // ProcessBaselineServiceServer is the server API for ProcessBaselineService service.
-// All implementations should embed UnimplementedProcessBaselineServiceServer
+// All implementations must embed UnimplementedProcessBaselineServiceServer
 // for forward compatibility
 type ProcessBaselineServiceServer interface {
 	// `GetProcessBaselineById` returns the single
@@ -102,9 +102,10 @@ type ProcessBaselineServiceServer interface {
 	LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error)
+	mustEmbedUnimplementedProcessBaselineServiceServer()
 }
 
-// UnimplementedProcessBaselineServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedProcessBaselineServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedProcessBaselineServiceServer struct {
 }
 
@@ -119,6 +120,8 @@ func (UnimplementedProcessBaselineServiceServer) LockProcessBaselines(context.Co
 }
 func (UnimplementedProcessBaselineServiceServer) DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProcessBaselines not implemented")
+}
+func (UnimplementedProcessBaselineServiceServer) mustEmbedUnimplementedProcessBaselineServiceServer() {
 }
 
 // UnsafeProcessBaselineServiceServer may be embedded to opt out of forward compatibility for this service.

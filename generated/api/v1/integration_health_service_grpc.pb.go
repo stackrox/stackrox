@@ -91,7 +91,7 @@ func (c *integrationHealthServiceClient) GetVulnDefinitionsInfo(ctx context.Cont
 }
 
 // IntegrationHealthServiceServer is the server API for IntegrationHealthService service.
-// All implementations should embed UnimplementedIntegrationHealthServiceServer
+// All implementations must embed UnimplementedIntegrationHealthServiceServer
 // for forward compatibility
 type IntegrationHealthServiceServer interface {
 	GetImageIntegrations(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
@@ -99,9 +99,10 @@ type IntegrationHealthServiceServer interface {
 	GetBackupPlugins(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
 	GetDeclarativeConfigs(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
 	GetVulnDefinitionsInfo(context.Context, *VulnDefinitionsInfoRequest) (*VulnDefinitionsInfo, error)
+	mustEmbedUnimplementedIntegrationHealthServiceServer()
 }
 
-// UnimplementedIntegrationHealthServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedIntegrationHealthServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedIntegrationHealthServiceServer struct {
 }
 
@@ -119,6 +120,8 @@ func (UnimplementedIntegrationHealthServiceServer) GetDeclarativeConfigs(context
 }
 func (UnimplementedIntegrationHealthServiceServer) GetVulnDefinitionsInfo(context.Context, *VulnDefinitionsInfoRequest) (*VulnDefinitionsInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVulnDefinitionsInfo not implemented")
+}
+func (UnimplementedIntegrationHealthServiceServer) mustEmbedUnimplementedIntegrationHealthServiceServer() {
 }
 
 // UnsafeIntegrationHealthServiceServer may be embedded to opt out of forward compatibility for this service.
