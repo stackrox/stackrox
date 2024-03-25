@@ -117,6 +117,16 @@ func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp)
 	return t1.Compare(t2)
 }
 
+// CompareTimestampToTime compares a proto timestamp to a time.
+// The return value is:
+// * -1 if the proto timestamp is before the time
+// * 0 if both represent the same time
+// * 1 if the proto timestamp is after the time
+func CompareTimestampToTime(t1 *gogoTimestamp.Timestamp, t2 *time.Time) int {
+	ts2 := ConvertTimeToTimestampOrNil(t2)
+	return CompareTimestamps(t1, ts2)
+}
+
 // DurationFromProto converts a proto Duration to a time.Duration.
 //
 // DurationFromProto returns an error if the Duration is invalid or is too large

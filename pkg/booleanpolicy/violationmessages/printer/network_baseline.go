@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -64,7 +65,7 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 			},
 		},
 		Type: storage.Alert_Violation_NETWORK_FLOW,
-		Time: networkFlow.LastSeenTimestamp,
+		Time: protocompat.ConvertTimeToTimestampOrNil(&networkFlow.LastSeenTimestamp),
 	}, nil
 }
 

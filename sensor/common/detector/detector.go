@@ -3,8 +3,8 @@ package detector
 import (
 	"context"
 	"sort"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -766,6 +766,15 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 	}
 	// Check if flow is anomalous
 	flowIsNotInBaseline := d.networkbaselineEval.IsOutsideLockedBaseline(flow, srcDetails.name, dstDetails.name)
+	// Assume the flow is still active and use the current timestamp.
+	flowLastSeenTimestamp := time.Now()
+	if flow.GetLastSeenTimestamp() != nil {
+		// If the flow has terminated already, then use the last seen timestamp.
+		timestamp, err := protocompat.ConvertTimestampToTimeOrError(flow.GetLastSeenTimestamp())
+		if err == nil {
+			flowLastSeenTimestamp = timestamp
+		}
+	}
 	flowDetails := &augmentedobjs.NetworkFlowDetails{
 		SrcEntityName:          srcDetails.name,
 		SrcEntityType:          flow.GetProps().GetSrcEntity().GetType(),
@@ -774,7 +783,7 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 		DstPort:                flow.GetProps().GetDstPort(),
 		L4Protocol:             flow.GetProps().GetL4Protocol(),
 		NotInNetworkBaseline:   flowIsNotInBaseline,
-		LastSeenTimestamp:      extractTimestamp(flow),
+		LastSeenTimestamp:      flowLastSeenTimestamp,
 		SrcDeploymentNamespace: srcDetails.deploymentNamespace,
 		SrcDeploymentType:      srcDetails.deploymentType,
 		DstDeploymentNamespace: dstDetails.deploymentNamespace,
@@ -783,13 +792,4 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 
 	d.pushFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
 	d.pushFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
-}
-
-func extractTimestamp(flow *storage.NetworkFlow) *types.Timestamp {
-	// If the flow has terminated already, then use the last seen timestamp.
-	if timestamp := flow.GetLastSeenTimestamp(); timestamp != nil {
-		return timestamp
-	}
-	// If the flow is still active, use the current timestamp.
-	return protocompat.TimestampNow()
 }
