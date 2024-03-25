@@ -140,25 +140,19 @@ func (r *SecretReconciliator) updateExisting(ctx context.Context, secret *coreV1
 		return nil // validation of existing secret successful - no reconciliation needed
 	}
 
-	// If the secret is unmanaged, we cannot fix it, so we should fail.
-	if validateErr != nil && !isManaged {
+	// At this point, there is a validation error.
+
+	if !isManaged {
+		// If the secret is unmanaged, we cannot fix it, so we should fail.
 		return errors.Wrapf(validateErr,
-			"existing %s secret is invalid (%s), but not owned by the CR, please delete the secret to allow fixing the issue",
-			validateErr.Error(), secret.Name)
+			"existing secret %q is invalid, but not managed by the operator, please delete the secret to allow fixing the issue: %s",
+			secret.Name, validateErr.Error())
 	}
 
-	if validateErr != nil {
-		oldData := secret.Data
-		data, err := generate(oldData)
-		if err != nil {
-			return generateError(err, secret.Name, fmt.Sprintf("invalid (%s)", validateErr.Error()))
-		}
-		secret.Data = data
-		needsUpdate = true
-	}
-
-	if !needsUpdate || !isManaged {
-		return nil
+	// Re-generate the secret data and update the secret.
+	var err error
+	if secret.Data, err = generate(secret.Data); err != nil {
+		return generateError(err, secret.Name, fmt.Sprintf("invalid (%s)", validateErr.Error()))
 	}
 
 	return errors.Wrapf(r.client.Update(ctx, secret), "updating secret %s/%s", secret.Namespace, secret.Name)
