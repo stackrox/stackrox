@@ -44,8 +44,8 @@ func (*ScanImage) ProtoMessage()    {}
 func (*ScanImage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c86f5e4b32c3c8e1, []int{0}
 }
-func (m *ScanImage) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -128,8 +128,8 @@ func (*ImageIntegrations) ProtoMessage()    {}
 func (*ImageIntegrations) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c86f5e4b32c3c8e1, []int{1}
 }
-func (m *ImageIntegrations) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ImageIntegrations) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ImageIntegrations) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -396,7 +396,7 @@ func sovImage(x uint64) (n int) {
 func sozImage(x uint64) (n int) {
 	return sovImage(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ScanImage) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -563,7 +563,7 @@ func (m *ScanImage) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageIntegrations) UnmarshalVT(dAtA []byte) error {
+func (m *ImageIntegrations) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -622,7 +622,7 @@ func (m *ImageIntegrations) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedIntegrations = append(m.UpdatedIntegrations, &storage.ImageIntegration{})
-			if err := m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

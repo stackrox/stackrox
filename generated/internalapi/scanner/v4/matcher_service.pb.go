@@ -41,8 +41,8 @@ func (*GetVulnerabilitiesRequest) ProtoMessage()    {}
 func (*GetVulnerabilitiesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_750c78caaf4a6a6e, []int{0}
 }
-func (m *GetVulnerabilitiesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetVulnerabilitiesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetVulnerabilitiesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -109,8 +109,8 @@ func (*Metadata) ProtoMessage()    {}
 func (*Metadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_750c78caaf4a6a6e, []int{1}
 }
-func (m *Metadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Metadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -450,7 +450,7 @@ func sovMatcherService(x uint64) (n int) {
 func sozMatcherService(x uint64) (n int) {
 	return sovMatcherService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetVulnerabilitiesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetVulnerabilitiesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -543,7 +543,7 @@ func (m *GetVulnerabilitiesRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Contents == nil {
 				m.Contents = &Contents{}
 			}
-			if err := m.Contents.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Contents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -569,7 +569,7 @@ func (m *GetVulnerabilitiesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Metadata) UnmarshalVT(dAtA []byte) error {
+func (m *Metadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

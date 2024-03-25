@@ -72,8 +72,8 @@ func (*ProcessBaselineKey) ProtoMessage()    {}
 func (*ProcessBaselineKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f494f50fa1cf9c47, []int{0}
 }
-func (m *ProcessBaselineKey) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessBaselineKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessBaselineKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -160,8 +160,8 @@ func (*ProcessBaseline) ProtoMessage()    {}
 func (*ProcessBaseline) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f494f50fa1cf9c47, []int{1}
 }
-func (m *ProcessBaseline) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessBaseline) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessBaseline) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -287,8 +287,8 @@ func (*BaselineElement) ProtoMessage()    {}
 func (*BaselineElement) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f494f50fa1cf9c47, []int{2}
 }
-func (m *BaselineElement) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *BaselineElement) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *BaselineElement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -357,8 +357,8 @@ func (*BaselineItem) ProtoMessage()    {}
 func (*BaselineItem) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f494f50fa1cf9c47, []int{3}
 }
-func (m *BaselineItem) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *BaselineItem) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *BaselineItem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -460,8 +460,8 @@ func (*ContainerNameAndBaselineStatus) ProtoMessage()    {}
 func (*ContainerNameAndBaselineStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f494f50fa1cf9c47, []int{4}
 }
-func (m *ContainerNameAndBaselineStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerNameAndBaselineStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerNameAndBaselineStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -538,8 +538,8 @@ func (*ProcessBaselineResults) ProtoMessage()    {}
 func (*ProcessBaselineResults) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f494f50fa1cf9c47, []int{5}
 }
-func (m *ProcessBaselineResults) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessBaselineResults) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessBaselineResults) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1246,7 +1246,7 @@ func sovProcessBaseline(x uint64) (n int) {
 func sozProcessBaseline(x uint64) (n int) {
 	return sovProcessBaseline(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ProcessBaselineKey) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessBaselineKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1425,7 +1425,7 @@ func (m *ProcessBaselineKey) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessBaseline) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1518,7 +1518,7 @@ func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &ProcessBaselineKey{}
 			}
-			if err := m.Key.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1552,7 +1552,7 @@ func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Elements = append(m.Elements, &BaselineElement{})
-			if err := m.Elements[len(m.Elements)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Elements[len(m.Elements)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1730,7 +1730,7 @@ func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ElementGraveyard = append(m.ElementGraveyard, &BaselineElement{})
-			if err := m.ElementGraveyard[len(m.ElementGraveyard)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ElementGraveyard[len(m.ElementGraveyard)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1756,7 +1756,7 @@ func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BaselineElement) UnmarshalVT(dAtA []byte) error {
+func (m *BaselineElement) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1817,7 +1817,7 @@ func (m *BaselineElement) UnmarshalVT(dAtA []byte) error {
 			if m.Element == nil {
 				m.Element = &BaselineItem{}
 			}
-			if err := m.Element.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Element.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1863,7 +1863,7 @@ func (m *BaselineElement) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BaselineItem) UnmarshalVT(dAtA []byte) error {
+func (m *BaselineItem) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1946,7 +1946,7 @@ func (m *BaselineItem) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerNameAndBaselineStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerNameAndBaselineStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2068,7 +2068,7 @@ func (m *ContainerNameAndBaselineStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessBaselineResults) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessBaselineResults) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2159,7 +2159,7 @@ func (m *ProcessBaselineResults) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.BaselineStatuses = append(m.BaselineStatuses, &ContainerNameAndBaselineStatus{})
-			if err := m.BaselineStatuses[len(m.BaselineStatuses)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.BaselineStatuses[len(m.BaselineStatuses)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

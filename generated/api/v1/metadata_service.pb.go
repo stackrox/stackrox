@@ -137,8 +137,8 @@ func (*Metadata) ProtoMessage()    {}
 func (*Metadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{0}
 }
-func (m *Metadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Metadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -226,8 +226,8 @@ func (*TrustInfo) ProtoMessage()    {}
 func (*TrustInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{1}
 }
-func (m *TrustInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TrustInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TrustInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -323,8 +323,8 @@ func (*TLSChallengeResponse) ProtoMessage()    {}
 func (*TLSChallengeResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{2}
 }
-func (m *TLSChallengeResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TLSChallengeResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TLSChallengeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -399,8 +399,8 @@ func (*TLSChallengeRequest) ProtoMessage()    {}
 func (*TLSChallengeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{3}
 }
-func (m *TLSChallengeRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TLSChallengeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TLSChallengeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -464,8 +464,8 @@ func (*DatabaseStatus) ProtoMessage()    {}
 func (*DatabaseStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{4}
 }
-func (m *DatabaseStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DatabaseStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DatabaseStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -538,8 +538,8 @@ func (*DatabaseBackupStatus) ProtoMessage()    {}
 func (*DatabaseBackupStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{5}
 }
-func (m *DatabaseBackupStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DatabaseBackupStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DatabaseBackupStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -614,8 +614,8 @@ func (*CentralServicesCapabilities) ProtoMessage()    {}
 func (*CentralServicesCapabilities) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{6}
 }
-func (m *CentralServicesCapabilities) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CentralServicesCapabilities) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CentralServicesCapabilities) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1500,7 +1500,7 @@ func sovMetadataService(x uint64) (n int) {
 func sozMetadataService(x uint64) (n int) {
 	return sovMetadataService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Metadata) UnmarshalVT(dAtA []byte) error {
+func (m *Metadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1654,7 +1654,7 @@ func (m *Metadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TrustInfo) UnmarshalVT(dAtA []byte) error {
+func (m *TrustInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1833,7 +1833,7 @@ func (m *TrustInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TLSChallengeResponse) UnmarshalVT(dAtA []byte) error {
+func (m *TLSChallengeResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1952,7 +1952,7 @@ func (m *TLSChallengeResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TLSChallengeRequest) UnmarshalVT(dAtA []byte) error {
+func (m *TLSChallengeRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2035,7 +2035,7 @@ func (m *TLSChallengeRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DatabaseStatus) UnmarshalVT(dAtA []byte) error {
+func (m *DatabaseStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2157,7 +2157,7 @@ func (m *DatabaseStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DatabaseBackupStatus) UnmarshalVT(dAtA []byte) error {
+func (m *DatabaseBackupStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2218,7 +2218,7 @@ func (m *DatabaseBackupStatus) UnmarshalVT(dAtA []byte) error {
 			if m.BackupInfo == nil {
 				m.BackupInfo = &storage.BackupInfo{}
 			}
-			if err := m.BackupInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.BackupInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2244,7 +2244,7 @@ func (m *DatabaseBackupStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CentralServicesCapabilities) UnmarshalVT(dAtA []byte) error {
+func (m *CentralServicesCapabilities) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

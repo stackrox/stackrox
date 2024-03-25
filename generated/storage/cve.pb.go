@@ -559,8 +559,8 @@ func (*CVE) ProtoMessage()    {}
 func (*CVE) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{0}
 }
-func (m *CVE) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -772,8 +772,8 @@ func (*CVE_DistroSpecific) ProtoMessage()    {}
 func (*CVE_DistroSpecific) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{0, 0}
 }
-func (m *CVE_DistroSpecific) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVE_DistroSpecific) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVE_DistroSpecific) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -863,8 +863,8 @@ func (*CVE_Reference) ProtoMessage()    {}
 func (*CVE_Reference) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{0, 1}
 }
-func (m *CVE_Reference) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVE_Reference) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVE_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -945,8 +945,8 @@ func (*CVEInfo) ProtoMessage()    {}
 func (*CVEInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{1}
 }
-func (m *CVEInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVEInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVEInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1080,8 +1080,8 @@ func (*CVEInfo_Reference) ProtoMessage()    {}
 func (*CVEInfo_Reference) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{1, 0}
 }
-func (m *CVEInfo_Reference) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVEInfo_Reference) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVEInfo_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1159,8 +1159,8 @@ func (*ImageCVE) ProtoMessage()    {}
 func (*ImageCVE) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{2}
 }
-func (m *ImageCVE) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ImageCVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ImageCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1289,8 +1289,8 @@ func (*NodeCVE) ProtoMessage()    {}
 func (*NodeCVE) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{3}
 }
-func (m *NodeCVE) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeCVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1416,8 +1416,8 @@ func (*ClusterCVE) ProtoMessage()    {}
 func (*ClusterCVE) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{4}
 }
-func (m *ClusterCVE) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterCVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1545,8 +1545,8 @@ func (*CVSSV2) ProtoMessage()    {}
 func (*CVSSV2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{5}
 }
-func (m *CVSSV2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVSSV2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVSSV2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1687,8 +1687,8 @@ func (*CVSSV3) ProtoMessage()    {}
 func (*CVSSV3) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{6}
 }
-func (m *CVSSV3) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CVSSV3) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CVSSV3) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3451,7 +3451,7 @@ func sovCve(x uint64) (n int) {
 func sozCve(x uint64) (n int) {
 	return sovCve(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *CVE) UnmarshalVT(dAtA []byte) error {
+func (m *CVE) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3708,7 +3708,7 @@ func (m *CVE) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.References = append(m.References, &CVE_Reference{})
-			if err := m.References[len(m.References)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.References[len(m.References)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3763,7 +3763,7 @@ func (m *CVE) UnmarshalVT(dAtA []byte) error {
 			if m.CvssV2 == nil {
 				m.CvssV2 = &CVSSV2{}
 			}
-			if err := m.CvssV2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CvssV2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3799,7 +3799,7 @@ func (m *CVE) UnmarshalVT(dAtA []byte) error {
 			if m.CvssV3 == nil {
 				m.CvssV3 = &CVSSV3{}
 			}
-			if err := m.CvssV3.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CvssV3.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4119,7 +4119,7 @@ func (m *CVE) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &CVE_DistroSpecific{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -4181,7 +4181,7 @@ func (m *CVE) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVE_DistroSpecific) UnmarshalVT(dAtA []byte) error {
+func (m *CVE_DistroSpecific) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4291,7 +4291,7 @@ func (m *CVE_DistroSpecific) UnmarshalVT(dAtA []byte) error {
 			if m.CvssV2 == nil {
 				m.CvssV2 = &CVSSV2{}
 			}
-			if err := m.CvssV2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CvssV2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4327,7 +4327,7 @@ func (m *CVE_DistroSpecific) UnmarshalVT(dAtA []byte) error {
 			if m.CvssV3 == nil {
 				m.CvssV3 = &CVSSV3{}
 			}
-			if err := m.CvssV3.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CvssV3.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4353,7 +4353,7 @@ func (m *CVE_DistroSpecific) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVE_Reference) UnmarshalVT(dAtA []byte) error {
+func (m *CVE_Reference) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4468,7 +4468,7 @@ func (m *CVE_Reference) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
+func (m *CVEInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4752,7 +4752,7 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 			if m.CvssV2 == nil {
 				m.CvssV2 = &CVSSV2{}
 			}
-			if err := m.CvssV2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CvssV2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4788,7 +4788,7 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 			if m.CvssV3 == nil {
 				m.CvssV3 = &CVSSV3{}
 			}
-			if err := m.CvssV3.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CvssV3.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4822,7 +4822,7 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.References = append(m.References, &CVEInfo_Reference{})
-			if err := m.References[len(m.References)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.References[len(m.References)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4848,7 +4848,7 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVEInfo_Reference) UnmarshalVT(dAtA []byte) error {
+func (m *CVEInfo_Reference) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4963,7 +4963,7 @@ func (m *CVEInfo_Reference) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageCVE) UnmarshalVT(dAtA []byte) error {
+func (m *ImageCVE) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5056,7 +5056,7 @@ func (m *ImageCVE) UnmarshalVT(dAtA []byte) error {
 			if m.CveBaseInfo == nil {
 				m.CveBaseInfo = &CVEInfo{}
 			}
-			if err := m.CveBaseInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CveBaseInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5247,7 +5247,7 @@ func (m *ImageCVE) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeCVE) UnmarshalVT(dAtA []byte) error {
+func (m *NodeCVE) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5340,7 +5340,7 @@ func (m *NodeCVE) UnmarshalVT(dAtA []byte) error {
 			if m.CveBaseInfo == nil {
 				m.CveBaseInfo = &CVEInfo{}
 			}
-			if err := m.CveBaseInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CveBaseInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5531,7 +5531,7 @@ func (m *NodeCVE) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterCVE) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterCVE) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5624,7 +5624,7 @@ func (m *ClusterCVE) UnmarshalVT(dAtA []byte) error {
 			if m.CveBaseInfo == nil {
 				m.CveBaseInfo = &CVEInfo{}
 			}
-			if err := m.CveBaseInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CveBaseInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5802,7 +5802,7 @@ func (m *ClusterCVE) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVSSV2) UnmarshalVT(dAtA []byte) error {
+func (m *CVSSV2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6051,7 +6051,7 @@ func (m *CVSSV2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVSSV3) UnmarshalVT(dAtA []byte) error {
+func (m *CVSSV3) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

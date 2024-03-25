@@ -76,8 +76,8 @@ func (*URLHasValidCertRequest) ProtoMessage()    {}
 func (*URLHasValidCertRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{0}
 }
-func (m *URLHasValidCertRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *URLHasValidCertRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *URLHasValidCertRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -137,8 +137,8 @@ func (*URLHasValidCertResponse) ProtoMessage()    {}
 func (*URLHasValidCertResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{1}
 }
-func (m *URLHasValidCertResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *URLHasValidCertResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *URLHasValidCertResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -204,8 +204,8 @@ func (*RandomDataRequest) ProtoMessage()    {}
 func (*RandomDataRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{2}
 }
-func (m *RandomDataRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *RandomDataRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *RandomDataRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -264,8 +264,8 @@ func (*RandomDataResponse) ProtoMessage()    {}
 func (*RandomDataResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{3}
 }
-func (m *RandomDataResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *RandomDataResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *RandomDataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -328,8 +328,8 @@ func (*EnvVarsResponse) ProtoMessage()    {}
 func (*EnvVarsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{4}
 }
-func (m *EnvVarsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EnvVarsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EnvVarsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -392,8 +392,8 @@ func (*ReconciliationStatsByClusterResponse) ProtoMessage()    {}
 func (*ReconciliationStatsByClusterResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{5}
 }
-func (m *ReconciliationStatsByClusterResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReconciliationStatsByClusterResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReconciliationStatsByClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -464,8 +464,8 @@ func (*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Proto
 func (*ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{5, 0}
 }
-func (m *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -545,8 +545,8 @@ func (*ReplicateImageRequest) ProtoMessage()    {}
 func (*ReplicateImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{6}
 }
-func (m *ReplicateImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReplicateImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReplicateImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -611,8 +611,8 @@ func (*Empty) ProtoMessage()    {}
 func (*Empty) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd1e3814a9597ac5, []int{7}
 }
-func (m *Empty) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Empty) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1469,7 +1469,7 @@ func sovDevelopmentService(x uint64) (n int) {
 func sozDevelopmentService(x uint64) (n int) {
 	return sovDevelopmentService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *URLHasValidCertRequest) UnmarshalVT(dAtA []byte) error {
+func (m *URLHasValidCertRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1552,7 +1552,7 @@ func (m *URLHasValidCertRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *URLHasValidCertResponse) UnmarshalVT(dAtA []byte) error {
+func (m *URLHasValidCertResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1654,7 +1654,7 @@ func (m *URLHasValidCertResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RandomDataRequest) UnmarshalVT(dAtA []byte) error {
+func (m *RandomDataRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1724,7 +1724,7 @@ func (m *RandomDataRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RandomDataResponse) UnmarshalVT(dAtA []byte) error {
+func (m *RandomDataResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1809,7 +1809,7 @@ func (m *RandomDataResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EnvVarsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *EnvVarsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1892,7 +1892,7 @@ func (m *EnvVarsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReconciliationStatsByClusterResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ReconciliationStatsByClusterResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1951,7 +1951,7 @@ func (m *ReconciliationStatsByClusterResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Stats = append(m.Stats, &ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster{})
-			if err := m.Stats[len(m.Stats)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Stats[len(m.Stats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1977,7 +1977,7 @@ func (m *ReconciliationStatsByClusterResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) UnmarshalVT(dAtA []byte) error {
+func (m *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2193,7 +2193,7 @@ func (m *ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster) Unm
 	}
 	return nil
 }
-func (m *ReplicateImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ReplicateImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2295,7 +2295,7 @@ func (m *ReplicateImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Empty) UnmarshalVT(dAtA []byte) error {
+func (m *Empty) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

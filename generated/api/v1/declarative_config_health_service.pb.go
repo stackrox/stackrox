@@ -40,8 +40,8 @@ func (*GetDeclarativeConfigHealthsResponse) ProtoMessage()    {}
 func (*GetDeclarativeConfigHealthsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bcfabb16bd33cd5d, []int{0}
 }
-func (m *GetDeclarativeConfigHealthsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetDeclarativeConfigHealthsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetDeclarativeConfigHealthsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -279,7 +279,7 @@ func sovDeclarativeConfigHealthService(x uint64) (n int) {
 func sozDeclarativeConfigHealthService(x uint64) (n int) {
 	return sovDeclarativeConfigHealthService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetDeclarativeConfigHealthsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetDeclarativeConfigHealthsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -338,7 +338,7 @@ func (m *GetDeclarativeConfigHealthsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Healths = append(m.Healths, &storage.DeclarativeConfigHealth{})
-			if err := m.Healths[len(m.Healths)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Healths[len(m.Healths)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

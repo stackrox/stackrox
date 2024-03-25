@@ -36,8 +36,8 @@ func (*DeploymentEnvironmentUpdate) ProtoMessage()    {}
 func (*DeploymentEnvironmentUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc7c40b05e2d7c6f, []int{0}
 }
-func (m *DeploymentEnvironmentUpdate) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeploymentEnvironmentUpdate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeploymentEnvironmentUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -105,8 +105,8 @@ func (*ClusterStatusUpdate) ProtoMessage()    {}
 func (*ClusterStatusUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc7c40b05e2d7c6f, []int{1}
 }
-func (m *ClusterStatusUpdate) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterStatusUpdate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterStatusUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -229,8 +229,8 @@ func (*RawClusterHealthInfo) ProtoMessage()    {}
 func (*RawClusterHealthInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc7c40b05e2d7c6f, []int{2}
 }
-func (m *RawClusterHealthInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *RawClusterHealthInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *RawClusterHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -305,8 +305,8 @@ func (*ClusterHealthResponse) ProtoMessage()    {}
 func (*ClusterHealthResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc7c40b05e2d7c6f, []int{3}
 }
-func (m *ClusterHealthResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterHealthResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterHealthResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -697,7 +697,7 @@ func sovClusterStatus(x uint64) (n int) {
 func sozClusterStatus(x uint64) (n int) {
 	return sovClusterStatus(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DeploymentEnvironmentUpdate) UnmarshalVT(dAtA []byte) error {
+func (m *DeploymentEnvironmentUpdate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -780,7 +780,7 @@ func (m *DeploymentEnvironmentUpdate) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterStatusUpdate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -839,7 +839,7 @@ func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.ClusterStatus{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &ClusterStatusUpdate_Status{v}
@@ -874,7 +874,7 @@ func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeploymentEnvironmentUpdate{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &ClusterStatusUpdate_DeploymentEnvUpdate{v}
@@ -901,7 +901,7 @@ func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
+func (m *RawClusterHealthInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -962,7 +962,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 			if m.CollectorHealthInfo == nil {
 				m.CollectorHealthInfo = &storage.CollectorHealthInfo{}
 			}
-			if err := m.CollectorHealthInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CollectorHealthInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -998,7 +998,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 			if m.AdmissionControlHealthInfo == nil {
 				m.AdmissionControlHealthInfo = &storage.AdmissionControlHealthInfo{}
 			}
-			if err := m.AdmissionControlHealthInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AdmissionControlHealthInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1034,7 +1034,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 			if m.ScannerHealthInfo == nil {
 				m.ScannerHealthInfo = &storage.ScannerHealthInfo{}
 			}
-			if err := m.ScannerHealthInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScannerHealthInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1060,7 +1060,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterHealthResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterHealthResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

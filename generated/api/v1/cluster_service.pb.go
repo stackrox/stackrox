@@ -103,8 +103,8 @@ func (*DecommissionedClusterRetentionInfo) ProtoMessage()    {}
 func (*DecommissionedClusterRetentionInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{0}
 }
-func (m *DecommissionedClusterRetentionInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DecommissionedClusterRetentionInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DecommissionedClusterRetentionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -226,8 +226,8 @@ func (*ClusterResponse) ProtoMessage()    {}
 func (*ClusterResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{1}
 }
-func (m *ClusterResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -297,8 +297,8 @@ func (*ClusterDefaultsResponse) ProtoMessage()    {}
 func (*ClusterDefaultsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{2}
 }
-func (m *ClusterDefaultsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterDefaultsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterDefaultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -373,8 +373,8 @@ func (*ClustersList) ProtoMessage()    {}
 func (*ClustersList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{3}
 }
-func (m *ClustersList) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClustersList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClustersList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -452,8 +452,8 @@ func (*GetClustersRequest) ProtoMessage()    {}
 func (*GetClustersRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{4}
 }
-func (m *GetClustersRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetClustersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -513,8 +513,8 @@ func (*KernelSupportAvailableResponse) ProtoMessage()    {}
 func (*KernelSupportAvailableResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e08f99f642c8548a, []int{5}
 }
-func (m *KernelSupportAvailableResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *KernelSupportAvailableResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *KernelSupportAvailableResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1393,7 +1393,7 @@ func sovClusterService(x uint64) (n int) {
 func sozClusterService(x uint64) (n int) {
 	return sovClusterService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DecommissionedClusterRetentionInfo) UnmarshalVT(dAtA []byte) error {
+func (m *DecommissionedClusterRetentionInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1485,7 +1485,7 @@ func (m *DecommissionedClusterRetentionInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1546,7 +1546,7 @@ func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &storage.Cluster{}
 			}
-			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1582,7 +1582,7 @@ func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error {
 			if m.ClusterRetentionInfo == nil {
 				m.ClusterRetentionInfo = &DecommissionedClusterRetentionInfo{}
 			}
-			if err := m.ClusterRetentionInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ClusterRetentionInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1608,7 +1608,7 @@ func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterDefaultsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterDefaultsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1743,7 +1743,7 @@ func (m *ClusterDefaultsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClustersList) UnmarshalVT(dAtA []byte) error {
+func (m *ClustersList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1802,7 +1802,7 @@ func (m *ClustersList) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &storage.Cluster{})
-			if err := m.Clusters[len(m.Clusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1914,7 +1914,7 @@ func (m *ClustersList) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &DecommissionedClusterRetentionInfo{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -1957,7 +1957,7 @@ func (m *ClustersList) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetClustersRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetClustersRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2040,7 +2040,7 @@ func (m *GetClustersRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KernelSupportAvailableResponse) UnmarshalVT(dAtA []byte) error {
+func (m *KernelSupportAvailableResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

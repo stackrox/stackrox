@@ -42,8 +42,8 @@ func (*GetImageRequest) ProtoMessage()    {}
 func (*GetImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1ca15d5344f9a7ff, []int{0}
 }
-func (m *GetImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -117,8 +117,8 @@ func (*GetImageResponse) ProtoMessage()    {}
 func (*GetImageResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1ca15d5344f9a7ff, []int{1}
 }
-func (m *GetImageResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetImageResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetImageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -427,7 +427,7 @@ func sovImageIservice(x uint64) (n int) {
 func sozImageIservice(x uint64) (n int) {
 	return sovImageIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -488,7 +488,7 @@ func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.ContainerImage{}
 			}
-			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -566,7 +566,7 @@ func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetImageResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetImageResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -627,7 +627,7 @@ func (m *GetImageResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

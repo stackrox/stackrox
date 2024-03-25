@@ -39,8 +39,8 @@ func (*MsgFromAdmissionControl) ProtoMessage()    {}
 func (*MsgFromAdmissionControl) Descriptor() ([]byte, []int) {
 	return fileDescriptor_861e2dad9d4a82c2, []int{0}
 }
-func (m *MsgFromAdmissionControl) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *MsgFromAdmissionControl) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *MsgFromAdmissionControl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -95,8 +95,8 @@ func (*MsgToAdmissionControl) ProtoMessage()    {}
 func (*MsgToAdmissionControl) Descriptor() ([]byte, []int) {
 	return fileDescriptor_861e2dad9d4a82c2, []int{1}
 }
-func (m *MsgToAdmissionControl) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *MsgToAdmissionControl) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *MsgToAdmissionControl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -562,7 +562,7 @@ func sovAdmissionControlIservice(x uint64) (n int) {
 func sozAdmissionControlIservice(x uint64) (n int) {
 	return sovAdmissionControlIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *MsgFromAdmissionControl) UnmarshalVT(dAtA []byte) error {
+func (m *MsgFromAdmissionControl) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -613,7 +613,7 @@ func (m *MsgFromAdmissionControl) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgToAdmissionControl) UnmarshalVT(dAtA []byte) error {
+func (m *MsgToAdmissionControl) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -672,7 +672,7 @@ func (m *MsgToAdmissionControl) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AdmissionControlSettings{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToAdmissionControl_SettingsPush{v}
@@ -707,7 +707,7 @@ func (m *MsgToAdmissionControl) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AdmCtrlUpdateResourceRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToAdmissionControl_UpdateResourceRequest{v}

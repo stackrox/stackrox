@@ -70,8 +70,8 @@ func (*UserAttribute) ProtoMessage()    {}
 func (*UserAttribute) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{0}
 }
-func (m *UserAttribute) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UserAttribute) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UserAttribute) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -152,8 +152,8 @@ func (*AuthStatus) ProtoMessage()    {}
 func (*AuthStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{1}
 }
-func (m *AuthStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AuthStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AuthStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -347,8 +347,8 @@ func (*AuthMachineToMachineConfig) ProtoMessage()    {}
 func (*AuthMachineToMachineConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{2}
 }
-func (m *AuthMachineToMachineConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AuthMachineToMachineConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AuthMachineToMachineConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -450,8 +450,8 @@ func (*AuthMachineToMachineConfig_Mapping) ProtoMessage()    {}
 func (*AuthMachineToMachineConfig_Mapping) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{2, 0}
 }
-func (m *AuthMachineToMachineConfig_Mapping) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AuthMachineToMachineConfig_Mapping) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AuthMachineToMachineConfig_Mapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -526,8 +526,8 @@ func (*ListAuthMachineToMachineConfigResponse) ProtoMessage()    {}
 func (*ListAuthMachineToMachineConfigResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{3}
 }
-func (m *ListAuthMachineToMachineConfigResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListAuthMachineToMachineConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListAuthMachineToMachineConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -592,8 +592,8 @@ func (*GetAuthMachineToMachineConfigResponse) ProtoMessage()    {}
 func (*GetAuthMachineToMachineConfigResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{4}
 }
-func (m *GetAuthMachineToMachineConfigResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAuthMachineToMachineConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAuthMachineToMachineConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -653,8 +653,8 @@ func (*AddAuthMachineToMachineConfigRequest) ProtoMessage()    {}
 func (*AddAuthMachineToMachineConfigRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{5}
 }
-func (m *AddAuthMachineToMachineConfigRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AddAuthMachineToMachineConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AddAuthMachineToMachineConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -714,8 +714,8 @@ func (*AddAuthMachineToMachineConfigResponse) ProtoMessage()    {}
 func (*AddAuthMachineToMachineConfigResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{6}
 }
-func (m *AddAuthMachineToMachineConfigResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AddAuthMachineToMachineConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AddAuthMachineToMachineConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -777,8 +777,8 @@ func (*UpdateAuthMachineToMachineConfigRequest) ProtoMessage()    {}
 func (*UpdateAuthMachineToMachineConfigRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{7}
 }
-func (m *UpdateAuthMachineToMachineConfigRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateAuthMachineToMachineConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateAuthMachineToMachineConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -841,8 +841,8 @@ func (*ExchangeAuthMachineToMachineTokenRequest) ProtoMessage()    {}
 func (*ExchangeAuthMachineToMachineTokenRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{8}
 }
-func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -906,8 +906,8 @@ func (*ExchangeAuthMachineToMachineTokenResponse) ProtoMessage() {}
 func (*ExchangeAuthMachineToMachineTokenResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70ce5d1cdb6bc92a, []int{9}
 }
-func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2184,7 +2184,7 @@ func sovAuthService(x uint64) (n int) {
 func sozAuthService(x uint64) (n int) {
 	return sovAuthService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *UserAttribute) UnmarshalVT(dAtA []byte) error {
+func (m *UserAttribute) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2299,7 +2299,7 @@ func (m *UserAttribute) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthStatus) UnmarshalVT(dAtA []byte) error {
+func (m *AuthStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2390,7 +2390,7 @@ func (m *AuthStatus) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.ServiceIdentity{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Id = &AuthStatus_ServiceId{v}
@@ -2495,7 +2495,7 @@ func (m *AuthStatus) UnmarshalVT(dAtA []byte) error {
 			if m.AuthProvider == nil {
 				m.AuthProvider = &storage.AuthProvider{}
 			}
-			if err := m.AuthProvider.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AuthProvider.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2531,7 +2531,7 @@ func (m *AuthStatus) UnmarshalVT(dAtA []byte) error {
 			if m.UserInfo == nil {
 				m.UserInfo = &storage.UserInfo{}
 			}
-			if err := m.UserInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UserInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2565,7 +2565,7 @@ func (m *AuthStatus) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UserAttributes = append(m.UserAttributes, &UserAttribute{})
-			if err := m.UserAttributes[len(m.UserAttributes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UserAttributes[len(m.UserAttributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2623,7 +2623,7 @@ func (m *AuthStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthMachineToMachineConfig) UnmarshalVT(dAtA []byte) error {
+func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2765,7 +2765,7 @@ func (m *AuthMachineToMachineConfig) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Mappings = append(m.Mappings, &AuthMachineToMachineConfig_Mapping{})
-			if err := m.Mappings[len(m.Mappings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Mappings[len(m.Mappings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2823,7 +2823,7 @@ func (m *AuthMachineToMachineConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuthMachineToMachineConfig_Mapping) UnmarshalVT(dAtA []byte) error {
+func (m *AuthMachineToMachineConfig_Mapping) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2970,7 +2970,7 @@ func (m *AuthMachineToMachineConfig_Mapping) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListAuthMachineToMachineConfigResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3029,7 +3029,7 @@ func (m *ListAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			m.Configs = append(m.Configs, &AuthMachineToMachineConfig{})
-			if err := m.Configs[len(m.Configs)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Configs[len(m.Configs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3055,7 +3055,7 @@ func (m *ListAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *GetAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetAuthMachineToMachineConfigResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3116,7 +3116,7 @@ func (m *GetAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &AuthMachineToMachineConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3142,7 +3142,7 @@ func (m *GetAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AddAuthMachineToMachineConfigRequest) UnmarshalVT(dAtA []byte) error {
+func (m *AddAuthMachineToMachineConfigRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3203,7 +3203,7 @@ func (m *AddAuthMachineToMachineConfigRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &AuthMachineToMachineConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3229,7 +3229,7 @@ func (m *AddAuthMachineToMachineConfigRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AddAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
+func (m *AddAuthMachineToMachineConfigResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3290,7 +3290,7 @@ func (m *AddAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &AuthMachineToMachineConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3316,7 +3316,7 @@ func (m *AddAuthMachineToMachineConfigResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateAuthMachineToMachineConfigRequest) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateAuthMachineToMachineConfigRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3377,7 +3377,7 @@ func (m *UpdateAuthMachineToMachineConfigRequest) UnmarshalVT(dAtA []byte) error
 			if m.Config == nil {
 				m.Config = &AuthMachineToMachineConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3403,7 +3403,7 @@ func (m *UpdateAuthMachineToMachineConfigRequest) UnmarshalVT(dAtA []byte) error
 	}
 	return nil
 }
-func (m *ExchangeAuthMachineToMachineTokenRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ExchangeAuthMachineToMachineTokenRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3486,7 +3486,7 @@ func (m *ExchangeAuthMachineToMachineTokenRequest) UnmarshalVT(dAtA []byte) erro
 	}
 	return nil
 }
-func (m *ExchangeAuthMachineToMachineTokenResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ExchangeAuthMachineToMachineTokenResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

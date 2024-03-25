@@ -35,8 +35,8 @@ func (*ResourceByID) ProtoMessage()    {}
 func (*ResourceByID) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4f1c0dc18920e9b2, []int{0}
 }
-func (m *ResourceByID) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ResourceByID) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ResourceByID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -99,8 +99,8 @@ func (*DeleteByIDWithForce) ProtoMessage()    {}
 func (*DeleteByIDWithForce) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4f1c0dc18920e9b2, []int{1}
 }
-func (m *DeleteByIDWithForce) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteByIDWithForce) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteByIDWithForce) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -305,7 +305,7 @@ func sovCommon(x uint64) (n int) {
 func sozCommon(x uint64) (n int) {
 	return sovCommon(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ResourceByID) UnmarshalVT(dAtA []byte) error {
+func (m *ResourceByID) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -388,7 +388,7 @@ func (m *ResourceByID) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteByIDWithForce) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteByIDWithForce) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

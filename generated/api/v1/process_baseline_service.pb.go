@@ -40,8 +40,8 @@ func (*GetProcessBaselineRequest) ProtoMessage()    {}
 func (*GetProcessBaselineRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{0}
 }
-func (m *GetProcessBaselineRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetProcessBaselineRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetProcessBaselineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -103,8 +103,8 @@ func (*UpdateProcessBaselinesRequest) ProtoMessage()    {}
 func (*UpdateProcessBaselinesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{1}
 }
-func (m *UpdateProcessBaselinesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateProcessBaselinesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateProcessBaselinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -195,8 +195,8 @@ func (*ProcessBaselinesResponse) ProtoMessage()    {}
 func (*ProcessBaselinesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{2}
 }
-func (m *ProcessBaselinesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessBaselinesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessBaselinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -262,8 +262,8 @@ func (*ProcessBaselineUpdateError) ProtoMessage()    {}
 func (*ProcessBaselineUpdateError) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{3}
 }
-func (m *ProcessBaselineUpdateError) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessBaselineUpdateError) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessBaselineUpdateError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -331,8 +331,8 @@ func (*UpdateProcessBaselinesResponse) ProtoMessage()    {}
 func (*UpdateProcessBaselinesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{4}
 }
-func (m *UpdateProcessBaselinesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateProcessBaselinesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateProcessBaselinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -411,8 +411,8 @@ func (*LockProcessBaselinesRequest) ProtoMessage()    {}
 func (*LockProcessBaselinesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{5}
 }
-func (m *LockProcessBaselinesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *LockProcessBaselinesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *LockProcessBaselinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -485,8 +485,8 @@ func (*DeleteProcessBaselinesRequest) ProtoMessage()    {}
 func (*DeleteProcessBaselinesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{6}
 }
-func (m *DeleteProcessBaselinesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteProcessBaselinesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteProcessBaselinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -553,8 +553,8 @@ func (*DeleteProcessBaselinesResponse) ProtoMessage()    {}
 func (*DeleteProcessBaselinesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7b38ebbdd88dd918, []int{7}
 }
-func (m *DeleteProcessBaselinesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteProcessBaselinesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteProcessBaselinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1436,7 +1436,7 @@ func sovProcessBaselineService(x uint64) (n int) {
 func sozProcessBaselineService(x uint64) (n int) {
 	return sovProcessBaselineService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetProcessBaselineRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetProcessBaselineRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1497,7 +1497,7 @@ func (m *GetProcessBaselineRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &storage.ProcessBaselineKey{}
 			}
-			if err := m.Key.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1523,7 +1523,7 @@ func (m *GetProcessBaselineRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateProcessBaselinesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1582,7 +1582,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Keys = append(m.Keys, &storage.ProcessBaselineKey{})
-			if err := m.Keys[len(m.Keys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Keys[len(m.Keys)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1616,7 +1616,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AddElements = append(m.AddElements, &storage.BaselineItem{})
-			if err := m.AddElements[len(m.AddElements)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AddElements[len(m.AddElements)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1650,7 +1650,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RemoveElements = append(m.RemoveElements, &storage.BaselineItem{})
-			if err := m.RemoveElements[len(m.RemoveElements)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RemoveElements[len(m.RemoveElements)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1676,7 +1676,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessBaselinesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1735,7 +1735,7 @@ func (m *ProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if err := m.Baselines[len(m.Baselines)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Baselines[len(m.Baselines)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1761,7 +1761,7 @@ func (m *ProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessBaselineUpdateError) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessBaselineUpdateError) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1854,7 +1854,7 @@ func (m *ProcessBaselineUpdateError) UnmarshalVT(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &storage.ProcessBaselineKey{}
 			}
-			if err := m.Key.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1880,7 +1880,7 @@ func (m *ProcessBaselineUpdateError) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateProcessBaselinesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1939,7 +1939,7 @@ func (m *UpdateProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if err := m.Baselines[len(m.Baselines)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Baselines[len(m.Baselines)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1973,7 +1973,7 @@ func (m *UpdateProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Errors = append(m.Errors, &ProcessBaselineUpdateError{})
-			if err := m.Errors[len(m.Errors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Errors[len(m.Errors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1999,7 +1999,7 @@ func (m *UpdateProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *LockProcessBaselinesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2058,7 +2058,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Keys = append(m.Keys, &storage.ProcessBaselineKey{})
-			if err := m.Keys[len(m.Keys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Keys[len(m.Keys)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2104,7 +2104,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteProcessBaselinesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2207,7 +2207,7 @@ func (m *DeleteProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteProcessBaselinesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

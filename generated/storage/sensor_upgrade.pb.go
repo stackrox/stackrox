@@ -37,8 +37,8 @@ func (*SensorUpgradeConfig) ProtoMessage()    {}
 func (*SensorUpgradeConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e0148125d586f21a, []int{0}
 }
-func (m *SensorUpgradeConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SensorUpgradeConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SensorUpgradeConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -173,7 +173,7 @@ func sovSensorUpgrade(x uint64) (n int) {
 func sozSensorUpgrade(x uint64) (n int) {
 	return sovSensorUpgrade(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SensorUpgradeConfig) UnmarshalVT(dAtA []byte) error {
+func (m *SensorUpgradeConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -40,8 +40,8 @@ func (*ListSignatureIntegrationsResponse) ProtoMessage()    {}
 func (*ListSignatureIntegrationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dda2156ddd73baf3, []int{0}
 }
-func (m *ListSignatureIntegrationsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListSignatureIntegrationsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListSignatureIntegrationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -433,7 +433,7 @@ func sovSignatureIntegrationService(x uint64) (n int) {
 func sozSignatureIntegrationService(x uint64) (n int) {
 	return sovSignatureIntegrationService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListSignatureIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListSignatureIntegrationsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -492,7 +492,7 @@ func (m *ListSignatureIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Integrations = append(m.Integrations, &storage.SignatureIntegration{})
-			if err := m.Integrations[len(m.Integrations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Integrations[len(m.Integrations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

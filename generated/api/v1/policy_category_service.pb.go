@@ -41,8 +41,8 @@ func (*PolicyCategory) ProtoMessage()    {}
 func (*PolicyCategory) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{0}
 }
-func (m *PolicyCategory) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PolicyCategory) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PolicyCategory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -115,8 +115,8 @@ func (*PostPolicyCategoryRequest) ProtoMessage()    {}
 func (*PostPolicyCategoryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{1}
 }
-func (m *PostPolicyCategoryRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PostPolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PostPolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -176,8 +176,8 @@ func (*GetPolicyCategoriesResponse) ProtoMessage()    {}
 func (*GetPolicyCategoriesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{2}
 }
-func (m *GetPolicyCategoriesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetPolicyCategoriesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetPolicyCategoriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -243,8 +243,8 @@ func (*RenamePolicyCategoryRequest) ProtoMessage()    {}
 func (*RenamePolicyCategoryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{3}
 }
-func (m *RenamePolicyCategoryRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *RenamePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *RenamePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -310,8 +310,8 @@ func (*DeletePolicyCategoryRequest) ProtoMessage()    {}
 func (*DeletePolicyCategoryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d74a5357d66d2c1c, []int{4}
 }
-func (m *DeletePolicyCategoryRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeletePolicyCategoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeletePolicyCategoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -955,7 +955,7 @@ func sovPolicyCategoryService(x uint64) (n int) {
 func sozPolicyCategoryService(x uint64) (n int) {
 	return sovPolicyCategoryService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error {
+func (m *PolicyCategory) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1090,7 +1090,7 @@ func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PostPolicyCategoryRequest) UnmarshalVT(dAtA []byte) error {
+func (m *PostPolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1151,7 +1151,7 @@ func (m *PostPolicyCategoryRequest) UnmarshalVT(dAtA []byte) error {
 			if m.PolicyCategory == nil {
 				m.PolicyCategory = &PolicyCategory{}
 			}
-			if err := m.PolicyCategory.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PolicyCategory.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1177,7 +1177,7 @@ func (m *PostPolicyCategoryRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetPolicyCategoriesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetPolicyCategoriesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1236,7 +1236,7 @@ func (m *GetPolicyCategoriesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Categories = append(m.Categories, &PolicyCategory{})
-			if err := m.Categories[len(m.Categories)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Categories[len(m.Categories)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1262,7 +1262,7 @@ func (m *GetPolicyCategoriesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RenamePolicyCategoryRequest) UnmarshalVT(dAtA []byte) error {
+func (m *RenamePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1377,7 +1377,7 @@ func (m *RenamePolicyCategoryRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeletePolicyCategoryRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DeletePolicyCategoryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

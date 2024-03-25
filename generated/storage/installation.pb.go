@@ -37,8 +37,8 @@ func (*InstallationInfo) ProtoMessage()    {}
 func (*InstallationInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_77152fd9fb250ba4, []int{0}
 }
-func (m *InstallationInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InstallationInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InstallationInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -197,7 +197,7 @@ func sovInstallation(x uint64) (n int) {
 func sozInstallation(x uint64) (n int) {
 	return sovInstallation(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *InstallationInfo) UnmarshalVT(dAtA []byte) error {
+func (m *InstallationInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

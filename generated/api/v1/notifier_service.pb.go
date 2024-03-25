@@ -39,8 +39,8 @@ func (*GetNotifiersRequest) ProtoMessage()    {}
 func (*GetNotifiersRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2d701d52c602e61b, []int{0}
 }
-func (m *GetNotifiersRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetNotifiersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetNotifiersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -92,8 +92,8 @@ func (*GetNotifiersResponse) ProtoMessage()    {}
 func (*GetNotifiersResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2d701d52c602e61b, []int{1}
 }
-func (m *GetNotifiersResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetNotifiersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetNotifiersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -159,8 +159,8 @@ func (*DeleteNotifierRequest) ProtoMessage()    {}
 func (*DeleteNotifierRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2d701d52c602e61b, []int{2}
 }
-func (m *DeleteNotifierRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteNotifierRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteNotifierRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -228,8 +228,8 @@ func (*UpdateNotifierRequest) ProtoMessage()    {}
 func (*UpdateNotifierRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2d701d52c602e61b, []int{3}
 }
-func (m *UpdateNotifierRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateNotifierRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateNotifierRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -924,7 +924,7 @@ func sovNotifierService(x uint64) (n int) {
 func sozNotifierService(x uint64) (n int) {
 	return sovNotifierService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetNotifiersRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetNotifiersRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -975,7 +975,7 @@ func (m *GetNotifiersRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNotifiersResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetNotifiersResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1034,7 +1034,7 @@ func (m *GetNotifiersResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Notifiers = append(m.Notifiers, &storage.Notifier{})
-			if err := m.Notifiers[len(m.Notifiers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Notifiers[len(m.Notifiers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1060,7 +1060,7 @@ func (m *GetNotifiersResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteNotifierRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteNotifierRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1163,7 +1163,7 @@ func (m *DeleteNotifierRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateNotifierRequest) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateNotifierRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1224,7 +1224,7 @@ func (m *UpdateNotifierRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Notifier == nil {
 				m.Notifier = &storage.Notifier{}
 			}
-			if err := m.Notifier.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Notifier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

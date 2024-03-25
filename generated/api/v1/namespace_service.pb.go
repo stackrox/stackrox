@@ -43,8 +43,8 @@ func (*Namespace) ProtoMessage()    {}
 func (*Namespace) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a595f584f52ae852, []int{0}
 }
-func (m *Namespace) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Namespace) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Namespace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -125,8 +125,8 @@ func (*GetNamespacesResponse) ProtoMessage()    {}
 func (*GetNamespacesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a595f584f52ae852, []int{1}
 }
-func (m *GetNamespacesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetNamespacesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetNamespacesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -191,8 +191,8 @@ func (*GetNamespaceRequest) ProtoMessage()    {}
 func (*GetNamespaceRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a595f584f52ae852, []int{2}
 }
-func (m *GetNamespaceRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetNamespaceRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetNamespaceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -605,7 +605,7 @@ func sovNamespaceService(x uint64) (n int) {
 func sozNamespaceService(x uint64) (n int) {
 	return sovNamespaceService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Namespace) UnmarshalVT(dAtA []byte) error {
+func (m *Namespace) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -666,7 +666,7 @@ func (m *Namespace) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.NamespaceMetadata{}
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -749,7 +749,7 @@ func (m *Namespace) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNamespacesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetNamespacesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -808,7 +808,7 @@ func (m *GetNamespacesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Namespaces = append(m.Namespaces, &Namespace{})
-			if err := m.Namespaces[len(m.Namespaces)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Namespaces[len(m.Namespaces)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -834,7 +834,7 @@ func (m *GetNamespacesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetNamespaceRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetNamespaceRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -895,7 +895,7 @@ func (m *GetNamespaceRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

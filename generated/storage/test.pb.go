@@ -141,8 +141,8 @@ func (*TestSingleKeyStruct) ProtoMessage()    {}
 func (*TestSingleKeyStruct) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0}
 }
-func (m *TestSingleKeyStruct) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -386,8 +386,8 @@ func (*TestSingleKeyStruct_Embedded) ProtoMessage()    {}
 func (*TestSingleKeyStruct_Embedded) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 1}
 }
-func (m *TestSingleKeyStruct_Embedded) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct_Embedded) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -448,8 +448,8 @@ func (*TestSingleKeyStruct_Embedded_Embedded2) ProtoMessage()    {}
 func (*TestSingleKeyStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 1, 0}
 }
-func (m *TestSingleKeyStruct_Embedded_Embedded2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -509,8 +509,8 @@ func (*TestSingleKeyStruct_Nested) ProtoMessage()    {}
 func (*TestSingleKeyStruct_Nested) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 2}
 }
-func (m *TestSingleKeyStruct_Nested) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct_Nested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -577,8 +577,8 @@ func (*TestSingleKeyStruct_Nested_Nested2) ProtoMessage()    {}
 func (*TestSingleKeyStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 2, 0}
 }
-func (m *TestSingleKeyStruct_Nested_Nested2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -638,8 +638,8 @@ func (*TestSingleKeyStruct_OneOfNested) ProtoMessage()    {}
 func (*TestSingleKeyStruct_OneOfNested) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 3}
 }
-func (m *TestSingleKeyStruct_OneOfNested) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -708,8 +708,8 @@ func (*TestSingleKeyStruct_OneOfNested_Nested2) ProtoMessage()    {}
 func (*TestSingleKeyStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{0, 3, 0}
 }
-func (m *TestSingleKeyStruct_OneOfNested_Nested2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleKeyStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -788,8 +788,8 @@ func (*TestSingleUUIDKeyStruct) ProtoMessage()    {}
 func (*TestSingleUUIDKeyStruct) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1}
 }
-func (m *TestSingleUUIDKeyStruct) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1033,8 +1033,8 @@ func (*TestSingleUUIDKeyStruct_Embedded) ProtoMessage()    {}
 func (*TestSingleUUIDKeyStruct_Embedded) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1, 1}
 }
-func (m *TestSingleUUIDKeyStruct_Embedded) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1097,8 +1097,8 @@ func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoMessage() {}
 func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1, 1, 0}
 }
-func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1158,8 +1158,8 @@ func (*TestSingleUUIDKeyStruct_Nested) ProtoMessage()    {}
 func (*TestSingleUUIDKeyStruct_Nested) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1, 2}
 }
-func (m *TestSingleUUIDKeyStruct_Nested) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct_Nested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1228,8 +1228,8 @@ func (*TestSingleUUIDKeyStruct_Nested_Nested2) ProtoMessage()    {}
 func (*TestSingleUUIDKeyStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1, 2, 0}
 }
-func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1289,8 +1289,8 @@ func (*TestSingleUUIDKeyStruct_OneOfNested) ProtoMessage()    {}
 func (*TestSingleUUIDKeyStruct_OneOfNested) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1, 3}
 }
-func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1361,8 +1361,8 @@ func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoMessage() {}
 func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{1, 3, 0}
 }
-func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1442,8 +1442,8 @@ func (*TestStruct) ProtoMessage()    {}
 func (*TestStruct) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2}
 }
-func (m *TestStruct) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1706,8 +1706,8 @@ func (*TestStruct_Embedded) ProtoMessage()    {}
 func (*TestStruct_Embedded) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2, 1}
 }
-func (m *TestStruct_Embedded) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct_Embedded) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1766,8 +1766,8 @@ func (*TestStruct_Embedded_Embedded2) ProtoMessage()    {}
 func (*TestStruct_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2, 1, 0}
 }
-func (m *TestStruct_Embedded_Embedded2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1829,8 +1829,8 @@ func (*TestStruct_Nested) ProtoMessage()    {}
 func (*TestStruct_Nested) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2, 2}
 }
-func (m *TestStruct_Nested) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct_Nested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct_Nested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1913,8 +1913,8 @@ func (*TestStruct_Nested_Nested2) ProtoMessage()    {}
 func (*TestStruct_Nested_Nested2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2, 2, 0}
 }
-func (m *TestStruct_Nested_Nested2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct_Nested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct_Nested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1987,8 +1987,8 @@ func (*TestStruct_OneOfNested) ProtoMessage()    {}
 func (*TestStruct_OneOfNested) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2, 3}
 }
-func (m *TestStruct_OneOfNested) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct_OneOfNested) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct_OneOfNested) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2047,8 +2047,8 @@ func (*TestStruct_OneOfNested_Nested2) ProtoMessage()    {}
 func (*TestStruct_OneOfNested_Nested2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{2, 3, 0}
 }
-func (m *TestStruct_OneOfNested_Nested2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestStruct_OneOfNested_Nested2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestStruct_OneOfNested_Nested2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2128,8 +2128,8 @@ func (*TestGrandparent) ProtoMessage()    {}
 func (*TestGrandparent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{3}
 }
-func (m *TestGrandparent) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestGrandparent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestGrandparent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2223,8 +2223,8 @@ func (*TestGrandparent_Embedded) ProtoMessage()    {}
 func (*TestGrandparent_Embedded) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{3, 0}
 }
-func (m *TestGrandparent_Embedded) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestGrandparent_Embedded) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestGrandparent_Embedded) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2296,8 +2296,8 @@ func (*TestGrandparent_Embedded_Embedded2) ProtoMessage()    {}
 func (*TestGrandparent_Embedded_Embedded2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{3, 0, 0}
 }
-func (m *TestGrandparent_Embedded_Embedded2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestGrandparent_Embedded_Embedded2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestGrandparent_Embedded_Embedded2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2360,8 +2360,8 @@ func (*TestParent1) ProtoMessage()    {}
 func (*TestParent1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{4}
 }
-func (m *TestParent1) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestParent1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestParent1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2458,8 +2458,8 @@ func (*TestParent1_Child1Ref) ProtoMessage()    {}
 func (*TestParent1_Child1Ref) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{4, 0}
 }
-func (m *TestParent1_Child1Ref) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestParent1_Child1Ref) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestParent1_Child1Ref) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2519,8 +2519,8 @@ func (*TestChild1) ProtoMessage()    {}
 func (*TestChild1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{5}
 }
-func (m *TestChild1) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestChild1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2589,8 +2589,8 @@ func (*TestGrandChild1) ProtoMessage()    {}
 func (*TestGrandChild1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{6}
 }
-func (m *TestGrandChild1) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestGrandChild1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestGrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2671,8 +2671,8 @@ func (*TestGGrandChild1) ProtoMessage()    {}
 func (*TestGGrandChild1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{7}
 }
-func (m *TestGGrandChild1) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestGGrandChild1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestGGrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2741,8 +2741,8 @@ func (*TestG2GrandChild1) ProtoMessage()    {}
 func (*TestG2GrandChild1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{8}
 }
-func (m *TestG2GrandChild1) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestG2GrandChild1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestG2GrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2823,8 +2823,8 @@ func (*TestG3GrandChild1) ProtoMessage()    {}
 func (*TestG3GrandChild1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{9}
 }
-func (m *TestG3GrandChild1) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestG3GrandChild1) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestG3GrandChild1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2892,8 +2892,8 @@ func (*TestParent2) ProtoMessage()    {}
 func (*TestParent2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{10}
 }
-func (m *TestParent2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestParent2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestParent2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2970,8 +2970,8 @@ func (*TestChild2) ProtoMessage()    {}
 func (*TestChild2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{11}
 }
-func (m *TestChild2) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestChild2) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestChild2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3053,8 +3053,8 @@ func (*TestParent3) ProtoMessage()    {}
 func (*TestParent3) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{12}
 }
-func (m *TestParent3) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestParent3) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestParent3) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3129,8 +3129,8 @@ func (*TestParent4) ProtoMessage()    {}
 func (*TestParent4) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{13}
 }
-func (m *TestParent4) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestParent4) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestParent4) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3205,8 +3205,8 @@ func (*TestChild1P4) ProtoMessage()    {}
 func (*TestChild1P4) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{14}
 }
-func (m *TestChild1P4) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestChild1P4) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestChild1P4) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3281,8 +3281,8 @@ func (*TestShortCircuit) ProtoMessage()    {}
 func (*TestShortCircuit) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f80f1f1db1167453, []int{15}
 }
-func (m *TestShortCircuit) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestShortCircuit) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestShortCircuit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -6657,7 +6657,7 @@ func sovTest(x uint64) (n int) {
 func sozTest(x uint64) (n int) {
 	return sovTest(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7134,7 +7134,7 @@ func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error {
 			if m.Embedded == nil {
 				m.Embedded = &TestSingleKeyStruct_Embedded{}
 			}
-			if err := m.Embedded.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Embedded.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7168,7 +7168,7 @@ func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nested = append(m.Nested, &TestSingleKeyStruct_Nested{})
-			if err := m.Nested[len(m.Nested)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested[len(m.Nested)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7234,7 +7234,7 @@ func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TestSingleKeyStruct_OneOfNested{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Oneof = &TestSingleKeyStruct_Oneofnested{v}
@@ -7295,7 +7295,7 @@ func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleKeyStruct_Embedded) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct_Embedded) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7378,7 +7378,7 @@ func (m *TestSingleKeyStruct_Embedded) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleKeyStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct_Embedded_Embedded2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7461,7 +7461,7 @@ func (m *TestSingleKeyStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *TestSingleKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct_Nested) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7554,7 +7554,7 @@ func (m *TestSingleKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
 			if m.Nested2 == nil {
 				m.Nested2 = &TestSingleKeyStruct_Nested_Nested2{}
 			}
-			if err := m.Nested2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7580,7 +7580,7 @@ func (m *TestSingleKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleKeyStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct_Nested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7663,7 +7663,7 @@ func (m *TestSingleKeyStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct_OneOfNested) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7756,7 +7756,7 @@ func (m *TestSingleKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 			if m.Nested2 == nil {
 				m.Nested2 = &TestSingleKeyStruct_OneOfNested_Nested2{}
 			}
-			if err := m.Nested2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7782,7 +7782,7 @@ func (m *TestSingleKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleKeyStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleKeyStruct_OneOfNested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7865,7 +7865,7 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8342,7 +8342,7 @@ func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error {
 			if m.Embedded == nil {
 				m.Embedded = &TestSingleUUIDKeyStruct_Embedded{}
 			}
-			if err := m.Embedded.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Embedded.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8376,7 +8376,7 @@ func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nested = append(m.Nested, &TestSingleUUIDKeyStruct_Nested{})
-			if err := m.Nested[len(m.Nested)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested[len(m.Nested)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8442,7 +8442,7 @@ func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TestSingleUUIDKeyStruct_OneOfNested{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Oneof = &TestSingleUUIDKeyStruct_Oneofnested{v}
@@ -8503,7 +8503,7 @@ func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct_Embedded) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct_Embedded) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8586,7 +8586,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8669,7 +8669,7 @@ func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) er
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct_Nested) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8762,7 +8762,7 @@ func (m *TestSingleUUIDKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
 			if m.Nested2 == nil {
 				m.Nested2 = &TestSingleUUIDKeyStruct_Nested_Nested2{}
 			}
-			if err := m.Nested2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8788,7 +8788,7 @@ func (m *TestSingleUUIDKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8871,7 +8871,7 @@ func (m *TestSingleUUIDKeyStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct_OneOfNested) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8964,7 +8964,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 			if m.Nested2 == nil {
 				m.Nested2 = &TestSingleUUIDKeyStruct_OneOfNested_Nested2{}
 			}
-			if err := m.Nested2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8990,7 +8990,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9073,7 +9073,7 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) e
 	}
 	return nil
 }
-func (m *TestStruct) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9550,7 +9550,7 @@ func (m *TestStruct) UnmarshalVT(dAtA []byte) error {
 			if m.Embedded == nil {
 				m.Embedded = &TestStruct_Embedded{}
 			}
-			if err := m.Embedded.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Embedded.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9584,7 +9584,7 @@ func (m *TestStruct) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nested = append(m.Nested, &TestStruct_Nested{})
-			if err := m.Nested[len(m.Nested)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested[len(m.Nested)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9650,7 +9650,7 @@ func (m *TestStruct) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TestStruct_OneOfNested{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Oneof = &TestStruct_Oneofnested{v}
@@ -9861,7 +9861,7 @@ func (m *TestStruct) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestStruct_Embedded) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct_Embedded) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9944,7 +9944,7 @@ func (m *TestStruct_Embedded) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct_Embedded_Embedded2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10027,7 +10027,7 @@ func (m *TestStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestStruct_Nested) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct_Nested) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10120,7 +10120,7 @@ func (m *TestStruct_Nested) UnmarshalVT(dAtA []byte) error {
 			if m.Nested2 == nil {
 				m.Nested2 = &TestStruct_Nested_Nested2{}
 			}
-			if err := m.Nested2.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nested2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10185,7 +10185,7 @@ func (m *TestStruct_Nested) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct_Nested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10307,7 +10307,7 @@ func (m *TestStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct_OneOfNested) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10390,7 +10390,7 @@ func (m *TestStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
+func (m *TestStruct_OneOfNested_Nested2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10473,7 +10473,7 @@ func (m *TestStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestGrandparent) UnmarshalVT(dAtA []byte) error {
+func (m *TestGrandparent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10596,7 +10596,7 @@ func (m *TestGrandparent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Embedded = append(m.Embedded, &TestGrandparent_Embedded{})
-			if err := m.Embedded[len(m.Embedded)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Embedded[len(m.Embedded)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10652,7 +10652,7 @@ func (m *TestGrandparent) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestGrandparent_Embedded) UnmarshalVT(dAtA []byte) error {
+func (m *TestGrandparent_Embedded) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10743,7 +10743,7 @@ func (m *TestGrandparent_Embedded) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Embedded2 = append(m.Embedded2, &TestGrandparent_Embedded_Embedded2{})
-			if err := m.Embedded2[len(m.Embedded2)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Embedded2[len(m.Embedded2)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10769,7 +10769,7 @@ func (m *TestGrandparent_Embedded) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestGrandparent_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
+func (m *TestGrandparent_Embedded_Embedded2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10852,7 +10852,7 @@ func (m *TestGrandparent_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestParent1) UnmarshalVT(dAtA []byte) error {
+func (m *TestParent1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10975,7 +10975,7 @@ func (m *TestParent1) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Children = append(m.Children, &TestParent1_Child1Ref{})
-			if err := m.Children[len(m.Children)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Children[len(m.Children)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11065,7 +11065,7 @@ func (m *TestParent1) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestParent1_Child1Ref) UnmarshalVT(dAtA []byte) error {
+func (m *TestParent1_Child1Ref) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11148,7 +11148,7 @@ func (m *TestParent1_Child1Ref) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestChild1) UnmarshalVT(dAtA []byte) error {
+func (m *TestChild1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11263,7 +11263,7 @@ func (m *TestChild1) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestGrandChild1) UnmarshalVT(dAtA []byte) error {
+func (m *TestGrandChild1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11442,7 +11442,7 @@ func (m *TestGrandChild1) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestGGrandChild1) UnmarshalVT(dAtA []byte) error {
+func (m *TestGGrandChild1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11557,7 +11557,7 @@ func (m *TestGGrandChild1) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestG2GrandChild1) UnmarshalVT(dAtA []byte) error {
+func (m *TestG2GrandChild1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11736,7 +11736,7 @@ func (m *TestG2GrandChild1) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestG3GrandChild1) UnmarshalVT(dAtA []byte) error {
+func (m *TestG3GrandChild1) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11851,7 +11851,7 @@ func (m *TestG3GrandChild1) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestParent2) UnmarshalVT(dAtA []byte) error {
+func (m *TestParent2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11998,7 +11998,7 @@ func (m *TestParent2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestChild2) UnmarshalVT(dAtA []byte) error {
+func (m *TestChild2) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -12177,7 +12177,7 @@ func (m *TestChild2) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestParent3) UnmarshalVT(dAtA []byte) error {
+func (m *TestParent3) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -12324,7 +12324,7 @@ func (m *TestParent3) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestParent4) UnmarshalVT(dAtA []byte) error {
+func (m *TestParent4) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -12471,7 +12471,7 @@ func (m *TestParent4) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestChild1P4) UnmarshalVT(dAtA []byte) error {
+func (m *TestChild1P4) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -12618,7 +12618,7 @@ func (m *TestChild1P4) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestShortCircuit) UnmarshalVT(dAtA []byte) error {
+func (m *TestShortCircuit) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

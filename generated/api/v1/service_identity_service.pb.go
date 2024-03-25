@@ -40,8 +40,8 @@ func (*ServiceIdentityResponse) ProtoMessage()    {}
 func (*ServiceIdentityResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c074a5de4b4a386, []int{0}
 }
-func (m *ServiceIdentityResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ServiceIdentityResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ServiceIdentityResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -107,8 +107,8 @@ func (*CreateServiceIdentityRequest) ProtoMessage()    {}
 func (*CreateServiceIdentityRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c074a5de4b4a386, []int{1}
 }
-func (m *CreateServiceIdentityRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CreateServiceIdentityRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CreateServiceIdentityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -176,8 +176,8 @@ func (*CreateServiceIdentityResponse) ProtoMessage()    {}
 func (*CreateServiceIdentityResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c074a5de4b4a386, []int{2}
 }
-func (m *CreateServiceIdentityResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CreateServiceIdentityResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CreateServiceIdentityResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -259,8 +259,8 @@ func (*Authority) ProtoMessage()    {}
 func (*Authority) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c074a5de4b4a386, []int{3}
 }
-func (m *Authority) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Authority) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Authority) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -323,8 +323,8 @@ func (*Authorities) ProtoMessage()    {}
 func (*Authorities) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c074a5de4b4a386, []int{4}
 }
-func (m *Authorities) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Authorities) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Authorities) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -900,7 +900,7 @@ func sovServiceIdentityService(x uint64) (n int) {
 func sozServiceIdentityService(x uint64) (n int) {
 	return sovServiceIdentityService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ServiceIdentityResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -959,7 +959,7 @@ func (m *ServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Identities = append(m.Identities, &storage.ServiceIdentity{})
-			if err := m.Identities[len(m.Identities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Identities[len(m.Identities)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -985,7 +985,7 @@ func (m *ServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreateServiceIdentityRequest) UnmarshalVT(dAtA []byte) error {
+func (m *CreateServiceIdentityRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1087,7 +1087,7 @@ func (m *CreateServiceIdentityRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreateServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CreateServiceIdentityResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1148,7 +1148,7 @@ func (m *CreateServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Identity == nil {
 				m.Identity = &storage.ServiceIdentity{}
 			}
-			if err := m.Identity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Identity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1242,7 +1242,7 @@ func (m *CreateServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Authority) UnmarshalVT(dAtA []byte) error {
+func (m *Authority) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1327,7 +1327,7 @@ func (m *Authority) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Authorities) UnmarshalVT(dAtA []byte) error {
+func (m *Authorities) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1386,7 +1386,7 @@ func (m *Authorities) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Authorities = append(m.Authorities, &Authority{})
-			if err := m.Authorities[len(m.Authorities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Authorities[len(m.Authorities)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

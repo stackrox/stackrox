@@ -41,8 +41,8 @@ func (*ConfigureTelemetryRequest) ProtoMessage()    {}
 func (*ConfigureTelemetryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3d29ceed52498e29, []int{0}
 }
-func (m *ConfigureTelemetryRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ConfigureTelemetryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ConfigureTelemetryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -343,7 +343,7 @@ func sovTelemetryService(x uint64) (n int) {
 func sozTelemetryService(x uint64) (n int) {
 	return sovTelemetryService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ConfigureTelemetryRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ConfigureTelemetryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

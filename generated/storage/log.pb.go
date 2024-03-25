@@ -38,8 +38,8 @@ func (*LogImbue) ProtoMessage()    {}
 func (*LogImbue) Descriptor() ([]byte, []int) {
 	return fileDescriptor_876ba64878915077, []int{0}
 }
-func (m *LogImbue) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *LogImbue) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *LogImbue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -220,7 +220,7 @@ func sovLog(x uint64) (n int) {
 func sozLog(x uint64) (n int) {
 	return sovLog(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *LogImbue) UnmarshalVT(dAtA []byte) error {
+func (m *LogImbue) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

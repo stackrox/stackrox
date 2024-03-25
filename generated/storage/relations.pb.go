@@ -45,8 +45,8 @@ func (*ImageComponentEdge) ProtoMessage()    {}
 func (*ImageComponentEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{0}
 }
-func (m *ImageComponentEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ImageComponentEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ImageComponentEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -181,8 +181,8 @@ func (*ComponentCVEEdge) ProtoMessage()    {}
 func (*ComponentCVEEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{1}
 }
-func (m *ComponentCVEEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ComponentCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ComponentCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -313,8 +313,8 @@ func (*ImageCVEEdge) ProtoMessage()    {}
 func (*ImageCVEEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{2}
 }
-func (m *ImageCVEEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ImageCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ImageCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -405,8 +405,8 @@ func (*NodeComponentEdge) ProtoMessage()    {}
 func (*NodeComponentEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{3}
 }
-func (m *NodeComponentEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeComponentEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeComponentEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -487,8 +487,8 @@ func (*NodeComponentCVEEdge) ProtoMessage()    {}
 func (*NodeComponentCVEEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{4}
 }
-func (m *NodeComponentCVEEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeComponentCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeComponentCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -623,8 +623,8 @@ func (*ClusterCVEEdge) ProtoMessage()    {}
 func (*ClusterCVEEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{5}
 }
-func (m *ClusterCVEEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -752,8 +752,8 @@ func (*PolicyCategoryEdge) ProtoMessage()    {}
 func (*PolicyCategoryEdge) Descriptor() ([]byte, []int) {
 	return fileDescriptor_62f882e266fcf764, []int{6}
 }
-func (m *PolicyCategoryEdge) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PolicyCategoryEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PolicyCategoryEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1601,7 +1601,7 @@ func sovRelations(x uint64) (n int) {
 func sozRelations(x uint64) (n int) {
 	return sovRelations(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ImageComponentEdge) UnmarshalVT(dAtA []byte) error {
+func (m *ImageComponentEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1800,7 +1800,7 @@ func (m *ImageComponentEdge) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComponentCVEEdge) UnmarshalVT(dAtA []byte) error {
+func (m *ComponentCVEEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1999,7 +1999,7 @@ func (m *ComponentCVEEdge) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageCVEEdge) UnmarshalVT(dAtA []byte) error {
+func (m *ImageCVEEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2201,7 +2201,7 @@ func (m *ImageCVEEdge) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeComponentEdge) UnmarshalVT(dAtA []byte) error {
+func (m *NodeComponentEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2348,7 +2348,7 @@ func (m *NodeComponentEdge) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeComponentCVEEdge) UnmarshalVT(dAtA []byte) error {
+func (m *NodeComponentCVEEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2547,7 +2547,7 @@ func (m *NodeComponentCVEEdge) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterCVEEdge) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterCVEEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2746,7 +2746,7 @@ func (m *ClusterCVEEdge) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PolicyCategoryEdge) UnmarshalVT(dAtA []byte) error {
+func (m *PolicyCategoryEdge) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

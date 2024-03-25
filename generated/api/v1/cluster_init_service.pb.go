@@ -46,8 +46,8 @@ func (*InitBundleMeta) ProtoMessage()    {}
 func (*InitBundleMeta) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{0}
 }
-func (m *InitBundleMeta) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleMeta) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleMeta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -151,8 +151,8 @@ func (*InitBundleMeta_ImpactedCluster) ProtoMessage()    {}
 func (*InitBundleMeta_ImpactedCluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{0, 0}
 }
-func (m *InitBundleMeta_ImpactedCluster) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleMeta_ImpactedCluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleMeta_ImpactedCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -220,8 +220,8 @@ func (*InitBundleGenResponse) ProtoMessage()    {}
 func (*InitBundleGenResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{1}
 }
-func (m *InitBundleGenResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleGenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleGenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -303,8 +303,8 @@ func (*GetCAConfigResponse) ProtoMessage()    {}
 func (*GetCAConfigResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{2}
 }
-func (m *GetCAConfigResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCAConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCAConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -367,8 +367,8 @@ func (*InitBundleMetasResponse) ProtoMessage()    {}
 func (*InitBundleMetasResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{3}
 }
-func (m *InitBundleMetasResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleMetasResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleMetasResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -433,8 +433,8 @@ func (*InitBundleGenRequest) ProtoMessage()    {}
 func (*InitBundleGenRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{4}
 }
-func (m *InitBundleGenRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleGenRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleGenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -494,8 +494,8 @@ func (*InitBundleRevokeRequest) ProtoMessage()    {}
 func (*InitBundleRevokeRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{5}
 }
-func (m *InitBundleRevokeRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleRevokeRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleRevokeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -570,8 +570,8 @@ func (*InitBundleRevokeResponse) ProtoMessage()    {}
 func (*InitBundleRevokeResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{6}
 }
-func (m *InitBundleRevokeResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleRevokeResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleRevokeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -653,8 +653,8 @@ func (*InitBundleRevokeResponse_InitBundleRevocationError) ProtoMessage() {}
 func (*InitBundleRevokeResponse_InitBundleRevocationError) Descriptor() ([]byte, []int) {
 	return fileDescriptor_72d12c1400ba6fdb, []int{6, 0}
 }
-func (m *InitBundleRevokeResponse_InitBundleRevocationError) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InitBundleRevokeResponse_InitBundleRevocationError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1650,7 +1650,7 @@ func sovClusterInitService(x uint64) (n int) {
 func sozClusterInitService(x uint64) (n int) {
 	return sovClusterInitService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleMeta) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1811,7 +1811,7 @@ func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error {
 			if m.CreatedBy == nil {
 				m.CreatedBy = &storage.User{}
 			}
-			if err := m.CreatedBy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CreatedBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1881,7 +1881,7 @@ func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ImpactedClusters = append(m.ImpactedClusters, &InitBundleMeta_ImpactedCluster{})
-			if err := m.ImpactedClusters[len(m.ImpactedClusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImpactedClusters[len(m.ImpactedClusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1907,7 +1907,7 @@ func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleMeta_ImpactedCluster) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleMeta_ImpactedCluster) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2022,7 +2022,7 @@ func (m *InitBundleMeta_ImpactedCluster) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleGenResponse) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleGenResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2083,7 +2083,7 @@ func (m *InitBundleGenResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Meta == nil {
 				m.Meta = &InitBundleMeta{}
 			}
-			if err := m.Meta.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Meta.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2177,7 +2177,7 @@ func (m *InitBundleGenResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCAConfigResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetCAConfigResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2262,7 +2262,7 @@ func (m *GetCAConfigResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleMetasResponse) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleMetasResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2321,7 +2321,7 @@ func (m *InitBundleMetasResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Items = append(m.Items, &InitBundleMeta{})
-			if err := m.Items[len(m.Items)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Items[len(m.Items)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2347,7 +2347,7 @@ func (m *InitBundleMetasResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleGenRequest) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleGenRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2430,7 +2430,7 @@ func (m *InitBundleGenRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleRevokeRequest) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleRevokeRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2545,7 +2545,7 @@ func (m *InitBundleRevokeRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleRevokeResponse) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleRevokeResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2604,7 +2604,7 @@ func (m *InitBundleRevokeResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.InitBundleRevocationErrors = append(m.InitBundleRevocationErrors, &InitBundleRevokeResponse_InitBundleRevocationError{})
-			if err := m.InitBundleRevocationErrors[len(m.InitBundleRevocationErrors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.InitBundleRevocationErrors[len(m.InitBundleRevocationErrors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2662,7 +2662,7 @@ func (m *InitBundleRevokeResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InitBundleRevokeResponse_InitBundleRevocationError) UnmarshalVT(dAtA []byte) error {
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2785,7 +2785,7 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) UnmarshalVT(dAtA []
 				return io.ErrUnexpectedEOF
 			}
 			m.ImpactedClusters = append(m.ImpactedClusters, &InitBundleMeta_ImpactedCluster{})
-			if err := m.ImpactedClusters[len(m.ImpactedClusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImpactedClusters[len(m.ImpactedClusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

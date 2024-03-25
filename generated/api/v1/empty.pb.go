@@ -34,8 +34,8 @@ func (*Empty) ProtoMessage()    {}
 func (*Empty) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d9f1655206f90258, []int{0}
 }
-func (m *Empty) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Empty) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -147,7 +147,7 @@ func sovEmpty(x uint64) (n int) {
 func sozEmpty(x uint64) (n int) {
 	return sovEmpty(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Empty) UnmarshalVT(dAtA []byte) error {
+func (m *Empty) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

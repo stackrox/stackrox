@@ -39,8 +39,8 @@ func (*SensorUpgradeTrigger) ProtoMessage()    {}
 func (*SensorUpgradeTrigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_20d0901c1423daa1, []int{0}
 }
-func (m *SensorUpgradeTrigger) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SensorUpgradeTrigger) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SensorUpgradeTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -132,8 +132,8 @@ func (*SensorUpgradeTrigger_EnvVarDef) ProtoMessage()    {}
 func (*SensorUpgradeTrigger_EnvVarDef) Descriptor() ([]byte, []int) {
 	return fileDescriptor_20d0901c1423daa1, []int{0, 0}
 }
-func (m *SensorUpgradeTrigger_EnvVarDef) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SensorUpgradeTrigger_EnvVarDef) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SensorUpgradeTrigger_EnvVarDef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -409,7 +409,7 @@ func sovSensorUpgrade(x uint64) (n int) {
 func sozSensorUpgrade(x uint64) (n int) {
 	return sovSensorUpgrade(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SensorUpgradeTrigger) UnmarshalVT(dAtA []byte) error {
+func (m *SensorUpgradeTrigger) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -564,7 +564,7 @@ func (m *SensorUpgradeTrigger) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.EnvVars = append(m.EnvVars, &SensorUpgradeTrigger_EnvVarDef{})
-			if err := m.EnvVars[len(m.EnvVars)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.EnvVars[len(m.EnvVars)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -590,7 +590,7 @@ func (m *SensorUpgradeTrigger) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SensorUpgradeTrigger_EnvVarDef) UnmarshalVT(dAtA []byte) error {
+func (m *SensorUpgradeTrigger_EnvVarDef) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

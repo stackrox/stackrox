@@ -36,8 +36,8 @@ func (*KeyValuePair) ProtoMessage()    {}
 func (*KeyValuePair) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d4c175919bcbc7ba, []int{0}
 }
-func (m *KeyValuePair) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *KeyValuePair) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *KeyValuePair) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -187,7 +187,7 @@ func sovCommon(x uint64) (n int) {
 func sozCommon(x uint64) (n int) {
 	return sovCommon(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *KeyValuePair) UnmarshalVT(dAtA []byte) error {
+func (m *KeyValuePair) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

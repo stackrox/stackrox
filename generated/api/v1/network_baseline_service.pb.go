@@ -69,8 +69,8 @@ func (*NetworkBaselinePeerEntity) ProtoMessage()    {}
 func (*NetworkBaselinePeerEntity) Descriptor() ([]byte, []int) {
 	return fileDescriptor_077bbc20584cb43f, []int{0}
 }
-func (m *NetworkBaselinePeerEntity) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkBaselinePeerEntity) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkBaselinePeerEntity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -149,8 +149,8 @@ func (*NetworkBaselineStatusPeer) ProtoMessage()    {}
 func (*NetworkBaselineStatusPeer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_077bbc20584cb43f, []int{1}
 }
-func (m *NetworkBaselineStatusPeer) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkBaselineStatusPeer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkBaselineStatusPeer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -232,8 +232,8 @@ func (*NetworkBaselinePeerStatus) ProtoMessage()    {}
 func (*NetworkBaselinePeerStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_077bbc20584cb43f, []int{2}
 }
-func (m *NetworkBaselinePeerStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkBaselinePeerStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkBaselinePeerStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -301,8 +301,8 @@ func (*NetworkBaselineStatusRequest) ProtoMessage()    {}
 func (*NetworkBaselineStatusRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_077bbc20584cb43f, []int{3}
 }
-func (m *NetworkBaselineStatusRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkBaselineStatusRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkBaselineStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -374,8 +374,8 @@ func (*NetworkBaselineStatusResponse) ProtoMessage()    {}
 func (*NetworkBaselineStatusResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_077bbc20584cb43f, []int{4}
 }
-func (m *NetworkBaselineStatusResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkBaselineStatusResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkBaselineStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -441,8 +441,8 @@ func (*ModifyBaselineStatusForPeersRequest) ProtoMessage()    {}
 func (*ModifyBaselineStatusForPeersRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_077bbc20584cb43f, []int{5}
 }
-func (m *ModifyBaselineStatusForPeersRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ModifyBaselineStatusForPeersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ModifyBaselineStatusForPeersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1208,7 +1208,7 @@ func sovNetworkBaselineService(x uint64) (n int) {
 func sozNetworkBaselineService(x uint64) (n int) {
 	return sovNetworkBaselineService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkBaselinePeerEntity) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkBaselinePeerEntity) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1310,7 +1310,7 @@ func (m *NetworkBaselinePeerEntity) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkBaselineStatusPeer) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkBaselineStatusPeer) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1371,7 +1371,7 @@ func (m *NetworkBaselineStatusPeer) UnmarshalVT(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &NetworkBaselinePeerEntity{}
 			}
-			if err := m.Entity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1455,7 +1455,7 @@ func (m *NetworkBaselineStatusPeer) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkBaselinePeerStatus) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkBaselinePeerStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1516,7 +1516,7 @@ func (m *NetworkBaselinePeerStatus) UnmarshalVT(dAtA []byte) error {
 			if m.Peer == nil {
 				m.Peer = &NetworkBaselineStatusPeer{}
 			}
-			if err := m.Peer.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Peer.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1561,7 +1561,7 @@ func (m *NetworkBaselinePeerStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkBaselineStatusRequest) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkBaselineStatusRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1652,7 +1652,7 @@ func (m *NetworkBaselineStatusRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Peers = append(m.Peers, &NetworkBaselineStatusPeer{})
-			if err := m.Peers[len(m.Peers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Peers[len(m.Peers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1678,7 +1678,7 @@ func (m *NetworkBaselineStatusRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkBaselineStatusResponse) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkBaselineStatusResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1737,7 +1737,7 @@ func (m *NetworkBaselineStatusResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Statuses = append(m.Statuses, &NetworkBaselinePeerStatus{})
-			if err := m.Statuses[len(m.Statuses)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Statuses[len(m.Statuses)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1763,7 +1763,7 @@ func (m *NetworkBaselineStatusResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ModifyBaselineStatusForPeersRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ModifyBaselineStatusForPeersRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1854,7 +1854,7 @@ func (m *ModifyBaselineStatusForPeersRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Peers = append(m.Peers, &NetworkBaselinePeerStatus{})
-			if err := m.Peers[len(m.Peers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Peers[len(m.Peers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

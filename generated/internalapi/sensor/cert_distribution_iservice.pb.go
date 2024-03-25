@@ -41,8 +41,8 @@ func (*FetchCertificateRequest) ProtoMessage()    {}
 func (*FetchCertificateRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bfc1f5deeeb84e10, []int{0}
 }
-func (m *FetchCertificateRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *FetchCertificateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *FetchCertificateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -109,8 +109,8 @@ func (*FetchCertificateResponse) ProtoMessage()    {}
 func (*FetchCertificateResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bfc1f5deeeb84e10, []int{1}
 }
-func (m *FetchCertificateResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *FetchCertificateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *FetchCertificateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -411,7 +411,7 @@ func sovCertDistributionIservice(x uint64) (n int) {
 func sozCertDistributionIservice(x uint64) (n int) {
 	return sovCertDistributionIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *FetchCertificateRequest) UnmarshalVT(dAtA []byte) error {
+func (m *FetchCertificateRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -513,7 +513,7 @@ func (m *FetchCertificateRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *FetchCertificateResponse) UnmarshalVT(dAtA []byte) error {
+func (m *FetchCertificateResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

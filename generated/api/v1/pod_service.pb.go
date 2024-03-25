@@ -40,8 +40,8 @@ func (*PodsResponse) ProtoMessage()    {}
 func (*PodsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5092c07627247a99, []int{0}
 }
-func (m *PodsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PodsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PodsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -107,8 +107,8 @@ func (*ExportPodRequest) ProtoMessage()    {}
 func (*ExportPodRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5092c07627247a99, []int{1}
 }
-func (m *ExportPodRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExportPodRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExportPodRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -174,8 +174,8 @@ func (*ExportPodResponse) ProtoMessage()    {}
 func (*ExportPodResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5092c07627247a99, []int{2}
 }
-func (m *ExportPodResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExportPodResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExportPodResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -591,7 +591,7 @@ func sovPodService(x uint64) (n int) {
 func sozPodService(x uint64) (n int) {
 	return sovPodService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *PodsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *PodsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -650,7 +650,7 @@ func (m *PodsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Pods = append(m.Pods, &storage.Pod{})
-			if err := m.Pods[len(m.Pods)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pods[len(m.Pods)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -676,7 +676,7 @@ func (m *PodsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPodRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ExportPodRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -778,7 +778,7 @@ func (m *ExportPodRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPodResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ExportPodResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -839,7 +839,7 @@ func (m *ExportPodResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Pod == nil {
 				m.Pod = &storage.Pod{}
 			}
-			if err := m.Pod.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pod.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

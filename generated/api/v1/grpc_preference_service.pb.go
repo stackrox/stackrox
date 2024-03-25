@@ -39,8 +39,8 @@ func (*Preferences) ProtoMessage()    {}
 func (*Preferences) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a9b372bab2d89b6f, []int{0}
 }
-func (m *Preferences) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Preferences) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Preferences) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -259,7 +259,7 @@ func sovGrpcPreferenceService(x uint64) (n int) {
 func sozGrpcPreferenceService(x uint64) (n int) {
 	return sovGrpcPreferenceService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Preferences) UnmarshalVT(dAtA []byte) error {
+func (m *Preferences) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

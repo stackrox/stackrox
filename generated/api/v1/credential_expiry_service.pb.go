@@ -70,8 +70,8 @@ func (*GetCertExpiry) ProtoMessage()    {}
 func (*GetCertExpiry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd0d8e0eb298005f, []int{0}
 }
-func (m *GetCertExpiry) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCertExpiry) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCertExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -123,8 +123,8 @@ func (*GetCertExpiry_Request) ProtoMessage()    {}
 func (*GetCertExpiry_Request) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd0d8e0eb298005f, []int{0, 0}
 }
-func (m *GetCertExpiry_Request) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCertExpiry_Request) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCertExpiry_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -183,8 +183,8 @@ func (*GetCertExpiry_Response) ProtoMessage()    {}
 func (*GetCertExpiry_Response) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd0d8e0eb298005f, []int{0, 1}
 }
-func (m *GetCertExpiry_Response) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCertExpiry_Response) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCertExpiry_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -509,7 +509,7 @@ func sovCredentialExpiryService(x uint64) (n int) {
 func sozCredentialExpiryService(x uint64) (n int) {
 	return sovCredentialExpiryService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetCertExpiry) UnmarshalVT(dAtA []byte) error {
+func (m *GetCertExpiry) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -560,7 +560,7 @@ func (m *GetCertExpiry) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCertExpiry_Request) UnmarshalVT(dAtA []byte) error {
+func (m *GetCertExpiry_Request) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -630,7 +630,7 @@ func (m *GetCertExpiry_Request) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCertExpiry_Response) UnmarshalVT(dAtA []byte) error {
+func (m *GetCertExpiry_Response) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

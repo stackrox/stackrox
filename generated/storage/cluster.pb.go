@@ -352,8 +352,8 @@ func (*ClusterMetadata) ProtoMessage()    {}
 func (*ClusterMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{0}
 }
-func (m *ClusterMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -428,8 +428,8 @@ func (*GoogleProviderMetadata) ProtoMessage()    {}
 func (*GoogleProviderMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{1}
 }
-func (m *GoogleProviderMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GoogleProviderMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GoogleProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -496,8 +496,8 @@ func (*AWSProviderMetadata) ProtoMessage()    {}
 func (*AWSProviderMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{2}
 }
-func (m *AWSProviderMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AWSProviderMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AWSProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -556,8 +556,8 @@ func (*AzureProviderMetadata) ProtoMessage()    {}
 func (*AzureProviderMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{3}
 }
-func (m *AzureProviderMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AzureProviderMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AzureProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -624,8 +624,8 @@ func (*ProviderMetadata) ProtoMessage()    {}
 func (*ProviderMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{4}
 }
-func (m *ProviderMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProviderMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProviderMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -802,8 +802,8 @@ func (*OrchestratorMetadata) ProtoMessage()    {}
 func (*OrchestratorMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{5}
 }
-func (m *OrchestratorMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *OrchestratorMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *OrchestratorMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -931,8 +931,8 @@ func (*AdmissionControllerConfig) ProtoMessage()    {}
 func (*AdmissionControllerConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{6}
 }
-func (m *AdmissionControllerConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AdmissionControllerConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AdmissionControllerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1019,8 +1019,8 @@ func (*TolerationsConfig) ProtoMessage()    {}
 func (*TolerationsConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{7}
 }
-func (m *TolerationsConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TolerationsConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TolerationsConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1089,8 +1089,8 @@ func (*StaticClusterConfig) ProtoMessage()    {}
 func (*StaticClusterConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{8}
 }
-func (m *StaticClusterConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *StaticClusterConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *StaticClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1216,8 +1216,8 @@ func (*DynamicClusterConfig) ProtoMessage()    {}
 func (*DynamicClusterConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{9}
 }
-func (m *DynamicClusterConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DynamicClusterConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DynamicClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1296,8 +1296,8 @@ func (*CompleteClusterConfig) ProtoMessage()    {}
 func (*CompleteClusterConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{10}
 }
-func (m *CompleteClusterConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CompleteClusterConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CompleteClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1393,8 +1393,8 @@ func (*SensorDeploymentIdentification) ProtoMessage()    {}
 func (*SensorDeploymentIdentification) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{11}
 }
-func (m *SensorDeploymentIdentification) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SensorDeploymentIdentification) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SensorDeploymentIdentification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1513,8 +1513,8 @@ func (*Cluster) ProtoMessage()    {}
 func (*Cluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{12}
 }
-func (m *Cluster) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Cluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Cluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1747,8 +1747,8 @@ func (*ClusterCertExpiryStatus) ProtoMessage()    {}
 func (*ClusterCertExpiryStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{13}
 }
-func (m *ClusterCertExpiryStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterCertExpiryStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterCertExpiryStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1822,8 +1822,8 @@ func (*ClusterStatus) ProtoMessage()    {}
 func (*ClusterStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{14}
 }
-func (m *ClusterStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1928,8 +1928,8 @@ func (*ClusterUpgradeStatus) ProtoMessage()    {}
 func (*ClusterUpgradeStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{15}
 }
-func (m *ClusterUpgradeStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterUpgradeStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterUpgradeStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2013,8 +2013,8 @@ func (*ClusterUpgradeStatus_UpgradeProcessStatus) ProtoMessage() {}
 func (*ClusterUpgradeStatus_UpgradeProcessStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{15, 0}
 }
-func (m *ClusterUpgradeStatus_UpgradeProcessStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterUpgradeStatus_UpgradeProcessStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterUpgradeStatus_UpgradeProcessStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2119,8 +2119,8 @@ func (*UpgradeProgress) ProtoMessage()    {}
 func (*UpgradeProgress) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{16}
 }
-func (m *UpgradeProgress) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpgradeProgress) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpgradeProgress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2197,8 +2197,8 @@ func (*AuditLogFileState) ProtoMessage()    {}
 func (*AuditLogFileState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{17}
 }
-func (m *AuditLogFileState) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AuditLogFileState) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AuditLogFileState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2281,8 +2281,8 @@ func (*ClusterHealthStatus) ProtoMessage()    {}
 func (*ClusterHealthStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{18}
 }
-func (m *ClusterHealthStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterHealthStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterHealthStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2433,8 +2433,8 @@ func (*CollectorHealthInfo) ProtoMessage()    {}
 func (*CollectorHealthInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{19}
 }
-func (m *CollectorHealthInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CollectorHealthInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CollectorHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2635,8 +2635,8 @@ func (*AdmissionControlHealthInfo) ProtoMessage()    {}
 func (*AdmissionControlHealthInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{20}
 }
-func (m *AdmissionControlHealthInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AdmissionControlHealthInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AdmissionControlHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2805,8 +2805,8 @@ func (*ScannerHealthInfo) ProtoMessage()    {}
 func (*ScannerHealthInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bd4108636841f8d0, []int{21}
 }
-func (m *ScannerHealthInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScannerHealthInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScannerHealthInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -5991,7 +5991,7 @@ func sovCluster(x uint64) (n int) {
 func sozCluster(x uint64) (n int) {
 	return sovCluster(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ClusterMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6125,7 +6125,7 @@ func (m *ClusterMetadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GoogleProviderMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *GoogleProviderMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6240,7 +6240,7 @@ func (m *GoogleProviderMetadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AWSProviderMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *AWSProviderMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6323,7 +6323,7 @@ func (m *AWSProviderMetadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AzureProviderMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *AzureProviderMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6406,7 +6406,7 @@ func (m *AzureProviderMetadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProviderMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *ProviderMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6529,7 +6529,7 @@ func (m *ProviderMetadata) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &GoogleProviderMetadata{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Provider = &ProviderMetadata_Google{v}
@@ -6564,7 +6564,7 @@ func (m *ProviderMetadata) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AWSProviderMetadata{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Provider = &ProviderMetadata_Aws{v}
@@ -6599,7 +6599,7 @@ func (m *ProviderMetadata) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AzureProviderMetadata{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Provider = &ProviderMetadata_Azure{v}
@@ -6656,7 +6656,7 @@ func (m *ProviderMetadata) UnmarshalVT(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &ClusterMetadata{}
 			}
-			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6682,7 +6682,7 @@ func (m *ProviderMetadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *OrchestratorMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *OrchestratorMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6865,7 +6865,7 @@ func (m *OrchestratorMetadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AdmissionControllerConfig) UnmarshalVT(dAtA []byte) error {
+func (m *AdmissionControllerConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7015,7 +7015,7 @@ func (m *AdmissionControllerConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TolerationsConfig) UnmarshalVT(dAtA []byte) error {
+func (m *TolerationsConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7086,7 +7086,7 @@ func (m *TolerationsConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
+func (m *StaticClusterConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7321,7 +7321,7 @@ func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if m.TolerationsConfig == nil {
 				m.TolerationsConfig = &TolerationsConfig{}
 			}
-			if err := m.TolerationsConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.TolerationsConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7387,7 +7387,7 @@ func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
+func (m *DynamicClusterConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7448,7 +7448,7 @@ func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if m.AdmissionControllerConfig == nil {
 				m.AdmissionControllerConfig = &AdmissionControllerConfig{}
 			}
-			if err := m.AdmissionControllerConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AdmissionControllerConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7526,7 +7526,7 @@ func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CompleteClusterConfig) UnmarshalVT(dAtA []byte) error {
+func (m *CompleteClusterConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7587,7 +7587,7 @@ func (m *CompleteClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if m.DynamicConfig == nil {
 				m.DynamicConfig = &DynamicClusterConfig{}
 			}
-			if err := m.DynamicConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DynamicConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7623,7 +7623,7 @@ func (m *CompleteClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if m.StaticConfig == nil {
 				m.StaticConfig = &StaticClusterConfig{}
 			}
-			if err := m.StaticConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.StaticConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7808,7 +7808,7 @@ func (m *CompleteClusterConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SensorDeploymentIdentification) UnmarshalVT(dAtA []byte) error {
+func (m *SensorDeploymentIdentification) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8051,7 +8051,7 @@ func (m *SensorDeploymentIdentification) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Cluster) UnmarshalVT(dAtA []byte) error {
+func (m *Cluster) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8299,7 +8299,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			if m.Status == nil {
 				m.Status = &ClusterStatus{}
 			}
-			if err := m.Status.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Status.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8386,7 +8386,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			if m.DynamicConfig == nil {
 				m.DynamicConfig = &DynamicClusterConfig{}
 			}
-			if err := m.DynamicConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DynamicConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8422,7 +8422,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			if m.TolerationsConfig == nil {
 				m.TolerationsConfig = &TolerationsConfig{}
 			}
-			if err := m.TolerationsConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.TolerationsConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8497,7 +8497,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			if m.HealthStatus == nil {
 				m.HealthStatus = &ClusterHealthStatus{}
 			}
-			if err := m.HealthStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.HealthStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8553,7 +8553,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			if m.HelmConfig == nil {
 				m.HelmConfig = &CompleteClusterConfig{}
 			}
-			if err := m.HelmConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.HelmConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8609,7 +8609,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 			if m.MostRecentSensorId == nil {
 				m.MostRecentSensorId = &SensorDeploymentIdentification{}
 			}
-			if err := m.MostRecentSensorId.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MostRecentSensorId.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8848,7 +8848,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &AuditLogFileState{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -8942,7 +8942,7 @@ func (m *Cluster) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterCertExpiryStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterCertExpiryStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9065,7 +9065,7 @@ func (m *ClusterCertExpiryStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9194,7 +9194,7 @@ func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
 			if m.ProviderMetadata == nil {
 				m.ProviderMetadata = &ProviderMetadata{}
 			}
-			if err := m.ProviderMetadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ProviderMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9230,7 +9230,7 @@ func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
 			if m.OrchestratorMetadata == nil {
 				m.OrchestratorMetadata = &OrchestratorMetadata{}
 			}
-			if err := m.OrchestratorMetadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.OrchestratorMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9266,7 +9266,7 @@ func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
 			if m.UpgradeStatus == nil {
 				m.UpgradeStatus = &ClusterUpgradeStatus{}
 			}
-			if err := m.UpgradeStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpgradeStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9302,7 +9302,7 @@ func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
 			if m.CertExpiryStatus == nil {
 				m.CertExpiryStatus = &ClusterCertExpiryStatus{}
 			}
-			if err := m.CertExpiryStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CertExpiryStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9328,7 +9328,7 @@ func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterUpgradeStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterUpgradeStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9440,7 +9440,7 @@ func (m *ClusterUpgradeStatus) UnmarshalVT(dAtA []byte) error {
 			if m.MostRecentProcess == nil {
 				m.MostRecentProcess = &ClusterUpgradeStatus_UpgradeProcessStatus{}
 			}
-			if err := m.MostRecentProcess.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MostRecentProcess.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9466,7 +9466,7 @@ func (m *ClusterUpgradeStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterUpgradeStatus_UpgradeProcessStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9679,7 +9679,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) UnmarshalVT(dAtA []byte) err
 			if m.Progress == nil {
 				m.Progress = &UpgradeProgress{}
 			}
-			if err := m.Progress.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Progress.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9724,7 +9724,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) UnmarshalVT(dAtA []byte) err
 	}
 	return nil
 }
-func (m *UpgradeProgress) UnmarshalVT(dAtA []byte) error {
+func (m *UpgradeProgress) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9862,7 +9862,7 @@ func (m *UpgradeProgress) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuditLogFileState) UnmarshalVT(dAtA []byte) error {
+func (m *AuditLogFileState) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9981,7 +9981,7 @@ func (m *AuditLogFileState) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClusterHealthStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterHealthStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10042,7 +10042,7 @@ func (m *ClusterHealthStatus) UnmarshalVT(dAtA []byte) error {
 			if m.CollectorHealthInfo == nil {
 				m.CollectorHealthInfo = &CollectorHealthInfo{}
 			}
-			if err := m.CollectorHealthInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CollectorHealthInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10210,7 +10210,7 @@ func (m *ClusterHealthStatus) UnmarshalVT(dAtA []byte) error {
 			if m.AdmissionControlHealthInfo == nil {
 				m.AdmissionControlHealthInfo = &AdmissionControlHealthInfo{}
 			}
-			if err := m.AdmissionControlHealthInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AdmissionControlHealthInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10278,7 +10278,7 @@ func (m *ClusterHealthStatus) UnmarshalVT(dAtA []byte) error {
 			if m.ScannerHealthInfo == nil {
 				m.ScannerHealthInfo = &ScannerHealthInfo{}
 			}
-			if err := m.ScannerHealthInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScannerHealthInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10323,7 +10323,7 @@ func (m *ClusterHealthStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectorHealthInfo) UnmarshalVT(dAtA []byte) error {
+func (m *CollectorHealthInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10498,7 +10498,7 @@ func (m *CollectorHealthInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AdmissionControlHealthInfo) UnmarshalVT(dAtA []byte) error {
+func (m *AdmissionControlHealthInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10621,7 +10621,7 @@ func (m *AdmissionControlHealthInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScannerHealthInfo) UnmarshalVT(dAtA []byte) error {
+func (m *ScannerHealthInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

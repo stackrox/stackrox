@@ -46,8 +46,8 @@ func (*ExternalBackup) ProtoMessage()    {}
 func (*ExternalBackup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_38dc9102c7d6c41e, []int{0}
 }
-func (m *ExternalBackup) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExternalBackup) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExternalBackup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -249,8 +249,8 @@ func (*S3Config) ProtoMessage()    {}
 func (*S3Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_38dc9102c7d6c41e, []int{1}
 }
-func (m *S3Config) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *S3Config) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *S3Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -355,8 +355,8 @@ func (*GCSConfig) ProtoMessage()    {}
 func (*GCSConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_38dc9102c7d6c41e, []int{2}
 }
-func (m *GCSConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GCSConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GCSConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -899,7 +899,7 @@ func sovExternalBackup(x uint64) (n int) {
 func sozExternalBackup(x uint64) (n int) {
 	return sovExternalBackup(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error {
+func (m *ExternalBackup) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1056,7 +1056,7 @@ func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error {
 			if m.Schedule == nil {
 				m.Schedule = &Schedule{}
 			}
-			if err := m.Schedule.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Schedule.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1109,7 +1109,7 @@ func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &S3Config{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &ExternalBackup_S3{v}
@@ -1144,7 +1144,7 @@ func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &GCSConfig{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Config = &ExternalBackup_Gcs{v}
@@ -1192,7 +1192,7 @@ func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *S3Config) UnmarshalVT(dAtA []byte) error {
+func (m *S3Config) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1455,7 +1455,7 @@ func (m *S3Config) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GCSConfig) UnmarshalVT(dAtA []byte) error {
+func (m *GCSConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

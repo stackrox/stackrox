@@ -43,8 +43,8 @@ func (*NetworkConnectionInfoMessage) ProtoMessage()    {}
 func (*NetworkConnectionInfoMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6dc4e32683ddd49f, []int{0}
 }
-func (m *NetworkConnectionInfoMessage) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkConnectionInfoMessage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkConnectionInfoMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -166,8 +166,8 @@ func (*NetworkFlowsControlMessage) ProtoMessage()    {}
 func (*NetworkFlowsControlMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6dc4e32683ddd49f, []int{1}
 }
-func (m *NetworkFlowsControlMessage) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkFlowsControlMessage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkFlowsControlMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -242,8 +242,8 @@ func (*IPAddressList) ProtoMessage()    {}
 func (*IPAddressList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6dc4e32683ddd49f, []int{2}
 }
-func (m *IPAddressList) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *IPAddressList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *IPAddressList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -326,8 +326,8 @@ func (*IPNetworkList) ProtoMessage()    {}
 func (*IPNetworkList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6dc4e32683ddd49f, []int{3}
 }
-func (m *IPNetworkList) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *IPNetworkList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *IPNetworkList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -874,7 +874,7 @@ func sovNetworkConnectionIservice(x uint64) (n int) {
 func sozNetworkConnectionIservice(x uint64) (n int) {
 	return sovNetworkConnectionIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkConnectionInfoMessage) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkConnectionInfoMessage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -933,7 +933,7 @@ func (m *NetworkConnectionInfoMessage) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CollectorRegisterRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &NetworkConnectionInfoMessage_Register{v}
@@ -968,7 +968,7 @@ func (m *NetworkConnectionInfoMessage) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkConnectionInfo{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &NetworkConnectionInfoMessage_Info{v}
@@ -995,7 +995,7 @@ func (m *NetworkConnectionInfoMessage) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkFlowsControlMessage) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkFlowsControlMessage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1056,7 +1056,7 @@ func (m *NetworkFlowsControlMessage) UnmarshalVT(dAtA []byte) error {
 			if m.PublicIpAddresses == nil {
 				m.PublicIpAddresses = &IPAddressList{}
 			}
-			if err := m.PublicIpAddresses.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PublicIpAddresses.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1092,7 +1092,7 @@ func (m *NetworkFlowsControlMessage) UnmarshalVT(dAtA []byte) error {
 			if m.IpNetworks == nil {
 				m.IpNetworks = &IPNetworkList{}
 			}
-			if err := m.IpNetworks.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.IpNetworks.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1118,7 +1118,7 @@ func (m *NetworkFlowsControlMessage) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IPAddressList) UnmarshalVT(dAtA []byte) error {
+func (m *IPAddressList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1273,7 +1273,7 @@ func (m *IPAddressList) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IPNetworkList) UnmarshalVT(dAtA []byte) error {
+func (m *IPNetworkList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

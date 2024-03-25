@@ -42,8 +42,8 @@ func (*TokenMetadata) ProtoMessage()    {}
 func (*TokenMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c11d10095315801c, []int{0}
 }
-func (m *TokenMetadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TokenMetadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TokenMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -315,7 +315,7 @@ func sovApiToken(x uint64) (n int) {
 func sozApiToken(x uint64) (n int) {
 	return sovApiToken(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *TokenMetadata) UnmarshalVT(dAtA []byte) error {
+func (m *TokenMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -37,8 +37,8 @@ func (*SignatureIntegration) ProtoMessage()    {}
 func (*SignatureIntegration) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b3165e7a4c19e14a, []int{0}
 }
-func (m *SignatureIntegration) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SignatureIntegration) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SignatureIntegration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -112,8 +112,8 @@ func (*CosignPublicKeyVerification) ProtoMessage()    {}
 func (*CosignPublicKeyVerification) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b3165e7a4c19e14a, []int{1}
 }
-func (m *CosignPublicKeyVerification) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CosignPublicKeyVerification) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CosignPublicKeyVerification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -179,8 +179,8 @@ func (*CosignPublicKeyVerification_PublicKey) ProtoMessage()    {}
 func (*CosignPublicKeyVerification_PublicKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b3165e7a4c19e14a, []int{1, 0}
 }
-func (m *CosignPublicKeyVerification_PublicKey) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CosignPublicKeyVerification_PublicKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CosignPublicKeyVerification_PublicKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -478,7 +478,7 @@ func sovSignatureIntegration(x uint64) (n int) {
 func sozSignatureIntegration(x uint64) (n int) {
 	return sovSignatureIntegration(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SignatureIntegration) UnmarshalVT(dAtA []byte) error {
+func (m *SignatureIntegration) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -603,7 +603,7 @@ func (m *SignatureIntegration) UnmarshalVT(dAtA []byte) error {
 			if m.Cosign == nil {
 				m.Cosign = &CosignPublicKeyVerification{}
 			}
-			if err := m.Cosign.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cosign.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -629,7 +629,7 @@ func (m *SignatureIntegration) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CosignPublicKeyVerification) UnmarshalVT(dAtA []byte) error {
+func (m *CosignPublicKeyVerification) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -688,7 +688,7 @@ func (m *CosignPublicKeyVerification) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PublicKeys = append(m.PublicKeys, &CosignPublicKeyVerification_PublicKey{})
-			if err := m.PublicKeys[len(m.PublicKeys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PublicKeys[len(m.PublicKeys)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -714,7 +714,7 @@ func (m *CosignPublicKeyVerification) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CosignPublicKeyVerification_PublicKey) UnmarshalVT(dAtA []byte) error {
+func (m *CosignPublicKeyVerification_PublicKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

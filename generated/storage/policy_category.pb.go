@@ -37,8 +37,8 @@ func (*PolicyCategory) ProtoMessage()    {}
 func (*PolicyCategory) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0b38511e664e6e6a, []int{0}
 }
-func (m *PolicyCategory) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PolicyCategory) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PolicyCategory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -210,7 +210,7 @@ func sovPolicyCategory(x uint64) (n int) {
 func sozPolicyCategory(x uint64) (n int) {
 	return sovPolicyCategory(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error {
+func (m *PolicyCategory) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

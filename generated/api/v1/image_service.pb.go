@@ -75,8 +75,8 @@ func (*GetImageRequest) ProtoMessage()    {}
 func (*GetImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{0}
 }
-func (m *GetImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -149,8 +149,8 @@ func (*ListImagesResponse) ProtoMessage()    {}
 func (*ListImagesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{1}
 }
-func (m *ListImagesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListImagesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -215,8 +215,8 @@ func (*CountImagesResponse) ProtoMessage()    {}
 func (*CountImagesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{2}
 }
-func (m *CountImagesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CountImagesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CountImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -279,8 +279,8 @@ func (*ScanImageRequest) ProtoMessage()    {}
 func (*ScanImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{3}
 }
-func (m *ScanImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -362,8 +362,8 @@ func (*ScanImageInternalRequest) ProtoMessage()    {}
 func (*ScanImageInternalRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{4}
 }
-func (m *ScanImageInternalRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImageInternalRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImageInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -440,8 +440,8 @@ func (*ScanImageInternalRequest_Source) ProtoMessage()    {}
 func (*ScanImageInternalRequest_Source) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{4, 0}
 }
-func (m *ScanImageInternalRequest_Source) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImageInternalRequest_Source) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImageInternalRequest_Source) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -518,8 +518,8 @@ func (*ScanImageInternalResponse) ProtoMessage()    {}
 func (*ScanImageInternalResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{5}
 }
-func (m *ScanImageInternalResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImageInternalResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImageInternalResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -586,8 +586,8 @@ func (*GetImageVulnerabilitiesInternalRequest) ProtoMessage()    {}
 func (*GetImageVulnerabilitiesInternalRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{6}
 }
-func (m *GetImageVulnerabilitiesInternalRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetImageVulnerabilitiesInternalRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetImageVulnerabilitiesInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -699,8 +699,8 @@ func (*EnrichLocalImageInternalRequest) ProtoMessage()    {}
 func (*EnrichLocalImageInternalRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{7}
 }
-func (m *EnrichLocalImageInternalRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EnrichLocalImageInternalRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EnrichLocalImageInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -850,8 +850,8 @@ func (*UpdateLocalScanStatusInternalRequest) ProtoMessage()    {}
 func (*UpdateLocalScanStatusInternalRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{8}
 }
-func (m *UpdateLocalScanStatusInternalRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateLocalScanStatusInternalRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateLocalScanStatusInternalRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -918,8 +918,8 @@ func (*DeleteImagesRequest) ProtoMessage()    {}
 func (*DeleteImagesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{9}
 }
-func (m *DeleteImagesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteImagesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteImagesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -987,8 +987,8 @@ func (*DeleteImagesResponse) ProtoMessage()    {}
 func (*DeleteImagesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{10}
 }
-func (m *DeleteImagesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteImagesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1057,8 +1057,8 @@ func (*WatchImageRequest) ProtoMessage()    {}
 func (*WatchImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{11}
 }
-func (m *WatchImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *WatchImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *WatchImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1123,8 +1123,8 @@ func (*WatchImageResponse) ProtoMessage()    {}
 func (*WatchImageResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{12}
 }
-func (m *WatchImageResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *WatchImageResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *WatchImageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1199,8 +1199,8 @@ func (*UnwatchImageRequest) ProtoMessage()    {}
 func (*UnwatchImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{13}
 }
-func (m *UnwatchImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UnwatchImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UnwatchImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1259,8 +1259,8 @@ func (*GetWatchedImagesResponse) ProtoMessage()    {}
 func (*GetWatchedImagesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{14}
 }
-func (m *GetWatchedImagesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetWatchedImagesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetWatchedImagesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1326,8 +1326,8 @@ func (*ScanImageInternalResponseDetails) ProtoMessage()    {}
 func (*ScanImageInternalResponseDetails) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{15}
 }
-func (m *ScanImageInternalResponseDetails) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImageInternalResponseDetails) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImageInternalResponseDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1384,8 +1384,8 @@ func (*ScanImageInternalResponseDetails_TooManyParallelScans) ProtoMessage() {}
 func (*ScanImageInternalResponseDetails_TooManyParallelScans) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{15, 0}
 }
-func (m *ScanImageInternalResponseDetails_TooManyParallelScans) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScanImageInternalResponseDetails_TooManyParallelScans) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScanImageInternalResponseDetails_TooManyParallelScans) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1438,8 +1438,8 @@ func (*ExportImageRequest) ProtoMessage()    {}
 func (*ExportImageRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{16}
 }
-func (m *ExportImageRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExportImageRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExportImageRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1505,8 +1505,8 @@ func (*ExportImageResponse) ProtoMessage()    {}
 func (*ExportImageResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b4306cfe43028263, []int{17}
 }
-func (m *ExportImageResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ExportImageResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ExportImageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -3767,7 +3767,7 @@ func sovImageService(x uint64) (n int) {
 func sozImageService(x uint64) (n int) {
 	return sovImageService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3890,7 +3890,7 @@ func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListImagesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3949,7 +3949,7 @@ func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Images = append(m.Images, &storage.ListImage{})
-			if err := m.Images[len(m.Images)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Images[len(m.Images)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3975,7 +3975,7 @@ func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountImagesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CountImagesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4045,7 +4045,7 @@ func (m *CountImagesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScanImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4200,7 +4200,7 @@ func (m *ScanImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScanImageInternalRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImageInternalRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4261,7 +4261,7 @@ func (m *ScanImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.ContainerImage{}
 			}
-			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4317,7 +4317,7 @@ func (m *ScanImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Source == nil {
 				m.Source = &ScanImageInternalRequest_Source{}
 			}
-			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Source.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4343,7 +4343,7 @@ func (m *ScanImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScanImageInternalRequest_Source) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImageInternalRequest_Source) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4490,7 +4490,7 @@ func (m *ScanImageInternalRequest_Source) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScanImageInternalResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImageInternalResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4551,7 +4551,7 @@ func (m *ScanImageInternalResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4577,7 +4577,7 @@ func (m *ScanImageInternalResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetImageVulnerabilitiesInternalRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4670,7 +4670,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error 
 			if m.ImageName == nil {
 				m.ImageName = &storage.ImageName{}
 			}
-			if err := m.ImageName.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageName.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4706,7 +4706,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error 
 			if m.Metadata == nil {
 				m.Metadata = &storage.ImageMetadata{}
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4857,7 +4857,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
+func (m *EnrichLocalImageInternalRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4950,7 +4950,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.ImageName == nil {
 				m.ImageName = &storage.ImageName{}
 			}
-			if err := m.ImageName.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageName.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4986,7 +4986,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.ImageMetadata{}
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5022,7 +5022,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.ImageSignature == nil {
 				m.ImageSignature = &storage.ImageSignature{}
 			}
-			if err := m.ImageSignature.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageSignature.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5316,7 +5316,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.V4Contents == nil {
 				m.V4Contents = &v4.Contents{}
 			}
-			if err := m.V4Contents.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.V4Contents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5374,7 +5374,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateLocalScanStatusInternalRequest) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateLocalScanStatusInternalRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5489,7 +5489,7 @@ func (m *UpdateLocalScanStatusInternalRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteImagesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteImagesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5550,7 +5550,7 @@ func (m *DeleteImagesRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5596,7 +5596,7 @@ func (m *DeleteImagesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteImagesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteImagesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5686,7 +5686,7 @@ func (m *DeleteImagesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *WatchImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *WatchImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5769,7 +5769,7 @@ func (m *WatchImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *WatchImageResponse) UnmarshalVT(dAtA []byte) error {
+func (m *WatchImageResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5903,7 +5903,7 @@ func (m *WatchImageResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnwatchImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *UnwatchImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5986,7 +5986,7 @@ func (m *UnwatchImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetWatchedImagesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetWatchedImagesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6045,7 +6045,7 @@ func (m *GetWatchedImagesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.WatchedImages = append(m.WatchedImages, &storage.WatchedImage{})
-			if err := m.WatchedImages[len(m.WatchedImages)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.WatchedImages[len(m.WatchedImages)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6071,7 +6071,7 @@ func (m *GetWatchedImagesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScanImageInternalResponseDetails) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImageInternalResponseDetails) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6122,7 +6122,7 @@ func (m *ScanImageInternalResponseDetails) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScanImageInternalResponseDetails_TooManyParallelScans) UnmarshalVT(dAtA []byte) error {
+func (m *ScanImageInternalResponseDetails_TooManyParallelScans) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6173,7 +6173,7 @@ func (m *ScanImageInternalResponseDetails_TooManyParallelScans) UnmarshalVT(dAtA
 	}
 	return nil
 }
-func (m *ExportImageRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ExportImageRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6275,7 +6275,7 @@ func (m *ExportImageRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportImageResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ExportImageResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6336,7 +6336,7 @@ func (m *ExportImageResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

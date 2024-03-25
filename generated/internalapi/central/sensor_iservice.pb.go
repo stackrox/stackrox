@@ -85,8 +85,8 @@ func (*MsgFromSensor) ProtoMessage()    {}
 func (*MsgFromSensor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{0}
 }
-func (m *MsgFromSensor) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *MsgFromSensor) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *MsgFromSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -513,8 +513,8 @@ func (*ReassessPolicies) ProtoMessage()    {}
 func (*ReassessPolicies) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{1}
 }
-func (m *ReassessPolicies) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReassessPolicies) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReassessPolicies) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -565,8 +565,8 @@ func (*ReprocessDeployments) ProtoMessage()    {}
 func (*ReprocessDeployments) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{2}
 }
-func (m *ReprocessDeployments) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReprocessDeployments) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReprocessDeployments) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -647,8 +647,8 @@ func (*MsgToSensor) ProtoMessage()    {}
 func (*MsgToSensor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{3}
 }
-func (m *MsgToSensor) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *MsgToSensor) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *MsgToSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1321,8 +1321,8 @@ func (*DeduperState) ProtoMessage()    {}
 func (*DeduperState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{4}
 }
-func (m *DeduperState) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeduperState) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeduperState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1403,8 +1403,8 @@ func (*NodeInventoryACK) ProtoMessage()    {}
 func (*NodeInventoryACK) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{5}
 }
-func (m *NodeInventoryACK) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeInventoryACK) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeInventoryACK) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1477,8 +1477,8 @@ func (*AuditLogSync) ProtoMessage()    {}
 func (*AuditLogSync) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{6}
 }
-func (m *AuditLogSync) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AuditLogSync) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AuditLogSync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1543,8 +1543,8 @@ func (*AuditLogStatusInfo) ProtoMessage()    {}
 func (*AuditLogStatusInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{7}
 }
-func (m *AuditLogStatusInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AuditLogStatusInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AuditLogStatusInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1609,8 +1609,8 @@ func (*ReprocessDeployment) ProtoMessage()    {}
 func (*ReprocessDeployment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{8}
 }
-func (m *ReprocessDeployment) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReprocessDeployment) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReprocessDeployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1673,8 +1673,8 @@ func (*InvalidateImageCache) ProtoMessage()    {}
 func (*InvalidateImageCache) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{9}
 }
-func (m *InvalidateImageCache) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InvalidateImageCache) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InvalidateImageCache) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1740,8 +1740,8 @@ func (*InvalidateImageCache_ImageKey) ProtoMessage()    {}
 func (*InvalidateImageCache_ImageKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{9, 0}
 }
-func (m *InvalidateImageCache_ImageKey) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InvalidateImageCache_ImageKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InvalidateImageCache_ImageKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -4172,7 +4172,7 @@ func sovSensorIservice(x uint64) (n int) {
 func sozSensorIservice(x uint64) (n int) {
 	return sovSensorIservice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
+func (m *MsgFromSensor) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4231,7 +4231,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SensorEvent{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_Event{v}
@@ -4266,7 +4266,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkFlowUpdate{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_NetworkFlowUpdate{v}
@@ -4301,7 +4301,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ScrapeUpdate{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ScrapeUpdate{v}
@@ -4336,7 +4336,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkPoliciesResponse{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_NetworkPoliciesResponse{v}
@@ -4371,7 +4371,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClusterStatusUpdate{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ClusterStatusUpdate{v}
@@ -4406,7 +4406,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &PullTelemetryDataResponse{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_TelemetryDataResponse{v}
@@ -4505,7 +4505,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &RawClusterHealthInfo{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ClusterHealthInfo{v}
@@ -4540,7 +4540,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SensorHello{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_Hello{v}
@@ -4575,7 +4575,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AuditLogStatusInfo{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_AuditLogStatusInfo{v}
@@ -4610,7 +4610,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &IssueLocalScannerCertsRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_IssueLocalScannerCertsRequest{v}
@@ -4645,7 +4645,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClusterMetrics{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ClusterMetrics{v}
@@ -4680,7 +4680,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ProcessListeningOnPortsUpdate{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ProcessListeningOnPortUpdate{v}
@@ -4734,7 +4734,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ComplianceOperatorInfo{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ComplianceOperatorInfo{v}
@@ -4769,7 +4769,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ComplianceResponse{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_ComplianceResponse{v}
@@ -4804,7 +4804,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeploymentEnhancementResponse{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgFromSensor_DeploymentEnhancementResponse{v}
@@ -4831,7 +4831,7 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReassessPolicies) UnmarshalVT(dAtA []byte) error {
+func (m *ReassessPolicies) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4882,7 +4882,7 @@ func (m *ReassessPolicies) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReprocessDeployments) UnmarshalVT(dAtA []byte) error {
+func (m *ReprocessDeployments) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4933,7 +4933,7 @@ func (m *ReprocessDeployments) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
+func (m *MsgToSensor) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4992,7 +4992,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SensorEnforcement{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_Enforcement{v}
@@ -5027,7 +5027,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ScrapeCommand{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ScrapeCommand{v}
@@ -5062,7 +5062,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkPoliciesCommand{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_NetworkPoliciesCommand{v}
@@ -5097,7 +5097,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClusterConfig{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ClusterConfig{v}
@@ -5132,7 +5132,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SensorUpgradeTrigger{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_SensorUpgradeTrigger{v}
@@ -5167,7 +5167,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &PullTelemetryDataRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_TelemetryDataRequest{v}
@@ -5202,7 +5202,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &PolicySync{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_PolicySync{v}
@@ -5237,7 +5237,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ReassessPolicies{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ReassessPolicies{v}
@@ -5272,7 +5272,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &BaselineSync{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_BaselineSync{v}
@@ -5307,7 +5307,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CancelPullTelemetryDataRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_CancelPullTelemetryDataRequest{v}
@@ -5342,7 +5342,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &PushNetworkEntitiesRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_PushNetworkEntitiesRequest{v}
@@ -5377,7 +5377,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &CentralHello{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_Hello{v}
@@ -5412,7 +5412,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NetworkBaselineSync{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_NetworkBaselineSync{v}
@@ -5447,7 +5447,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &AuditLogSync{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_AuditLogSync{v}
@@ -5482,7 +5482,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ReprocessDeployment{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ReprocessDeployment{v}
@@ -5517,7 +5517,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &InvalidateImageCache{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_InvalidateImageCache{v}
@@ -5552,7 +5552,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &IssueLocalScannerCertsResponse{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_IssueLocalScannerCertsResponse{v}
@@ -5587,7 +5587,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.Image{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_UpdatedImage{v}
@@ -5622,7 +5622,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ReprocessDeployments{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ReprocessDeployments{v}
@@ -5657,7 +5657,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &NodeInventoryACK{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_NodeInventoryAck{v}
@@ -5692,7 +5692,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DelegatedRegistryConfig{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_DelegatedRegistryConfig{v}
@@ -5727,7 +5727,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ScanImage{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ScanImage{v}
@@ -5762,7 +5762,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ImageIntegrations{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ImageIntegrations{v}
@@ -5797,7 +5797,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ComplianceRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ComplianceRequest{v}
@@ -5832,7 +5832,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &ClusterHealthResponse{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_ClusterHealthResponse{v}
@@ -5867,7 +5867,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeduperState{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_DeduperState{v}
@@ -5902,7 +5902,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &DeploymentEnhancementRequest{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Msg = &MsgToSensor_DeploymentEnhancementRequest{v}
@@ -5929,7 +5929,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeduperState) UnmarshalVT(dAtA []byte) error {
+func (m *DeduperState) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6131,7 +6131,7 @@ func (m *DeduperState) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeInventoryACK) UnmarshalVT(dAtA []byte) error {
+func (m *NodeInventoryACK) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6265,7 +6265,7 @@ func (m *NodeInventoryACK) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuditLogSync) UnmarshalVT(dAtA []byte) error {
+func (m *AuditLogSync) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6402,7 +6402,7 @@ func (m *AuditLogSync) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.AuditLogFileState{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -6445,7 +6445,7 @@ func (m *AuditLogSync) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AuditLogStatusInfo) UnmarshalVT(dAtA []byte) error {
+func (m *AuditLogStatusInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6582,7 +6582,7 @@ func (m *AuditLogStatusInfo) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.AuditLogFileState{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -6625,7 +6625,7 @@ func (m *AuditLogStatusInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReprocessDeployment) UnmarshalVT(dAtA []byte) error {
+func (m *ReprocessDeployment) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6708,7 +6708,7 @@ func (m *ReprocessDeployment) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InvalidateImageCache) UnmarshalVT(dAtA []byte) error {
+func (m *InvalidateImageCache) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6767,7 +6767,7 @@ func (m *InvalidateImageCache) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ImageKeys = append(m.ImageKeys, &InvalidateImageCache_ImageKey{})
-			if err := m.ImageKeys[len(m.ImageKeys)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ImageKeys[len(m.ImageKeys)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6793,7 +6793,7 @@ func (m *InvalidateImageCache) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InvalidateImageCache_ImageKey) UnmarshalVT(dAtA []byte) error {
+func (m *InvalidateImageCache_ImageKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

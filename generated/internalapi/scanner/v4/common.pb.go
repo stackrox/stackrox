@@ -38,8 +38,8 @@ func (*Contents) ProtoMessage()    {}
 func (*Contents) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{0}
 }
-func (m *Contents) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Contents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Contents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -154,8 +154,8 @@ func (*Package) ProtoMessage()    {}
 func (*Package) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{1}
 }
-func (m *Package) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Package) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Package) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -294,8 +294,8 @@ func (*NormalizedVersion) ProtoMessage()    {}
 func (*NormalizedVersion) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{2}
 }
-func (m *NormalizedVersion) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NormalizedVersion) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NormalizedVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -373,8 +373,8 @@ func (*Distribution) ProtoMessage()    {}
 func (*Distribution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{3}
 }
-func (m *Distribution) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Distribution) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Distribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -493,8 +493,8 @@ func (*Repository) ProtoMessage()    {}
 func (*Repository) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{4}
 }
-func (m *Repository) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Repository) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Repository) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -586,8 +586,8 @@ func (*Environment) ProtoMessage()    {}
 func (*Environment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{5}
 }
-func (m *Environment) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Environment) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Environment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -671,8 +671,8 @@ func (*Environment_List) ProtoMessage()    {}
 func (*Environment_List) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{5, 0}
 }
-func (m *Environment_List) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Environment_List) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Environment_List) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1576,7 +1576,7 @@ func sovCommon(x uint64) (n int) {
 func sozCommon(x uint64) (n int) {
 	return sovCommon(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Contents) UnmarshalVT(dAtA []byte) error {
+func (m *Contents) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1635,7 +1635,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Packages = append(m.Packages, &Package{})
-			if err := m.Packages[len(m.Packages)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Packages[len(m.Packages)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1669,7 +1669,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Distributions = append(m.Distributions, &Distribution{})
-			if err := m.Distributions[len(m.Distributions)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Distributions[len(m.Distributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1703,7 +1703,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Repositories = append(m.Repositories, &Repository{})
-			if err := m.Repositories[len(m.Repositories)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Repositories[len(m.Repositories)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1815,7 +1815,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &Environment_List{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -1858,7 +1858,7 @@ func (m *Contents) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Package) UnmarshalVT(dAtA []byte) error {
+func (m *Package) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2015,7 +2015,7 @@ func (m *Package) UnmarshalVT(dAtA []byte) error {
 			if m.NormalizedVersion == nil {
 				m.NormalizedVersion = &NormalizedVersion{}
 			}
-			if err := m.NormalizedVersion.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.NormalizedVersion.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2115,7 +2115,7 @@ func (m *Package) UnmarshalVT(dAtA []byte) error {
 			if m.Source == nil {
 				m.Source = &Package{}
 			}
-			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Source.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2301,7 +2301,7 @@ func (m *Package) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NormalizedVersion) UnmarshalVT(dAtA []byte) error {
+func (m *NormalizedVersion) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2460,7 +2460,7 @@ func (m *NormalizedVersion) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Distribution) UnmarshalVT(dAtA []byte) error {
+func (m *Distribution) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2799,7 +2799,7 @@ func (m *Distribution) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Repository) UnmarshalVT(dAtA []byte) error {
+func (m *Repository) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3010,7 +3010,7 @@ func (m *Repository) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Environment) UnmarshalVT(dAtA []byte) error {
+func (m *Environment) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3189,7 +3189,7 @@ func (m *Environment) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Environment_List) UnmarshalVT(dAtA []byte) error {
+func (m *Environment_List) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3248,7 +3248,7 @@ func (m *Environment_List) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Environments = append(m.Environments, &Environment{})
-			if err := m.Environments[len(m.Environments)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Environments[len(m.Environments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

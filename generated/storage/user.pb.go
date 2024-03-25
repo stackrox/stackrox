@@ -36,8 +36,8 @@ func (*SlimUser) ProtoMessage()    {}
 func (*SlimUser) Descriptor() ([]byte, []int) {
 	return fileDescriptor_07f0ee709dd55f7c, []int{0}
 }
-func (m *SlimUser) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SlimUser) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SlimUser) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -107,8 +107,8 @@ func (*User) ProtoMessage()    {}
 func (*User) Descriptor() ([]byte, []int) {
 	return fileDescriptor_07f0ee709dd55f7c, []int{1}
 }
-func (m *User) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *User) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -195,8 +195,8 @@ func (*UserAttribute) ProtoMessage()    {}
 func (*UserAttribute) Descriptor() ([]byte, []int) {
 	return fileDescriptor_07f0ee709dd55f7c, []int{2}
 }
-func (m *UserAttribute) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UserAttribute) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UserAttribute) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -265,8 +265,8 @@ func (*UserInfo) ProtoMessage()    {}
 func (*UserInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_07f0ee709dd55f7c, []int{3}
 }
-func (m *UserInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UserInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UserInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -356,8 +356,8 @@ func (*UserInfo_Role) ProtoMessage()    {}
 func (*UserInfo_Role) Descriptor() ([]byte, []int) {
 	return fileDescriptor_07f0ee709dd55f7c, []int{3, 0}
 }
-func (m *UserInfo_Role) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UserInfo_Role) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UserInfo_Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -432,8 +432,8 @@ func (*UserInfo_ResourceToAccess) ProtoMessage()    {}
 func (*UserInfo_ResourceToAccess) Descriptor() ([]byte, []int) {
 	return fileDescriptor_07f0ee709dd55f7c, []int{3, 1}
 }
-func (m *UserInfo_ResourceToAccess) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UserInfo_ResourceToAccess) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UserInfo_ResourceToAccess) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -998,7 +998,7 @@ func sovUser(x uint64) (n int) {
 func sozUser(x uint64) (n int) {
 	return sovUser(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SlimUser) UnmarshalVT(dAtA []byte) error {
+func (m *SlimUser) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1113,7 +1113,7 @@ func (m *SlimUser) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *User) UnmarshalVT(dAtA []byte) error {
+func (m *User) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1236,7 +1236,7 @@ func (m *User) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Attributes = append(m.Attributes, &UserAttribute{})
-			if err := m.Attributes[len(m.Attributes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Attributes[len(m.Attributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1294,7 +1294,7 @@ func (m *User) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UserAttribute) UnmarshalVT(dAtA []byte) error {
+func (m *UserAttribute) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1409,7 +1409,7 @@ func (m *UserAttribute) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UserInfo) UnmarshalVT(dAtA []byte) error {
+func (m *UserInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1534,7 +1534,7 @@ func (m *UserInfo) UnmarshalVT(dAtA []byte) error {
 			if m.Permissions == nil {
 				m.Permissions = &UserInfo_ResourceToAccess{}
 			}
-			if err := m.Permissions.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Permissions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1568,7 +1568,7 @@ func (m *UserInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &UserInfo_Role{})
-			if err := m.Roles[len(m.Roles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1594,7 +1594,7 @@ func (m *UserInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UserInfo_Role) UnmarshalVT(dAtA []byte) error {
+func (m *UserInfo_Role) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1790,7 +1790,7 @@ func (m *UserInfo_Role) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UserInfo_ResourceToAccess) UnmarshalVT(dAtA []byte) error {
+func (m *UserInfo_ResourceToAccess) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

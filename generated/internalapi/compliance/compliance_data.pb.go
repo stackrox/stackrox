@@ -38,8 +38,8 @@ func (*GZIPDataChunk) ProtoMessage()    {}
 func (*GZIPDataChunk) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{0}
 }
-func (m *GZIPDataChunk) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GZIPDataChunk) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GZIPDataChunk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -111,8 +111,8 @@ func (*File) ProtoMessage()    {}
 func (*File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{1}
 }
-func (m *File) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *File) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -239,8 +239,8 @@ func (*CommandLine) ProtoMessage()    {}
 func (*CommandLine) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{2}
 }
-func (m *CommandLine) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CommandLine) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CommandLine) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -314,8 +314,8 @@ func (*CommandLine_Args) ProtoMessage()    {}
 func (*CommandLine_Args) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{2, 0}
 }
-func (m *CommandLine_Args) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CommandLine_Args) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CommandLine_Args) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -394,8 +394,8 @@ func (*InsecureRegistriesConfig) ProtoMessage()    {}
 func (*InsecureRegistriesConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{3}
 }
-func (m *InsecureRegistriesConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *InsecureRegistriesConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *InsecureRegistriesConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -469,8 +469,8 @@ func (*ContainerRuntimeInfo) ProtoMessage()    {}
 func (*ContainerRuntimeInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{4}
 }
-func (m *ContainerRuntimeInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerRuntimeInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerRuntimeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -531,8 +531,8 @@ func (*ComplianceStandardResult) ProtoMessage()    {}
 func (*ComplianceStandardResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{5}
 }
-func (m *ComplianceStandardResult) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ComplianceStandardResult) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ComplianceStandardResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -619,8 +619,8 @@ func (*ComplianceReturn) ProtoMessage()    {}
 func (*ComplianceReturn) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0141493472fe6290, []int{6}
 }
-func (m *ComplianceReturn) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ComplianceReturn) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ComplianceReturn) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1664,7 +1664,7 @@ func sovComplianceData(x uint64) (n int) {
 func sozComplianceData(x uint64) (n int) {
 	return sovComplianceData(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GZIPDataChunk) UnmarshalVT(dAtA []byte) error {
+func (m *GZIPDataChunk) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1749,7 +1749,7 @@ func (m *GZIPDataChunk) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *File) UnmarshalVT(dAtA []byte) error {
+func (m *File) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2015,7 +2015,7 @@ func (m *File) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Children = append(m.Children, &File{})
-			if err := m.Children[len(m.Children)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Children[len(m.Children)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2041,7 +2041,7 @@ func (m *File) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CommandLine) UnmarshalVT(dAtA []byte) error {
+func (m *CommandLine) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2132,7 +2132,7 @@ func (m *CommandLine) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Args = append(m.Args, &CommandLine_Args{})
-			if err := m.Args[len(m.Args)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Args[len(m.Args)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2158,7 +2158,7 @@ func (m *CommandLine) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CommandLine_Args) UnmarshalVT(dAtA []byte) error {
+func (m *CommandLine_Args) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2283,7 +2283,7 @@ func (m *CommandLine_Args) UnmarshalVT(dAtA []byte) error {
 			if m.File == nil {
 				m.File = &File{}
 			}
-			if err := m.File.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.File.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2309,7 +2309,7 @@ func (m *CommandLine_Args) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *InsecureRegistriesConfig) UnmarshalVT(dAtA []byte) error {
+func (m *InsecureRegistriesConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2424,7 +2424,7 @@ func (m *InsecureRegistriesConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerRuntimeInfo) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerRuntimeInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2485,7 +2485,7 @@ func (m *ContainerRuntimeInfo) UnmarshalVT(dAtA []byte) error {
 			if m.InsecureRegistries == nil {
 				m.InsecureRegistries = &InsecureRegistriesConfig{}
 			}
-			if err := m.InsecureRegistries.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.InsecureRegistries.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2511,7 +2511,7 @@ func (m *ContainerRuntimeInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceStandardResult) UnmarshalVT(dAtA []byte) error {
+func (m *ComplianceStandardResult) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2648,7 +2648,7 @@ func (m *ComplianceStandardResult) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.ComplianceResultValue{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -2777,7 +2777,7 @@ func (m *ComplianceStandardResult) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.ComplianceResultValue{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -2820,7 +2820,7 @@ func (m *ComplianceStandardResult) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
+func (m *ComplianceReturn) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2945,7 +2945,7 @@ func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
 			if m.DockerData == nil {
 				m.DockerData = &GZIPDataChunk{}
 			}
-			if err := m.DockerData.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DockerData.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3057,7 +3057,7 @@ func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &CommandLine{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -3186,7 +3186,7 @@ func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &File{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -3315,7 +3315,7 @@ func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &File{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -3404,7 +3404,7 @@ func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
 			if m.ContainerRuntimeInfo == nil {
 				m.ContainerRuntimeInfo = &ContainerRuntimeInfo{}
 			}
-			if err := m.ContainerRuntimeInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ContainerRuntimeInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3440,7 +3440,7 @@ func (m *ComplianceReturn) UnmarshalVT(dAtA []byte) error {
 			if m.Evidence == nil {
 				m.Evidence = &GZIPDataChunk{}
 			}
-			if err := m.Evidence.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Evidence.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

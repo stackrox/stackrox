@@ -167,8 +167,8 @@ func (*Node) ProtoMessage()    {}
 func (*Node) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{0}
 }
-func (m *Node) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Node) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Node) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -575,8 +575,8 @@ func (*NodeScan) ProtoMessage()    {}
 func (*NodeScan) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{1}
 }
-func (m *NodeScan) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeScan) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -678,8 +678,8 @@ func (*NodeInventory) ProtoMessage()    {}
 func (*NodeInventory) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{2}
 }
-func (m *NodeInventory) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeInventory) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeInventory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -774,8 +774,8 @@ func (*NodeInventory_Components) ProtoMessage()    {}
 func (*NodeInventory_Components) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{2, 0}
 }
-func (m *NodeInventory_Components) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeInventory_Components) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeInventory_Components) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -867,8 +867,8 @@ func (*NodeInventory_Components_RHELComponent) ProtoMessage()    {}
 func (*NodeInventory_Components_RHELComponent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{2, 0, 0}
 }
-func (m *NodeInventory_Components_RHELComponent) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeInventory_Components_RHELComponent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeInventory_Components_RHELComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -987,8 +987,8 @@ func (*NodeInventory_Components_RHELComponent_Executable) ProtoMessage() {}
 func (*NodeInventory_Components_RHELComponent_Executable) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{2, 0, 0, 0}
 }
-func (m *NodeInventory_Components_RHELComponent_Executable) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeInventory_Components_RHELComponent_Executable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1065,8 +1065,8 @@ func (*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Pro
 func (*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{2, 0, 0, 0, 0}
 }
-func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1141,8 +1141,8 @@ func (*EmbeddedNodeScanComponent) ProtoMessage()    {}
 func (*EmbeddedNodeScanComponent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_107f6eed651900c7, []int{3}
 }
-func (m *EmbeddedNodeScanComponent) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EmbeddedNodeScanComponent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EmbeddedNodeScanComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2670,7 +2670,7 @@ func sovNode(x uint64) (n int) {
 func sozNode(x uint64) (n int) {
 	return sovNode(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Node) UnmarshalVT(dAtA []byte) error {
+func (m *Node) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2793,7 +2793,7 @@ func (m *Node) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Taints = append(m.Taints, &Taint{})
-			if err := m.Taints[len(m.Taints)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Taints[len(m.Taints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3343,7 +3343,7 @@ func (m *Node) UnmarshalVT(dAtA []byte) error {
 			if m.ContainerRuntime == nil {
 				m.ContainerRuntime = &ContainerRuntimeInfo{}
 			}
-			if err := m.ContainerRuntime.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ContainerRuntime.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3475,7 +3475,7 @@ func (m *Node) UnmarshalVT(dAtA []byte) error {
 			if m.Scan == nil {
 				m.Scan = &NodeScan{}
 			}
-			if err := m.Scan.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scan.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3743,7 +3743,7 @@ func (m *Node) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeScan) UnmarshalVT(dAtA []byte) error {
+func (m *NodeScan) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3838,7 +3838,7 @@ func (m *NodeScan) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Components = append(m.Components, &EmbeddedNodeScanComponent{})
-			if err := m.Components[len(m.Components)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Components[len(m.Components)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3965,7 +3965,7 @@ func (m *NodeScan) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeInventory) UnmarshalVT(dAtA []byte) error {
+func (m *NodeInventory) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4126,7 +4126,7 @@ func (m *NodeInventory) UnmarshalVT(dAtA []byte) error {
 			if m.Components == nil {
 				m.Components = &NodeInventory_Components{}
 			}
-			if err := m.Components.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Components.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4221,7 +4221,7 @@ func (m *NodeInventory) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeInventory_Components) UnmarshalVT(dAtA []byte) error {
+func (m *NodeInventory_Components) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4312,7 +4312,7 @@ func (m *NodeInventory_Components) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RhelComponents = append(m.RhelComponents, &NodeInventory_Components_RHELComponent{})
-			if err := m.RhelComponents[len(m.RhelComponents)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RhelComponents[len(m.RhelComponents)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4370,7 +4370,7 @@ func (m *NodeInventory_Components) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NodeInventory_Components_RHELComponent) UnmarshalVT(dAtA []byte) error {
+func (m *NodeInventory_Components_RHELComponent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4640,7 +4640,7 @@ func (m *NodeInventory_Components_RHELComponent) UnmarshalVT(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			m.Executables = append(m.Executables, &NodeInventory_Components_RHELComponent_Executable{})
-			if err := m.Executables[len(m.Executables)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Executables[len(m.Executables)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4666,7 +4666,7 @@ func (m *NodeInventory_Components_RHELComponent) UnmarshalVT(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *NodeInventory_Components_RHELComponent_Executable) UnmarshalVT(dAtA []byte) error {
+func (m *NodeInventory_Components_RHELComponent_Executable) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4757,7 +4757,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable) UnmarshalVT(dAtA []b
 				return io.ErrUnexpectedEOF
 			}
 			m.RequiredFeatures = append(m.RequiredFeatures, &NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{})
-			if err := m.RequiredFeatures[len(m.RequiredFeatures)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.RequiredFeatures[len(m.RequiredFeatures)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4783,7 +4783,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable) UnmarshalVT(dAtA []b
 	}
 	return nil
 }
-func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) UnmarshalVT(dAtA []byte) error {
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4898,7 +4898,7 @@ func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) U
 	}
 	return nil
 }
-func (m *EmbeddedNodeScanComponent) UnmarshalVT(dAtA []byte) error {
+func (m *EmbeddedNodeScanComponent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5021,7 +5021,7 @@ func (m *EmbeddedNodeScanComponent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Vulns = append(m.Vulns, &EmbeddedVulnerability{})
-			if err := m.Vulns[len(m.Vulns)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Vulns[len(m.Vulns)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5096,7 +5096,7 @@ func (m *EmbeddedNodeScanComponent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Vulnerabilities = append(m.Vulnerabilities, &NodeVulnerability{})
-			if err := m.Vulnerabilities[len(m.Vulnerabilities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Vulnerabilities[len(m.Vulnerabilities)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

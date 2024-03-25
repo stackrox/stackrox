@@ -37,8 +37,8 @@ func (*Scope) ProtoMessage()    {}
 func (*Scope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7c72a373e2c7b3ae, []int{0}
 }
-func (m *Scope) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Scope) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Scope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -113,8 +113,8 @@ func (*Scope_Label) ProtoMessage()    {}
 func (*Scope_Label) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7c72a373e2c7b3ae, []int{0, 0}
 }
-func (m *Scope_Label) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Scope_Label) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Scope_Label) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -346,7 +346,7 @@ func sovScope(x uint64) (n int) {
 func sozScope(x uint64) (n int) {
 	return sovScope(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Scope) UnmarshalVT(dAtA []byte) error {
+func (m *Scope) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -471,7 +471,7 @@ func (m *Scope) UnmarshalVT(dAtA []byte) error {
 			if m.Label == nil {
 				m.Label = &Scope_Label{}
 			}
-			if err := m.Label.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Label.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -497,7 +497,7 @@ func (m *Scope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Scope_Label) UnmarshalVT(dAtA []byte) error {
+func (m *Scope_Label) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -111,8 +111,8 @@ func (*Role) ProtoMessage()    {}
 func (*Role) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{0}
 }
-func (m *Role) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Role) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -229,8 +229,8 @@ func (*PermissionSet) ProtoMessage()    {}
 func (*PermissionSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{1}
 }
-func (m *PermissionSet) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PermissionSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PermissionSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -332,8 +332,8 @@ func (*SimpleAccessScope) ProtoMessage()    {}
 func (*SimpleAccessScope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{2}
 }
-func (m *SimpleAccessScope) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SimpleAccessScope) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SimpleAccessScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -428,8 +428,8 @@ func (*SimpleAccessScope_Rules) ProtoMessage()    {}
 func (*SimpleAccessScope_Rules) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{2, 0}
 }
-func (m *SimpleAccessScope_Rules) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SimpleAccessScope_Rules) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SimpleAccessScope_Rules) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -533,8 +533,8 @@ func (*SimpleAccessScope_Rules_Namespace) ProtoMessage()    {}
 func (*SimpleAccessScope_Rules_Namespace) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{2, 0, 0}
 }
-func (m *SimpleAccessScope_Rules_Namespace) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SimpleAccessScope_Rules_Namespace) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SimpleAccessScope_Rules_Namespace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -606,8 +606,8 @@ func (*EffectiveAccessScope) ProtoMessage()    {}
 func (*EffectiveAccessScope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{3}
 }
-func (m *EffectiveAccessScope) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EffectiveAccessScope) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EffectiveAccessScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -675,8 +675,8 @@ func (*EffectiveAccessScope_Namespace) ProtoMessage()    {}
 func (*EffectiveAccessScope_Namespace) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{3, 0}
 }
-func (m *EffectiveAccessScope_Namespace) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EffectiveAccessScope_Namespace) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EffectiveAccessScope_Namespace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -766,8 +766,8 @@ func (*EffectiveAccessScope_Cluster) ProtoMessage()    {}
 func (*EffectiveAccessScope_Cluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dc9b4bbfaa99ac3e, []int{3, 1}
 }
-func (m *EffectiveAccessScope_Cluster) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EffectiveAccessScope_Cluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EffectiveAccessScope_Cluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1739,7 +1739,7 @@ func sovRole(x uint64) (n int) {
 func sozRole(x uint64) (n int) {
 	return sovRole(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Role) UnmarshalVT(dAtA []byte) error {
+func (m *Role) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2060,7 +2060,7 @@ func (m *Role) UnmarshalVT(dAtA []byte) error {
 			if m.Traits == nil {
 				m.Traits = &Traits{}
 			}
-			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Traits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2086,7 +2086,7 @@ func (m *Role) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
+func (m *PermissionSet) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2356,7 +2356,7 @@ func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
 			if m.Traits == nil {
 				m.Traits = &Traits{}
 			}
-			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Traits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2382,7 +2382,7 @@ func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SimpleAccessScope) UnmarshalVT(dAtA []byte) error {
+func (m *SimpleAccessScope) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2539,7 +2539,7 @@ func (m *SimpleAccessScope) UnmarshalVT(dAtA []byte) error {
 			if m.Rules == nil {
 				m.Rules = &SimpleAccessScope_Rules{}
 			}
-			if err := m.Rules.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Rules.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2575,7 +2575,7 @@ func (m *SimpleAccessScope) UnmarshalVT(dAtA []byte) error {
 			if m.Traits == nil {
 				m.Traits = &Traits{}
 			}
-			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Traits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2601,7 +2601,7 @@ func (m *SimpleAccessScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error {
+func (m *SimpleAccessScope_Rules) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2692,7 +2692,7 @@ func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.IncludedNamespaces = append(m.IncludedNamespaces, &SimpleAccessScope_Rules_Namespace{})
-			if err := m.IncludedNamespaces[len(m.IncludedNamespaces)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.IncludedNamespaces[len(m.IncludedNamespaces)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2726,7 +2726,7 @@ func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterLabelSelectors = append(m.ClusterLabelSelectors, &SetBasedLabelSelector{})
-			if err := m.ClusterLabelSelectors[len(m.ClusterLabelSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ClusterLabelSelectors[len(m.ClusterLabelSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2760,7 +2760,7 @@ func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NamespaceLabelSelectors = append(m.NamespaceLabelSelectors, &SetBasedLabelSelector{})
-			if err := m.NamespaceLabelSelectors[len(m.NamespaceLabelSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.NamespaceLabelSelectors[len(m.NamespaceLabelSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2786,7 +2786,7 @@ func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SimpleAccessScope_Rules_Namespace) UnmarshalVT(dAtA []byte) error {
+func (m *SimpleAccessScope_Rules_Namespace) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2901,7 +2901,7 @@ func (m *SimpleAccessScope_Rules_Namespace) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EffectiveAccessScope) UnmarshalVT(dAtA []byte) error {
+func (m *EffectiveAccessScope) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2960,7 +2960,7 @@ func (m *EffectiveAccessScope) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &EffectiveAccessScope_Cluster{})
-			if err := m.Clusters[len(m.Clusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2986,7 +2986,7 @@ func (m *EffectiveAccessScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EffectiveAccessScope_Namespace) UnmarshalVT(dAtA []byte) error {
+func (m *EffectiveAccessScope_Namespace) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3247,7 +3247,7 @@ func (m *EffectiveAccessScope_Namespace) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EffectiveAccessScope_Cluster) UnmarshalVT(dAtA []byte) error {
+func (m *EffectiveAccessScope_Cluster) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3389,7 +3389,7 @@ func (m *EffectiveAccessScope_Cluster) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Namespaces = append(m.Namespaces, &EffectiveAccessScope_Namespace{})
-			if err := m.Namespaces[len(m.Namespaces)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Namespaces[len(m.Namespaces)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

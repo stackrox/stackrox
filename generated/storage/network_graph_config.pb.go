@@ -36,8 +36,8 @@ func (*NetworkGraphConfig) ProtoMessage()    {}
 func (*NetworkGraphConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_66edcc8cca394cec, []int{0}
 }
-func (m *NetworkGraphConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkGraphConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkGraphConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -194,7 +194,7 @@ func sovNetworkGraphConfig(x uint64) (n int) {
 func sozNetworkGraphConfig(x uint64) (n int) {
 	return sovNetworkGraphConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkGraphConfig) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkGraphConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

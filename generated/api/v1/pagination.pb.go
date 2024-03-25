@@ -67,8 +67,8 @@ func (*AggregateBy) ProtoMessage()    {}
 func (*AggregateBy) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5993a9cae165a01a, []int{0}
 }
-func (m *AggregateBy) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AggregateBy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AggregateBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -137,8 +137,8 @@ func (*SortOption) ProtoMessage()    {}
 func (*SortOption) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5993a9cae165a01a, []int{1}
 }
-func (m *SortOption) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SortOption) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SortOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -216,8 +216,8 @@ func (*Pagination) ProtoMessage()    {}
 func (*Pagination) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5993a9cae165a01a, []int{2}
 }
-func (m *Pagination) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Pagination) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Pagination) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -573,7 +573,7 @@ func sovPagination(x uint64) (n int) {
 func sozPagination(x uint64) (n int) {
 	return sovPagination(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *AggregateBy) UnmarshalVT(dAtA []byte) error {
+func (m *AggregateBy) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -663,7 +663,7 @@ func (m *AggregateBy) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SortOption) UnmarshalVT(dAtA []byte) error {
+func (m *SortOption) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -776,7 +776,7 @@ func (m *SortOption) UnmarshalVT(dAtA []byte) error {
 			if m.AggregateBy == nil {
 				m.AggregateBy = &AggregateBy{}
 			}
-			if err := m.AggregateBy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AggregateBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -802,7 +802,7 @@ func (m *SortOption) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Pagination) UnmarshalVT(dAtA []byte) error {
+func (m *Pagination) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -901,7 +901,7 @@ func (m *Pagination) UnmarshalVT(dAtA []byte) error {
 			if m.SortOption == nil {
 				m.SortOption = &SortOption{}
 			}
-			if err := m.SortOption.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SortOption.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -935,7 +935,7 @@ func (m *Pagination) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SortOptions = append(m.SortOptions, &SortOption{})
-			if err := m.SortOptions[len(m.SortOptions)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SortOptions[len(m.SortOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -40,8 +40,8 @@ func (*ListCollectionSelectorsResponse) ProtoMessage()    {}
 func (*ListCollectionSelectorsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{0}
 }
-func (m *ListCollectionSelectorsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListCollectionSelectorsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListCollectionSelectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -105,8 +105,8 @@ func (*GetCollectionRequest) ProtoMessage()    {}
 func (*GetCollectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{1}
 }
-func (m *GetCollectionRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -174,8 +174,8 @@ func (*CollectionDeploymentMatchOptions) ProtoMessage()    {}
 func (*CollectionDeploymentMatchOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{2}
 }
-func (m *CollectionDeploymentMatchOptions) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CollectionDeploymentMatchOptions) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CollectionDeploymentMatchOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -243,8 +243,8 @@ func (*GetCollectionResponse) ProtoMessage()    {}
 func (*GetCollectionResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{3}
 }
-func (m *GetCollectionResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -317,8 +317,8 @@ func (*GetCollectionCountRequest) ProtoMessage()    {}
 func (*GetCollectionCountRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{4}
 }
-func (m *GetCollectionCountRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCollectionCountRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCollectionCountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -378,8 +378,8 @@ func (*GetCollectionCountResponse) ProtoMessage()    {}
 func (*GetCollectionCountResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{5}
 }
-func (m *GetCollectionCountResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetCollectionCountResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetCollectionCountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -441,8 +441,8 @@ func (*CreateCollectionRequest) ProtoMessage()    {}
 func (*CreateCollectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{6}
 }
-func (m *CreateCollectionRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CreateCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CreateCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -532,8 +532,8 @@ func (*CreateCollectionResponse) ProtoMessage()    {}
 func (*CreateCollectionResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{7}
 }
-func (m *CreateCollectionResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CreateCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CreateCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -597,8 +597,8 @@ func (*UpdateCollectionRequest) ProtoMessage()    {}
 func (*UpdateCollectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{8}
 }
-func (m *UpdateCollectionRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -695,8 +695,8 @@ func (*UpdateCollectionResponse) ProtoMessage()    {}
 func (*UpdateCollectionResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{9}
 }
-func (m *UpdateCollectionResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *UpdateCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *UpdateCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -761,8 +761,8 @@ func (*DryRunCollectionRequest) ProtoMessage()    {}
 func (*DryRunCollectionRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{10}
 }
-func (m *DryRunCollectionRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DryRunCollectionRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DryRunCollectionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -867,8 +867,8 @@ func (*DryRunCollectionResponse) ProtoMessage()    {}
 func (*DryRunCollectionResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{11}
 }
-func (m *DryRunCollectionResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DryRunCollectionResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DryRunCollectionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -933,8 +933,8 @@ func (*ListCollectionsRequest) ProtoMessage()    {}
 func (*ListCollectionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{12}
 }
-func (m *ListCollectionsRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListCollectionsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListCollectionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -994,8 +994,8 @@ func (*ListCollectionsResponse) ProtoMessage()    {}
 func (*ListCollectionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_21a4b2c7d805c182, []int{13}
 }
-func (m *ListCollectionsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListCollectionsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListCollectionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2451,7 +2451,7 @@ func sovResourceCollectionService(x uint64) (n int) {
 func sozResourceCollectionService(x uint64) (n int) {
 	return sovResourceCollectionService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListCollectionSelectorsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListCollectionSelectorsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2534,7 +2534,7 @@ func (m *ListCollectionSelectorsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCollectionRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetCollectionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2627,7 +2627,7 @@ func (m *GetCollectionRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Options == nil {
 				m.Options = &CollectionDeploymentMatchOptions{}
 			}
-			if err := m.Options.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Options.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2653,7 +2653,7 @@ func (m *GetCollectionRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectionDeploymentMatchOptions) UnmarshalVT(dAtA []byte) error {
+func (m *CollectionDeploymentMatchOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2734,7 +2734,7 @@ func (m *CollectionDeploymentMatchOptions) UnmarshalVT(dAtA []byte) error {
 			if m.FilterQuery == nil {
 				m.FilterQuery = &RawQuery{}
 			}
-			if err := m.FilterQuery.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.FilterQuery.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2760,7 +2760,7 @@ func (m *CollectionDeploymentMatchOptions) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetCollectionResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2821,7 +2821,7 @@ func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if err := m.Collection.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Collection.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2855,7 +2855,7 @@ func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if err := m.Deployments[len(m.Deployments)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Deployments[len(m.Deployments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2881,7 +2881,7 @@ func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCollectionCountRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetCollectionCountRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2942,7 +2942,7 @@ func (m *GetCollectionCountRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2968,7 +2968,7 @@ func (m *GetCollectionCountRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetCollectionCountResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetCollectionCountResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3038,7 +3038,7 @@ func (m *GetCollectionCountResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreateCollectionRequest) UnmarshalVT(dAtA []byte) error {
+func (m *CreateCollectionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3161,7 +3161,7 @@ func (m *CreateCollectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3219,7 +3219,7 @@ func (m *CreateCollectionRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreateCollectionResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CreateCollectionResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3280,7 +3280,7 @@ func (m *CreateCollectionResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if err := m.Collection.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Collection.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3306,7 +3306,7 @@ func (m *CreateCollectionResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateCollectionRequest) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateCollectionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3461,7 +3461,7 @@ func (m *UpdateCollectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3519,7 +3519,7 @@ func (m *UpdateCollectionRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateCollectionResponse) UnmarshalVT(dAtA []byte) error {
+func (m *UpdateCollectionResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3580,7 +3580,7 @@ func (m *UpdateCollectionResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if err := m.Collection.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Collection.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3606,7 +3606,7 @@ func (m *UpdateCollectionResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DryRunCollectionRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3761,7 +3761,7 @@ func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3829,7 +3829,7 @@ func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Options == nil {
 				m.Options = &CollectionDeploymentMatchOptions{}
 			}
-			if err := m.Options.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Options.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3855,7 +3855,7 @@ func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DryRunCollectionResponse) UnmarshalVT(dAtA []byte) error {
+func (m *DryRunCollectionResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3914,7 +3914,7 @@ func (m *DryRunCollectionResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if err := m.Deployments[len(m.Deployments)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Deployments[len(m.Deployments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3940,7 +3940,7 @@ func (m *DryRunCollectionResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListCollectionsRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ListCollectionsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4001,7 +4001,7 @@ func (m *ListCollectionsRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4027,7 +4027,7 @@ func (m *ListCollectionsRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListCollectionsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListCollectionsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4086,7 +4086,7 @@ func (m *ListCollectionsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Collections = append(m.Collections, &storage.ResourceCollection{})
-			if err := m.Collections[len(m.Collections)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Collections[len(m.Collections)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

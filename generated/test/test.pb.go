@@ -65,8 +65,8 @@ func (*TestCloneSubMessage) ProtoMessage()    {}
 func (*TestCloneSubMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_84eb23d74a64bdab, []int{0}
 }
-func (m *TestCloneSubMessage) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestCloneSubMessage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestCloneSubMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -149,8 +149,8 @@ func (*TestClone) ProtoMessage()    {}
 func (*TestClone) Descriptor() ([]byte, []int) {
 	return fileDescriptor_84eb23d74a64bdab, []int{1}
 }
-func (m *TestClone) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TestClone) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TestClone) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -929,7 +929,7 @@ func sovTest(x uint64) (n int) {
 func sozTest(x uint64) (n int) {
 	return sovTest(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *TestCloneSubMessage) UnmarshalVT(dAtA []byte) error {
+func (m *TestCloneSubMessage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1031,7 +1031,7 @@ func (m *TestCloneSubMessage) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TestClone) UnmarshalVT(dAtA []byte) error {
+func (m *TestClone) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1198,7 +1198,7 @@ func (m *TestClone) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SubMessages = append(m.SubMessages, &TestCloneSubMessage{})
-			if err := m.SubMessages[len(m.SubMessages)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SubMessages[len(m.SubMessages)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1310,7 +1310,7 @@ func (m *TestClone) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &TestCloneSubMessage{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -1645,7 +1645,7 @@ func (m *TestClone) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &TestCloneSubMessage{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Primitive = &TestClone_Msg{v}
@@ -1912,7 +1912,7 @@ func (m *TestClone) UnmarshalVT(dAtA []byte) error {
 			if m.SubMessage == nil {
 				m.SubMessage = &TestCloneSubMessage{}
 			}
-			if err := m.SubMessage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SubMessage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

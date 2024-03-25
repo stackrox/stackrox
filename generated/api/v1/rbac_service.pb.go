@@ -42,8 +42,8 @@ func (*ListRolesResponse) ProtoMessage()    {}
 func (*ListRolesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{0}
 }
-func (m *ListRolesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListRolesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListRolesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -108,8 +108,8 @@ func (*GetRoleResponse) ProtoMessage()    {}
 func (*GetRoleResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{1}
 }
-func (m *GetRoleResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetRoleResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetRoleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -171,8 +171,8 @@ func (*ListRoleBindingsResponse) ProtoMessage()    {}
 func (*ListRoleBindingsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{2}
 }
-func (m *ListRoleBindingsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListRoleBindingsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListRoleBindingsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -237,8 +237,8 @@ func (*GetRoleBindingResponse) ProtoMessage()    {}
 func (*GetRoleBindingResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{3}
 }
-func (m *GetRoleBindingResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetRoleBindingResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetRoleBindingResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -300,8 +300,8 @@ func (*ListSubjectsResponse) ProtoMessage()    {}
 func (*ListSubjectsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{4}
 }
-func (m *ListSubjectsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListSubjectsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListSubjectsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -367,8 +367,8 @@ func (*SubjectAndRoles) ProtoMessage()    {}
 func (*SubjectAndRoles) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{5}
 }
-func (m *SubjectAndRoles) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SubjectAndRoles) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SubjectAndRoles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -443,8 +443,8 @@ func (*GetSubjectResponse) ProtoMessage()    {}
 func (*GetSubjectResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{6}
 }
-func (m *GetSubjectResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetSubjectResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetSubjectResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -531,8 +531,8 @@ func (*ScopedRoles) ProtoMessage()    {}
 func (*ScopedRoles) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3524f4bea3cf307, []int{7}
 }
-func (m *ScopedRoles) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ScopedRoles) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ScopedRoles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1455,7 +1455,7 @@ func sovRbacService(x uint64) (n int) {
 func sozRbacService(x uint64) (n int) {
 	return sovRbacService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListRolesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListRolesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1514,7 +1514,7 @@ func (m *ListRolesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if err := m.Roles[len(m.Roles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1540,7 +1540,7 @@ func (m *ListRolesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetRoleResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetRoleResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1601,7 +1601,7 @@ func (m *GetRoleResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Role == nil {
 				m.Role = &storage.K8SRole{}
 			}
-			if err := m.Role.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Role.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1627,7 +1627,7 @@ func (m *GetRoleResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListRoleBindingsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListRoleBindingsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1686,7 +1686,7 @@ func (m *ListRoleBindingsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Bindings = append(m.Bindings, &storage.K8SRoleBinding{})
-			if err := m.Bindings[len(m.Bindings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Bindings[len(m.Bindings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1712,7 +1712,7 @@ func (m *ListRoleBindingsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetRoleBindingResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetRoleBindingResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1773,7 +1773,7 @@ func (m *GetRoleBindingResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Binding == nil {
 				m.Binding = &storage.K8SRoleBinding{}
 			}
-			if err := m.Binding.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Binding.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1799,7 +1799,7 @@ func (m *GetRoleBindingResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListSubjectsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListSubjectsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1858,7 +1858,7 @@ func (m *ListSubjectsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.SubjectAndRoles = append(m.SubjectAndRoles, &SubjectAndRoles{})
-			if err := m.SubjectAndRoles[len(m.SubjectAndRoles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SubjectAndRoles[len(m.SubjectAndRoles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1884,7 +1884,7 @@ func (m *ListSubjectsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SubjectAndRoles) UnmarshalVT(dAtA []byte) error {
+func (m *SubjectAndRoles) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1945,7 +1945,7 @@ func (m *SubjectAndRoles) UnmarshalVT(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &storage.Subject{}
 			}
-			if err := m.Subject.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Subject.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1979,7 +1979,7 @@ func (m *SubjectAndRoles) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if err := m.Roles[len(m.Roles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2005,7 +2005,7 @@ func (m *SubjectAndRoles) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetSubjectResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2066,7 +2066,7 @@ func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &storage.Subject{}
 			}
-			if err := m.Subject.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Subject.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2100,7 +2100,7 @@ func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterRoles = append(m.ClusterRoles, &storage.K8SRole{})
-			if err := m.ClusterRoles[len(m.ClusterRoles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ClusterRoles[len(m.ClusterRoles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2134,7 +2134,7 @@ func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScopedRoles = append(m.ScopedRoles, &ScopedRoles{})
-			if err := m.ScopedRoles[len(m.ScopedRoles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ScopedRoles[len(m.ScopedRoles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2160,7 +2160,7 @@ func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScopedRoles) UnmarshalVT(dAtA []byte) error {
+func (m *ScopedRoles) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2251,7 +2251,7 @@ func (m *ScopedRoles) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if err := m.Roles[len(m.Roles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Roles[len(m.Roles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

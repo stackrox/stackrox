@@ -36,8 +36,8 @@ func (*PolicySync) ProtoMessage()    {}
 func (*PolicySync) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4c217656959c2b05, []int{0}
 }
-func (m *PolicySync) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PolicySync) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PolicySync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -186,7 +186,7 @@ func sovPolicySync(x uint64) (n int) {
 func sozPolicySync(x uint64) (n int) {
 	return sovPolicySync(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *PolicySync) UnmarshalVT(dAtA []byte) error {
+func (m *PolicySync) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -245,7 +245,7 @@ func (m *PolicySync) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &storage.Policy{})
-			if err := m.Policies[len(m.Policies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policies[len(m.Policies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

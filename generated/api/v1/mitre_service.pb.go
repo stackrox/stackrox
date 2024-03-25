@@ -40,8 +40,8 @@ func (*ListMitreAttackVectorsResponse) ProtoMessage()    {}
 func (*ListMitreAttackVectorsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_16da3126c9d20a5c, []int{0}
 }
-func (m *ListMitreAttackVectorsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListMitreAttackVectorsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListMitreAttackVectorsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -106,8 +106,8 @@ func (*GetMitreVectorResponse) ProtoMessage()    {}
 func (*GetMitreVectorResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_16da3126c9d20a5c, []int{1}
 }
-func (m *GetMitreVectorResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetMitreVectorResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetMitreVectorResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -438,7 +438,7 @@ func sovMitreService(x uint64) (n int) {
 func sozMitreService(x uint64) (n int) {
 	return sovMitreService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ListMitreAttackVectorsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListMitreAttackVectorsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -497,7 +497,7 @@ func (m *ListMitreAttackVectorsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MitreAttackVectors = append(m.MitreAttackVectors, &storage.MitreAttackVector{})
-			if err := m.MitreAttackVectors[len(m.MitreAttackVectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MitreAttackVectors[len(m.MitreAttackVectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -523,7 +523,7 @@ func (m *ListMitreAttackVectorsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetMitreVectorResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetMitreVectorResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -584,7 +584,7 @@ func (m *GetMitreVectorResponse) UnmarshalVT(dAtA []byte) error {
 			if m.MitreAttackVector == nil {
 				m.MitreAttackVector = &storage.MitreAttackVector{}
 			}
-			if err := m.MitreAttackVector.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.MitreAttackVector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

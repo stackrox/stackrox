@@ -46,8 +46,8 @@ func (*ProcessListeningOnPort) ProtoMessage()    {}
 func (*ProcessListeningOnPort) Descriptor() ([]byte, []int) {
 	return fileDescriptor_44bd1925a567394f, []int{0}
 }
-func (m *ProcessListeningOnPort) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessListeningOnPort) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessListeningOnPort) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -173,8 +173,8 @@ func (*ProcessListeningOnPort_Endpoint) ProtoMessage()    {}
 func (*ProcessListeningOnPort_Endpoint) Descriptor() ([]byte, []int) {
 	return fileDescriptor_44bd1925a567394f, []int{0, 0}
 }
-func (m *ProcessListeningOnPort_Endpoint) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessListeningOnPort_Endpoint) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessListeningOnPort_Endpoint) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -248,8 +248,8 @@ func (*ProcessListeningOnPortFromSensor) ProtoMessage()    {}
 func (*ProcessListeningOnPortFromSensor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_44bd1925a567394f, []int{1}
 }
-func (m *ProcessListeningOnPortFromSensor) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessListeningOnPortFromSensor) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessListeningOnPortFromSensor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -376,8 +376,8 @@ func (*ProcessListeningOnPortStorage) ProtoMessage()    {}
 func (*ProcessListeningOnPortStorage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_44bd1925a567394f, []int{2}
 }
-func (m *ProcessListeningOnPortStorage) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessListeningOnPortStorage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessListeningOnPortStorage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1081,7 +1081,7 @@ func sovProcessListeningOnPort(x uint64) (n int) {
 func sozProcessListeningOnPort(x uint64) (n int) {
 	return sovProcessListeningOnPort(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ProcessListeningOnPort) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessListeningOnPort) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1142,7 +1142,7 @@ func (m *ProcessListeningOnPort) UnmarshalVT(dAtA []byte) error {
 			if m.Endpoint == nil {
 				m.Endpoint = &ProcessListeningOnPort_Endpoint{}
 			}
-			if err := m.Endpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Endpoint.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1306,7 +1306,7 @@ func (m *ProcessListeningOnPort) UnmarshalVT(dAtA []byte) error {
 			if m.Signal == nil {
 				m.Signal = &ProcessSignal{}
 			}
-			if err := m.Signal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Signal.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1464,7 +1464,7 @@ func (m *ProcessListeningOnPort) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessListeningOnPort_Endpoint) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessListeningOnPort_Endpoint) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1553,7 +1553,7 @@ func (m *ProcessListeningOnPort_Endpoint) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessListeningOnPortFromSensor) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessListeningOnPortFromSensor) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1652,7 +1652,7 @@ func (m *ProcessListeningOnPortFromSensor) UnmarshalVT(dAtA []byte) error {
 			if m.Process == nil {
 				m.Process = &ProcessIndicatorUniqueKey{}
 			}
-			if err := m.Process.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Process.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1842,7 +1842,7 @@ func (m *ProcessListeningOnPortFromSensor) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessListeningOnPortStorage) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessListeningOnPortStorage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2061,7 +2061,7 @@ func (m *ProcessListeningOnPortStorage) UnmarshalVT(dAtA []byte) error {
 			if m.Process == nil {
 				m.Process = &ProcessIndicatorUniqueKey{}
 			}
-			if err := m.Process.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Process.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

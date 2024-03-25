@@ -201,8 +201,8 @@ func (*Deployment) ProtoMessage()    {}
 func (*Deployment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{0}
 }
-func (m *Deployment) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Deployment) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Deployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -510,8 +510,8 @@ func (*ContainerImage) ProtoMessage()    {}
 func (*ContainerImage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{1}
 }
-func (m *ContainerImage) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerImage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerImage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -602,8 +602,8 @@ func (*Container) ProtoMessage()    {}
 func (*Container) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{2}
 }
-func (m *Container) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Container) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Container) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -759,8 +759,8 @@ func (*Resources) ProtoMessage()    {}
 func (*Resources) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{3}
 }
-func (m *Resources) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Resources) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Resources) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -845,8 +845,8 @@ func (*Volume) ProtoMessage()    {}
 func (*Volume) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{4}
 }
-func (m *Volume) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Volume) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Volume) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -940,8 +940,8 @@ func (*LivenessProbe) ProtoMessage()    {}
 func (*LivenessProbe) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{5}
 }
-func (m *LivenessProbe) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *LivenessProbe) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *LivenessProbe) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1000,8 +1000,8 @@ func (*ReadinessProbe) ProtoMessage()    {}
 func (*ReadinessProbe) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{6}
 }
-func (m *ReadinessProbe) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ReadinessProbe) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ReadinessProbe) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1072,8 +1072,8 @@ func (*Pod) ProtoMessage()    {}
 func (*Pod) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{7}
 }
-func (m *Pod) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Pod) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Pod) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1194,8 +1194,8 @@ func (*Pod_ContainerInstanceList) ProtoMessage()    {}
 func (*Pod_ContainerInstanceList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{7, 0}
 }
-func (m *Pod_ContainerInstanceList) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Pod_ContainerInstanceList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Pod_ContainerInstanceList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1278,8 +1278,8 @@ func (*ContainerInstance) ProtoMessage()    {}
 func (*ContainerInstance) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{8}
 }
-func (m *ContainerInstance) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerInstance) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerInstance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1406,8 +1406,8 @@ func (*ContainerInstanceID) ProtoMessage()    {}
 func (*ContainerInstanceID) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{9}
 }
-func (m *ContainerInstanceID) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerInstanceID) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerInstanceID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1481,8 +1481,8 @@ func (*EmbeddedSecret) ProtoMessage()    {}
 func (*EmbeddedSecret) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{10}
 }
-func (m *EmbeddedSecret) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *EmbeddedSecret) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *EmbeddedSecret) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1554,8 +1554,8 @@ func (*PortConfig) ProtoMessage()    {}
 func (*PortConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{11}
 }
-func (m *PortConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PortConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PortConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1667,8 +1667,8 @@ func (*PortConfig_ExposureInfo) ProtoMessage()    {}
 func (*PortConfig_ExposureInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{11, 0}
 }
-func (m *PortConfig_ExposureInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PortConfig_ExposureInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PortConfig_ExposureInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1790,8 +1790,8 @@ func (*ContainerConfig) ProtoMessage()    {}
 func (*ContainerConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{12}
 }
-func (m *ContainerConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1908,8 +1908,8 @@ func (*ContainerConfig_EnvironmentConfig) ProtoMessage()    {}
 func (*ContainerConfig_EnvironmentConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{12, 0}
 }
-func (m *ContainerConfig_EnvironmentConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ContainerConfig_EnvironmentConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ContainerConfig_EnvironmentConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1988,8 +1988,8 @@ func (*SecurityContext) ProtoMessage()    {}
 func (*SecurityContext) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{13}
 }
-func (m *SecurityContext) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SecurityContext) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SecurityContext) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2103,8 +2103,8 @@ func (*SecurityContext_SELinux) ProtoMessage()    {}
 func (*SecurityContext_SELinux) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{13, 0}
 }
-func (m *SecurityContext_SELinux) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SecurityContext_SELinux) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SecurityContext_SELinux) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2185,8 +2185,8 @@ func (*SecurityContext_SeccompProfile) ProtoMessage()    {}
 func (*SecurityContext_SeccompProfile) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{13, 1}
 }
-func (m *SecurityContext_SeccompProfile) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SecurityContext_SeccompProfile) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SecurityContext_SeccompProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2260,8 +2260,8 @@ func (*ListDeployment) ProtoMessage()    {}
 func (*ListDeployment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3884ae4621696a3, []int{14}
 }
-func (m *ListDeployment) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListDeployment) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListDeployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -4980,7 +4980,7 @@ func sovDeployment(x uint64) (n int) {
 func sozDeployment(x uint64) (n int) {
 	return sovDeployment(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Deployment) UnmarshalVT(dAtA []byte) error {
+func (m *Deployment) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5413,7 +5413,7 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Containers = append(m.Containers, &Container{})
-			if err := m.Containers[len(m.Containers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Containers[len(m.Containers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5806,7 +5806,7 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 			if m.LabelSelector == nil {
 				m.LabelSelector = &LabelSelector{}
 			}
-			if err := m.LabelSelector.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LabelSelector.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5860,7 +5860,7 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Tolerations = append(m.Tolerations, &Toleration{})
-			if err := m.Tolerations[len(m.Tolerations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Tolerations[len(m.Tolerations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5926,7 +5926,7 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Ports = append(m.Ports, &PortConfig{})
-			if err := m.Ports[len(m.Ports)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Ports[len(m.Ports)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6132,7 +6132,7 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerImage) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerImage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6193,7 +6193,7 @@ func (m *ContainerImage) UnmarshalVT(dAtA []byte) error {
 			if m.Name == nil {
 				m.Name = &ImageName{}
 			}
-			if err := m.Name.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Name.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6291,7 +6291,7 @@ func (m *ContainerImage) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Container) UnmarshalVT(dAtA []byte) error {
+func (m *Container) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6384,7 +6384,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &ContainerConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6420,7 +6420,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &ContainerImage{}
 			}
-			if err := m.Image.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Image.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6456,7 +6456,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 			if m.SecurityContext == nil {
 				m.SecurityContext = &SecurityContext{}
 			}
-			if err := m.SecurityContext.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SecurityContext.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6490,7 +6490,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Volumes = append(m.Volumes, &Volume{})
-			if err := m.Volumes[len(m.Volumes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Volumes[len(m.Volumes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6524,7 +6524,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Ports = append(m.Ports, &PortConfig{})
-			if err := m.Ports[len(m.Ports)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Ports[len(m.Ports)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6558,7 +6558,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &EmbeddedSecret{})
-			if err := m.Secrets[len(m.Secrets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Secrets[len(m.Secrets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6594,7 +6594,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 			if m.Resources == nil {
 				m.Resources = &Resources{}
 			}
-			if err := m.Resources.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Resources.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6662,7 +6662,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 			if m.LivenessProbe == nil {
 				m.LivenessProbe = &LivenessProbe{}
 			}
-			if err := m.LivenessProbe.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LivenessProbe.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6698,7 +6698,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 			if m.ReadinessProbe == nil {
 				m.ReadinessProbe = &ReadinessProbe{}
 			}
-			if err := m.ReadinessProbe.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ReadinessProbe.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6724,7 +6724,7 @@ func (m *Container) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Resources) UnmarshalVT(dAtA []byte) error {
+func (m *Resources) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6819,7 +6819,7 @@ func (m *Resources) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Volume) UnmarshalVT(dAtA []byte) error {
+func (m *Volume) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7037,7 +7037,7 @@ func (m *Volume) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *LivenessProbe) UnmarshalVT(dAtA []byte) error {
+func (m *LivenessProbe) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7108,7 +7108,7 @@ func (m *LivenessProbe) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ReadinessProbe) UnmarshalVT(dAtA []byte) error {
+func (m *ReadinessProbe) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7179,7 +7179,7 @@ func (m *ReadinessProbe) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Pod) UnmarshalVT(dAtA []byte) error {
+func (m *Pod) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7398,7 +7398,7 @@ func (m *Pod) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.LiveInstances = append(m.LiveInstances, &ContainerInstance{})
-			if err := m.LiveInstances[len(m.LiveInstances)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LiveInstances[len(m.LiveInstances)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7432,7 +7432,7 @@ func (m *Pod) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.TerminatedInstances = append(m.TerminatedInstances, &Pod_ContainerInstanceList{})
-			if err := m.TerminatedInstances[len(m.TerminatedInstances)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.TerminatedInstances[len(m.TerminatedInstances)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7494,7 +7494,7 @@ func (m *Pod) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Pod_ContainerInstanceList) UnmarshalVT(dAtA []byte) error {
+func (m *Pod_ContainerInstanceList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7553,7 +7553,7 @@ func (m *Pod_ContainerInstanceList) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Instances = append(m.Instances, &ContainerInstance{})
-			if err := m.Instances[len(m.Instances)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Instances[len(m.Instances)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7579,7 +7579,7 @@ func (m *Pod_ContainerInstanceList) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerInstance) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerInstance) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7640,7 +7640,7 @@ func (m *ContainerInstance) UnmarshalVT(dAtA []byte) error {
 			if m.InstanceId == nil {
 				m.InstanceId = &ContainerInstanceID{}
 			}
-			if err := m.InstanceId.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.InstanceId.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7917,7 +7917,7 @@ func (m *ContainerInstance) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerInstanceID) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerInstanceID) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8051,7 +8051,7 @@ func (m *ContainerInstanceID) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EmbeddedSecret) UnmarshalVT(dAtA []byte) error {
+func (m *EmbeddedSecret) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8166,7 +8166,7 @@ func (m *EmbeddedSecret) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PortConfig) UnmarshalVT(dAtA []byte) error {
+func (m *PortConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8346,7 +8346,7 @@ func (m *PortConfig) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExposureInfos = append(m.ExposureInfos, &PortConfig_ExposureInfo{})
-			if err := m.ExposureInfos[len(m.ExposureInfos)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExposureInfos[len(m.ExposureInfos)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8372,7 +8372,7 @@ func (m *PortConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PortConfig_ExposureInfo) UnmarshalVT(dAtA []byte) error {
+func (m *PortConfig_ExposureInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8640,7 +8640,7 @@ func (m *PortConfig_ExposureInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerConfig) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8699,7 +8699,7 @@ func (m *ContainerConfig) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Env = append(m.Env, &ContainerConfig_EnvironmentConfig{})
-			if err := m.Env[len(m.Env)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Env[len(m.Env)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -8904,7 +8904,7 @@ func (m *ContainerConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ContainerConfig_EnvironmentConfig) UnmarshalVT(dAtA []byte) error {
+func (m *ContainerConfig_EnvironmentConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9038,7 +9038,7 @@ func (m *ContainerConfig_EnvironmentConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecurityContext) UnmarshalVT(dAtA []byte) error {
+func (m *SecurityContext) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9119,7 +9119,7 @@ func (m *SecurityContext) UnmarshalVT(dAtA []byte) error {
 			if m.Selinux == nil {
 				m.Selinux = &SecurityContext_SELinux{}
 			}
-			if err := m.Selinux.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Selinux.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9239,7 +9239,7 @@ func (m *SecurityContext) UnmarshalVT(dAtA []byte) error {
 			if m.SeccompProfile == nil {
 				m.SeccompProfile = &SecurityContext_SeccompProfile{}
 			}
-			if err := m.SeccompProfile.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.SeccompProfile.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9285,7 +9285,7 @@ func (m *SecurityContext) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecurityContext_SELinux) UnmarshalVT(dAtA []byte) error {
+func (m *SecurityContext_SELinux) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9464,7 +9464,7 @@ func (m *SecurityContext_SELinux) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecurityContext_SeccompProfile) UnmarshalVT(dAtA []byte) error {
+func (m *SecurityContext_SeccompProfile) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9566,7 +9566,7 @@ func (m *SecurityContext_SeccompProfile) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListDeployment) UnmarshalVT(dAtA []byte) error {
+func (m *ListDeployment) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

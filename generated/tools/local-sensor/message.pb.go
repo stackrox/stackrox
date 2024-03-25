@@ -36,8 +36,8 @@ func (*LocalSensorPolicies) ProtoMessage()    {}
 func (*LocalSensorPolicies) Descriptor() ([]byte, []int) {
 	return fileDescriptor_16761c5ea3753077, []int{0}
 }
-func (m *LocalSensorPolicies) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *LocalSensorPolicies) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *LocalSensorPolicies) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -185,7 +185,7 @@ func sovMessage(x uint64) (n int) {
 func sozMessage(x uint64) (n int) {
 	return sovMessage(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *LocalSensorPolicies) UnmarshalVT(dAtA []byte) error {
+func (m *LocalSensorPolicies) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -244,7 +244,7 @@ func (m *LocalSensorPolicies) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &storage.Policy{})
-			if err := m.Policies[len(m.Policies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policies[len(m.Policies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

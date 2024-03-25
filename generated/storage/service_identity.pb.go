@@ -109,8 +109,8 @@ func (*ServiceIdentity) ProtoMessage()    {}
 func (*ServiceIdentity) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a988b93c2073ff63, []int{0}
 }
-func (m *ServiceIdentity) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ServiceIdentity) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ServiceIdentity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -238,8 +238,8 @@ func (*ServiceCertificate) ProtoMessage()    {}
 func (*ServiceCertificate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a988b93c2073ff63, []int{1}
 }
-func (m *ServiceCertificate) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ServiceCertificate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ServiceCertificate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -314,8 +314,8 @@ func (*TypedServiceCertificate) ProtoMessage()    {}
 func (*TypedServiceCertificate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a988b93c2073ff63, []int{2}
 }
-func (m *TypedServiceCertificate) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TypedServiceCertificate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TypedServiceCertificate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -383,8 +383,8 @@ func (*TypedServiceCertificateSet) ProtoMessage()    {}
 func (*TypedServiceCertificateSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a988b93c2073ff63, []int{3}
 }
-func (m *TypedServiceCertificateSet) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *TypedServiceCertificateSet) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *TypedServiceCertificateSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -821,7 +821,7 @@ func sovServiceIdentity(x uint64) (n int) {
 func sozServiceIdentity(x uint64) (n int) {
 	return sovServiceIdentity(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ServiceIdentity) UnmarshalVT(dAtA []byte) error {
+func (m *ServiceIdentity) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1007,7 +1007,7 @@ func (m *ServiceIdentity) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ServiceCertificate) UnmarshalVT(dAtA []byte) error {
+func (m *ServiceCertificate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1126,7 +1126,7 @@ func (m *ServiceCertificate) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TypedServiceCertificate) UnmarshalVT(dAtA []byte) error {
+func (m *TypedServiceCertificate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1206,7 +1206,7 @@ func (m *TypedServiceCertificate) UnmarshalVT(dAtA []byte) error {
 			if m.Cert == nil {
 				m.Cert = &ServiceCertificate{}
 			}
-			if err := m.Cert.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cert.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1232,7 +1232,7 @@ func (m *TypedServiceCertificate) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TypedServiceCertificateSet) UnmarshalVT(dAtA []byte) error {
+func (m *TypedServiceCertificateSet) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1325,7 +1325,7 @@ func (m *TypedServiceCertificateSet) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ServiceCerts = append(m.ServiceCerts, &TypedServiceCertificate{})
-			if err := m.ServiceCerts[len(m.ServiceCerts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ServiceCerts[len(m.ServiceCerts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

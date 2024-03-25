@@ -147,8 +147,8 @@ func (*Traits) ProtoMessage()    {}
 func (*Traits) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ec31914177d462a1, []int{0}
 }
-func (m *Traits) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Traits) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Traits) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -322,7 +322,7 @@ func sovTraits(x uint64) (n int) {
 func sozTraits(x uint64) (n int) {
 	return sovTraits(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Traits) UnmarshalVT(dAtA []byte) error {
+func (m *Traits) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -49,8 +49,8 @@ func (*ProcessIndicator) ProtoMessage()    {}
 func (*ProcessIndicator) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a226da59a324d96a, []int{0}
 }
-func (m *ProcessIndicator) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessIndicator) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessIndicator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -181,8 +181,8 @@ func (*ProcessIndicatorUniqueKey) ProtoMessage()    {}
 func (*ProcessIndicatorUniqueKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a226da59a324d96a, []int{1}
 }
-func (m *ProcessIndicatorUniqueKey) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessIndicatorUniqueKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessIndicatorUniqueKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -272,8 +272,8 @@ func (*NetworkProcessUniqueKey) ProtoMessage()    {}
 func (*NetworkProcessUniqueKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a226da59a324d96a, []int{2}
 }
-func (m *NetworkProcessUniqueKey) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkProcessUniqueKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkProcessUniqueKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -372,8 +372,8 @@ func (*ProcessSignal) ProtoMessage()    {}
 func (*ProcessSignal) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a226da59a324d96a, []int{3}
 }
-func (m *ProcessSignal) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessSignal) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessSignal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -522,8 +522,8 @@ func (*ProcessSignal_LineageInfo) ProtoMessage()    {}
 func (*ProcessSignal_LineageInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a226da59a324d96a, []int{3, 0}
 }
-func (m *ProcessSignal_LineageInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProcessSignal_LineageInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProcessSignal_LineageInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1213,7 +1213,7 @@ func sovProcessIndicator(x uint64) (n int) {
 func sozProcessIndicator(x uint64) (n int) {
 	return sovProcessIndicator(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ProcessIndicator) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessIndicator) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1402,7 +1402,7 @@ func (m *ProcessIndicator) UnmarshalVT(dAtA []byte) error {
 			if m.Signal == nil {
 				m.Signal = &ProcessSignal{}
 			}
-			if err := m.Signal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Signal.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1592,7 +1592,7 @@ func (m *ProcessIndicator) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessIndicatorUniqueKey) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessIndicatorUniqueKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1803,7 +1803,7 @@ func (m *ProcessIndicatorUniqueKey) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkProcessUniqueKey) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkProcessUniqueKey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1950,7 +1950,7 @@ func (m *NetworkProcessUniqueKey) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessSignal) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2314,7 +2314,7 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.LineageInfo = append(m.LineageInfo, &ProcessSignal_LineageInfo{})
-			if err := m.LineageInfo[len(m.LineageInfo)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.LineageInfo[len(m.LineageInfo)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2340,7 +2340,7 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessSignal_LineageInfo) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessSignal_LineageInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

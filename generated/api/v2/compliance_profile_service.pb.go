@@ -49,8 +49,8 @@ func (*ComplianceRule) ProtoMessage()    {}
 func (*ComplianceRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{0}
 }
-func (m *ComplianceRule) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ComplianceRule) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ComplianceRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -182,8 +182,8 @@ func (*ComplianceProfile) ProtoMessage()    {}
 func (*ComplianceProfile) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{1}
 }
-func (m *ComplianceProfile) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ComplianceProfile) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ComplianceProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -321,8 +321,8 @@ func (*ComplianceProfileSummary) ProtoMessage()    {}
 func (*ComplianceProfileSummary) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{2}
 }
-func (m *ComplianceProfileSummary) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ComplianceProfileSummary) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ComplianceProfileSummary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -417,8 +417,8 @@ func (*ListComplianceProfilesResponse) ProtoMessage()    {}
 func (*ListComplianceProfilesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{3}
 }
-func (m *ListComplianceProfilesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListComplianceProfilesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListComplianceProfilesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -484,8 +484,8 @@ func (*ListComplianceProfileSummaryResponse) ProtoMessage()    {}
 func (*ListComplianceProfileSummaryResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{4}
 }
-func (m *ListComplianceProfileSummaryResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListComplianceProfileSummaryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListComplianceProfileSummaryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -551,8 +551,8 @@ func (*CountComplianceProfilesResponse) ProtoMessage()    {}
 func (*CountComplianceProfilesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{5}
 }
-func (m *CountComplianceProfilesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CountComplianceProfilesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CountComplianceProfilesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -611,8 +611,8 @@ func (*ProfilesForClusterRequest) ProtoMessage()    {}
 func (*ProfilesForClusterRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{6}
 }
-func (m *ProfilesForClusterRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ProfilesForClusterRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ProfilesForClusterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -671,8 +671,8 @@ func (*ClustersProfileSummaryRequest) ProtoMessage()    {}
 func (*ClustersProfileSummaryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1a6d608d8e632533, []int{7}
 }
-func (m *ClustersProfileSummaryRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClustersProfileSummaryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClustersProfileSummaryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1685,7 +1685,7 @@ func sovComplianceProfileService(x uint64) (n int) {
 func sozComplianceProfileService(x uint64) (n int) {
 	return sovComplianceProfileService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ComplianceRule) UnmarshalVT(dAtA []byte) error {
+func (m *ComplianceRule) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2056,7 +2056,7 @@ func (m *ComplianceRule) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error {
+func (m *ComplianceProfile) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2307,7 +2307,7 @@ func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Rules = append(m.Rules, &ComplianceRule{})
-			if err := m.Rules[len(m.Rules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Rules[len(m.Rules)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2429,7 +2429,7 @@ func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ComplianceProfileSummary) UnmarshalVT(dAtA []byte) error {
+func (m *ComplianceProfileSummary) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2659,7 +2659,7 @@ func (m *ComplianceProfileSummary) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListComplianceProfilesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListComplianceProfilesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2718,7 +2718,7 @@ func (m *ListComplianceProfilesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Profiles = append(m.Profiles, &ComplianceProfile{})
-			if err := m.Profiles[len(m.Profiles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Profiles[len(m.Profiles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2744,7 +2744,7 @@ func (m *ListComplianceProfilesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListComplianceProfileSummaryResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListComplianceProfileSummaryResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2803,7 +2803,7 @@ func (m *ListComplianceProfileSummaryResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Profiles = append(m.Profiles, &ComplianceProfileSummary{})
-			if err := m.Profiles[len(m.Profiles)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Profiles[len(m.Profiles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2829,7 +2829,7 @@ func (m *ListComplianceProfileSummaryResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountComplianceProfilesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CountComplianceProfilesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2899,7 +2899,7 @@ func (m *CountComplianceProfilesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProfilesForClusterRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ProfilesForClusterRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2982,7 +2982,7 @@ func (m *ProfilesForClusterRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ClustersProfileSummaryRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ClustersProfileSummaryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

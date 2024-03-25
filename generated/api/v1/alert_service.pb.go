@@ -94,8 +94,8 @@ func (*CountAlertsResponse) ProtoMessage()    {}
 func (*CountAlertsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{0}
 }
-func (m *CountAlertsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CountAlertsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CountAlertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -155,8 +155,8 @@ func (*ListAlertsRequest) ProtoMessage()    {}
 func (*ListAlertsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{1}
 }
-func (m *ListAlertsRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListAlertsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListAlertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -225,8 +225,8 @@ func (*ResolveAlertRequest) ProtoMessage()    {}
 func (*ResolveAlertRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{2}
 }
-func (m *ResolveAlertRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ResolveAlertRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ResolveAlertRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -300,8 +300,8 @@ func (*ResolveAlertsRequest) ProtoMessage()    {}
 func (*ResolveAlertsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{3}
 }
-func (m *ResolveAlertsRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ResolveAlertsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ResolveAlertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -361,8 +361,8 @@ func (*SnoozeAlertRequest) ProtoMessage()    {}
 func (*SnoozeAlertRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{4}
 }
-func (m *SnoozeAlertRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SnoozeAlertRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SnoozeAlertRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -429,8 +429,8 @@ func (*ListAlertsResponse) ProtoMessage()    {}
 func (*ListAlertsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{5}
 }
-func (m *ListAlertsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListAlertsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListAlertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -496,8 +496,8 @@ func (*DeleteAlertsRequest) ProtoMessage()    {}
 func (*DeleteAlertsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{6}
 }
-func (m *DeleteAlertsRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteAlertsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteAlertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -565,8 +565,8 @@ func (*DeleteAlertsResponse) ProtoMessage()    {}
 func (*DeleteAlertsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{7}
 }
-func (m *DeleteAlertsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DeleteAlertsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DeleteAlertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -632,8 +632,8 @@ func (*GetAlertsGroupResponse) ProtoMessage()    {}
 func (*GetAlertsGroupResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{8}
 }
-func (m *GetAlertsGroupResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertsGroupResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertsGroupResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -699,8 +699,8 @@ func (*GetAlertsGroupResponse_PolicyGroup) ProtoMessage()    {}
 func (*GetAlertsGroupResponse_PolicyGroup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{8, 0}
 }
-func (m *GetAlertsGroupResponse_PolicyGroup) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertsGroupResponse_PolicyGroup) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertsGroupResponse_PolicyGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -768,8 +768,8 @@ func (*GetAlertsCountsRequest) ProtoMessage()    {}
 func (*GetAlertsCountsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{9}
 }
-func (m *GetAlertsCountsRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertsCountsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertsCountsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -836,8 +836,8 @@ func (*GetAlertsCountsResponse) ProtoMessage()    {}
 func (*GetAlertsCountsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{10}
 }
-func (m *GetAlertsCountsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertsCountsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertsCountsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -903,8 +903,8 @@ func (*GetAlertsCountsResponse_AlertGroup) ProtoMessage()    {}
 func (*GetAlertsCountsResponse_AlertGroup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{10, 0}
 }
-func (m *GetAlertsCountsResponse_AlertGroup) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertsCountsResponse_AlertGroup) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertsCountsResponse_AlertGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -981,8 +981,8 @@ func (*GetAlertsCountsResponse_AlertGroup_AlertCounts) ProtoMessage() {}
 func (*GetAlertsCountsResponse_AlertGroup_AlertCounts) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{10, 0, 0}
 }
-func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1050,8 +1050,8 @@ func (*AlertEvent) ProtoMessage()    {}
 func (*AlertEvent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{11}
 }
-func (m *AlertEvent) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *AlertEvent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *AlertEvent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1124,8 +1124,8 @@ func (*GetAlertTimeseriesResponse) ProtoMessage()    {}
 func (*GetAlertTimeseriesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{12}
 }
-func (m *GetAlertTimeseriesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertTimeseriesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertTimeseriesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1193,8 +1193,8 @@ func (*GetAlertTimeseriesResponse_ClusterAlerts) ProtoMessage()    {}
 func (*GetAlertTimeseriesResponse_ClusterAlerts) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{12, 0}
 }
-func (m *GetAlertTimeseriesResponse_ClusterAlerts) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertTimeseriesResponse_ClusterAlerts) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertTimeseriesResponse_ClusterAlerts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1271,8 +1271,8 @@ func (*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) ProtoMessage() {}
 func (*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2056301d4364d89a, []int{12, 0, 0}
 }
-func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2999,7 +2999,7 @@ func sovAlertService(x uint64) (n int) {
 func sozAlertService(x uint64) (n int) {
 	return sovAlertService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *CountAlertsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CountAlertsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3069,7 +3069,7 @@ func (m *CountAlertsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAlertsRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ListAlertsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3162,7 +3162,7 @@ func (m *ListAlertsRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Pagination == nil {
 				m.Pagination = &Pagination{}
 			}
-			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3188,7 +3188,7 @@ func (m *ListAlertsRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ResolveAlertRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ResolveAlertRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3311,7 +3311,7 @@ func (m *ResolveAlertRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ResolveAlertsRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ResolveAlertsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3394,7 +3394,7 @@ func (m *ResolveAlertsRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SnoozeAlertRequest) UnmarshalVT(dAtA []byte) error {
+func (m *SnoozeAlertRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3513,7 +3513,7 @@ func (m *SnoozeAlertRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAlertsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListAlertsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3572,7 +3572,7 @@ func (m *ListAlertsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.ListAlert{})
-			if err := m.Alerts[len(m.Alerts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Alerts[len(m.Alerts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3598,7 +3598,7 @@ func (m *ListAlertsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteAlertsRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteAlertsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3659,7 +3659,7 @@ func (m *DeleteAlertsRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Query == nil {
 				m.Query = &RawQuery{}
 			}
-			if err := m.Query.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3705,7 +3705,7 @@ func (m *DeleteAlertsRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteAlertsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *DeleteAlertsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3795,7 +3795,7 @@ func (m *DeleteAlertsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertsGroupResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertsGroupResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3854,7 +3854,7 @@ func (m *GetAlertsGroupResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AlertsByPolicies = append(m.AlertsByPolicies, &GetAlertsGroupResponse_PolicyGroup{})
-			if err := m.AlertsByPolicies[len(m.AlertsByPolicies)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AlertsByPolicies[len(m.AlertsByPolicies)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3880,7 +3880,7 @@ func (m *GetAlertsGroupResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertsGroupResponse_PolicyGroup) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertsGroupResponse_PolicyGroup) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3941,7 +3941,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) UnmarshalVT(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.ListAlertPolicy{}
 			}
-			if err := m.Policy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Policy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3986,7 +3986,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertsCountsRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertsCountsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4047,7 +4047,7 @@ func (m *GetAlertsCountsRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Request == nil {
 				m.Request = &ListAlertsRequest{}
 			}
-			if err := m.Request.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Request.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4092,7 +4092,7 @@ func (m *GetAlertsCountsRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertsCountsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertsCountsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4151,7 +4151,7 @@ func (m *GetAlertsCountsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Groups = append(m.Groups, &GetAlertsCountsResponse_AlertGroup{})
-			if err := m.Groups[len(m.Groups)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Groups[len(m.Groups)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4177,7 +4177,7 @@ func (m *GetAlertsCountsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertsCountsResponse_AlertGroup) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertsCountsResponse_AlertGroup) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4268,7 +4268,7 @@ func (m *GetAlertsCountsResponse_AlertGroup) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Counts = append(m.Counts, &GetAlertsCountsResponse_AlertGroup_AlertCounts{})
-			if err := m.Counts[len(m.Counts)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Counts[len(m.Counts)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4294,7 +4294,7 @@ func (m *GetAlertsCountsResponse_AlertGroup) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4383,7 +4383,7 @@ func (m *GetAlertsCountsResponse_AlertGroup_AlertCounts) UnmarshalVT(dAtA []byte
 	}
 	return nil
 }
-func (m *AlertEvent) UnmarshalVT(dAtA []byte) error {
+func (m *AlertEvent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4504,7 +4504,7 @@ func (m *AlertEvent) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertTimeseriesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertTimeseriesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4563,7 +4563,7 @@ func (m *GetAlertTimeseriesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &GetAlertTimeseriesResponse_ClusterAlerts{})
-			if err := m.Clusters[len(m.Clusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4589,7 +4589,7 @@ func (m *GetAlertTimeseriesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAlertTimeseriesResponse_ClusterAlerts) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4680,7 +4680,7 @@ func (m *GetAlertTimeseriesResponse_ClusterAlerts) UnmarshalVT(dAtA []byte) erro
 				return io.ErrUnexpectedEOF
 			}
 			m.Severities = append(m.Severities, &GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{})
-			if err := m.Severities[len(m.Severities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Severities[len(m.Severities)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4706,7 +4706,7 @@ func (m *GetAlertTimeseriesResponse_ClusterAlerts) UnmarshalVT(dAtA []byte) erro
 	}
 	return nil
 }
-func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) UnmarshalVT(dAtA []byte) error {
+func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4784,7 +4784,7 @@ func (m *GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents) UnmarshalVT(dAtA 
 				return io.ErrUnexpectedEOF
 			}
 			m.Events = append(m.Events, &AlertEvent{})
-			if err := m.Events[len(m.Events)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Events[len(m.Events)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

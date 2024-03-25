@@ -39,8 +39,8 @@ func (*GetUpgradeStatusResponse) ProtoMessage()    {}
 func (*GetUpgradeStatusResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e4bd547a0084fea, []int{0}
 }
-func (m *GetUpgradeStatusResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetUpgradeStatusResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetUpgradeStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -108,8 +108,8 @@ func (*CentralUpgradeStatus) ProtoMessage()    {}
 func (*CentralUpgradeStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptor_6e4bd547a0084fea, []int{1}
 }
-func (m *CentralUpgradeStatus) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CentralUpgradeStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CentralUpgradeStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -466,7 +466,7 @@ func sovCentralHealthService(x uint64) (n int) {
 func sozCentralHealthService(x uint64) (n int) {
 	return sovCentralHealthService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GetUpgradeStatusResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetUpgradeStatusResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -527,7 +527,7 @@ func (m *GetUpgradeStatusResponse) UnmarshalVT(dAtA []byte) error {
 			if m.UpgradeStatus == nil {
 				m.UpgradeStatus = &CentralUpgradeStatus{}
 			}
-			if err := m.UpgradeStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpgradeStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -553,7 +553,7 @@ func (m *GetUpgradeStatusResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CentralUpgradeStatus) UnmarshalVT(dAtA []byte) error {
+func (m *CentralUpgradeStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

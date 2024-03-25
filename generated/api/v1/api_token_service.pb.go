@@ -44,8 +44,8 @@ func (*GenerateTokenRequest) ProtoMessage()    {}
 func (*GenerateTokenRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b5cff1ec89435902, []int{0}
 }
-func (m *GenerateTokenRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GenerateTokenRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GenerateTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -132,8 +132,8 @@ func (*GenerateTokenResponse) ProtoMessage()    {}
 func (*GenerateTokenResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b5cff1ec89435902, []int{1}
 }
-func (m *GenerateTokenResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GenerateTokenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GenerateTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -202,8 +202,8 @@ func (*GetAPITokensRequest) ProtoMessage()    {}
 func (*GetAPITokensRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b5cff1ec89435902, []int{2}
 }
-func (m *GetAPITokensRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAPITokensRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAPITokensRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -301,8 +301,8 @@ func (*GetAPITokensResponse) ProtoMessage()    {}
 func (*GetAPITokensResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b5cff1ec89435902, []int{3}
 }
-func (m *GetAPITokensResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetAPITokensResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetAPITokensResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -367,8 +367,8 @@ func (*ListAllowedTokenRolesResponse) ProtoMessage()    {}
 func (*ListAllowedTokenRolesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b5cff1ec89435902, []int{4}
 }
-func (m *ListAllowedTokenRolesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListAllowedTokenRolesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListAllowedTokenRolesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1068,7 +1068,7 @@ func sovApiTokenService(x uint64) (n int) {
 func sozApiTokenService(x uint64) (n int) {
 	return sovApiTokenService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GenerateTokenRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GenerateTokenRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1251,7 +1251,7 @@ func (m *GenerateTokenRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GenerateTokenResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GenerateTokenResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1344,7 +1344,7 @@ func (m *GenerateTokenResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.TokenMetadata{}
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1370,7 +1370,7 @@ func (m *GenerateTokenResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAPITokensRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetAPITokensRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1442,7 +1442,7 @@ func (m *GetAPITokensRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAPITokensResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetAPITokensResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1501,7 +1501,7 @@ func (m *GetAPITokensResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Tokens = append(m.Tokens, &storage.TokenMetadata{})
-			if err := m.Tokens[len(m.Tokens)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Tokens[len(m.Tokens)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1527,7 +1527,7 @@ func (m *GetAPITokensResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAllowedTokenRolesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListAllowedTokenRolesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

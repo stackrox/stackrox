@@ -70,8 +70,8 @@ func (*ResourceCollection) ProtoMessage()    {}
 func (*ResourceCollection) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ef506d17363ff2fd, []int{0}
 }
-func (m *ResourceCollection) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ResourceCollection) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ResourceCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -207,8 +207,8 @@ func (*ResourceCollection_EmbeddedResourceCollection) ProtoMessage() {}
 func (*ResourceCollection_EmbeddedResourceCollection) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ef506d17363ff2fd, []int{0, 0}
 }
-func (m *ResourceCollection_EmbeddedResourceCollection) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ResourceCollection_EmbeddedResourceCollection) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ResourceCollection_EmbeddedResourceCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -268,8 +268,8 @@ func (*ResourceSelector) ProtoMessage()    {}
 func (*ResourceSelector) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ef506d17363ff2fd, []int{1}
 }
-func (m *ResourceSelector) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ResourceSelector) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ResourceSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -347,8 +347,8 @@ func (*SelectorRule) ProtoMessage()    {}
 func (*SelectorRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ef506d17363ff2fd, []int{2}
 }
-func (m *SelectorRule) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SelectorRule) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SelectorRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -428,8 +428,8 @@ func (*RuleValue) ProtoMessage()    {}
 func (*RuleValue) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ef506d17363ff2fd, []int{3}
 }
-func (m *RuleValue) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *RuleValue) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *RuleValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -969,7 +969,7 @@ func sovResourceCollection(x uint64) (n int) {
 func sozResourceCollection(x uint64) (n int) {
 	return sovResourceCollection(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error {
+func (m *ResourceCollection) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1198,7 +1198,7 @@ func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error {
 			if m.CreatedBy == nil {
 				m.CreatedBy = &SlimUser{}
 			}
-			if err := m.CreatedBy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.CreatedBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1234,7 +1234,7 @@ func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error {
 			if m.UpdatedBy == nil {
 				m.UpdatedBy = &SlimUser{}
 			}
-			if err := m.UpdatedBy.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpdatedBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1268,7 +1268,7 @@ func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &ResourceSelector{})
-			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ResourceSelectors[len(m.ResourceSelectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1302,7 +1302,7 @@ func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.EmbeddedCollections = append(m.EmbeddedCollections, &ResourceCollection_EmbeddedResourceCollection{})
-			if err := m.EmbeddedCollections[len(m.EmbeddedCollections)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.EmbeddedCollections[len(m.EmbeddedCollections)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1328,7 +1328,7 @@ func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ResourceCollection_EmbeddedResourceCollection) UnmarshalVT(dAtA []byte) error {
+func (m *ResourceCollection_EmbeddedResourceCollection) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1411,7 +1411,7 @@ func (m *ResourceCollection_EmbeddedResourceCollection) UnmarshalVT(dAtA []byte)
 	}
 	return nil
 }
-func (m *ResourceSelector) UnmarshalVT(dAtA []byte) error {
+func (m *ResourceSelector) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1470,7 +1470,7 @@ func (m *ResourceSelector) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Rules = append(m.Rules, &SelectorRule{})
-			if err := m.Rules[len(m.Rules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Rules[len(m.Rules)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1496,7 +1496,7 @@ func (m *ResourceSelector) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SelectorRule) UnmarshalVT(dAtA []byte) error {
+func (m *SelectorRule) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1606,7 +1606,7 @@ func (m *SelectorRule) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Values = append(m.Values, &RuleValue{})
-			if err := m.Values[len(m.Values)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Values[len(m.Values)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1632,7 +1632,7 @@ func (m *SelectorRule) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RuleValue) UnmarshalVT(dAtA []byte) error {
+func (m *RuleValue) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

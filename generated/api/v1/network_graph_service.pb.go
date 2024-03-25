@@ -41,8 +41,8 @@ func (*NetworkGraphScope) ProtoMessage()    {}
 func (*NetworkGraphScope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{0}
 }
-func (m *NetworkGraphScope) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkGraphScope) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkGraphScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -103,8 +103,8 @@ func (*NetworkEdgeProperties) ProtoMessage()    {}
 func (*NetworkEdgeProperties) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{1}
 }
-func (m *NetworkEdgeProperties) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkEdgeProperties) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkEdgeProperties) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -178,8 +178,8 @@ func (*NetworkEdgePropertiesBundle) ProtoMessage()    {}
 func (*NetworkEdgePropertiesBundle) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{2}
 }
-func (m *NetworkEdgePropertiesBundle) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkEdgePropertiesBundle) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkEdgePropertiesBundle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -250,8 +250,8 @@ func (*NetworkNode) ProtoMessage()    {}
 func (*NetworkNode) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{3}
 }
-func (m *NetworkNode) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkNode) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkNode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -368,8 +368,8 @@ func (*NetworkGraphRequest) ProtoMessage()    {}
 func (*NetworkGraphRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{4}
 }
-func (m *NetworkGraphRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkGraphRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkGraphRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -466,8 +466,8 @@ func (*NetworkGraph) ProtoMessage()    {}
 func (*NetworkGraph) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{5}
 }
-func (m *NetworkGraph) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkGraph) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkGraph) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -540,8 +540,8 @@ func (*CreateNetworkEntityRequest) ProtoMessage()    {}
 func (*CreateNetworkEntityRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{6}
 }
-func (m *CreateNetworkEntityRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CreateNetworkEntityRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CreateNetworkEntityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -609,8 +609,8 @@ func (*PatchNetworkEntityRequest) ProtoMessage()    {}
 func (*PatchNetworkEntityRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{7}
 }
-func (m *PatchNetworkEntityRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PatchNetworkEntityRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PatchNetworkEntityRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -677,8 +677,8 @@ func (*GetExternalNetworkEntitiesRequest) ProtoMessage()    {}
 func (*GetExternalNetworkEntitiesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{8}
 }
-func (m *GetExternalNetworkEntitiesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetExternalNetworkEntitiesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetExternalNetworkEntitiesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -744,8 +744,8 @@ func (*GetExternalNetworkEntitiesResponse) ProtoMessage()    {}
 func (*GetExternalNetworkEntitiesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{9}
 }
-func (m *GetExternalNetworkEntitiesResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetExternalNetworkEntitiesResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetExternalNetworkEntitiesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -810,8 +810,8 @@ func (*PutNetworkGraphConfigRequest) ProtoMessage()    {}
 func (*PutNetworkGraphConfigRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c1c337f7e92a3e31, []int{10}
 }
-func (m *PutNetworkGraphConfigRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PutNetworkGraphConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PutNetworkGraphConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2090,7 +2090,7 @@ func sovNetworkGraphService(x uint64) (n int) {
 func sozNetworkGraphService(x uint64) (n int) {
 	return sovNetworkGraphService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkGraphScope) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkGraphScope) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2173,7 +2173,7 @@ func (m *NetworkGraphScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEdgeProperties) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkEdgeProperties) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2298,7 +2298,7 @@ func (m *NetworkEdgeProperties) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEdgePropertiesBundle) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkEdgePropertiesBundle) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2357,7 +2357,7 @@ func (m *NetworkEdgePropertiesBundle) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Properties = append(m.Properties, &NetworkEdgeProperties{})
-			if err := m.Properties[len(m.Properties)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Properties[len(m.Properties)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2383,7 +2383,7 @@ func (m *NetworkEdgePropertiesBundle) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkNode) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkNode) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2444,7 +2444,7 @@ func (m *NetworkNode) UnmarshalVT(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &storage.NetworkEntityInfo{}
 			}
-			if err := m.Entity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2594,7 +2594,7 @@ func (m *NetworkNode) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &NetworkEdgePropertiesBundle{}
-					if err := mapvalue.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
 						return err
 					}
 					iNdEx = postmsgIndex
@@ -2697,7 +2697,7 @@ func (m *NetworkNode) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkGraphRequest) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkGraphRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2878,7 +2878,7 @@ func (m *NetworkGraphRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Scope == nil {
 				m.Scope = &NetworkGraphScope{}
 			}
-			if err := m.Scope.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Scope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2924,7 +2924,7 @@ func (m *NetworkGraphRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkGraph) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkGraph) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3002,7 +3002,7 @@ func (m *NetworkGraph) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nodes = append(m.Nodes, &NetworkNode{})
-			if err := m.Nodes[len(m.Nodes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Nodes[len(m.Nodes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3028,7 +3028,7 @@ func (m *NetworkGraph) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CreateNetworkEntityRequest) UnmarshalVT(dAtA []byte) error {
+func (m *CreateNetworkEntityRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3121,7 +3121,7 @@ func (m *CreateNetworkEntityRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &storage.NetworkEntityInfo_ExternalSource{}
 			}
-			if err := m.Entity.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entity.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3147,7 +3147,7 @@ func (m *CreateNetworkEntityRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PatchNetworkEntityRequest) UnmarshalVT(dAtA []byte) error {
+func (m *PatchNetworkEntityRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3262,7 +3262,7 @@ func (m *PatchNetworkEntityRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetExternalNetworkEntitiesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetExternalNetworkEntitiesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3377,7 +3377,7 @@ func (m *GetExternalNetworkEntitiesRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetExternalNetworkEntitiesResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetExternalNetworkEntitiesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3436,7 +3436,7 @@ func (m *GetExternalNetworkEntitiesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Entities = append(m.Entities, &storage.NetworkEntity{})
-			if err := m.Entities[len(m.Entities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entities[len(m.Entities)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3462,7 +3462,7 @@ func (m *GetExternalNetworkEntitiesResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PutNetworkGraphConfigRequest) UnmarshalVT(dAtA []byte) error {
+func (m *PutNetworkGraphConfigRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3523,7 +3523,7 @@ func (m *PutNetworkGraphConfigRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.NetworkGraphConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

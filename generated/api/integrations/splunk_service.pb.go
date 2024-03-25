@@ -77,8 +77,8 @@ func (*SplunkViolationsResponse) ProtoMessage()    {}
 func (*SplunkViolationsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{0}
 }
-func (m *SplunkViolationsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolationsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -167,8 +167,8 @@ func (*SplunkViolation) ProtoMessage()    {}
 func (*SplunkViolation) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1}
 }
-func (m *SplunkViolation) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -345,8 +345,8 @@ func (*SplunkViolation_ViolationInfo) ProtoMessage()    {}
 func (*SplunkViolation_ViolationInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1, 0}
 }
-func (m *SplunkViolation_ViolationInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation_ViolationInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation_ViolationInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -479,8 +479,8 @@ func (*SplunkViolation_AlertInfo) ProtoMessage()    {}
 func (*SplunkViolation_AlertInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1, 1}
 }
-func (m *SplunkViolation_AlertInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation_AlertInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation_AlertInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -565,8 +565,8 @@ func (*SplunkViolation_ProcessInfo) ProtoMessage()    {}
 func (*SplunkViolation_ProcessInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1, 2}
 }
-func (m *SplunkViolation_ProcessInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation_ProcessInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation_ProcessInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -712,8 +712,8 @@ func (*SplunkViolation_DeploymentInfo) ProtoMessage()    {}
 func (*SplunkViolation_DeploymentInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1, 3}
 }
-func (m *SplunkViolation_DeploymentInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation_DeploymentInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation_DeploymentInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -867,8 +867,8 @@ func (*SplunkViolation_ResourceInfo) ProtoMessage()    {}
 func (*SplunkViolation_ResourceInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1, 4}
 }
-func (m *SplunkViolation_ResourceInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation_ResourceInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation_ResourceInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -963,8 +963,8 @@ func (*SplunkViolation_PolicyInfo) ProtoMessage()    {}
 func (*SplunkViolation_PolicyInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_363fda14f8180d4f, []int{1, 5}
 }
-func (m *SplunkViolation_PolicyInfo) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SplunkViolation_PolicyInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SplunkViolation_PolicyInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -2370,7 +2370,7 @@ func sovSplunkService(x uint64) (n int) {
 func sozSplunkService(x uint64) (n int) {
 	return sovSplunkService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SplunkViolationsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolationsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2429,7 +2429,7 @@ func (m *SplunkViolationsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Violations = append(m.Violations, &SplunkViolation{})
-			if err := m.Violations[len(m.Violations)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Violations[len(m.Violations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2487,7 +2487,7 @@ func (m *SplunkViolationsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2548,7 +2548,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 			if m.ViolationInfo == nil {
 				m.ViolationInfo = &SplunkViolation_ViolationInfo{}
 			}
-			if err := m.ViolationInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ViolationInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2584,7 +2584,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 			if m.AlertInfo == nil {
 				m.AlertInfo = &SplunkViolation_AlertInfo{}
 			}
-			if err := m.AlertInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AlertInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2620,7 +2620,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 			if m.ProcessInfo == nil {
 				m.ProcessInfo = &SplunkViolation_ProcessInfo{}
 			}
-			if err := m.ProcessInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ProcessInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2654,7 +2654,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SplunkViolation_DeploymentInfo{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.EntityInfo = &SplunkViolation_DeploymentInfo_{v}
@@ -2691,7 +2691,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 			if m.PolicyInfo == nil {
 				m.PolicyInfo = &SplunkViolation_PolicyInfo{}
 			}
-			if err := m.PolicyInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PolicyInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2727,7 +2727,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 			if m.NetworkFlowInfo == nil {
 				m.NetworkFlowInfo = &storage.Alert_Violation_NetworkFlowInfo{}
 			}
-			if err := m.NetworkFlowInfo.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.NetworkFlowInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2761,7 +2761,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &SplunkViolation_ResourceInfo{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.EntityInfo = &SplunkViolation_ResourceInfo_{v}
@@ -2788,7 +2788,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation_ViolationInfo) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation_ViolationInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2911,7 +2911,7 @@ func (m *SplunkViolation_ViolationInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ViolationMessageAttributes = append(m.ViolationMessageAttributes, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{})
-			if err := m.ViolationMessageAttributes[len(m.ViolationMessageAttributes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ViolationMessageAttributes[len(m.ViolationMessageAttributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3156,7 +3156,7 @@ func (m *SplunkViolation_ViolationInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation_AlertInfo) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation_AlertInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3294,7 +3294,7 @@ func (m *SplunkViolation_AlertInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation_ProcessInfo) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation_ProcessInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3657,7 +3657,7 @@ func (m *SplunkViolation_ProcessInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProcessLineageInfo = append(m.ProcessLineageInfo, &storage.ProcessSignal_LineageInfo{})
-			if err := m.ProcessLineageInfo[len(m.ProcessLineageInfo)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ProcessLineageInfo[len(m.ProcessLineageInfo)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3683,7 +3683,7 @@ func (m *SplunkViolation_ProcessInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation_DeploymentInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4093,7 +4093,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentContainers = append(m.DeploymentContainers, &storage.Alert_Deployment_Container{})
-			if err := m.DeploymentContainers[len(m.DeploymentContainers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DeploymentContainers[len(m.DeploymentContainers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4256,7 +4256,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
 			if m.DeploymentImage == nil {
 				m.DeploymentImage = &storage.ContainerImage{}
 			}
-			if err := m.DeploymentImage.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.DeploymentImage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4282,7 +4282,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation_ResourceInfo) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation_ResourceInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4493,7 +4493,7 @@ func (m *SplunkViolation_ResourceInfo) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SplunkViolation_PolicyInfo) UnmarshalVT(dAtA []byte) error {
+func (m *SplunkViolation_PolicyInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

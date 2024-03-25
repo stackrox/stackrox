@@ -156,8 +156,8 @@ func (*DiscoveredCluster) ProtoMessage()    {}
 func (*DiscoveredCluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{0}
 }
-func (m *DiscoveredCluster) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DiscoveredCluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DiscoveredCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -252,8 +252,8 @@ func (*DiscoveredCluster_Metadata) ProtoMessage()    {}
 func (*DiscoveredCluster_Metadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{0, 0}
 }
-func (m *DiscoveredCluster_Metadata) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DiscoveredCluster_Metadata) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DiscoveredCluster_Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -348,8 +348,8 @@ func (*DiscoveredCluster_CloudSource) ProtoMessage()    {}
 func (*DiscoveredCluster_CloudSource) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{0, 1}
 }
-func (m *DiscoveredCluster_CloudSource) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DiscoveredCluster_CloudSource) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DiscoveredCluster_CloudSource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -415,8 +415,8 @@ func (*DiscoveredClustersFilter) ProtoMessage()    {}
 func (*DiscoveredClustersFilter) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{1}
 }
-func (m *DiscoveredClustersFilter) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *DiscoveredClustersFilter) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *DiscoveredClustersFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -513,8 +513,8 @@ func (*CountDiscoveredClustersRequest) ProtoMessage()    {}
 func (*CountDiscoveredClustersRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{2}
 }
-func (m *CountDiscoveredClustersRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CountDiscoveredClustersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CountDiscoveredClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -574,8 +574,8 @@ func (*CountDiscoveredClustersResponse) ProtoMessage()    {}
 func (*CountDiscoveredClustersResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{3}
 }
-func (m *CountDiscoveredClustersResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CountDiscoveredClustersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CountDiscoveredClustersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -634,8 +634,8 @@ func (*GetDiscoveredClusterRequest) ProtoMessage()    {}
 func (*GetDiscoveredClusterRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{4}
 }
-func (m *GetDiscoveredClusterRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetDiscoveredClusterRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetDiscoveredClusterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -694,8 +694,8 @@ func (*GetDiscoveredClusterResponse) ProtoMessage()    {}
 func (*GetDiscoveredClusterResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{5}
 }
-func (m *GetDiscoveredClusterResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *GetDiscoveredClusterResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *GetDiscoveredClusterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -758,8 +758,8 @@ func (*ListDiscoveredClustersRequest) ProtoMessage()    {}
 func (*ListDiscoveredClustersRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{6}
 }
-func (m *ListDiscoveredClustersRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListDiscoveredClustersRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListDiscoveredClustersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -827,8 +827,8 @@ func (*ListDiscoveredClustersResponse) ProtoMessage()    {}
 func (*ListDiscoveredClustersResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fe81e36624cd29b2, []int{7}
 }
-func (m *ListDiscoveredClustersResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListDiscoveredClustersResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListDiscoveredClustersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -1835,7 +1835,7 @@ func sovDiscoveredClusterService(x uint64) (n int) {
 func sozDiscoveredClusterService(x uint64) (n int) {
 	return sovDiscoveredClusterService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error {
+func (m *DiscoveredCluster) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1928,7 +1928,7 @@ func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &DiscoveredCluster_Metadata{}
 			}
-			if err := m.Metadata.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Metadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1983,7 +1983,7 @@ func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error {
 			if m.Source == nil {
 				m.Source = &DiscoveredCluster_CloudSource{}
 			}
-			if err := m.Source.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Source.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2009,7 +2009,7 @@ func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DiscoveredCluster_Metadata) UnmarshalVT(dAtA []byte) error {
+func (m *DiscoveredCluster_Metadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2230,7 +2230,7 @@ func (m *DiscoveredCluster_Metadata) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DiscoveredCluster_CloudSource) UnmarshalVT(dAtA []byte) error {
+func (m *DiscoveredCluster_CloudSource) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2313,7 +2313,7 @@ func (m *DiscoveredCluster_CloudSource) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DiscoveredClustersFilter) UnmarshalVT(dAtA []byte) error {
+func (m *DiscoveredClustersFilter) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2566,7 +2566,7 @@ func (m *DiscoveredClustersFilter) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
+func (m *CountDiscoveredClustersRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2627,7 +2627,7 @@ func (m *CountDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Filter == nil {
 				m.Filter = &DiscoveredClustersFilter{}
 			}
-			if err := m.Filter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Filter.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2653,7 +2653,7 @@ func (m *CountDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountDiscoveredClustersResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CountDiscoveredClustersResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2723,7 +2723,7 @@ func (m *CountDiscoveredClustersResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetDiscoveredClusterRequest) UnmarshalVT(dAtA []byte) error {
+func (m *GetDiscoveredClusterRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2806,7 +2806,7 @@ func (m *GetDiscoveredClusterRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetDiscoveredClusterResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetDiscoveredClusterResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2867,7 +2867,7 @@ func (m *GetDiscoveredClusterResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &DiscoveredCluster{}
 			}
-			if err := m.Cluster.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2893,7 +2893,7 @@ func (m *GetDiscoveredClusterResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
+func (m *ListDiscoveredClustersRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2954,7 +2954,7 @@ func (m *ListDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Pagination == nil {
 				m.Pagination = &Pagination{}
 			}
-			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2990,7 +2990,7 @@ func (m *ListDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Filter == nil {
 				m.Filter = &DiscoveredClustersFilter{}
 			}
-			if err := m.Filter.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Filter.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3016,7 +3016,7 @@ func (m *ListDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListDiscoveredClustersResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListDiscoveredClustersResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3075,7 +3075,7 @@ func (m *ListDiscoveredClustersResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &DiscoveredCluster{})
-			if err := m.Clusters[len(m.Clusters)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Clusters[len(m.Clusters)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

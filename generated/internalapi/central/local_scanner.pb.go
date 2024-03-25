@@ -36,8 +36,8 @@ func (*LocalScannerCertsIssueError) ProtoMessage()    {}
 func (*LocalScannerCertsIssueError) Descriptor() ([]byte, []int) {
 	return fileDescriptor_856923c76f63cf0a, []int{0}
 }
-func (m *LocalScannerCertsIssueError) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *LocalScannerCertsIssueError) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *LocalScannerCertsIssueError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -96,8 +96,8 @@ func (*IssueLocalScannerCertsRequest) ProtoMessage()    {}
 func (*IssueLocalScannerCertsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_856923c76f63cf0a, []int{1}
 }
-func (m *IssueLocalScannerCertsRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *IssueLocalScannerCertsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *IssueLocalScannerCertsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -160,8 +160,8 @@ func (*IssueLocalScannerCertsResponse) ProtoMessage()    {}
 func (*IssueLocalScannerCertsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_856923c76f63cf0a, []int{2}
 }
-func (m *IssueLocalScannerCertsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *IssueLocalScannerCertsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *IssueLocalScannerCertsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -555,7 +555,7 @@ func sovLocalScanner(x uint64) (n int) {
 func sozLocalScanner(x uint64) (n int) {
 	return sovLocalScanner(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *LocalScannerCertsIssueError) UnmarshalVT(dAtA []byte) error {
+func (m *LocalScannerCertsIssueError) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -638,7 +638,7 @@ func (m *LocalScannerCertsIssueError) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IssueLocalScannerCertsRequest) UnmarshalVT(dAtA []byte) error {
+func (m *IssueLocalScannerCertsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -721,7 +721,7 @@ func (m *IssueLocalScannerCertsRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *IssueLocalScannerCertsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *IssueLocalScannerCertsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -812,7 +812,7 @@ func (m *IssueLocalScannerCertsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &storage.TypedServiceCertificateSet{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Response = &IssueLocalScannerCertsResponse_Certificates{v}
@@ -847,7 +847,7 @@ func (m *IssueLocalScannerCertsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			v := &LocalScannerCertsIssueError{}
-			if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			m.Response = &IssueLocalScannerCertsResponse_Error{v}

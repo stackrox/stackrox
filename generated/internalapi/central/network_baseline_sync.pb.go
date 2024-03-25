@@ -36,8 +36,8 @@ func (*NetworkBaselineSync) ProtoMessage()    {}
 func (*NetworkBaselineSync) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7f52e7f2d7e76ab4, []int{0}
 }
-func (m *NetworkBaselineSync) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkBaselineSync) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkBaselineSync) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -187,7 +187,7 @@ func sovNetworkBaselineSync(x uint64) (n int) {
 func sozNetworkBaselineSync(x uint64) (n int) {
 	return sovNetworkBaselineSync(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkBaselineSync) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkBaselineSync) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -246,7 +246,7 @@ func (m *NetworkBaselineSync) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NetworkBaselines = append(m.NetworkBaselines, &storage.NetworkBaseline{})
-			if err := m.NetworkBaselines[len(m.NetworkBaselines)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.NetworkBaselines[len(m.NetworkBaselines)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -42,8 +42,8 @@ func (*SecretList) ProtoMessage()    {}
 func (*SecretList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7a81c8939a98fd13, []int{0}
 }
-func (m *SecretList) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *SecretList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *SecretList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -110,8 +110,8 @@ func (*ListSecretsResponse) ProtoMessage()    {}
 func (*ListSecretsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7a81c8939a98fd13, []int{1}
 }
-func (m *ListSecretsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ListSecretsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ListSecretsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -176,8 +176,8 @@ func (*CountSecretsResponse) ProtoMessage()    {}
 func (*CountSecretsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7a81c8939a98fd13, []int{2}
 }
-func (m *CountSecretsResponse) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *CountSecretsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *CountSecretsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -598,7 +598,7 @@ func sovSecretService(x uint64) (n int) {
 func sozSecretService(x uint64) (n int) {
 	return sovSecretService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SecretList) UnmarshalVT(dAtA []byte) error {
+func (m *SecretList) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -657,7 +657,7 @@ func (m *SecretList) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &storage.Secret{})
-			if err := m.Secrets[len(m.Secrets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Secrets[len(m.Secrets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -683,7 +683,7 @@ func (m *SecretList) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListSecretsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ListSecretsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -742,7 +742,7 @@ func (m *ListSecretsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &storage.ListSecret{})
-			if err := m.Secrets[len(m.Secrets)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Secrets[len(m.Secrets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -768,7 +768,7 @@ func (m *ListSecretsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CountSecretsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *CountSecretsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

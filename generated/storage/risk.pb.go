@@ -86,8 +86,8 @@ func (*Risk) ProtoMessage()    {}
 func (*Risk) Descriptor() ([]byte, []int) {
 	return fileDescriptor_76ed3b6b4b68c2b1, []int{0}
 }
-func (m *Risk) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Risk) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Risk) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -176,8 +176,8 @@ func (*Risk_Result) ProtoMessage()    {}
 func (*Risk_Result) Descriptor() ([]byte, []int) {
 	return fileDescriptor_76ed3b6b4b68c2b1, []int{0, 0}
 }
-func (m *Risk_Result) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Risk_Result) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Risk_Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -257,8 +257,8 @@ func (*Risk_Result_Factor) ProtoMessage()    {}
 func (*Risk_Result_Factor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_76ed3b6b4b68c2b1, []int{0, 0, 0}
 }
-func (m *Risk_Result_Factor) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *Risk_Result_Factor) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *Risk_Result_Factor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -327,8 +327,8 @@ func (*RiskSubject) ProtoMessage()    {}
 func (*RiskSubject) Descriptor() ([]byte, []int) {
 	return fileDescriptor_76ed3b6b4b68c2b1, []int{1}
 }
-func (m *RiskSubject) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *RiskSubject) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *RiskSubject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -769,7 +769,7 @@ func sovRisk(x uint64) (n int) {
 func sozRisk(x uint64) (n int) {
 	return sovRisk(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Risk) UnmarshalVT(dAtA []byte) error {
+func (m *Risk) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -862,7 +862,7 @@ func (m *Risk) UnmarshalVT(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &RiskSubject{}
 			}
-			if err := m.Subject.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Subject.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -907,7 +907,7 @@ func (m *Risk) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Results = append(m.Results, &Risk_Result{})
-			if err := m.Results[len(m.Results)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Results[len(m.Results)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -933,7 +933,7 @@ func (m *Risk) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Risk_Result) UnmarshalVT(dAtA []byte) error {
+func (m *Risk_Result) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1024,7 +1024,7 @@ func (m *Risk_Result) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Factors = append(m.Factors, &Risk_Result_Factor{})
-			if err := m.Factors[len(m.Factors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Factors[len(m.Factors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1061,7 +1061,7 @@ func (m *Risk_Result) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Risk_Result_Factor) UnmarshalVT(dAtA []byte) error {
+func (m *Risk_Result_Factor) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1176,7 +1176,7 @@ func (m *Risk_Result_Factor) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RiskSubject) UnmarshalVT(dAtA []byte) error {
+func (m *RiskSubject) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

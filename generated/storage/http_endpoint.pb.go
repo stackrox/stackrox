@@ -45,8 +45,8 @@ func (*HTTPEndpointConfig) ProtoMessage()    {}
 func (*HTTPEndpointConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_511533d120983170, []int{0}
 }
-func (m *HTTPEndpointConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *HTTPEndpointConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *HTTPEndpointConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -332,7 +332,7 @@ func sovHttpEndpoint(x uint64) (n int) {
 func sozHttpEndpoint(x uint64) (n int) {
 	return sovHttpEndpoint(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *HTTPEndpointConfig) UnmarshalVT(dAtA []byte) error {
+func (m *HTTPEndpointConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -539,7 +539,7 @@ func (m *HTTPEndpointConfig) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Headers = append(m.Headers, &KeyValuePair{})
-			if err := m.Headers[len(m.Headers)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Headers[len(m.Headers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

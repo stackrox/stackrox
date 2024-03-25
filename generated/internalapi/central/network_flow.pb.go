@@ -40,8 +40,8 @@ func (*NetworkFlowUpdate) ProtoMessage()    {}
 func (*NetworkFlowUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_82ca8b583996f885, []int{0}
 }
-func (m *NetworkFlowUpdate) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NetworkFlowUpdate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NetworkFlowUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -128,8 +128,8 @@ func (*PushNetworkEntitiesRequest) ProtoMessage()    {}
 func (*PushNetworkEntitiesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_82ca8b583996f885, []int{1}
 }
-func (m *PushNetworkEntitiesRequest) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *PushNetworkEntitiesRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *PushNetworkEntitiesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -399,7 +399,7 @@ func sovNetworkFlow(x uint64) (n int) {
 func sozNetworkFlow(x uint64) (n int) {
 	return sovNetworkFlow(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkFlowUpdate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -458,7 +458,7 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Updated = append(m.Updated, &storage.NetworkFlow{})
-			if err := m.Updated[len(m.Updated)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Updated[len(m.Updated)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -528,7 +528,7 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
-			if err := m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -554,7 +554,7 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PushNetworkEntitiesRequest) UnmarshalVT(dAtA []byte) error {
+func (m *PushNetworkEntitiesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -613,7 +613,7 @@ func (m *PushNetworkEntitiesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Entities = append(m.Entities, &storage.NetworkEntityInfo{})
-			if err := m.Entities[len(m.Entities)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Entities[len(m.Entities)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

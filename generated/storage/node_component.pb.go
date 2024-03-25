@@ -44,8 +44,8 @@ func (*NodeComponent) ProtoMessage()    {}
 func (*NodeComponent) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1117c2b5f2ac051c, []int{0}
 }
-func (m *NodeComponent) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *NodeComponent) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *NodeComponent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -351,7 +351,7 @@ func sovNodeComponent(x uint64) (n int) {
 func sozNodeComponent(x uint64) (n int) {
 	return sovNodeComponent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NodeComponent) UnmarshalVT(dAtA []byte) error {
+func (m *NodeComponent) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

@@ -36,8 +36,8 @@ func (*ClusterConfig) ProtoMessage()    {}
 func (*ClusterConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_842fd1351745032d, []int{0}
 }
-func (m *ClusterConfig) XXX_UnmarshalVT(b []byte) error {
-	return m.UnmarshalVT(b)
+func (m *ClusterConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
 func (m *ClusterConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
@@ -178,7 +178,7 @@ func sovClusterConfig(x uint64) (n int) {
 func sozClusterConfig(x uint64) (n int) {
 	return sovClusterConfig(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ClusterConfig) UnmarshalVT(dAtA []byte) error {
+func (m *ClusterConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -239,7 +239,7 @@ func (m *ClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.DynamicClusterConfig{}
 			}
-			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
