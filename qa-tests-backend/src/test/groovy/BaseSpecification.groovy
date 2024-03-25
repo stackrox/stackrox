@@ -42,7 +42,9 @@ class BaseSpecification extends Specification {
 
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
-    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12@$TEST_IMAGE_SHA"
+    static final String TEST_IMAGE_NAME_WITH_SHA = TEST_IMAGE
+    static final String TEST_IMAGE_SHA = "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728"
 
     static final String RUN_ID
 
@@ -196,9 +198,13 @@ class BaseSpecification extends Specification {
         globalSetupDone = true
     }
 
+    // `globalTimeout` serves to stop stuck tests hogging clusters. A side
+    // effect is that it can abort tests legitimately taking longer. Reaching
+    // `globalTimeout` is to be avoided because it upsets Spock and generates
+    // confusing junit reports.
     @Rule
     Timeout globalTimeout = new Timeout(
-            isRaceBuild() ? 2500 : 800,
+            isRaceBuild() ? 6000 : 2000,
             TimeUnit.SECONDS
     )
     @Rule
