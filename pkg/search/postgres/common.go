@@ -985,7 +985,7 @@ func unmarshal[T any, PT protocompat.Unmarshaler[T]](row pgx.Row) (*T, error) {
 		return nil, err
 	}
 	msg := new(T)
-	if err := PT(msg).UnmarshalVT(data); err != nil {
+	if err := protocompat.Unmarshal(data, PT(msg)); err != nil {
 		return nil, err
 	}
 	return msg, nil

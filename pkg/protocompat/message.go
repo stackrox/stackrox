@@ -65,7 +65,7 @@ func ProtoUnmarshal(dAtA []byte, msg proto.Message) error {
 // Unmarshal resets pb before starting to unmarshal, so any existing data
 // in pb is always removed.
 func Unmarshal[T any, U Unmarshaler[T]](dAtA []byte, msg U) error {
-	return msg.UnmarshalVT(dAtA)
+	return msg.Unmarshal(dAtA)
 }
 
 // Marshaler is a generic interface type wrapping around types that implement protobuf Marshaler.
@@ -76,8 +76,7 @@ type Marshaler[T any] interface {
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	// proto.Unmarshaler
-	UnmarshalVT([]byte) error
+	proto.Unmarshaler
 	*T
 }
 
@@ -85,7 +84,6 @@ type Unmarshaler[T any] interface {
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
 	Clone() *T
-	// proto.Unmarshaler
-	UnmarshalVT([]byte) error
+	proto.Unmarshaler
 	*T
 }
