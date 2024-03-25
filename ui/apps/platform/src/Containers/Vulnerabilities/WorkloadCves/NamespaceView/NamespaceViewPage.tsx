@@ -23,7 +23,10 @@ import { gql, useQuery } from '@apollo/client';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
 import {
     CLUSTER_SEARCH_OPTION,
     NAMESPACE_LABEL_SEARCH_OPTION,
@@ -35,11 +38,8 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSort from 'hooks/useURLSort';
 import FilterAutocompleteSelect from 'Containers/Vulnerabilities/components/FilterAutocomplete';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentFilterLink from './DeploymentFilterLink';
 import LabelsModal from './LabelsModal';
 
