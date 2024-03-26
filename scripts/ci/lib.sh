@@ -1424,7 +1424,7 @@ send_slack_failure_summary() {
     fi
 }
 
-_do_we_at_the_author() {
+_set_mention_author() {
     mention_author="false"
 
     # Mention the commit author if new JIRA issues were created
