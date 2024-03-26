@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/mapeval"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/search"
@@ -265,7 +266,7 @@ func generateTimestampMatcher(value string, matchAll bool) (baseMatcherAndExtrac
 			}
 			return nil
 		}
-		return []valueMatchedPair{{value: readable.ProtoTime(ts), matched: matchAll || (value != "-" && baseMatcher(ts))}}
+		return []valueMatchedPair{{value: protoconv.ProtoTime(ts), matched: matchAll || (value != "-" && baseMatcher(ts))}}
 	}, nil
 }
 

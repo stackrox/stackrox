@@ -6,6 +6,8 @@ import (
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/readable"
 )
 
 var (
@@ -89,4 +91,15 @@ func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
 		return ConvertTimeToTimestamp(ts)
 	}
 	return nil
+}
+
+// ProtoTime takes a proto time type and converts it to a human readable string down to seconds.
+// It always prints a UTC time.
+func ProtoTime(ts *gogoTimestamp.Timestamp) string {
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
+	if err != nil {
+		log.Error(err)
+		return "<malformed time>"
+	}
+	return readable.Time(t)
 }
