@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"reflect"
@@ -13,10 +15,18 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
+	// This will register all proto types in the package,
+	// making it possible to retrieve the message type by name.
 	_ "github.com/stackrox/rox/generated/storage"
 )
 
-var protobufType *string = flag.String("type", "", "name of protobuf, e.g., storage.Alert")
+var (
+	protobufType = flag.String("type", "", "name of protobuf, e.g., storage.Alert")
+
+	errUnqoting  = errors.New("failed to unquote the serialized text")
+	errDecoding  = errors.New("failed decoding the hex value of the text")
+	errUnmarshal = errors.New("failed unmarshalling the proto")
+)
 
 func main() {
 	flag.Parse()
@@ -31,11 +41,16 @@ func main() {
 	}
 	msg := reflect.New(mt.Elem()).Interface().(proto.Message)
 
-	var text string
+	if err := printProtoMessages(os.Stdin, os.Stdout, msg); err != nil {
+		log.Fatalf("Error while printing proto messages: %v", err)
+	}
+}
 
-	reader := bufio.NewScanner(os.Stdin)
+func printProtoMessages(in io.Reader, out io.Writer, msg proto.Message) error {
+	reader := bufio.NewScanner(in)
+
 	for reader.Scan() {
-		text = reader.Text()
+		text := reader.Text()
 		if len(text) == 0 {
 			break
 		}
@@ -43,30 +58,33 @@ func main() {
 		// It's not clear why we need to both unquote *and* prepend 0A but it works ¯\_(ツ)_/¯
 		s, err := strconv.Unquote(fmt.Sprintf("\"%s\"", text))
 		if err != nil {
-			log.Fatalf("error while unquote the serialized text, text = %s, err = %v", text, err)
+			return fmt.Errorf("%w (text=%q): %w", errUnqoting, text, err)
 		}
 
 		s = "0A" + strings.TrimSpace(s)
 
 		b, err := hex.DecodeString(s)
 		if err != nil {
-			log.Fatalf("error while decoding the hex value of the serialized text, text = %s, err = %v",
-				text, err)
+			return fmt.Errorf("%w (text=%q): %w", errDecoding, text, err)
 		}
 
 		if err := proto.Unmarshal(b, msg); err != nil {
-			log.Fatalf("error unmarshaling proto, text = %s, err = %v", text, err)
+			return fmt.Errorf("%w: %w", errUnmarshal, err)
 		}
 
 		m := jsonpb.Marshaler{Indent: "  "}
 		json, err := m.MarshalToString(msg)
 		if err != nil {
-			log.Fatalf("error while prettifying, message = %+v, err = %v", msg, err)
+			return fmt.Errorf("failed marshalling the proto to JSON (msg=%+v): %w", msg, err)
 		}
-		fmt.Println(json)
+
+		if _, err := fmt.Fprintln(out, json); err != nil {
+			return fmt.Errorf("failed writing proto JSON to output: %w", err)
+		}
 	}
 
 	if err := reader.Err(); err != nil {
-		log.Fatalf("error while reading from stdin, err = %v", err)
+		return fmt.Errorf("reading from input: %w", err)
 	}
+	return nil
 }
