@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 const (
