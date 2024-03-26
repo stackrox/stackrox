@@ -28,7 +28,7 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 	// During the transition to not use serialized, we may be coming from a database
 	// that uses it.  So if serialized is not nil, we will need to use that
 	if m.Serialized != nil {
-		if err := msg.Unmarshal(m.Serialized); err != nil {
+		if err := protocompat.Unmarshal(m.Serialized, &msg); err != nil {
 			return nil, err
 		}
 		return &msg, nil

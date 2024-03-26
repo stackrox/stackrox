@@ -107,12 +107,12 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := protocompat.Unmarshal(serialized, &msg); err != nil {
+		if err := protocompat.ProtoUnmarshal(serialized, &msg); err != nil {
 			return nil, err
 		}
 
 		var procMsg storage.ProcessIndicator
-		if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
+		if err := protocompat.ProtoUnmarshal(procSerialized, &procMsg); err != nil {
 			return nil, err
 		}
 

@@ -23,7 +23,7 @@ func ConvertNotifierFromProto(obj *storage.Notifier) (*Notifiers, error) {
 // ConvertNotifierToProto converts Gorm model `Notifiers` to its protobuf type object
 func ConvertNotifierToProto(m *Notifiers) (*storage.Notifier, error) {
 	var msg storage.Notifier
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := protocompat.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil

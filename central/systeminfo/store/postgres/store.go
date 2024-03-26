@@ -83,7 +83,7 @@ func (s *storeImpl) get(ctx context.Context) (*storage.SystemInfo, bool, error) 
 	}
 
 	var msg storage.SystemInfo
-	if err := msg.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

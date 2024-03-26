@@ -3,6 +3,7 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertTestShortCircuitFromProto converts a `*storage.TestShortCircuit` to Gorm model
@@ -23,7 +24,7 @@ func ConvertTestShortCircuitFromProto(obj *storage.TestShortCircuit) (*TestShort
 // ConvertTestShortCircuitToProto converts Gorm model `TestShortCircuits` to its protobuf type object
 func ConvertTestShortCircuitToProto(m *TestShortCircuits) (*storage.TestShortCircuit, error) {
 	var msg storage.TestShortCircuit
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := protocompat.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil

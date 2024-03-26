@@ -26,7 +26,7 @@ func TestErrorOnNilMarshal(t *testing.T) {
 }
 
 func TestErrorOnNilUnmarshal(t *testing.T) {
-	err := protocompat.Unmarshal(nil, nil)
+	err := protocompat.ProtoUnmarshal(nil, nil)
 	assert.Equal(t, proto.ErrNil, err)
 
 	err = protocompat.Unmarshal(nil, (*storage.Image)(nil))

@@ -3,14 +3,17 @@ package main
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 )
 
-var typeRegistry = make(map[string]proto.Unmarshaler)
+var typeRegistry = make(map[string]unmarshaler)
+
+type unmarshaler interface {
+	UnmarshalVT([]byte) error
+}
 
 func init() {
-	for _, v := range []proto.Unmarshaler{
+	for _, v := range []unmarshaler{
 		&storage.ActiveComponent{},
 		&storage.AdministrationEvent{},
 		&storage.AuthMachineToMachineConfig{},

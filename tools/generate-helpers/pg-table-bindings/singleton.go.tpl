@@ -172,7 +172,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := msg.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &msg); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil

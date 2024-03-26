@@ -894,7 +894,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	var image storage.Image
-	if err := image.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &image); err != nil {
 		return nil, false, err
 	}
 
@@ -928,7 +928,7 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 			return nil, err
 		}
 		msg := &storage.ImageComponentEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
@@ -965,7 +965,7 @@ func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map
 			return nil, err
 		}
 		msg := &storage.ImageCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
@@ -988,7 +988,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []str
 			return nil, err
 		}
 		msg := &storage.ImageComponent{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -1011,7 +1011,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 			return nil, err
 		}
 		msg := &storage.ComponentCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
@@ -1034,7 +1034,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.ImageCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -1289,7 +1289,7 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 	}
 
 	var msg storage.Image
-	if err := msg.Unmarshal(data); err != nil {
+	if err := protocompat.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

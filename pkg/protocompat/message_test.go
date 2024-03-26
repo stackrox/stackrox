@@ -146,3 +146,19 @@ func TestUnmarshal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, msg, decoded)
 }
+
+func TestProtoUnmarshal(t *testing.T) {
+	msg := &storage.NamespaceMetadata{
+		Id:          testconsts.NamespaceA,
+		Name:        "Namespace A",
+		ClusterId:   testconsts.Cluster1,
+		ClusterName: "Cluster 1",
+	}
+	data, err := proto.Marshal(msg)
+	assert.NoError(t, err)
+
+	decoded := &storage.NamespaceMetadata{}
+	err = ProtoUnmarshal(data, decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, msg, decoded)
+}
