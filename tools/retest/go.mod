@@ -1,6 +1,8 @@
 module github.com/stackrox/stackrox/tools/retest
 
-go 1.19
+go 1.21
+
+toolchain go1.21.8
 
 require github.com/google/go-github/v60 v60.0.0
 
