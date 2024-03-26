@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,10 +67,10 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 	v4DataSource := &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}
 	v4MatchReq := &v1.EnrichLocalImageInternalRequest{IndexerVersion: "v4"}
 	v2MatchReq := &v1.EnrichLocalImageInternalRequest{}
-	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: timestamp.NowMinus(reprocessInterval * 2)}}
-	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: timestamp.NowMinus(0)}}
+	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoutils.NowMinus(reprocessInterval * 2)}}
+	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoutils.NowMinus(0)}}
 	v4ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: v2ExpiredScan.Scan.ScanTime, DataSource: v4DataSource}}
-	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: timestamp.NowMinus(0), DataSource: v4DataSource}}
+	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoutils.NowMinus(0), DataSource: v4DataSource}}
 
 	testCases := []struct {
 		desc           string

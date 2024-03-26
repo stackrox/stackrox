@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 // GetOpenPlopObject1 Return an open plop object
@@ -111,7 +111,7 @@ func GetPlopStorage1() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		CloseTimestamp:     protoutils.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
 	}
@@ -124,7 +124,7 @@ func GetPlopStorage2() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		CloseTimestamp:     protoutils.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment5,
 	}
@@ -137,7 +137,7 @@ func GetPlopStorage3() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
-		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		CloseTimestamp:     protoutils.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment3,
 	}
@@ -151,7 +151,7 @@ func GetPlopStorage4() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		CloseTimestamp:     protoutils.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
 		PodUid:             fixtureconsts.PodUID1,
@@ -166,7 +166,7 @@ func GetPlopStorage5() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		CloseTimestamp:     protoutils.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment5,
 		PodUid:             fixtureconsts.PodUID2,
@@ -181,7 +181,7 @@ func GetPlopStorage6() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
-		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		CloseTimestamp:     protoutils.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment3,
 		PodUid:             fixtureconsts.PodUID3,
@@ -195,7 +195,7 @@ func GetPlopStorageExpired1() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     protoutils.NowMinus(1 * time.Hour),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
 		PodUid:             fixtureconsts.PodUID1,
@@ -209,7 +209,7 @@ func GetPlopStorageExpired2() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     protoutils.NowMinus(1 * time.Hour),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment5,
 		PodUid:             fixtureconsts.PodUID2,
@@ -223,7 +223,7 @@ func GetPlopStorageExpired3() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     protoutils.NowMinus(1 * time.Hour),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment3,
 		PodUid:             fixtureconsts.PodUID3,

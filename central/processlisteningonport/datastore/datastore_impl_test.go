@@ -22,11 +22,11 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -2314,7 +2314,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestamp.NowMinus(age),
+			Time: protoutils.NowMinus(age),
 		},
 	}
 }
