@@ -233,6 +233,7 @@ var (
 	ComplianceOperatorScanType               = newFieldLabel("Compliance Scan Type")
 	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
 	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
+	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
