@@ -6,6 +6,10 @@ on:
 jobs:
   upload-dev-vulnerabilities:
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
+      volumes:
+        - /tmp:/tmp # make sure Claircore blob can access tmp folder
     steps:
     - name: Checkout
       uses: actions/checkout@v4
