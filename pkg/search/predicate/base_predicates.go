@@ -5,17 +5,13 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	timestampPtrType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
 func resultIfNullValue(value string) (*search.Result, bool) {
@@ -58,7 +54,7 @@ func createBasePredicate(fullPath string, fieldType reflect.Type, value string) 
 
 func createPtrPredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
 	// Special case for pointer to timestamp.
-	if fieldType == timestampPtrType {
+	if fieldType == protocompat.TimestampPtrType {
 		return createTimestampPredicate(fullPath, value)
 	}
 
