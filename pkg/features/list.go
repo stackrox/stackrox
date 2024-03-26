@@ -87,4 +87,7 @@ var (
 
 	// VulnMgmtNodePlatformCVEs enables new APIs and UI for VM 2.0 Node and Platform CVEs
 	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", false)
+
+	// PersistDeduperState whether we persist the deduper state or not. THIS IS FOR TESTING ONLY.
+	PersistDeduperState = registerFeature("Whether we persist the deduper state or not", "ROX_PERSIST_DEDUPER_STATE", false)
 )

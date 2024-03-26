@@ -39,6 +39,11 @@ type eventPipeline struct {
 	cancelContext context.CancelFunc
 }
 
+// SetStopCallback to be used in case Sensor needs to be gracefully restarted.
+func (p *eventPipeline) SetStopCallback(fn func(string)) {
+	p.listener.SetStopCallback(fn)
+}
+
 // Capabilities implements common.SensorComponent
 func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 	return nil
