@@ -35,7 +35,7 @@ type DBCloneManager interface {
 	Scan() error
 
 	// GetCloneToMigrate -- retrieves the clone that needs moved to the active database.
-	GetCloneToMigrate(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error)
+	GetCloneToMigrate(rocksVersion *migrations.MigrationVersion) (string, bool, error)
 
 	// Persist -- moves the clone database to be the active database.
 	Persist(clone string) error
