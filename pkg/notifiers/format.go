@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mitre/datastore"
 	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
-	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -140,7 +140,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 		FullMitreAttackVectors: fullMitreVectors,
 		AlertLink:              alertLink,
 		Severity:               SeverityString(alert.Policy.Severity),
-		Time:                   readable.ProtoTime(alert.Time),
+		Time:                   protoconv.ProtoTime(alert.Time),
 	}
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:

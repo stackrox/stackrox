@@ -90,17 +90,12 @@ func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp
 	flowsToBeUpserted := make([]*storage.NetworkFlow, 0, len(updatedFlows))
 	for indicator, ts := range updatedFlows {
 		toBeUpserted := &storage.NetworkFlow{
-			Props:             indicator.ToNetworkFlowPropertiesProto(),
-			LastSeenTimestamp: convertTS(ts),
+			Props: indicator.ToNetworkFlowPropertiesProto(),
+		}
+		if ts != 0 {
+			toBeUpserted.LastSeenTimestamp = ts.GogoProtobuf()
 		}
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
 	}
 	return flowsToBeUpserted
-}
-
-func convertTS(ts timestamp.MicroTS) *types.Timestamp {
-	if ts == 0 {
-		return nil
-	}
-	return ts.GogoProtobuf()
 }

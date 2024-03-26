@@ -16,9 +16,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -331,7 +331,7 @@ func newReportSnapshot(
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 runState,
 			ReportRequestType:        runMethod,
-			CompletedAt:              timestamp.NowMinus(age),
+			CompletedAt:              protoconv.NowMinus(age),
 			ReportNotificationMethod: notificationMethod,
 		},
 	}

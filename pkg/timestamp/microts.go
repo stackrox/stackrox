@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
@@ -75,11 +74,6 @@ func (ts MicroTS) Protobuf() *timestamp.Timestamp {
 	}
 }
 
-// GogoProtobuf converts this microtimestamp to a (Gogo) protobuf representation.
-func (ts MicroTS) GogoProtobuf() *types.Timestamp {
-	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
-}
-
 // ElapsedSince returns the time elapsed since the given timestamp, as a `time.Duration`.
 func (ts MicroTS) ElapsedSince(otherTS MicroTS) time.Duration {
 	return time.Duration(ts-otherTS) * time.Microsecond
@@ -105,4 +99,9 @@ type ProtoTimestamp interface {
 // FromProtobuf converts the given protobuf timestamp message to a microtimestamp.
 func FromProtobuf(ts ProtoTimestamp) MicroTS {
 	return MicroTS(ts.GetSeconds()*microsecondsPerSecond + int64(ts.GetNanos()/nanosecondsPerMicrosecond))
+}
+
+// GogoProtobuf converts this microtimestamp to a (Gogo) protobuf representation.
+func (ts MicroTS) GogoProtobuf() *protocompat.Timestamp {
+	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
 }

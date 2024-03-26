@@ -2,7 +2,6 @@ package ocm
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -13,8 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -97,13 +94,8 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 func (c *ocmClient) mapToDiscoveredClusters(subs []*accountsmgmtv1.Subscription) ([]*discoveredclusters.DiscoveredCluster, error) {
 	clusters := make([]*discoveredclusters.DiscoveredCluster, 0, len(subs))
 	clusterIDs := set.NewStringSet()
-	var createClusterErrs error
 	for _, sub := range subs {
-		createdTime, err := protocompat.ConvertTimeToTimestampOrError(sub.CreatedAt())
-		if err != nil {
-			createClusterErrs = errors.Join(createClusterErrs, errox.InvariantViolation.New("converting timestamp").CausedBy(err))
-			continue
-		}
+		createdTime := sub.CreatedAt()
 		// We've seen duplicates being returned from the API and the search query doesn't seem to support DISTINCT
 		// or unique as key-value.
 		if clusterIDs.Contains(sub.ExternalClusterID()) {
@@ -115,15 +107,12 @@ func (c *ocmClient) mapToDiscoveredClusters(subs []*accountsmgmtv1.Subscription)
 			Type:              getClusterMetadataType(sub),
 			ProviderType:      getProviderType(sub),
 			Region:            sub.RegionID(),
-			FirstDiscoveredAt: createdTime,
+			FirstDiscoveredAt: &createdTime,
 			CloudSourceID:     c.cloudSourceID,
 		})
 		clusterIDs.Add(sub.ExternalClusterID())
 	}
 
-	if createClusterErrs != nil {
-		return nil, createClusterErrs
-	}
 	return clusters, nil
 }
 

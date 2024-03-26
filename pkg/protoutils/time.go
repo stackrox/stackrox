@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 const (
@@ -25,4 +27,14 @@ func Sub(ts1, ts2 *types.Timestamp) time.Duration {
 func After(ts1, ts2 *types.Timestamp) bool {
 	diff := Sub(ts1, ts2)
 	return diff > 0
+}
+
+// RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
+func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
+	if err != nil {
+		return
+	}
+	newTS := protoconv.ConvertTimeToTimestamp(t.Round(d))
+	*ts = *newTS
 }

@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -297,19 +296,14 @@ func getErrorResponse(resp *http.Response) error {
 
 func (c *paladinClient) mapAssetToDiscoveredCluster(asset Asset) (*discoveredclusters.DiscoveredCluster, error) {
 	d := &discoveredclusters.DiscoveredCluster{
-		ID:            asset.GetID(),
-		Name:          asset.GetName(),
-		Type:          asset.GetType(),
-		ProviderType:  asset.GetProviderType(),
-		Region:        asset.Region,
-		CloudSourceID: c.cloudSourceID,
+		ID:                asset.GetID(),
+		Name:              asset.GetName(),
+		Type:              asset.GetType(),
+		ProviderType:      asset.GetProviderType(),
+		Region:            asset.Region,
+		CloudSourceID:     c.cloudSourceID,
+		FirstDiscoveredAt: &asset.FirstDiscoveredAt,
 	}
-
-	firstDiscoveredAt, err := protocompat.ConvertTimeToTimestampOrError(asset.FirstDiscoveredAt)
-	if err != nil {
-		return nil, errox.InvariantViolation.New("converting timestamps").CausedBy(err)
-	}
-	d.FirstDiscoveredAt = firstDiscoveredAt
 
 	return d, nil
 }

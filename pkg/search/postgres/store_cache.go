@@ -19,7 +19,7 @@ import (
 
 // NewGenericStoreWithCache returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithCache[T any, PT clonedUnmarshaler[T]](
+func NewGenericStoreWithCache[T any, PT protocompat.ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -65,7 +65,7 @@ func NewGenericStoreWithCache[T any, PT clonedUnmarshaler[T]](
 
 // NewGenericStoreWithCacheAndPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithCacheAndPermissionChecker[T any, PT clonedUnmarshaler[T]](
+func NewGenericStoreWithCacheAndPermissionChecker[T any, PT protocompat.ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -108,7 +108,7 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT clonedUnmarshaler[T]
 }
 
 // cachedStore implements subset of Store interface for resources with single ID.
-type cachedStore[T any, PT clonedUnmarshaler[T]] struct {
+type cachedStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
 	schema                        *walker.Schema
 	pkGetter                      primaryKeyGetter[T, PT]
 	setCacheOperationDurationTime durationTimeSetter

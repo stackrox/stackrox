@@ -10,7 +10,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,19 +29,11 @@ func TestClient_GetAssets(t *testing.T) {
 
 	testCluster1FirstDiscoveredAt, err := time.Parse(timeFormat, "2023-11-28 08:00:00+0000")
 	require.NoError(t, err)
-	testCluster1FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster1FirstDiscoveredAt)
-	require.NoError(t, err)
 	testCluster2FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
-	require.NoError(t, err)
-	testCluster2FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster2FirstDiscoveredAt)
 	require.NoError(t, err)
 	testCluster3FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-01 13:52:00+0000")
 	require.NoError(t, err)
-	testCluster3FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster3FirstDiscoveredAt)
-	require.NoError(t, err)
 	testCluster4FirstDiscoveredAt, err := time.Parse(timeFormat, "2024-02-09 08:00:00+0000")
-	require.NoError(t, err)
-	testCluster4FirstDiscoveredAtTS, err := protocompat.ConvertTimeToTimestampOrError(testCluster4FirstDiscoveredAt)
 	require.NoError(t, err)
 
 	expectedDiscoveredClusters := []*discoveredclusters.DiscoveredCluster{
@@ -53,7 +44,7 @@ func TestClient_GetAssets(t *testing.T) {
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
 			Region:            "eastus",
 			CloudSourceID:     "id",
-			FirstDiscoveredAt: testCluster1FirstDiscoveredAtTS,
+			FirstDiscoveredAt: &testCluster1FirstDiscoveredAt,
 		},
 		{
 			ID:                "1231245342513",
@@ -62,7 +53,7 @@ func TestClient_GetAssets(t *testing.T) {
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
 			Region:            "us-central1-c",
 			CloudSourceID:     "id",
-			FirstDiscoveredAt: testCluster2FirstDiscoveredAtTS,
+			FirstDiscoveredAt: &testCluster2FirstDiscoveredAt,
 		},
 		{
 			ID:                "1231234124123541",
@@ -71,7 +62,7 @@ func TestClient_GetAssets(t *testing.T) {
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
 			Region:            "us-central1",
 			CloudSourceID:     "id",
-			FirstDiscoveredAt: testCluster3FirstDiscoveredAtTS,
+			FirstDiscoveredAt: &testCluster3FirstDiscoveredAt,
 		},
 		{
 			ID:                "arn:aws:eks:us-east-1:test-account:cluster/test-cluster-4",
@@ -80,7 +71,7 @@ func TestClient_GetAssets(t *testing.T) {
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
 			Region:            "us-east-1",
 			CloudSourceID:     "id",
-			FirstDiscoveredAt: testCluster4FirstDiscoveredAtTS,
+			FirstDiscoveredAt: &testCluster4FirstDiscoveredAt,
 		},
 	}
 
