@@ -287,6 +287,7 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 	ctx context.Context,
 	deployment *storage.Deployment,
 	includePorts bool,
+	setSelected bool,
 ) (*node, error) {
 	if isProtectedDeployment(deployment) {
 		return nil, errors.New("cannot generate policy for a protected deployment")
@@ -302,18 +303,25 @@ func (g *generator) generateNodeFromBaselineForDeployment(
 
 	deploymentNode := createNode(networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deployment.GetId()})
 	deploymentNode.deployment = deployment
+	deploymentNode.selected = setSelected
 
 	// Temporarily elevate permissions to obtain all deployments in cluster.
 	elevatedCtx := sac.WithAllAccess(ctx)
 	// Since we only generate ingress flows, we only look at ingress peers for policy generation
+	log.Debugf("Baseline for deployment %s - %s in namespace %s. (locked: %t) (observation period: %v)",
+		deployment.GetId(), deployment.GetName(), deployment.GetNamespace(),
+		baseline.GetLocked(), baseline.GetObservationPeriodEnd())
 	for _, peer := range baseline.GetPeers() {
+		log.Debugf("Baseline Peer for deployment %s - %s in namespace %s: %+v", deployment.GetId(), deployment.GetName(), deployment.GetNamespace(), peer)
 		peerNode := g.populateNode(elevatedCtx, peer.GetEntity().GetInfo().GetId(), peer.GetEntity().GetInfo().GetType())
 		if peerNode == nil {
 			// Peer deployment probably has been deleted.
 			continue
 		}
 		for _, props := range peer.GetProperties() {
+			log.Debugf("Properties from peer node %+v --> %+v", peer.GetEntity().GetInfo(), props)
 			if !props.GetIngress() {
+				log.Debugf("Not ingress")
 				continue
 			}
 			var port portDesc
