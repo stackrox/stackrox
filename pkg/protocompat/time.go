@@ -6,6 +6,7 @@ import (
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -31,8 +32,8 @@ var (
 type Timestamp = gogoTimestamp.Timestamp
 
 // TimestampNow returns a protobuf timestamp set to the current time.
-func TimestampNow() *gogoTimestamp.Timestamp {
-	return gogoTimestamp.TimestampNow()
+func TimestampNow() *timestamppb.Timestamp {
+	return timestamppb.Now()
 }
 
 // ConvertTimestampToCSVString converts a proto timestamp to a string for display in a CSV report.
