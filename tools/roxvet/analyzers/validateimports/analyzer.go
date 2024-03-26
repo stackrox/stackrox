@@ -73,10 +73,6 @@ var (
 				"github.com/stackrox/rox/pkg/protoutils",
 				// The packages below should be removed from the set
 				// once migrated to the compatibility layer (above three packages).
-				"github.com/stackrox/rox/central/audit",
-				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
-				"github.com/stackrox/rox/pkg/db/mapcache",
-				"github.com/stackrox/rox/pkg/notifier",
 				"github.com/stackrox/rox/pkg/postgres/pgutils",
 				"github.com/stackrox/rox/pkg/search/postgres",
 			),
