@@ -105,7 +105,7 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 	for fileName, pkgEntry := range probeFilesInPackage {
 		mf.Files = append(mf.Files, &v1.ProbeUploadManifest_File{
 			Name:  fileName,
-			Size_: int64(pkgEntry.UncompressedSize64),
+			Size:  int64(pkgEntry.UncompressedSize64),
 			Crc32: pkgEntry.CRC32,
 		})
 		readerFuncs = append(readerFuncs, readerFuncForZipEntry(pkgEntry))
