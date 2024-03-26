@@ -3,6 +3,7 @@ package internaltov2storage
 import (
 	"strings"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -66,5 +67,6 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 		Warning:     sensorData.GetWarning(),
 		Controls:    controls,
 		ClusterId:   clusterID,
+		RuleRefId:   BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
 	}
 }

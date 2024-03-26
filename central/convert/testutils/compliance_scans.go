@@ -78,6 +78,6 @@ func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
 		CreatedTime:      startTime,
 		LastExecutedTime: endTime,
 		ProductType:      "",
-		ScanRefId:        internaltov2storage.BuildScanRefID(fixtureconsts.Cluster1, "ocp-cis"),
+		ScanRefId:        internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, "ocp-cis"),
 	}
 }
