@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 const (
@@ -35,4 +36,23 @@ func MustGetProtoTimestampFromRFC3339NanoString(timeStr string) *types.Timestamp
 	timestamp, err := protocompat.GetProtoTimestampFromRFC3339NanoString(timeStr)
 	utils.CrashOnError(err)
 	return timestamp
+}
+
+// NowMinus substracts a specified amount of time from the current timestamp
+func NowMinus(t time.Duration) *types.Timestamp {
+	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+// TimeBeforeDays subtracts a specified number of days from the current timestamp
+func TimeBeforeDays(days int) *types.Timestamp {
+	return NowMinus(24 * time.Duration(days) * time.Hour)
+}
+
+// RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
+func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
+	if err != nil {
+		return
+	}
+	*ts = *protoconv.ConvertTimeToTimestamp(t.Round(d))
 }
