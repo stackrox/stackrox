@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	migVer "github.com/stackrox/rox/migrator/version"
-	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -17,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func upgrade(_ *config.Config, dbClone string, _ bool) error {
+func upgrade(dbClone string) error {
 	var gormDB *gorm.DB
 	var pgPool postgres.DB
 	var err error

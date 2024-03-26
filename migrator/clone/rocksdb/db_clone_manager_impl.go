@@ -123,11 +123,6 @@ func (d *dbCloneManagerImpl) safeRemove(clone string) {
 	delete(d.cloneMap, clone)
 }
 
-func (d *dbCloneManagerImpl) contains(clone string) bool {
-	_, ok := d.cloneMap[clone]
-	return ok
-}
-
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the clone link, path to database and error if fails.
 func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
@@ -195,57 +190,6 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
 	}
 
 	return CurrentClone, d.getPath(d.cloneMap[CurrentClone].GetDirName()), nil
-}
-
-// Persist - replaces current clone with upgraded one.
-func (d *dbCloneManagerImpl) Persist(cloneName string) error {
-	if !d.contains(cloneName) {
-		utils.CrashOnError(errors.New("Unexpected clone to persist"))
-	}
-	log.Infof("Persisting upgraded clone: %s", cloneName)
-
-	switch cloneName {
-	case RestoreClone:
-		return d.doPersist(cloneName, BackupClone)
-	case CurrentClone:
-		// No need to persist
-	case TempClone:
-		return d.doPersist(cloneName, PreviousClone)
-	case PreviousClone:
-		return d.doPersist(cloneName, "")
-	default:
-		utils.CrashOnError(errors.Errorf("commit with unknown clone: %s", cloneName))
-	}
-	return nil
-}
-
-func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
-	// Remove prev clone if exist.
-	if prev != "" {
-		d.safeRemove(prev)
-
-		// prev -> current
-		if err := fileutils.AtomicSymlink(d.cloneMap[CurrentClone].GetDirName(), d.getPath(prev)); err != nil {
-			return err
-		}
-		d.cloneMap[prev] = d.cloneMap[CurrentClone]
-	}
-
-	// current -> clone
-	if err := fileutils.AtomicSymlink(d.cloneMap[cloneName].GetDirName(), d.getPath(CurrentClone)); err != nil {
-		return err
-	}
-
-	currClone := d.cloneMap[CurrentClone].GetDirName()
-	d.cloneMap[CurrentClone] = d.cloneMap[cloneName]
-
-	if prev == "" {
-		d.safeRemove(currClone)
-	}
-
-	// Remove clone symbolic link only, if exists.
-	_ = os.Remove(d.getPath(cloneName))
-	return nil
 }
 
 func (d *dbCloneManagerImpl) getPath(cloneLink string) string {

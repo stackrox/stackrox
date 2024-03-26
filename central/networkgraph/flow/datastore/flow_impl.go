@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
@@ -27,7 +26,7 @@ type flowDataStoreImpl struct {
 	deletedDeploymentsCache   expiringcache.Cache
 }
 
-func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	flows, ts, err := fds.storage.GetAllFlows(ctx, since)
 	if err != nil {
 		return nil, nil, nil
@@ -40,7 +39,7 @@ func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Time
 	return flows, ts, nil
 }
 
-func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	flows, ts, err := fds.storage.GetMatchingFlows(ctx, pred, since)
 	if err != nil {
 		return nil, nil, nil

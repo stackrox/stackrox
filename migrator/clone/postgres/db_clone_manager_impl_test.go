@@ -199,10 +199,10 @@ func (s *PostgresCloneManagerSuite) TestGetRestoreClone() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
+	s.Nil(err)
 	s.Equal(clone, migrations.RestoreDatabase)
 	s.False(migrateRocks)
-	s.Nil(err)
 }
 
 func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
@@ -221,20 +221,20 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 		LastPersisted: time.Now(),
 	}
 
-	// No central_active exists so we return the temp clone to use and migrate to rocks
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(CurrentClone, clone)
+	// No central_active exists so we return the temp clone to use and migrate from rocks
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion)
+	s.EqualError(err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
+	s.Equal("", clone)
 	s.True(migrateRocks)
-	s.Nil(err)
 
 	// Need to migrate from Rocks because Rocks exists and Postgres is fresh.
 	pgtest.CreateDatabase(s.T(), migrations.CurrentDatabase)
 
 	// Still migrate from Rocks because no version in Postgres meaning it is empty
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(CurrentClone, clone)
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
+	s.EqualError(err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
+	s.Equal("", clone)
 	s.True(migrateRocks)
-	s.Nil(err)
 
 	// Set central_active version
 	currVersion := &storage.Version{
@@ -246,11 +246,11 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 
 	// Need to re-scan to get the updated clone version
 	s.Nil(dbm.Scan())
-	// Need to use use the Postgres database so migrateRocks will be false.
-	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
+	// Need to use the Postgres database so migrateRocks will be false.
+	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion)
+	s.Nil(err)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
-	s.Nil(err)
 }
 
 func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {
@@ -262,7 +262,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -285,7 +285,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneCurrentCurrent() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(CurrentClone, clone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -308,7 +308,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgrade() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(TempClone, clone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -331,7 +331,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgradeSameSeq() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(CurrentClone, clone)
 	s.False(migrateRocks)
 	s.Nil(err)
@@ -364,23 +364,8 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 	// Scan the clones
 	s.Nil(dbm.Scan())
 
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, false)
+	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil)
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
-	s.Nil(err)
-}
-
-func (s *PostgresCloneManagerSuite) TestGetRestoreFromRocksClone() {
-	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
-	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-
-	dbm := New("", s.config, s.sourceMap)
-
-	// Scan the clones
-	s.Nil(dbm.Scan())
-
-	clone, migrateRocks, err := dbm.GetCloneToMigrate(nil, true)
-	s.Equal(clone, migrations.RestoreDatabase)
-	s.True(migrateRocks)
 	s.Nil(err)
 }

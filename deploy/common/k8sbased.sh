@@ -370,10 +370,10 @@ function launch_central {
       fi
 
       if [[ "${CGO_CHECKS}" == "true" ]]; then
-        echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+        echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
         helm_args+=(
-          --set customize.central.envVars.GODEBUG=cgocheck=2
+          --set customize.central.envVars.GOEXPERIMENT=cgocheck2
           --set customize.central.envVars.MUTEX_WATCHDOG_TIMEOUT_SECS=15
         )
       fi
@@ -483,9 +483,9 @@ function launch_central {
         ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then
-        echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+        echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
-        ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
+        ${ORCH_CMD} -n stackrox set env deploy/central GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
       fi
 
       # set logging options

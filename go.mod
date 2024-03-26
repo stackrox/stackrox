@@ -1,6 +1,8 @@
 module github.com/stackrox/rox
 
-go 1.19
+go 1.21
+
+toolchain go1.21.7
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.6
@@ -14,7 +16,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/RoaringBitmap/roaring v1.9.0
+	github.com/RoaringBitmap/roaring v1.9.1
 	github.com/Shopify/toxiproxy/v2 v2.8.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.8.0
@@ -44,7 +46,7 @@ require (
 	github.com/google/certificate-transparency-go v1.1.7
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.19.0
+	github.com/google/go-containerregistry v0.19.1
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/gorilla/schema v1.2.1

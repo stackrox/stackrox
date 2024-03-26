@@ -2,6 +2,7 @@ package networkflowupdate
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -20,9 +21,12 @@ type flowPersisterImpl struct {
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) error {
+func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error {
 	now := timestamp.Now()
-	updateMicroTS := timestamp.FromProtobuf(updateTS)
+	var updateMicroTS timestamp.MicroTS
+	if updateTS != nil {
+		updateMicroTS = timestamp.FromGoTime(*updateTS)
+	}
 
 	flowsByIndicator := getFlowsByIndicator(newFlows, updateMicroTS, now)
 	if err := s.baselines.ProcessFlowUpdate(flowsByIndicator); err != nil {
@@ -46,7 +50,10 @@ func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.C
 		return err
 	}
 
-	closeTS := timestamp.FromProtobuf(lastUpdateTS)
+	var closeTS timestamp.MicroTS
+	if lastUpdateTS != nil {
+		closeTS = timestamp.FromGoTime(*lastUpdateTS)
+	}
 	if closeTS == 0 {
 		closeTS = timestamp.Now()
 	}

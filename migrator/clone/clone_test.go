@@ -5,7 +5,6 @@ package clone
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/migrator/clone/metadata"
@@ -97,9 +96,9 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(c.toVersion, "")
+			require.NoError(t, mock.upgradeCentral(c.toVersion, ""))
 			if c.furtherToVersion != nil {
-				mock.upgradeCentral(c.furtherToVersion, "")
+				require.NoError(t, mock.upgradeCentral(c.furtherToVersion, ""))
 			}
 		})
 	}
@@ -109,21 +108,8 @@ func createAndRunCentral(t *testing.T, ver *versionPair, runBoth bool) *mockCent
 	mock := createCentral(t, runBoth)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
-	mock.runMigrator("", "")
+	require.NoError(t, mock.runMigrator("", ""))
 	mock.runCentral()
-	return mock
-}
-
-// createAndRunCentralStartRocks - creates a central that has both Rocks and Postgres but it only
-// starts Rocks to help simulate the condition of having a Rocks and then upgrading to Postgres.
-func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool) *mockCentral {
-	mock := createCentral(t, runBoth)
-	mock.setVersion = setVersion
-	mock.setVersion(t, ver)
-
-	mock.runMigrator("", "")
-	mock.runCentral()
-
 	return mock
 }
 
@@ -182,14 +168,14 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			// Migration aborted
-			mock.upgradeCentral(c.toVersion, c.breakPoint)
+			require.NoError(t, mock.upgradeCentral(c.toVersion, c.breakPoint))
 			if reboot {
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			}
 			if c.furtherToVersion != nil {
 				// Run migrator multiple times
-				mock.runMigrator("", "")
-				mock.upgradeCentral(c.furtherToVersion, "")
+				require.NoError(t, mock.runMigrator("", ""))
+				require.NoError(t, mock.upgradeCentral(c.furtherToVersion, ""))
 			}
 		})
 	}
@@ -198,20 +184,18 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 func TestCloneRestore(t *testing.T) {
 	// This will test restore for Rocks -> Rocks or Postgres -> Postgres depending on
 	// the test is executed with the Postgres env variable set or not.
-	testCloneRestore(t, false)
-
-	// Test restore again for the case of restoring Rocks -> Postgres
-	testCloneRestore(t, true)
+	testCloneRestore(t)
 }
 
-func testCloneRestore(t *testing.T, rocksToPostgres bool) {
+func testCloneRestore(t *testing.T) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
 	testCases := []struct {
-		description string
-		toVersion   *versionPair
-		breakPoint  string
+		description     string
+		toVersion       *versionPair
+		breakPoint      string
+		rocksToPostgres bool
 	}{
 		{
 			description: "Restore to earlier version",
@@ -251,6 +235,11 @@ func testCloneRestore(t *testing.T, rocksToPostgres bool) {
 			toVersion:   &currVer,
 			breakPoint:  breakBeforePersist,
 		},
+		{
+			description:     "Restore to earlier RocksDB version",
+			toVersion:       &preHistoryVer,
+			rocksToPostgres: true,
+		},
 	}
 
 	for _, c := range testCases {
@@ -259,21 +248,22 @@ func testCloneRestore(t *testing.T, rocksToPostgres bool) {
 			c.description = c.description + " with reboot"
 		}
 
-		if rocksToPostgres {
-			c.description = c.description + " rocksDB to Postgres"
-		}
-
 		t.Run(c.description, func(t *testing.T) {
 			log.Infof("Test = %q", c.description)
-			mock := createAndRunCentral(t, &preHistoryVer, rocksToPostgres)
+			mock := createAndRunCentral(t, &preHistoryVer, c.rocksToPostgres)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(&currVer, "")
-			mock.restoreCentral(c.toVersion, c.breakPoint, rocksToPostgres)
-			if reboot {
-				mock.rebootCentral()
+			require.NoError(t, mock.upgradeCentral(&currVer, ""))
+			err := mock.restoreCentral(c.toVersion, c.breakPoint, c.rocksToPostgres)
+			if c.rocksToPostgres {
+				require.EqualError(t, err, "Effective release 4.5, restores from pre-4.0 releases are no longer supported.")
+				return
 			}
-			mock.upgradeCentral(&futureVer, "")
+
+			if reboot {
+				require.NoError(t, mock.rebootCentral())
+			}
+			require.NoError(t, mock.upgradeCentral(&futureVer, ""))
 		})
 	}
 }
@@ -350,7 +340,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			}
 			mock := createAndRunCentral(t, ver, false)
 			defer mock.destroyCentral()
-			mock.upgradeCentral(&c.toVersion, "")
+			require.NoError(t, mock.upgradeCentral(&c.toVersion, ""))
 			if !c.withPrevious {
 				mock.removePreviousClone()
 			}
@@ -373,7 +363,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 				assert.EqualError(t, err, expectedError)
 			} else {
 				assert.NoError(t, err)
-				mock.rollbackCentral(&currVer, "", c.forceRollback)
+				require.NoError(t, mock.rollbackCentral(&currVer, "", c.forceRollback))
 			}
 
 		})
@@ -460,100 +450,9 @@ func doTestRollback(t *testing.T) {
 			mock := createAndRunCentral(t, c.toVersion, false)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(c.fromVersion, c.breakPoint)
-			mock.rollbackCentral(c.toVersion, "", c.toVersion.version)
-			mock.upgradeCentral(c.fromVersion, "")
-		})
-	}
-}
-
-// TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
-func TestRollbackPostgresToRocks(t *testing.T) {
-	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	currVer = releaseVer
-	doTestRollbackPostgresToRocks(t)
-	currVer = devVer
-	doTestRollbackPostgresToRocks(t)
-	currVer = rcVer
-	doTestRollbackPostgresToRocks(t)
-	currVer = nightlyVer
-	doTestRollbackPostgresToRocks(t)
-}
-
-func doTestRollbackPostgresToRocks(t *testing.T) {
-	if buildinfo.ReleaseBuild {
-		return
-	}
-	testCases := []struct {
-		description string
-		fromVersion *versionPair
-		toVersion   *versionPair // version to failback to
-		breakPoint  string
-	}{
-		{
-			description: "Rollback to current",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-		},
-		{
-			description: "Rollback to version 57",
-			fromVersion: &postgresDBVer,
-			toVersion:   &preVer,
-		},
-		{
-			description: "Rollback to current break before persist",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-			breakPoint:  breakBeforePersist,
-		},
-		{
-			description: "Rollback to version 57 break before persist",
-			fromVersion: &postgresDBVer,
-			toVersion:   &preVer,
-			breakPoint:  breakBeforePersist,
-		},
-		{
-			description: "Rollback to current break after scan",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-			breakPoint:  breakAfterScan,
-		},
-		{
-			description: "Rollback to version 57 break after scan",
-			fromVersion: &postgresDBVer,
-			toVersion:   &preVer,
-			breakPoint:  breakAfterScan,
-		},
-		{
-			description: "Rollback to current break after get clone",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-			breakPoint:  breakAfterGetClone,
-		},
-		{
-			description: "Rollback to version 57 break after get clone",
-			fromVersion: &postgresDBVer,
-			toVersion:   &preVer,
-			breakPoint:  breakAfterGetClone,
-		},
-	}
-	rand.Seed(8056)
-	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
-		if reboot {
-			c.description = c.description + " with reboot"
-		}
-		log.Infof("Test = %q", c.description)
-
-		t.Run(c.description, func(t *testing.T) {
-			mock := createAndRunCentralStartRocks(t, c.toVersion, true)
-			defer mock.destroyCentral()
-			mock.setVersion = setVersion
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
-
-			mock.rollbackCentral(c.toVersion, "", c.toVersion.version)
-			mock.upgradeCentral(c.fromVersion, "")
+			require.NoError(t, mock.upgradeCentral(c.fromVersion, c.breakPoint))
+			require.NoError(t, mock.rollbackCentral(c.toVersion, "", c.toVersion.version))
+			require.NoError(t, mock.upgradeCentral(c.fromVersion, ""))
 		})
 	}
 }
@@ -583,7 +482,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Rollback breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.migrateWithVersion(&futureVer, breakBeforePersist, "")
+				require.NoError(t, m.migrateWithVersion(&futureVer, breakBeforePersist, ""))
 				setVersion(t, &currVer)
 			},
 		},
@@ -594,10 +493,10 @@ func TestRacingConditionInPersist(t *testing.T) {
 				log.Infof("Test = %q", c.description)
 				mock := createAndRunCentral(t, &preVer, false)
 				defer mock.destroyCentral()
-				mock.upgradeCentral(&currVer, "")
+				require.NoError(t, mock.upgradeCentral(&currVer, ""))
 				c.preRun(mock)
 				mock.runMigratorWithBreaksInPersist(breakpoint)
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			})
 		}
 
@@ -664,25 +563,30 @@ func TestUpgradeFromLastRocksDB(t *testing.T) {
 			}
 
 			mock.setVersion(t, c.toVersion)
-			mock.runMigrator("", "")
+			err := mock.runMigrator("", "")
+			if c.fromRocks && err != nil {
+				require.EqualError(t, err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
+				return
+			}
+
+			require.NoError(t, err)
+
 			mock.runCentral()
-			mock.upgradeCentral(c.toVersion, "")
+			err = mock.upgradeCentral(c.toVersion, "")
+			if c.fromRocks {
+				require.EqualError(t, err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
+				return
+			}
+			require.NoError(t, err)
+
 			mock.verifyCurrent()
 
 			// Again on the fresh install case we don't touch rocks so it won't be updated.
-			if c.fromRocks {
-				if strings.HasPrefix(c.fromVersion.version, "3.74.") {
-					mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: c.fromVersion.version, seqNum: migrations.LastRocksDBVersionSeqNum()})
-				} else {
-					mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()})
-				}
-				if c.previousVerion != nil {
-					mock.verifyClone(rocksdb.PreviousClone, &versionPair{version: c.previousVerion.version, seqNum: c.previousVerion.seqNum})
-				}
-			} else {
-				// Rocks should have then empty version if we fresh installed Postgres.
-				mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "0", seqNum: 0})
+			if c.fromRocks && err == nil {
+				require.Fail(t, "This case is not valid")
 			}
+			// Rocks should have then empty version if we fresh installed Postgres.
+			mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "0", seqNum: 0})
 		})
 	}
 }

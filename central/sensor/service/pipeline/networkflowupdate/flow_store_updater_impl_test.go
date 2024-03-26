@@ -57,7 +57,7 @@ func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
-	firstTimestamp := protoconv.ConvertTimeToTimestamp(time.Now())
+	firstTimestamp := time.Now()
 	storedFlows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -66,7 +66,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: firstTimestamp,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNow(&firstTimestamp),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -83,11 +83,11 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: firstTimestamp,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNow(&firstTimestamp),
 		},
 	}
 
-	secondTimestamp := protoconv.ConvertTimeToTimestamp(time.Now())
+	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -105,7 +105,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: secondTimestamp,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
 		},
 	}
 
@@ -132,7 +132,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, firstTimestamp, nil)
+	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, &firstTimestamp, nil)
 
 	suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
 		expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{
@@ -159,7 +159,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				},
 				DstPort:  2,
 				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			}: timestamp.FromProtobuf(secondTimestamp),
+			}: timestamp.FromGoTime(secondTimestamp),
 		}
 
 		if len(expectedMap) != len(got) {
@@ -206,6 +206,6 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}), gomock.Any()).Return(nil)
 
 	// Run test.
-	err := suite.tested.update(suite.hasWriteCtx, newFlows, secondTimestamp)
+	err := suite.tested.update(suite.hasWriteCtx, newFlows, &secondTimestamp)
 	suite.NoError(err, "update should succeed on first insert")
 }

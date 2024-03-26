@@ -1,9 +1,9 @@
 package clone
 
 import (
+	"github.com/pkg/errors"
 	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
-	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
@@ -46,59 +46,32 @@ func (d *dbCloneManagerImpl) Scan() error {
 
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the clone link, path to database, postgres database name and error if fails.
-func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, string, error) {
+func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, error) {
 	var pgClone string
 	var migrateFromRocks bool
 	var err error
 
 	// We have to support the restoration of legacy backups for a couple of releases.  This allows us to determine
 	// if we are dealing with that case.
-	restoreFromRocks := d.dbmRocks.CheckForRestore()
-
-	// Get the version of the Rocks Current so Postgres manager can use that info
-	// to determine what clone it needs to migrate.
-	var rocksVersion *migrations.MigrationVersion
-	if restoreFromRocks {
-		rocksVersion = d.dbmRocks.GetVersion(rocksdb.RestoreClone)
-	} else {
-		rocksVersion = d.dbmRocks.GetVersion(rocksdb.CurrentClone)
+	if d.dbmRocks.CheckForRestore() {
+		return "", errors.New("Effective release 4.5, restores from pre-4.0 releases are no longer supported.")
 	}
 
-	pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(rocksVersion, restoreFromRocks)
+	pgClone, migrateFromRocks, err = d.dbmPostgres.GetCloneToMigrate(d.dbmRocks.GetVersion(rocksdb.CurrentClone))
 	if err != nil {
-		return "", "", "", err
+		return "", err
 	}
 
-	// If we need to migrate from rocks we need to continue processing and
-	// get the Rocks clones.  If we don't, there is no need to process Rocks, but
-	// we will check to see if we can get rid of rocks
-	if !migrateFromRocks {
-		return "", "", pgClone, nil
+	// If we are doing an upgrade from 3.74 or prior to 4.5 or later we throw an error as that is no longer supported.
+	if migrateFromRocks {
+		return "", errors.New("Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
 	}
 
-	// Get the RocksDB clone we are migrating
-	clone, clonePath, err := d.dbmRocks.GetCloneToMigrate()
-	if err != nil {
-		if migrateFromRocks {
-			return "", "", "", err
-		}
-		log.Warnf("unable to determine Rocks clone.  Continuing with postgres.  %v", err)
-	}
-
-	return clone, clonePath, pgClone, nil
+	return pgClone, nil
 }
 
 // Persist - replaces current clone with upgraded one.
-func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBoth bool) error {
-	// We need to persist the Rocks previous, so it is there in case of a rollback.  In the case of
-	// an upgrade that will generate a previous, the Temp Clone will be the one RocksDB persists.
-	// During the persist operation the Current clone will move to Previous and Temp will move to Current.
-	if persistBoth && (cloneName == rocksdb.TempClone || cloneName == rocksdb.RestoreClone) {
-		if err := d.dbmRocks.Persist(cloneName); err != nil {
-			log.Warnf("Unable to create a previous version of Rocks to rollback to: %v", err)
-		}
-	}
-
+func (d *dbCloneManagerImpl) Persist(pgClone string) error {
 	// External DB does not use clone copies so simply return once migration is complete
 	if d.external {
 		return nil

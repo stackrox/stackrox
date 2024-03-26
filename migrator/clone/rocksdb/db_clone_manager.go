@@ -45,9 +45,6 @@ type DBCloneManager interface {
 	// GetCloneToMigrate -- retrieves the clone that needs moved to the actived database.
 	GetCloneToMigrate() (string, string, error)
 
-	// Persist -- moves the clone database to be the active database.
-	Persist(cloneName string) error
-
 	// GetVersion -- gets the version of the clone
 	GetVersion(cloneName string) *migrations.MigrationVersion
 
