@@ -5,9 +5,7 @@ package m182tom183
 import (
 	"context"
 	"testing"
-	"time"
 
-	protobufTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	apiTokenStore "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/apitokenstore"
 	groupStore "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/groupstore"
@@ -131,8 +129,8 @@ var (
 		Id:         "12345678-9ABC-DEF0-AAAA-222222222222",
 		Name:       "Test Token 1",
 		Roles:      []string{"Admin", "Vulnerability Management Requester"},
-		IssuedAt:   getTime("17/09/1991"),
-		Expiration: getTime("17/09/1992"),
+		IssuedAt:   protoconv.ConvertTimeString("1991-09-17T00:00Z"),
+		Expiration: protoconv.ConvertTimeString("1992-09-17T00:00Z"),
 		Revoked:    false,
 	}
 
@@ -140,8 +138,8 @@ var (
 		Id:         "12345678-9ABC-DEF0-AAAA-333333333333",
 		Name:       "Test Token 2",
 		Roles:      []string{scopeManagerObjectName, "Vulnerability Management Requester"},
-		IssuedAt:   getTime("17/12/2003"),
-		Expiration: getTime("17/12/2004"),
+		IssuedAt:   protoconv.ConvertTimeString("2003-12-17T00:00Z"),
+		Expiration: protoconv.ConvertTimeString("2004-12-17T00:00Z"),
 		Revoked:    false,
 	}
 
@@ -171,11 +169,6 @@ var (
 		RoleName: scopeManagerObjectName,
 	}
 )
-
-func getTime(formattedValue string) *protobufTypes.Timestamp {
-	t, _ := time.Parse("DD/MM/YYYY", formattedValue)
-	return protoconv.ConvertTimeToTimestamp(t)
-}
 
 func (s *migrationTestSuite) TestMigrationNoReference() {
 	inputAPITokens := []*storage.TokenMetadata{
