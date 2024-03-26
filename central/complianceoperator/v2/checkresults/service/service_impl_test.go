@@ -788,12 +788,10 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileResults() {
 			results, err := s.service.GetComplianceProfileResults(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
+				s.Require().Equal(tc.expectedResp, results)
 			} else {
 				s.Require().Error(tc.expectedErr, err)
-			}
-
-			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results)
+				s.Require().Nil(results)
 			}
 		})
 	}
