@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import {
     AngleDoubleDownIcon,
     AngleDoubleUpIcon,
@@ -24,13 +24,25 @@ import { PolicySeverity } from 'types/policy.proto';
 // For example, colors={count === 0 ? noViolationsColor: undefined} prop.
 
 export const CriticalSeverityIcon = (props) => (
-    <Icon color={props.color ?? CRITICAL_SEVERITY_COLOR}>
+    <Icon
+        style={
+            {
+                '--pf-v5-c-icon__content--Color': props.color ?? CRITICAL_SEVERITY_COLOR,
+            } as CSSProperties
+        }
+    >
         <CriticalRiskIcon {...props} />
     </Icon>
 );
 
 export const ImportantSeverityIcon = (props) => (
-    <Icon color={props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR}>
+    <Icon
+        style={
+            {
+                '--pf-v5-c-icon__content--Color': props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR,
+            } as CSSProperties
+        }
+    >
         <AngleDoubleUpIcon {...props} />
     </Icon>
 );
@@ -38,7 +50,13 @@ export const ImportantSeverityIcon = (props) => (
 export const HighSeverityIcon = ImportantSeverityIcon; // High is for policy severity
 
 export const ModerateSeverityIcon = (props) => (
-    <Icon color={props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR}>
+    <Icon
+        style={
+            {
+                '--pf-v5-c-icon__content--Color': props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR,
+            } as CSSProperties
+        }
+    >
         <EqualsIcon {...props} />
     </Icon>
 );
@@ -46,13 +64,25 @@ export const ModerateSeverityIcon = (props) => (
 export const MediumSeverityIcon = ModerateSeverityIcon; // Medium is for policy severity
 
 export const LowSeverityIcon = (props) => (
-    <Icon color={props.color ?? LOW_SEVERITY_COLOR}>
+    <Icon
+        style={
+            {
+                '--pf-v5-c-icon__content--Color': props.color ?? LOW_SEVERITY_COLOR,
+            } as CSSProperties
+        }
+    >
         <AngleDoubleDownIcon {...props} />
     </Icon>
 );
 
 export const UnknownSeverityIcon = (props) => (
-    <Icon color={props.color ?? UNKNOWN_SEVERITY_COLOR}>
+    <Icon
+        style={
+            {
+                '--pf-v5-c-icon__content--Color': props.color ?? UNKNOWN_SEVERITY_COLOR,
+            } as CSSProperties
+        }
+    >
         <UnknownIcon {...props} />
     </Icon>
 );

@@ -4,6 +4,11 @@
    We should have a goal of eventually being able to delete this file.
  */
 
+body {
+    /* Overrides the tailwind default font-family that clashes with the upgrade to PF 5 */
+    font-family: var(--pf-v5-global--FontFamily--text);
+}
+
 .ReactModal__Content,
 #main-page-container > div > :not(.pf-v5-c-page__main-section) {
   font-size: 0.875rem;
@@ -51,18 +56,11 @@
     border-top: var(--pf-v5-global--BorderColor--100) var(--pf-v5-global--BorderWidth--sm) solid;
 }
 
-/* overrides for forms, until we remove Tailwind */
-.pf-v5-c-check__input {
-    height: var(--pf-v5-c-check__input--Height);
-    width: var(--pf-v5-c-check__input--Height);
-}
-
 .pf-v5-c-form-control {
     border-top-color: var(--pf-v5-global--BorderColor--300);
     border-right-color: var(--pf-v5-global--BorderColor--300);
     border-bottom-color: var(--pf-v5-global--BorderColor--200);
     border-left-color: var(--pf-v5-global--BorderColor--300);
-    padding: var(--pf-v5-c-form-control--PaddingTop) var(--pf-v5-c-form-control--PaddingRight) var(--pf-v5-c-form-control--PaddingBottom) var(--pf-v5-c-form-control--PaddingLeft);
 }
 
 .pf-v5-c-form-control:disabled {
@@ -124,15 +122,7 @@
 
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
-.pf-v5-c-button__icon.pf-m-start svg,
-.pf-v5-c-button__icon.pf-m-end svg,
-.pf-v5-c-empty-state__content svg,
-.pf-v5-c-progress__status-icon svg,
-.pf-v5-c-table__toggle-icon svg,
-.pf-v5-c-expandable-section__toggle-icon svg,
-.chr-c-feedback-modal svg,
-.pf-v5-c-breadcrumb__item-divider svg,
-.pf-v5-c-modal-box__title-icon svg {
+.pf-v5-c-page svg {
     display: inline;
 }
 

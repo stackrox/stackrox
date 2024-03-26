@@ -337,13 +337,6 @@ function CollectionForm({
                     <Flex direction={{ default: 'column', lg: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <FormGroup label="Name" fieldId="name" isRequired={!isReadOnly}>
-                                <FormHelperText>
-                                    <HelperText>
-                                        <HelperTextItem variant={nameError ? 'error' : 'default'}>
-                                            {nameError}
-                                        </HelperTextItem>
-                                    </HelperText>
-                                </FormHelperText>
                                 <TextInput
                                     id="name"
                                     name="name"
@@ -361,6 +354,13 @@ function CollectionForm({
                                     onBlur={handleBlur}
                                     readOnlyVariant={isReadOnly ? 'plain' : undefined}
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameError ? 'error' : 'default'}>
+                                            {nameError}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </FormGroup>
                         </FlexItem>
                         <FlexItem flex={{ default: 'flex_2' }}>
