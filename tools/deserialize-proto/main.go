@@ -15,6 +15,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
+
 	// This will register all proto types in the package,
 	// making it possible to retrieve the message type by name.
 	_ "github.com/stackrox/rox/generated/storage"
