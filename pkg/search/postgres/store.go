@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -36,27 +36,21 @@ var (
 	errInvalidOperation = errors.New("invalid operation, function not set up")
 )
 
-type clonedUnmarshaler[T any] interface {
-	Clone() *T
-	proto.Unmarshaler
-	*T
-}
-
 // Deleter is an interface that allow deletions of multiple identifiers
 type Deleter interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
 }
 
-type primaryKeyGetter[T any, PT clonedUnmarshaler[T]] func(obj PT) string
+type primaryKeyGetter[T any, PT protocompat.ClonedUnmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
-type inserter[T any, PT clonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
-type copier[T any, PT clonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
-type upsertChecker[T any, PT clonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
+type inserter[T any, PT protocompat.ClonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
+type copier[T any, PT protocompat.ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
+type upsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
 // Store is the interface to interact with the storage for the generic type T.
-type Store[T any, PT unmarshaler[T]] interface {
+type Store[T any, PT protocompat.Unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
@@ -75,7 +69,7 @@ type Store[T any, PT unmarshaler[T]] interface {
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
-type genericStore[T any, PT clonedUnmarshaler[T]] struct {
+type genericStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
 	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
@@ -91,7 +85,7 @@ type genericStore[T any, PT clonedUnmarshaler[T]] struct {
 
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStore[T any, PT clonedUnmarshaler[T]](
+func NewGenericStore[T any, PT protocompat.ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -127,7 +121,7 @@ func NewGenericStore[T any, PT clonedUnmarshaler[T]](
 
 // NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT clonedUnmarshaler[T]](
+func NewGenericStoreWithPermissionChecker[T any, PT protocompat.ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -515,7 +509,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 }
 
 // GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func GloballyScopedUpsertChecker[T any, PT clonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+func GloballyScopedUpsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {
