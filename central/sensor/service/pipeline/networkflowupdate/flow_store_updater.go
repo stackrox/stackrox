@@ -2,8 +2,8 @@ package networkflowupdate
 
 import (
 	"context"
+	"time"
 
-	protobuf "github.com/gogo/protobuf/types"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,7 +11,7 @@ import (
 )
 
 type flowPersister interface {
-	update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error
+	update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error
 }
 
 func newFlowPersister(flowStore datastore.FlowDataStore, networkBaselines networkBaselineManager.Manager) flowPersister {
