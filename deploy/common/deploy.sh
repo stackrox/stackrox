@@ -50,7 +50,7 @@ popd
 # arguments:
 #   - anything else `curl` will accept, including the URL
 function curl_central_once() {
-    cmd=(curl --silent --show-error --insecure)
+    local cmd=(curl --silent --show-error --insecure)
     local admin_user="${ROX_ADMIN_USER:-admin}"
     if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
         cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
@@ -71,7 +71,7 @@ function curl_central_retry() {
     # On top of --retry we do our own retry loop, to make sure no corner cases slip through.
     # https://github.com/curl/curl/issues/6712#issuecomment-796534491
     for _ in $(seq 3); do
-        if "${cmd[@]}" --fail --retry 3 --retry-delay "${delay_sec}" --retry-connrefused "$@" > "${tmp_out}"; then
+        if curl_central_once --fail --retry 3 --retry-delay "${delay_sec}" --retry-connrefused "$@" > "${tmp_out}"; then
             cat "${tmp_out}"
             rm -f "${tmp_out}"
             return 0
