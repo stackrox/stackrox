@@ -69,19 +69,21 @@ func (x *complianceServiceCommunicateClient) Recv() (*MsgToCompliance, error) {
 }
 
 // ComplianceServiceServer is the server API for ComplianceService service.
-// All implementations should embed UnimplementedComplianceServiceServer
+// All implementations must embed UnimplementedComplianceServiceServer
 // for forward compatibility
 type ComplianceServiceServer interface {
 	Communicate(ComplianceService_CommunicateServer) error
+	mustEmbedUnimplementedComplianceServiceServer()
 }
 
-// UnimplementedComplianceServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedComplianceServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedComplianceServiceServer struct {
 }
 
 func (UnimplementedComplianceServiceServer) Communicate(ComplianceService_CommunicateServer) error {
 	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
 }
+func (UnimplementedComplianceServiceServer) mustEmbedUnimplementedComplianceServiceServer() {}
 
 // UnsafeComplianceServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ComplianceServiceServer will

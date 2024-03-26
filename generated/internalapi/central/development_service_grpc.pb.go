@@ -94,7 +94,7 @@ func (c *developmentServiceClient) ReconciliationStatsByCluster(ctx context.Cont
 }
 
 // DevelopmentServiceServer is the server API for DevelopmentService service.
-// All implementations should embed UnimplementedDevelopmentServiceServer
+// All implementations must embed UnimplementedDevelopmentServiceServer
 // for forward compatibility
 type DevelopmentServiceServer interface {
 	ReplicateImage(context.Context, *ReplicateImageRequest) (*Empty, error)
@@ -102,9 +102,10 @@ type DevelopmentServiceServer interface {
 	RandomData(context.Context, *RandomDataRequest) (*RandomDataResponse, error)
 	EnvVars(context.Context, *Empty) (*EnvVarsResponse, error)
 	ReconciliationStatsByCluster(context.Context, *Empty) (*ReconciliationStatsByClusterResponse, error)
+	mustEmbedUnimplementedDevelopmentServiceServer()
 }
 
-// UnimplementedDevelopmentServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedDevelopmentServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedDevelopmentServiceServer struct {
 }
 
@@ -123,6 +124,7 @@ func (UnimplementedDevelopmentServiceServer) EnvVars(context.Context, *Empty) (*
 func (UnimplementedDevelopmentServiceServer) ReconciliationStatsByCluster(context.Context, *Empty) (*ReconciliationStatsByClusterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReconciliationStatsByCluster not implemented")
 }
+func (UnimplementedDevelopmentServiceServer) mustEmbedUnimplementedDevelopmentServiceServer() {}
 
 // UnsafeDevelopmentServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to DevelopmentServiceServer will

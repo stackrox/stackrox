@@ -133,7 +133,7 @@ func (c *notifierServiceClient) TestUpdatedNotifier(ctx context.Context, in *Upd
 }
 
 // NotifierServiceServer is the server API for NotifierService service.
-// All implementations should embed UnimplementedNotifierServiceServer
+// All implementations must embed UnimplementedNotifierServiceServer
 // for forward compatibility
 type NotifierServiceServer interface {
 	// GetNotifier returns the notifier configuration given its ID.
@@ -152,9 +152,10 @@ type NotifierServiceServer interface {
 	UpdateNotifier(context.Context, *UpdateNotifierRequest) (*Empty, error)
 	// TestUpdatedNotifier checks if the given notifier is correctly configured, with optional stored credential reconciliation.
 	TestUpdatedNotifier(context.Context, *UpdateNotifierRequest) (*Empty, error)
+	mustEmbedUnimplementedNotifierServiceServer()
 }
 
-// UnimplementedNotifierServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNotifierServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNotifierServiceServer struct {
 }
 
@@ -182,6 +183,7 @@ func (UnimplementedNotifierServiceServer) UpdateNotifier(context.Context, *Updat
 func (UnimplementedNotifierServiceServer) TestUpdatedNotifier(context.Context, *UpdateNotifierRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TestUpdatedNotifier not implemented")
 }
+func (UnimplementedNotifierServiceServer) mustEmbedUnimplementedNotifierServiceServer() {}
 
 // UnsafeNotifierServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to NotifierServiceServer will

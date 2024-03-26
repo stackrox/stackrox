@@ -82,15 +82,16 @@ func (x *podServiceExportPodsClient) Recv() (*ExportPodResponse, error) {
 }
 
 // PodServiceServer is the server API for PodService service.
-// All implementations should embed UnimplementedPodServiceServer
+// All implementations must embed UnimplementedPodServiceServer
 // for forward compatibility
 type PodServiceServer interface {
 	// GetPods returns the pods.
 	GetPods(context.Context, *RawQuery) (*PodsResponse, error)
 	ExportPods(*ExportPodRequest, PodService_ExportPodsServer) error
+	mustEmbedUnimplementedPodServiceServer()
 }
 
-// UnimplementedPodServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedPodServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedPodServiceServer struct {
 }
 
@@ -100,6 +101,7 @@ func (UnimplementedPodServiceServer) GetPods(context.Context, *RawQuery) (*PodsR
 func (UnimplementedPodServiceServer) ExportPods(*ExportPodRequest, PodService_ExportPodsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportPods not implemented")
 }
+func (UnimplementedPodServiceServer) mustEmbedUnimplementedPodServiceServer() {}
 
 // UnsafePodServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PodServiceServer will

@@ -47,19 +47,21 @@ func (c *imageServiceClient) GetImage(ctx context.Context, in *GetImageRequest, 
 }
 
 // ImageServiceServer is the server API for ImageService service.
-// All implementations should embed UnimplementedImageServiceServer
+// All implementations must embed UnimplementedImageServiceServer
 // for forward compatibility
 type ImageServiceServer interface {
 	GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error)
+	mustEmbedUnimplementedImageServiceServer()
 }
 
-// UnimplementedImageServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedImageServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedImageServiceServer struct {
 }
 
 func (UnimplementedImageServiceServer) GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetImage not implemented")
 }
+func (UnimplementedImageServiceServer) mustEmbedUnimplementedImageServiceServer() {}
 
 // UnsafeImageServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ImageServiceServer will

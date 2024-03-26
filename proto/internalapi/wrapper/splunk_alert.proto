@@ -4,7 +4,7 @@ package wrapper;
 
 import "google/protobuf/any.proto";
 
-option go_package = "wrapper";
+option go_package = "./;wrapper";
 
 // Splunk notification needs the source of data
 // and the type of data.

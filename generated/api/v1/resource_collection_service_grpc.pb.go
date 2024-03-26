@@ -124,7 +124,7 @@ func (c *collectionServiceClient) DryRunCollection(ctx context.Context, in *DryR
 }
 
 // CollectionServiceServer is the server API for CollectionService service.
-// All implementations should embed UnimplementedCollectionServiceServer
+// All implementations must embed UnimplementedCollectionServiceServer
 // for forward compatibility
 type CollectionServiceServer interface {
 	ListCollectionSelectors(context.Context, *Empty) (*ListCollectionSelectorsResponse, error)
@@ -135,9 +135,10 @@ type CollectionServiceServer interface {
 	ListCollections(context.Context, *ListCollectionsRequest) (*ListCollectionsResponse, error)
 	DeleteCollection(context.Context, *ResourceByID) (*Empty, error)
 	DryRunCollection(context.Context, *DryRunCollectionRequest) (*DryRunCollectionResponse, error)
+	mustEmbedUnimplementedCollectionServiceServer()
 }
 
-// UnimplementedCollectionServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedCollectionServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedCollectionServiceServer struct {
 }
 
@@ -165,6 +166,7 @@ func (UnimplementedCollectionServiceServer) DeleteCollection(context.Context, *R
 func (UnimplementedCollectionServiceServer) DryRunCollection(context.Context, *DryRunCollectionRequest) (*DryRunCollectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DryRunCollection not implemented")
 }
+func (UnimplementedCollectionServiceServer) mustEmbedUnimplementedCollectionServiceServer() {}
 
 // UnsafeCollectionServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to CollectionServiceServer will

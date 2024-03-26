@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "internalapi/scanner/v4/common.proto";
 import "internalapi/scanner/v4/vulnerability_report.proto";
 
-option go_package = "v4";
+option go_package = "./;v4";
 
 message GetVulnerabilitiesRequest {
   string hash_id = 1;

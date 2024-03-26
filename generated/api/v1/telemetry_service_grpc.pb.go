@@ -75,7 +75,7 @@ func (c *telemetryServiceClient) GetConfig(ctx context.Context, in *Empty, opts 
 }
 
 // TelemetryServiceServer is the server API for TelemetryService service.
-// All implementations should embed UnimplementedTelemetryServiceServer
+// All implementations must embed UnimplementedTelemetryServiceServer
 // for forward compatibility
 type TelemetryServiceServer interface {
 	// Deprecated: Do not use.
@@ -83,9 +83,10 @@ type TelemetryServiceServer interface {
 	// Deprecated: Do not use.
 	ConfigureTelemetry(context.Context, *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error)
 	GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error)
+	mustEmbedUnimplementedTelemetryServiceServer()
 }
 
-// UnimplementedTelemetryServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedTelemetryServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedTelemetryServiceServer struct {
 }
 
@@ -98,6 +99,7 @@ func (UnimplementedTelemetryServiceServer) ConfigureTelemetry(context.Context, *
 func (UnimplementedTelemetryServiceServer) GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
+func (UnimplementedTelemetryServiceServer) mustEmbedUnimplementedTelemetryServiceServer() {}
 
 // UnsafeTelemetryServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to TelemetryServiceServer will

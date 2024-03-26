@@ -71,20 +71,23 @@ func (x *networkConnectionInfoServicePushNetworkConnectionInfoClient) Recv() (*N
 }
 
 // NetworkConnectionInfoServiceServer is the server API for NetworkConnectionInfoService service.
-// All implementations should embed UnimplementedNetworkConnectionInfoServiceServer
+// All implementations must embed UnimplementedNetworkConnectionInfoServiceServer
 // for forward compatibility
 type NetworkConnectionInfoServiceServer interface {
 	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
 	// send anything via this stream.
 	PushNetworkConnectionInfo(NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error
+	mustEmbedUnimplementedNetworkConnectionInfoServiceServer()
 }
 
-// UnimplementedNetworkConnectionInfoServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNetworkConnectionInfoServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNetworkConnectionInfoServiceServer struct {
 }
 
 func (UnimplementedNetworkConnectionInfoServiceServer) PushNetworkConnectionInfo(NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	return status.Errorf(codes.Unimplemented, "method PushNetworkConnectionInfo not implemented")
+}
+func (UnimplementedNetworkConnectionInfoServiceServer) mustEmbedUnimplementedNetworkConnectionInfoServiceServer() {
 }
 
 // UnsafeNetworkConnectionInfoServiceServer may be embedded to opt out of forward compatibility for this service.

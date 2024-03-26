@@ -6,7 +6,7 @@ import "internalapi/sensor/collector.proto";
 import "internalapi/sensor/network_connection_info.proto";
 
 option cc_enable_arenas = true;
-option go_package = "sensor";
+option go_package = "./;sensor";
 
 message NetworkConnectionInfoMessage {
   oneof msg {

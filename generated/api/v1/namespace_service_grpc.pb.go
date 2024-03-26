@@ -58,14 +58,15 @@ func (c *namespaceServiceClient) GetNamespace(ctx context.Context, in *ResourceB
 }
 
 // NamespaceServiceServer is the server API for NamespaceService service.
-// All implementations should embed UnimplementedNamespaceServiceServer
+// All implementations must embed UnimplementedNamespaceServiceServer
 // for forward compatibility
 type NamespaceServiceServer interface {
 	GetNamespaces(context.Context, *GetNamespaceRequest) (*GetNamespacesResponse, error)
 	GetNamespace(context.Context, *ResourceByID) (*Namespace, error)
+	mustEmbedUnimplementedNamespaceServiceServer()
 }
 
-// UnimplementedNamespaceServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedNamespaceServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedNamespaceServiceServer struct {
 }
 
@@ -75,6 +76,7 @@ func (UnimplementedNamespaceServiceServer) GetNamespaces(context.Context, *GetNa
 func (UnimplementedNamespaceServiceServer) GetNamespace(context.Context, *ResourceByID) (*Namespace, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNamespace not implemented")
 }
+func (UnimplementedNamespaceServiceServer) mustEmbedUnimplementedNamespaceServiceServer() {}
 
 // UnsafeNamespaceServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to NamespaceServiceServer will

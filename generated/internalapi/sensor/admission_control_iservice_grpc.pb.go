@@ -81,14 +81,15 @@ func (c *admissionControlManagementServiceClient) PolicyAlerts(ctx context.Conte
 }
 
 // AdmissionControlManagementServiceServer is the server API for AdmissionControlManagementService service.
-// All implementations should embed UnimplementedAdmissionControlManagementServiceServer
+// All implementations must embed UnimplementedAdmissionControlManagementServiceServer
 // for forward compatibility
 type AdmissionControlManagementServiceServer interface {
 	Communicate(AdmissionControlManagementService_CommunicateServer) error
 	PolicyAlerts(context.Context, *AdmissionControlAlerts) (*emptypb.Empty, error)
+	mustEmbedUnimplementedAdmissionControlManagementServiceServer()
 }
 
-// UnimplementedAdmissionControlManagementServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedAdmissionControlManagementServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedAdmissionControlManagementServiceServer struct {
 }
 
@@ -97,6 +98,8 @@ func (UnimplementedAdmissionControlManagementServiceServer) Communicate(Admissio
 }
 func (UnimplementedAdmissionControlManagementServiceServer) PolicyAlerts(context.Context, *AdmissionControlAlerts) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PolicyAlerts not implemented")
+}
+func (UnimplementedAdmissionControlManagementServiceServer) mustEmbedUnimplementedAdmissionControlManagementServiceServer() {
 }
 
 // UnsafeAdmissionControlManagementServiceServer may be embedded to opt out of forward compatibility for this service.
