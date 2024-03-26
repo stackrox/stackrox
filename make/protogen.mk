@@ -28,6 +28,7 @@ MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_VT_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_vtproto.pb.go)
+GENERATED_GOGO_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_gogo.pb.go)
 GENERATED_API_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
@@ -46,6 +47,7 @@ $(call go-tool, VTPROTO_BIN, github.com/planetscale/vtprotobuf/cmd/protoc-gen-go
 $(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2, tools/proto)
 $(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway, tools/proto)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
+$(call go-tool, PROTOC_GEN_GOGO_BIN, github.com/stackrox/stackrox/tools/proto/protoc-gen-go-gogo, tools/proto)
 
 ##############
 ## Protobuf ##
@@ -191,10 +193,25 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--go_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
-		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go="${PROTOC_GEN_GO_BIN}" \
 		--plugin protoc-gen-go-vtproto="${VTPROTO_BIN}" \
+		$<
+
+# Generate proto messages
+$(GENERATED_BASE_PATH)/%_gogo.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_GRPC_BIN) $(ALL_PROTOS) $(PROTOC) $(PROTOC_GEN_GOGO_BIN)
+	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
+	$(SILENT)mkdir -p $(dir $@)
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		-I$(PROTOC_INCLUDES) \
+		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_PROTO_BASE_PATH) \
+		--go-gogo_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
+		--plugin protoc-gen-go-gogo="${PROTOC_GEN_GOGO_BIN}" \
 		$<
 
 # Generate gRPC services.

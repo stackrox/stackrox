@@ -6,6 +6,7 @@ import (
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -17,8 +18,8 @@ var (
 )
 
 // TimestampNow returns a protobuf timestamp set to the current time.
-func TimestampNow() *gogoTimestamp.Timestamp {
-	return gogoTimestamp.TimestampNow()
+func TimestampNow() *timestamppb.Timestamp {
+	return timestamppb.Now()
 }
 
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.

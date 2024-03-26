@@ -5,7 +5,7 @@ import pathlib
 
 
 GENERATED_EXTENSIONS = sorted(
-    [".pb.go", "_vtproto.pb.go", ".pb.gw.go", ".swagger.json", "_grpc.pb.go"],
+    [".pb.go", "_vtproto.pb.go", "_gogo.pb.go", ".pb.gw.go", ".swagger.json", "_grpc.pb.go"],
     key=len, reverse=True)
 
 
