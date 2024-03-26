@@ -99,7 +99,7 @@ function DeploymentSelector({
     const deploymentSelectMenu = (
         <Menu onSelect={onDeploymentSelect} selected={selectedDeployments} isScrollable>
             <MenuSearch>
-                <MenuSearchInput className="pf-v5-u-p-md">
+                <MenuSearchInput>
                     <SearchInput
                         value={input}
                         aria-label="Filter deployments"

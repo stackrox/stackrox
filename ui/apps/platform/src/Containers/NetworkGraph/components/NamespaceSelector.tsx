@@ -127,7 +127,7 @@ function NamespaceSelector({
     const namespaceSelectMenu = (
         <Menu onSelect={onNamespaceSelect} selected={selectedNamespaces} isScrollable>
             <MenuSearch>
-                <MenuSearchInput className="pf-v5-u-p-md">
+                <MenuSearchInput>
                     <SearchInput
                         value={input}
                         aria-label="Filter namespaces"

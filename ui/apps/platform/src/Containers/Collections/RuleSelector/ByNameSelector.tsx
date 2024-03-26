@@ -127,13 +127,6 @@ function ByNameSelector({
                                     className="rule-selector-name-value-input"
                                     fieldId={inputId}
                                 >
-                                    <FormHelperText>
-                                        <HelperText>
-                                            <HelperTextItem variant={inputValidated}>
-                                                {errorMessage}
-                                            </HelperTextItem>
-                                        </HelperText>
-                                    </FormHelperText>
                                     <TextInput
                                         id={inputId}
                                         aria-label={inputAriaLabel}
@@ -146,6 +139,13 @@ function ByNameSelector({
                                         value={value}
                                         isDisabled={isDisabled}
                                     />
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem variant={inputValidated}>
+                                                {errorMessage}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                 </FormGroup>
                             </div>
                             {!isDisabled && (
