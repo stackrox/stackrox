@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // GenerateNetworkFlowViolation constructs violation message for network flow violations.
