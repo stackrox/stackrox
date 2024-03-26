@@ -1353,7 +1353,7 @@ send_slack_failure_summary() {
     fi
 
     local mention_author=""
-    _do_we_at_the_author
+    _set_mention_author
 
     local slack_attachments=""
     _make_slack_failure_attachments
