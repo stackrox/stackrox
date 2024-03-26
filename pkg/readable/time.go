@@ -2,12 +2,6 @@ package readable
 
 import (
 	"time"
-
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 const (
