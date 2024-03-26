@@ -379,7 +379,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            source ./scripts/ci/lib.sh
+            source ./scripts/ci/lib.shh
             echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
             push_context=""
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
