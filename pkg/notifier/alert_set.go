@@ -3,9 +3,9 @@ package notifier
 import (
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // AlertSet is a layer over an expiring cache specifically for alerts.
@@ -27,7 +27,7 @@ type alertSetImpl struct {
 }
 
 func (as *alertSetImpl) Add(alert *storage.Alert) {
-	as.alerts.Add(alert.GetId(), proto.Clone(alert))
+	as.alerts.Add(alert.GetId(), protocompat.Clone(alert))
 }
 
 func (as *alertSetImpl) Remove(id string) {
