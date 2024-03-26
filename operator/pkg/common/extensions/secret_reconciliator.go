@@ -180,11 +180,11 @@ func (r *SecretReconciliator) applyOwnershipStrategy(secret *coreV1.Secret) bool
 		shouldUpdate = true
 	}
 
-	if r.ownershipStrategy == OwnershipStrategyLabel && getIsManagedByOwnerRef(secret, r.obj) {
+	if r.ownershipStrategy == OwnershipStrategyLabel && isManagedByOwnerRef(secret, r.obj) {
 		// Secret should be using label, but is using ownerReference, so remove it
 		removeOwnerReference(secret, r.obj)
 		shouldUpdate = true
-	} else if r.ownershipStrategy == OwnershipStrategyOwnerReference && !getIsManagedByOwnerRef(secret, r.obj) {
+	} else if r.ownershipStrategy == OwnershipStrategyOwnerReference && !isManagedByOwnerRef(secret, r.obj) {
 		// Secret should be using ownerReference, but doesn't have one, so set it
 		addOwnerReference(secret, r.obj)
 		shouldUpdate = true
@@ -214,14 +214,14 @@ func addOwnerReference(secret *coreV1.Secret, obj types.K8sObject) {
 	secret.SetOwnerReferences(append(secret.GetOwnerReferences(), *ownerRef))
 }
 
-func getIsManagedByOwnerRef(secret *coreV1.Secret, obj types.K8sObject) bool {
+func isManagedByOwnerRef(secret *coreV1.Secret, obj types.K8sObject) bool {
 	return metav1.IsControlledBy(secret, obj)
 }
 
-func getIsManagedByLabel(secret *coreV1.Secret) bool {
+func isManagedByLabel(secret *coreV1.Secret) bool {
 	return secret.Labels != nil && secret.Labels[commonLabels.ManagedByLabel] == commonLabels.ManagedByValue
 }
 
 func isSecretManaged(secret *coreV1.Secret, obj types.K8sObject) bool {
-	return getIsManagedByOwnerRef(secret, obj) || getIsManagedByLabel(secret)
+	return isManagedByOwnerRef(secret, obj) || isManagedByLabel(secret)
 }
