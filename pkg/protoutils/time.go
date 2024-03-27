@@ -30,24 +30,6 @@ func After(ts1, ts2 *types.Timestamp) bool {
 	return diff > 0
 }
 
-// MustGetProtoTimestampFromRFC3339NanoString generates a proto timestamp from a time string in RFC3339Nano format.
-// The function panics if an error is raised in the conversion process.
-func MustGetProtoTimestampFromRFC3339NanoString(timeStr string) *types.Timestamp {
-	timestamp, err := protocompat.GetProtoTimestampFromRFC3339NanoString(timeStr)
-	utils.CrashOnError(err)
-	return timestamp
-}
-
-// NowMinus substracts a specified amount of time from the current timestamp
-func NowMinus(t time.Duration) *types.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
-}
-
-// TimeBeforeDays subtracts a specified number of days from the current timestamp
-func TimeBeforeDays(days int) *types.Timestamp {
-	return NowMinus(24 * time.Duration(days) * time.Hour)
-}
-
 // RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
 func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
 	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
