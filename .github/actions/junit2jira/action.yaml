@@ -5,7 +5,7 @@ branding:
   color: 'blue'
 inputs:
   create-jiras:
-    description: 'Weather to report failures to jira'
+    description: 'Whether to report failures to Jira'
     required: false
     default: 'true'
   gcp-account:
@@ -47,7 +47,7 @@ runs:
         extra_args=(--dry-run)
         echo "Will use junit2jira to create CSV for BigQuery input"
       else
-        echo "Will create JIRA issues for junit failures found in ${{ inputs.directory }}"
+        echo "Will create JIRA issues for JUnit failures found in ${{ inputs.directory }}"
       fi
       csv_output="$(mktemp --suffix=.csv)"
       ./junit2jira \
