@@ -1,5 +1,4 @@
 import React from 'react';
-import { gql } from '@apollo/client';
 import {
     Flex,
     LabelGroup,
@@ -18,7 +17,7 @@ import { getDateTime } from 'utils/dateUtils';
 import { getDistroLinkText } from '../../utils/textUtils';
 import { sortCveDistroList } from '../../utils/sortUtils';
 
-export type ImageCveMetadata = {
+export type NodeCveMetadata = {
     cve: string;
     firstDiscoveredInSystem: string | null;
     distroTuples: {
@@ -28,42 +27,42 @@ export type ImageCveMetadata = {
     }[];
 };
 
-export const imageCveMetadataFragment = gql`
-    fragment ImageCVEMetadata on ImageCVECore {
-        cve
-        firstDiscoveredInSystem
-        distroTuples {
-            summary
-            link
-            operatingSystem
-        }
-    }
-`;
-
-export type ImageCvePageHeaderProps = {
-    data?: ImageCveMetadata;
+export type NodeCvePageHeaderProps = {
+    data: NodeCveMetadata | undefined;
 };
 
-function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
-    const prioritizedDistros = uniqBy(
-        sortCveDistroList(data?.distroTuples ?? []),
-        getDistroLinkText
-    );
-    return data ? (
+function NodeCvePageHeader({ data }: NodeCvePageHeaderProps) {
+    if (!data) {
+        return (
+            <Flex
+                direction={{ default: 'column' }}
+                spaceItems={{ default: 'spaceItemsXs' }}
+                className="pf-u-w-50"
+            >
+                <Skeleton screenreaderText="Loading CVE name" fontSize="2xl" />
+                <Skeleton screenreaderText="Loading CVE metadata" height="100px" />
+            </Flex>
+        );
+    }
+
+    const prioritizedDistros = uniqBy(sortCveDistroList(data.distroTuples), getDistroLinkText);
+    const topDistro = prioritizedDistros[0];
+
+    return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Title headingLevel="h1" className="pf-u-mb-sm">
                 {data.cve}
             </Title>
-            <LabelGroup numLabels={1}>
-                {data.firstDiscoveredInSystem && (
+            {data.firstDiscoveredInSystem && (
+                <LabelGroup numLabels={1}>
                     <Label>
                         First discovered in system {getDateTime(data.firstDiscoveredInSystem)}
                     </Label>
-                )}
-            </LabelGroup>
-            {prioritizedDistros.length > 0 && (
+                </LabelGroup>
+            )}
+            {topDistro && (
                 <>
-                    <Text>{prioritizedDistros[0].summary}</Text>
+                    <Text>{topDistro.summary}</Text>
                     <List isPlain>
                         {prioritizedDistros.map((distro) => (
                             <ListItem key={distro.operatingSystem}>
@@ -78,16 +77,7 @@ function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
                 </>
             )}
         </Flex>
-    ) : (
-        <Flex
-            direction={{ default: 'column' }}
-            spaceItems={{ default: 'spaceItemsXs' }}
-            className="pf-u-w-50"
-        >
-            <Skeleton screenreaderText="Loading CVE name" fontSize="2xl" />
-            <Skeleton screenreaderText="Loading CVE metadata" fontSize="sm" />
-        </Flex>
     );
 }
 
-export default ImageCvePageHeader;
+export default NodeCvePageHeader;
