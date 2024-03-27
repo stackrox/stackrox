@@ -2,8 +2,8 @@ package queue
 
 import (
 	"container/list"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -11,7 +11,7 @@ import (
 type DeploymentObservation struct {
 	DeploymentID   string
 	InObservation  bool
-	ObservationEnd *types.Timestamp
+	ObservationEnd time.Time
 }
 
 // DeploymentObservationQueue interface for observation queue

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -65,6 +64,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -961,13 +961,16 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 }
 
 func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStatus {
+	lastContactTime := daysAgo(daysSinceLastContact)
 	return &storage.ClusterHealthStatus{
 		SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-		LastContact:        timeBeforeDays(daysSinceLastContact),
+		LastContact:        protocompat.ConvertTimeToTimestampOrNil(&lastContactTime),
 	}
 }
 
 func getCluserRetentionConfig(retentionDays int, createdBeforeDays int, lastUpdatedBeforeHours int) *storage.PrivateConfig {
+	lastUpdateTime := hoursAgo(lastUpdatedBeforeHours)
+	creationTime := daysAgo(createdBeforeDays)
 	return &storage.PrivateConfig{
 		DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
 			RetentionDurationDays: int32(retentionDays),
@@ -976,8 +979,8 @@ func getCluserRetentionConfig(retentionDays int, createdBeforeDays int, lastUpda
 				"k2": "v2",
 				"k3": "v3",
 			},
-			LastUpdated: timeBeforeHours(lastUpdatedBeforeHours),
-			CreatedAt:   timeBeforeDays(createdBeforeDays),
+			LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&lastUpdateTime),
+			CreatedAt:   protocompat.ConvertTimeToTimestampOrNil(&creationTime),
 		}}
 }
 
@@ -1154,15 +1157,12 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 }
 
-func timeBeforeDays(days int) *protoTypes.Timestamp {
-	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
-}
+func daysAgo(days int) time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
 
-func timeBeforeHours(hours int) *protoTypes.Timestamp {
-	return timestampNowMinus(time.Duration(hours) * time.Hour)
-}
+func hoursAgo(hours int) time.Time { return time.Now().Add(-time.Duration(hours) * time.Hour) }
 
 func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
+	alertTime := time.Now().Add(-age)
 	return &storage.ListAlert{
 		Id: id,
 		Entity: &storage.ListAlert_Deployment{
@@ -1170,18 +1170,19 @@ func newListAlertWithDeployment(id string, age time.Duration, deploymentID strin
 		},
 		State:          state,
 		LifecycleStage: stage,
-		Time:           timestampNowMinus(age),
+		Time:           protoconv.ConvertTimeToTimestamp(alertTime),
 	}
 }
 
 func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
+	signalTime := time.Now().Add(-age)
 	return &storage.ProcessIndicator{
 		Id:            id,
 		DeploymentId:  deploymentID,
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestampNowMinus(age),
+			Time: protoconv.ConvertTimeToTimestamp(signalTime),
 		},
 	}
 }
@@ -1312,6 +1313,10 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 	plopID1 := uuid.NewV4().String()
 
+	now := time.Now()
+	aSecondAgo := now.Add(-1 * time.Second)
+	anHourAgo := now.Add(-1 * time.Hour)
+
 	cases := []struct {
 		name              string
 		initialPlops      []*storage.ProcessListeningOnPortStorage
@@ -1347,7 +1352,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					Id:                 plopID1,
 					Port:               1234,
 					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:     timestampNowMinus(1 * time.Second),
+					CloseTimestamp:     protoconv.ConvertTimeToTimestampOrNil(aSecondAgo),
 					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 					Closed:             true,
 					Process: &storage.ProcessIndicatorUniqueKey{
@@ -1370,7 +1375,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					Id:                 plopID1,
 					Port:               1234,
 					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:     timestampNowMinus(1 * time.Hour),
+					CloseTimestamp:     protoconv.ConvertTimeToTimestampOrNil(anHourAgo),
 					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 					Closed:             true,
 					Process: &storage.ProcessIndicatorUniqueKey{
@@ -1587,6 +1592,9 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 }
 
 func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
+	now := time.Now()
+	twentyMinutesAgo := now.Add(-20 * time.Minute)
+	anHourAgo := now.Add(-1 * time.Hour)
 	cases := []struct {
 		name             string
 		flows            []*storage.NetworkFlow
@@ -1597,7 +1605,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "no deployments - remove all flows",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNil(anHourAgo),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1617,7 +1625,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "no deployments - but no flows with deployments",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNil(anHourAgo),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_INTERNET,
@@ -1637,7 +1645,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "no deployments - but flows too recent",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(20 * time.Minute),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNil(twentyMinutesAgo),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1657,7 +1665,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "some deployments with matching flows",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNil(anHourAgo),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1677,7 +1685,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "some deployments with matching src",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNil(anHourAgo),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1697,7 +1705,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "some deployments with matching dst",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNil(anHourAgo),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -2017,6 +2025,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 }
 
 func (s *PruningTestSuite) TestRemoveLogImbues() {
+	now := time.Now()
+	yesterday := now.Add(-24 * time.Hour)
+	sixDaysAgo := now.Add(-24 * 6 * time.Hour)
+	sevenDaysAgo := now.Add(-24 * 7 * time.Hour)
+	eightDaysAgo := now.Add(-24 * 8 * time.Hour)
 	cases := []struct {
 		name                 string
 		logImbues            []*storage.LogImbue
@@ -2027,11 +2040,11 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			name:        "remove Log Imbues that are old",
 			recentlyRun: false,
 			logImbues: []*storage.LogImbue{
-				{Id: "log-1", Timestamp: timestampNowMinus(0)},
-				{Id: "log-2", Timestamp: timestampNowMinus(24 * time.Hour)},
-				{Id: "log-3", Timestamp: timestampNowMinus(24 * 6 * time.Hour)},
-				{Id: "log-4", Timestamp: timestampNowMinus(24 * 7 * time.Hour)},
-				{Id: "log-5", Timestamp: timestampNowMinus(24 * 8 * time.Hour)},
+				{Id: "log-1", Timestamp: protoconv.ConvertTimeToTimestampOrNil(now)},
+				{Id: "log-2", Timestamp: protoconv.ConvertTimeToTimestampOrNil(yesterday)},
+				{Id: "log-3", Timestamp: protoconv.ConvertTimeToTimestampOrNil(sixDaysAgo)},
+				{Id: "log-4", Timestamp: protoconv.ConvertTimeToTimestampOrNil(sevenDaysAgo)},
+				{Id: "log-5", Timestamp: protoconv.ConvertTimeToTimestampOrNil(eightDaysAgo)},
 			},
 			expectedLogDeletions: set.NewFrozenStringSet("log-4", "log-5"),
 		},
@@ -2039,11 +2052,11 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			name:        "recently run, nothing pruned",
 			recentlyRun: true,
 			logImbues: []*storage.LogImbue{
-				{Id: "log-1", Timestamp: timestampNowMinus(0)},
-				{Id: "log-2", Timestamp: timestampNowMinus(24 * time.Hour)},
-				{Id: "log-3", Timestamp: timestampNowMinus(24 * 6 * time.Hour)},
-				{Id: "log-4", Timestamp: timestampNowMinus(24 * 7 * time.Hour)},
-				{Id: "log-5", Timestamp: timestampNowMinus(24 * 8 * time.Hour)},
+				{Id: "log-1", Timestamp: protoconv.ConvertTimeToTimestampOrNil(now)},
+				{Id: "log-2", Timestamp: protoconv.ConvertTimeToTimestampOrNil(yesterday)},
+				{Id: "log-3", Timestamp: protoconv.ConvertTimeToTimestampOrNil(sixDaysAgo)},
+				{Id: "log-4", Timestamp: protoconv.ConvertTimeToTimestampOrNil(sevenDaysAgo)},
+				{Id: "log-5", Timestamp: protoconv.ConvertTimeToTimestampOrNil(eightDaysAgo)},
 			},
 			expectedLogDeletions: set.NewFrozenStringSet(),
 		},

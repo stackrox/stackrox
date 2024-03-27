@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# This file is only sourced, but the following line helps set the stage for shellcheck.
+set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -42,13 +44,43 @@ echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
 popd
 
-function curl_central() {
-	cmd=(curl --retry 10 --retry-delay 10 --retry-connrefused --silent --show-error --insecure)
-	local admin_user="${ROX_ADMIN_USER:-admin}"
-	if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
-		cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
-	fi
-	"${cmd[@]}" "$@"
+# curl_central_once
+# Runs curl with --silent --show-error --insecure.
+# Obeys $ROX_ADMIN_USER and $ROX_ADMIN_PASSWORD.
+# arguments:
+#   - anything else `curl` will accept, including the URL
+function curl_central_once() {
+    local cmd=(curl --silent --show-error --insecure)
+    local admin_user="${ROX_ADMIN_USER:-admin}"
+    if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+        cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
+    fi
+    "${cmd[@]}" "$@"
+}
+
+
+# curl_central_retry
+# Runs curl like curl_central_once, but with retries and --fail.
+# Captures stdout and emits it only once (for the last invocation of curl).
+# arguments:
+#   - anything else `curl` will accept, including the URL
+function curl_central_retry() {
+    local tmp_out
+    tmp_out="$(mktemp)"
+    local delay_sec=10
+    # On top of --retry we do our own retry loop, to make sure no corner cases slip through.
+    # https://github.com/curl/curl/issues/6712#issuecomment-796534491
+    for _ in $(seq 3); do
+        if curl_central_once --fail --retry 3 --retry-delay "${delay_sec}" --retry-connrefused "$@" > "${tmp_out}"; then
+            cat "${tmp_out}"
+            rm -f "${tmp_out}"
+            return 0
+        fi
+        sleep "${delay_sec}"
+    done
+    cat "${tmp_out}"
+    rm -f "${tmp_out}"
+    return 1
 }
 
 # generate_ca
@@ -78,23 +110,18 @@ function wait_for_central {
     local central_namespace=${2:-stackrox}
 
     echo -n "Waiting for Central in namespace ${central_namespace} to respond."
-    set +e
     local start_time
     start_time="$(date '+%s')"
     local deadline=$((start_time + 10*60))  # 10 minutes
-    until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
+    until curl_central_once --output /dev/null --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
         if [[ "$(date '+%s')" -gt "$deadline" ]]; then
-            echo >&2 "Exceeded deadline waiting for Central."
-            central_pod="$("${ORCH_CMD}" -n "${central_namespace}" get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
-            if [[ -n "$central_pod" ]]; then
-                "${ORCH_CMD}" -n "${central_namespace}" exec "${central_pod}" -c central -- kill -ABRT 1
-            fi
+            echo >&2 "Exceeded deadline waiting for Central, aborting its process."
+            "${ORCH_CMD}" -n "${central_namespace}" exec deployment/central -c central -- kill -ABRT 1
             exit 1
         fi
         echo -n '.'
         sleep 1
     done
-    set -e
     echo
 }
 
@@ -133,9 +160,8 @@ function get_cluster_zip {
     export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
 
     TMP=$(mktemp)
-    STATUS=$(curl_central -X POST \
+    STATUS=$(curl_central_retry -X POST \
         -d "$CLUSTER_JSON" \
-        -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
         "https://$LOCAL_API_ENDPOINT/v1/clusters")
@@ -148,9 +174,8 @@ function get_cluster_zip {
     ID="$(jq -r .cluster.id "${TMP}")"
 
     echo "Getting zip file for cluster ${ID}"
-    STATUS=$(curl_central -X POST \
+    STATUS=$(curl_central_retry -X POST \
         -d "{\"id\": \"$ID\", \"createUpgraderSA\": true}" \
-        -s \
         -o "$OUTPUT_DIR/sensor-deploy.zip" \
         -w "%{http_code}\n" \
         "https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip")

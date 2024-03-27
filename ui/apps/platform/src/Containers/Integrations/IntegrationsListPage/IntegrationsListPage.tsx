@@ -6,6 +6,7 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Divider,
+    Flex,
 } from '@patternfly/react-core';
 import { useParams, useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
@@ -22,6 +23,8 @@ import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
 import { ClusterInitBundle } from 'services/ClustersService';
 
+import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrations from '../hooks/useIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
@@ -50,6 +53,7 @@ function IntegrationsListPage({
 }): ReactElement {
     const { source, type } = useParams();
     const integrations = useIntegrations({ source, type });
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
     const history = useHistory();
@@ -69,6 +73,8 @@ function IntegrationsListPage({
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
     const isCloudSource = getIsCloudSource(source);
+
+    const isTechPreview = isFeatureFlagEnabled('ROX_SCANNER_V4') && type === 'scannerv4';
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -115,7 +121,17 @@ function IntegrationsListPage({
                 <Title headingLevel="h1">
                     {isSignatureIntegration ? 'Signature' : ''} Integrations
                 </Title>
-                {!isSignatureIntegration && <Title headingLevel="h2">{typeLabel}</Title>}
+                {!isSignatureIntegration && (
+                    <Title headingLevel="h2">
+                        <Flex
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                            alignItems={{ default: 'alignItemsCenter' }}
+                        >
+                            <span>{typeLabel}</span>
+                            {isTechPreview && <TechPreviewLabel />}
+                        </Flex>
+                    </Title>
+                )}
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable

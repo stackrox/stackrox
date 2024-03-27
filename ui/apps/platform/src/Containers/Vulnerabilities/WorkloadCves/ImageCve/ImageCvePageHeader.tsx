@@ -14,9 +14,9 @@ import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { getDateTime } from 'utils/dateUtils';
-import { ensureExhaustive } from 'utils/type.utils';
 
-import { Distro, sortCveDistroList } from '../../utils/sortUtils';
+import { getDistroLinkText } from '../../utils/textUtils';
+import { sortCveDistroList } from '../../utils/sortUtils';
 
 export type ImageCveMetadata = {
     cve: string;
@@ -39,26 +39,6 @@ export const imageCveMetadataFragment = gql`
         }
     }
 `;
-
-function getDistroLinkText({ distro }: { distro: Distro }): string {
-    switch (distro) {
-        case 'rhel':
-        case 'centos':
-            return 'View in Red Hat CVE database';
-        case 'ubuntu':
-            return 'View in Ubuntu CVE database';
-        case 'debian':
-            return 'View in Debian CVE database';
-        case 'alpine':
-            return 'View in Alpine Linux CVE database';
-        case 'amzn':
-            return 'View in Amazon Linux CVE database';
-        case 'other':
-            return 'View additional information';
-        default:
-            return ensureExhaustive(distro);
-    }
-}
 
 export type ImageCvePageHeaderProps = {
     data?: ImageCveMetadata;

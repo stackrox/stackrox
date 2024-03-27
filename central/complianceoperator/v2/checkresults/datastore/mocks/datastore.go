@@ -102,6 +102,21 @@ func (mr *MockDataStoreMockRecorder) ComplianceProfileResultStats(ctx, query any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceProfileResultStats", reflect.TypeOf((*MockDataStore)(nil).ComplianceProfileResultStats), ctx, query)
 }
 
+// ComplianceProfileResults mocks base method.
+func (m *MockDataStore) ComplianceProfileResults(ctx context.Context, query *v1.Query) ([]*datastore.ResourceResultsByProfile, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComplianceProfileResults", ctx, query)
+	ret0, _ := ret[0].([]*datastore.ResourceResultsByProfile)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ComplianceProfileResults indicates an expected call of ComplianceProfileResults.
+func (mr *MockDataStoreMockRecorder) ComplianceProfileResults(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceProfileResults", reflect.TypeOf((*MockDataStore)(nil).ComplianceProfileResults), ctx, query)
+}
+
 // CountCheckResults mocks base method.
 func (m *MockDataStore) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()

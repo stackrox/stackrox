@@ -357,7 +357,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			reportSnap := testReportSnapshot(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes, tc.scopeRules)
-			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(reportSnap, tc.collection, nil)
+			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(reportSnap, tc.collection, time.Time{})
 			s.NoError(err)
 			reportData := extractVulnReportData(deployedImgResults, watchedImgResults)
 			s.ElementsMatch(tc.expected.deploymentNames, reportData.deploymentNames)

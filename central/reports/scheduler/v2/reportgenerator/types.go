@@ -1,7 +1,8 @@
 package reportgenerator
 
 import (
-	"github.com/gogo/protobuf/types"
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -9,7 +10,7 @@ import (
 type ReportRequest struct {
 	ReportSnapshot *storage.ReportSnapshot
 	Collection     *storage.ResourceCollection
-	DataStartTime  *types.Timestamp
+	DataStartTime  time.Time
 }
 
 type reportEmailBodyFormat struct {

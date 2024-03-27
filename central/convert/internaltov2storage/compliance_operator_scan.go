@@ -35,6 +35,6 @@ func ComplianceOperatorScanObject(sensorData *central.ComplianceOperatorScanV2, 
 		CreatedTime:      sensorData.GetStatus().GetStartTime(),
 		LastExecutedTime: sensorData.GetStatus().GetEndTime(),
 		ProductType:      sensorData.GetScanType(),
-		ScanRefId:        BuildScanRefID(clusterID, sensorData.GetName()),
+		ScanRefId:        BuildNameRefID(clusterID, sensorData.GetName()),
 	}
 }

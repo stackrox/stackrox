@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -91,6 +92,7 @@ func GetRuleV2Storage(_ *testing.T) *storage.ComplianceOperatorRuleV2 {
 		Warning:     "test warning",
 		Controls:    controls,
 		ClusterId:   fixtureconsts.Cluster1,
+		RuleRefId:   internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, "random-rule-name"),
 	}
 }
 

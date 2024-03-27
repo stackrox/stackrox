@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/protocompat"
+	queueScaler "github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
@@ -78,8 +79,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	netFlowQueueSize := 0
 	piQueueSize := 0
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		netFlowQueueSize = env.DetectorNetworkFlowBufferSize.IntegerSetting()
-		piQueueSize = env.DetectorProcessIndicatorBufferSize.IntegerSetting()
+		netFlowQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
+		piQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
 	}
 	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
 		detectorStopper,

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -43,7 +43,7 @@ type serviceImpl struct {
 
 	imageIntegrations iiDStore.DataStore
 	scannerConfigs    map[mtls.Subject]*tls.Config
-	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error)
+	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error)
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -93,7 +93,7 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error) {
+func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
 	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, tlsConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
@@ -107,11 +107,7 @@ func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsC
 	if cn := leafCert.Subject.CommonName; cn != subject.CN() {
 		return nil, errors.Errorf("common name of %q at %s (%s) is not as expected", subject.Identifier, endpoint, cn)
 	}
-	expiry, err := protocompat.ConvertTimeToTimestampOrError(leafCert.NotAfter)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting timestamp")
-	}
-	return expiry, nil
+	return &leafCert.NotAfter, nil
 }
 
 func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
@@ -134,7 +130,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		return nil, errors.Wrap(errox.InvalidArgs, "StackRox Scanner is not integrated")
 	}
 	errC := make(chan error, len(clairifyEndpoints))
-	expiryC := make(chan *types.Timestamp, len(clairifyEndpoints))
+	expiryC := make(chan *time.Time, len(clairifyEndpoints))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -166,7 +162,14 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 				return nil, errorList.ToError()
 			}
 		case expiry := <-expiryC:
-			return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+			if expiry == nil {
+				return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+			}
+			certExpiry, err := protocompat.ConvertTimeToTimestampOrError(*expiry)
+			if err != nil {
+				return nil, err
+			}
+			return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
 		}
 	}
 }
@@ -201,7 +204,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 
 	numEndpoints := 2
 	errC := make(chan error, numEndpoints)
-	expiryC := make(chan *types.Timestamp, numEndpoints)
+	expiryC := make(chan *time.Time, numEndpoints)
 	getExpiry := func(subject mtls.Subject, endpoint string) {
 		expiry, err := s.expiryFunc(ctx, subject, s.scannerConfigs[subject], endpoint)
 		if err != nil {
@@ -217,7 +220,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	go getExpiry(mtls.ScannerV4MatcherSubject, matcherEndpoint)
 
 	errorList := errorhelpers.NewErrorList("failed to determine Scanner V4 cert expiry")
-	expiries := make([]*types.Timestamp, 0, numEndpoints)
+	expiries := make([]*time.Time, 0, numEndpoints)
 	for i := 0; i < numEndpoints; i++ {
 		select {
 		case <-ctx.Done():
@@ -233,10 +236,24 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	}
 
 	sort.Slice(expiries, func(i, j int) bool {
-		return protocompat.CompareTimestamps(expiries[i], expiries[j]) < 0
+		if expiries[i] == nil {
+			return true
+		}
+		if expiries[j] == nil {
+			return false
+		}
+		return expiries[i].Compare(*expiries[j]) < 0
 	})
 
-	return &v1.GetCertExpiry_Response{Expiry: expiries[0]}, nil
+	if expiries[0] == nil {
+		return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+	}
+	certExpiry, err := protocompat.ConvertTimeToTimestampOrError(*expiries[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

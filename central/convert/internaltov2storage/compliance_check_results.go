@@ -1,6 +1,7 @@
 package internaltov2storage
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -47,6 +48,7 @@ func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckRe
 		Rationale:      sensorData.GetRationale(),
 		ValuesUsed:     sensorData.GetValuesUsed(),
 		Warnings:       sensorData.GetWarnings(),
-		ScanRefId:      BuildScanRefID(clusterID, sensorData.GetScanName()),
+		ScanRefId:      BuildNameRefID(clusterID, sensorData.GetScanName()),
+		RuleRefId:      BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
 	}
 }

@@ -41,6 +41,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
+			"/v2.ComplianceResultsService/GetComplianceProfileResults",
 		},
 	})
 )
@@ -313,6 +314,34 @@ func (s *serviceImpl) GetComplianceScanConfigurationResultsCount(ctx context.Con
 	return &v2.CountComplianceScanResults{
 		Count: int32(count),
 	}, nil
+}
+
+func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ComplianceProfileResults, error) {
+	if request.GetProfileName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+	}
+
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Add the profile name as an exact match
+	parsedQuery = search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).ProtoQuery(),
+		parsedQuery,
+	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.ComplianceProfileResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance profile scan stats for %+v", request)
+	}
+
+	return storagetov2.ComplianceV2ProfileResults(scanResults), nil
 }
 
 func (s *serviceImpl) mapScanConfigToID(ctx context.Context, scanResults []*storage.ComplianceOperatorCheckResultV2) (map[string]string, error) {

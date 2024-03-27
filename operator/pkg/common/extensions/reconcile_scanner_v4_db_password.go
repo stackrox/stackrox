@@ -28,7 +28,11 @@ func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCusto
 
 func reconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client, direct ctrlClient.Reader) error {
 	run := &reconcileScannerV4DBPasswordExtensionRun{
-		SecretReconciliator:  NewSecretReconciliator(client, direct, obj),
+		// This is using OwnershipStrategyOwnerReference, so the secret will be garbage-collected
+		// when SecuredCluster CR is deleted. This is because ScannerV4 database PVC is not kept
+		// when the SecuredCluster CR is deleted, so keeping the password secret around after the
+		// CR is deleted is not useful.
+		SecretReconciliator:  NewSecretReconciliator(client, direct, obj, OwnershipStrategyOwnerReference),
 		obj:                  obj,
 		passwordResourceName: scannerV4DBPasswordResourceName,
 	}

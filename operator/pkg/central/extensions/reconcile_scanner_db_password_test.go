@@ -3,15 +3,18 @@ package extensions
 import (
 	"testing"
 
-	"github.com/stackrox/rox/operator/pkg/types"
+	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func verifyScannerDBPassword(t *testing.T, data types.SecretDataMap) {
-	assert.NotEmpty(t, data[scannerDBPasswordKey])
+func verifyScannerDBPassword(t *testing.T, central *platform.Central, secret *v1.Secret) {
+	assert.True(t, metav1.IsControlledBy(secret, central))
+	assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
+	assert.NotEmpty(t, secret.Data[scannerDBPasswordKey])
 }
 
 func TestReconcileScannerDBPassword(t *testing.T) {

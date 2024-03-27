@@ -36,7 +36,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.FuncType)(nil),
 		(*ast.StructType)(nil),
 	}
-	common.FilteredPreorder(inspectResult, common.Not(common.IsGeneratedFile), nodeFilter, func(n ast.Node) {
+	common.FilteredPreorder(inspectResult, common.Not(ast.IsGenerated), nodeFilter, func(n ast.Node) {
 		var relevantFields []*ast.Field
 		switch t := n.(type) {
 		case *ast.FuncType:

@@ -70,6 +70,11 @@ var (
 	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
 	DetectorNetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_NETWORK_FLOW_BUFFER_SIZE", 20000)
 
+	// BufferScaleCeiling sets the upper limit queue.ScaleSize will scale buffers and queues to.
+	// In its default, the ceiling is defined as triple the relative size.
+	// For example, the NetflowBufferSize will never surpass 100 * 3 = 300.
+	BufferScaleCeiling = RegisterIntegerSetting("ROX_SENSOR_BUFFER_SCALE_CEILING", 3)
+
 	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
 	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
 		2*time.Minute)

@@ -9,8 +9,10 @@ import { vulnerabilitiesNodeCvesPath } from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
 import NodeCvesOverviewPage from './Overview/NodeCvesOverviewPage';
 import NodeCvePage from './NodeCve/NodeCvePage';
+import NodePage from './Node/NodePage';
 
 const vulnerabilitiesNodeCveSinglePath = `${vulnerabilitiesNodeCvesPath}/cves/:cveId`;
+const vulnerabilitiesNodeSinglePath = `${vulnerabilitiesNodeCvesPath}/nodes/:nodeId`;
 
 function NodeCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -21,6 +23,7 @@ function NodeCvesPage() {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
                 <Route path={vulnerabilitiesNodeCveSinglePath} component={NodeCvePage} />
+                <Route path={vulnerabilitiesNodeSinglePath} component={NodePage} />
                 <Route exact path={vulnerabilitiesNodeCvesPath} component={NodeCvesOverviewPage} />
                 <Route>
                     <PageSection variant="light">

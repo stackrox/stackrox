@@ -31,7 +31,7 @@ func ReconcileCentralDBPasswordExtension(client ctrlClient.Client, direct ctrlCl
 
 func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileCentralDBPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c, commonExtensions.OwnershipStrategyLabel),
 		centralObj:          c,
 	}
 	return run.Execute(ctx)
@@ -69,7 +69,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.DeleteSecret(ctx, canonicalCentralDBPasswordSecretName)
+		return nil // do not delete the secret as the PVC is not deleted
 	}
 
 	centralSpec := r.centralObj.Spec.Central

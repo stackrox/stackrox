@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
@@ -167,11 +166,12 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMar
 }
 
 // It is the caller's responsibility to not call this with an empty slice.
-func lastTimestamp(processes []*storage.ProcessIndicator) (*ptypes.Timestamp, error) {
+func lastTime(processes []*storage.ProcessIndicator) (*time.Time, error) {
 	if len(processes) == 0 {
 		return nil, errors.New("Unexpected: no processes found in the alert")
 	}
-	return processes[len(processes)-1].GetSignal().GetTime(), nil
+	lastTime := protocompat.ConvertTimestampToTimeOrNil(processes[len(processes)-1].GetSignal().GetTime())
+	return lastTime, nil
 }
 
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
@@ -192,7 +192,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 
 	newProcessesSlice := oldProcessViolation.GetProcesses()
 	// De-dupe processes using timestamps.
-	timestamp, err := lastTimestamp(oldProcessViolation.GetProcesses())
+	lastProcessTime, err := lastTime(oldProcessViolation.GetProcesses())
 	if err != nil {
 		log.Errorf(
 			"Failed to merge alerts. "+
@@ -206,7 +206,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	}
 
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
-		if protocompat.CompareTimestamps(process.GetSignal().GetTime(), timestamp) > 0 {
+		if protocompat.CompareTimestampToTime(process.GetSignal().GetTime(), lastProcessTime) > 0 {
 			newAlertHasNewProcesses = true
 			newProcessesSlice = append(newProcessesSlice, process)
 		}

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -30,6 +31,9 @@ import (
 )
 
 var (
+	// Create an alias on the protoutils function for readability
+	makeTimestamp = protoutils.MustGetProtoTimestampFromRFC3339NanoString
+
 	// In case later we'd need to make adjustments or take different samples, the following structs were dumped from a
 	// live system by simply using "github.com/mitranim/repr" module and printing them with `repr.Println(alert)` call.
 	// Next, I removed some redundant `&` operators that compiler did not like, adjusted enums to use symbols (such as
@@ -1168,10 +1172,10 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 
 			if sample.expectedCount > 0 {
 				// Check that all violations fall within the expected range.
-				fromTs := makeTimestamp(sample.violationsNotBefore)
-				toTs := makeTimestamp(sample.violationsNotAfter)
+				fromTs := mustParseTime(sample.violationsNotBefore)
+				toTs := mustParseTime(sample.violationsNotAfter)
 				for _, v := range vs {
-					ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
+					ts := mustParseTime(s.extr(v, ".violationInfo.violationTime").(string))
 					s.True(ts.Compare(fromTs) >= 0, "Violation timestamp is earlier than expected", v)
 					s.True(ts.Compare(toTs) <= 0, "Violation timestamp is later than expected", v)
 				}

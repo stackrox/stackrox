@@ -14,7 +14,7 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
+	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -29,7 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
+func verifyCentralCert(t *testing.T, central *platform.Central, secret *v1.Secret) {
+	assert.True(t, metav1.IsControlledBy(secret, central))
+	assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
+	data := secret.Data
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
 	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE))
@@ -47,11 +50,13 @@ func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVeri
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
-	return func(t *testing.T, data types.SecretDataMap) {
-		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
+	return func(t *testing.T, central *platform.Central, secret *v1.Secret) {
+		assert.True(t, metav1.IsControlledBy(secret, central))
+		assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
+		validatingCA, err := mtls.LoadCAForValidation(secret.Data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType))
+		assert.NoError(t, certgen.VerifyServiceCertAndKey(secret.Data, fileNamePrefix, validatingCA, serviceType))
 	}
 }
 
@@ -104,7 +109,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "central-tls",
 			Namespace: testutils.TestNamespace,
-			Labels:    commonLabels.DefaultLabels(),
+			Labels:    labels.DefaultLabels(),
 		},
 		Data: centralFileMapWithInvalidLeaf,
 	}
@@ -119,7 +124,7 @@ func TestCreateCentralTLS(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "central-tls",
 			Namespace: testutils.TestNamespace,
-			Labels:    commonLabels.DefaultLabels(),
+			Labels:    labels.DefaultLabels(),
 		},
 		Data: centralFileMapWithMissingCAKey,
 	}

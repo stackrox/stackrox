@@ -23,6 +23,7 @@ const (
 	ComplianceResultsService_GetComplianceScanResultsOverview_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceScanResultsOverview"
 	ComplianceResultsService_GetComplianceScanResults_FullMethodName                   = "/v2.ComplianceResultsService/GetComplianceScanResults"
 	ComplianceResultsService_GetComplianceScanConfigurationResults_FullMethodName      = "/v2.ComplianceResultsService/GetComplianceScanConfigurationResults"
+	ComplianceResultsService_GetComplianceProfileResults_FullMethodName                = "/v2.ComplianceResultsService/GetComplianceProfileResults"
 	ComplianceResultsService_GetComplianceProfileStats_FullMethodName                  = "/v2.ComplianceResultsService/GetComplianceProfileStats"
 	ComplianceResultsService_GetComplianceProfilesStats_FullMethodName                 = "/v2.ComplianceResultsService/GetComplianceProfilesStats"
 	ComplianceResultsService_GetComplianceClusterScanStats_FullMethodName              = "/v2.ComplianceResultsService/GetComplianceClusterScanStats"
@@ -55,6 +56,9 @@ type ComplianceResultsServiceClient interface {
 	// GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
 	GetComplianceScanConfigurationResults(ctx context.Context, in *ComplianceScanResultsRequest, opts ...grpc.CallOption) (*ListComplianceScanResultsResponse, error)
+	// GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
+	// Optional RawQuery query fields can be combined.
+	GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ComplianceProfileResults, error)
 	// GetComplianceProfileScanStats lists current scan stats grouped by profile
 	// Optional RawQuery query fields can be combined.
 	// Commonly used ones include but are not limited to
@@ -120,6 +124,15 @@ func (c *complianceResultsServiceClient) GetComplianceScanResults(ctx context.Co
 func (c *complianceResultsServiceClient) GetComplianceScanConfigurationResults(ctx context.Context, in *ComplianceScanResultsRequest, opts ...grpc.CallOption) (*ListComplianceScanResultsResponse, error) {
 	out := new(ListComplianceScanResultsResponse)
 	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceScanConfigurationResults_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *complianceResultsServiceClient) GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ComplianceProfileResults, error) {
+	out := new(ComplianceProfileResults)
+	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceProfileResults_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -212,6 +225,9 @@ type ComplianceResultsServiceServer interface {
 	// GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
 	GetComplianceScanConfigurationResults(context.Context, *ComplianceScanResultsRequest) (*ListComplianceScanResultsResponse, error)
+	// GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
+	// Optional RawQuery query fields can be combined.
+	GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ComplianceProfileResults, error)
 	// GetComplianceProfileScanStats lists current scan stats grouped by profile
 	// Optional RawQuery query fields can be combined.
 	// Commonly used ones include but are not limited to
@@ -254,6 +270,9 @@ func (UnimplementedComplianceResultsServiceServer) GetComplianceScanResults(cont
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceScanConfigurationResults(context.Context, *ComplianceScanResultsRequest) (*ListComplianceScanResultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanConfigurationResults not implemented")
+}
+func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ComplianceProfileResults, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileResults not implemented")
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceProfileStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileScanStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileStats not implemented")
@@ -356,6 +375,24 @@ func _ComplianceResultsService_GetComplianceScanConfigurationResults_Handler(srv
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsServiceServer).GetComplianceScanConfigurationResults(ctx, req.(*ComplianceScanResultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceResultsService_GetComplianceProfileResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceProfileResultsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileResults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceResultsService_GetComplianceProfileResults_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceResultsServiceServer).GetComplianceProfileResults(ctx, req.(*ComplianceProfileResultsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -508,6 +545,10 @@ var ComplianceResultsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComplianceScanConfigurationResults",
 			Handler:    _ComplianceResultsService_GetComplianceScanConfigurationResults_Handler,
+		},
+		{
+			MethodName: "GetComplianceProfileResults",
+			Handler:    _ComplianceResultsService_GetComplianceProfileResults_Handler,
 		},
 		{
 			MethodName: "GetComplianceProfileStats",

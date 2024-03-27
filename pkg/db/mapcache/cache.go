@@ -1,7 +1,6 @@
 package mapcache
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -34,7 +33,7 @@ type cacheImpl struct {
 }
 
 func (c *cacheImpl) addNoLock(msg protocompat.Message) {
-	c.cache[string(c.keyFunc(msg))] = proto.Clone(msg)
+	c.cache[string(c.keyFunc(msg))] = protocompat.Clone(msg)
 }
 
 func (c *cacheImpl) populate() error {
@@ -83,7 +82,7 @@ func (c *cacheImpl) Get(id string) (protocompat.Message, bool, error) {
 	if !ok {
 		return nil, false, nil
 	}
-	return proto.Clone(msg), true, nil
+	return protocompat.Clone(msg), true, nil
 }
 
 func (c *cacheImpl) GetMany(ids []string) ([]protocompat.Message, []int, error) {
@@ -98,7 +97,7 @@ func (c *cacheImpl) GetMany(ids []string) ([]protocompat.Message, []int, error) 
 			missingIndices = append(missingIndices, i)
 			continue
 		}
-		msgs = append(msgs, proto.Clone(msg))
+		msgs = append(msgs, protocompat.Clone(msg))
 	}
 	return msgs, missingIndices, nil
 }
@@ -108,7 +107,7 @@ func (c *cacheImpl) Walk(fn func(msg protocompat.Message) error) error {
 	defer c.lock.RUnlock()
 
 	for _, msg := range c.cache {
-		if err := fn(proto.Clone(msg)); err != nil {
+		if err := fn(protocompat.Clone(msg)); err != nil {
 			return err
 		}
 	}
@@ -120,7 +119,7 @@ func (c *cacheImpl) WalkAllWithID(fn func(id []byte, msg protocompat.Message) er
 	defer c.lock.RUnlock()
 
 	for id, msg := range c.cache {
-		if err := fn([]byte(id), proto.Clone(msg)); err != nil {
+		if err := fn([]byte(id), protocompat.Clone(msg)); err != nil {
 			return err
 		}
 	}
@@ -158,7 +157,7 @@ func (c *cacheImpl) UpsertWithID(id string, msg protocompat.Message) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.cache[id] = proto.Clone(msg)
+	c.cache[id] = protocompat.Clone(msg)
 	return nil
 }
 
@@ -174,7 +173,7 @@ func (c *cacheImpl) UpsertManyWithIDs(ids []string, msgs []protocompat.Message) 
 	defer c.lock.Unlock()
 
 	for i, id := range ids {
-		c.cache[id] = proto.Clone(msgs[i])
+		c.cache[id] = protocompat.Clone(msgs[i])
 	}
 	return nil
 }

@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -332,8 +331,8 @@ func (s *handlerTestSuite) mockHandleDefsFile(zipF *zip.File, blobName string) e
 
 	b := &storage.Blob{
 		Name:         blobName,
-		LastUpdated:  types.TimestampNow(),
-		ModifiedTime: types.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
 		Length:       zipF.FileInfo().Size(),
 	}
 

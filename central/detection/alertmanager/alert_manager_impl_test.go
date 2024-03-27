@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/detection"
 	runtimeDetectorMocks "github.com/stackrox/rox/central/detection/runtime/mocks"
@@ -29,36 +28,38 @@ import (
 )
 
 var (
-	nowProcess        = getProcessIndicator(protocompat.TimestampNow())
-	yesterdayProcess  = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour)))
-	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
+	now        = time.Now()
+	yesterday  = now.Add(-24 * time.Hour)
+	twoDaysAgo = now.Add(-2 * 24 * time.Hour)
 
-	firstKubeEventViolation  = getKubeEventViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondKubeEventViolation = getKubeEventViolation("2", protocompat.TimestampNow())
+	nowProcess        = getProcessIndicator(now)
+	yesterdayProcess  = getProcessIndicator(yesterday)
+	twoDaysAgoProcess = getProcessIndicator(twoDaysAgo)
 
-	firstNetworkFlowViolation  = getNetworkFlowViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondNetworkFlowViolation = getNetworkFlowViolation("2", protocompat.TimestampNow())
+	firstKubeEventViolation  = getKubeEventViolation("1", yesterday)
+	secondKubeEventViolation = getKubeEventViolation("2", now)
+
+	firstNetworkFlowViolation  = getNetworkFlowViolation("1", yesterday)
+	secondNetworkFlowViolation = getNetworkFlowViolation("2", now)
 )
 
-func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Alert_Violation {
+func getKubeEventViolation(msg string, violationTime time.Time) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
 		Message: msg,
 		Type:    storage.Alert_Violation_K8S_EVENT,
-		Time:    timestamp,
+		Time:    protocompat.ConvertTimeToTimestampOrNil(&violationTime),
 	}
 }
 
-func getNetworkFlowViolation(msg string, networkFlowTimestamp *ptypes.Timestamp) *storage.Alert_Violation {
+func getNetworkFlowViolation(msg string, networkFlowTimestamp time.Time) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
 		Message: msg,
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
 					{
-						Key: "NetworkFlowTimestamp",
-						Value: protoconv.
-							ConvertTimestampToTimeOrNow(networkFlowTimestamp).
-							Format("2006-01-02 15:04:05 UTC"),
+						Key:   "NetworkFlowTimestamp",
+						Value: networkFlowTimestamp.Format("2006-01-02 15:04:05 UTC"),
 					},
 				},
 			},
@@ -67,11 +68,11 @@ func getNetworkFlowViolation(msg string, networkFlowTimestamp *ptypes.Timestamp)
 	}
 }
 
-func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator {
+func getProcessIndicator(processTime time.Time) *storage.ProcessIndicator {
 	return &storage.ProcessIndicator{
 		Signal: &storage.ProcessSignal{
 			Name: "apt-get",
-			Time: timestamp,
+			Time: protocompat.ConvertTimeToTimestampOrNil(&processTime),
 		},
 	}
 }
