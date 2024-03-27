@@ -132,7 +132,6 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
             </>
         );
     }
-    console.log('selectedNetworkPolicy', selectedNetworkPolicy);
 
     return (
         <div className="pf-v5-u-h-100 pf-v5-u-p-md">

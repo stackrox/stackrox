@@ -37,6 +37,7 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                 <Stack hasGutter>
                     {secrets.length > 0 ? (
                         secrets.map((secret, index) => (
+                            // eslint-disable-next-line react/no-array-index-key
                             <StackItem key={`${secret.name}-${index}`}>
                                 <ExpandableSection
                                     toggleText={secret.name}
