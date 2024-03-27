@@ -123,7 +123,7 @@ test_upgrade_paths() {
     find $PWD -type f -name "go.mod" -printf '%h\n' | xargs -IDIR bash -c 'cd DIR && go mod tidy'
     git add .
     git commit -m "Upgrade to Go 1.21"
-    git tag -f $LAST_POSTGRES_TAG
+    git tag -f -a -m $LAST_POSTGRES_TAG $LAST_POSTGRES_TAG
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
