@@ -198,30 +198,12 @@ spec:
 
     tasks:
 
-    # This task ensures our workspace PVC gets attached to a node that has sufficient resources for the pipeline.
-    - name: spacer
-      workspaces:
-      - name: workspace
-        workspace: workspace
-      taskSpec:
-        steps:
-        - name: dummy
-          computeResources:
-            limits:
-              cpu: 4
-            requests:
-              cpu: 4
-          image: registry.access.redhat.com/ubi8/ubi:latest
-          script: echo "Done"
-
     - name: init
       params:
       - name: image-url
         value: $(params.output-image)
       - name: rebuild
         value: $(params.rebuild)
-      runAfter:
-      - spacer
       taskRef:
         params:
         - name: name
