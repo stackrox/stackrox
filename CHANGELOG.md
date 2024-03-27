@@ -16,7 +16,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Dropped support for older Helm versions: For rendering the Helm charts stackrox-central-services and
   stackrox-secured-cluster-services a Helm version >= 3.9.0 is now required.
 
-### Deprecated Fatures
+### Deprecated Features
 
 ### Technical Changes
 
@@ -24,6 +24,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Reduces memory consumption of the operator significantly, especially on large clusters. (28% on a fresh OCP cluster)
   - Increases number of requests sent to the API server to get secrets that are not managed by the operator and don't match the cache label selector.
   - Adds a label `app.stackrox.io/managed-by: operator` to all helm chart resources and secrets created by the operator
+- ROX-22044: Scanner DB is now based on PostgreSQL 15 instead of 12.
+  - No migration should be necessary, as the database is not persisted.
 
 ## [4.4.0]
 
