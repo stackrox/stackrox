@@ -4,14 +4,10 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	central "github.com/stackrox/rox/generated/internalapi/central"
-	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	_ "github.com/stackrox/rox/generated/internalapi/central"
+	_ "github.com/stackrox/rox/generated/storage"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -118,160 +114,6 @@ var fileDescriptor_3d29ceed52498e29 = []byte{
 	0xc7, 0x0e, 0x79, 0xfa, 0x70, 0x16, 0xa8, 0x19, 0x29, 0x9e, 0xa2, 0x08, 0xfa, 0x5a, 0xdd, 0x96,
 	0xe7, 0xe2, 0x22, 0x89, 0x78, 0xe6, 0x5f, 0x18, 0x99, 0x7f, 0x4e, 0x7a, 0x8b, 0x05, 0xb6, 0xff,
 	0x15, 0x00, 0x00, 0xff, 0xff, 0x96, 0xf7, 0x99, 0x3d, 0x58, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// TelemetryServiceClient is the client API for TelemetryService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type TelemetryServiceClient interface {
-	GetTelemetryConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
-	ConfigureTelemetry(ctx context.Context, in *ConfigureTelemetryRequest, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
-	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*central.TelemetryConfig, error)
-}
-
-type telemetryServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewTelemetryServiceClient(cc grpc.ClientConnInterface) TelemetryServiceClient {
-	return &telemetryServiceClient{cc}
-}
-
-// Deprecated: Do not use.
-func (c *telemetryServiceClient) GetTelemetryConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error) {
-	out := new(storage.TelemetryConfiguration)
-	err := c.cc.Invoke(ctx, "/v1.TelemetryService/GetTelemetryConfiguration", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Deprecated: Do not use.
-func (c *telemetryServiceClient) ConfigureTelemetry(ctx context.Context, in *ConfigureTelemetryRequest, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error) {
-	out := new(storage.TelemetryConfiguration)
-	err := c.cc.Invoke(ctx, "/v1.TelemetryService/ConfigureTelemetry", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *telemetryServiceClient) GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*central.TelemetryConfig, error) {
-	out := new(central.TelemetryConfig)
-	err := c.cc.Invoke(ctx, "/v1.TelemetryService/GetConfig", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// TelemetryServiceServer is the server API for TelemetryService service.
-type TelemetryServiceServer interface {
-	GetTelemetryConfiguration(context.Context, *Empty) (*storage.TelemetryConfiguration, error)
-	ConfigureTelemetry(context.Context, *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error)
-	GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error)
-}
-
-// UnimplementedTelemetryServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedTelemetryServiceServer struct {
-}
-
-func (*UnimplementedTelemetryServiceServer) GetTelemetryConfiguration(ctx context.Context, req *Empty) (*storage.TelemetryConfiguration, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTelemetryConfiguration not implemented")
-}
-func (*UnimplementedTelemetryServiceServer) ConfigureTelemetry(ctx context.Context, req *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ConfigureTelemetry not implemented")
-}
-func (*UnimplementedTelemetryServiceServer) GetConfig(ctx context.Context, req *Empty) (*central.TelemetryConfig, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
-}
-
-func RegisterTelemetryServiceServer(s *grpc.Server, srv TelemetryServiceServer) {
-	s.RegisterService(&_TelemetryService_serviceDesc, srv)
-}
-
-func _TelemetryService_GetTelemetryConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TelemetryServiceServer).GetTelemetryConfiguration(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.TelemetryService/GetTelemetryConfiguration",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TelemetryServiceServer).GetTelemetryConfiguration(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TelemetryService_ConfigureTelemetry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigureTelemetryRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TelemetryServiceServer).ConfigureTelemetry(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.TelemetryService/ConfigureTelemetry",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TelemetryServiceServer).ConfigureTelemetry(ctx, req.(*ConfigureTelemetryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TelemetryService_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TelemetryServiceServer).GetConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.TelemetryService/GetConfig",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TelemetryServiceServer).GetConfig(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _TelemetryService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.TelemetryService",
-	HandlerType: (*TelemetryServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetTelemetryConfiguration",
-			Handler:    _TelemetryService_GetTelemetryConfiguration_Handler,
-		},
-		{
-			MethodName: "ConfigureTelemetry",
-			Handler:    _TelemetryService_ConfigureTelemetry_Handler,
-		},
-		{
-			MethodName: "GetConfig",
-			Handler:    _TelemetryService_GetConfig_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/telemetry_service.proto",
 }
 
 func (m *ConfigureTelemetryRequest) Marshal() (dAtA []byte, err error) {

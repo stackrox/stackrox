@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
@@ -877,36 +876,23 @@ func (s *clusterCVEDatastoreSACSuite) TestSearchRawClusterCVEs() {
 	}
 }
 
-func addDurationToTimestamp(ts *types.Timestamp, duration *types.Duration) *types.Timestamp {
-	nanos := ts.GetNanos() + duration.GetNanos()
-	seconds := ts.GetSeconds() + duration.GetSeconds()
-	nanosInSecond := int32(1000 * 1000 * 1000)
-	if nanos >= nanosInSecond {
-		seconds += int64(nanos / nanosInSecond)
-	}
-	return protocompat.GetProtoTimestampFromSecondsAndNanos(
-		seconds,
-		int32(0))
-
-}
-
 func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
-	snoozeStart *types.Timestamp,
-	snoozeDuration *types.Duration,
+	snoozeStart time.Time,
+	snoozeDuration time.Duration,
 	shouldBeSnoozed bool) {
 	var err error
 	var found bool
 	var objSnoozed bool
-	var objSnoozeStart *types.Timestamp
-	var objSnoozeExpiry *types.Timestamp
-	expectedSnoozeExpire := addDurationToTimestamp(snoozeStart, snoozeDuration)
+	var objSnoozeStart *time.Time
+	var objSnoozeExpiry *time.Time
+	expectedSnoozeExpire := snoozeStart.Add(snoozeDuration)
 
 	var obj *storage.ClusterCVE
 	obj, found, err = s.pgStore.Get(allAccessCtx, targetCVE)
 	if found {
 		objSnoozed = obj.GetSnoozed()
-		objSnoozeStart = obj.GetSnoozeStart()
-		objSnoozeExpiry = obj.GetSnoozeExpiry()
+		objSnoozeStart = protocompat.ConvertTimestampToTimeOrNil(obj.GetSnoozeStart())
+		objSnoozeExpiry = protocompat.ConvertTimestampToTimeOrNil(obj.GetSnoozeExpiry())
 	} else {
 		objSnoozed = false
 		objSnoozeStart = nil
@@ -917,27 +903,27 @@ func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
 	s.True(found)
 	if shouldBeSnoozed {
 		s.True(objSnoozed)
-		s.Equal(snoozeStart, objSnoozeStart)
-		s.Equal(expectedSnoozeExpire, objSnoozeExpiry)
+		s.Equal(snoozeStart.UTC(), objSnoozeStart.UTC())
+		s.Equal(expectedSnoozeExpire.UTC(), objSnoozeExpiry.UTC())
 	} else {
 		s.False(objSnoozed)
 	}
 }
 
 func (s *clusterCVEDatastoreSACSuite) checkCVEUnsnoozed(targetCVE string,
-	snoozeStart *types.Timestamp,
-	snoozeDuration *types.Duration,
+	snoozeStart time.Time,
+	snoozeDuration time.Duration,
 	shouldBeUnsnoozed bool) {
 
 	var objSnoozed bool
-	var objSnoozeStart *types.Timestamp
-	var objSnoozeExpiry *types.Timestamp
-	expectedSnoozeExpire := addDurationToTimestamp(snoozeStart, snoozeDuration)
+	var objSnoozeStart *time.Time
+	var objSnoozeExpiry *time.Time
+	expectedSnoozeExpire := snoozeStart.Add(snoozeDuration)
 	obj, found, err := s.pgStore.Get(allAccessCtx, targetCVE)
 	if found {
 		objSnoozed = obj.GetSnoozed()
-		objSnoozeStart = obj.GetSnoozeStart()
-		objSnoozeExpiry = obj.GetSnoozeExpiry()
+		objSnoozeStart = protocompat.ConvertTimestampToTimeOrNil(obj.GetSnoozeStart())
+		objSnoozeExpiry = protocompat.ConvertTimestampToTimeOrNil(obj.GetSnoozeExpiry())
 	} else {
 		objSnoozed = false
 		objSnoozeStart = nil
@@ -950,8 +936,8 @@ func (s *clusterCVEDatastoreSACSuite) checkCVEUnsnoozed(targetCVE string,
 		s.False(objSnoozed)
 	} else {
 		s.True(objSnoozed)
-		s.Equal(snoozeStart, objSnoozeStart)
-		s.Equal(expectedSnoozeExpire, objSnoozeExpiry)
+		s.Equal(snoozeStart.UTC(), objSnoozeStart.UTC())
+		s.Equal(expectedSnoozeExpire.UTC(), objSnoozeExpiry.UTC())
 	}
 }
 
@@ -965,11 +951,10 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 	for _, c := range getClusterCVESuppressUnsuppressTestCases(s.T(), validClusters[0], validClusters[1]) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
-			snoozeStart := protocompat.TimestampNow()
-			snoozeStart.Nanos = 0
-			snoozeDuration := protocompat.DurationProto(10 * time.Minute)
+			snoozeStart := time.Now().Truncate(time.Second)
+			snoozeDuration := 10 * time.Minute
 
-			err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
+			err = s.pgStore.Suppress(ctx, &snoozeStart, &snoozeDuration, targetCVE)
 			if c.visibleCVE[targetCVE] {
 				s.NoError(err)
 			} else {
@@ -978,7 +963,7 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 			s.checkCVESnoozed(targetCVE, snoozeStart, snoozeDuration, c.visibleCVE[targetCVE])
 			if !c.visibleCVE[targetCVE] {
 
-				err = s.pgStore.Suppress(allAccessCtx, snoozeStart, snoozeDuration, targetCVE)
+				err = s.pgStore.Suppress(allAccessCtx, &snoozeStart, &snoozeDuration, targetCVE)
 
 				s.NoError(err)
 			}

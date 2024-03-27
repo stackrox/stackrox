@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -96,7 +95,7 @@ func (s *storeImpl) insertIntoNodes(
 	tx *postgres.Tx,
 	parts *nodePartsAsSlice,
 	scanUpdated bool,
-	iTime *protoTypes.Timestamp,
+	iTime time.Time,
 ) error {
 	cloned := parts.node
 	if cloned.GetScan().GetComponents() != nil {
@@ -116,11 +115,11 @@ func (s *storeImpl) insertIntoNodes(
 		cloned.GetClusterName(),
 		cloned.GetLabels(),
 		cloned.GetAnnotations(),
-		pgutils.NilOrTime(cloned.GetJoinedAt()),
+		protocompat.NilOrTime(cloned.GetJoinedAt()),
 		cloned.GetContainerRuntime().GetVersion(),
 		cloned.GetOsImage(),
-		pgutils.NilOrTime(cloned.GetLastUpdated()),
-		pgutils.NilOrTime(cloned.GetScan().GetScanTime()),
+		protocompat.NilOrTime(cloned.GetLastUpdated()),
+		protocompat.NilOrTime(cloned.GetScan().GetScanTime()),
 		cloned.GetComponents(),
 		cloned.GetCves(),
 		cloned.GetFixableCves(),
@@ -313,7 +312,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 	return nil
 }
 
-func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
+func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.NodeCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -351,7 +350,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 			obj.SnoozeStart = storedCVE.GetSnoozeStart()
 			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
 		} else {
-			obj.CveBaseInfo.CreatedAt = iTime
+			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
 
 		serialized, marshalErr := obj.Marshal()
@@ -362,14 +361,14 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Ti
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
-			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetOperatingSystem(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
-			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
+			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
 		})
 
@@ -491,10 +490,10 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
-	iTime := protocompat.TimestampNow()
+	iTime := time.Now()
 
 	if !s.noUpdateTimestamps {
-		obj.LastUpdated = iTime
+		obj.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 	}
 	scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {

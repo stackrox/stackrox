@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -277,122 +273,6 @@ var fileDescriptor_a595f584f52ae852 = []byte{
 	0xff, 0xf8, 0x97, 0xb8, 0x9b, 0x62, 0x48, 0x56, 0x26, 0xc7, 0x06, 0x3f, 0xd4, 0x97, 0x12, 0xca,
 	0x2c, 0x0d, 0x8b, 0xe8, 0x8d, 0x53, 0x44, 0xaf, 0x9d, 0x77, 0x57, 0x2a, 0xed, 0xe1, 0xbf, 0x00,
 	0x00, 0x00, 0xff, 0xff, 0x85, 0xa5, 0x5a, 0x31, 0xd5, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// NamespaceServiceClient is the client API for NamespaceService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type NamespaceServiceClient interface {
-	GetNamespaces(ctx context.Context, in *GetNamespaceRequest, opts ...grpc.CallOption) (*GetNamespacesResponse, error)
-	GetNamespace(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Namespace, error)
-}
-
-type namespaceServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewNamespaceServiceClient(cc grpc.ClientConnInterface) NamespaceServiceClient {
-	return &namespaceServiceClient{cc}
-}
-
-func (c *namespaceServiceClient) GetNamespaces(ctx context.Context, in *GetNamespaceRequest, opts ...grpc.CallOption) (*GetNamespacesResponse, error) {
-	out := new(GetNamespacesResponse)
-	err := c.cc.Invoke(ctx, "/v1.NamespaceService/GetNamespaces", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *namespaceServiceClient) GetNamespace(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Namespace, error) {
-	out := new(Namespace)
-	err := c.cc.Invoke(ctx, "/v1.NamespaceService/GetNamespace", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// NamespaceServiceServer is the server API for NamespaceService service.
-type NamespaceServiceServer interface {
-	GetNamespaces(context.Context, *GetNamespaceRequest) (*GetNamespacesResponse, error)
-	GetNamespace(context.Context, *ResourceByID) (*Namespace, error)
-}
-
-// UnimplementedNamespaceServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedNamespaceServiceServer struct {
-}
-
-func (*UnimplementedNamespaceServiceServer) GetNamespaces(ctx context.Context, req *GetNamespaceRequest) (*GetNamespacesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNamespaces not implemented")
-}
-func (*UnimplementedNamespaceServiceServer) GetNamespace(ctx context.Context, req *ResourceByID) (*Namespace, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNamespace not implemented")
-}
-
-func RegisterNamespaceServiceServer(s *grpc.Server, srv NamespaceServiceServer) {
-	s.RegisterService(&_NamespaceService_serviceDesc, srv)
-}
-
-func _NamespaceService_GetNamespaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNamespaceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(NamespaceServiceServer).GetNamespaces(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.NamespaceService/GetNamespaces",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NamespaceServiceServer).GetNamespaces(ctx, req.(*GetNamespaceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _NamespaceService_GetNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResourceByID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(NamespaceServiceServer).GetNamespace(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.NamespaceService/GetNamespace",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NamespaceServiceServer).GetNamespace(ctx, req.(*ResourceByID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _NamespaceService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.NamespaceService",
-	HandlerType: (*NamespaceServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetNamespaces",
-			Handler:    _NamespaceService_GetNamespaces_Handler,
-		},
-		{
-			MethodName: "GetNamespace",
-			Handler:    _NamespaceService_GetNamespace_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/namespace_service.proto",
 }
 
 func (m *Namespace) Marshal() (dAtA []byte, err error) {

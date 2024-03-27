@@ -1,7 +1,8 @@
 package standards
 
 import (
-	"github.com/gogo/protobuf/types"
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/kubelet/config/v1beta1"
@@ -27,6 +28,6 @@ type ComplianceData struct {
 
 	KubeletConfiguration *KubeletConfiguration
 
-	Time         *types.Timestamp
+	Time         time.Time
 	IsMasterNode bool
 }

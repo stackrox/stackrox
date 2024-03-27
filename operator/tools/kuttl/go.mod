@@ -1,6 +1,8 @@
 module github.com/stackrox/rox/operator/tools/kuttl
 
-go 1.19
+go 1.21
+
+toolchain go1.21.7
 
 require github.com/kudobuilder/kuttl v0.15.1-0.20240314095807-ad66f0338e71
 
@@ -12,7 +14,7 @@ require (
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v24.0.7+incompatible // indirect
+	github.com/docker/docker v24.0.9+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

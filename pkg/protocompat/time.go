@@ -5,21 +5,20 @@ import (
 	"time"
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
+	"github.com/graph-gophers/graphql-go"
 )
 
 var (
 	// TimestampPtrType is a variable containing a nil pointer of Timestamp type
 	TimestampPtrType = reflect.TypeOf((*gogoTimestamp.Timestamp)(nil))
+
+	// TimestampType is the type representing a proto timestamp.
+	TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
 )
 
 // TimestampNow returns a protobuf timestamp set to the current time.
 func TimestampNow() *gogoTimestamp.Timestamp {
 	return gogoTimestamp.TimestampNow()
-}
-
-// ConvertTimestampToTimeOrError converts a proto timestamp to a golang Time, or returns an error if there is one.
-func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
-	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
@@ -44,6 +43,22 @@ func ConvertTimeToTimestampOrNil(goTime *time.Time) *gogoTimestamp.Timestamp {
 		return nil
 	}
 	return gogo
+}
+
+// ConvertTimestampToGraphqlTimeOrError converts a proto timestamp
+// to a graphql Time, or returns an error if there is one.
+func ConvertTimestampToGraphqlTimeOrError(gogo *gogoTimestamp.Timestamp) (*graphql.Time, error) {
+	if gogo == nil {
+		return nil, nil
+	}
+	t, err := gogoTimestamp.TimestampFromProto(gogo)
+	return &graphql.Time{Time: t}, err
+}
+
+// ConvertTimestampToTimeOrError converts a proto timestamp
+// to a golang Time, or returns an error if there is one.
+func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
+	return gogoTimestamp.TimestampFromProto(gogo)
 }
 
 // ConvertTimeToTimestampOrError converts golang time to proto timestamp.
@@ -82,11 +97,34 @@ func NilOrTime(t *gogoTimestamp.Timestamp) *time.Time {
 	return &ts
 }
 
+// ParseRFC3339NanoTimestamp converts a time string in RFC 3339 Nano format to a protobuf timestamp.
+func ParseRFC3339NanoTimestamp(timestamp string) (*gogoTimestamp.Timestamp, error) {
+	t, err := time.Parse(time.RFC3339Nano, timestamp)
+	if err != nil {
+		return nil, err
+	}
+	protoTime, err := ConvertTimeToTimestampOrError(t)
+	if err != nil {
+		return nil, err
+	}
+	return protoTime, nil
+}
+
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
 // the first timestamp is before the second or a positive value if the first timestamp is
 // after the second.
 func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
 	return t1.Compare(t2)
+}
+
+// CompareTimestampToTime compares a proto timestamp to a time.
+// The return value is:
+// * -1 if the proto timestamp is before the time
+// * 0 if both represent the same time
+// * 1 if the proto timestamp is after the time
+func CompareTimestampToTime(t1 *gogoTimestamp.Timestamp, t2 *time.Time) int {
+	ts2 := ConvertTimeToTimestampOrNil(t2)
+	return CompareTimestamps(t1, ts2)
 }
 
 // DurationFromProto converts a proto Duration to a time.Duration.

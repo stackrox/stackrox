@@ -3,6 +3,7 @@ package networkflowupdate
 import (
 	"context"
 	"errors"
+	"time"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -66,7 +68,15 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 
-	if err = s.storeUpdater.update(ctx, allUpdatedFlows, update.Time); err != nil {
+	var updateTime *time.Time
+	if update.Time != nil {
+		updateRawTime, err := protocompat.ConvertTimestampToTimeOrError(update.Time)
+		if err != nil {
+			return err
+		}
+		updateTime = &updateRawTime
+	}
+	if err = s.storeUpdater.update(ctx, allUpdatedFlows, updateTime); err != nil {
 		return err
 	}
 	return nil

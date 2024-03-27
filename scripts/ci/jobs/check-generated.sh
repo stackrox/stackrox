@@ -84,7 +84,11 @@ echo 'Check if a script that was on the failed shellcheck list is now fixed. (If
 function check-shellcheck-failing-list() {
     make update-shellcheck-skip
     echo 'Checking for diffs after updating shellcheck failing list...'
-    git diff --exit-code HEAD
+    if ! git diff --exit-code HEAD; then
+        echo 'Failure only if files can be removed from the skip file.'
+        test "$(git diff --numstat scripts/style/shellcheck_skip.txt | cut -f2)" -lt 1 \
+            && git reset --hard HEAD
+    fi
 }
 check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \

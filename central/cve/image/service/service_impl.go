@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cve/common"
@@ -61,11 +62,15 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	if features.UnifiedCVEDeferral.Enabled() {
 		return nil, errox.NotFound
 	}
-	createdAt := protocompat.TimestampNow()
 	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
-	if err := s.cves.Suppress(ctx, createdAt, request.GetDuration(), request.GetCves()...); err != nil {
+	createdAt := time.Now()
+	suppressDuration, err := protocompat.DurationFromProto(request.GetDuration())
+	if err != nil {
+		return nil, err
+	}
+	if err := s.cves.Suppress(ctx, &createdAt, &suppressDuration, request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// This handles updating image-cve edges and reprocessing affected deployments.

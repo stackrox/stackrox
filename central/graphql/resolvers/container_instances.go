@@ -102,8 +102,9 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 		groupByPodID[podID] = groupByName
 
 		for _, instance := range pod.GetLiveInstances() {
-			startTime, ok := convertTimestamp(instance.GetContainerName(), "container instance", instance.GetStarted())
-			if !ok {
+			startTime, err := protocompat.ConvertTimestampToTimeOrError(instance.GetStarted())
+			if err != nil {
+				logTimestampConversionError(instance.GetContainerName(), "container instance", err)
 				continue
 			}
 
@@ -133,8 +134,9 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 				return protocompat.CompareTimestamps(instances[i].GetStarted(), instances[j].GetStarted()) < 0
 			})
 
-			startTime, ok := convertTimestamp(instances[0].GetContainerName(), "container instance", instances[0].GetStarted())
-			if !ok {
+			startTime, err := protocompat.ConvertTimestampToTimeOrError(instances[0].GetStarted())
+			if err != nil {
+				logTimestampConversionError(instances[0].GetContainerName(), "container instance", err)
 				continue
 			}
 
@@ -232,8 +234,9 @@ func (resolver *ContainerNameGroupResolver) containerRestartEvents() []*Containe
 
 	events := make([]*ContainerRestartEventResolver, 0, len(resolver.terminatedInstances))
 	for i := 1; i < len(resolver.terminatedInstances); i++ {
-		started, ok := convertTimestamp(resolver.terminatedInstances[i].data.GetContainerName(), "container instance", resolver.terminatedInstances[i].data.GetStarted())
-		if !ok {
+		started, err := protocompat.ConvertTimestampToTimeOrError(resolver.terminatedInstances[i].data.GetStarted())
+		if err != nil {
+			logTimestampConversionError(resolver.terminatedInstances[i].data.GetContainerName(), "container instance", err)
 			continue
 		}
 		events = append(events, &ContainerRestartEventResolver{
@@ -244,8 +247,10 @@ func (resolver *ContainerNameGroupResolver) containerRestartEvents() []*Containe
 	}
 
 	if resolver.liveInstance != nil && len(resolver.terminatedInstances) > 0 {
-		started, ok := convertTimestamp(resolver.liveInstance.data.GetContainerName(), "container instance", resolver.liveInstance.data.GetStarted())
-		if ok {
+		started, err := protocompat.ConvertTimestampToTimeOrError(resolver.liveInstance.data.GetStarted())
+		if err != nil {
+			logTimestampConversionError(resolver.liveInstance.data.GetContainerName(), "container instance", err)
+		} else {
 			events = append(events, &ContainerRestartEventResolver{
 				id:        graphql.ID(resolver.liveInstance.data.GetInstanceId().GetId()),
 				name:      resolver.name,
@@ -263,8 +268,9 @@ func (resolver *ContainerNameGroupResolver) containerTerminationEvents() []*Cont
 
 	events := make([]*ContainerTerminationEventResolver, 0, len(resolver.terminatedInstances))
 	for _, instance := range resolver.terminatedInstances {
-		finished, ok := convertTimestamp(instance.data.GetContainerName(), "container instance", instance.data.GetFinished())
-		if !ok {
+		finished, err := protocompat.ConvertTimestampToTimeOrError(instance.data.GetFinished())
+		if err != nil {
+			logTimestampConversionError(instance.data.GetContainerName(), "container instance", err)
 			continue
 		}
 		events = append(events, &ContainerTerminationEventResolver{

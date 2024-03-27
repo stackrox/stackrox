@@ -366,12 +366,14 @@ registry_rw_login() {
     case "$registry" in
         quay.io/rhacs-eng)
             _login() {
+                # shellcheck disable=SC2317
                 docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             }
             retry 5 true _login
             ;;
         quay.io/stackrox-io)
             _login() {
+                # shellcheck disable=SC2317
                 docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
             }
             retry 5 true _login
@@ -391,6 +393,7 @@ registry_ro_login() {
     case "$registry" in
         quay.io/rhacs-eng)
             _login() {
+                # shellcheck disable=SC2317
                 docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
             }
             retry 5 true _login
@@ -932,6 +935,23 @@ get_pr_details() {
 
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
+
+    #TODO(janisz): remove after https://github.com/openshift/release/pull/49962 is merged
+    if [ -e "/tmp/go/" ]; then
+        info "Go already exists"
+    else
+        info "Replace Go"
+        go version
+        whoami
+        GOLANG_VERSION=1.21.8
+        GOLANG_SHA256=538b3b143dc7f32b093c8ffe0e050c260b57fc9d57a12c4140a639a8dd2b4e4f
+        url="https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz"
+        wget --no-verbose -O /tmp/go.tgz "$url"
+        echo "$GOLANG_SHA256 /tmp/go.tgz" | sha256sum -c -
+        tar -C /tmp/ -xzf /tmp/go.tgz
+    fi
+    export PATH=/tmp/go/bin:$PATH
+    go version
 
     openshift_ci_debug
 
@@ -1881,7 +1901,7 @@ highlight_cluster_versions() {
         return
     fi
 
-    artifact_file="$ARTIFACT_DIR/cluster-version-summary.html"
+    artifact_file="$ARTIFACT_DIR/cluster-version.html"
 
     cat > "$artifact_file" <<- HEAD
 <html>

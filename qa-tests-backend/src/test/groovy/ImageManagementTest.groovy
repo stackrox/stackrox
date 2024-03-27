@@ -17,7 +17,7 @@ import spock.lang.Unroll
 import util.Env
 
 @Tag("Parallel")
-// @Tag("PZ") // ROX-22846: uncomment when resolved.
+@Tag("PZ")
 class ImageManagementTest extends BaseSpecification {
 
     private static final String TEST_NAMESPACE = "qa-image-management"
@@ -239,7 +239,7 @@ class ImageManagementTest extends BaseSpecification {
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(IMAGE_SHA)
+            def image = ImageService.getImage(TEST_IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
     }
@@ -262,7 +262,7 @@ class ImageManagementTest extends BaseSpecification {
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(IMAGE_SHA)
+            def image = ImageService.getImage(TEST_IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
 

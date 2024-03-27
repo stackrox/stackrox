@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -224,7 +225,7 @@ func (resolver *nodeComponentResolver) LastScanned(ctx context.Context) (*graphq
 
 	// Short path. Full image is embedded when image scan resolver is called.
 	if scanTime := embeddedobjs.NodeComponentLastScannedFromContext(resolver.ctx); scanTime != nil {
-		return timestamp(scanTime)
+		return &graphql.Time{Time: *scanTime}, nil
 	}
 
 	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)
@@ -251,7 +252,7 @@ func (resolver *nodeComponentResolver) LastScanned(ctx context.Context) (*graphq
 		return nil, errors.New("multiple nodes matched for last scanned component query")
 	}
 
-	return timestamp(nodes[0].GetScan().GetScanTime())
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(nodes[0].GetScan().GetScanTime())
 }
 
 // Location of the node component.

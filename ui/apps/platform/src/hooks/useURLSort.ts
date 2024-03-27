@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
+
 import useURLParameter from 'hooks/useURLParameter';
 import { SortAggregate, SortDirection, SortOption, ThProps } from 'types/table';
 import { ApiSortOption } from 'types/search';
@@ -74,7 +76,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
 
     // we'll construct a map of sort fields to indices that will make it easier to work with
     // PatternFly
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         const newFieldToIndexMap = sortFields.reduce(
             (acc, curr, index) => {
                 acc[curr] = index;

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/converter/v2"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -72,7 +70,7 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 }
 
 func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
-	iTime := protocompat.TimestampNow()
+	iTime := time.Now()
 
 	cves := make([]*storage.ClusterCVE, 0, len(cvePartsArr))
 	var edges []*storage.ClusterCVEEdge
@@ -111,7 +109,7 @@ func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType st
 	return tx.Commit(ctx)
 }
 
-func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ClusterCVE) error {
+func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.ClusterCVE) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -152,7 +150,7 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timest
 			obj.SnoozeStart = storedCVE.GetSnoozeStart()
 			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
 		} else {
-			obj.CveBaseInfo.CreatedAt = iTime
+			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
 
 		serialized, marshalErr := obj.Marshal()
@@ -164,13 +162,13 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timest
 			obj.GetId(),
 			obj.GetType(),
 			obj.GetCveBaseInfo().GetCve(),
-			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
-			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
+			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
 		})
 

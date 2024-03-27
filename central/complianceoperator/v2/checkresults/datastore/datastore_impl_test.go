@@ -248,6 +248,75 @@ var (
 			ProfileName:        "ocp4-cis-node",
 		},
 	}
+
+	expectedProfileResults = []*ResourceResultsByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  0,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check-2",
+			RuleName:           "test-rule",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  5,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check",
+			RuleName:           "test-rule",
+		},
+	}
+
+	expectedProfileResultsCluster2 = []*ResourceResultsByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check",
+			RuleName:           "test-rule",
+		},
+	}
+
+	expectedProfileResultsCluster2And3 = []*ResourceResultsByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  4,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check",
+			RuleName:           "test-rule",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  0,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check-2",
+			RuleName:           "test-rule",
+		},
+	}
 )
 
 func TestComplianceCheckResultDataStore(t *testing.T) {
@@ -718,6 +787,55 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultSta
 	}
 }
 
+func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults() {
+	s.setupTestData()
+	testCases := []struct {
+		desc            string
+		query           *apiV1.Query
+		scopeKey        string
+		expectedResults []*ResourceResultsByProfile
+	}{
+		{
+			desc:            "Empty query - Full access",
+			query:           search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileResults,
+		},
+		{
+			desc:            "Empty query - Only cluster 2 access",
+			query:           search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedProfileResultsCluster2,
+		},
+		{
+			desc:            "Cluster 2 query - Only cluster 2 access",
+			query:           search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedProfileResultsCluster2,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Only cluster 2 access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedProfileResultsCluster2,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileResultsCluster2And3,
+		},
+	}
+
+	for _, tc := range testCases {
+		results, err := s.dataStore.ComplianceProfileResults(s.testContexts[tc.scopeKey], tc.query)
+		s.NoError(err)
+		s.ElementsMatch(tc.expectedResults, results)
+	}
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	// make sure we have nothing
 	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
@@ -751,8 +869,19 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 		testconsts.Cluster3: internaltov2storage.BuildProfileRefID(testconsts.Cluster3, "ocp4-cis-node", "node"),
 	}
 
+	ruleCluster := map[string]string{
+		testconsts.Cluster1: internaltov2storage.BuildNameRefID(testconsts.Cluster1, "test-rule"),
+		testconsts.Cluster2: internaltov2storage.BuildNameRefID(testconsts.Cluster2, "test-rule"),
+		testconsts.Cluster3: internaltov2storage.BuildNameRefID(testconsts.Cluster3, "test-rule"),
+	}
+
 	for k, v := range profileCluster {
 		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+		s.Require().NoError(err)
+	}
+
+	for k, v := range ruleCluster {
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_rule_v2 (id, name, clusterid, rulerefid) values ($1, $2, $3, $4)", uuid.NewV4().String(), "test-rule", k, v)
 		s.Require().NoError(err)
 	}
 
@@ -781,7 +910,8 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		CreatedTime:    protocompat.TimestampNow(),
 		ScanName:       scanName,
 		ScanConfigName: "scanConfig1",
-		ScanRefId:      internaltov2storage.BuildScanRefID(clusterID, scanName),
+		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, scanName),
+		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, "test-rule"),
 	}
 }
 
@@ -801,6 +931,7 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		CreatedTime:    protocompat.TimestampNow(),
 		ScanName:       scanName,
 		ScanConfigName: "scanConfig2",
-		ScanRefId:      internaltov2storage.BuildScanRefID(clusterID, scanName),
+		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, scanName),
+		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, "test-rule"),
 	}
 }

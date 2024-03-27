@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -395,7 +394,7 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vu
 		return nil, err
 	}
 	modTime := time.Time{}
-	if t := pgutils.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
+	if t := protocompat.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
 		modTime = *t
 	}
 	return &vulDefFile{snap.File, modTime, snap.Close}, nil

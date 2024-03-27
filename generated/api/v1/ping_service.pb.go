@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -108,86 +104,6 @@ var fileDescriptor_e11869b18a72c24a = []byte{
 	0xe6, 0xeb, 0x15, 0x97, 0x24, 0x26, 0x67, 0x17, 0xe5, 0x57, 0x40, 0x1c, 0xa4, 0x97, 0x58, 0x90,
 	0xa9, 0x57, 0x66, 0x18, 0xc5, 0x54, 0x66, 0x18, 0xc1, 0x98, 0xc4, 0x06, 0x16, 0x33, 0x06, 0x04,
 	0x00, 0x00, 0xff, 0xff, 0xe9, 0xa7, 0x6a, 0x1a, 0xf7, 0x00, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// PingServiceClient is the client API for PingService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type PingServiceClient interface {
-	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PongMessage, error)
-}
-
-type pingServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewPingServiceClient(cc grpc.ClientConnInterface) PingServiceClient {
-	return &pingServiceClient{cc}
-}
-
-func (c *pingServiceClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PongMessage, error) {
-	out := new(PongMessage)
-	err := c.cc.Invoke(ctx, "/v1.PingService/Ping", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// PingServiceServer is the server API for PingService service.
-type PingServiceServer interface {
-	Ping(context.Context, *Empty) (*PongMessage, error)
-}
-
-// UnimplementedPingServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedPingServiceServer struct {
-}
-
-func (*UnimplementedPingServiceServer) Ping(ctx context.Context, req *Empty) (*PongMessage, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
-}
-
-func RegisterPingServiceServer(s *grpc.Server, srv PingServiceServer) {
-	s.RegisterService(&_PingService_serviceDesc, srv)
-}
-
-func _PingService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PingServiceServer).Ping(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.PingService/Ping",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PingServiceServer).Ping(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _PingService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.PingService",
-	HandlerType: (*PingServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Ping",
-			Handler:    _PingService_Ping_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/ping_service.proto",
 }
 
 func (m *PongMessage) Marshal() (dAtA []byte, err error) {

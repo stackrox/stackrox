@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/normalize"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -80,7 +81,7 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 	indicator.PodId = cachedContainer.PodID
 	indicator.PodUid = cachedContainer.PodUID
 	indicator.Namespace = cachedContainer.Namespace
-	indicator.ContainerStartTime = cachedContainer.StartTime
+	indicator.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(cachedContainer.StartTime)
 	indicator.ImageId = cachedContainer.ImageID
 }
 
