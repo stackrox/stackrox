@@ -21,7 +21,7 @@ type singletonStore struct {
 }
 
 func (s *singletonStore) Upsert(val protocompat.Message) error {
-	marshalled, err := protocompat.Marshal(val)
+	marshalled, err := protocompat.ProtoMarshal(val)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal %s", s.objectName)
 	}
@@ -31,7 +31,7 @@ func (s *singletonStore) Upsert(val protocompat.Message) error {
 }
 
 func (s *singletonStore) Create(val protocompat.Message) error {
-	marshalled, err := protocompat.Marshal(val)
+	marshalled, err := protocompat.ProtoMarshal(val)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal %s", s.objectName)
 	}

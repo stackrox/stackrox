@@ -11,6 +11,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -45,7 +46,7 @@ func New(db postgres.DB) Store {
 //// Helper functions
 
 func insertIntoIntegrationHealths(_ context.Context, batch *pgx.Batch, obj *storage.IntegrationHealth) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := protocompat.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}

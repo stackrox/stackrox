@@ -3,11 +3,12 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertResourceCollectionFromProto converts a `*storage.ResourceCollection` to Gorm model
 func ConvertResourceCollectionFromProto(obj *storage.ResourceCollection) (*Collections, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}

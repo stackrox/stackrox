@@ -8,7 +8,7 @@ import (
 
 // ConvertReportSnapshotFromProto converts a `*storage.ReportSnapshot` to Gorm model
 func ConvertReportSnapshotFromProto(obj *storage.ReportSnapshot) (*ReportSnapshots, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}

@@ -5,11 +5,12 @@ package schema
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertLogImbueFromProto converts a `*storage.LogImbue` to Gorm model
 func ConvertLogImbueFromProto(obj *storage.LogImbue) (*LogImbues, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
@@ -120,7 +121,7 @@ func writeOutputInBinaryFormat(messages []*central.MsgFromSensor, _, _ time.Time
 	}()
 	utils.CrashOnError(err)
 	for _, m := range messages {
-		d, err := m.Marshal()
+		d, err := protocompat.Marshal(m)
 		utils.CrashOnError(err)
 		buf := make([]byte, 4)
 		binary.LittleEndian.PutUint32(buf, uint32(len(d)))

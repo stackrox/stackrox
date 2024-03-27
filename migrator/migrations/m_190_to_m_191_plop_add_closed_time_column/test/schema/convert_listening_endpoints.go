@@ -4,11 +4,12 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertProcessListeningOnPortStorageFromProto converts a `*storage.ProcessListeningOnPortStorage` to Gorm model
 func ConvertProcessListeningOnPortStorageFromProto(obj *storage.ProcessListeningOnPortStorage) (*ListeningEndpoints, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}

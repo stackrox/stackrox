@@ -14,6 +14,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -160,7 +161,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 				continue
 			}
 			if s.writer != nil {
-				if data, err := signalStreamMsg.Marshal(); err == nil {
+				if data, err := protocompat.Marshal(signalStreamMsg); err == nil {
 					if _, err := s.writer.Write(data); err != nil {
 						log.Warnf("Error writing msg: %v", err)
 					}

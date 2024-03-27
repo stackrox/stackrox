@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -148,7 +149,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 }
 
 func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := protocompat.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}

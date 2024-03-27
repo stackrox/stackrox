@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"gopkg.in/yaml.v3"
 )
 
@@ -160,7 +161,7 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 	case pkgNotifiers.AWSSecurityHubType:
 		creds := notifier.GetAwsSecurityHub().GetCredentials()
 		if creds != nil {
-			marshalled, err := creds.Marshal()
+			marshalled, err := protocompat.Marshal(creds)
 			if err != nil {
 				return "", err
 			}

@@ -13,6 +13,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -64,7 +65,7 @@ func New(db postgres.DB) Store {
 
 func insertIntoGroups(_ context.Context, batch *pgx.Batch, obj *storage.Group) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := protocompat.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -116,7 +117,7 @@ func (s *storeImpl) copyFromGroups(ctx context.Context, tx *postgres.Tx, objs ..
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := protocompat.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}

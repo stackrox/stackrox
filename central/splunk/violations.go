@@ -297,7 +297,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 // It still may happen that different violations in storage.Alert have the same content and we'll produce the same Ids
 // for them. Let's see if this ever becomes a problem.
 func generateViolationID(alertID string, v *storage.Alert_Violation) (string, error) {
-	data, err := v.Marshal()
+	data, err := protocompat.Marshal(v)
 	if err != nil {
 		return "", err
 	}

@@ -3,11 +3,12 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ConvertReportConfigurationFromProto converts a `*storage.ReportConfiguration` to Gorm model
 func ConvertReportConfigurationFromProto(obj *storage.ReportConfiguration) (*ReportConfigurations, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := protocompat.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
