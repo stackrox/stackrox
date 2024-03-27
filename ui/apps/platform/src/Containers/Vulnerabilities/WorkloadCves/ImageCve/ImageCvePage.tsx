@@ -346,7 +346,7 @@ function ImageCvePage() {
                     {!metadataRequest.error && (
                         <BreadcrumbItem isActive>
                             {cveName ?? (
-                                <Skeleton screenreaderText="Loading image name" width="200px" />
+                                <Skeleton screenreaderText="Loading CVE name" width="200px" />
                             )}
                         </BreadcrumbItem>
                     )}
