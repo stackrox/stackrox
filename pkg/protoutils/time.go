@@ -31,10 +31,10 @@ func After(ts1, ts2 *types.Timestamp) bool {
 }
 
 // RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
-func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
+func RoundTimestamp(ts *types.Timestamp, d time.Duration) *types.Timestamp {
 	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
 	if err != nil {
-		return
+		return ts
 	}
-	*ts = *protoconv.ConvertTimeToTimestamp(t.Round(d))
+	return protoconv.ConvertTimeToTimestamp(t.Round(d))
 }

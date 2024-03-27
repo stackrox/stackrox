@@ -42,8 +42,7 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 
 	if m.LastPersisted != nil {
 		ts := protoconv.MustConvertTimeToTimestamp(*m.LastPersisted)
-		protoutils.RoundTimestamp(ts, time.Microsecond)
-		msg.LastPersisted = ts
+		msg.LastPersisted = protoutils.RoundTimestamp(ts, time.Microsecond)
 	}
 
 	return &msg, nil
