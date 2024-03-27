@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -447,7 +446,7 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 		// Should be subject to pruning.
 		{
 			Id:            "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastUpdatedAt: protoutils.TimeBeforeDays(2),
+			LastUpdatedAt: protoconv.TimeBeforeDays(2),
 		},
 		// Should not be subject to pruning.
 		{
@@ -467,12 +466,12 @@ func (s *PostgresPruningSuite) TestPruneDiscoveredClusters() {
 		// Should be subject to pruning.
 		{
 			Id:            "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastUpdatedAt: protoutils.TimeBeforeDays(12),
+			LastUpdatedAt: protoconv.TimeBeforeDays(12),
 		},
 		// Should be subject to pruning.
 		{
 			Id:            "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastUpdatedAt: protoutils.TimeBeforeDays(365),
+			LastUpdatedAt: protoconv.TimeBeforeDays(365),
 		},
 	}
 	s.Require().NoError(discoveredClustersDS.UpsertTestDiscoveredClusters(s.ctx, s.T(),
@@ -492,7 +491,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastOccurredAt: protoutils.TimeBeforeDays(2),
+			LastOccurredAt: protoconv.TimeBeforeDays(2),
 		},
 		// Should not be subject to pruning.
 		{
@@ -507,7 +506,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
-			LastOccurredAt: protoutils.TimeBeforeDays(3),
+			LastOccurredAt: protoconv.TimeBeforeDays(3),
 		},
 		// Should not be subject to pruning.
 		{
@@ -517,12 +516,12 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should be subject to pruning.
 		{
 			Id:             "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastOccurredAt: protoutils.TimeBeforeDays(12),
+			LastOccurredAt: protoconv.TimeBeforeDays(12),
 		},
 		// Should be subject to pruning.
 		{
 			Id:             "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastOccurredAt: protoutils.TimeBeforeDays(365),
+			LastOccurredAt: protoconv.TimeBeforeDays(365),
 		},
 	}
 	s.Require().NoError(administrationEventDS.UpsertTestEvents(s.ctx, s.T(),
@@ -555,7 +554,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: protoutils.NowMinus(age),
+			Time: protoconv.NowMinus(age),
 		},
 	}
 }
