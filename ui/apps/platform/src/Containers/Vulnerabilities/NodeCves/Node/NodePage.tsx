@@ -4,9 +4,10 @@ import { useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { getOverviewCvesPath } from '../utils/searchUtils';
 
-const workloadCveOverviewCvePath = getOverviewCvesPath({
+import { getOverviewPagePath } from '../../utils/searchUtils';
+
+const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
     entityTab: 'Node',
 });
 

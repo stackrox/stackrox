@@ -45,19 +45,16 @@ import {
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
+    getOverviewPagePath,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseWorkloadQuerySearchFilter,
 } from '../../utils/searchUtils';
 import { getDefaultWorkloadSortOption } from '../../utils/sortUtils';
 import { DynamicTableLabel } from '../../components/DynamicIcon';
+import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 
-import { getOverviewCvesPath } from '../utils/searchUtils';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
-import ImageCvePageHeader, {
-    ImageCveMetadata,
-    imageCveMetadataFragment,
-} from './ImageCvePageHeader';
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
@@ -75,16 +72,21 @@ import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/Cve
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
-const workloadCveOverviewCvePath = getOverviewCvesPath({
+const workloadCveOverviewCvePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
     entityTab: 'CVE',
 });
 
 export const imageCveMetadataQuery = gql`
-    ${imageCveMetadataFragment}
     query getImageCveMetadata($cve: String!) {
         imageCVE(cve: $cve) {
-            ...ImageCVEMetadata
+            cve
+            firstDiscoveredInSystem
+            distroTuples {
+                summary
+                link
+                operatingSystem
+            }
         }
     }
 `;
@@ -199,7 +201,7 @@ function ImageCvePage() {
         onSort: () => setPage(1),
     });
 
-    const metadataRequest = useQuery<{ imageCVE: ImageCveMetadata | null }, { cve: string }>(
+    const metadataRequest = useQuery<{ imageCVE: CveMetadata | null }, { cve: string }>(
         imageCveMetadataQuery,
         { variables: { cve: cveId } }
     );
@@ -362,7 +364,7 @@ function ImageCvePage() {
                 ) : (
                     // Don't check the loading state here, since if the passed `data` is `undefined` we
                     // will implicitly handle the loading state in the component
-                    <ImageCvePageHeader data={metadataRequest.data?.imageCVE ?? undefined} />
+                    <CvePageHeader data={metadataRequest.data?.imageCVE ?? undefined} />
                 )}
             </PageSection>
             <Divider component="div" />
