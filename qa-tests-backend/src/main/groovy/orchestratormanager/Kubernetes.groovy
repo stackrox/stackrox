@@ -1764,6 +1764,7 @@ class Kubernetes implements OrchestratorMain {
             client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
             createClusterRole(generatePspRole())
             createClusterRoleBinding(generatePspRoleBinding(namespace))
+        } else {
         }
     }
 
@@ -2441,6 +2442,9 @@ class Kubernetes implements OrchestratorMain {
         ObjectMeta meta = new ObjectMeta()
         meta.setNamespace(ns)
         meta.setName(ns)
+        final Map<String, String> currentLabels = meta.getLabels();
+        currentLabels.put("pod-security.kubernetes.io/warn", "restricted");
+        meta.setLabels(currentLabels);
         namespace.setMetadata(meta)
         return namespace
     }

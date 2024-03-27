@@ -57,7 +57,6 @@ class Deployment {
         this.name = n
         // This label will be the selector used to select this deployment.
         this.addLabel("name", n)
-        this.addLabel("pod-security.kubernetes.io/warn", "restricted")
         return this
     }
 
