@@ -117,11 +117,13 @@ test_upgrade_paths() {
     cd "$TEST_ROOT"
     git checkout "$LAST_POSTGRES_SHA"
 
-    # Upgrade go.mod to Go 1.21
+    #TODO(janisz): remove below section once 4.5 is released
+    info "Upgrade go.mod to Go 1.21 commit and replace tag"
+    info "This is a hack to make 4.4.0 code working on Go 1.21"
     find $PWD -type f -name "go.mod" -printf '%h\n' | xargs -IDIR bash -c 'cd DIR && go mod tidy'
     git add .
     git commit -m "Upgrade to Go 1.21"
-    export BUILD_TAG=$LAST_POSTGRES_TAG
+    git tag -fa $LAST_POSTGRES_TAG
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
