@@ -74,7 +74,7 @@ UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifneq ($(UNAME_M),x86_64)
-	BUILD_IMAGE = quay.io/projectquay/golang:1.21
+	BUILD_IMAGE = docker.io/library/golang::1.21
 endif
 
 CENTRAL_DB_DOCKER_ARGS :=
@@ -423,12 +423,12 @@ main-build: build-prep main-build-dockerized
 	@echo "+ $@"
 
 .PHONY: sensor-build-dockerized
-sensor-build-dockerized:
+sensor-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
-sensor-kubernetes-build-dockerized:
+sensor-kubernetes-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
@@ -442,7 +442,7 @@ sensor-kubernetes-build:
 	$(GOBUILD) sensor/kubernetes
 
 .PHONY: main-build-dockerized
-main-build-dockerized:
+main-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
