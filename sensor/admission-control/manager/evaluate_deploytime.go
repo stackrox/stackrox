@@ -129,7 +129,8 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	var fetchImgCtx context.Context
-	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
+	timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
+	if timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
 		var cancel context.CancelFunc
 		fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
 		defer cancel()
