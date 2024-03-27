@@ -14,8 +14,8 @@ set -euo pipefail
 # TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-LAST_POSTGRES_TAG="4.4.0-rc.11-1-gba4856e48c"
-LAST_POSTGRES_SHA="ba4856e48ceba45a81a77cbbe07062ea723fbb75"
+LAST_POSTGRES_TAG="4.4.0-rc.11-2-g5bdff1f851"
+LAST_POSTGRES_SHA="5bdff1f851bd3c551674797370da04d508b0f6ab"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
