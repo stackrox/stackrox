@@ -11,8 +11,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	// ManagedByLabel is the label used to manage the ownership of a resource.
+	ManagedByLabel = "app.stackrox.io/managed-by"
+	// ManagedByValue is the value of the label used to manage the ownership of a resource.
+	ManagedByValue = "operator"
+)
+
 var defaultLabels = map[string]string{
-	"app.stackrox.io/managed-by": "operator",
+	ManagedByLabel: ManagedByValue,
 }
 
 // DefaultLabels defines the default labels the operator should set on resources it creates.

@@ -38,7 +38,7 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.R
 
 func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c, commonExtensions.OwnershipStrategyOwnerReference),
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}
