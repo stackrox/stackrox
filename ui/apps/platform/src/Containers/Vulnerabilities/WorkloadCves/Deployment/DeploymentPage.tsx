@@ -20,17 +20,17 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 
-import { getOverviewCvesPath } from '../utils/searchUtils';
 import DeploymentPageHeader, {
     DeploymentMetadata,
     deploymentMetadataFragment,
 } from './DeploymentPageHeader';
+import { getOverviewPagePath } from '../../utils/searchUtils';
 import { detailsTabValues } from '../../types';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
 
-const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
+const workloadCveOverviewDeploymentsPath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
     entityTab: 'Deployment',
 });

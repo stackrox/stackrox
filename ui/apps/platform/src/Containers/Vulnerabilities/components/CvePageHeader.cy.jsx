@@ -2,12 +2,12 @@ import React from 'react';
 
 import ComponentTestProviders from 'test-utils/ComponentProviders';
 
-import NodeCvePageHeader from './NodeCvePageHeader';
+import CvePageHeader from './CvePageHeader';
 
 function setup(data) {
     cy.mount(
         <ComponentTestProviders>
-            <NodeCvePageHeader data={data} />
+            <CvePageHeader data={data} />
         </ComponentTestProviders>
     );
 }

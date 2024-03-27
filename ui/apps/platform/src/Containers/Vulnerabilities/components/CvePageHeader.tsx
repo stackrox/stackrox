@@ -14,10 +14,10 @@ import uniqBy from 'lodash/uniqBy';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { getDateTime } from 'utils/dateUtils';
 
-import { getDistroLinkText } from '../../utils/textUtils';
-import { sortCveDistroList } from '../../utils/sortUtils';
+import { getDistroLinkText } from '../utils/textUtils';
+import { sortCveDistroList } from '../utils/sortUtils';
 
-export type NodeCveMetadata = {
+export type CveMetadata = {
     cve: string;
     firstDiscoveredInSystem: string | null;
     distroTuples: {
@@ -27,11 +27,11 @@ export type NodeCveMetadata = {
     }[];
 };
 
-export type NodeCvePageHeaderProps = {
-    data: NodeCveMetadata | undefined;
+export type CvePageHeaderProps = {
+    data: CveMetadata | undefined;
 };
 
-function NodeCvePageHeader({ data }: NodeCvePageHeaderProps) {
+function CvePageHeader({ data }: CvePageHeaderProps) {
     if (!data) {
         return (
             <Flex
@@ -80,4 +80,4 @@ function NodeCvePageHeader({ data }: NodeCvePageHeaderProps) {
     );
 }
 
-export default NodeCvePageHeader;
+export default CvePageHeader;
