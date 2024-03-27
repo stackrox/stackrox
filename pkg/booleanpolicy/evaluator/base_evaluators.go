@@ -266,7 +266,7 @@ func generateTimestampMatcher(value string, matchAll bool) (baseMatcherAndExtrac
 			}
 			return nil
 		}
-		return []valueMatchedPair{{value: protoconv.ProtoTime(ts), matched: matchAll || (value != "-" && baseMatcher(ts))}}
+		return []valueMatchedPair{{value: protoconv.ReadableTime(ts), matched: matchAll || (value != "-" && baseMatcher(ts))}}
 	}, nil
 }
 

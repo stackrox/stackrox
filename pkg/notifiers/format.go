@@ -140,7 +140,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 		FullMitreAttackVectors: fullMitreVectors,
 		AlertLink:              alertLink,
 		Severity:               SeverityString(alert.Policy.Severity),
-		Time:                   protoconv.ProtoTime(alert.Time),
+		Time:                   protoconv.ReadableTime(alert.Time),
 	}
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:

@@ -37,12 +37,12 @@ func TestConvertTimeString(t *testing.T) {
 	}
 }
 
-func TestProtoTime(t *testing.T) {
+func TestReadableTime(t *testing.T) {
 	ts1 := protocompat.GetProtoTimestampFromSeconds(1547942400)
-	readable1 := ProtoTime(ts1)
+	readable1 := ReadableTime(ts1)
 	assert.Equal(t, "2019-01-20 00:00:00", readable1)
 
 	invalidTs := protocompat.GetProtoTimestampFromSeconds(-62234567890)
-	unreadable := ProtoTime(invalidTs)
+	unreadable := ReadableTime(invalidTs)
 	assert.Equal(t, "<malformed time>", unreadable)
 }
