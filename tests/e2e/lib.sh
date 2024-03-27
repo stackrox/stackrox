@@ -33,7 +33,7 @@ deploy_stackrox() {
     deploy_central "${central_namespace}"
 
     export_central_basic_auth_creds
-    wait_for_api "${central_namespace}"
+    wait_for_api "${central_namespace}sss"
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 
