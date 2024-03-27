@@ -114,6 +114,8 @@ class ProcessBaselinesTest extends BaseSpecification {
     private Policy unauthorizedProcessExecution
 
     def setupSpec() {
+        orchestrator.setPodSecurityMode(TEST_NAMESPACE, "warn", "restricted")
+
         clusterId = ClusterService.getClusterId()
 
         unauthorizedProcessExecution = PolicyService.clonePolicyAndScopeByNamespace(

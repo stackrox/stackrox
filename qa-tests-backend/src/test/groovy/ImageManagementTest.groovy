@@ -28,6 +28,10 @@ class ImageManagementTest extends BaseSpecification {
     private static final String WGET_IMAGE_TAG = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "struts-app":"trigger-policy-violations-most-v1")
 
+    def setupSpec() {
+        orchestrator.setPodSecurityMode(TEST_NAMESPACE, "warn", "restricted")
+    }
+
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
