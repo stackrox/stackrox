@@ -97,7 +97,7 @@ function DayPickerDropdown({
         <Select
             variant={SelectVariant.checkbox}
             aria-label="Select one or more days"
-            onToggle={(_e, v) => onToggleDaySelect()}
+            onToggle={onToggleDaySelect}
             onSelect={onSelectDay}
             selections={selectSafeValue}
             isOpen={isDaySelectOpen}
