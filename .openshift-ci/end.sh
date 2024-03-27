@@ -25,7 +25,7 @@ end() {
 
     update_job_record outcome "${OVERALL_JOB_OUTCOME}" stopped_at "CURRENT_TIMESTAMP()"
 
-    post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}"
+    post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}" "${END_JUNIT2JIRA_SUMMARY_FILE}"
 
     if [[ "${OVERALL_JOB_OUTCOME}" == "${OUTCOME_FAILED}" ]]; then
         (send_slack_failure_summary) || { echo >&2 "ERROR: Could not slack a test failure message"; }
