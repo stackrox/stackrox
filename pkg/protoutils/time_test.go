@@ -38,3 +38,17 @@ func TestAfter(t *testing.T) {
 	assert.True(t, After(afterTs, nowTs), "After() should return true for a time that is 1s after now")
 	assert.True(t, After(rightAfterTs, nowTs), "After() should return true for a time that is 1ns after now")
 }
+
+func TestMustGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
+	timeString := "2017-11-16T19:35:32.012345678Z"
+
+	ts1 := MustGetProtoTimestampFromRFC3339NanoString(timeString)
+	assert.Equal(t, int64(1510860932), ts1.Seconds)
+	assert.Equal(t, int32(12345678), ts1.Nanos)
+
+	invalidTimeString1 := "0000-12-24T23:59:59.999999999Z"
+	assert.Panics(t, func() { MustGetProtoTimestampFromRFC3339NanoString(invalidTimeString1) })
+
+	invalidTimeString2 := "0000-12-2AT23:59:59.999999999Z"
+	assert.Panics(t, func() { MustGetProtoTimestampFromRFC3339NanoString(invalidTimeString2) })
+}

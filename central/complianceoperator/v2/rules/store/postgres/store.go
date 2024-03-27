@@ -118,10 +118,11 @@ func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.Complianc
 		obj.GetRuleType(),
 		obj.GetSeverity(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
+		pgutils.NilOrUUID(obj.GetRuleRefId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2 (Id, Name, RuleType, Severity, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_rule_v2 (Id, Name, RuleType, Severity, ClusterId, RuleRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, ClusterId = EXCLUDED.ClusterId, RuleRefId = EXCLUDED.RuleRefId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -169,6 +170,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		"ruletype",
 		"severity",
 		"clusterid",
+		"rulerefid",
 		"serialized",
 	}
 
@@ -189,6 +191,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 			obj.GetRuleType(),
 			obj.GetSeverity(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
+			pgutils.NilOrUUID(obj.GetRuleRefId()),
 			serialized,
 		})
 

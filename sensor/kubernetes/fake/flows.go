@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
@@ -188,7 +187,12 @@ func getNetworkEndpointFromConnectionAndOriginator(conn *sensor.NetworkConnectio
 	}
 }
 
-func makeNetworkConnection(src string, dst string, containerID string, closeTS *types.Timestamp) *sensor.NetworkConnection {
+func makeNetworkConnection(src string, dst string, containerID string, closeTimestamp time.Time) *sensor.NetworkConnection {
+	closeTS, err := protocompat.ConvertTimeToTimestampOrError(closeTimestamp)
+	if err != nil {
+		log.Errorf("Unable to set closeTS %+v", err)
+	}
+
 	return &sensor.NetworkConnection{
 		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
 		LocalAddress: &sensor.NetworkAddress{
@@ -227,12 +231,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 			continue
 		}
 
-		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
-		if err != nil {
-			log.Errorf("Unable to set closeTS %+v", err)
-		}
-
-		conn := makeNetworkConnection(src, dst, containerID, closeTS)
+		conn := makeNetworkConnection(src, dst, containerID, time.Now().Add(-5*time.Second))
 
 		originator := getRandomOriginator(containerID)
 

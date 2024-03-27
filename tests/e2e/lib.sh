@@ -153,6 +153,8 @@ export_test_environment() {
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
     ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
+    ci_export ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA "${ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA:-true}"
+    ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -238,8 +240,8 @@ deploy_central_via_operator() {
 
     customize_envVars=""
     if [[ "${CGO_CHECKS:-}" == "true" ]]; then
-        customize_envVars+=$'\n      - name: GODEBUG'
-        customize_envVars+=$'\n        value: "2"'
+        customize_envVars+=$'\n      - name: GOEXPERIMENT'
+        customize_envVars+=$'\n        value: "cgocheck2"'
         customize_envVars+=$'\n      - name: MUTEX_WATCHDOG_TIMEOUT_SECS'
         customize_envVars+=$'\n        value: "15"'
     fi
@@ -262,6 +264,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"

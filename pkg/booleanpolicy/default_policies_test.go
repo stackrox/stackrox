@@ -3195,8 +3195,6 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	suite.NoError(err)
 
 	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
-	timestamp, err := protocompat.ConvertTimeToTimestampOrError(time.Now())
-	suite.Nil(err)
 	flow := &augmentedobjs.NetworkFlowDetails{
 		SrcEntityName:        srcName,
 		SrcEntityType:        storage.NetworkEntityInfo_DEPLOYMENT,
@@ -3205,7 +3203,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 		DstPort:              uint32(port),
 		L4Protocol:           protocol,
 		NotInNetworkBaseline: true,
-		LastSeenTimestamp:    timestamp,
+		LastSeenTimestamp:    time.Now(),
 	}
 
 	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)), flow)

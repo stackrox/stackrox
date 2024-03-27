@@ -2,8 +2,8 @@ package networkflowupdate
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,9 +20,12 @@ type flowPersisterImpl struct {
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) error {
+func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error {
 	now := timestamp.Now()
-	updateMicroTS := timestamp.FromProtobuf(updateTS)
+	var updateMicroTS timestamp.MicroTS
+	if updateTS != nil {
+		updateMicroTS = timestamp.FromGoTime(*updateTS)
+	}
 
 	flowsByIndicator := getFlowsByIndicator(newFlows, updateMicroTS, now)
 	if err := s.baselines.ProcessFlowUpdate(flowsByIndicator); err != nil {
@@ -46,7 +49,10 @@ func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.C
 		return err
 	}
 
-	closeTS := timestamp.FromProtobuf(lastUpdateTS)
+	var closeTS timestamp.MicroTS
+	if lastUpdateTS != nil {
+		closeTS = timestamp.FromGoTime(*lastUpdateTS)
+	}
 	if closeTS == 0 {
 		closeTS = timestamp.Now()
 	}
@@ -83,17 +89,12 @@ func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp
 	flowsToBeUpserted := make([]*storage.NetworkFlow, 0, len(updatedFlows))
 	for indicator, ts := range updatedFlows {
 		toBeUpserted := &storage.NetworkFlow{
-			Props:             indicator.ToNetworkFlowPropertiesProto(),
-			LastSeenTimestamp: convertTS(ts),
+			Props: indicator.ToNetworkFlowPropertiesProto(),
+		}
+		if ts != 0 {
+			toBeUpserted.LastSeenTimestamp = ts.GogoProtobuf()
 		}
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
 	}
 	return flowsToBeUpserted
-}
-
-func convertTS(ts timestamp.MicroTS) *types.Timestamp {
-	if ts == 0 {
-		return nil
-	}
-	return ts.GogoProtobuf()
 }

@@ -239,7 +239,7 @@ class ImageManagementTest extends BaseSpecification {
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(IMAGE_SHA)
+            def image = ImageService.getImage(TEST_IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
     }
@@ -262,7 +262,7 @@ class ImageManagementTest extends BaseSpecification {
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
-            def image = ImageService.getImage(IMAGE_SHA)
+            def image = ImageService.getImage(TEST_IMAGE_SHA)
             assert image != null && image.riskScore != 0
         }
 

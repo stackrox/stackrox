@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -35,7 +36,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 
 	return &DeploymentEnhancer{
 		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, env.SensorDeploymentEnhancementQueueSize.IntegerSetting()),
+		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, queue.ScaleSizeOnNonDefault(env.SensorDeploymentEnhancementQueueSize)),
 		storeProvider:    provider,
 		ctx:              ctx,
 		ctxCancel:        ctxCancel,
@@ -58,7 +59,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 		metrics.IncrementDeploymentEnhancerQueueSize()
 		return nil
 	default:
-		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", env.SensorDeploymentEnhancementQueueSize.IntegerSetting())
+		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", len(d.deploymentsQueue))
 	}
 }
 
