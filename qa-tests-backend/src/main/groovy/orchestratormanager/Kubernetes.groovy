@@ -1764,7 +1764,6 @@ class Kubernetes implements OrchestratorMain {
             client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
             createClusterRole(generatePspRole())
             createClusterRoleBinding(generatePspRoleBinding(namespace))
-        } else {
         }
     }
 
