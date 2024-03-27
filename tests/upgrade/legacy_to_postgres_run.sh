@@ -14,8 +14,8 @@ set -euo pipefail
 # TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-LAST_POSTGRES_TAG="4.4.0"
-LAST_POSTGRES_SHA="9a475905b70cb7ce54dd54e2d77f88fd8a3c81be"
+LAST_POSTGRES_TAG="4.4.0-rc.11-1-gba4856e48c"
+LAST_POSTGRES_SHA="ba4856e48ceba45a81a77cbbe07062ea723fbb75"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -116,14 +116,6 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
     git checkout "$LAST_POSTGRES_SHA"
-
-    #TODO(janisz): remove below section once 4.5 is released
-    info "Upgrade go.mod to Go 1.21 commit and replace tag"
-    info "This is a hack to make 4.4.0 code working on Go 1.21"
-    find $PWD -type f -name "go.mod" -printf '%h\n' | xargs -IDIR bash -c 'cd DIR && go mod tidy'
-    git add .
-    git commit -m "Upgrade to Go 1.21"
-    git tag -f -a -m $LAST_POSTGRES_TAG $LAST_POSTGRES_TAG
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
