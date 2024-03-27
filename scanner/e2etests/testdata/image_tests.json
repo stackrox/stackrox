@@ -43,6 +43,7 @@
         "only_check_specified_vulns": true
     },
     {
+        "disabled_reason": "description is not being parsed correctly by claircore",
         "image": "quay.io/rhacs-eng/qa:apache-server-scannerci",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -54,7 +55,7 @@
                 "Name": "cron",
                 "NamespaceName": "ubuntu:14.04",
                 "Version": "3.0pl1-124ubuntu2",
-                "Arch": "x86_64",
+                "Arch": "amd64",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2017-9525",
@@ -71,9 +72,7 @@
                                 "CVSSv3": {
                                     "Score": 6.7,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H"
-                                },
-                                "LastModifiedDateTime": "2019-03-21T23:29Z",
-                                "PublishedDateTime": "2017-06-09T16:29Z"
+                                }
                             }
                         }
                     },
@@ -92,9 +91,7 @@
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                                },
-                                "LastModifiedDateTime": "2021-11-30T19:53Z",
-                                "PublishedDateTime": "2019-03-12T01:29Z"
+                                }
                             }
                         }
                     },
@@ -113,9 +110,7 @@
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                                },
-                                "LastModifiedDateTime": "2021-11-30T18:50Z",
-                                "PublishedDateTime": "2019-03-12T01:29Z"
+                                }
                             }
                         }
                     },
@@ -134,14 +129,13 @@
                                 "CVSSv3": {
                                     "Score": 5.5,
                                     "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
-                                },
-                                "LastModifiedDateTime": "2021-11-30T18:50Z",
-                                "PublishedDateTime": "2019-03-12T01:29Z"
+                                }
                             }
                         }
                     }
                 ],
-                "AddedBy": "sha256:bae382666908fd87a3a3646d7eb7176fa42226027d3256cac38ee0b79bdb0491"
+                "AddedBy": "sha256:bae382666908fd87a3a3646d7eb7176fa42226027d3256cac38ee0b79bdb0491",
+                "Location": "var/lib/dpkg/status"
             }
         ],
         "unexpected_features": null,
@@ -1094,12 +1088,8 @@
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 7.5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 9.8,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1136,12 +1126,8 @@
                         "Severity": "Critical",
                         "Metadata": {
                             "NVD": {
-                                "CVSSv2": {
-                                    "Score": 7.5,
-                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
-                                },
                                 "CVSSv3": {
-                                    "Score": 9.8,
+                                    "Score": 0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1179,7 +1165,7 @@
                         "Metadata": {
                             "NVD": {
                                 "CVSSv3": {
-                                    "Score": 9.8,
+                                    "Score": 0.0,
                                     "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
                                 }
                             }
@@ -1321,7 +1307,8 @@
                 "Version": "1.26.5-3.el9",
                 "Arch": "noarch",
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
-                "Location": "sqlite:var/lib/rpm"
+                "Location": "sqlite:var/lib/rpm",
+                "FixedBy": "0:1.26.5-3.el9_3.1"
             },
             {
                 "Name": "vim-minimal",
@@ -1651,6 +1638,7 @@
         "only_check_specified_vulns": true
     },
     {
+        "disabled_reason": "https://issues.redhat.com/browse/ROX-22663",
         "image": "quay.io/rhacs-eng/qa:tomcat-9.0.59",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -1787,6 +1775,7 @@
         "only_check_specified_vulns": true
     },
     {
+        "disabled_reason": "https://issues.redhat.com/browse/ROX-22663",
         "image": "nginx:1.25.0-alpine",
         "registry": "https://registry-1.docker.io",
         "username": "DOCKER_USERNAME",
@@ -1814,12 +1803,12 @@
                                 }
                             }
                         },
-                        "FixedBy": "1.8.7-r0"
+                        "FixedBy": "1.8.4-r1"
                     }
                 ],
                 "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
                 "Location": "lib/apk/db/installed",
-                "FixedBy": "1.8.4-r1"
+                "FixedBy": "1.8.7-r0"
             },
             {
                 "Name": "nghttp2-libs",
@@ -1986,7 +1975,7 @@
                 "Version": "1.8.5-7.el8_6",
                 "Arch": "x86_64",
                 "Location": "bdb:var/lib/rpm",
-                "AddedBy": "sha256:60ccddb6218556f1d6ac035de7505a87c53b2c8653569d2a57dfc1b53c745588",
+                "AddedBy": "sha256:f68bbd02e59af82434daa66d365e994a7b1dce7fe0565cbd35d5bec4a2c210b6",
                 "FixedBy": "10:1.8.5-7.el8_6_fips",
                 "Vulnerabilities": [
                     {
