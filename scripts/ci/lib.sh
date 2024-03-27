@@ -1772,6 +1772,11 @@ _EO_CASE_HEADER_
             <failure><![CDATA[${details}]]></failure>
 _EO_FAILURE_
         fi
+        if [[ "$result" == "${_JUNIT_RESULT_SKIPPED}" ]]; then
+        cat << _EO_SKIPPED_ >> "${junit_file}"
+            <skipped/>
+_EO_SKIPPED_
+        fi
 
         echo "        </testcase>" >> "${junit_file}"
 
