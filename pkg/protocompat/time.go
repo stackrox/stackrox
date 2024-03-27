@@ -66,6 +66,19 @@ func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, 
 	return gogoTimestamp.TimestampProto(goTime)
 }
 
+// GetProtoTimestampFromRFC3339NanoString generates a proto timestamp from a time string in RFC3339Nano format.
+func GetProtoTimestampFromRFC3339NanoString(timeStr string) (*gogoTimestamp.Timestamp, error) {
+	stringTime, err := time.Parse(time.RFC3339Nano, timeStr)
+	if err != nil {
+		return nil, err
+	}
+	timestamp, err := ConvertTimeToTimestampOrError(stringTime)
+	if err != nil {
+		return nil, err
+	}
+	return timestamp, nil
+}
+
 // GetProtoTimestampFromSeconds instantiates a protobuf Timestamp structure initialized
 // with the input to the seconds granularity.
 func GetProtoTimestampFromSeconds(seconds int64) *gogoTimestamp.Timestamp {

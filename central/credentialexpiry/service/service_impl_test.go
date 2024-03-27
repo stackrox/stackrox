@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	iiDSMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -69,21 +68,20 @@ func TestEnsureTLSAndReturnAddr(t *testing.T) {
 }
 
 func TestGetScannerV4CertExpiry(t *testing.T) {
-	expiryCur := protocompat.TimestampNow()
-	expiryOld, err := protocompat.ConvertTimeToTimestampOrError(time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC))
-	require.NoError(t, err)
+	expiryCur := time.Now()
+	expiryOld := time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC)
 
-	successExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{
-		mtls.ScannerV4IndexerSubject: expiryOld,
-		mtls.ScannerV4MatcherSubject: expiryCur,
+	successExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*time.Time{
+		mtls.ScannerV4IndexerSubject: &expiryOld,
+		mtls.ScannerV4MatcherSubject: &expiryCur,
 	})
 
-	matcherSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{
-		mtls.ScannerV4MatcherSubject: expiryCur,
+	matcherSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*time.Time{
+		mtls.ScannerV4MatcherSubject: &expiryCur,
 	})
 
-	indexerSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{
-		mtls.ScannerV4IndexerSubject: expiryOld,
+	indexerSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*time.Time{
+		mtls.ScannerV4IndexerSubject: &expiryOld,
 	})
 
 	errorExpiryFunc := genGetExpiryFunc(nil)
@@ -108,40 +106,40 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 		scannerConfigs      map[mtls.Subject]*tls.Config
 		getIntegrationError bool
 		integrationExists   bool
-		expiryFunc          func(context.Context, mtls.Subject, *tls.Config, string) (*types.Timestamp, error)
-		expiryExpected      *types.Timestamp
+		expiryFunc          func(context.Context, mtls.Subject, *tls.Config, string) (*time.Time, error)
+		expiryExpected      *time.Time
 	}{
 		{
 			"error if feature disabled",
-			!feature, errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, expiryOld,
+			!feature, errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if scanner config missing",
-			feature, errorExpected, noScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, expiryOld,
+			feature, errorExpected, noScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if failure getting scanner v4 integration",
-			feature, errorExpected, allScannerConfigs, getIntegrationError, integrationExists, successExpiryFunc, expiryOld,
+			feature, errorExpected, allScannerConfigs, getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if no scanner v4 integration",
-			feature, errorExpected, allScannerConfigs, !getIntegrationError, !integrationExists, successExpiryFunc, expiryOld,
+			feature, errorExpected, allScannerConfigs, !getIntegrationError, !integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"error if fail contacting both indexer and matcher",
-			feature, errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, errorExpiryFunc, expiryOld,
+			feature, errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, errorExpiryFunc, &expiryOld,
 		},
 		{
 			"success if indexer and matcher able to be contacted",
-			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, expiryOld,
+			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, successExpiryFunc, &expiryOld,
 		},
 		{
 			"success if contacted matcher but failed contacting indexer",
-			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, matcherSuccessExpiryFunc, expiryCur,
+			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, matcherSuccessExpiryFunc, &expiryCur,
 		},
 		{
 			"success if contacted indexer but failed contacting matcher",
-			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, indexerSuccessExpiryFunc, expiryOld,
+			feature, !errorExpected, allScannerConfigs, !getIntegrationError, integrationExists, indexerSuccessExpiryFunc, &expiryOld,
 		},
 	}
 	for _, tc := range testCases {
@@ -172,15 +170,21 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tc.expiryExpected, actual.Expiry)
+				if tc.expiryExpected == nil {
+					assert.Nil(t, actual.Expiry)
+				} else {
+					expectedExpiry, err := protocompat.ConvertTimeToTimestampOrError(*tc.expiryExpected)
+					require.NoError(t, err)
+					assert.Equal(t, expectedExpiry, actual.Expiry)
+				}
 			}
 		})
 	}
 
 }
 
-func genGetExpiryFunc(expiries map[mtls.Subject]*types.Timestamp) func(context.Context, mtls.Subject, *tls.Config, string) (*types.Timestamp, error) {
-	return func(_ context.Context, subject mtls.Subject, _ *tls.Config, _ string) (*types.Timestamp, error) {
+func genGetExpiryFunc(expiries map[mtls.Subject]*time.Time) func(context.Context, mtls.Subject, *tls.Config, string) (*time.Time, error) {
+	return func(_ context.Context, subject mtls.Subject, _ *tls.Config, _ string) (*time.Time, error) {
 		expiry, ok := expiries[subject]
 		if !ok {
 			return nil, errors.New("fake")
