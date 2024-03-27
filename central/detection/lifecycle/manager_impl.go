@@ -28,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -158,7 +157,7 @@ func (m *managerImpl) flushBaselineQueue() {
 	for {
 		// ObservationEnd is in the future so we have nothing to do at this time
 		head := m.deploymentObservationQueue.Peek()
-		if head == nil || protoutils.After(head.ObservationEnd, protocompat.TimestampNow()) {
+		if head == nil || head.ObservationEnd.After(time.Now()) {
 			return
 		}
 
@@ -320,7 +319,7 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 	}
 	metrics.ProcessFilterCounterInc("Added")
 
-	observationEnd, _ := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(genDuration))
+	observationEnd := time.Now().Add(genDuration)
 	m.deploymentObservationQueue.Push(&queue.DeploymentObservation{DeploymentID: indicator.GetDeploymentId(), InObservation: true, ObservationEnd: observationEnd})
 
 	m.addToIndicatorQueue(indicator)
