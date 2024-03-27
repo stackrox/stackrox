@@ -78,6 +78,9 @@ jobs:
 
         # Do not use the make target, as there may be some incompatibilities.
         # See https://github.com/stackrox/stackrox/pull/9227.
+        # Similarly, any updates to the Go version may require go.mod updates.
+        # Just run go mod tidy and hope for the best.
+        go mod tidy
         cd scanner
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache
