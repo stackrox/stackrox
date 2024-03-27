@@ -45,7 +45,6 @@ runs:
       extra_args=()
       if [[ "${{ inputs.create-jiras }}" == "false" ]]; then
         extra_args=(--dry-run)
-        echo "Will use junit2jira to create CSV for BigQuery input"
       else
         echo "Will create JIRA issues for JUnit failures found in ${{ inputs.directory }}"
       fi
