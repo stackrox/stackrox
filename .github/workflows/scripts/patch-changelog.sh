@@ -22,10 +22,10 @@ check_not_empty \
 create_pr() {
     # shellcheck disable=SC2154
     gh pr create \
-    --title "$TITLE" \
-    --base "$main_branch" \
-    --body "Cutting \`CHANGELOG.md\` after the $BRANCH branch." \
-    --assignee "$GITHUB_ACTOR"
+        --title "$TITLE" \
+        --base "$main_branch" \
+        --body "Cutting \`CHANGELOG.md\` after the $BRANCH branch." \
+        --assignee "$GITHUB_ACTOR"
 }
 
 if grep "^## \[${VERSION}\]$" CHANGELOG.md; then

@@ -11,4 +11,5 @@ import (
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/nilslice/protolock"
 	_ "golang.org/x/vuln/cmd/govulncheck"
+	_ "mvdan.cc/sh/v3/cmd/shfmt"
 )
