@@ -54,8 +54,8 @@ function NodeCvePage() {
                 <CvePageHeader data={nodeCveMetadata} />
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                <div className="pf-u-background-color-100 pf-u-flex-grow-1"></div>
+            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
+                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1"></div>
             </PageSection>
         </>
     );
