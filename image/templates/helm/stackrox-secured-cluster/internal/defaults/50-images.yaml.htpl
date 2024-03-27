@@ -22,9 +22,11 @@ image:
   scannerV4:
     name: [< required "" .ScannerV4ImageRemote >]
     tag: [< required "" .ScannerV4ImageTag >]
+    pullPolicy: IfNotPresent
   scannerV4DB:
     name: [< required "" .ScannerV4DBImageRemote >]
     tag: [< required "" .ScannerV4ImageTag >]
+    pullPolicy: IfNotPresent
   [<- end >]
 ---
 # Add registry defaults
@@ -113,7 +115,6 @@ image:
     {{- end }}
 ---
 # Add fullRef references to images
-# TODO(ROX-9261): Add support for image pull policy to scanner slim
 image:
   main:
     fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
@@ -138,3 +139,13 @@ sensor:
   imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
 admissionControl:
   imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+[<- if not .KubectlOutput >]
+scanner:
+  imagePullPolicy: {{ ._rox.image.scanner.pullPolicy }}
+[<- end >]
+[<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
+scannerV4:
+  imagePullPolicy: {{ ._rox.image.scannerV4.pullPolicy }}
+  db:
+    imagePullPolicy: {{ ._rox.image.scannerV4DB.pullPolicy }}
+[<- end >]

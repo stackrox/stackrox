@@ -1,0 +1,78 @@
+defs: |
+  def scannerV4Indexer:
+    container(.deployments.scanner-v4-indexer; "indexer");
+  def scannerV4DB:
+    container(.deployments.scanner-v4-db; "db");
+values:
+  imagePullSecrets:
+    allowNone: true
+  scannerV4:
+    disable: false
+
+tests:
+- name: "test image settings"
+  tests:
+  - name: "custom registry for scanner-v4 images"
+    set:
+      image.scannerV4.registry: "scanner-v4-registry.example.com"
+      image.scannerV4.registry: "scanner-v4-db-registry.example.com"
+    expect: |
+      scannerSlim | .image | assertThat(startswith("scanner-registry.example.com/scanner-slim:"))
+      scannerDBSlim | .image | assertThat(startswith("scanner-registry.example.com/scanner-db-slim:"))
+      scannerDBSlimInit | .image | assertThat(startswith("scanner-registry.example.com/scanner-db-slim:"))
+  - name: "custom name for scanner-slim images"
+    set:
+      image.slimImage.registry: "scanner-registry.example.com"
+      image.slimImage.name: "my-scanner-slim"
+      image.slimDBImage.registry: "scanner-db-registry.example.com"
+      image.slimDBImage.name: "my-scanner-db-slim"
+    expect: |
+      scannerSlim | .image | assertThat(startswith("collector-registry.example.com/my-scanner-slim:"))
+      scannerDBSlim | .image | assertThat(startswith("scanner-db-registry.example.com/my-scanner-db-slim:"))
+      scannerDBSlimInit | .image | assertThat(startswith("scanner-db-registry.example.com/scanner-db-slim:"))
+  - name: "custom tag for scanner-slim images"
+    set:
+      image.slimImage.registry: "scanner-registry.example.com"
+      image.slimImage.tag: "my-tag"
+      image.slimDBImage.registry: "scanner-db-registry.example.com"
+      image.slimDBImage.tag: "my-db-tag"
+    expect: |
+      scannerSlim | .image | assertThat(. == "scanner-registry.example.com/scanner-slim:my-tag")
+      scannerDBSlim | .image | assertThat(. == "scanner-db-registry.example.com/scanner-db-slim:my-db-tag")
+      scannerDBSlimInit | .image | assertThat(. == "scanner-db-registry.example.com/scanner-db-slim:my-db-tag")
+  - name: "custom full reference"
+    set:
+      image.slimImage.registry: "scanner-registry.example.com"
+      image.slimImage.tag: "my-tag"
+      image.slimImage.fullRef: "scanner-unrelated.example.com/some-image:some-tag"
+      image.slimDBImage.registry: "scanner-db-registry.example.com"
+      image.slimDBImage.tag: "my-db-tag"
+      image.slimDBImage.fullRef: "scanner-db-unrelated.example.com/some-db-image:some-db-tag"
+    expect: |
+      scannerSlim | .image | assertThat(. == "scanner-unrelated.example.com/some-image:some-tag")
+      scannerDBSlim | .image | assertThat(. == "scanner-db-unrelated.example.com/some-db-image:some-db-tag")
+      scannerDBSlimInit | .image | assertThat(. == "scanner-db-unrelated.example.com/some-db-image:some-db-tag")
+- name: "test image pull policy settings"
+  tests:
+  - name: "default settings"
+    expect: |
+      scannerSlim | assertThat(.imagePullPolicy == "IfNotPresent")
+      scannerDBSlim | assertThat(.imagePullPolicy == "IfNotPresent")
+      scannerDBSlimInit | assertThat(.imagePullPolicy == "IfNotPresent")
+  - name: "global setting"
+    set:
+      image.scannerSlim.pullPolicy: Never
+      image.scannerDBSlim.pullPolicy: Never
+    tests:
+    - name: "with no override"
+      expect: |
+        scannerSlim | assertThat(.imagePullPolicy == "Never")
+        scannerDBSlim | assertThat(.imagePullPolicy == "Never")
+        scannerDBSlimInit | assertThat(.imagePullPolicy == "Never")
+    - name: "with scanner override"
+      set:
+        scanner.imagePullPolicy: Always
+      expect: |
+        scannerSlim | assertThat(.imagePullPolicy == "Always")
+        scannerDBSlim | assertThat(.imagePullPolicy == "Always")
+        scannerDBSlimInit | assertThat(.imagePullPolicy == "Always")

@@ -44,6 +44,9 @@ spec:
       containers:
       - name: indexer
         image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
+        {{- if not ._rox.env.centralServices }}
+        imagePullPolicy: {{ ._rox.scannerV4.imagePullPolicy }}
+        {{- end }}
         env:
         - name: ROX_MEMLIMIT
           valueFrom:
