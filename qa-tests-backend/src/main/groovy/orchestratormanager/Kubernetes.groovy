@@ -2446,7 +2446,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     static setPodSecurityMode(String ns, String mode = "warn", String profile = "restricted") {
-        namespace = client.namespaces().withName(ns)
+        Namespace namespace = client.namespaces().withName(ns)
         ObjectMeta meta = namespace.getMetadata()
         final Map<String, String> currentLabels = meta.getLabels()
         currentLabels.put("pod-security.kubernetes.io/warn", "restricted")
