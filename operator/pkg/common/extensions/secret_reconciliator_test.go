@@ -2,7 +2,9 @@ package extensions
 
 import (
 	"context"
+	"strings"
 	"testing"
+	"text/tabwriter"
 
 	pkgErrors "github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -10,6 +12,8 @@ import (
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -35,17 +39,7 @@ func TestSecretReconcilerExtension(t *testing.T) {
 
 func (s *secretReconcilerTestSuite) SetupTest() {
 	s.ctx = context.Background()
-	s.centralObj = &platform.Central{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: platform.CentralGVK.GroupVersion().String(),
-			Kind:       platform.CentralGVK.Kind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stackrox-central-services",
-			Namespace: testutils.TestNamespace,
-			UID:       k8sTypes.UID(uuid.NewV4().String()),
-		},
-	}
+	s.centralObj = newCentral()
 
 	existingSecret := &v1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -83,7 +77,7 @@ func (s *secretReconcilerTestSuite) SetupTest() {
 
 	s.client = fake.NewClientBuilder().WithObjects(existingSecret, existingOwnedSecret).Build()
 
-	s.reconciliator = NewSecretReconciliator(s.client, s.client, s.centralObj)
+	s.reconciliator = NewSecretReconciliator(s.client, s.client, s.centralObj, OwnershipStrategyOwnerReference)
 }
 
 func (s *secretReconcilerTestSuite) Test_ShouldNotExist_OnNonExisting_ShouldDoNothing() {
@@ -274,4 +268,251 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Failing
 	s.Require().NoError(err)
 
 	s.Equal(initSecret, secret)
+}
+
+// TestSecretReconciler_EnsureSecret_Ownership tests the ownership strategy logic of the secret reconciler
+func TestSecretReconciler_EnsureSecret_Ownership(t *testing.T) {
+
+	// Test matrix shown below with expected results. Easier to read than the test table
+	// (the test will fail if the matrix is not in sync with the test table)
+	const expectedMatrix = `
+Strategy           State                        ExpectOwnerRef    ExpectLabel
+owner-reference    secretDoesNotExist           x                 x
+owner-reference    unmanaged
+owner-reference    hasOwnerRef                  x                 x
+owner-reference    hasLabel                     x                 x
+owner-reference    hasWrongLabel
+owner-reference    hasOwnerRef,hasLabel         x                 x
+owner-reference    hasOwnerRef,hasWrongLabel    x                 x
+label              secretDoesNotExist                             x
+label              unmanaged
+label              hasOwnerRef                                    x
+label              hasLabel                                       x
+label              hasWrongLabel
+label              hasOwnerRef,hasLabel                           x
+label              hasOwnerRef,hasWrongLabel                      x
+
+`
+
+	tests := []struct {
+		strategy         OwnershipStrategy
+		state            string
+		expectedOwnerRef bool
+		expectedLabel    bool
+	}{
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "secretDoesNotExist",
+			expectedOwnerRef: true,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "unmanaged",
+			expectedOwnerRef: false,
+			expectedLabel:    false,
+		},
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "hasOwnerRef",
+			expectedOwnerRef: true,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "hasLabel",
+			expectedOwnerRef: true,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "hasWrongLabel",
+			expectedOwnerRef: false,
+			expectedLabel:    false,
+		},
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "hasOwnerRef,hasLabel",
+			expectedOwnerRef: true,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyOwnerReference,
+			state:            "hasOwnerRef,hasWrongLabel",
+			expectedOwnerRef: true,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "secretDoesNotExist",
+			expectedOwnerRef: false,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "unmanaged",
+			expectedOwnerRef: false,
+			expectedLabel:    false,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "hasOwnerRef",
+			expectedOwnerRef: false,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "hasLabel",
+			expectedOwnerRef: false,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "hasWrongLabel",
+			expectedOwnerRef: false,
+			expectedLabel:    false,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "hasOwnerRef,hasLabel",
+			expectedOwnerRef: false,
+			expectedLabel:    true,
+		},
+		{
+			strategy:         OwnershipStrategyLabel,
+			state:            "hasOwnerRef,hasWrongLabel",
+			expectedOwnerRef: false,
+			expectedLabel:    true, // special case. Assumes presence of ownerRef is a stronger signal than label to determine ownership
+		},
+	}
+
+	{
+		// Validate test matrix
+
+		wr := &strings.Builder{}
+		wr.WriteString("\n")
+
+		tbl := tabwriter.NewWriter(wr, 0, 0, 4, ' ', tabwriter.DiscardEmptyColumns)
+		_, err := tbl.Write([]byte("Strategy\tState\tExpectOwnerRef\tExpectLabel\n"))
+		require.NoError(t, err)
+
+		for _, test := range tests {
+			var ts = string(test.strategy) + "\t" + test.state + "\t"
+			if test.expectedOwnerRef {
+				ts += "x"
+			}
+			ts += "\t"
+			if test.expectedLabel {
+				ts += "x"
+			}
+			ts += "\n"
+			_, err := tbl.Write([]byte(ts))
+			require.NoError(t, err)
+		}
+		require.NoError(t, tbl.Flush())
+
+		gotMatrix := wr.String()
+		// remove trailing whitespace
+		clean := ""
+		for _, line := range strings.Split(gotMatrix, "\n") {
+			clean += strings.TrimSpace(line) + "\n"
+		}
+		gotMatrix = clean
+
+		require.Equal(t, expectedMatrix, gotMatrix, "test matrix is not in sync with the test table")
+	}
+
+	// dummy test dependencies
+	var (
+		secretName string
+		central    *platform.Central
+		generate   func(dataMap types.SecretDataMap) (types.SecretDataMap, error)
+		validate   func(dataMap types.SecretDataMap, b bool) error
+	)
+	{
+		secretName = "test-secret"
+		central = newCentral()
+		validate = func(dataMap types.SecretDataMap, b bool) error {
+			return nil
+		}
+		generate = func(dataMap types.SecretDataMap) (types.SecretDataMap, error) {
+			return types.SecretDataMap{
+				"test": []byte("test"),
+			}, nil
+		}
+	}
+
+	for _, tt := range tests {
+
+		exists := tt.state != "secretDoesNotExist"
+		hasOwnerReference := strings.Contains(tt.state, "hasOwnerRef")
+		hasLabel := strings.Contains(tt.state, "hasLabel")
+		hasWrongLabel := strings.Contains(tt.state, "hasWrongLabel")
+
+		t.Run("strategy:"+string(tt.strategy)+",state:"+tt.state, func(t *testing.T) {
+
+			var objects []ctrlClient.Object
+			if exists {
+				secret := &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      secretName,
+						Namespace: testutils.TestNamespace,
+						Labels:    map[string]string{},
+					},
+					Data: map[string][]byte{
+						"test": []byte("test"),
+					},
+				}
+				if hasOwnerReference {
+					secret.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(central, platform.CentralGVK)})
+				}
+				if hasLabel {
+					secret.Labels = map[string]string{
+						labels.ManagedByLabel: labels.ManagedByValue,
+					}
+				}
+				if hasWrongLabel {
+					secret.Labels = map[string]string{
+						labels.ManagedByLabel: "wrong",
+					}
+				}
+				objects = append(objects, secret)
+			}
+			client := fake.NewClientBuilder().WithObjects(objects...).Build()
+			ctx := context.Background()
+			reconciler := NewSecretReconciliator(client, client, central, tt.strategy)
+			err := reconciler.EnsureSecret(ctx, secretName, validate, generate)
+			require.NoError(t, err)
+
+			var secret v1.Secret
+			require.NoError(t, client.Get(ctx, k8sTypes.NamespacedName{Name: secretName, Namespace: testutils.TestNamespace}, &secret))
+
+			if tt.expectedLabel {
+				assert.Equal(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
+			} else {
+				assert.NotEqual(t, labels.ManagedByValue, secret.Labels[labels.ManagedByLabel])
+			}
+
+			if tt.expectedOwnerRef {
+				assert.True(t, metav1.IsControlledBy(&secret, central))
+			} else {
+				assert.False(t, metav1.IsControlledBy(&secret, central))
+			}
+		})
+
+	}
+}
+
+func newCentral() *platform.Central {
+	return &platform.Central{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: platform.CentralGVK.GroupVersion().String(),
+			Kind:       platform.CentralGVK.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "stackrox-central-services",
+			Namespace: testutils.TestNamespace,
+			UID:       k8sTypes.UID(uuid.NewV4().String()),
+		},
+	}
 }
