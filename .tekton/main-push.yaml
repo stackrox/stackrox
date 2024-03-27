@@ -40,7 +40,8 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" }
+        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" },
+        { "type": "gomod", "path": "." }
       ]
   - name: build-source-image
     value: 'true'
