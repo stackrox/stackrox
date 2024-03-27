@@ -1,22 +1,48 @@
+ARG ROCKSDB_BUILDER_STAGE_PATH="/mnt/rocksdb"
+ARG FINAL_STAGE_PATH="/mnt/final"
+
+
+# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-base
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
 
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-rpm-installer
+# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-installer
 
-ARG MOUNT_PATH="/mnt"
+ARG ROCKSDB_BUILDER_STAGE_PATH
+COPY --from=rocksdb-builder-base / "$ROCKSDB_BUILDER_STAGE_PATH"
 
-COPY --from=rocksdb-builder-base / "$MOUNT_PATH"
+ARG FINAL_STAGE_PATH
+COPY --from=final-base / "$FINAL_STAGE_PATH"
 
 COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$MOUNT_PATH" && \
-    # gflags and snappy-devel come from this repo codeready-builder-for-rhel-8.
-    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms && \
-    dnf -y --installroot="$MOUNT_PATH" upgrade --nobest && \
-    dnf -y --installroot="$MOUNT_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel && \
-    /tmp/.konflux/subscription-manager-bro.sh cleanup
+RUN /tmp/.konflux/subscription-manager-bro.sh register "$ROCKSDB_BUILDER_STAGE_PATH" "$FINAL_STAGE_PATH"
+
+# gflags and snappy-devel for rocksdb-builder come from codeready-builder-for-rhel-8 repo.
+RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+
+# Install packages for the rockdsb builder stage.
+RUN dnf -y --installroot="$ROCKSDB_BUILDER_STAGE_PATH" upgrade --nobest && \
+    dnf -y --installroot="$ROCKSDB_BUILDER_STAGE_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel
+
+# Install packages for the final stage.
+RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
+    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
+    # find is used in /stackrox/import-additional-cas \
+    # snappy provides libsnappy.so.1, which is needed by most stackrox binaries \
+    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils snappy zstd postgresql && \
+    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+    dnf -y --installroot="$FINAL_STAGE_PATH" clean all && \
+    rpm --root="$FINAL_STAGE_PATH" --verbose -e --nodeps $(rpm --root="$FINAL_STAGE_PATH" -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf "$FINAL_STAGE_PATH/var/cache/dnf" "$FINAL_STAGE_PATH/var/cache/yum"
+
+RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
+
 
 FROM scratch AS rocksdb-builder
 
-COPY --from=rocksdb-builder-rpm-installer /mnt /
+ARG ROCKSDB_BUILDER_STAGE_PATH
+COPY --from=rpm-installer "$ROCKSDB_BUILDER_STAGE_PATH" /
 
 WORKDIR /staging
 
@@ -48,35 +74,10 @@ ENV ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
 RUN make -C ui build
 
 
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
-
-# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-installer
-
-ARG FINAL_STAGE_PATH="/mnt/final"
-
-COPY --from=final-base / "$FINAL_STAGE_PATH"
-
-COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
-
-RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
-    # find is used in /stackrox/import-additional-cas \
-    # snappy provides libsnappy.so.1, which is needed by most stackrox binaries \
-    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils snappy zstd postgresql && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot="$FINAL_STAGE_PATH" clean all && \
-    rpm --root="$FINAL_STAGE_PATH" --verbose -e --nodeps $(rpm --root="$FINAL_STAGE_PATH" -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf "$FINAL_STAGE_PATH/var/cache/dnf" "$FINAL_STAGE_PATH/var/cache/yum"
-
-RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
-
-
 FROM scratch
 
-COPY --from=rpm-installer /mnt/final /
+ARG FINAL_STAGE_PATH
+COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
