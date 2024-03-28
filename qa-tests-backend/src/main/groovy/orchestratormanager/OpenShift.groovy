@@ -2,6 +2,7 @@ package orchestratormanager
 
 import static util.Helpers.withRetry
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.ProjectRequest
@@ -14,6 +15,7 @@ import util.Env
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class OpenShift extends Kubernetes {
     OpenShiftClient oClient
 
@@ -23,7 +25,7 @@ class OpenShift extends Kubernetes {
     }
 
     OpenShift() {
-        OpenShift("default")
+        this('default')
     }
 
     @Override
