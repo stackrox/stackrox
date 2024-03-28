@@ -18,43 +18,51 @@ func TestBroker(t *testing.T) {
 }
 
 func (s *scalerTestSuite) TestScaleSize() {
-	cases := map[string]struct {
+	cases := []struct {
+		name              string
 		inputQueueSize    int
 		sensorMemLimit    int
 		bufferCeiling     int
 		expectedQueueSize int
 	}{
-		"50% memlimit": {
+		{
+			name:              "50% memlimit",
 			inputQueueSize:    100,
 			sensorMemLimit:    int(defaultMemlimit * 0.5),
 			expectedQueueSize: 50,
 		},
-		"50% memlimit - rounding up": {
+		{
+			name:              "50% memlimit - rounding up",
 			inputQueueSize:    5,
 			sensorMemLimit:    int(defaultMemlimit * 0.5),
 			expectedQueueSize: 3,
 		},
-		"200% memlimit": {
+		{
+			name:              "200% memlimit",
 			inputQueueSize:    100,
 			sensorMemLimit:    int(defaultMemlimit * 2),
 			expectedQueueSize: 200,
 		},
-		"At least size 1": {
+		{
+			name:              "At least size 1",
 			inputQueueSize:    100,
 			sensorMemLimit:    1,
 			expectedQueueSize: 1,
 		},
-		"Default on memlimit 0": {
+		{
+			name:              "Default on memlimit 0",
 			inputQueueSize:    100,
 			sensorMemLimit:    0,
 			expectedQueueSize: 100,
 		},
-		"Upper limit hit": {
+		{
+			name:              "Upper limit hit",
 			inputQueueSize:    100,
 			sensorMemLimit:    int(defaultMemlimit * 10),
 			expectedQueueSize: 300,
 		},
-		"Custom upper limit": {
+		{
+			name:              "Custom upper limit",
 			inputQueueSize:    100,
 			sensorMemLimit:    int(defaultMemlimit * 10),
 			bufferCeiling:     5,
@@ -62,12 +70,16 @@ func (s *scalerTestSuite) TestScaleSize() {
 		},
 	}
 
-	for name, c := range cases {
-		s.Run(name, func() {
+	for _, c := range cases {
+		s.Run(c.name, func() {
 			err := os.Setenv("ROX_MEMLIMIT", strconv.Itoa(c.sensorMemLimit))
 			s.NoError(err)
 			if c.bufferCeiling != 0 {
 				err := os.Setenv("ROX_SENSOR_BUFFER_SCALE_CEILING", strconv.Itoa(c.bufferCeiling))
+				s.NoError(err)
+			} else {
+				val := strconv.Itoa(env.BufferScaleCeiling.DefaultValue())
+				err := os.Setenv("ROX_SENSOR_BUFFER_SCALE_CEILING", val)
 				s.NoError(err)
 			}
 
