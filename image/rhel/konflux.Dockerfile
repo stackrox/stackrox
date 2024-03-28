@@ -78,7 +78,7 @@ ENV GOFLAGS=""
 ENV CGO_CFLAGS="-I/lib/rocksdb/include"
 ENV CGO_LDFLAGS="-L/lib/rocksdb -L/usr/lib64"
 ENV CGO_ENABLED=1
-# TODO(): figure out BUILD_TAG
+# TODO(ROX-19958): figure out if we need BUILD_TAG
 # ENV BUILD_TAG="${CI_VERSION}"
 ENV GOTAGS="release"
 ENV CI=1
