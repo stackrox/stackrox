@@ -9,7 +9,6 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
@@ -112,7 +111,6 @@ import objects.SecretKeyRef
 import util.Env
 import util.Timer
 
-@CompileStatic
 @Slf4j
 class Kubernetes implements OrchestratorMain {
     final int sleepDurationSeconds = 5
@@ -1741,6 +1739,13 @@ class Kubernetes implements OrchestratorMain {
         return roleBinding
     }
 
+    @Deprecated
+    /**
+     * @deprecated PodSecurityPolicy was deprecated in Kubernetes 1.21 and removed in Kubernetes 1.25.
+     *             Users are advised to not rely on this resource.
+     *             For more information read this <a href=
+     *             "https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/">blogpost</a>
+     */
     protected defaultPspForNamespace(String namespace) {
         if (Env.get("POD_SECURITY_POLICIES") != "false") {
             PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
