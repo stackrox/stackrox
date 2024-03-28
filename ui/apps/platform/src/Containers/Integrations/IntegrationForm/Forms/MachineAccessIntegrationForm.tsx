@@ -174,11 +174,6 @@ function MachineAccessIntegrationForm({
                             touched={touched}
                             errors={errors}
                         >
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>For example, 3h20m20s</HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                             <TextInput
                                 isRequired
                                 type="text"
@@ -188,6 +183,11 @@ function MachineAccessIntegrationForm({
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>For example, 3h20m20s</HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormLabelGroup>
                         <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
                             <FieldArray
@@ -294,19 +294,6 @@ function MachineAccessIntegrationForm({
                                                             label="Role"
                                                             fieldId={`mappings[${index}].role`}
                                                         >
-                                                            <FormHelperText>
-                                                                <HelperText>
-                                                                    <HelperTextItem
-                                                                        variant={
-                                                                            errors[index]?.role
-                                                                                ? 'error'
-                                                                                : 'default'
-                                                                        }
-                                                                    >
-                                                                        {errors[index]?.role || ''}
-                                                                    </HelperTextItem>
-                                                                </HelperText>
-                                                            </FormHelperText>
                                                             <SelectSingle
                                                                 id={`mappings[${index}].role`}
                                                                 value={
@@ -324,6 +311,19 @@ function MachineAccessIntegrationForm({
                                                                     />
                                                                 ))}
                                                             </SelectSingle>
+                                                            <FormHelperText>
+                                                                <HelperText>
+                                                                    <HelperTextItem
+                                                                        variant={
+                                                                            errors[index]?.role
+                                                                                ? 'error'
+                                                                                : 'default'
+                                                                        }
+                                                                    >
+                                                                        {errors[index]?.role || ''}
+                                                                    </HelperTextItem>
+                                                                </HelperText>
+                                                            </FormHelperText>
                                                         </FormGroup>
                                                     </FlexItem>
                                                     {isEditable && (
