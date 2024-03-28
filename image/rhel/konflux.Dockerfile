@@ -72,7 +72,12 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+# TODO: remove me
+RUN git diff scripts/konflux/bootstrap-yarn/package-lock.json
+
+# Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
+RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
+    scripts/konflux/fail-build-if-git-is-dirty.sh
 
 ENV GOFLAGS=""
 ENV CGO_CFLAGS="-I/lib/rocksdb/include"
