@@ -115,6 +115,7 @@ test_upgrade_paths() {
     export API_TOKEN
 
     cd "$TEST_ROOT"
+    git fetch origin release-4.4.x/go_1.21
     git checkout "$LAST_POSTGRES_SHA"
 
     ########################################################################################
