@@ -304,7 +304,6 @@ The following tools are necessary to test code and build image(s):
 
 * [Make](https://www.gnu.org/software/make/)
 * [Go](https://golang.org/dl/)
-  * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
 * [Docker](https://docs.docker.com/get-docker/)
