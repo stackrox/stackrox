@@ -115,7 +115,9 @@ test_upgrade_paths() {
     export API_TOKEN
 
     cd "$TEST_ROOT"
-    git fetch origin release-4.4.x/go_1.21
+    git branch -r | grep -v '\->' | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | while read remote; do git branch --track "${remote#origin/}" "$remote"; done
+    git fetch --all
+    git pull --all
     git checkout "$LAST_POSTGRES_SHA"
 
     ########################################################################################
