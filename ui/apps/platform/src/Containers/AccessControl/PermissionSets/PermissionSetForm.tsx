@@ -155,13 +155,6 @@ function PermissionSetForm({
             </Toolbar>
             {alertSubmit}
             <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
-                <FormHelperText>
-                    <HelperText>
-                        <HelperTextItem variant={nameValidatedState}>
-                            {nameErrorMessage}
-                        </HelperTextItem>
-                    </HelperText>
-                </FormHelperText>
                 <TextInput
                     type="text"
                     id="name"
@@ -172,6 +165,13 @@ function PermissionSetForm({
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
