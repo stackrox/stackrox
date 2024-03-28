@@ -222,7 +222,7 @@ function InviteUsersModal(): ReactElement | null {
                         title="No auth providers are available."
                         variant="warning"
                         isInline
-                        className="pf-u-mb-lg"
+                        className="pf-v5-u-mb-lg"
                     >
                         <Text>
                             You must have at least one auth provider in order to invite users.
@@ -242,7 +242,7 @@ function InviteUsersModal(): ReactElement | null {
                                 title="Problem inviting the specified users"
                                 variant="danger"
                                 isInline
-                                className="pf-u-mb-lg"
+                                className="pf-v5-u-mb-lg"
                             >
                                 <Text>The following error occurred:</Text>
                                 <Text>{apiError?.message}</Text>

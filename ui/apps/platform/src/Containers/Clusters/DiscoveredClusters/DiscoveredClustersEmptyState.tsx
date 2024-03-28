@@ -7,6 +7,7 @@ import {
     Flex,
     Text,
     Title,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Td, Tr } from '@patternfly/react-table';
@@ -27,7 +28,7 @@ function DiscoveredClustersEmptyState({
                     <Bullseye>
                         {hasFilter ? (
                             <EmptyState>
-                                <EmptyStateIcon icon={SearchIcon} />
+                                <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} />
                                 <EmptyStateBody>
                                     <Flex direction={{ default: 'column' }}>
                                         <Title headingLevel="h2">

@@ -92,7 +92,7 @@ function SumoLogicIntegrationForm({
                             id="name"
                             name="name"
                             value={values.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -111,7 +111,7 @@ function SumoLogicIntegrationForm({
                             id="sumologic.httpSourceAddress"
                             name="sumologic.httpSourceAddress"
                             value={values.sumologic.httpSourceAddress}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -121,7 +121,7 @@ function SumoLogicIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="sumologic.skipTLSVerify"
                             isChecked={values.sumologic.skipTLSVerify}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

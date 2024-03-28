@@ -119,7 +119,7 @@ function OcmIntegrationForm({
                             type="text"
                             id="cloudSource.name"
                             value={values.cloudSource.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -137,7 +137,7 @@ function OcmIntegrationForm({
                             id="cloudSource.ocm.endpoint"
                             name="cloudSource.ocm.endpoint"
                             value={values.cloudSource.ocm?.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -152,7 +152,7 @@ function OcmIntegrationForm({
                                 label="Update stored credentials"
                                 id="updateCredentials"
                                 isChecked={values.updateCredentials}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -170,7 +170,7 @@ function OcmIntegrationForm({
                             type="password"
                             id={`cloudSource.credentials.secret`}
                             value={values.cloudSource.credentials.secret}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updateCredentials}
                             placeholder={

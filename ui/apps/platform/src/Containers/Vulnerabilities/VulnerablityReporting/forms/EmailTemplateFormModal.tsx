@@ -5,6 +5,9 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Modal,
     Tab,
     TabTitleText,
@@ -123,19 +126,21 @@ function EmailTemplateFormModal({
         >
             <Tabs defaultActiveKey={0} role="region">
                 <Tab eventKey={0} title={<TabTitleText>Edit</TabTitleText>}>
-                    <Form className="pf-u-py-lg pf-u-px-lg" onSubmit={handleSubmit}>
-                        <FormGroup
-                            label="Email subject"
-                            fieldId="emailSubject"
-                            validated={emailSubjectValidated}
-                            helperTextInvalid={errors.emailSubject}
-                        >
+                    <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" onSubmit={handleSubmit}>
+                        <FormGroup label="Email subject" fieldId="emailSubject">
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={emailSubjectValidated}>
+                                        {errors.emailSubject}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextInput
                                 id="emailSubject"
                                 type="text"
                                 value={values.emailSubject}
                                 validated={emailSubjectValidated}
-                                onChange={(_, e) => handleChange(e)}
+                                onChange={(e) => handleChange(e)}
                                 onBlur={handleBlur}
                                 isDisabled={isSubmitting}
                                 placeholder={defaultEmailSubject}
@@ -145,7 +150,7 @@ function EmailTemplateFormModal({
                                     <TextContent>
                                         <Text
                                             component={TextVariants.p}
-                                            className="pf-u-font-size-sm"
+                                            className="pf-v5-u-font-size-sm"
                                         >
                                             {values.emailSubject.length} / {maxEmailSubjectLength}{' '}
                                             characters
@@ -154,10 +159,10 @@ function EmailTemplateFormModal({
                                 </FlexItem>
                                 <FlexItem>
                                     <Button
-                                        className="pf-u-mt-sm"
+                                        className="pf-v5-u-mt-sm"
                                         variant="link"
                                         isInline
-                                        isSmall
+                                        size="sm"
                                         onClick={() => setFieldValue('emailSubject', '')}
                                         isDisabled={values.emailSubject.length === 0}
                                     >
@@ -166,18 +171,20 @@ function EmailTemplateFormModal({
                                 </FlexItem>
                             </Flex>
                         </FormGroup>
-                        <FormGroup
-                            label="Email body"
-                            fieldId="emailBody"
-                            validated={emailBodyValidated}
-                            helperTextInvalid={errors.emailBody}
-                        >
+                        <FormGroup label="Email body" fieldId="emailBody">
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={emailBodyValidated}>
+                                        {errors.emailBody}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <TextArea
                                 id="emailBody"
                                 type="text"
                                 value={values.emailBody}
                                 validated={emailBodyValidated}
-                                onChange={(_, e) => handleChange(e)}
+                                onChange={(e) => handleChange(e)}
                                 onBlur={handleBlur}
                                 isDisabled={isSubmitting}
                                 style={{ minHeight: '250px' }}
@@ -188,7 +195,7 @@ function EmailTemplateFormModal({
                                     <TextContent>
                                         <Text
                                             component={TextVariants.p}
-                                            className="pf-u-font-size-sm"
+                                            className="pf-v5-u-font-size-sm"
                                         >
                                             {values.emailBody.length} / {maxEmailBodyLength}{' '}
                                             characters
@@ -197,10 +204,10 @@ function EmailTemplateFormModal({
                                 </FlexItem>
                                 <FlexItem>
                                     <Button
-                                        className="pf-u-mt-sm"
+                                        className="pf-v5-u-mt-sm"
                                         variant="link"
                                         isInline
-                                        isSmall
+                                        size="sm"
                                         onClick={() => setFieldValue('emailBody', '')}
                                         isDisabled={values.emailBody.length === 0}
                                     >

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardBody, Flex, FlexItem, Select, SelectOption } from '@patternfly/react-core';
+import { Card, CardBody, Flex, FlexItem } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { DelegatedRegistryCluster } from 'services/DelegatedRegistryConfigService';
@@ -37,7 +38,7 @@ function DelegatedScanningSettings({
         clusters.find((cluster) => selectedClusterId === cluster.id)?.name ?? 'None';
 
     return (
-        <Card className="pf-u-mb-lg">
+        <Card className="pf-v5-u-mb-lg">
             <CardBody>
                 <FormLabelGroup
                     label="Select default cluster to delegate to"
@@ -58,7 +59,7 @@ function DelegatedScanningSettings({
                                     </span>
                                 }
                                 toggleAriaLabel="Select a cluster"
-                                onToggle={toggleIsClusterOpen}
+                                onToggle={(_e, v) => toggleIsClusterOpen(v)}
                                 onSelect={onClusterSelect}
                                 isOpen={isClusterOpen}
                                 selections={selectedClusterName}

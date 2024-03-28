@@ -3,10 +3,10 @@ import { CSSProperties } from 'react';
 import { BannerConfig, BannerConfigSize } from 'types/config.proto';
 
 const sizeVarMap: Record<BannerConfigSize, string> = {
-    UNSET: 'var(--pf-global--FontSize--xs)',
-    SMALL: 'var(--pf-global--FontSize--xs)',
-    MEDIUM: 'var(--pf-global--FontSize--sm)',
-    LARGE: 'var(--pf-global--FontSize--md)',
+    UNSET: 'var(--pf-v5-global--FontSize--xs)',
+    SMALL: 'var(--pf-v5-global--FontSize--xs)',
+    MEDIUM: 'var(--pf-v5-global--FontSize--sm)',
+    LARGE: 'var(--pf-v5-global--FontSize--md)',
 };
 
 export function getPublicConfigStyle({
@@ -15,8 +15,8 @@ export function getPublicConfigStyle({
     size,
 }: BannerConfig): CSSProperties {
     return {
-        '--pf-c-banner--BackgroundColor': backgroundColor,
-        '--pf-c-banner--Color': color,
-        '--pf-c-banner--FontSize': sizeVarMap[size],
+        '--pf-v5-c-banner--BackgroundColor': backgroundColor,
+        '--pf-v5-c-banner--Color': color,
+        '--pf-v5-c-banner--FontSize': sizeVarMap[size],
     } as CSSProperties;
 }

@@ -12,10 +12,12 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
     FormSection,
     Grid,
     GridItem,
-    SelectOption,
+    HelperText,
+    HelperTextItem,
     TextInput,
     Title,
     Toolbar,
@@ -25,6 +27,7 @@ import {
     Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
@@ -281,10 +284,11 @@ function AuthProviderForm({
     const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
     const isDisabled = isViewing || values.active || getIsAuthProviderImmutable(values);
+    const nameValidated = errors.name && touched.name ? ValidatedOptions.error : 'default';
 
     return (
         <Form>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">{formTitle}</Title>
@@ -296,7 +300,7 @@ function AuthProviderForm({
                     )}
                     {isActionable && (
                         <ToolbarGroup
-                            alignment={{ default: 'alignRight' }}
+                            align={{ default: 'alignRight' }}
                             spaceItems={{ default: 'spaceItemsLg' }}
                         >
                             {hasAction ? (
@@ -306,7 +310,7 @@ function AuthProviderForm({
                                             variant="primary"
                                             onClick={onClickSubmit}
                                             isDisabled={!dirty || !isValid}
-                                            isSmall
+                                            size="sm"
                                             isLoading={isSaving}
                                             spinnerAriaValueText={isSaving ? 'Saving' : undefined}
                                         >
@@ -314,7 +318,11 @@ function AuthProviderForm({
                                         </Button>
                                     </ToolbarItem>
                                     <ToolbarItem>
-                                        <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                        <Button
+                                            variant="tertiary"
+                                            onClick={onClickCancel}
+                                            size="sm"
+                                        >
                                             Cancel
                                         </Button>
                                     </ToolbarItem>
@@ -322,7 +330,7 @@ function AuthProviderForm({
                             ) : (
                                 <ToolbarGroup variant="button-group">
                                     <ToolbarItem>
-                                        <Button variant="link" isSmall>
+                                        <Button variant="link" size="sm">
                                             <Link
                                                 to="/main/access-control/auth-providers"
                                                 aria-current="page"
@@ -338,7 +346,7 @@ function AuthProviderForm({
                                                     variant="secondary"
                                                     onClick={handleTest}
                                                     isDisabled={action === 'edit'}
-                                                    isSmall
+                                                    size="sm"
                                                 >
                                                     Test login
                                                 </Button>
@@ -349,7 +357,7 @@ function AuthProviderForm({
                                             variant="primary"
                                             onClick={onClickEdit}
                                             isDisabled={action === 'edit'}
-                                            isSmall
+                                            size="sm"
                                         >
                                             {selectedAuthProvider.active ||
                                             getIsAuthProviderImmutable(selectedAuthProvider)
@@ -408,23 +416,22 @@ function AuthProviderForm({
                 />
             )}
             <FormikProvider value={formik}>
-                <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
+                <FormSection title="Configuration" titleElement="h3" className="pf-v5-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
-                            <FormGroup
-                                label="Name"
-                                fieldId="name"
-                                isRequired
-                                helperTextInvalid={errors.name || ''}
-                                validated={
-                                    errors.name && touched.name ? ValidatedOptions.error : 'default'
-                                }
-                            >
+                            <FormGroup label="Name" fieldId="name" isRequired>
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameValidated}>
+                                            {errors.name || ''}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                                 <TextInput
                                     type="text"
                                     id="name"
                                     value={values.name}
-                                    onChange={onChange}
+                                    onChange={(event, _value) => onChange(_value, event)}
                                     isDisabled={isDisabled}
                                     isRequired
                                     onBlur={handleBlur}
@@ -471,7 +478,7 @@ function AuthProviderForm({
                     titleElement="h3"
                 >
                     <FormGroup
-                        className="pf-u-w-100 pf-u-w-75-on-md pf-u-w-50-on-lg"
+                        className="pf-v5-u-w-100 pf-v5-u-w-75-on-md pf-v5-u-w-50-on-lg"
                         label="Minimum access role"
                         fieldId="minimumAccessRole"
                         isRequired
@@ -541,7 +548,9 @@ function AuthProviderForm({
                                                                 type="text"
                                                                 id={`requiredAttributes[${index}].attributeKey`}
                                                                 value={attribute.attributeKey}
-                                                                onChange={onChange}
+                                                                onChange={(event, _value) =>
+                                                                    onChange(_value, event)
+                                                                }
                                                                 isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
@@ -553,7 +562,9 @@ function AuthProviderForm({
                                                                 type="text"
                                                                 id={`requiredAttributes[${index}].attributeValue`}
                                                                 value={attribute.attributeValue}
-                                                                onChange={onChange}
+                                                                onChange={(event, _value) =>
+                                                                    onChange(_value, event)
+                                                                }
                                                                 isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
@@ -602,7 +613,7 @@ function AuthProviderForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
@@ -655,7 +666,9 @@ function AuthProviderForm({
                                                             type="text"
                                                             id={`claimMappings[${index}][0]`}
                                                             value={mapping[0]}
-                                                            onChange={onChange}
+                                                            onChange={(event, _value) =>
+                                                                onChange(_value, event)
+                                                            }
                                                             isDisabled={isDisabled}
                                                         />
                                                     </FormGroup>
@@ -667,7 +680,9 @@ function AuthProviderForm({
                                                             type="text"
                                                             id={`claimMappings[${index}][1]`}
                                                             value={mapping[1]}
-                                                            onChange={onChange}
+                                                            onChange={(event, _value) =>
+                                                                onChange(_value, event)
+                                                            }
                                                             isDisabled={isDisabled}
                                                         />
                                                     </FormGroup>
@@ -714,7 +729,7 @@ function AuthProviderForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
                                                         }
                                                         onClick={() => arrayHelpers.push(['', ''])}
                                                     >
@@ -728,7 +743,7 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
+                    <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
                             groups={values.groups}

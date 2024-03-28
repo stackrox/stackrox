@@ -1,5 +1,5 @@
 import React, { ReactElement, ReactNode, useState } from 'react';
-import { Dropdown, DropdownToggle } from '@patternfly/react-core';
+import { Dropdown, DropdownToggle } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
 type BulkActionsDropdownProps = {
@@ -38,7 +38,7 @@ function BulkActionsDropdown({
             toggle={
                 <DropdownToggle
                     id="bulk-actions-dropdown"
-                    onToggle={onToggle}
+                    onToggle={(_event, value) => onToggle(value)}
                     toggleIndicator={CaretDownIcon}
                     isDisabled={isDisabled}
                 >

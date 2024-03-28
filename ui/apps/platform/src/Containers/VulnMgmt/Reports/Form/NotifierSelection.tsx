@@ -1,14 +1,8 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { FormikErrors, FormikTouched } from 'formik';
 
-import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    SelectOption,
-    TextInput,
-} from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, FlexItem, TextInput } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
@@ -80,7 +74,7 @@ function NotifierSelection({
             <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
                 <FlexItem>
                     <FormLabelGroup
-                        className="pf-u-mb-md"
+                        className="pf-v5-u-mb-md"
                         isRequired
                         label="Notifier"
                         fieldId="emailConfig.notifierId"
@@ -105,7 +99,7 @@ function NotifierSelection({
                 {allowCreate && (
                     <FlexItem>
                         <Button
-                            className="pf-u-mb-md"
+                            className="pf-v5-u-mb-md"
                             variant={ButtonVariant.secondary}
                             onClick={onToggleEmailNotifierModal}
                         >
@@ -127,7 +121,7 @@ function NotifierSelection({
                     type="text"
                     id="emailConfig.mailingLists"
                     value={joinedMailingLists}
-                    onChange={onMailingListsChange}
+                    onChange={(_event, value) => onMailingListsChange(value)}
                     onBlur={handleBlur}
                     placeholder="annie@example.com,jack@example.com"
                 />

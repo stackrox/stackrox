@@ -11,7 +11,7 @@ function PublicConfigHeader(): ReactElement | null {
     if (publicConfigHeader?.enabled) {
         return (
             <div
-                className="pf-c-banner pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
+                className="pf-v5-c-banner pf-v5-u-display-flex pf-v5-u-justify-content-center pf-v5-u-align-items-center"
                 style={getPublicConfigStyle(publicConfigHeader)}
                 data-testid="public-config-header"
             >

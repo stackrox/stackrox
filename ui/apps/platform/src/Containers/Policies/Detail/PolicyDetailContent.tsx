@@ -36,10 +36,10 @@ function PolicyDetailContent({
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }}>
                 <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
-                <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                     Policy behavior
                 </Title>
-                <Divider component="div" className="pf-u-mb-md" />
+                <Divider component="div" className="pf-v5-u-mb-md" />
                 <PolicyBehaviorSection
                     lifecycleStages={lifecycleStages}
                     eventSource={eventSource}
@@ -48,7 +48,7 @@ function PolicyDetailContent({
                 <Formik initialValues={policy} onSubmit={() => {}}>
                     {() => (
                         <>
-                            <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                            <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                                 Policy criteria
                             </Title>
                             <Divider component="div" />
@@ -61,7 +61,7 @@ function PolicyDetailContent({
                 </Formik>
                 {(scope?.length > 0 || exclusions?.length > 0) && (
                     <>
-                        <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                        <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                             Policy scope
                         </Title>
                         <Divider component="div" />

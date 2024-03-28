@@ -71,7 +71,7 @@ const VulnMgmtReportTableColumnDescriptor = [
                             display={{ default: 'inlineFlex' }}
                         >
                             <FlexItem>
-                                <ExclamationCircleIcon className="pf-u-danger-color-100" />
+                                <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
                             </FlexItem>
                             <FlexItem>Error</FlexItem>
                         </Flex>

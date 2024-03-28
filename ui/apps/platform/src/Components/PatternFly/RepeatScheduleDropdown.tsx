@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { SelectOption } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import SelectSingle from 'Components/SelectSingle';
 

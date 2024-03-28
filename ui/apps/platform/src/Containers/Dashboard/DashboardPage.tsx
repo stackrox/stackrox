@@ -67,7 +67,7 @@ function DashboardPage() {
                     {hasReadAccessForCluster && hasReadAccessForNamespace && (
                         <FlexItem
                             grow={{ default: 'grow' }}
-                            className="pf-u-display-flex pf-u-justify-content-flex-end"
+                            className="pf-v5-u-display-flex pf-v5-u-justify-content-flex-end"
                         >
                             <ScopeBar />
                         </FlexItem>
@@ -80,10 +80,10 @@ function DashboardPage() {
                     style={
                         {
                             // Ensure the grid has never grows large enough to show 4 columns
-                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
+                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v5-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
                             // Ensure the grid gap matches that of the outside padding of the containing PageSection
-                            '--pf-l-gallery--m-gutter--GridGap':
-                                'var(--pf-c-page__main-section--PaddingTop)',
+                            '--pf-v5-l-gallery--m-gutter--GridGap':
+                                'var(--pf-v5-c-page__main-section--PaddingTop)',
                         } as CSSProperties
                     }
                     hasGutter

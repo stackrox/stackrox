@@ -50,7 +50,7 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Review</Title>
                     </FlexItem>
@@ -67,21 +67,21 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Stack hasGutter className="pf-u-py-lg pf-u-px-lg">
+            <Stack hasGutter className="pf-v5-u-py-lg pf-v5-u-px-lg">
                 <StackItem>
-                    <Text component={TextVariants.h3} className="pf-u-font-weight-bold">
+                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
                         Name
                     </Text>
                     <Text>{formikValues.parameters.name}</Text>
                 </StackItem>
                 <StackItem>
-                    <Text component={TextVariants.h3} className="pf-u-font-weight-bold">
+                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
                         Schedule
                     </Text>
                     <Text>{formattedScanSchedule}</Text>
                 </StackItem>
                 <StackItem>
-                    <Text component={TextVariants.h3} className="pf-u-font-weight-bold">
+                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
                         Clusters
                     </Text>
                     <TextList isPlain>
@@ -91,7 +91,7 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                     </TextList>
                 </StackItem>
                 <StackItem>
-                    <Text component={TextVariants.h3} className="pf-u-font-weight-bold">
+                    <Text component={TextVariants.h3} className="pf-v5-u-font-weight-bold">
                         Profiles
                     </Text>
                     <TextList isPlain>

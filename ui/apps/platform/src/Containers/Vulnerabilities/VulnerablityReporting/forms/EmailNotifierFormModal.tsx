@@ -56,7 +56,7 @@ function EmailNotifierFormModal({
             <Title id="custom-header-label" headingLevel="h1" size={TitleSizes.xl}>
                 {title}
             </Title>
-            <p className="pf-u-pt-sm">{descriptionText}</p>
+            <p className="pf-v5-u-pt-sm">{descriptionText}</p>
         </>
     );
 

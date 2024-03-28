@@ -110,7 +110,7 @@ function IntegrationsListPage({
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection variant={PageSectionVariants.light} className="pf-u-py-md">
+            <PageSection variant={PageSectionVariants.light} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>

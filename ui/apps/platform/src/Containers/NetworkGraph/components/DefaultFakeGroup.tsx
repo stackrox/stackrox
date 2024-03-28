@@ -5,7 +5,7 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import { css } from '@patternfly/react-styles';
-import styles from '@patternfly/react-styles/css/components/Topology/topology-components';
+import styles from '@patternfly/react-topology/dist/js/css/topology-components';
 import {
     Layer,
     LabelPosition,

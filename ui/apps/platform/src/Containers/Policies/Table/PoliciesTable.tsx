@@ -3,10 +3,6 @@ import { useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
     PageSection,
     Pagination,
     Toolbar,
@@ -16,7 +12,13 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import {
-    TableComposable,
+    Dropdown,
+    DropdownItem,
+    DropdownSeparator,
+    DropdownToggle,
+} from '@patternfly/react-core/deprecated';
+import {
+    Table /* data-codemods */,
     Thead,
     Tbody,
     Tr,
@@ -188,7 +190,7 @@ function PoliciesTable({
                     <ToolbarContent>
                         <ToolbarItem
                             variant="search-filter"
-                            className="pf-u-flex-grow-1 pf-u-flex-shrink-1"
+                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <SearchFilterInput
                                 className="w-full theme-light pf-search-shim"
@@ -211,8 +213,10 @@ function PoliciesTable({
                                         toggle={
                                             <DropdownToggle
                                                 isDisabled={!hasSelections}
-                                                isPrimary
-                                                onToggle={onToggleActions}
+                                                toggleVariant="primary"
+                                                onToggle={(_event, toggleOpen) =>
+                                                    onToggleActions(toggleOpen)
+                                                }
                                                 toggleIndicator={CaretDownIcon}
                                             >
                                                 Bulk actions
@@ -293,7 +297,7 @@ function PoliciesTable({
                                 </Tooltip>
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 isCompact
                                 isDisabled
@@ -304,11 +308,7 @@ function PoliciesTable({
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-                <TableComposable
-                    isStickyHeader
-                    aria-label="Policies table"
-                    data-testid="policies-table"
-                >
+                <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                     <Thead>
                         <Tr>
                             <Th>{/* Header for expanded column */}</Th>
@@ -401,7 +401,7 @@ function PoliciesTable({
                             <Tbody
                                 key={id}
                                 style={{
-                                    borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                                 }}
                                 isExpanded={isExpanded}
                             >
@@ -445,7 +445,7 @@ function PoliciesTable({
                                                     (notifierCountWithLabelString) => (
                                                         <div
                                                             key={notifierCountWithLabelString}
-                                                            className="pf-u-text-nowrap"
+                                                            className="pf-v5-u-text-nowrap"
                                                         >
                                                             {notifierCountWithLabelString}
                                                         </div>
@@ -476,7 +476,7 @@ function PoliciesTable({
                             </Tbody>
                         );
                     })}
-                </TableComposable>
+                </Table>
             </PageSection>
             <ConfirmationModal
                 ariaLabel="Confirm delete"

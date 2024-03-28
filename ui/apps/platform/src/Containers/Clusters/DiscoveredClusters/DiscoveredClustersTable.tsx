@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -40,7 +40,7 @@ function DiscoveredClustersTable({
     sourceNameMap,
 }: DiscoveredClustersTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" borders={false}>
+        <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th width={25} sort={getSortParams(nameField)}>
@@ -102,7 +102,7 @@ function DiscoveredClustersTable({
                     })}
                 </Tbody>
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

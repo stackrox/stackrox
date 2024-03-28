@@ -1,14 +1,7 @@
 import React from 'react';
 import { useField } from 'formik';
-import {
-    TextInput,
-    ToggleGroup,
-    ToggleGroupItem,
-    FormGroup,
-    Select,
-    SelectOption,
-    SelectVariant,
-} from '@patternfly/react-core';
+import { TextInput, ToggleGroup, ToggleGroupItem, FormGroup } from '@patternfly/react-core';
+import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
 
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
@@ -65,7 +58,7 @@ function PolicyCriteriaFieldInput({
                     type="text"
                     id={name}
                     isDisabled={readOnly}
-                    onChange={handleChangeValue}
+                    onChange={(_event, val) => handleChangeValue(val)}
                     data-testid="policy-criteria-value-text-input"
                     placeholder={descriptor.placeholder || ''}
                 />
@@ -112,7 +105,7 @@ function PolicyCriteriaFieldInput({
                     type="number"
                     id={name}
                     isDisabled={readOnly}
-                    onChange={handleChangeValue}
+                    onChange={(_event, val) => handleChangeValue(val)}
                     data-testid="policy-criteria-value-number-input"
                 />
             );
@@ -121,7 +114,7 @@ function PolicyCriteriaFieldInput({
                 <FormGroup
                     label={descriptor.label}
                     fieldId={descriptor.name}
-                    className="pf-u-flex-1"
+                    className="pf-v5-u-flex-1"
                     data-testid="policy-criteria-value-select"
                 >
                     <Select
@@ -150,7 +143,7 @@ function PolicyCriteriaFieldInput({
                 <FormGroup
                     label={descriptor.label}
                     fieldId={descriptor.name}
-                    className="pf-u-flex-1"
+                    className="pf-v5-u-flex-1"
                     data-testid="policy-criteria-value-multiselect"
                 >
                     <Select

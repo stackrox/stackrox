@@ -26,9 +26,9 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
     return (
         <ExpandableSection
             toggleText={toggleText}
-            onToggle={onToggle}
+            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             isExpanded={isExpanded}
-            displaySize="large"
+            displaySize="lg"
             isWidthLimited
             data-testid="deployment-container-config"
         >

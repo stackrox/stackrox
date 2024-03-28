@@ -7,7 +7,7 @@ type ScanConfigProfilesProps = {
 
 function ScanConfigProfiles({ profiles }: ScanConfigProfilesProps): React.ReactElement {
     return (
-        <Card className="pf-u-h-100">
+        <Card className="pf-v5-u-h-100">
             <CardTitle component="h2">Profiles</CardTitle>
             <CardBody>
                 <List isPlain>

@@ -13,7 +13,7 @@ function OutdatedVersionBanner(): ReactElement | null {
 
     if (isOutdatedVersion) {
         return (
-            <Banner className="pf-u-text-align-center" variant="warning">
+            <Banner className="pf-v5-u-text-align-center" variant="gold">
                 It looks like this page is out of date and may not behave properly. Please{' '}
                 <Button variant="link" isInline onClick={reloadWindow}>
                     refresh this page

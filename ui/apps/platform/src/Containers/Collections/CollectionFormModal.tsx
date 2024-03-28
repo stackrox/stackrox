@@ -73,7 +73,7 @@ function CollectionsFormModal({
     configError,
     setConfigError,
 }: CollectionsFormModalProps) {
-    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-global--breakpoint--xl
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
     const {
         isOpen: isDrawerOpen,
         toggleSelect: toggleDrawer,
@@ -91,7 +91,7 @@ function CollectionsFormModal({
 
     if (error) {
         content = (
-            <Bullseye className="pf-u-p-2xl">
+            <Bullseye className="pf-v5-u-p-2xl">
                 <CollectionLoadError
                     title="There was an error loading this collection"
                     error={error}
@@ -101,8 +101,8 @@ function CollectionsFormModal({
         modalTitle = 'Collection error';
     } else if (loading) {
         content = (
-            <Bullseye className="pf-u-p-2xl">
-                <Spinner isSVG />
+            <Bullseye className="pf-v5-u-p-2xl">
+                <Spinner />
             </Bullseye>
         );
         modalTitle = 'Loading collection';
@@ -162,7 +162,7 @@ function CollectionsFormModal({
             width="90vw"
             hasNoBodyWrapper
             header={
-                <Flex className="pf-u-pb-md" alignItems={{ default: 'alignItemsCenter' }}>
+                <Flex className="pf-v5-u-pb-md" alignItems={{ default: 'alignItemsCenter' }}>
                     <FlexItem grow={{ default: 'grow' }}>
                         <Title headingLevel="h2">{modalTitle}</Title>
                     </FlexItem>
@@ -172,7 +172,7 @@ function CollectionsFormModal({
         >
             {configError && (
                 <Alert
-                    className="pf-u-mx-lg pf-u-mb-md"
+                    className="pf-v5-u-mx-lg pf-v5-u-mb-md"
                     title={configError.message}
                     variant="danger"
                     isInline

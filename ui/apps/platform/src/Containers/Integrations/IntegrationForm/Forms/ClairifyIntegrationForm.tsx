@@ -97,7 +97,7 @@ function ClairifyIntegrationForm({
                             id="name"
                             value={values.name}
                             placeholder="(example, StackRox Scanner Integration)"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -142,7 +142,7 @@ function ClairifyIntegrationForm({
                             type="text"
                             id="clairify.endpoint"
                             value={values.clairify.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -159,7 +159,7 @@ function ClairifyIntegrationForm({
                             type="text"
                             id="clairify.grpcEndpoint"
                             value={values.clairify.grpcEndpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -176,7 +176,7 @@ function ClairifyIntegrationForm({
                             type="number"
                             id="clairify.numConcurrentScans"
                             value={values.clairify.numConcurrentScans}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

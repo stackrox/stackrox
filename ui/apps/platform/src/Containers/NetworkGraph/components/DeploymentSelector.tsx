@@ -9,12 +9,13 @@ import {
     MenuContent,
     MenuFooter,
     MenuGroup,
-    MenuInput,
+    MenuSearch,
     MenuItem,
     MenuList,
     SearchInput,
-    Select,
+    MenuSearchInput,
 } from '@patternfly/react-core';
+import { Select } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
@@ -50,13 +51,13 @@ function DeploymentSelector({
                 .map((deployment) => (
                     <MenuItem
                         key={deployment.id}
-                        hasCheck
+                        hasCheckbox
                         itemId={deployment.name}
                         isSelected={selectedDeployments.includes(deployment.name)}
                     >
                         <span>
                             <DeploymentIcon />
-                            <span className="pf-u-mx-xs" data-testid="deployment-name">
+                            <span className="pf-v5-u-mx-xs" data-testid="deployment-name">
                                 {deployment.name}
                             </span>
                         </span>
@@ -97,16 +98,18 @@ function DeploymentSelector({
 
     const deploymentSelectMenu = (
         <Menu onSelect={onDeploymentSelect} selected={selectedDeployments} isScrollable>
-            <MenuInput className="pf-u-p-md">
-                <SearchInput
-                    value={input}
-                    aria-label="Filter deployments"
-                    type="search"
-                    placeholder="Filter deployments..."
-                    onChange={(_event, value) => handleTextInputChange(value)}
-                />
-            </MenuInput>
-            <Divider className="pf-u-m-0" />
+            <MenuSearch>
+                <MenuSearchInput>
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter deployments"
+                        type="search"
+                        placeholder="Filter deployments..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
+            <Divider className="pf-v5-u-m-0" />
             <MenuContent>
                 <MenuList>
                     {filteredDeploymentSelectMenuItems.length === 0 && (
@@ -133,7 +136,7 @@ function DeploymentSelector({
     return (
         <Select
             isOpen={isDeploymentOpen}
-            onToggle={toggleIsDeploymentOpen}
+            onToggle={(_e, v) => toggleIsDeploymentOpen(v)}
             className="deployment-select"
             placeholderText={
                 <Flex alignSelf={{ default: 'alignSelfCenter' }}>

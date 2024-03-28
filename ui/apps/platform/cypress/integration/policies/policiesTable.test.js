@@ -222,8 +222,8 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-c-title:contains('Policy management')`);
-        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v5-c-title:contains('Policy management')`);
+        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to clone policy and then cancel', () => {
@@ -233,8 +233,8 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-c-title:contains('Policy management')`);
-        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v5-c-title:contains('Policy management')`);
+        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to disable policy that has enabled status and then enable it again', () => {
@@ -293,8 +293,8 @@ describe('Policies table', () => {
 
         deletePolicyInTable({ policyName, actionText: 'Delete policy' });
 
-        cy.get(`.pf-c-title:contains('Policy management')`);
-        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v5-c-title:contains('Policy management')`);
+        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
     });
 });

@@ -189,7 +189,7 @@ function S3IntegrationForm({
                             type="text"
                             id="externalBackup.name"
                             value={values.externalBackup.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -206,7 +206,7 @@ function S3IntegrationForm({
                             type="number"
                             id="externalBackup.backupsToKeep"
                             value={values.externalBackup.backupsToKeep}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -221,7 +221,7 @@ function S3IntegrationForm({
                         <FormSelect
                             id="externalBackup.schedule.intervalType"
                             value={values.externalBackup.schedule.intervalType}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
@@ -239,7 +239,7 @@ function S3IntegrationForm({
                             <FormSelect
                                 id="externalBackup.schedule.weekly.day"
                                 value={values.externalBackup.schedule?.weekly?.day}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             >
@@ -257,7 +257,7 @@ function S3IntegrationForm({
                         <FormSelect
                             id="externalBackup.schedule.hour"
                             value={values.externalBackup.schedule.hour}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
@@ -276,7 +276,7 @@ function S3IntegrationForm({
                             type="text"
                             id="externalBackup.s3.bucket"
                             value={values.externalBackup.s3.bucket}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -291,7 +291,7 @@ function S3IntegrationForm({
                             type="text"
                             id="externalBackup.s3.objectPrefix"
                             value={values.externalBackup.s3.objectPrefix}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -307,7 +307,7 @@ function S3IntegrationForm({
                             type="text"
                             id="externalBackup.s3.endpoint"
                             value={values.externalBackup.s3.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -324,7 +324,7 @@ function S3IntegrationForm({
                             type="text"
                             id="externalBackup.s3.region"
                             value={values.externalBackup.s3.region}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -339,7 +339,7 @@ function S3IntegrationForm({
                             label="Use container IAM role"
                             id="externalBackup.s3.useIam"
                             isChecked={values.externalBackup.s3.useIam}
-                            onChange={updateKeysOnChange}
+                            onChange={(event, value) => updateKeysOnChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -355,7 +355,7 @@ function S3IntegrationForm({
                                 label="Update access key ID and secret access key"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -373,7 +373,7 @@ function S3IntegrationForm({
                             type="password"
                             id="externalBackup.s3.accessKeyId"
                             value={values.externalBackup.s3.accessKeyId}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||
@@ -399,7 +399,7 @@ function S3IntegrationForm({
                             type="password"
                             id="externalBackup.s3.secretAccessKey"
                             value={values.externalBackup.s3.secretAccessKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||

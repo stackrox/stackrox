@@ -98,7 +98,7 @@ function ScannerV4IntegrationForm({
                             id="name"
                             value={values.name}
                             placeholder="(example, StackRox Scanner Integration)"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled
                         />
@@ -141,7 +141,7 @@ function ScannerV4IntegrationForm({
                             type="text"
                             id="scannerV4.indexerEndpoint"
                             value={values.scannerV4.indexerEndpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -156,7 +156,7 @@ function ScannerV4IntegrationForm({
                             type="text"
                             id="scannerV4.matcherEndpoint"
                             value={values.scannerV4.matcherEndpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -173,7 +173,7 @@ function ScannerV4IntegrationForm({
                             type="number"
                             id="scannerV4.numConcurrentScans"
                             value={values.scannerV4.numConcurrentScans}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

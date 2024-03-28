@@ -37,7 +37,7 @@ function PolicyCategoriesPage(): React.ReactElement {
     let listContent = (
         <PageSection variant="light" isFilled id="policies-table-loading">
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         </PageSection>
     );
@@ -86,16 +86,16 @@ function PolicyCategoriesPage(): React.ReactElement {
         <>
             <PolicyManagementHeader currentTabTitle="Policy categories" />
             <Divider component="div" />
-            <PageSection variant="light" className="pf-u-py-0">
+            <PageSection variant="light" className="pf-v5-u-py-0">
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
                         <ToolbarItem>
-                            <div className="pf-u-font-size-sm">
+                            <div className="pf-v5-u-font-size-sm">
                                 Manage categories for your policies.
                             </div>
                         </ToolbarItem>
                         {hasWriteAccessForPolicy && (
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <Flex>
                                     <Button
                                         variant="primary"

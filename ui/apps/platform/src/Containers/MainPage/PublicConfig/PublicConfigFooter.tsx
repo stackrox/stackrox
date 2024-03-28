@@ -11,7 +11,7 @@ function PublicConfigFooter(): ReactElement | null {
     if (publicConfigFooter?.enabled) {
         return (
             <div
-                className="pf-c-banner pf-u-display-flex pf-u-justify-content-center pf-u-align-items-center"
+                className="pf-v5-c-banner pf-v5-u-display-flex pf-v5-u-justify-content-center pf-v5-u-align-items-center"
                 style={getPublicConfigStyle(publicConfigFooter)}
                 data-testid="public-config-footer"
             >

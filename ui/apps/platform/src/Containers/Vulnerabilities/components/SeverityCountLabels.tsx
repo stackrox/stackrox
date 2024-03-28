@@ -64,7 +64,7 @@ function SeverityCountLabels({
                 >
                     <span className={getClassNameForCount(critical)}>
                         {!critical && critical !== 0 ? (
-                            <EllipsisHIcon className="pf-u-my-xs" />
+                            <EllipsisHIcon className="pf-v5-u-my-xs" />
                         ) : (
                             critical
                         )}
@@ -79,7 +79,7 @@ function SeverityCountLabels({
                 >
                     <span className={getClassNameForCount(important)}>
                         {!important && important !== 0 ? (
-                            <EllipsisHIcon className="pf-u-my-xs" />
+                            <EllipsisHIcon className="pf-v5-u-my-xs" />
                         ) : (
                             important
                         )}
@@ -94,7 +94,7 @@ function SeverityCountLabels({
                 >
                     <span className={getClassNameForCount(moderate)}>
                         {!moderate && moderate !== 0 ? (
-                            <EllipsisHIcon className="pf-u-my-xs" />
+                            <EllipsisHIcon className="pf-v5-u-my-xs" />
                         ) : (
                             moderate
                         )}
@@ -108,7 +108,7 @@ function SeverityCountLabels({
                     icon={<LowIcon color={low ? undefined : noViolationsColor} />}
                 >
                     <span className={getClassNameForCount(low)}>
-                        {!low && low !== 0 ? <EllipsisHIcon className="pf-u-my-xs" /> : low}
+                        {!low && low !== 0 ? <EllipsisHIcon className="pf-v5-u-my-xs" /> : low}
                     </span>
                 </Label>
             </Tooltip>

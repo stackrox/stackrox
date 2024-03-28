@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import {
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -39,7 +39,7 @@ function AdministrationEventsTable({
     searchFilter,
 }: AdministrationEventsTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" borders={false}>
+        <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th>Domain</Th>
@@ -64,7 +64,7 @@ function AdministrationEventsTable({
                             key={id}
                             isExpanded
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                         >
                             <Tr>
@@ -96,7 +96,7 @@ function AdministrationEventsTable({
                     );
                 })
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

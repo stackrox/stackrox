@@ -92,7 +92,7 @@ function AdministrationEventsToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                     {lastUpdatedTime && (
                         <ToolbarItem>
                             <UpdatedTimeOrUpdateButton

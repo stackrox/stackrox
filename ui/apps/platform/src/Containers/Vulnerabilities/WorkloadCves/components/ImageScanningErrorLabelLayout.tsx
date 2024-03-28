@@ -34,7 +34,7 @@ function ImageScanningErrorLabel({ imageNotes, scanNotes }: ImageScanningErrorLa
                 enableFlip
                 position="top"
             >
-                <Button variant="plain" className="pf-u-p-0">
+                <Button variant="plain" className="pf-v5-u-p-0">
                     <Label
                         color="orange"
                         isCompact

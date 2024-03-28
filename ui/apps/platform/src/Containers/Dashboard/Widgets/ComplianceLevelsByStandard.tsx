@@ -13,6 +13,8 @@ import {
     EmptyStateIcon,
     EmptyStateVariant,
     EmptyStateBody,
+    EmptyStateHeader,
+    EmptyStateFooter,
 } from '@patternfly/react-core';
 import { SyncIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
@@ -45,15 +47,18 @@ const fieldIdPrefix = 'compliance-levels-by-standard';
 
 function ComplianceScanEmptyState() {
     return (
-        <EmptyState className="pf-u-h-100" variant={EmptyStateVariant.xs}>
-            <EmptyStateIcon className="pf-u-font-size-xl" icon={SyncIcon} />
-            <Title headingLevel="h3" size="md">
-                No Standard results available.
-            </Title>
+        <EmptyState className="pf-v5-u-h-100" variant={EmptyStateVariant.xs}>
+            <EmptyStateHeader
+                titleText="No Standard results available."
+                icon={<EmptyStateIcon className="pf-v5-u-font-size-xl" icon={SyncIcon} />}
+                headingLevel="h3"
+            />
             <EmptyStateBody>Run a scan on the Compliance page.</EmptyStateBody>
-            <Button component={LinkShim} href={complianceBasePath}>
-                Go to compliance
-            </Button>
+            <EmptyStateFooter>
+                <Button component={LinkShim} href={complianceBasePath}>
+                    Go to compliance
+                </Button>
+            </EmptyStateFooter>
         </EmptyState>
     );
 }

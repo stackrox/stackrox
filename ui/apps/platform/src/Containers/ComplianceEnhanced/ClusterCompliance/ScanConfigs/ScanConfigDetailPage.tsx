@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useCallback } from 'react';
 import { generatePath, Link, useParams } from 'react-router-dom';
-import { Button, Divider, PageSection } from '@patternfly/react-core';
 
 import usePageAction from 'hooks/usePageAction';
 import useRestQuery from 'hooks/useRestQuery';

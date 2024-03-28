@@ -115,7 +115,7 @@ function FalsePositiveFormModal({
             ]}
         >
             <FormMessage message={message} />
-            <div className="pf-u-pb-md">
+            <div className="pf-v5-u-pb-md">
                 CVEs will be marked as false positive and removed from the vulnerability management
                 workflow
             </div>
@@ -135,7 +135,7 @@ function FalsePositiveFormModal({
                         isChecked={
                             formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ALL_TAGS_WITHIN_IMAGE
                         }
-                        onChange={onImageAppliesToOnChange}
+                        onChange={(event, _) => onImageAppliesToOnChange(_, event)}
                     />
                     <Radio
                         id="appliesToOnlyThisImage"
@@ -145,7 +145,7 @@ function FalsePositiveFormModal({
                         isChecked={
                             formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG
                         }
-                        onChange={onImageAppliesToOnChange}
+                        onChange={(event, _) => onImageAppliesToOnChange(_, event)}
                     />
                 </FormLabelGroup>
                 <FormLabelGroup
@@ -160,7 +160,7 @@ function FalsePositiveFormModal({
                         type="text"
                         id="comment"
                         value={formik.values.comment}
-                        onChange={onChange}
+                        onChange={(event, value) => onChange(value, event)}
                         onBlur={formik.handleBlur}
                     />
                 </FormLabelGroup>

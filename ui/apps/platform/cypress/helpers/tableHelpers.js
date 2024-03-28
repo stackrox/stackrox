@@ -19,8 +19,8 @@ export function getTableRowActionButtonByName(name) {
 }
 
 export function editIntegration(name) {
-    cy.get(`tr:contains('${name}') td.pf-c-table__action button`).click();
+    cy.get(`tr:contains('${name}') td.pf-v5-c-table__action button`).click();
     cy.get(
-        `tr:contains('${name}') td.pf-c-table__action button:contains("Edit Integration")`
+        `tr:contains('${name}') td.pf-v5-c-table__action button:contains("Edit Integration")`
     ).click();
 }

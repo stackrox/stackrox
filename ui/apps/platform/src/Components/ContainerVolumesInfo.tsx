@@ -37,17 +37,17 @@ function ContainerVolumeInfo({ volumes }: ContainerVolumeInfoProps) {
                 <Stack hasGutter>
                     {volumes.length > 0 ? (
                         volumes.map((volume, index) => (
-                            <StackItem>
+                            <StackItem key={volume.name}>
                                 <ExpandableSection
                                     toggleText={volume.name}
-                                    onToggle={() => setToggleAtIndex(index)}
+                                    onToggle={(_e, v) => setToggleAtIndex(v)}
                                     isExpanded={volumeToggles[index]}
                                     className="pf-expandable-not-large"
                                 >
                                     <DescriptionList
                                         columnModifier={{ default: '2Col' }}
                                         isCompact
-                                        className="pf-u-background-color-200 pf-u-p-md"
+                                        className="pf-v5-u-background-color-200 pf-v5-u-p-md"
                                     >
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Source</DescriptionListTerm>

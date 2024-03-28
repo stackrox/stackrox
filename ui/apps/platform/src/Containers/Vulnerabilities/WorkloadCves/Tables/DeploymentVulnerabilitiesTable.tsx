@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
     ExpandableRowContent,
-    TableComposable,
+    Table /* data-codemods */,
     Tbody,
     Td,
     Th,
@@ -151,7 +151,7 @@ function DeploymentVulnerabilitiesTable({
     const vulnerabilities = formatVulnerabilityData(deployment);
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
@@ -221,7 +221,7 @@ function DeploymentVulnerabilitiesTable({
                                 <ExpandableRowContent>
                                     {summary && images.length > 0 ? (
                                         <>
-                                            <p className="pf-u-mb-md">{summary}</p>
+                                            <p className="pf-v5-u-mb-md">{summary}</p>
                                             <DeploymentComponentVulnerabilitiesTable
                                                 images={images}
                                                 cve={cve}
@@ -237,7 +237,7 @@ function DeploymentVulnerabilitiesTable({
                     </Tbody>
                 );
             })}
-        </TableComposable>
+        </Table>
     );
 }
 

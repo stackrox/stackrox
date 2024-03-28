@@ -83,7 +83,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
         return (
             <Skeleton
                 height="32px"
-                className="pf-u-m-md"
+                className="pf-v5-u-m-md"
                 screenreaderText="Loading system summary counts"
             />
         );
@@ -101,9 +101,9 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
     }
 
     return (
-        <Split className="pf-u-align-items-center">
+        <Split className="pf-v5-u-align-items-center">
             <SplitItem isFilled>
-                <Split className="pf-u-flex-wrap">
+                <Split className="pf-v5-u-flex-wrap">
                     {tileResources
                         .filter((tileResource) => typeof data[dataKey[tileResource]] === 'number')
                         .map((tileResource) => (
@@ -116,7 +116,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                         ))}
                 </Split>
             </SplitItem>
-            <div className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg">
+            <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mr-md pf-v5-u-mr-lg-on-lg">
                 {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
                     lastUpdate
                 )}`}

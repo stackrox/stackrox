@@ -1,21 +1,17 @@
+import { DropEvent, Split, SplitItem } from '@patternfly/react-core';
 import {
     Dropdown,
     DropdownDirection,
     DropdownItem,
     DropdownToggle,
-    Split,
-    SplitItem,
-} from '@patternfly/react-core';
+} from '@patternfly/react-core/deprecated';
 import React from 'react';
 import UploadYAMLButton from './UploadYAMLButton';
 
 type NetworkSimulatorActionsProps = {
     generateNetworkPolicies: () => void;
     undoNetworkPolicies: () => void;
-    onFileInputChange: (
-        _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
-        file: File
-    ) => void;
+    onFileInputChange: (_event: DropEvent, file: File) => void;
     openNotifyYAMLModal?: () => void;
 };
 
@@ -67,7 +63,7 @@ function NetworkSimulatorActions({
     }
 
     return (
-        <Split hasGutter className="pf-u-p-md">
+        <Split hasGutter className="pf-v5-u-p-md">
             <SplitItem>
                 <UploadYAMLButton onFileInputChange={onFileInputChange} />
             </SplitItem>
@@ -77,7 +73,10 @@ function NetworkSimulatorActions({
                     position="left"
                     onSelect={onSelect}
                     toggle={
-                        <DropdownToggle id={actionsDropdownId} onToggle={onToggle}>
+                        <DropdownToggle
+                            id={actionsDropdownId}
+                            onToggle={(_event, isOpen: boolean) => onToggle(isOpen)}
+                        >
                             Actions
                         </DropdownToggle>
                     }

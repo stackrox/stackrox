@@ -16,7 +16,12 @@ function FormMessage({ message }: FormMessageProps): ReactElement {
     return (
         <div id="form-message-alert">
             {message && (
-                <Alert className="pf-u-mt-md pf-u-mb-md" title={title} variant={variant} isInline>
+                <Alert
+                    className="pf-v5-u-mt-md pf-v5-u-mb-md"
+                    title={title}
+                    variant={variant}
+                    isInline
+                >
                     <p>{message?.message}</p>
                 </Alert>
             )}

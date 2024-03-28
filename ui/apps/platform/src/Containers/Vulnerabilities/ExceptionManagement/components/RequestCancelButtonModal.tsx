@@ -61,7 +61,7 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
                 ]}
                 showClose={false}
             >
-                <Flex className="pf-u-py-md">
+                <Flex className="pf-v5-u-py-md">
                     {errorMessage && (
                         <Alert isInline variant={AlertVariant.danger} title={errorMessage} />
                     )}

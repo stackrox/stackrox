@@ -141,7 +141,7 @@ function IbmIntegrationForm({
                             type="text"
                             id="config.name"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -157,7 +157,7 @@ function IbmIntegrationForm({
                             type="text"
                             id="config.ibm.endpoint"
                             value={values.config.ibm.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -173,7 +173,7 @@ function IbmIntegrationForm({
                                 id="updatePassword"
                                 label="Update stored credentials"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -191,7 +191,7 @@ function IbmIntegrationForm({
                             type="password"
                             id="config.ibm.apiKey"
                             value={values.config.ibm.apiKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                             placeholder={

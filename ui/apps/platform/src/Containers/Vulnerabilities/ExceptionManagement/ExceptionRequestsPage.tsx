@@ -64,7 +64,7 @@ function ExceptionRequestsPage() {
         <>
             <PageTitle title="Exception Management" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
                 <Flex direction={{ default: 'column' }}>
@@ -79,7 +79,7 @@ function ExceptionRequestsPage() {
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
                     component="nav"
-                    className="pf-u-pl-lg pf-u-background-color-100"
+                    className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
                     <Tab
                         eventKey="PENDING_REQUESTS"

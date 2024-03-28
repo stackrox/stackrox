@@ -97,7 +97,7 @@ function ClusterInitBundleIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                <div id="form-message-alert" className="pf-u-pb-md">
+                <div id="form-message-alert" className="pf-v5-u-pb-md">
                     {message && <ClusterInitBundleFormMessageAlert message={message} />}
                 </div>
                 {isViewingDetails && initialValues ? (
@@ -116,7 +116,7 @@ function ClusterInitBundleIntegrationForm({
                                 type="text"
                                 id="name"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || isGenerated}
                             />

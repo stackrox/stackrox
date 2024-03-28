@@ -253,7 +253,7 @@ function DelegateScanningPage() {
         <>
             <PageTitle title={displayedPageTitle} />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-pl-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-pl-lg">
                     <FlexItem>
                         <Breadcrumb>
                             <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
@@ -275,7 +275,7 @@ function DelegateScanningPage() {
                         title={alertObj.title}
                         variant={alertObj.type}
                         isInline
-                        className="pf-u-mb-lg"
+                        className="pf-v5-u-mb-lg"
                         component="h2"
                     >
                         {alertObj.body}
@@ -311,7 +311,7 @@ function DelegateScanningPage() {
                         </>
                     )}
                 </Form>
-                <Flex className="pf-u-p-md">
+                <Flex className="pf-v5-u-p-md">
                     <FlexItem align={{ default: 'alignLeft' }}>
                         <Flex>
                             <Button variant="primary" onClick={onSave}>

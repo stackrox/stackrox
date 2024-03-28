@@ -1,5 +1,6 @@
 import React from 'react';
-import { Dropdown, DropdownToggle, DropdownItem, Spinner, Bullseye } from '@patternfly/react-core';
+import { Spinner, Bullseye } from '@patternfly/react-core';
+import { Dropdown, DropdownToggle, DropdownItem } from '@patternfly/react-core/deprecated';
 
 import downloadCLI from 'services/CLIService';
 
@@ -30,7 +31,7 @@ function DownloadCLIDropdown({ hasBuild }) {
                 >
                     {isCLIDownloading ? (
                         <Bullseye>
-                            <Spinner isSVG size="md" />
+                            <Spinner size="md" />
                         </Bullseye>
                     ) : (
                         'Download CLI'

@@ -129,7 +129,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
@@ -144,7 +144,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 />
             )}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Form className="pf-u-py-lg pf-u-px-lg">
+                <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem flex={{ default: 'flexNone' }}>
                             <ul>
@@ -157,7 +157,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                                 deliveryDestination.customBody
                                             );
                                         return (
-                                            <li key={keyFor(index)} className="pf-u-mb-md">
+                                            <li key={keyFor(index)} className="pf-v5-u-mb-md">
                                                 <Card>
                                                     <CardTitle>
                                                         <Flex
@@ -195,7 +195,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                                             allowCreate={hasNotifierWriteAccess}
                                                             formik={formik}
                                                         />
-                                                        <div className="pf-u-mt-md">
+                                                        <div className="pf-v5-u-mt-md">
                                                             <FormLabelGroup
                                                                 label="Email template"
                                                                 labelIcon={

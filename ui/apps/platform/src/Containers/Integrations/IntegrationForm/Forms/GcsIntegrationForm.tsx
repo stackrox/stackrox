@@ -184,7 +184,7 @@ function GcsIntegrationForm({
                             type="text"
                             id="externalBackup.name"
                             value={values.externalBackup.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -202,7 +202,7 @@ function GcsIntegrationForm({
                             id="externalBackup.backupsToKeep"
                             name="externalBackup.backupsToKeep"
                             value={values.externalBackup.backupsToKeep}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -217,7 +217,7 @@ function GcsIntegrationForm({
                         <FormSelect
                             id="externalBackup.schedule.intervalType"
                             value={values.externalBackup.schedule.intervalType}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
@@ -235,7 +235,7 @@ function GcsIntegrationForm({
                             <FormSelect
                                 id="externalBackup.schedule.weekly.day"
                                 value={values.externalBackup.schedule?.weekly?.day}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             >
@@ -253,7 +253,7 @@ function GcsIntegrationForm({
                         <FormSelect
                             id="externalBackup.schedule.hour"
                             value={values.externalBackup.schedule.hour}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
@@ -273,7 +273,7 @@ function GcsIntegrationForm({
                             id="externalBackup.gcs.bucket"
                             name="externalBackup.gcs.bucket"
                             value={values.externalBackup.gcs.bucket}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -289,7 +289,7 @@ function GcsIntegrationForm({
                             id="externalBackup.gcs.objectPrefix"
                             name="externalBackup.gcs.objectPrefix"
                             value={values.externalBackup.gcs.objectPrefix}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -304,7 +304,7 @@ function GcsIntegrationForm({
                             label="Use workload identity"
                             id="externalBackup.gcs.useWorkloadId"
                             isChecked={values.externalBackup.gcs.useWorkloadId}
-                            onChange={updateServiceAccountOnChange}
+                            onChange={(event, value) => updateServiceAccountOnChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -324,7 +324,7 @@ function GcsIntegrationForm({
                                     !values.externalBackup.gcs.useWorkloadId &&
                                     values.updatePassword
                                 }
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.externalBackup.gcs.useWorkloadId}
                             />
@@ -348,7 +348,7 @@ function GcsIntegrationForm({
                             id="externalBackup.gcs.serviceAccount"
                             name="externalBackup.gcs.serviceAccount"
                             value={values.externalBackup.gcs.serviceAccount}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||

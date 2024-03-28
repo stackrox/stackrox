@@ -39,7 +39,7 @@ export function selectNamespace(namespace) {
         cy.get(namespaceSelect).click();
         // Exact match to distinguish stackrox from stackrox-operator namespaces.
         cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} .pf-c-menu__list-item [data-testid="namespace-name"]`
+            `${selectSelectors.patternFlySelect.openMenu} .pf-v5-c-menu__list-item [data-testid="namespace-name"]`
         )
             .contains(new RegExp(`^${namespace}$`))
             .click();
@@ -51,7 +51,7 @@ export function selectDeployment(deployment) {
     interactAndWaitForResponses(() => {
         cy.get(deploymentSelect).click();
         cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} .pf-c-menu__list-item [data-testid="deployment-name"]`
+            `${selectSelectors.patternFlySelect.openMenu} .pf-v5-c-menu__list-item [data-testid="deployment-name"]`
         )
             .contains(new RegExp(`^${deployment}$`))
             .click();
@@ -98,7 +98,7 @@ export function visitNetworkGraph(staticResponseMap) {
 
 export function checkNetworkGraphEmptyState() {
     cy.get(
-        '.pf-c-empty-state__content:contains("Select a cluster and at least one namespace to render active deployment traffic on the graph")'
+        '.pf-v5-c-empty-state__content:contains("Select a cluster and at least one namespace to render active deployment traffic on the graph")'
     );
 }
 

@@ -121,7 +121,7 @@ function PagerDutyIntegrationForm({
                             id="name"
                             name="name"
                             value={values.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -133,7 +133,7 @@ function PagerDutyIntegrationForm({
                                 id="updateStoredCredential"
                                 name="updateStoredCredential"
                                 isChecked={isUpdatingStoredCredential}
-                                onChange={onChangeUpdateStoredCredential}
+                                onChange={(_event, value) => onChangeUpdateStoredCredential(value)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -152,7 +152,7 @@ function PagerDutyIntegrationForm({
                             id="pagerduty.apiKey"
                             name="pagerduty.apiKey"
                             value={values.pagerduty.apiKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isStoredCredentialInputEnabled}
                             placeholder={

@@ -48,7 +48,7 @@ function TableEntityToolbar({
                         </ToolbarItem>
                     )}
                     {children}
-                    <ToolbarItem alignment={{ default: 'alignRight' }} variant="pagination">
+                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
                         <Pagination
                             itemCount={tableRowCount}
                             page={page}

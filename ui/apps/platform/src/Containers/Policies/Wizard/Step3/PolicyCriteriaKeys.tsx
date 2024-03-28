@@ -26,7 +26,7 @@ function PolicyCriteriaKeys({ keys }) {
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
             <Title headingLevel="h2">Drag out policy fields</Title>
-            <Divider component="div" className="pf-u-mb-sm pf-u-mt-md" />
+            <Divider component="div" className="pf-v5-u-mb-sm pf-v5-u-mt-md" />
             {Object.keys(categories).map((category, idx) => (
                 <div key={category}>
                     <PolicyCriteriaCategory
@@ -34,7 +34,7 @@ function PolicyCriteriaKeys({ keys }) {
                         keys={categories[category]}
                         isOpenDefault={idx === 0}
                     />
-                    <Divider component="div" className="pf-u-mb-sm pf-u-mt-sm" />
+                    <Divider component="div" className="pf-v5-u-mb-sm pf-v5-u-mt-sm" />
                 </div>
             ))}
         </Flex>

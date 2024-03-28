@@ -8,9 +8,8 @@ import {
     FlexItem,
     Breadcrumb,
     BreadcrumbItem,
-    Wizard,
-    WizardStep,
 } from '@patternfly/react-core';
+import { Wizard, WizardStep } from '@patternfly/react-core/deprecated';
 import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -90,7 +89,7 @@ function CreateVulnReportPage() {
         <>
             <PageTitle title="Create vulnerability report" />
             <ReportFormErrorAlert error={error} />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
@@ -100,7 +99,7 @@ function CreateVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h1">Create report</Title>
                     </FlexItem>

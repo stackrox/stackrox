@@ -161,7 +161,7 @@ function ArtifactRegistryIntegrationForm({
                             id="config.name"
                             placeholder="(ex. Google Artifact Registry)"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -178,7 +178,7 @@ function ArtifactRegistryIntegrationForm({
                             id="config.google.endpoint"
                             placeholder="(ex. us-west1-docker.pkg.dev)"
                             value={values.config.google.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -194,7 +194,7 @@ function ArtifactRegistryIntegrationForm({
                             type="text"
                             id="config.google.project"
                             value={values.config.google.project}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -209,7 +209,7 @@ function ArtifactRegistryIntegrationForm({
                                 label="Use workload identity"
                                 id="config.google.wifEnabled"
                                 isChecked={values.config.google.wifEnabled}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -231,7 +231,7 @@ function ArtifactRegistryIntegrationForm({
                                         isCloudCredentialsEnabled && values.config.google.wifEnabled
                                     ) && values.updatePassword
                                 }
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={
                                     !isEditable ||
@@ -261,7 +261,7 @@ function ArtifactRegistryIntegrationForm({
                             id="config.google.serviceAccount"
                             name="config.google.serviceAccount"
                             value={values.config.google.serviceAccount}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||
@@ -283,7 +283,7 @@ function ArtifactRegistryIntegrationForm({
                             label="Create integration without testing"
                             id="config.skipTestIntegration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

@@ -165,7 +165,7 @@ function NexusIntegrationForm({
                             type="text"
                             id="config.name"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -182,7 +182,7 @@ function NexusIntegrationForm({
                             type="text"
                             id="config.docker.endpoint"
                             value={values.config.docker.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -200,7 +200,7 @@ function NexusIntegrationForm({
                             type="text"
                             id="config.docker.username"
                             value={values.config.docker.username}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                         />
@@ -215,7 +215,7 @@ function NexusIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -234,7 +234,7 @@ function NexusIntegrationForm({
                             type="password"
                             id="config.docker.password"
                             value={values.config.docker.password}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                             placeholder={
@@ -249,7 +249,7 @@ function NexusIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="config.docker.insecure"
                             isChecked={values.config.docker.insecure}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -259,7 +259,7 @@ function NexusIntegrationForm({
                             label="Create integration without testing"
                             id="config.skipTestIntegration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

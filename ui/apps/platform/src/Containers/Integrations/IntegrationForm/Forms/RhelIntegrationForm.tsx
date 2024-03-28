@@ -162,7 +162,7 @@ function RhelIntegrationForm({
                             type="text"
                             id="config.name"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -179,7 +179,7 @@ function RhelIntegrationForm({
                             type="text"
                             id="config.docker.endpoint"
                             value={values.config.docker.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -194,7 +194,7 @@ function RhelIntegrationForm({
                             type="text"
                             id="config.docker.username"
                             value={values.config.docker.username}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -209,7 +209,7 @@ function RhelIntegrationForm({
                                 id="updatePassword"
                                 label="Update stored credentials"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -227,7 +227,7 @@ function RhelIntegrationForm({
                             type="password"
                             id="config.docker.password"
                             value={values.config.docker.password}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                             placeholder={
@@ -246,7 +246,7 @@ function RhelIntegrationForm({
                             label="Create integration without testing"
                             id="config.skipTestIntegration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

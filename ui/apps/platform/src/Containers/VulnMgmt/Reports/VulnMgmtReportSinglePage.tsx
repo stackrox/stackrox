@@ -37,7 +37,7 @@ function VulnMgmtReportPage(): ReactElement {
             {isLoading && (
                 <PageSection isFilled id="report-page">
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 </PageSection>
             )}

@@ -39,7 +39,7 @@ import { deploymentTabs } from '../utils/deploymentUtils';
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
 
 const sidebarHeadingStyleConstant = {
-    '--pf-u-max-width--MaxWidth': '26ch',
+    '--pf-v5-u-max-width--MaxWidth': '26ch',
 } as CSSProperties;
 
 type DeploymentSideBarProps = {
@@ -106,7 +106,7 @@ function DeploymentSideBar({
     if (isLoadingDeployment) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }
@@ -115,7 +115,7 @@ function DeploymentSideBar({
         return (
             <Stack>
                 <StackItem>
-                    <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                    <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                         <FlexItem>
                             <DeploymentIcon />
                         </FlexItem>
@@ -125,7 +125,7 @@ function DeploymentSideBar({
                     <Alert
                         variant={AlertVariant.danger}
                         title={error.toString()}
-                        className="pf-u-my-lg pf-u-mx-lg"
+                        className="pf-v5-u-my-lg pf-v5-u-mx-lg"
                     />
                 </StackItem>
             </Stack>
@@ -135,7 +135,7 @@ function DeploymentSideBar({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>
                         <DeploymentIcon />
                     </FlexItem>
@@ -143,7 +143,7 @@ function DeploymentSideBar({
                         <TextContent>
                             <Text
                                 component={TextVariants.h1}
-                                className="pf-u-font-size-xl pf-u-max-width"
+                                className="pf-v5-u-font-size-xl pf-v5-u-max-width"
                                 style={sidebarHeadingStyleConstant}
                                 data-testid="drawer-title"
                             >
@@ -153,7 +153,7 @@ function DeploymentSideBar({
                         <TextContent>
                             <Text
                                 component={TextVariants.h2}
-                                className="pf-u-font-size-sm pf-u-color-200"
+                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
                                 data-testid="drawer-subtitle"
                             >
                                 in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
@@ -238,7 +238,7 @@ function DeploymentSideBar({
                             eventKey={deploymentTabs.BASELINE}
                             id={deploymentTabs.BASELINE}
                             hidden={activeKeyTab !== deploymentTabs.BASELINE}
-                            className="pf-u-h-100"
+                            className="pf-v5-u-h-100"
                         >
                             {activeKeyTab === deploymentTabs.BASELINE && (
                                 <DeploymentBaselines

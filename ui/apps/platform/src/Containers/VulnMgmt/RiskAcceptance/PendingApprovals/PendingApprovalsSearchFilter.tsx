@@ -5,9 +5,10 @@ import {
     Flex,
     FlexItem,
     InputGroup,
-    SelectOption,
     TextInput,
+    InputGroupItem,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FilterIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
@@ -67,21 +68,25 @@ function PendingApprovalsSearchFilter({
             <FlexItem spacer={{ default: 'spacerNone' }}>
                 {selectedAttribute === 'Request ID' && (
                     <InputGroup>
-                        <TextInput
-                            name="requestIDSearchInput"
-                            id="requestIDSearchInput"
-                            type="search"
-                            aria-label="request id search input"
-                            onChange={handleInputChange}
-                            value={inputValue}
-                        />
-                        <Button
-                            variant={ButtonVariant.control}
-                            aria-label="search button for search input"
-                            onClick={() => handleSearchChange(inputValue)}
-                        >
-                            <SearchIcon />
-                        </Button>
+                        <InputGroupItem isFill>
+                            <TextInput
+                                name="requestIDSearchInput"
+                                id="requestIDSearchInput"
+                                type="search"
+                                aria-label="request id search input"
+                                onChange={(_event, value) => handleInputChange(value)}
+                                value={inputValue}
+                            />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                            <Button
+                                variant={ButtonVariant.control}
+                                aria-label="search button for search input"
+                                onClick={() => handleSearchChange(inputValue)}
+                            >
+                                <SearchIcon />
+                            </Button>
+                        </InputGroupItem>
                     </InputGroup>
                 )}
                 {selectedAttribute === 'Requested Vulnerability State' && (

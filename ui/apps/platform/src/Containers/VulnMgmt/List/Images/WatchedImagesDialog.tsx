@@ -99,14 +99,14 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
         .map((image) => (
             <li className="flex border-b last:border-0 border-base-300 py-2">
                 <Flex
-                    className="pf-u-w-100"
+                    className="pf-v5-u-w-100"
                     alignItems={{ default: 'alignItemsCenter' }}
                     flexWrap={{ default: 'nowrap' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
                 >
                     <FlexItem>{image.name}</FlexItem>
                     <FlexItem>
-                        <Button variant="danger" isSmall onClick={getRemoveFromWatch(image.name)}>
+                        <Button variant="danger" size="sm" onClick={getRemoveFromWatch(image.name)}>
                             Remove watch
                         </Button>
                     </FlexItem>

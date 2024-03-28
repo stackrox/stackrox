@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    ActionsColumn,
+    Table /* data-codemods */,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 
 import { ClusterInitBundle } from 'services/ClustersService';
 import { clustersInitBundlesPath } from 'routePaths';
@@ -17,7 +25,7 @@ function InitBundlesTable({
     setInitBundleToRevoke,
 }: InitBundlesTableProps): ReactElement {
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead>
                 <Tr>
                     <Th>Name</Th>
@@ -40,9 +48,9 @@ function InitBundlesTable({
                             <Td dataLabel="Created at">{createdAt}</Td>
                             <Td dataLabel="Expires at">{expiresAt}</Td>
                             {hasWriteAccessForInitBundles && (
-                                <Td>
+                                <Td isActionCell>
                                     <ActionsColumn
-                                        menuAppendTo={() => document.body}
+                                        // menuAppendTo={() => document.body}
                                         items={[
                                             {
                                                 title: 'Revoke bundle',
@@ -58,7 +66,7 @@ function InitBundlesTable({
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

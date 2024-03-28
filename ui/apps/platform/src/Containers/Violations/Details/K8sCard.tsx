@@ -33,13 +33,13 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
     }
 
     return (
-        <div className="pf-u-pb-md" key={message}>
+        <div className="pf-v5-u-pb-md" key={message}>
             <Card isExpanded={isExpanded} id={message} isFlat>
                 <CardHeader onExpand={onExpand}>
                     <CardTitle>{message}</CardTitle>
                 </CardHeader>
                 <CardExpandableContent>
-                    <CardBody className="pf-u-mt-lg">
+                    <CardBody className="pf-v5-u-mt-lg">
                         <DescriptionList isHorizontal>
                             <DescriptionListItem term="Time" desc={format(time, dateTimeFormat)} />
                             {keyValueAttrs.attrs?.length > 0 && <Divider component="div" />}

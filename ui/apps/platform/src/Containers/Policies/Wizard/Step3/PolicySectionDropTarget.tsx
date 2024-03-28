@@ -52,14 +52,14 @@ function PolicySectionDropTarget({ sectionIndex, descriptors }) {
         }),
     });
 
-    let dropStyle = 'pf-u-background-color-200';
+    let dropStyle = 'pf-v5-u-background-color-200';
     // getItemType returns the item type if an item is currently being dragged
     if (!canDrop && !!getItemType) {
-        dropStyle = 'pf-u-background-color-disabled-color-200';
+        dropStyle = 'pf-v5-u-background-color-disabled-color-200';
     } else if (canDrop && isOver) {
-        dropStyle = 'pf-u-background-color-success';
+        dropStyle = 'pf-v5-u-background-color-success';
     } else if (canDrop) {
-        dropStyle = 'pf-u-background-color-default';
+        dropStyle = 'pf-v5-u-background-color-default';
     }
 
     return (
@@ -67,7 +67,7 @@ function PolicySectionDropTarget({ sectionIndex, descriptors }) {
             <Flex
                 data-testid="policy-section-drop-target"
                 justifyContent={{ default: 'justifyContentCenter' }}
-                className={`pf-u-p-sm dropzone ${dropStyle}`}
+                className={`pf-v5-u-p-sm dropzone ${dropStyle}`}
             >
                 Drop a policy field inside
             </Flex>

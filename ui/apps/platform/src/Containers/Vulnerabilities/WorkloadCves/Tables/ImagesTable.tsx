@@ -1,7 +1,15 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    ActionsColumn,
+    Table /* data-codemods */,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 import { Flex, Label } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -101,7 +109,7 @@ function ImagesTable({
     const colSpan = hasWriteAccessForWatchedImage ? 7 : 6;
 
     return (
-        <TableComposable borders={false} variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 {/* TODO: need to double check sorting on columns  */}
                 <Tr>
@@ -147,7 +155,7 @@ function ImagesTable({
                         <Tbody
                             key={id}
                             style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
                             }}
                         >
                             <Tr>
@@ -159,7 +167,7 @@ function ImagesTable({
                                                     isCompact
                                                     variant="outline"
                                                     color="grey"
-                                                    className="pf-u-mt-xs"
+                                                    className="pf-v5-u-mt-xs"
                                                     icon={<EyeIcon />}
                                                 >
                                                     Watched image
@@ -209,7 +217,7 @@ function ImagesTable({
                                     <Td isActionCell>
                                         {name?.tag && (
                                             <ActionsColumn
-                                                menuAppendTo={() => document.body}
+                                                // menuAppendTo={() => document.body}
                                                 items={[
                                                     {
                                                         title: watchImageMenuText,
@@ -228,7 +236,7 @@ function ImagesTable({
                     );
                 }
             )}
-        </TableComposable>
+        </Table>
     );
 }
 

@@ -14,7 +14,7 @@ function NotifierName({ notifierId }: NotifierNameProps): ReactElement {
     const fullNotifier = notifiersResult.notifiers.find((notifier) => notifier.id === notifierId);
 
     if (notifiersResult.isLoading) {
-        return <Spinner isSVG size="md" />;
+        return <Spinner size="md" />;
     }
 
     if (notifiersResult.error) {

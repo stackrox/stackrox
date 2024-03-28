@@ -12,7 +12,7 @@ function PolicyCriteriaKey({ fieldKey }) {
     });
 
     return (
-        <div ref={drag} className="pf-u-p-sm pf-u-mb-md policy-criteria-key">
+        <div ref={drag} className="pf-v5-u-p-sm pf-v5-u-mb-md policy-criteria-key">
             <Flex alignItems={{ default: 'alignItemsCenter' }} flexWrap={{ default: 'nowrap' }}>
                 <span className="draggable-grip" />
                 {shortName || name}

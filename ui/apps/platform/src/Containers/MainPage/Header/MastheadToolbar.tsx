@@ -1,6 +1,10 @@
 import React, { ReactElement } from 'react';
 import { useLocation } from 'react-router-dom';
-import { PageHeaderTools, PageHeaderToolsGroup, PageHeaderToolsItem } from '@patternfly/react-core';
+import {
+    PageHeaderTools,
+    PageHeaderToolsGroup,
+    PageHeaderToolsItem,
+} from '@patternfly/react-core/deprecated';
 
 import useCases from 'constants/useCaseTypes';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';

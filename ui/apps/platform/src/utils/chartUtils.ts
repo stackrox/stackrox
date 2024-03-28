@@ -10,7 +10,7 @@ import merge from 'lodash/merge';
 import { policySeverityColorMap } from 'constants/severityColors';
 import { ValueOf } from './type.utils';
 
-export const solidBlueChartColor = 'var(--pf-global--palette--blue-400)';
+export const solidBlueChartColor = 'var(--pf-v5-global--palette--blue-400)';
 
 export const severityColorScale = Object.values(policySeverityColorMap);
 

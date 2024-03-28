@@ -40,7 +40,7 @@ function ProcessCard({ processes, message }) {
                         columnModifier={{
                             default: '2Col',
                         }}
-                        className="pf-u-my-md"
+                        className="pf-v5-u-my-md"
                     >
                         <DescriptionListItem
                             term="First occurrence"

@@ -7,10 +7,10 @@ import {
     DescriptionListTerm,
     Form,
     PageSection,
-    SelectOption,
     TextInput,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import * as yup from 'yup';
 
@@ -108,7 +108,7 @@ function ApiTokenIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                <div id="form-message-alert" className="pf-u-pb-md">
+                <div id="form-message-alert" className="pf-v5-u-pb-md">
                     {message && <ApiTokenFormMessageAlert message={message} />}
                 </div>
 
@@ -158,7 +158,7 @@ function ApiTokenIntegrationForm({
                                 type="text"
                                 id="name"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || isGenerated}
                             />

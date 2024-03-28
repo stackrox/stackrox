@@ -59,7 +59,7 @@ function CheckStatusModal({ checkResult, isOpen, status, handleClose }: CheckSta
                     isDisabled
                 />
             </ToggleGroup>
-            <Divider component="div" className="pf-u-pb-md" />
+            <Divider component="div" className="pf-v5-u-pb-md" />
         </Flex>
     );
 

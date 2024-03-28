@@ -160,7 +160,7 @@ function GoogleCloudSccIntegrationForm({
                             id="notifier.name"
                             value={values.notifier.name}
                             placeholder="(example, Cloud SCC Integration)"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -178,7 +178,7 @@ function GoogleCloudSccIntegrationForm({
                             id="notifier.cscc.sourceId"
                             value={values.notifier.cscc.sourceId}
                             placeholder="example, organizations/123/sources/456"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -193,7 +193,7 @@ function GoogleCloudSccIntegrationForm({
                                 label="Use workload identity"
                                 id="notifier.cscc.wifEnabled"
                                 isChecked={values.notifier.cscc.wifEnabled}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -215,7 +215,7 @@ function GoogleCloudSccIntegrationForm({
                                         isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled
                                     ) && values.updatePassword
                                 }
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={
                                     !isEditable ||
@@ -245,7 +245,7 @@ function GoogleCloudSccIntegrationForm({
                             id="notifier.cscc.serviceAccount"
                             name="notifier.cscc.serviceAccount"
                             value={values.notifier.cscc.serviceAccount}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||

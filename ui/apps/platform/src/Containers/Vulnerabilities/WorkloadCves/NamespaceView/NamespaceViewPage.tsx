@@ -16,7 +16,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title="Workload CVEs - Namespace view" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilitiesWorkloadCvesPath}>
                         Workload CVEs
@@ -30,7 +30,7 @@ function NamespaceViewPage() {
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
-                    <Title headingLevel="h1" className="pf-u-mb-sm">
+                    <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                         Namespace view
                     </Title>
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>

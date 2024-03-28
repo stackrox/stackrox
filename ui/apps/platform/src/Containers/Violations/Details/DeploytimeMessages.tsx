@@ -7,7 +7,7 @@ type DeploytimeMessageProps = {
 
 function DeploytimeMessage({ message }: DeploytimeMessageProps): ReactElement {
     return (
-        <Card isFlat className="pf-u-mb-md">
+        <Card isFlat className="pf-v5-u-mb-md">
             <CardBody>{message}</CardBody>
         </Card>
     );

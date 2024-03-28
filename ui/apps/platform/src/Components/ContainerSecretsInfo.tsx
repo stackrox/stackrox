@@ -37,16 +37,17 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
                 <Stack hasGutter>
                     {secrets.length > 0 ? (
                         secrets.map((secret, index) => (
-                            <StackItem>
+                            // eslint-disable-next-line react/no-array-index-key
+                            <StackItem key={`${secret.name}-${index}`}>
                                 <ExpandableSection
                                     toggleText={secret.name}
-                                    onToggle={() => setToggleAtIndex(index)}
+                                    onToggle={(_e, v) => setToggleAtIndex(v)}
                                     isExpanded={secretToggles[index]}
                                     className="pf-expandable-not-large"
                                 >
                                     <DescriptionList
                                         isCompact
-                                        className="pf-u-background-color-200 pf-u-p-md"
+                                        className="pf-v5-u-background-color-200 pf-v5-u-p-md"
                                     >
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Source</DescriptionListTerm>

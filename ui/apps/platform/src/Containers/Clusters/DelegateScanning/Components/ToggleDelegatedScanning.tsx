@@ -11,7 +11,7 @@ type ToggleDelegatedScanningProps = {
 
 function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDelegatedScanningProps) {
     return (
-        <Card className="pf-u-mb-lg">
+        <Card className="pf-v5-u-mb-lg">
             <CardBody>
                 <FormLabelGroup
                     label="Delegate scanning for"
@@ -19,7 +19,7 @@ function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDeleg
                     touched={{}}
                     errors={{}}
                 >
-                    <Flex className="pf-u-mt-md pf-u-mb-lg">
+                    <Flex className="pf-v5-u-mt-md pf-v5-u-mb-lg">
                         <FlexItem>
                             <Radio
                                 label="None"

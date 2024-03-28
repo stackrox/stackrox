@@ -1,6 +1,7 @@
 import React from 'react';
 import { useField } from 'formik';
-import { TextInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
+import { TextInput, FormGroup } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { SubComponent } from './policyCriteriaDescriptors';
 
@@ -33,13 +34,13 @@ function PolicyCriteriaFieldSubInput({
     switch (subComponent.type) {
         case 'text':
             return (
-                <FormGroup label={subComponent.label} fieldId={name} className="pf-u-flex-1">
+                <FormGroup label={subComponent.label} fieldId={name} className="pf-v5-u-flex-1">
                     <TextInput
                         value={value}
                         type="text"
                         id={name}
                         isDisabled={readOnly}
-                        onChange={(v) => setValue(v)}
+                        onChange={(_event, v) => setValue(v)}
                         data-testid="policy-criteria-value-text-input"
                     />
                 </FormGroup>
@@ -51,9 +52,9 @@ function PolicyCriteriaFieldSubInput({
                     type="number"
                     id={name}
                     isDisabled={readOnly}
-                    onChange={(v) => setValue(v)}
+                    onChange={(_event, v) => setValue(v)}
                     placeholder="(ex. 5)"
-                    className="pf-u-w-25"
+                    className="pf-v5-u-w-25"
                     data-testid="policy-criteria-value-number-input"
                 />
             );
@@ -62,7 +63,7 @@ function PolicyCriteriaFieldSubInput({
                 <FormGroup
                     label={subComponent.label}
                     fieldId={name}
-                    className="pf-u-flex-1 pf-u-w-0"
+                    className="pf-v5-u-flex-1 pf-v5-u-w-0"
                     data-testid="policy-criteria-value-select"
                 >
                     <Select

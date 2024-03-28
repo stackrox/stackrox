@@ -19,14 +19,14 @@ export function getSelectButtonByLabel(label) {
 }
 
 export function getSelectOption(option) {
-    return cy.get(`.pf-c-select__menu button:contains("${option}")`);
+    return cy.get(`.pf-v5-c-select__menu button:contains("${option}")`);
 }
 
 export function getToggleGroupItem(groupText, itemIndex, itemText) {
     // Need item index to disambiguate complete versus partial matches.
     // For example, Registry is (intended) complete match but Registry + Scanner is (unintended) partial match.
     return cy.get(
-        `.pf-c-form__group:contains("${groupText}") .pf-c-toggle-group__item:eq(${itemIndex}) button.pf-c-toggle-group__button:contains("${itemText}")`
+        `.pf-v5-c-form__group:contains("${groupText}") .pf-v5-c-toggle-group__item:eq(${itemIndex}) button.pf-v5-c-toggle-group__button:contains("${itemText}")`
     );
 }
 

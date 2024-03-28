@@ -178,7 +178,7 @@ class HorizontalBarChart extends Component {
                             y: item.y,
                             link: item.link,
                         }))}
-                        color="var(--pf-global--palette--black-200)"
+                        color="var(--pf-v5-global--palette--black-200)"
                         style={{
                             height: seriesProps.style.height,
                             rx: '2',

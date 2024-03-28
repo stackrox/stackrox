@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
-import { Flex, Select, SelectOption } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { MitreTechnique } from 'types/mitre.proto';
 
@@ -36,7 +37,7 @@ function MitreTechniqueSelect({
             className={className}
             isOpen={isOpen}
             onSelect={onSelect}
-            onToggle={setIsOpen}
+            onToggle={(_event, val) => setIsOpen(val)}
             placeholderText={label}
             selections={techniqueId}
         >

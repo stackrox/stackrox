@@ -163,7 +163,7 @@ function GoogleIntegrationForm({
                             id="config.name"
                             placeholder="(ex. Google Registry and Scanner)"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -211,7 +211,7 @@ function GoogleIntegrationForm({
                             type="text"
                             id="config.google.endpoint"
                             value={values.config.google.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -227,7 +227,7 @@ function GoogleIntegrationForm({
                             type="text"
                             id="config.google.project"
                             value={values.config.google.project}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -242,7 +242,7 @@ function GoogleIntegrationForm({
                                 label="Use workload identity"
                                 id="config.google.wifEnabled"
                                 isChecked={values.config.google.wifEnabled}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -264,7 +264,7 @@ function GoogleIntegrationForm({
                                         isCloudCredentialsEnabled && values.config.google.wifEnabled
                                     ) && values.updatePassword
                                 }
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={
                                     !isEditable ||
@@ -294,7 +294,7 @@ function GoogleIntegrationForm({
                             id="config.google.serviceAccount"
                             name="config.google.serviceAccount"
                             value={values.config.google.serviceAccount}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={
                                 !isEditable ||
@@ -316,7 +316,7 @@ function GoogleIntegrationForm({
                             label="Create integration without testing"
                             id="config.skipTestIntegration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

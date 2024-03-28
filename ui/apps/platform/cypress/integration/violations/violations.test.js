@@ -56,7 +56,7 @@ describe('Violations', () => {
 
         // check audit log type
         cy.get('tbody tr:nth-child(2) td[data-label="Entity"]').should('contain', 'test-scc'); // table cell also has cluster
-        cy.get('tbody tr:nth-child(2) td[data-label="Entity"] div.pf-u-font-size-xs').should(
+        cy.get('tbody tr:nth-child(2) td[data-label="Entity"] div.pf-v5-u-font-size-xs').should(
             'have.text',
             'in "aaa_remote"'
         ); // table cell also has cluster

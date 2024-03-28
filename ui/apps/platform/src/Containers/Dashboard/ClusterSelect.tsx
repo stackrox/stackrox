@@ -1,11 +1,11 @@
 import React, { ChangeEvent } from 'react';
+import { Divider } from '@patternfly/react-core';
 import {
-    Divider,
     Select,
     SelectOption,
     SelectOptionObject,
     SelectVariant,
-} from '@patternfly/react-core';
+} from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
@@ -22,7 +22,7 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
         <SelectOption key={selectAll.toString()} value={selectAll}>
             <span>All clusters</span>
         </SelectOption>,
-        <Divider key="cluster-select-option-divider" className="pf-u-mb-0" component="div" />,
+        <Divider key="cluster-select-option-divider" className="pf-v5-u-mb-0" component="div" />,
         ...visibleClusters.map(({ name }) => (
             <SelectOption key={name} value={name}>
                 <span>{name}</span>
@@ -86,7 +86,7 @@ function ClusterSelect({
             toggleAriaLabel="Select clusters"
             variant={SelectVariant.checkbox}
             isOpen={isOpen}
-            onToggle={onToggle}
+            onToggle={(_e, v) => onToggle(v)}
             onSelect={onSelect}
             onFilter={onFilter}
             placeholderText={currentSelection === selectAll ? 'All clusters' : 'Clusters'}

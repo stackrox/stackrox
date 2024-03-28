@@ -104,14 +104,19 @@ function ReviewPolicyForm({
                     flex={{ default: 'flex_1' }}
                     direction={{ default: 'column' }}
                     alignSelf={{ default: 'alignSelfStretch' }}
-                    className="review-policy pf-u-p-lg"
+                    className="review-policy pf-v5-u-p-lg"
                 >
                     <Flex direction={{ default: 'column', xl: 'row' }}>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h2">Review policy</Title>
-                            <div className="pf-u-mt-sm">Review policy settings and violations.</div>
+                            <div className="pf-v5-u-mt-sm">
+                                Review policy settings and violations.
+                            </div>
                         </FlexItem>
-                        <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                        <FlexItem
+                            className="pf-v5-u-pr-md"
+                            alignSelf={{ default: 'alignSelfCenter' }}
+                        >
                             <Button
                                 variant="secondary"
                                 onClick={() => setShowPolicyResults(!showPolicyResults)}
@@ -131,30 +136,30 @@ function ReviewPolicyForm({
                     )}
                 </Flex>
                 <Divider component="div" />
-                <FlexItem className="pf-u-p-lg">
+                <FlexItem className="pf-v5-u-p-lg">
                     <PolicyDetailContent policy={postFormatExclusionField(values)} isReview />
                 </FlexItem>
             </Flex>
             {showPolicyResults && (
                 <>
-                    <Divider component="div" isVertical />
+                    <Divider component="div" orientation={{ default: 'vertical' }} />
                     <Flex
                         direction={{ default: 'column' }}
                         alignSelf={{ default: 'alignSelfStretch' }}
-                        className="preview-violations pf-u-p-lg pf-u-w-50"
+                        className="preview-violations pf-v5-u-p-lg pf-v5-u-w-50"
                     >
                         <Title headingLevel="h2">Preview violations</Title>
-                        <div className="pf-u-mb-md pf-u-mt-sm">
+                        <div className="pf-v5-u-mb-md pf-v5-u-mt-sm">
                             The policy settings you have selected will generate violations for the
                             Build or Deploy lifecycle stages. Runtime violations are not available
                             in this preview because they are generated in response to future events.
                         </div>
-                        <div className="pf-u-mb-md">
+                        <div className="pf-v5-u-mb-md">
                             Before you save the policy, verify that the violations seem accurate.
                         </div>
                         {values.disabled && (
                             <Alert
-                                className="pf-u-mb-md"
+                                className="pf-v5-u-mb-md"
                                 isInline
                                 variant="info"
                                 title="Policy disabled"
@@ -166,7 +171,7 @@ function ReviewPolicyForm({
                         {isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
                                 <FlexItem>
-                                    <Spinner isSVG />
+                                    <Spinner />
                                 </FlexItem>
                             </Flex>
                         ) : checkDryRunErrorMessage ? (

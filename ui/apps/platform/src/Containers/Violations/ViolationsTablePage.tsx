@@ -159,7 +159,7 @@ function ViolationsTablePage(): ReactElement {
         <>
             <PageSection variant="light" id="violations-table">
                 <Title headingLevel="h1">Violations</Title>
-                <Divider className="pf-u-py-md" />
+                <Divider className="pf-v5-u-py-md" />
                 <SearchFilterInput
                     className="theme-light pf-search-shim"
                     handleChangeSearchFilter={setSearchFilter}

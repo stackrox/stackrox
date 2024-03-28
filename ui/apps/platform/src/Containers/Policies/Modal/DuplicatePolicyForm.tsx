@@ -39,7 +39,7 @@ function DuplicatePolicyForm({
     );
 
     return (
-        <Form data-testid="dupe-policy-form" className="pf-u-mt-md">
+        <Form data-testid="dupe-policy-form" className="pf-v5-u-mt-md">
             {!showKeepBothPolicies && (
                 <RenamePolicySection changeRadio={changeRadio} changeText={changeText} />
             )}

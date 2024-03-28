@@ -8,12 +8,14 @@ import {
     Flex,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     PageSection,
     Radio,
-    Select,
-    SelectOption,
     TextInput,
 } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -140,7 +142,7 @@ function InitBundleForm(): ReactElement {
                                 isRequired
                                 value={values.name}
                                 onBlur={handleBlur}
-                                onChange={onChangeTextInput}
+                                onChange={(event, value) => onChangeTextInput(value, event)}
                             />
                         </FormLabelGroup>
                         <FormGroup
@@ -170,19 +172,26 @@ function InitBundleForm(): ReactElement {
                         <FormGroup
                             fieldId="installation"
                             label="Installation method for secured cluster services"
-                            helperText="You can use one bundle to secure multiple clusters that have the same installation method."
                             isRequired
                         >
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        You can use one bundle to secure multiple clusters that have
+                                        the same installation method.
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <Select
                                 variant="single"
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
                                 isDisabled={values.platform !== 'OpenShift'}
-                                onToggle={onToggle}
+                                onToggle={(_e, v) => onToggle(v)}
                                 onSelect={(_event, value) => onSelectInstallation(value)}
                                 selections={values.installation}
                                 isOpen={isOpen}
-                                // className="pf-u-flex-basis-0"
+                                // className="pf-v5-u-flex-basis-0"
                             >
                                 {Object.entries(installationOptions)
                                     .filter(

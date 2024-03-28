@@ -213,7 +213,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
         >
             {isLoading && (
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner />
                 </Bullseye>
             )}
             {CIDRBlocks.entities?.length >= 0 && !isLoading && (
@@ -223,7 +223,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
                         <Alert
                             variant={formCallout.type}
                             title={formCallout.message}
-                            className="pf-u-mb-md"
+                            className="pf-v5-u-mb-md"
                         />
                     )}
                     <Flex fullWidth={{ default: 'fullWidth' }}>

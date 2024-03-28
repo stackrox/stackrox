@@ -137,7 +137,7 @@ function WatchedImagesModal({
                 <Divider component="div" />
                 {currentWatchedImagesRequest.loading && !currentWatchedImagesRequest.data && (
                     <Bullseye>
-                        <Spinner isSVG aria-label="Loading current watched images" />
+                        <Spinner aria-label="Loading current watched images" />
                     </Bullseye>
                 )}
                 {currentWatchedImagesRequest.data && (
@@ -147,11 +147,11 @@ function WatchedImagesModal({
                         </Title>
                         <WatchedImagesTable
                             aria-labelledby="current-watched-images-list"
-                            className="pf-u-max-height"
+                            className="pf-v5-u-max-height"
                             style={
                                 {
                                     overflowY: 'auto',
-                                    '--pf-u-max-height--MaxHeight': '280px',
+                                    '--pf-v5-u-max-height--MaxHeight': '280px',
                                 } as CSSProperties
                             }
                             watchedImages={watchedImages}

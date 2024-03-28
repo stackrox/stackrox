@@ -20,14 +20,14 @@ const OrchestratorComponentsToggle = (): ReactElement => {
         location.reload(); // TODO instead pages could re-render on change to Redux store.
     }
 
-    // TODO: update wrapper classes to PatternFly, like  `pf-u-background-color-100
+    // TODO: update wrapper classes to PatternFly, like  `pf-v5-u-background-color-100
     return (
         <div className="flex justify-center items-center pr-3 relative" style={{ top: '2px' }}>
             <Switch
                 id="orchestrator-components-toggle"
                 aria-label="Toggle Showing Orchestrator Components"
                 isChecked={showOrchestratorComponents === 'true'}
-                onChange={handleToggle}
+                onChange={(_event, value) => handleToggle(value)}
             />
             <span className="p-2 text-base-600" aria-hidden="true">
                 Show Orchestrator Components

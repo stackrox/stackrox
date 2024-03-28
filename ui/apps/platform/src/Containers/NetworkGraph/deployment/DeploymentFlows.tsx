@@ -137,19 +137,19 @@ function DeploymentFlows({
     if (isLoadingNetworkFlows || isModifying) {
         return (
             <Bullseye>
-                <Spinner isSVG size="lg" />
+                <Spinner size="lg" />
             </Bullseye>
         );
     }
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             {(networkFlowsError || modifyError) && (
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
                     title={networkFlowsError || modifyError}
-                    className="pf-u-mb-sm"
+                    className="pf-v5-u-mb-sm"
                 />
             )}
             <Stack>
@@ -170,14 +170,14 @@ function DeploymentFlows({
                         </FlexItem>
                     </Flex>
                 </StackItem>
-                <Divider component="hr" className="pf-u-py-md" />
+                <Divider component="hr" className="pf-v5-u-py-md" />
                 <StackItem>
-                    <Toolbar className="pf-u-p-0">
-                        <ToolbarContent className="pf-u-px-0">
+                    <Toolbar className="pf-v5-u-p-0">
+                        <ToolbarContent className="pf-v5-u-px-0">
                             <ToolbarItem>
                                 <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                             </ToolbarItem>
-                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignRight' }}>
                                 <FlowsBulkActions
                                     type="active"
                                     selectedRows={selectedRows}
@@ -200,7 +200,7 @@ function DeploymentFlows({
                                     'flow',
                                     numAnomalousFlows
                                 )}`}
-                                onToggle={toggleAnomalousFlowsExpandable}
+                                onToggle={() => toggleAnomalousFlowsExpandable}
                                 isExpanded={isAnomalousFlowsExpanded}
                             >
                                 {numAnomalousFlows > 0 ? (
@@ -230,7 +230,7 @@ function DeploymentFlows({
                                     'flow',
                                     numBaselineFlows
                                 )}`}
-                                onToggle={toggleBaselineFlowsExpandable}
+                                onToggle={() => toggleBaselineFlowsExpandable}
                                 isExpanded={isBaselineFlowsExpanded}
                             >
                                 {numBaselineFlows > 0 ? (

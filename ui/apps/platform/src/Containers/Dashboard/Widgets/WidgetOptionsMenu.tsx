@@ -20,11 +20,11 @@ function WidgetOptionsMenu({ bodyContent }: OptionsMenuProps) {
             <Button
                 aria-label="Options"
                 variant="secondary"
-                className="pf-u-mr-sm"
+                className="pf-v5-u-mr-sm"
                 icon={<CaretDownIcon />}
                 iconPosition="right"
             >
-                <CogIcon className="pf-u-display-inline" />
+                <CogIcon className="pf-v5-u-display-inline" />
             </Button>
         </Popover>
     );

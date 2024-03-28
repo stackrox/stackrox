@@ -20,7 +20,7 @@ const severityToQuerySeverityKeys = {
     LOW_VULNERABILITY_SEVERITY: 'low',
 } as const;
 
-const fadedTextColor = 'var(--pf-global--Color--200)';
+const fadedTextColor = 'var(--pf-v5-global--Color--200)';
 
 export type ResourceCountsByCveSeverity = {
     critical: { total: number };
@@ -46,7 +46,7 @@ function BySeveritySummaryCard({
         <Card className={className} isCompact isFlat>
             <CardTitle>{title}</CardTitle>
             <CardBody>
-                <Grid className="pf-u-pl-sm">
+                <Grid className="pf-v5-u-pl-sm">
                     {severitiesCriticalToLow.map((severity) => {
                         const querySeverityKey = severityToQuerySeverityKeys[severity];
                         const count = severityCounts[querySeverityKey];
@@ -69,7 +69,7 @@ function BySeveritySummaryCard({
                         return (
                             <GridItem key={severity} span={6}>
                                 <Flex
-                                    className="pf-u-pt-sm"
+                                    className="pf-v5-u-pt-sm"
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
