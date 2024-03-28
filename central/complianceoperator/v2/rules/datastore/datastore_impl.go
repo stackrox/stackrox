@@ -28,6 +28,12 @@ func (d *datastoreImpl) GetRulesByCluster(ctx context.Context, clusterID string)
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 }
 
+// GetRulesByName retrieves rules by name
+func (d *datastoreImpl) GetRulesByName(ctx context.Context, ruleName string) ([]*storage.ComplianceOperatorRuleV2, error) {
+	return d.store.GetByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorRuleName, ruleName).ProtoQuery())
+}
+
 // delete rule by cluster id
 func (d *datastoreImpl) DeleteRulesByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()

@@ -22,6 +22,9 @@ type DataStore interface {
 	// GetRulesByCluster retrieves rules by cluster
 	GetRulesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorRuleV2, error)
 
+	// GetRulesByName retrieves rules by name
+	GetRulesByName(ctx context.Context, ruleName string) ([]*storage.ComplianceOperatorRuleV2, error)
+
 	// DeleteRulesByCluster removes rule by cluster id
 	DeleteRulesByCluster(ctx context.Context, clusterID string) error
 }

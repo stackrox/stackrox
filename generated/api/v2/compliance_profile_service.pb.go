@@ -23,139 +23,6 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Next Tag: 11
-type ComplianceRule struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	RuleVersion          string   `protobuf:"bytes,2,opt,name=rule_version,json=ruleVersion,proto3" json:"rule_version,omitempty"`
-	RuleType             string   `protobuf:"bytes,3,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
-	Severity             string   `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
-	Standard             string   `protobuf:"bytes,5,opt,name=standard,proto3" json:"standard,omitempty"`
-	Control              string   `protobuf:"bytes,6,opt,name=control,proto3" json:"control,omitempty"`
-	Title                string   `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
-	Description          string   `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale            string   `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes                string   `protobuf:"bytes,10,opt,name=fixes,proto3" json:"fixes,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ComplianceRule) Reset()         { *m = ComplianceRule{} }
-func (m *ComplianceRule) String() string { return proto.CompactTextString(m) }
-func (*ComplianceRule) ProtoMessage()    {}
-func (*ComplianceRule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{0}
-}
-func (m *ComplianceRule) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ComplianceRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ComplianceRule.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ComplianceRule) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ComplianceRule.Merge(m, src)
-}
-func (m *ComplianceRule) XXX_Size() int {
-	return m.Size()
-}
-func (m *ComplianceRule) XXX_DiscardUnknown() {
-	xxx_messageInfo_ComplianceRule.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ComplianceRule proto.InternalMessageInfo
-
-func (m *ComplianceRule) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetRuleVersion() string {
-	if m != nil {
-		return m.RuleVersion
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetRuleType() string {
-	if m != nil {
-		return m.RuleType
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetSeverity() string {
-	if m != nil {
-		return m.Severity
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetStandard() string {
-	if m != nil {
-		return m.Standard
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetControl() string {
-	if m != nil {
-		return m.Control
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetTitle() string {
-	if m != nil {
-		return m.Title
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetDescription() string {
-	if m != nil {
-		return m.Description
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetRationale() string {
-	if m != nil {
-		return m.Rationale
-	}
-	return ""
-}
-
-func (m *ComplianceRule) GetFixes() string {
-	if m != nil {
-		return m.Fixes
-	}
-	return ""
-}
-
-func (m *ComplianceRule) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *ComplianceRule) Clone() *ComplianceRule {
-	if m == nil {
-		return nil
-	}
-	cloned := new(ComplianceRule)
-	*cloned = *m
-
-	return cloned
-}
-
-// Next Tag: 11
 type ComplianceProfile struct {
 	Id                   string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name                 string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
@@ -176,7 +43,7 @@ func (m *ComplianceProfile) Reset()         { *m = ComplianceProfile{} }
 func (m *ComplianceProfile) String() string { return proto.CompactTextString(m) }
 func (*ComplianceProfile) ProtoMessage()    {}
 func (*ComplianceProfile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{1}
+	return fileDescriptor_1a6d608d8e632533, []int{0}
 }
 func (m *ComplianceProfile) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -315,7 +182,7 @@ func (m *ComplianceProfileSummary) Reset()         { *m = ComplianceProfileSumma
 func (m *ComplianceProfileSummary) String() string { return proto.CompactTextString(m) }
 func (*ComplianceProfileSummary) ProtoMessage()    {}
 func (*ComplianceProfileSummary) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{2}
+	return fileDescriptor_1a6d608d8e632533, []int{1}
 }
 func (m *ComplianceProfileSummary) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -411,7 +278,7 @@ func (m *ListComplianceProfilesResponse) Reset()         { *m = ListCompliancePr
 func (m *ListComplianceProfilesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceProfilesResponse) ProtoMessage()    {}
 func (*ListComplianceProfilesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{3}
+	return fileDescriptor_1a6d608d8e632533, []int{2}
 }
 func (m *ListComplianceProfilesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -478,7 +345,7 @@ func (m *ListComplianceProfileSummaryResponse) Reset()         { *m = ListCompli
 func (m *ListComplianceProfileSummaryResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceProfileSummaryResponse) ProtoMessage()    {}
 func (*ListComplianceProfileSummaryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{4}
+	return fileDescriptor_1a6d608d8e632533, []int{3}
 }
 func (m *ListComplianceProfileSummaryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -545,7 +412,7 @@ func (m *CountComplianceProfilesResponse) Reset()         { *m = CountCompliance
 func (m *CountComplianceProfilesResponse) String() string { return proto.CompactTextString(m) }
 func (*CountComplianceProfilesResponse) ProtoMessage()    {}
 func (*CountComplianceProfilesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{5}
+	return fileDescriptor_1a6d608d8e632533, []int{4}
 }
 func (m *CountComplianceProfilesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -605,7 +472,7 @@ func (m *ProfilesForClusterRequest) Reset()         { *m = ProfilesForClusterReq
 func (m *ProfilesForClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*ProfilesForClusterRequest) ProtoMessage()    {}
 func (*ProfilesForClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{6}
+	return fileDescriptor_1a6d608d8e632533, []int{5}
 }
 func (m *ProfilesForClusterRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -665,7 +532,7 @@ func (m *ClustersProfileSummaryRequest) Reset()         { *m = ClustersProfileSu
 func (m *ClustersProfileSummaryRequest) String() string { return proto.CompactTextString(m) }
 func (*ClustersProfileSummaryRequest) ProtoMessage()    {}
 func (*ClustersProfileSummaryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{7}
+	return fileDescriptor_1a6d608d8e632533, []int{6}
 }
 func (m *ClustersProfileSummaryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -719,7 +586,6 @@ func (m *ClustersProfileSummaryRequest) Clone() *ClustersProfileSummaryRequest {
 }
 
 func init() {
-	proto.RegisterType((*ComplianceRule)(nil), "v2.ComplianceRule")
 	proto.RegisterType((*ComplianceProfile)(nil), "v2.ComplianceProfile")
 	proto.RegisterType((*ComplianceProfileSummary)(nil), "v2.ComplianceProfileSummary")
 	proto.RegisterType((*ListComplianceProfilesResponse)(nil), "v2.ListComplianceProfilesResponse")
@@ -734,153 +600,50 @@ func init() {
 }
 
 var fileDescriptor_1a6d608d8e632533 = []byte{
-	// 777 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x95, 0xcf, 0x6f, 0xd3, 0x48,
-	0x14, 0xc7, 0xd7, 0xce, 0x8f, 0xc6, 0x2f, 0x55, 0x77, 0x77, 0x36, 0x5b, 0xb9, 0x69, 0x93, 0x34,
-	0xee, 0xae, 0x9a, 0x53, 0xa2, 0xcd, 0x1e, 0x76, 0xc5, 0x09, 0xb5, 0x08, 0x54, 0x89, 0x03, 0xb8,
-	0x08, 0x21, 0x2e, 0xc1, 0xd8, 0xd3, 0x32, 0xc2, 0xf1, 0xb8, 0x33, 0xb6, 0x69, 0x84, 0xb8, 0x20,
-	0x8e, 0x70, 0xe2, 0xc2, 0x99, 0x7f, 0x81, 0x7f, 0x82, 0x23, 0x88, 0x7f, 0x00, 0x15, 0xfe, 0x10,
-	0xe4, 0x99, 0xb1, 0xf3, 0xcb, 0x09, 0xb7, 0xbc, 0xef, 0x9b, 0xf7, 0xe6, 0xbd, 0xcf, 0x7b, 0x13,
-	0xc3, 0xa1, 0x13, 0x92, 0x41, 0x32, 0x1c, 0xb8, 0x74, 0x1c, 0xfa, 0xc4, 0x09, 0x5c, 0x3c, 0x0a,
-	0x19, 0x3d, 0x23, 0x3e, 0x1e, 0x71, 0xcc, 0x12, 0xe2, 0xe2, 0x7e, 0xc8, 0x68, 0x44, 0x91, 0x9e,
-	0x0c, 0x9b, 0x7f, 0x4c, 0x0f, 0x8f, 0x69, 0x20, 0x1d, 0xcd, 0x1d, 0x25, 0x72, 0xec, 0x30, 0xf7,
-	0xc9, 0xe8, 0x22, 0xc6, 0x6c, 0xa2, 0x5c, 0x7b, 0xe7, 0x94, 0x9e, 0xfb, 0x78, 0x90, 0x9e, 0x70,
-	0x82, 0x80, 0x46, 0x4e, 0x44, 0x68, 0xc0, 0xa5, 0xd7, 0x7a, 0xaf, 0xc3, 0xd6, 0x71, 0x7e, 0xad,
-	0x1d, 0xfb, 0x18, 0x21, 0x28, 0x07, 0xce, 0x18, 0x9b, 0xda, 0xbe, 0xd6, 0x33, 0x6c, 0xf1, 0x1b,
-	0x75, 0x61, 0x93, 0xc5, 0x3e, 0x1e, 0x25, 0x98, 0x71, 0x42, 0x03, 0x53, 0x17, 0xbe, 0x7a, 0xaa,
-	0xdd, 0x97, 0x12, 0xda, 0x05, 0x43, 0x1c, 0x89, 0x26, 0x21, 0x36, 0x4b, 0xc2, 0x5f, 0x4b, 0x85,
-	0x7b, 0x93, 0x10, 0xa3, 0x26, 0xd4, 0x38, 0x4e, 0x30, 0x23, 0xd1, 0xc4, 0x2c, 0x4b, 0x5f, 0x66,
-	0x0b, 0x5f, 0xe4, 0x04, 0x9e, 0xc3, 0x3c, 0xb3, 0xa2, 0x7c, 0xca, 0x46, 0x26, 0x6c, 0xb8, 0x34,
-	0x88, 0x18, 0xf5, 0xcd, 0xaa, 0x70, 0x65, 0x26, 0x6a, 0x40, 0x25, 0x22, 0x91, 0x8f, 0xcd, 0x0d,
-	0xa1, 0x4b, 0x03, 0xed, 0x43, 0xdd, 0xc3, 0xdc, 0x65, 0x24, 0x4c, 0x9b, 0x34, 0x6b, 0xb2, 0xcc,
-	0x19, 0x09, 0xed, 0x81, 0xc1, 0x04, 0x01, 0xc7, 0xc7, 0xa6, 0x21, 0xfc, 0x53, 0x21, 0xcd, 0x7a,
-	0x46, 0x2e, 0x31, 0x37, 0x41, 0x66, 0x15, 0x86, 0xf5, 0x41, 0x87, 0xdf, 0xa7, 0x90, 0xee, 0xc8,
-	0xd1, 0xa0, 0x2d, 0xd0, 0x89, 0xa7, 0x28, 0xe9, 0xc4, 0xcb, 0xb9, 0xe9, 0x33, 0xdc, 0x0e, 0xe1,
-	0xd7, 0x6c, 0x92, 0x19, 0x3a, 0x89, 0x66, 0x4b, 0xc9, 0x19, 0xbd, 0x2e, 0x6c, 0x86, 0x8c, 0x7a,
-	0xb1, 0x1b, 0x49, 0x80, 0x12, 0x52, 0x5d, 0x69, 0x39, 0xc3, 0x55, 0x9c, 0x16, 0xfa, 0xae, 0x2e,
-	0xf7, 0xdd, 0x83, 0x4a, 0x3a, 0x0d, 0x6e, 0x6e, 0xec, 0x97, 0x7a, 0xf5, 0x21, 0xea, 0x27, 0xc3,
-	0xfe, 0xfc, 0xe0, 0x6d, 0x79, 0x20, 0x65, 0xae, 0xae, 0x55, 0xfc, 0x32, 0x73, 0xca, 0xdc, 0x98,
-	0x65, 0xbe, 0x0d, 0xd5, 0xc4, 0xf1, 0x63, 0x01, 0xad, 0xd4, 0x33, 0x6c, 0x65, 0x59, 0x9f, 0x35,
-	0x30, 0x97, 0xa8, 0x9d, 0xc6, 0xe3, 0xb1, 0xc3, 0x26, 0xab, 0x96, 0x6c, 0x8e, 0x81, 0xbe, 0xcc,
-	0x60, 0xa1, 0xcf, 0xd2, 0x72, 0x9f, 0x79, 0x8d, 0xe5, 0xd9, 0x1a, 0x5b, 0x00, 0x62, 0x39, 0x5d,
-	0x1a, 0x07, 0x91, 0xa0, 0x57, 0xb1, 0xc5, 0xba, 0x1e, 0xa7, 0x42, 0xd1, 0x98, 0xaa, 0x45, 0x63,
-	0xb2, 0x4e, 0xa1, 0x7d, 0x9b, 0xf0, 0x68, 0xa9, 0x2d, 0x6e, 0x63, 0x1e, 0xd2, 0x80, 0x63, 0xf4,
-	0x0f, 0xd4, 0x54, 0x0c, 0x37, 0x35, 0x81, 0xfa, 0xcf, 0x79, 0xd4, 0x2a, 0xc2, 0xce, 0x8f, 0x59,
-	0x8f, 0xe0, 0xaf, 0xc2, 0xa4, 0x8a, 0x55, 0x9e, 0xfa, 0xff, 0xa5, 0xd4, 0x7b, 0x85, 0xa9, 0xb3,
-	0xb8, 0xe9, 0x0d, 0xff, 0x41, 0x47, 0x34, 0xba, 0xa6, 0xee, 0x06, 0x54, 0x24, 0x1c, 0x4d, 0xc0,
-	0x91, 0x86, 0x75, 0x0d, 0x76, 0xb2, 0x93, 0x37, 0x29, 0x3b, 0xf6, 0x63, 0x1e, 0x61, 0x66, 0xe3,
-	0x8b, 0x18, 0xf3, 0x28, 0x85, 0xea, 0x4a, 0x65, 0x94, 0x3f, 0x04, 0x43, 0x29, 0x27, 0x9e, 0x75,
-	0x1d, 0x5a, 0x2a, 0x80, 0x2f, 0x36, 0x24, 0xe3, 0x3b, 0x50, 0x9f, 0xc6, 0xcb, 0x96, 0x0c, 0x1b,
-	0xf2, 0x04, 0x7c, 0xf8, 0xa6, 0x5c, 0xb4, 0x41, 0xf2, 0x1f, 0x11, 0x79, 0xd0, 0xb8, 0x85, 0x97,
-	0x3b, 0x42, 0xbf, 0xa5, 0x4c, 0x6c, 0xcc, 0x69, 0xcc, 0x5c, 0x7c, 0x34, 0x39, 0xb9, 0xd1, 0x2c,
-	0x1e, 0x80, 0x75, 0xf0, 0xf2, 0xcb, 0xf7, 0xb7, 0x7a, 0x0b, 0xed, 0xce, 0xff, 0xf5, 0x0e, 0x14,
-	0xb5, 0xc1, 0x73, 0xe2, 0xbd, 0x40, 0xaf, 0x34, 0xd8, 0x2e, 0x9e, 0x38, 0x6a, 0xa5, 0x69, 0x57,
-	0xd2, 0x69, 0x5a, 0xa9, 0x7b, 0xfd, 0xb2, 0x58, 0x87, 0xa2, 0x84, 0x2e, 0xea, 0x14, 0x97, 0xc0,
-	0x07, 0x0a, 0x06, 0x7a, 0xad, 0x41, 0x23, 0xcd, 0x35, 0x07, 0x92, 0x60, 0x8e, 0xba, 0xa2, 0xb7,
-	0x75, 0x98, 0x9b, 0xbd, 0x95, 0x85, 0x2c, 0x2c, 0xd8, 0xcf, 0xcb, 0xe1, 0xea, 0xf5, 0xc6, 0xb0,
-	0x53, 0xc4, 0x5e, 0x3e, 0xa6, 0x4d, 0x31, 0x00, 0xe7, 0xd9, 0xdd, 0xf4, 0x23, 0xd4, 0x3c, 0x90,
-	0xf0, 0xd7, 0x2e, 0x9f, 0xf5, 0xb7, 0xb8, 0xb8, 0x83, 0x5a, 0x2b, 0x39, 0xa4, 0x09, 0x8e, 0xfa,
-	0x1f, 0xaf, 0xda, 0xda, 0xa7, 0xab, 0xb6, 0xf6, 0xf5, 0xaa, 0xad, 0xbd, 0xfb, 0xd6, 0xfe, 0x05,
-	0x4c, 0x42, 0xfb, 0x3c, 0x72, 0xdc, 0xa7, 0x8c, 0x5e, 0xca, 0x2f, 0x5a, 0xdf, 0x09, 0x49, 0x3f,
-	0x19, 0x3e, 0xd4, 0x93, 0xe1, 0x03, 0xfd, 0x71, 0x55, 0x68, 0xff, 0xfe, 0x08, 0x00, 0x00, 0xff,
-	0xff, 0x77, 0x61, 0x52, 0xee, 0x62, 0x07, 0x00, 0x00,
-}
-
-func (m *ComplianceRule) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ComplianceRule) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ComplianceRule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Fixes) > 0 {
-		i -= len(m.Fixes)
-		copy(dAtA[i:], m.Fixes)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Fixes)))
-		i--
-		dAtA[i] = 0x52
-	}
-	if len(m.Rationale) > 0 {
-		i -= len(m.Rationale)
-		copy(dAtA[i:], m.Rationale)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Rationale)))
-		i--
-		dAtA[i] = 0x4a
-	}
-	if len(m.Description) > 0 {
-		i -= len(m.Description)
-		copy(dAtA[i:], m.Description)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Description)))
-		i--
-		dAtA[i] = 0x42
-	}
-	if len(m.Title) > 0 {
-		i -= len(m.Title)
-		copy(dAtA[i:], m.Title)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Title)))
-		i--
-		dAtA[i] = 0x3a
-	}
-	if len(m.Control) > 0 {
-		i -= len(m.Control)
-		copy(dAtA[i:], m.Control)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Control)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.Standard) > 0 {
-		i -= len(m.Standard)
-		copy(dAtA[i:], m.Standard)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Standard)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.Severity) > 0 {
-		i -= len(m.Severity)
-		copy(dAtA[i:], m.Severity)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Severity)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.RuleType) > 0 {
-		i -= len(m.RuleType)
-		copy(dAtA[i:], m.RuleType)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.RuleType)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.RuleVersion) > 0 {
-		i -= len(m.RuleVersion)
-		copy(dAtA[i:], m.RuleVersion)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.RuleVersion)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
+	// 688 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x94, 0xcb, 0x6e, 0xd3, 0x40,
+	0x14, 0x86, 0xb1, 0x73, 0x69, 0x73, 0x52, 0x15, 0x18, 0x42, 0x35, 0x0d, 0xcd, 0xa5, 0x2e, 0xa8,
+	0x59, 0x25, 0x22, 0x2c, 0x40, 0xac, 0x50, 0x8b, 0x40, 0x95, 0x58, 0x80, 0x8b, 0x10, 0x62, 0x13,
+	0x8c, 0x3d, 0x94, 0x11, 0x8e, 0xc7, 0x9d, 0xb1, 0x0d, 0x11, 0x62, 0x83, 0x58, 0xc2, 0x8a, 0x0d,
+	0xef, 0xc1, 0x4b, 0xb0, 0x04, 0xf1, 0x02, 0xa8, 0xf0, 0x20, 0xc8, 0x33, 0x13, 0xa7, 0x89, 0xdd,
+	0xb0, 0xf3, 0x9c, 0xcb, 0xef, 0xf3, 0x7f, 0x73, 0x81, 0x5d, 0x27, 0xa4, 0x83, 0x64, 0x38, 0x70,
+	0xd9, 0x38, 0xf4, 0xa9, 0x13, 0xb8, 0x64, 0x14, 0x72, 0xf6, 0x92, 0xfa, 0x64, 0x24, 0x08, 0x4f,
+	0xa8, 0x4b, 0xfa, 0x21, 0x67, 0x11, 0x43, 0x66, 0x32, 0x6c, 0x5e, 0x9a, 0x15, 0x8f, 0x59, 0xa0,
+	0x12, 0xcd, 0x76, 0x5e, 0x61, 0x2e, 0xbf, 0xa9, 0xf3, 0x82, 0x38, 0xdc, 0x7d, 0x35, 0x3a, 0x8e,
+	0x09, 0x9f, 0xe8, 0xd4, 0xd6, 0x11, 0x63, 0x47, 0x3e, 0x19, 0xa4, 0x15, 0x4e, 0x10, 0xb0, 0xc8,
+	0x89, 0x28, 0x0b, 0x84, 0xca, 0x5a, 0xdf, 0x4c, 0xb8, 0xb8, 0x9f, 0x89, 0x3e, 0x54, 0x53, 0xa1,
+	0x75, 0x30, 0xa9, 0x87, 0x8d, 0xae, 0xd1, 0xab, 0xd9, 0x26, 0xf5, 0x10, 0x82, 0x72, 0xe0, 0x8c,
+	0x09, 0x36, 0x65, 0x44, 0x7e, 0xa3, 0x5d, 0x38, 0x3f, 0x35, 0x91, 0x10, 0x2e, 0x28, 0x0b, 0x70,
+	0x49, 0xa6, 0xd7, 0x75, 0xf8, 0x89, 0x8a, 0xa2, 0x6d, 0x58, 0x0b, 0x39, 0xf3, 0x62, 0x37, 0x1a,
+	0x45, 0x93, 0x90, 0xe0, 0xb2, 0xac, 0xaa, 0xeb, 0xd8, 0xe3, 0x49, 0x48, 0x50, 0x13, 0x56, 0x45,
+	0xe4, 0x04, 0x9e, 0xc3, 0x3d, 0x5c, 0x91, 0xe9, 0x6c, 0x8d, 0xba, 0x50, 0xf7, 0x88, 0x70, 0x39,
+	0x0d, 0xd3, 0xb9, 0x71, 0x55, 0x75, 0x9f, 0x0a, 0xa1, 0x1e, 0x54, 0x78, 0xec, 0x13, 0x81, 0x57,
+	0xba, 0xa5, 0x5e, 0x7d, 0x88, 0xfa, 0xc9, 0xb0, 0x3f, 0xf3, 0x64, 0xc7, 0x3e, 0xb1, 0x55, 0x01,
+	0xc2, 0xb0, 0xa2, 0x7f, 0x8b, 0x57, 0xa5, 0xce, 0x74, 0x89, 0x1a, 0x50, 0x89, 0x68, 0xe4, 0x13,
+	0x5c, 0x93, 0x71, 0xb5, 0x40, 0x1b, 0x50, 0x4d, 0x1c, 0x3f, 0x26, 0x02, 0x43, 0xb7, 0xd4, 0xab,
+	0xd9, 0x7a, 0x65, 0xfd, 0x34, 0x00, 0xe7, 0xa8, 0x1d, 0xc6, 0xe3, 0xb1, 0xc3, 0x27, 0x19, 0x2c,
+	0xe3, 0x14, 0xac, 0x45, 0x06, 0x66, 0x9e, 0xc1, 0x82, 0xcf, 0x52, 0xde, 0x67, 0x36, 0x63, 0xf9,
+	0xf4, 0x8c, 0x2d, 0x80, 0xd4, 0xdc, 0xc8, 0x65, 0x71, 0x10, 0x49, 0x7a, 0x15, 0xbb, 0x96, 0x46,
+	0xf6, 0xd3, 0x40, 0xd1, 0x36, 0x55, 0x8b, 0xb6, 0xc9, 0x3a, 0x84, 0xf6, 0x03, 0x2a, 0xa2, 0x9c,
+	0x2d, 0x61, 0x13, 0x11, 0xb2, 0x40, 0x10, 0x74, 0x1d, 0x56, 0x75, 0x8f, 0xc0, 0x86, 0x44, 0x7d,
+	0x79, 0x1e, 0xb5, 0xee, 0xb0, 0xb3, 0x32, 0xeb, 0x39, 0x5c, 0x2d, 0x14, 0xd5, 0xac, 0x32, 0xe9,
+	0x5b, 0x39, 0xe9, 0xad, 0x42, 0xe9, 0x69, 0xdf, 0xec, 0x0f, 0x37, 0xa1, 0x23, 0x8d, 0x2e, 0x99,
+	0xbb, 0x01, 0x15, 0x05, 0xc7, 0x90, 0x70, 0xd4, 0xc2, 0xba, 0x0d, 0x9b, 0xd3, 0xca, 0x7b, 0x8c,
+	0xef, 0xfb, 0xb1, 0x88, 0x08, 0xb7, 0xc9, 0x71, 0x4c, 0x44, 0x94, 0x42, 0x75, 0x55, 0x64, 0x94,
+	0x5d, 0x84, 0x9a, 0x8e, 0x1c, 0x78, 0xd6, 0x1d, 0x68, 0xe9, 0x06, 0xb1, 0x68, 0x48, 0xf5, 0x77,
+	0xa0, 0x3e, 0xeb, 0x57, 0x96, 0x6a, 0x36, 0x64, 0x02, 0x62, 0xf8, 0xb9, 0x5c, 0x74, 0x82, 0xd4,
+	0x63, 0x80, 0x3c, 0x68, 0xdc, 0x27, 0x79, 0x47, 0xe8, 0x42, 0xca, 0xc4, 0x26, 0x82, 0xc5, 0xdc,
+	0x25, 0x7b, 0x93, 0x83, 0xbb, 0xcd, 0xe2, 0x0d, 0xb0, 0x76, 0x3e, 0xfc, 0xfa, 0xfb, 0xc5, 0x6c,
+	0xa1, 0x2b, 0xf3, 0x6f, 0xc6, 0x40, 0x53, 0x1b, 0xbc, 0xa3, 0xde, 0x7b, 0xf4, 0xd1, 0x80, 0x8d,
+	0xe2, 0x1d, 0x47, 0xad, 0x54, 0xf6, 0x4c, 0x3a, 0x4d, 0x2b, 0x4d, 0x2f, 0x3f, 0x2c, 0xd6, 0xae,
+	0x1c, 0x61, 0x1b, 0x75, 0x8a, 0x47, 0x10, 0x03, 0x0d, 0x03, 0x7d, 0x32, 0xa0, 0x91, 0x6a, 0xcd,
+	0x81, 0xa4, 0x44, 0xa0, 0x6d, 0xe9, 0x6d, 0x19, 0xe6, 0x66, 0xef, 0xcc, 0x41, 0x16, 0x0e, 0xd8,
+	0xff, 0xc7, 0x11, 0xfa, 0xf6, 0xc6, 0xb0, 0x59, 0xc4, 0x5e, 0x5d, 0xa6, 0x35, 0xb9, 0x01, 0xce,
+	0x9b, 0x47, 0xe9, 0xfb, 0xda, 0xdc, 0x51, 0xf0, 0x97, 0x1e, 0x3e, 0xeb, 0x9a, 0xfc, 0x71, 0x07,
+	0xb5, 0xce, 0xe4, 0x90, 0x0a, 0xec, 0xf5, 0xbf, 0x9f, 0xb4, 0x8d, 0x1f, 0x27, 0x6d, 0xe3, 0xf7,
+	0x49, 0xdb, 0xf8, 0xfa, 0xa7, 0x7d, 0x0e, 0x30, 0x65, 0x7d, 0x11, 0x39, 0xee, 0x6b, 0xce, 0xde,
+	0xaa, 0xc7, 0xba, 0xef, 0x84, 0xb4, 0x9f, 0x0c, 0x9f, 0x99, 0xc9, 0xf0, 0x69, 0xe9, 0x45, 0x55,
+	0xc6, 0x6e, 0xfc, 0x0b, 0x00, 0x00, 0xff, 0xff, 0xf8, 0xd2, 0x58, 0xe0, 0x5d, 0x06, 0x00, 0x00,
 }
 
 func (m *ComplianceProfile) Marshal() (dAtA []byte, err error) {
@@ -1251,58 +1014,6 @@ func encodeVarintComplianceProfileService(dAtA []byte, offset int, v uint64) int
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ComplianceRule) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.RuleVersion)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.RuleType)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Severity)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Standard)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Control)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Title)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Description)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Rationale)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	l = len(m.Fixes)
-	if l > 0 {
-		n += 1 + l + sovComplianceProfileService(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *ComplianceProfile) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1484,377 +1195,6 @@ func sovComplianceProfileService(x uint64) (n int) {
 }
 func sozComplianceProfileService(x uint64) (n int) {
 	return sovComplianceProfileService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *ComplianceRule) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowComplianceProfileService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ComplianceRule: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ComplianceRule: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RuleVersion", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RuleVersion = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RuleType", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RuleType = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Severity = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Standard", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Standard = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Control", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Control = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Title = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Description = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Rationale", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Rationale = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Fixes", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceProfileService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Fixes = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipComplianceProfileService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthComplianceProfileService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *ComplianceProfile) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
