@@ -14,8 +14,8 @@ set -euo pipefail
 # TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-LAST_POSTGRES_TAG="4.4.0-rc.11-2-g5bdff1f851"
-LAST_POSTGRES_SHA="5bdff1f851bd3c551674797370da04d508b0f6ab"
+LAST_POSTGRES_TAG="4.4.0"
+LAST_POSTGRES_SHA="9a475905b70cb7ce54dd54e2d77f88fd8a3c81be"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -115,8 +115,6 @@ test_upgrade_paths() {
     export API_TOKEN
 
     cd "$TEST_ROOT"
-    git remote add origin https://github.com/stackrox/stackrox.git
-    git fetch origin release-4.4.x/go_1.21
     git checkout "$LAST_POSTGRES_SHA"
     export GOTOOLCHAIN=go1.20.10 GOSUMDB=off
 
