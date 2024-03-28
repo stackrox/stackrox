@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
 import {
     AngleDoubleDownIcon,
     AngleDoubleUpIcon,
@@ -25,11 +25,9 @@ import { PolicySeverity } from 'types/policy.proto';
 
 export const CriticalSeverityIcon = (props) => (
     <Icon
-        style={
-            {
-                '--pf-v5-c-icon__content--Color': props.color ?? CRITICAL_SEVERITY_COLOR,
-            } as CSSProperties
-        }
+        style={{
+            '--pf-v5-c-icon__content--Color': props.color ?? CRITICAL_SEVERITY_COLOR,
+        }}
     >
         <CriticalRiskIcon {...props} />
     </Icon>
@@ -37,11 +35,9 @@ export const CriticalSeverityIcon = (props) => (
 
 export const ImportantSeverityIcon = (props) => (
     <Icon
-        style={
-            {
-                '--pf-v5-c-icon__content--Color': props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR,
-            } as CSSProperties
-        }
+        style={{
+            '--pf-v5-c-icon__content--Color': props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR,
+        }}
     >
         <AngleDoubleUpIcon {...props} />
     </Icon>
@@ -51,11 +47,9 @@ export const HighSeverityIcon = ImportantSeverityIcon; // High is for policy sev
 
 export const ModerateSeverityIcon = (props) => (
     <Icon
-        style={
-            {
-                '--pf-v5-c-icon__content--Color': props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR,
-            } as CSSProperties
-        }
+        style={{
+            '--pf-v5-c-icon__content--Color': props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR,
+        }}
     >
         <EqualsIcon {...props} />
     </Icon>
@@ -65,11 +59,9 @@ export const MediumSeverityIcon = ModerateSeverityIcon; // Medium is for policy 
 
 export const LowSeverityIcon = (props) => (
     <Icon
-        style={
-            {
-                '--pf-v5-c-icon__content--Color': props.color ?? LOW_SEVERITY_COLOR,
-            } as CSSProperties
-        }
+        style={{
+            '--pf-v5-c-icon__content--Color': props.color ?? LOW_SEVERITY_COLOR,
+        }}
     >
         <AngleDoubleDownIcon {...props} />
     </Icon>
@@ -77,11 +69,9 @@ export const LowSeverityIcon = (props) => (
 
 export const UnknownSeverityIcon = (props) => (
     <Icon
-        style={
-            {
-                '--pf-v5-c-icon__content--Color': props.color ?? UNKNOWN_SEVERITY_COLOR,
-            } as CSSProperties
-        }
+        style={{
+            '--pf-v5-c-icon__content--Color': props.color ?? UNKNOWN_SEVERITY_COLOR,
+        }}
     >
         <UnknownIcon {...props} />
     </Icon>
