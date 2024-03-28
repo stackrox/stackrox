@@ -269,6 +269,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			// impact on image scan data.
 			fetchOpt = enricher.ForceRefetchSignaturesOnly
 			imgExists = true
+
+			if updateImageFromRequest(img, request.GetImage().GetName()) {
+				// Ensure that the change to Names is not overwritten by the enricher.
+				fetchOpt = enricher.IgnoreExistingImages
+			}
 		}
 	}
 
@@ -294,6 +299,45 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	return internalScanRespFromImage(img), nil
+}
+
+// updateImageFromRequest will update the name of existing image with the one from the request
+// if the names differ and the metadata for the existing image was unable to be pulled previously.
+// Returns true if an update was made, false otherwise.
+func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.ImageName) bool {
+	if !features.UnqualifiedSearchRegistries.Enabled() || reqImgName == nil {
+		// The need for this behavior is associated with the use of unqualified search
+		// registries or short name aliases (currently), if the feature is disabled
+		// do not modify the name.
+		return false
+	}
+
+	if existingImg.GetMetadata() != nil {
+		// If metadata exists, then the existing image name is likely valid, no update needed.
+		return false
+	}
+
+	existingImgName := existingImg.GetName()
+	if existingImgName.GetRegistry() == reqImgName.GetRegistry() &&
+		existingImgName.GetRemote() == reqImgName.GetRemote() {
+		// No updated needed.
+		return false
+	}
+
+	// If the existing image had missing metadata and this request has a different registry or
+	// remote it's possible the values were incorrect when Sensor sent the initial request to Central.
+	// This could occur when unqualified search registries or short name aliases are in use due
+	// to the actual registry/repo/digest not being known until the container runtime pulls the image.
+
+	// Replace the image name with the one from the request since it is more likely to be 'correct'.
+	log.Debugf("Updated existing image name from %q to %q", existingImgName.GetFullName(), reqImgName.GetFullName())
+	existingImg.Name = reqImgName
+
+	// Because there is no metadata for the existing image we assume the existing Names are
+	// invalid and reset them. If this was an incorrect assumption, Names will be re-populated
+	// over time via the various reprocessing workflows.
+	existingImg.Names = []*storage.ImageName{reqImgName}
+	return true
 }
 
 // enrichImage will enrich the given image, additionally applying the request source and fetch option to the request.

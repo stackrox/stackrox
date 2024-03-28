@@ -6,10 +6,12 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -373,6 +375,160 @@ func TestPopulateImageMetadata(t *testing.T) {
 				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
 				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)
 				assert.Equal(t, m.expectedIsClusterLocal, wrap.Deployment.Containers[i].Image.IsClusterLocal)
+			}
+		})
+	}
+}
+
+func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, true)
+	type wrapContainer struct {
+		image string
+	}
+
+	type pod struct {
+		images           []string
+		imageIDsInStatus []string
+	}
+
+	type metadata struct {
+		expectedID        string
+		expectedImageName *storage.ImageName
+	}
+
+	cases := []struct {
+		name             string
+		wrap             []wrapContainer
+		pods             []pod
+		expectedMetadata []metadata
+	}{
+		{
+			name: "cri-o short name alias with explicit tag",
+			wrap: []wrapContainer{{image: "ubi9:9.3-1610"}},
+			pods: []pod{
+				{
+					images: []string{"ubi9:9.3-1610"},
+					imageIDsInStatus: []string{
+						"crio://registry.access.redhat.com/ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					expectedImageName: &storage.ImageName{
+						Registry: "registry.access.redhat.com",
+						Remote:   "ubi9",
+						Tag:      "9.3-1610",
+						FullName: "registry.access.redhat.com/ubi9:9.3-1610",
+					},
+				},
+			},
+		},
+		{
+			name: "cri-o short name alias with implied tag",
+			wrap: []wrapContainer{{image: "ubi9"}},
+			pods: []pod{
+				{
+					images: []string{"ubi9"},
+					imageIDsInStatus: []string{
+						"crio://registry.access.redhat.com/ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					expectedImageName: &storage.ImageName{
+						Registry: "registry.access.redhat.com",
+						Remote:   "ubi9",
+						Tag:      "latest",
+						FullName: "registry.access.redhat.com/ubi9:latest",
+					},
+				},
+			},
+		},
+		{
+			name: "cri-o short name alias with digest",
+			wrap: []wrapContainer{{image: "ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072"}},
+			pods: []pod{
+				{
+					images: []string{"ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072"},
+					imageIDsInStatus: []string{
+						"crio://registry.access.redhat.com/ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					expectedImageName: &storage.ImageName{
+						Registry: "registry.access.redhat.com",
+						Remote:   "ubi9",
+						Tag:      "",
+						FullName: "registry.access.redhat.com/ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					},
+				},
+			},
+		},
+		{
+			name: "cri-o short name alias with tag and digest",
+			wrap: []wrapContainer{{image: "ubi9:v1.2.3@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072"}},
+			pods: []pod{
+				{
+					images: []string{"ubi9:v1.2.3@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072"},
+					imageIDsInStatus: []string{
+						"crio://registry.access.redhat.com/ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					expectedImageName: &storage.ImageName{
+						Registry: "registry.access.redhat.com",
+						Remote:   "ubi9",
+						Tag:      "v1.2.3",
+						FullName: "registry.access.redhat.com/ubi9:v1.2.3@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var localImages set.StringSet
+			wrap := deploymentWrap{
+				Deployment: &storage.Deployment{},
+			}
+			for _, container := range c.wrap {
+				img, err := imageUtils.GenerateImageFromString(container.image)
+				require.NoError(t, err)
+				wrap.Containers = append(wrap.Containers, &storage.Container{
+					Image: img,
+				})
+
+			}
+
+			pods := make([]*v1.Pod, 0, len(c.pods))
+			for _, pod := range c.pods {
+				k8sPod := &v1.Pod{}
+				for _, img := range pod.images {
+					k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Image: img})
+				}
+				for _, imageID := range pod.imageIDsInStatus {
+					k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
+						ImageID: imageID,
+					})
+				}
+				pods = append(pods, k8sPod)
+			}
+
+			wrap.populateImageMetadata(localImages, pods...)
+			for i, m := range c.expectedMetadata {
+				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
+				assert.Equal(t, m.expectedImageName, wrap.Deployment.Containers[i].Image.Name)
 			}
 		})
 	}
