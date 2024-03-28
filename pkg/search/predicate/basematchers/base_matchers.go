@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/parse"
@@ -147,9 +146,9 @@ func ForBool(value string) (func(bool) bool, error) {
 }
 
 // ForTimestamp returns a matcher for a proto timestamp type.
-func ForTimestamp(value string) (func(*types.Timestamp) bool, error) {
+func ForTimestamp(value string) (func(*protocompat.Timestamp) bool, error) {
 	if value == "-" {
-		return func(instance *types.Timestamp) bool {
+		return func(instance *protocompat.Timestamp) bool {
 			return instance == nil
 		}, nil
 	}
@@ -168,15 +167,15 @@ func ForTimestamp(value string) (func(*types.Timestamp) bool, error) {
 	// This is because, for example, >90d means more than 90 days ago,
 	// which means <=(ts of time.Now().Add(-90days).
 	if durationValue != nil {
-		actualComparator = func(instance, value *types.Timestamp) bool {
+		actualComparator = func(instance, value *protocompat.Timestamp) bool {
 			return !comparator(instance, value)
 		}
 	}
 
-	return func(instance *types.Timestamp) bool {
+	return func(instance *protocompat.Timestamp) bool {
 		// This has to be done inside the closure, since we want to take time.Now() at evaluation time,
 		// not at build time.
-		var ts *types.Timestamp
+		var ts *protocompat.Timestamp
 		if timestampValue != nil {
 			ts = timestampValue
 		} else if durationValue != nil {

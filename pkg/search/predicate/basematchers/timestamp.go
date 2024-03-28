@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
@@ -16,7 +15,7 @@ const (
 	dayDuration = 24 * time.Hour
 )
 
-func parseTimestamp(value string) (*types.Timestamp, *time.Duration, error) {
+func parseTimestamp(value string) (*protocompat.Timestamp, *time.Duration, error) {
 	if t, ok := parseTimeString(value); ok {
 		// Adjust for the timezone offset when comparing
 		seconds := t.Unix() - timeutil.TimeToOffset(t)
@@ -28,26 +27,26 @@ func parseTimestamp(value string) (*types.Timestamp, *time.Duration, error) {
 	return nil, nil, errors.New("Invalid time query. Must be of the format (01/02/2006 or 1d)")
 }
 
-func timestampComparator(cmp string) (func(instance, value *types.Timestamp) bool, error) {
+func timestampComparator(cmp string) (func(instance, value *protocompat.Timestamp) bool, error) {
 	switch cmp {
 	case LessThanOrEqualTo:
-		return func(instance, value *types.Timestamp) bool {
+		return func(instance, value *protocompat.Timestamp) bool {
 			return protocompat.CompareTimestamps(value, instance) >= 0
 		}, nil
 	case GreaterThanOrEqualTo:
-		return func(instance, value *types.Timestamp) bool {
+		return func(instance, value *protocompat.Timestamp) bool {
 			return protocompat.CompareTimestamps(value, instance) <= 0
 		}, nil
 	case LessThan:
-		return func(instance, value *types.Timestamp) bool {
+		return func(instance, value *protocompat.Timestamp) bool {
 			return protocompat.CompareTimestamps(value, instance) > 0
 		}, nil
 	case GreaterThan:
-		return func(instance, value *types.Timestamp) bool {
+		return func(instance, value *protocompat.Timestamp) bool {
 			return protocompat.CompareTimestamps(value, instance) < 0
 		}, nil
 	case "":
-		return func(instance, value *types.Timestamp) bool {
+		return func(instance, value *protocompat.Timestamp) bool {
 			return protocompat.CompareTimestamps(value, instance) == 0
 		}, nil
 	default:
