@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, FlexItem, Modal, ModalVariant, Title } from '@patternfly/react-core';
-import { Table /* data-codemods */, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';

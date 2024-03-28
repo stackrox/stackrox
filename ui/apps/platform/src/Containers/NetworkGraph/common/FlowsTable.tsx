@@ -3,7 +3,7 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
-    Table /* data-codemods */,
+    Table,
     Tbody,
     Td,
     Th,

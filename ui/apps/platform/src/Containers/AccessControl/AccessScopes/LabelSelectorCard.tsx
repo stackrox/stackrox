@@ -15,7 +15,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
 

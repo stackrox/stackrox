@@ -1,14 +1,6 @@
 import React from 'react';
 import { Bullseye, Flex, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
-import {
-    ExpandableRowContent,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';

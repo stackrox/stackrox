@@ -12,7 +12,7 @@ import {
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import useFetchNotifiers from 'hooks/useFetchNotifiers';
 import useTableSelection from 'hooks/useTableSelection';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { notifyNetworkPolicyModification } from 'services/NetworkService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

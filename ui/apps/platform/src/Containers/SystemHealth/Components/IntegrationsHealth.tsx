@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { getDateTime } from 'utils/dateUtils';
 
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { IntegrationMergedItem } from '../utils/integrations';
 
 type Props = {

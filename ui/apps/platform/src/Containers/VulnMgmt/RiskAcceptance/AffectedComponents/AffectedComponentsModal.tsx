@@ -10,15 +10,7 @@ import {
     TextInput,
     InputGroupItem,
 } from '@patternfly/react-core';
-import {
-    ExpandableRowContent,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';

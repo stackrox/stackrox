@@ -10,7 +10,7 @@ import {
     Text,
     TextContent,
 } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import usePagination from 'hooks/patternfly/usePagination';
 
 const columnNames = {

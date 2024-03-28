@@ -11,7 +11,7 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { FileAltIcon, SearchIcon } from '@patternfly/react-icons';
 
 import useURLPagination from 'hooks/useURLPagination';

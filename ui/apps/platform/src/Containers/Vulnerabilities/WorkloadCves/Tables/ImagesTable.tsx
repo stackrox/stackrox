@@ -1,15 +1,7 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import {
-    ActionsColumn,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Flex, Label } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';

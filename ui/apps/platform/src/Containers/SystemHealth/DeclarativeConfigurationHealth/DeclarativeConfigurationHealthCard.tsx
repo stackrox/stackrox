@@ -8,7 +8,7 @@ import {
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import { fetchDeclarativeConfigurationsHealth } from 'services/DeclarativeConfigHealthService';

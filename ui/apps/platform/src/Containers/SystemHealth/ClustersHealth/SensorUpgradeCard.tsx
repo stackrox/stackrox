@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Alert, Card, CardBody } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Th, Tr } from '@patternfly/react-table';
 
 import { Cluster } from 'types/cluster.proto';
 

@@ -9,7 +9,7 @@ import {
     pluralize,
     Title,
 } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';

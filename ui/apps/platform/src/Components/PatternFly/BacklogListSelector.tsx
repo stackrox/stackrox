@@ -13,7 +13,7 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon, MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-import { BaseCellProps, Table /* data-codemods */, Tbody, Td, Tr } from '@patternfly/react-table';
+import { BaseCellProps, Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 type BacklogTableProps<Item> = {
     type: 'selected' | 'deselected';

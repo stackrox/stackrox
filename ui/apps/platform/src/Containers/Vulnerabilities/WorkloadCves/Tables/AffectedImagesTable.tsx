@@ -1,14 +1,6 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import {
-    ExpandableRowContent,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Thead,
-    Th,
-    Tr,
-} from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';

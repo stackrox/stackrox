@@ -1,14 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-    ActionsColumn,
-    IAction,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { format } from 'date-fns';
 import { Link, generatePath } from 'react-router-dom';

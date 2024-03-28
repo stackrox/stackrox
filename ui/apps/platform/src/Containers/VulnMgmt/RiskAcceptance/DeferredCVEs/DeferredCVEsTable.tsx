@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,

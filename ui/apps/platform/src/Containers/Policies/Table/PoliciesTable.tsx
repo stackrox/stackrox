@@ -17,15 +17,7 @@ import {
     DropdownSeparator,
     DropdownToggle,
 } from '@patternfly/react-core/deprecated';
-import {
-    Table /* data-codemods */,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
-    ExpandableRowContent,
-} from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
 
