@@ -1,26 +1,28 @@
 import { SearchCategory } from 'services/SearchService';
 
 export type SearchOptionValue =
-    | 'SEVERITY'
-    | 'FIXABLE'
-    | 'CVE'
-    | 'IMAGE'
-    | 'DEPLOYMENT'
-    | 'NAMESPACE'
     | 'CLUSTER'
     | 'COMPONENT'
     | 'COMPONENT SOURCE'
+    | 'CVE'
+    | 'DEPLOYMENT'
+    | 'FIXABLE'
+    | 'IMAGE'
+    | 'NAMESPACE'
+    | 'Namespace Label'
     | 'Request Name'
-    | 'Requester User Name';
+    | 'Requester User Name'
+    | 'SEVERITY';
 
 // Search fields that will default to regex search
 export const regexSearchOptions: SearchOptionValue[] = [
-    'CVE',
-    'IMAGE',
-    'DEPLOYMENT',
-    'NAMESPACE',
     'CLUSTER',
     'COMPONENT',
+    'CVE',
+    'DEPLOYMENT',
+    'IMAGE',
+    'NAMESPACE',
+    'Namespace Label',
     'Request Name',
     'Requester User Name',
 ] as const;
@@ -66,6 +68,12 @@ export const DEPLOYMENT_SEARCH_OPTION = {
 export const NAMESPACE_SEARCH_OPTION = {
     label: 'Namespace',
     value: 'NAMESPACE',
+    category: 'NAMESPACES',
+} as const;
+
+export const NAMESPACE_LABEL_SEARCH_OPTION = {
+    label: 'Namespace label',
+    value: 'Namespace Label',
     category: 'NAMESPACES',
 } as const;
 
