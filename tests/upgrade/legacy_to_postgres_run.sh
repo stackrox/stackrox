@@ -80,8 +80,6 @@ test_upgrade_paths() {
     EARLIER_TAG="3.74.0"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
-    download_roxctl "${EARLIER_TAG}"
-
     ########################################################################################
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
     ########################################################################################
@@ -242,11 +240,11 @@ restore_3_56_1_backup() {
 deploy_earlier_rocks_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    roxctl version
+    download_roxctl "${EARLIER_TAG}"
 
     # Let's try helm
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
