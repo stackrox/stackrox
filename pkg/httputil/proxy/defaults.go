@@ -31,3 +31,11 @@ func copyDefaultTransport() *http.Transport {
 	}
 	return trans
 }
+
+func dialerWithTimeout(timeout time.Duration) *net.Dialer {
+	return &net.Dialer{
+		Timeout:   timeout,
+		KeepAlive: defaultDialer.KeepAlive,
+		DualStack: defaultDialer.DualStack,
+	}
+}
