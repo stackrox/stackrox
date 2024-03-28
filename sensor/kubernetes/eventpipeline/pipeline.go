@@ -42,7 +42,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	pipelineResponses := make(chan *message.ExpiringMessage)
 	return &eventPipeline{
 		eventsC:     pipelineResponses,
-		stopSig:     concurrency.NewSignal(),
+		stopper:     concurrency.NewStopper(),
 		output:      outputQueue,
 		resolver:    depResolver,
 		listener:    resourceListener,
