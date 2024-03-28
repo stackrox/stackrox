@@ -8,7 +8,7 @@ ARG BASE_TAG=latest
 FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS mappings
 
 COPY download-mappings.sh /download-mappings.sh
-RUN /download-mappings.sh
+RUN /download-mappings.sh /mappings
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
