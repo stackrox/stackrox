@@ -35,6 +35,18 @@ func TimestampNow() *gogoTimestamp.Timestamp {
 	return gogoTimestamp.TimestampNow()
 }
 
+// ConvertTimestampToCSVString converts a proto timestamp to a string for display in a CSV report.
+func ConvertTimestampToCSVString(timestamp *gogoTimestamp.Timestamp) string {
+	if timestamp == nil {
+		return "N/A"
+	}
+	ts, err := gogoTimestamp.TimestampFromProto(timestamp)
+	if err != nil {
+		return "ERR"
+	}
+	return ts.Format(time.RFC1123)
+}
+
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
 func ConvertTimestampToTimeOrNil(gogo *gogoTimestamp.Timestamp) *time.Time {
 	if gogo == nil {
