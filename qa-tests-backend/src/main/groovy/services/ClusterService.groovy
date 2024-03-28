@@ -9,6 +9,7 @@ import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
+import groovy.json.*
 
 @CompileStatic
 @Slf4j
@@ -29,6 +30,8 @@ class ClusterService extends BaseService {
     }
 
     static getClusterId(String name = DEFAULT_CLUSTER_NAME) {
+        log.warn("clusters", JsonOutput.toJson(getClusters()))
+          
         return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
         ).clustersList.find { it.name == name }?.id
