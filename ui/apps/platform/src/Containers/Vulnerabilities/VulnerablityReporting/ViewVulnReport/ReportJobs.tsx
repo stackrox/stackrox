@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    Table /* data-codemods */,
+    Table,
     Tbody,
     Td,
     Th,

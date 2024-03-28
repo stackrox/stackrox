@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';

@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Button, Modal, ModalVariant } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';

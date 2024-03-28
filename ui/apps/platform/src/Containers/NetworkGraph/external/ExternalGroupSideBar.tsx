@@ -14,7 +14,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { getEdgesByNodeId, getNodeById } from '../utils/networkGraphUtils';
 import {
     CIDRBlockNodeModel,

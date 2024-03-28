@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import { UseURLSortResult } from 'hooks/useURLSort';
