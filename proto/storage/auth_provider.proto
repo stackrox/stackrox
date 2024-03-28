@@ -43,27 +43,16 @@ message AuthProvider {
   // Each key in this map contains a path in IdP token we want to map. Path is separated by "." symbol.
   // For example, if IdP token payload looks like:
   //
-  //
   // {
-  //
   //      "a": {
-  //
   //          "b" : "c",
-  //
   //          "d": true,
-  //
   //          "e": [ "val1", "val2", "val3" ],
-  //
   //          "f": [ true, false, false ],
-  //
   //          "g": 123.0,
-  //
   //          "h": [ 1, 2, 3]
-  //
   //      }
-  //
   // }
-  //
   //
   // then "a.b" would be a valid key and "a.z" is not.
   //
