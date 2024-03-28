@@ -4,13 +4,6 @@ branding:
   icon: 'archive'
   color: 'blue'
 inputs:
-  create-jiras:
-    description: 'Whether to report failures to Jira'
-    required: false
-    default: 'true'
-  gcp-account:
-    description: 'Account to be used to upload tests data'
-    required: true
   jira-token:
     description: 'Token used to authenticate with Jira.'
     required: true
@@ -39,28 +32,14 @@ runs:
   - name: Check files
     shell: bash
     env:
-      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     run: |
-      extra_args=()
-      if [[ "${{ inputs.create-jiras }}" == "false" ]]; then
-        extra_args=(--dry-run)
-      else
-        echo "Will create JIRA issues for JUnit failures found in ${{ inputs.directory }}"
-      fi
-      csv_output="$(mktemp --suffix=.csv)"
       ./junit2jira \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
           -build-id "${{ github.run_id }}"  \
           -build-link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           -build-tag "${{ github.ref_name }}@${{ github.sha }}" \
-          -csv-output "${csv_output}" \
           -job-name "${{ github.job }}" \
           -junit-reports-dir "${{ inputs.directory }}" \
           -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \
-          -threshold "${{ inputs.threshold }}" \
-          "${extra_args[@]}"
-
-      source scripts/ci/lib.sh
-      setup_gcp
-      save_test_metrics "${csv_output}"
+          -threshold "${{ inputs.threshold }}"
