@@ -66,7 +66,11 @@ export const nodeEntityTabValues = ['CVE', 'Node'] as const;
 
 export type NodeEntityTab = (typeof nodeEntityTabValues)[number];
 
-export type EntityTab = WorkloadEntityTab | NodeEntityTab;
+export const platformEntityTabValues = ['CVE', 'Cluster'] as const;
+
+export type PlatformEntityTab = (typeof platformEntityTabValues)[number];
+
+export type EntityTab = WorkloadEntityTab | NodeEntityTab | PlatformEntityTab;
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 
