@@ -8,7 +8,6 @@ import (
 	accountsmgmtv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,22 +19,14 @@ func TestMapToDiscoveredClusters(t *testing.T) {
 
 	cluster1, err := time.Parse(time.RFC3339, "2024-02-13T21:34:35.11432Z")
 	require.NoError(t, err)
-	cluster1TS, err := protocompat.ConvertTimeToTimestampOrError(cluster1)
-	require.NoError(t, err)
 
 	cluster2, err := time.Parse(time.RFC3339, "2024-02-13T21:34:03.763759Z")
-	require.NoError(t, err)
-	cluster2TS, err := protocompat.ConvertTimeToTimestampOrError(cluster2)
 	require.NoError(t, err)
 
 	cluster3, err := time.Parse(time.RFC3339, "2024-02-13T21:30:57.000508Z")
 	require.NoError(t, err)
-	cluster3TS, err := protocompat.ConvertTimeToTimestampOrError(cluster3)
-	require.NoError(t, err)
 
 	cluster4, err := time.Parse(time.RFC3339, "2024-02-13T21:28:54.916088Z")
-	require.NoError(t, err)
-	cluster4TS, err := protocompat.ConvertTimeToTimestampOrError(cluster4)
 	require.NoError(t, err)
 
 	expectedClusters := []*discoveredclusters.DiscoveredCluster{
@@ -44,7 +35,7 @@ func TestMapToDiscoveredClusters(t *testing.T) {
 			Name:              "rosa-cluster",
 			Type:              storage.ClusterMetadata_ROSA,
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS,
-			FirstDiscoveredAt: cluster1TS,
+			FirstDiscoveredAt: &cluster1,
 			Region:            "us-east1",
 			CloudSourceID:     "12345",
 		},
@@ -54,7 +45,7 @@ func TestMapToDiscoveredClusters(t *testing.T) {
 			Type:              storage.ClusterMetadata_ARO,
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE,
 			Region:            "us-east1",
-			FirstDiscoveredAt: cluster2TS,
+			FirstDiscoveredAt: &cluster2,
 			CloudSourceID:     "12345",
 		},
 		{
@@ -63,7 +54,7 @@ func TestMapToDiscoveredClusters(t *testing.T) {
 			Type:              storage.ClusterMetadata_OSD,
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
 			Region:            "us-central1",
-			FirstDiscoveredAt: cluster3TS,
+			FirstDiscoveredAt: &cluster3,
 			CloudSourceID:     "12345",
 		},
 		{
@@ -72,7 +63,7 @@ func TestMapToDiscoveredClusters(t *testing.T) {
 			Type:              storage.ClusterMetadata_OCP,
 			ProviderType:      storage.DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP,
 			Region:            "us-central1",
-			FirstDiscoveredAt: cluster4TS,
+			FirstDiscoveredAt: &cluster4,
 			CloudSourceID:     "12345",
 		},
 	}
