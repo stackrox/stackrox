@@ -89,7 +89,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prometheus/client_model v0.6.0
-	github.com/prometheus/common v0.48.0
+	github.com/prometheus/common v0.51.1
 	github.com/quay/claircore v1.5.25
 	github.com/quay/claircore/toolkit v1.1.1
 	github.com/quay/goval-parser v0.8.8
@@ -124,7 +124,7 @@ require (
 	golang.org/x/crypto v0.21.0
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e
 	golang.org/x/net v0.22.0
-	golang.org/x/oauth2 v0.17.0
+	golang.org/x/oauth2 v0.18.0
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.18.0
 	golang.org/x/text v0.14.0
