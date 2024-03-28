@@ -420,13 +420,6 @@ function AuthProviderForm({
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
                             <FormGroup label="Name" fieldId="name" isRequired>
-                                <FormHelperText>
-                                    <HelperText>
-                                        <HelperTextItem variant={nameValidated}>
-                                            {errors.name || ''}
-                                        </HelperTextItem>
-                                    </HelperText>
-                                </FormHelperText>
                                 <TextInput
                                     type="text"
                                     id="name"
@@ -441,6 +434,13 @@ function AuthProviderForm({
                                             : 'default'
                                     }
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameValidated}>
+                                            {errors.name || ''}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </FormGroup>
                         </GridItem>
                         <GridItem span={12} lg={6}>
