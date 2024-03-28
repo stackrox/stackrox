@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/version"
@@ -138,7 +139,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	futureVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
 		Version:       futureVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum() + 2),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), futureVersion)
@@ -155,7 +156,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	verForPrevClone := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), verForPrevClone)
 
@@ -166,7 +167,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	verForPrevClone = &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 2),
 		Version:       preVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), verForPrevClone)
 
@@ -186,7 +187,7 @@ func (s *PostgresCloneManagerSuite) TestScanRestoreFromFuture() {
 	futureVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
 		Version:       futureVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetRestoreClone(), futureVersion)
 
@@ -240,7 +241,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	currVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
 
@@ -276,7 +277,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneCurrentCurrent() {
 	currVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
 
@@ -299,7 +300,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgrade() {
 	currVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() - 2),
 		Version:       preVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
 
@@ -322,7 +323,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneUpgradeSameSeq() {
 	currVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       preVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), currVersion)
 
@@ -345,7 +346,7 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 	futureVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
 		Version:       futureVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetCurrentClone(), futureVersion)
@@ -354,7 +355,7 @@ func (s *PostgresCloneManagerSuite) TestGetClonePrevious() {
 	currVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       currVer.version,
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 	}
 	migVer.SetVersionPostgres(s.ctx, migrations.GetPreviousClone(), currVersion)
