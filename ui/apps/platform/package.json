@@ -48,7 +48,7 @@
         "mobx-react": "^7.5.3",
         "monaco-editor": "^0.21.3",
         "monaco-editor-webpack-plugin": "^2.1.0",
-        "monaco-yaml": "^4.0.4",
+        "monaco-yaml": "^5.1.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",

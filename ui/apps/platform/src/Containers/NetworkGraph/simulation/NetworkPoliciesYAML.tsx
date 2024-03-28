@@ -51,7 +51,9 @@ function NetworkPoliciesYAML({
         <CodeEditorControl
             icon={<DownloadIcon />}
             aria-label={labels.downloadYAML}
-            toolTipText={labels.downloadYAML}
+            tooltipProps={{
+                content: labels.downloadYAML,
+            }}
             onClick={downloadYAMLHandler('networkPolicy', yaml)}
             isVisible
         />
