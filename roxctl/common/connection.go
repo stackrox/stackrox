@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // GRPCOption encodes behavior of a gRPC connection.
@@ -74,6 +75,24 @@ type grpcConfig struct {
 	retryTimeout  time.Duration
 }
 
+// addCommandHeaderUnaryInterceptor adds the roxctl command header to all unary requests.
+func addCommandHeaderUnaryInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	md := metadata.New(map[string]string{
+		roxctlCommandHeader: RoxctlCommand,
+	})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+	return invoker(ctx, method, req, reply, cc, opts...)
+}
+
+// addCommandHeaderUnaryInterceptor adds the roxctl command header to all stream requests.
+func addCommandHeaderStreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	md := metadata.New(map[string]string{
+		roxctlCommandHeader: RoxctlCommand,
+	})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+	return streamer(ctx, desc, cc, method, opts...)
+}
+
 func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 	const initialBackoffDuration = 100 * time.Millisecond
 	retryOpts := []grpc_retry.CallOption{
@@ -85,7 +104,9 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 
 	grpcDialOpts := []grpc.DialOption{
 		grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(retryOpts...)),
+		grpc.WithStreamInterceptor(addCommandHeaderStreamInterceptor),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
+		grpc.WithUnaryInterceptor(addCommandHeaderUnaryInterceptor),
 	}
 
 	if c.usePlaintext {
