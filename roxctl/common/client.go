@@ -21,6 +21,9 @@ import (
 
 var (
 	http1NextProtos = []string{"http/1.1", "http/1.0"}
+
+	// RoxctlCommand is the reconstructed roxctl command line.
+	RoxctlCommand string
 )
 
 // RoxctlHTTPClient abstracts all HTTP-related functionalities required within roxctl
@@ -103,6 +106,10 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
+	if RoxctlCommand != "" {
+		req.Header.Add(clientconn.RoxctlCommandHeader, RoxctlCommand)
+	}
+
 	resp, err := client.http.Do(req)
 	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
 	// See https://github.com/hashicorp/go-retryablehttp/issues/142.

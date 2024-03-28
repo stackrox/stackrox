@@ -294,7 +294,7 @@ func (s *centralDBGenerateCliTestSuite) TestCentralDBGenerateCli() {
 
 func (s *centralDBGenerateCliTestSuite) createRootCommand(testCase testCaseType) *cobra.Command {
 	genCmd := Command(env.CLIEnvironment())
-	common.PatchPersistentPreRunHooks(genCmd)
+	common.PatchPersistentPreRunHooks(genCmd, nil)
 	if testCase.addError == downloadError {
 		genCmd.PersistentPreRunE = func(*cobra.Command, []string) error {
 			return errors.New("download error")
