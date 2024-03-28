@@ -61,6 +61,22 @@ runs:
           -threshold "${{ inputs.threshold }}" \
           "${extra_args[@]}"
 
+      outcome="unknown"
+      case "${{ job.status }}" in
+        "success")
+        outcome="passed"
+        ;;
+        "failure")
+        outcome="failed"
+        ;;
+        "cancelled")
+        outcome="canceled"
+        ;;
+      esac
+
       source scripts/ci/lib.sh
       setup_gcp
       save_test_metrics "${csv_output}"
+      create_job_record "${{ github.job }}"
+      update_job_record \
+        outcome "${{ job.status }}"
