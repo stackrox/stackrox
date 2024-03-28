@@ -22,8 +22,7 @@ export type ConfigurationFormFieldsProps = {
     config: AuthProviderConfig;
     isViewing: boolean;
     onChange: (
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
-        _value: unknown
+        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
     ) => void;
     onBlur: (event?: React.FocusEvent<HTMLTextAreaElement, Element>) => void;
     setFieldValue: (name: string, value: string | boolean) => void;
@@ -106,6 +105,16 @@ function ConfigurationFormFields({
                 <>
                     <GridItem span={12} lg={6}>
                         <FormGroup label="Auth0 tenant" fieldId="config.issuer" isRequired>
+                            <TextInput
+                                type="text"
+                                id="config.issuer"
+                                value={(config.issuer as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                                validated={showIssuerError ? ValidatedOptions.error : 'default'}
+                            />
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem
@@ -124,20 +133,20 @@ function ConfigurationFormFields({
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
-                            <TextInput
-                                type="text"
-                                id="config.issuer"
-                                value={(config.issuer as string) || ''}
-                                onChange={onChange}
-                                isDisabled={isViewing || isActiveModificationsDisabled}
-                                isRequired
-                                onBlur={onBlur}
-                                validated={showIssuerError ? ValidatedOptions.error : 'default'}
-                            />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
                         <FormGroup label="Client ID" fieldId="config.client_id" isRequired>
+                            <TextInput
+                                type="text"
+                                id="config.client_id"
+                                value={(config.client_id as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                                validated={showClientIdError ? ValidatedOptions.error : 'default'}
+                            />
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem
@@ -149,16 +158,6 @@ function ConfigurationFormFields({
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
-                            <TextInput
-                                type="text"
-                                id="config.client_id"
-                                value={(config.client_id as string) || ''}
-                                onChange={onChange}
-                                isDisabled={isViewing || isActiveModificationsDisabled}
-                                isRequired
-                                onBlur={onBlur}
-                                validated={showClientIdError ? ValidatedOptions.error : 'default'}
-                            />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12}>
@@ -196,6 +195,16 @@ function ConfigurationFormFields({
                     </GridItem>
                     <GridItem span={12} lg={6}>
                         <FormGroup label="Issuer" fieldId="config.issuer" isRequired>
+                            <TextInput
+                                type="text"
+                                id="config.issuer"
+                                value={(config.issuer as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                                validated={showIssuerError ? ValidatedOptions.error : 'default'}
+                            />
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem
@@ -214,20 +223,20 @@ function ConfigurationFormFields({
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
-                            <TextInput
-                                type="text"
-                                id="config.issuer"
-                                value={(config.issuer as string) || ''}
-                                onChange={onChange}
-                                isDisabled={isViewing || isActiveModificationsDisabled}
-                                isRequired
-                                onBlur={onBlur}
-                                validated={showIssuerError ? ValidatedOptions.error : 'default'}
-                            />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
                         <FormGroup label="Client ID" fieldId="config.client_id" isRequired>
+                            <TextInput
+                                type="text"
+                                id="config.client_id"
+                                value={(config.client_id as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                                validated={showClientIdError ? ValidatedOptions.error : 'default'}
+                            />
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem
@@ -239,16 +248,6 @@ function ConfigurationFormFields({
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
-                            <TextInput
-                                type="text"
-                                id="config.client_id"
-                                value={(config.client_id as string) || ''}
-                                onChange={onChange}
-                                isDisabled={isViewing || isActiveModificationsDisabled}
-                                isRequired
-                                onBlur={onBlur}
-                                validated={showClientIdError ? ValidatedOptions.error : 'default'}
-                            />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
@@ -263,23 +262,6 @@ function ConfigurationFormFields({
                                 )
                             }
                         >
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem
-                                        variant={
-                                            showClientSecretError
-                                                ? ValidatedOptions.error
-                                                : 'default'
-                                        }
-                                    >
-                                        {configErrors?.client_secret || (
-                                            <span className="pf-v5-u-font-size-sm">
-                                                {clientSecretHelperText}
-                                            </span>
-                                        )}
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                             <TextInput
                                 type="password"
                                 id="config.client_secret"
@@ -300,6 +282,23 @@ function ConfigurationFormFields({
                                 }
                                 placeholder={isViewing ? '*****' : ''}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem
+                                        variant={
+                                            showClientSecretError
+                                                ? ValidatedOptions.error
+                                                : 'default'
+                                        }
+                                    >
+                                        {configErrors?.client_secret || (
+                                            <span className="pf-v5-u-font-size-sm">
+                                                {clientSecretHelperText}
+                                            </span>
+                                        )}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormGroup>
                     </GridItem>
                     <GridItem span={6} lg={6}>
@@ -321,16 +320,6 @@ function ConfigurationFormFields({
                     </GridItem>
                     <GridItem span={6} lg={6}>
                         <FormGroup fieldId="config.disable_offline_access_scope">
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>
-                                        <span className="pf-v5-u-font-size-sm">
-                                            Use if the identity provider has a limit on the number
-                                            of offline tokens that it can issue.
-                                        </span>
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                             <Checkbox
                                 isChecked={config.disable_offline_access_scope as boolean}
                                 label="Disable 'offline_access' scope"
@@ -342,6 +331,16 @@ function ConfigurationFormFields({
                                 }}
                                 isDisabled={isViewing || isAuthProviderDeclarative}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        <span className="pf-v5-u-font-size-sm">
+                                            Use if the identity provider has a limit on the number
+                                            of offline tokens that it can issue.
+                                        </span>
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12}>
@@ -367,6 +366,16 @@ function ConfigurationFormFields({
                             fieldId="config.sp_issuer"
                             isRequired
                         >
+                            <TextInput
+                                type="text"
+                                id="config.sp_issuer"
+                                value={(config.sp_issuer as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                                validated={showSpIssuerError ? ValidatedOptions.error : 'default'}
+                            />
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem
@@ -385,16 +394,6 @@ function ConfigurationFormFields({
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
-                            <TextInput
-                                type="text"
-                                id="config.sp_issuer"
-                                value={(config.sp_issuer as string) || ''}
-                                onChange={onChange}
-                                isDisabled={isViewing || isActiveModificationsDisabled}
-                                isRequired
-                                onBlur={onBlur}
-                                validated={showSpIssuerError ? ValidatedOptions.error : 'default'}
-                            />
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
@@ -426,6 +425,20 @@ function ConfigurationFormFields({
                                     fieldId="config.idp_metadata_url"
                                     isRequired
                                 >
+                                    <TextInput
+                                        type="text"
+                                        id="config.idp_metadata_url"
+                                        value={(config.idp_metadata_url as string) || ''}
+                                        onChange={onChange}
+                                        isDisabled={isViewing || isActiveModificationsDisabled}
+                                        isRequired
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpMetadataUrlError
+                                                ? ValidatedOptions.error
+                                                : 'default'
+                                        }
+                                    />
                                     <FormHelperText>
                                         <HelperText>
                                             <HelperTextItem
@@ -446,20 +459,6 @@ function ConfigurationFormFields({
                                             </HelperTextItem>
                                         </HelperText>
                                     </FormHelperText>
-                                    <TextInput
-                                        type="text"
-                                        id="config.idp_metadata_url"
-                                        value={(config.idp_metadata_url as string) || ''}
-                                        onChange={onChange}
-                                        isDisabled={isViewing || isActiveModificationsDisabled}
-                                        isRequired
-                                        onBlur={onBlur}
-                                        validated={
-                                            showIdpMetadataUrlError
-                                                ? ValidatedOptions.error
-                                                : 'default'
-                                        }
-                                    />
                                 </FormGroup>
                             </GridItem>
                         </>
@@ -472,6 +471,18 @@ function ConfigurationFormFields({
                                     fieldId="config.idp_issuer"
                                     isRequired={config.configurationType === 'static'}
                                 >
+                                    <TextInput
+                                        type="text"
+                                        id="config.idp_issuer"
+                                        value={(config.idp_issuer as string) || ''}
+                                        onChange={onChange}
+                                        isDisabled={isViewing || isActiveModificationsDisabled}
+                                        isRequired={config.configurationType === 'static'}
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpIssuerError ? ValidatedOptions.error : 'default'
+                                        }
+                                    />
                                     <FormHelperText>
                                         <HelperText>
                                             <HelperTextItem
@@ -497,18 +508,6 @@ function ConfigurationFormFields({
                                             </HelperTextItem>
                                         </HelperText>
                                     </FormHelperText>
-                                    <TextInput
-                                        type="text"
-                                        id="config.idp_issuer"
-                                        value={(config.idp_issuer as string) || ''}
-                                        onChange={onChange}
-                                        isDisabled={isViewing || isActiveModificationsDisabled}
-                                        isRequired={config.configurationType === 'static'}
-                                        onBlur={onBlur}
-                                        validated={
-                                            showIdpIssuerError ? ValidatedOptions.error : 'default'
-                                        }
-                                    />
                                 </FormGroup>
                             </GridItem>
                             <GridItem span={12} lg={6}>
@@ -517,6 +516,18 @@ function ConfigurationFormFields({
                                     fieldId="config.idp_sso_url"
                                     isRequired={config.configurationType === 'static'}
                                 >
+                                    <TextInput
+                                        type="text"
+                                        id="config.idp_sso_url"
+                                        value={(config.idp_sso_url as string) || ''}
+                                        onChange={onChange}
+                                        isDisabled={isViewing || isActiveModificationsDisabled}
+                                        isRequired={config.configurationType === 'static'}
+                                        onBlur={onBlur}
+                                        validated={
+                                            showIdpSsoUrlError ? ValidatedOptions.error : 'default'
+                                        }
+                                    />
                                     <FormHelperText>
                                         <HelperText>
                                             <HelperTextItem
@@ -537,18 +548,6 @@ function ConfigurationFormFields({
                                             </HelperTextItem>
                                         </HelperText>
                                     </FormHelperText>
-                                    <TextInput
-                                        type="text"
-                                        id="config.idp_sso_url"
-                                        value={(config.idp_sso_url as string) || ''}
-                                        onChange={onChange}
-                                        isDisabled={isViewing || isActiveModificationsDisabled}
-                                        isRequired={config.configurationType === 'static'}
-                                        onBlur={onBlur}
-                                        validated={
-                                            showIdpSsoUrlError ? ValidatedOptions.error : 'default'
-                                        }
-                                    />
                                 </FormGroup>
                             </GridItem>
                             <GridItem span={12} lg={6}>
@@ -556,6 +555,14 @@ function ConfigurationFormFields({
                                     label="Name/ID Format"
                                     fieldId="config.idp_nameid_format"
                                 >
+                                    <TextInput
+                                        type="text"
+                                        id="config.idp_nameid_format"
+                                        value={(config.idp_nameid_format as string) || ''}
+                                        onChange={onChange}
+                                        isDisabled={isViewing || isActiveModificationsDisabled}
+                                        onBlur={onBlur}
+                                    />
                                     <FormHelperText>
                                         <HelperText>
                                             <HelperTextItem>
@@ -568,14 +575,6 @@ function ConfigurationFormFields({
                                             </HelperTextItem>
                                         </HelperText>
                                     </FormHelperText>
-                                    <TextInput
-                                        type="text"
-                                        id="config.idp_nameid_format"
-                                        value={(config.idp_nameid_format as string) || ''}
-                                        onChange={onChange}
-                                        isDisabled={isViewing || isActiveModificationsDisabled}
-                                        onBlur={onBlur}
-                                    />
                                 </FormGroup>
                             </GridItem>
                             <GridItem span={12} lg={6}>
@@ -584,19 +583,6 @@ function ConfigurationFormFields({
                                     fieldId="config.idp_cert_pem"
                                     isRequired={config.configurationType === 'static'}
                                 >
-                                    <FormHelperText>
-                                        <HelperText>
-                                            <HelperTextItem
-                                                variant={
-                                                    showIdpCertPemError
-                                                        ? ValidatedOptions.error
-                                                        : 'default'
-                                                }
-                                            >
-                                                {configErrors?.idp_cert_pem || ''}
-                                            </HelperTextItem>
-                                        </HelperText>
-                                    </FormHelperText>
                                     <TextArea
                                         className="certificate-input"
                                         autoResize
@@ -614,6 +600,19 @@ function ConfigurationFormFields({
                                             showIdpCertPemError ? ValidatedOptions.error : 'default'
                                         }
                                     />
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem
+                                                variant={
+                                                    showIdpCertPemError
+                                                        ? ValidatedOptions.error
+                                                        : 'default'
+                                                }
+                                            >
+                                                {configErrors?.idp_cert_pem || ''}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
                                 </FormGroup>
                             </GridItem>
                         </>
@@ -637,17 +636,6 @@ function ConfigurationFormFields({
             {type === 'userpki' && (
                 <GridItem span={12} lg={6}>
                     <FormGroup label="CA certificate(s) (PEM)" fieldId="config.keys" isRequired>
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem
-                                    variant={
-                                        showUserPkiKeysError ? ValidatedOptions.error : 'default'
-                                    }
-                                >
-                                    {configErrors?.keys || ''}
-                                </HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <TextArea
                             className="certificate-input"
                             autoResize
@@ -663,12 +651,33 @@ function ConfigurationFormFields({
                             onBlur={onBlur}
                             validated={showUserPkiKeysError ? ValidatedOptions.error : 'default'}
                         />
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem
+                                    variant={
+                                        showUserPkiKeysError ? ValidatedOptions.error : 'default'
+                                    }
+                                >
+                                    {configErrors?.keys || ''}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                 </GridItem>
             )}
             {type === 'iap' && (
                 <GridItem span={12} lg={6}>
                     <FormGroup label="Audience" fieldId="config.audience" isRequired>
+                        <TextInput
+                            type="text"
+                            id="config.audience"
+                            value={(config.audience as string) || ''}
+                            onChange={onChange}
+                            isDisabled={isViewing || isActiveModificationsDisabled}
+                            isRequired
+                            onBlur={onBlur}
+                            validated={showAudienceError ? ValidatedOptions.error : 'default'}
+                        />
                         <FormHelperText>
                             <HelperText>
                                 <HelperTextItem
@@ -685,16 +694,6 @@ function ConfigurationFormFields({
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
-                        <TextInput
-                            type="text"
-                            id="config.audience"
-                            value={(config.audience as string) || ''}
-                            onChange={onChange}
-                            isDisabled={isViewing || isActiveModificationsDisabled}
-                            isRequired
-                            onBlur={onBlur}
-                            validated={showAudienceError ? ValidatedOptions.error : 'default'}
-                        />
                     </FormGroup>
                 </GridItem>
             )}
