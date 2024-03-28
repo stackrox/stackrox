@@ -34,7 +34,7 @@ func ReconcileAdminPasswordExtension(client ctrlClient.Client, direct ctrlClient
 
 func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), _ logr.Logger) error {
 	run := &reconcileAdminPasswordExtensionRun{
-		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c, commonExtensions.OwnershipStrategyOwnerReference),
+		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		statusUpdater:       statusUpdater,
 		centralObj:          c,
 	}
