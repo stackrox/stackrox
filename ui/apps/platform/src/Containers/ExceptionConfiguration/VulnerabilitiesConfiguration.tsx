@@ -61,11 +61,6 @@ function NumericSetting({
         <>
             <GridItem span={8} md={4} xl={3}>
                 <FormGroup>
-                    <FormHelperText>
-                        <HelperText>
-                            <HelperTextItem variant={validated}>{helperTextInvalid}</HelperTextItem>
-                        </HelperText>
-                    </FormHelperText>
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
                             id={`${fieldId}.numDays`}
@@ -78,6 +73,11 @@ function NumericSetting({
                         />
                         <span>days</span>
                     </Flex>
+                    <FormHelperText>
+                        <HelperText>
+                            <HelperTextItem variant={validated}>{helperTextInvalid}</HelperTextItem>
+                        </HelperText>
+                    </FormHelperText>
                 </FormGroup>
             </GridItem>
             <GridItem span={4} md={8} xl={9}>
