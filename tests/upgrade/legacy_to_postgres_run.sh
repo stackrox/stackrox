@@ -118,6 +118,7 @@ test_upgrade_paths() {
     git remote add origin https://github.com/stackrox/stackrox.git
     git fetch origin release-4.4.x/go_1.21
     git checkout "$LAST_POSTGRES_SHA"
+    export GOTOOLCHAIN=go1.20.10 GOSUMDB=off
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
