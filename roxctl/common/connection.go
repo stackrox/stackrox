@@ -78,7 +78,7 @@ type grpcConfig struct {
 // addCommandHeaderUnaryInterceptor adds the roxctl command header to all unary requests.
 func addCommandHeaderUnaryInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	md := metadata.New(map[string]string{
-		roxctlCommandHeader: RoxctlCommand,
+		clientconn.RoxctlCommandHeader: RoxctlCommand,
 	})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	return invoker(ctx, method, req, reply, cc, opts...)
@@ -87,7 +87,7 @@ func addCommandHeaderUnaryInterceptor(ctx context.Context, method string, req, r
 // addCommandHeaderUnaryInterceptor adds the roxctl command header to all stream requests.
 func addCommandHeaderStreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	md := metadata.New(map[string]string{
-		roxctlCommandHeader: RoxctlCommand,
+		clientconn.RoxctlCommandHeader: RoxctlCommand,
 	})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	return streamer(ctx, desc, cc, method, opts...)

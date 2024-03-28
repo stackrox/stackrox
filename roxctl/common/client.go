@@ -19,9 +19,6 @@ import (
 	"golang.org/x/net/http2"
 )
 
-// HTTP header name with the reconstructed roxctl command as the value.
-const roxctlCommandHeader = "roxctl-command"
-
 var (
 	http1NextProtos = []string{"http/1.1", "http/1.0"}
 
@@ -110,7 +107,7 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
 	if RoxctlCommand != "" {
-		req.Header.Add(roxctlCommandHeader, RoxctlCommand)
+		req.Header.Add(clientconn.RoxctlCommandHeader, RoxctlCommand)
 	}
 
 	resp, err := client.http.Do(req)
