@@ -59,7 +59,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&diffNetpolCmd.removeOutputPath, "remove", false, "Remove the output path if it already exists")
 	c.Flags().BoolVar(&diffNetpolCmd.outputToFile, "save-to-file", false, "Whether to save connections diff output into default file")
 	c.Flags().StringVarP(&diffNetpolCmd.outputFilePath, "output-file", "f", "", "Save connections diff output into specific file")
-	c.Flags().StringVarP(&diffNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections diff in specific format, supported formats: txt|md|csv")
+	c.Flags().StringVarP(&diffNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections diff in specific format, supported formats: txt|md|csv|dot")
 	return c
 }
 

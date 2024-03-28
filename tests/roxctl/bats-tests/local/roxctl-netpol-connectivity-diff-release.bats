@@ -245,6 +245,25 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
 | added | {ingress-controller} | zeroday/zeroday[Deployment] | No Connections | TCP 8080 | workload zeroday/zeroday[Deployment] added |'
 }
 
+@test "roxctl-release netpol connectivity diff generates conns diff report between resources from two directories dot output" {
+    dir1="${diff_tests_dir}/acs-security-demos/"
+    dir2="${diff_tests_dir}/acs-security-demos-new-version/"
+    # assert files exist in dir1
+    check_acs_security_demos_files ${dir1}
+    # assert files exist in dir2
+    check_acs_security_demos_new_version_files ${dir2}
+    echo "Writing diff report to ${ofile}" >&3
+    run roxctl-release netpol connectivity diff --dir1="${dir1}" --dir2="${dir2}" --output-format=dot
+    assert_success
+
+    echo "$output" > "$ofile"
+    assert_file_exist "$ofile"
+    # partial is used to filter WARN and INFO messages
+    assert_line --regexp "INFO:.*Found connections diffs"
+    assert_output --partial 'digraph {'
+    assert_output --partial '"backend/checkout[Deployment]" -> "backend/notification[Deployment]" [label="TCP 8080" color="grey" fontcolor="grey"]'
+}
+
 @test "roxctl-release netpol connectivity diff generates conns diff report between resources from two directories csv output" {
     dir1="${diff_tests_dir}/acs-security-demos/"
     dir2="${diff_tests_dir}/acs-security-demos-new-version/"
