@@ -234,16 +234,9 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "validate registry based image metadata"
         def imageDigest
-        try {
-            withRetry(30, 2) {
-                imageDigest = ImageService.getImages().find { it.name == deployment.image }
-                assert imageDigest?.id
-            }
-        } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw (e)
-            }
-            throw new AssumptionViolatedException("Failed to pull the image using ${integration}. Skipping test!", e)
+        withRetry(30, 2) {
+            imageDigest = ImageService.getImages().find { it.name == deployment.image }
+            assert imageDigest?.id
         }
         ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest?.id)
         assert imageDetail.metadata?.v1?.layersCount >= 1
@@ -276,14 +269,7 @@ class ImageScanningTest extends BaseSpecification {
         assert imageDetail.metadata.dataSource.name != ""
         assert imageDetail.scan.dataSource.id != ""
         assert imageDetail.scan.dataSource.name != ""
-        try {
-            assert imageDetail.scan.componentsCount > 0
-        } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw (e)
-            }
-            throw new AssumptionViolatedException("Failed to scan the image using ${integration}. Skipping test!", e)
-        }
+        assert imageDetail.scan.componentsCount > 0
 
         and:
         "validate the existence of expected CVEs"
@@ -774,16 +760,9 @@ class ImageScanningTest extends BaseSpecification {
         assert imageDetail.scan.dataSource.id != ""
         assert imageDetail.scan.dataSource.name == scannerName
 
-        try {
-            assert imageDetail.scan.componentsCount > 0
-            assert imageDetail.scan.componentsList.size() > 0
-            assert imageDetail.scan.componentsList.vulnsCount.sum { it as Integer } > 0
-        } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw (e)
-            }
-            throw new AssumptionViolatedException("Failed to scan the image using ${scannerName}. Skipping test!", e)
-        }
+        assert imageDetail.scan.componentsCount > 0
+        assert imageDetail.scan.componentsList.size() > 0
+        assert imageDetail.scan.componentsList.vulnsCount.sum { it as Integer } > 0
 
         cleanup:
         if (scannerName == "Stackrox Scanner") {
