@@ -17,10 +17,10 @@ from runners import ClusterTestSetsRunner
 def make_qa_e2e_test_runner(cluster):
     return ClusterTestSetsRunner(
         cluster=cluster,
+        initial_pre_test=PreSystemTests(),
         sets=[
             {
                 "name": "QA tests part I",
-                "pre_test": PreSystemTests(),
                 "test": QaE2eTestPart1(),
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
@@ -55,10 +55,10 @@ def make_qa_e2e_test_runner(cluster):
 def make_qa_e2e_test_runner_custom(cluster):
     return ClusterTestSetsRunner(
         cluster=cluster,
+        initial_pre_test=PreSystemTests(run_poll_for_system_test_images=False),
         sets=[
             {
                 "name": "Custom set of tests for p/z",
-                "pre_test": PreSystemTests(run_poll_for_system_test_images=False),
                 "test": CustomSetTest(),
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
