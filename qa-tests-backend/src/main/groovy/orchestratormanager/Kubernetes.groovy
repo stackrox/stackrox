@@ -1739,12 +1739,8 @@ class Kubernetes implements OrchestratorMain {
         return roleBinding
     }
 
-    @Deprecated
     /**
      * @deprecated PodSecurityPolicy was deprecated in Kubernetes 1.21 and removed in Kubernetes 1.25.
-     *             Users are advised to not rely on this resource.
-     *             For more information read this <a href=
-     *             "https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/">blogpost</a>
      */
     protected defaultPspForNamespace(String namespace) {
         if (Env.get("POD_SECURITY_POLICIES") != "false") {
