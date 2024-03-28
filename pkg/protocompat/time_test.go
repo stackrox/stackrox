@@ -162,6 +162,33 @@ func TestGetProtoTimestampZero(t *testing.T) {
 	assert.Equal(t, int32(0), ts1.GetNanos())
 }
 
+func TestNilOrNow(t *testing.T) {
+	now := time.Now()
+	var nilTS *types.Timestamp
+	nowFromNil := NilOrNow(nilTS)
+	assert.NotNil(t, nowFromNil)
+	deltaFromNil := nowFromNil.Sub(now)
+	// ensure the delta between "now" and the "now" from conversion is small enough
+	assert.Equal(t, "0s", deltaFromNil.Truncate(time.Second).String())
+
+	invalidTS := &types.Timestamp{
+		Seconds: -62234567890,
+	}
+	nowFromInvalid := NilOrNow(invalidTS)
+	assert.NotNil(t, nowFromInvalid)
+	deltaFromInvalid := nowFromInvalid.Sub(now)
+	// ensure the delta between "now" and the "now" from conversion is small enough
+	assert.Equal(t, "0s", deltaFromInvalid.Truncate(time.Second).String())
+
+	ts := &types.Timestamp{
+		Seconds: int64(2345678901),
+		Nanos:   int32(123456789),
+	}
+	timeFromTS := NilOrNow(ts)
+	assert.NotNil(t, timeFromTS)
+	assert.Equal(t, time.Date(2044, 5, 1, 1, 28, 21, 123457000, time.UTC), *timeFromTS)
+}
+
 func TestTimestampNow(t *testing.T) {
 	nowTime := time.Now()
 	nowTimestamp := TimestampNow()
