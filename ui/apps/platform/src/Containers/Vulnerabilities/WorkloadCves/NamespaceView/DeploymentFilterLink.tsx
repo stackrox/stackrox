@@ -16,8 +16,8 @@ function DeploymentFilterLink({ deploymentCount, namespaceName, clusterName }) {
         vulnerabilityState: 'OBSERVED',
         entityTab: 'Deployment',
         s: {
-            NAMESPACE: namespaceName,
-            CLUSTER: clusterName,
+            NAMESPACE: `^${namespaceName}$`,
+            CLUSTER: `^${clusterName}$`,
         },
     });
     return (

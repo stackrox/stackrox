@@ -59,7 +59,7 @@ type Namespace = {
 };
 
 const namespacesQuery = gql`
-    query getNamespaces($query: String, $pagination: Pagination) {
+    query getNamespaceViewNamespaces($query: String, $pagination: Pagination) {
         namespaces(query: $query, pagination: $pagination) {
             metadata {
                 id
@@ -238,7 +238,7 @@ function NamespaceViewPage() {
                                 <Td colSpan={5}>
                                     <Bullseye>
                                         <EmptyStateTemplate
-                                            title="No pending exception requests"
+                                            title="There are currently no namespaces"
                                             headingLevel="h2"
                                             icon={FileAltIcon}
                                         >
