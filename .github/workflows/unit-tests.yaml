@@ -65,10 +65,12 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
   go-postgres:
@@ -116,10 +118,12 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
   go-bench:
@@ -192,10 +196,12 @@ jobs:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/test-results/reports'
 
   local-roxctl-tests:
@@ -226,10 +232,12 @@ jobs:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
@@ -255,10 +263,12 @@ jobs:
         paths: 'shell-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
