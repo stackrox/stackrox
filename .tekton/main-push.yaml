@@ -245,6 +245,38 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
+    # TODO(ROX-23257): remove once Central does not depend on rocksdb
+    - name: clone-rocksdb
+      params:
+      - name: url
+        value: 'https://github.com/facebook/rocksdb.git'
+      - name: revision
+        value: "0915c99f01b46f50af8e02da8b6528156f584b7c" # v6.7.3
+      - name: depth
+        value: "1"
+      - name: subdirectory
+        value: source/.konflux/rocksdb
+      runAfter:
+      - clone-repository
+      taskRef:
+        params:
+        - name: name
+          value: git-clone
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:fffe6234a4d60c63b97af86642369e4931a404f6dc8be0d12743f7651a4dc802
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values: [ "true" ]
+      workspaces:
+      - name: output
+        workspace: workspace
+      - name: basic-auth
+        workspace: git-auth
+
     - name: fetch-external-content
       runAfter:
       - clone-repository
@@ -298,6 +330,7 @@ spec:
       runAfter:
       - fetch-external-content
       - prefetch-dependencies
+      - clone-rocksdb
       taskRef:
         params:
         # buildah with more memory is needed for UI builds to succeed. Otherwise, there's an error like this in logs:
