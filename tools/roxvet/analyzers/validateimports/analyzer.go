@@ -309,6 +309,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/process/id",
 			"pkg/protocompat",
 			"pkg/protoconv",
+			"pkg/protoutils",
 			"pkg/retry",
 			"pkg/sac",
 			"pkg/scancomponent",
