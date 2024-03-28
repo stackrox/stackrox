@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
