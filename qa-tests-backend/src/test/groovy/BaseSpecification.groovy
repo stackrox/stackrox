@@ -67,8 +67,6 @@ class BaseSpecification extends Specification {
 
     protected static String allAccessToken = null
 
-    public static strictIntegrationTesting = false
-
     private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
@@ -85,13 +83,6 @@ class BaseSpecification extends Specification {
         }
 
         LOG.info "Performing global setup"
-
-        if (!Env.IN_CI || Env.get("BUILD_TAG")) {
-            // Strictly test integration with external services when running in
-            // a dev environment or in CI against tagged builds (e.g. nightly builds).
-            LOG.info "Will perform strict integration testing (if any is required)"
-            strictIntegrationTesting = true
-        }
 
         OrchestratorMain orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),

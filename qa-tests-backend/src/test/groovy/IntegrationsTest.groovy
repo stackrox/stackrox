@@ -217,7 +217,7 @@ class IntegrationsTest extends BaseSpecification {
 
         then:
         "Verify the messages are seen in the json"
-        notifier.validateViolationNotification(policy.build(), nginxdeployment, strictIntegrationTesting)
+        notifier.validateViolationNotification(policy.build(), nginxdeployment)
 
         cleanup:
         "remove Deployment and services"
@@ -266,7 +266,7 @@ class IntegrationsTest extends BaseSpecification {
         and:
         "validate notification"
         for (Notifier notifier : notifierTypes) {
-            notifier.validateNetpolNotification(orchestrator.generateYaml(policy), strictIntegrationTesting)
+            notifier.validateNetpolNotification(orchestrator.generateYaml(policy))
         }
 
         cleanup:
@@ -332,7 +332,7 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "Validate Notification details"
         for (Notifier notifier : notifierTypes) {
-            notifier.validateViolationNotification(policy.build(), deployment, strictIntegrationTesting)
+            notifier.validateViolationNotification(policy.build(), deployment)
         }
 
         cleanup:
@@ -442,7 +442,7 @@ class IntegrationsTest extends BaseSpecification {
         and:
         "Validate Notification details"
         for (Notifier notifier : notifierTypes) {
-            notifier.validateViolationNotification(policy.build(), deployment, strictIntegrationTesting)
+            notifier.validateViolationNotification(policy.build(), deployment)
         }
 
         cleanup:
@@ -586,7 +586,7 @@ class IntegrationsTest extends BaseSpecification {
 
         then:
         "Validate Notification details"
-        notifier.validateViolationNotification(policy.build(), deployment, strictIntegrationTesting)
+        notifier.validateViolationNotification(policy.build(), deployment)
 
         cleanup:
         "delete deployment, policy, notifiers and clear annotation"

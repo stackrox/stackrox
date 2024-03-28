@@ -31,11 +31,11 @@ class Notifier {
         return NotifierService.testNotifier(notifier)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+    void validateViolationNotification(Policy policy, Deployment deployment) {
         log.debug("Nothing to validate")
     }
 
-    void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) {
+    void validateNetpolNotification(String yaml) {
         log.debug("Nothing to validate")
     }
 
@@ -98,14 +98,14 @@ class GenericNotifier extends Notifier {
         return generic
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+    void validateViolationNotification(Policy policy, Deployment deployment) {
         def generic = getMostRecentViolationAndValidateCommonFields()
 
         assert generic["data"]["alert"]["policy"]["name"] == policy.name
         assert generic["data"]["alert"]["deployment"]["name"] == deployment.name
     }
 
-    void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) {
+    void validateNetpolNotification(String yaml) {
         def generic = getMostRecentViolationAndValidateCommonFields()
 
         assert generic["data"]["networkpolicy"]["yaml"] == yaml
@@ -135,7 +135,7 @@ class SplunkNotifier extends Notifier {
         notifier = NotifierService.addNotifier(notifier)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+    void validateViolationNotification(Policy policy, Deployment deployment) {
         def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
 
         assert response.find { it.deployment.id == deployment.deploymentUid }
