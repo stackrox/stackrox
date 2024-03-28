@@ -1291,7 +1291,7 @@ var (
 
 	pattern_ComplianceResultsService_GetComplianceOverallClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5}, []string{"v2", "compliance", "scan", "stats", "overall", "cluster"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceResultsService_GetComplianceClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "stats", "clusters"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceResultsService_GetComplianceClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "totals", "clusters"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceResultsService_GetComplianceOverallClusterCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 2, 6}, []string{"v2", "compliance", "scan", "stats", "overall", "cluster", "count"}, "", runtime.AssumeColonVerbOpt(false)))
 

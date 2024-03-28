@@ -225,12 +225,13 @@ service ComplianceResultsService {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/cluster"};
   }
 
+  // Deprecated in favor of GetComplianceClusterStats
   rpc GetComplianceOverallClusterStats(RawQuery) returns (ListComplianceClusterOverallStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster"};
   }
 
   rpc GetComplianceClusterStats(ComplianceClusterStatsRequest) returns (ListComplianceClusterOverallStatsResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/stats/clusters"};
+    option (google.api.http) = {get: "/v2/compliance/scan/totals/clusters"};
   }
 
   rpc GetComplianceOverallClusterCount(RawQuery) returns (CountComplianceScanResults) {
