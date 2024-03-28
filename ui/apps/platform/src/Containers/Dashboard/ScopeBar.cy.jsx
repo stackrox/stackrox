@@ -36,6 +36,11 @@ function setup() {
         req.reply({ data: mockData });
     });
 
+    // Work-around for cy.location('search') assertions.
+    // Remove unexpected cypress specPath param before component code executes.
+    // https://github.com/cypress-io/cypress/issues/28021#issuecomment-1756646215
+    window.history.pushState({}, document.title, window.location.pathname);
+
     cy.mount(
         <ComponentTestProviders>
             <ScopeBar />
