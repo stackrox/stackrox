@@ -240,8 +240,8 @@ deploy_central_via_operator() {
 
     customize_envVars=""
     if [[ "${CGO_CHECKS:-}" == "true" ]]; then
-        customize_envVars+=$'\n      - name: GODEBUG'
-        customize_envVars+=$'\n        value: "2"'
+        customize_envVars+=$'\n      - name: GOEXPERIMENT'
+        customize_envVars+=$'\n        value: "cgocheck2"'
         customize_envVars+=$'\n      - name: MUTEX_WATCHDOG_TIMEOUT_SECS'
         customize_envVars+=$'\n        value: "15"'
     fi
