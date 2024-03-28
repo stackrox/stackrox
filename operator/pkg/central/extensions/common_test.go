@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-type secretVerifyFunc func(t *testing.T, central *platform.Central, secret *v1.Secret)
+type secretVerifyFunc func(t *testing.T, data types.SecretDataMap)
 type statusVerifyFunc func(t *testing.T, status *platform.CentralStatus)
 
 type secretReconciliationTestCase struct {
@@ -29,11 +30,10 @@ type secretReconciliationTestCase struct {
 	Other                  []ctrlClient.Object
 	InterceptedK8sAPICalls interceptor.Funcs
 
-	ExpectedCreatedSecrets       map[string]secretVerifyFunc
-	ExpectedSecretsAfterDeletion []string
-	ExpectedError                string
-	ExpectedNotExistingSecrets   []string
-	VerifyStatus                 statusVerifyFunc
+	ExpectedCreatedSecrets     map[string]secretVerifyFunc
+	ExpectedError              string
+	ExpectedNotExistingSecrets []string
+	VerifyStatus               statusVerifyFunc
 }
 
 func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.CentralSpec {
@@ -60,9 +60,8 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 	return spec
 }
 
-type runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger) error
-
-func testSecretReconciliation(t *testing.T, runFn runFn, c secretReconciliationTestCase) {
+// TODO(ROX-9453): Refactor this to be used also by Secured Cluster reconciler extensions.
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
 	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "platform.stackrox.io/v1alpha1",
@@ -152,7 +151,14 @@ func testSecretReconciliation(t *testing.T, runFn runFn, c secretReconciliationT
 		if !assert.True(t, ok, "expected secret %s was not created", name) {
 			continue
 		}
-		verifyFunc(t, central, &found)
+		hasOwnerRef := false
+		for _, ownerRef := range found.ObjectMeta.GetOwnerReferences() {
+			if ownerRef.Name == "test-central" {
+				hasOwnerRef = true
+			}
+		}
+		assert.Truef(t, hasOwnerRef, "newly created secret %s is missing owner reference", name)
+		verifyFunc(t, found.Data)
 		delete(secretsByName, name)
 	}
 
@@ -196,12 +202,6 @@ func testSecretReconciliation(t *testing.T, runFn runFn, c secretReconciliationT
 		}
 		assert.Equalf(t, existingSecret.Data, found.Data, "data of pre-existing secret %s has changed", existingSecret.Name)
 		delete(postDeletionSecretsByName, existingSecret.Name)
-	}
-
-	for _, expectedAfterDeletion := range c.ExpectedSecretsAfterDeletion {
-		_, ok := postDeletionSecretsByName[expectedAfterDeletion]
-		assert.Truef(t, ok, "secret %s missing, was expected to exist after deletion", expectedAfterDeletion)
-		delete(postDeletionSecretsByName, expectedAfterDeletion)
 	}
 
 	assert.Empty(t, postDeletionSecretsByName, "newly created secrets remain after deletion")

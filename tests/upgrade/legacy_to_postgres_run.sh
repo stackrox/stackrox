@@ -116,6 +116,7 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
     git checkout "$LAST_POSTGRES_SHA"
+    export GOTOOLCHAIN=go1.20.10
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #

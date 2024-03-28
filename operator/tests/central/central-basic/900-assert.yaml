@@ -1,1 +1,10 @@
-../../common/central-cr-post-deletion-assert.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: central-db
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

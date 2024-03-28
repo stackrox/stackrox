@@ -96,6 +96,7 @@ function setup() {
     assert_output --partial 'tests="1"'
     assert_output --partial 'skipped="1"'
     assert_output --partial 'failures="0"'
+    assert_output --partial '<skipped/>'
 }
 
 @test "handles success, skipped and failure" {

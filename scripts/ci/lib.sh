@@ -936,23 +936,6 @@ get_pr_details() {
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
-    #TODO(janisz): remove after https://github.com/openshift/release/pull/49962 is merged
-    if [ -e "/tmp/go/" ]; then
-        info "Go already exists"
-    else
-        info "Replace Go"
-        go version
-        whoami
-        GOLANG_VERSION=1.21.8
-        GOLANG_SHA256=538b3b143dc7f32b093c8ffe0e050c260b57fc9d57a12c4140a639a8dd2b4e4f
-        url="https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz"
-        wget --no-verbose -O /tmp/go.tgz "$url"
-        echo "$GOLANG_SHA256 /tmp/go.tgz" | sha256sum -c -
-        tar -C /tmp/ -xzf /tmp/go.tgz
-    fi
-    export PATH=/tmp/go/bin:$PATH
-    go version
-
     openshift_ci_debug
 
     info "Current Status:"
@@ -1796,6 +1779,11 @@ _EO_CASE_HEADER_
         cat << _EO_FAILURE_ >> "${junit_file}"
             <failure><![CDATA[${details}]]></failure>
 _EO_FAILURE_
+        fi
+        if [[ "$result" == "${_JUNIT_RESULT_SKIPPED}" ]]; then
+        cat << _EO_SKIPPED_ >> "${junit_file}"
+            <skipped/>
+_EO_SKIPPED_
         fi
 
         echo "        </testcase>" >> "${junit_file}"
