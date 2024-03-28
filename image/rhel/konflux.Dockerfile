@@ -1,9 +1,11 @@
 ARG ROCKSDB_BUILDER_STAGE_PATH="/mnt/rocksdb"
+ARG GO_BUILDER_STAGE_PATH="/mnt/go"
 ARG FINAL_STAGE_PATH="/mnt/final"
 
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rocksdb-builder-base
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 AS go-builder-base
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
 
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
@@ -12,11 +14,14 @@ FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-installer
 ARG ROCKSDB_BUILDER_STAGE_PATH
 COPY --from=rocksdb-builder-base / "$ROCKSDB_BUILDER_STAGE_PATH"
 
+ARG GO_BUILDER_STAGE_PATH
+COPY --from=go-builder-base / "$GO_BUILDER_STAGE_PATH"
+
 ARG FINAL_STAGE_PATH
 COPY --from=final-base / "$FINAL_STAGE_PATH"
 
 COPY ./scripts/konflux/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$ROCKSDB_BUILDER_STAGE_PATH" "$FINAL_STAGE_PATH"
+RUN /tmp/.konflux/subscription-manager-bro.sh register "$ROCKSDB_BUILDER_STAGE_PATH" "$GO_BUILDER_STAGE_PATH" "$FINAL_STAGE_PATH"
 
 # gflags and snappy-devel for rocksdb-builder come from codeready-builder-for-rhel-8 repo.
 RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
@@ -24,6 +29,9 @@ RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
 # Install packages for the rockdsb builder stage.
 RUN dnf -y --installroot="$ROCKSDB_BUILDER_STAGE_PATH" upgrade --nobest && \
     dnf -y --installroot="$ROCKSDB_BUILDER_STAGE_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel
+
+# Install packages for the Go builder stage.
+RUN dnf -y --installroot="$GO_BUILDER_STAGE_PATH" install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake libzstd-devel zstd jq
 
 # Install packages for the final stage.
 RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
@@ -50,6 +58,39 @@ COPY .konflux/rocksdb ./
 
 # Set up and build rocksdb
 RUN PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul" CXXFLAGS="-fPIC" make --jobs=6 static_lib
+
+
+FROM scratch AS go-builder
+
+ARG GO_BUILDER_STAGE_PATH
+COPY --from=rpm-installer "$GO_BUILDER_STAGE_PATH" /
+
+COPY --from=rocksdb-builder /staging/librocksdb.a /lib/rocksdb/librocksdb.a
+COPY --from=rocksdb-builder /staging/include /lib/rocksdb/include
+
+WORKDIR /go/src/github.com/stackrox/rox/app
+
+COPY . .
+
+RUN scripts/konflux/fail-build-if-git-is-dirty.sh
+
+ENV GOFLAGS=""
+ENV CGO_CFLAGS="-I/lib/rocksdb/include"
+ENV CGO_LDFLAGS="-L/lib/rocksdb -L/usr/lib64"
+ENV CGO_ENABLED=1
+# TODO(): figure out BUILD_TAG
+# ENV BUILD_TAG="${CI_VERSION}"
+ENV GOTAGS="release"
+ENV CI=1
+
+RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
+    make main-build-nodeps cli-build && \
+    mkdir -p image/rhel/docs/api/v1 && \
+    ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
+    mkdir -p image/rhel/docs/api/v2 && \
+    ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
+
+RUN make copy-go-binaries-to-image-dir
 
 
 FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
@@ -81,9 +122,8 @@ COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
-# TODO: move this to go-builder stage. Will be done as part of the same ROX-20160.
-COPY --from=rocksdb-builder /staging/librocksdb.a /lib/rocksdb/librocksdb.a
-COPY --from=rocksdb-builder /staging/include /lib/rocksdb/include
+# TODO: others
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
