@@ -96,6 +96,11 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  name: central-db-password
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: central-db-tls
 ---
 apiVersion: v1
