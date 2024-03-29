@@ -57,10 +57,10 @@ function PlatformCvesOverviewPage() {
             <PageTitle title="Platform CVEs Overview" />
             <Divider component="div" />
             <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
                 variant="light"
             >
-                <Flex direction={{ default: 'column' }} className="pf-u-flex-grow-1">
+                <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
                     <Title headingLevel="h1">Platform CVEs</Title>
                     <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
                 </Flex>
