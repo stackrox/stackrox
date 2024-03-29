@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"os"
 	"strconv"
 	"testing"
 
@@ -64,11 +63,9 @@ func (s *scalerTestSuite) TestScaleSize() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			err := os.Setenv("ROX_MEMLIMIT", strconv.Itoa(c.sensorMemLimit))
-			s.NoError(err)
+			s.T().Setenv("ROX_MEMLIMIT", strconv.Itoa(c.sensorMemLimit))
 			if c.bufferCeiling != 0 {
-				err := os.Setenv("ROX_SENSOR_BUFFER_SCALE_CEILING", strconv.Itoa(c.bufferCeiling))
-				s.NoError(err)
+				s.T().Setenv("ROX_SENSOR_BUFFER_SCALE_CEILING", strconv.Itoa(c.bufferCeiling))
 			}
 
 			actual, err := ScaleSize(c.inputQueueSize)
@@ -87,8 +84,7 @@ func (s *scalerTestSuite) TestScaleSize() {
 }
 
 func (s *scalerTestSuite) TestScaleSizeEnvConversion() {
-	err := os.Setenv("ROX_MEMLIMIT", "definitelyNotAnInteger")
-	s.NoError(err)
+	s.T().Setenv("ROX_MEMLIMIT", "definitelyNotAnInteger")
 
 	actual, err := ScaleSize(100)
 	s.ErrorContains(err, "strconv.ParseInt: parsing")
@@ -118,10 +114,8 @@ func (s *scalerTestSuite) TestScaleSizeOnNonDefault() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			err := os.Setenv("ROX_MEMLIMIT", strconv.Itoa(c.sensorMemLimit))
-			s.NoError(err)
-			err = os.Setenv("TEST_1", strconv.Itoa(c.setValue))
-			s.NoError(err)
+			s.T().Setenv("ROX_MEMLIMIT", strconv.Itoa(c.sensorMemLimit))
+			s.T().Setenv("TEST_1", strconv.Itoa(c.setValue))
 
 			s.Equal(c.expected, ScaleSizeOnNonDefault(c.setting))
 		})
