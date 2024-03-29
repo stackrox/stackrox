@@ -7,13 +7,13 @@ import { Icon } from '@patternfly/react-core';
 import { getIsReadAccess, getIsWriteAccess } from './permissionSets.utils';
 
 const forbiddenIcon = (
-    <Icon color="var(--pf-v5-global--danger-color--100)" size="sm">
-        <TimesIcon aria-label="forbidden" />
+    <Icon size="sm">
+        <TimesIcon color="var(--pf-v5-global--danger-color--100)" aria-label="forbidden" />
     </Icon>
 );
 const permittedIcon = (
-    <Icon color="var(--pf-v5-global--success-color--100)" size="sm">
-        <CheckIcon aria-label="permitted" />
+    <Icon size="sm">
+        <CheckIcon color="var(--pf-v5-global--success-color--100)" aria-label="permitted" />
     </Icon>
 );
 
