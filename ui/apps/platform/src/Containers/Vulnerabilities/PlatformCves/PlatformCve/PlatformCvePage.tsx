@@ -8,21 +8,21 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
 
-const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
+const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
 });
 
-function NodeCvePage() {
+function PlatformCvePage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { cveId } = useParams() as { cveId: string };
 
-    const [nodeCveMetadata, setNodeCveMetadata] = useState<CveMetadata>();
-    const nodeCveName = nodeCveMetadata?.cve;
+    const [platformCveMetadata, setPlatformCveMetadata] = useState<CveMetadata>();
+    const cveName = platformCveMetadata?.cve;
 
     // TODO - Simulate a loading state, will replace metadata with results from a query
     useEffect(() => {
         setTimeout(() => {
-            setNodeCveMetadata({
+            setPlatformCveMetadata({
                 cve: cveId,
                 firstDiscoveredInSystem: '2021-01-01T00:00:00Z',
                 distroTuples: [
@@ -38,20 +38,18 @@ function NodeCvePage() {
 
     return (
         <>
-            <PageTitle title={`Node CVEs - NodeCVE ${nodeCveName}`} />
+            <PageTitle title={`Platform CVEs - PlatformCVE ${cveName}`} />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
-                        {nodeCveName ?? (
-                            <Skeleton screenreaderText="Loading CVE name" width="200px" />
-                        )}
+                        {cveName ?? <Skeleton screenreaderText="Loading CVE name" width="200px" />}
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <CvePageHeader data={nodeCveMetadata} />
+                <CvePageHeader data={platformCveMetadata} />
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
@@ -61,4 +59,4 @@ function NodeCvePage() {
     );
 }
 
-export default NodeCvePage;
+export default PlatformCvePage;
