@@ -59,6 +59,7 @@ test_upgrade() {
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
 
+    preamble
     setup_deployment_env false false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
@@ -273,8 +274,26 @@ download_roxctl() {
     local version="$1"
     local output_dir="$(mktemp -d)"
 
+    local host_os
+    if is_darwin; then
+        host_os="darwin"
+    elif is_linux; then
+        host_os="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    local platform
+    case "$(uname -m)" in
+        x86_64) platform="" ;;
+        ppc64le) platform="-ppc64le" ;;
+        s390x) platform="-s390x" ;;
+        *) die "Unknown architecture" ;;
+    esac
+
     info "Download roxctl $version"
-    curl --retry 3 -sS --fail -o "${output_dir}/roxctl" "https://mirror.openshift.com/pub/rhacs/assets/${version}/bin/Linux/roxctl"
+    curl --retry 3 -sS --fail -o "${output_dir}/roxctl" \
+        "https://mirror.openshift.com/pub/rhacs/assets/${version}/bin/${host_os}/roxctl${platform}"
     chmod +x "${output_dir}/roxctl"
     export PATH="$output_dir:$PATH"
     roxctl version
