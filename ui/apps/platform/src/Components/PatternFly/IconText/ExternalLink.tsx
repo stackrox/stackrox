@@ -20,8 +20,8 @@ function ExternalLink({ children }: ExternalLinkProps): ReactElement {
             spaceItems={{ default: 'spaceItemsSm' }}
         >
             {children}
-            <Icon color="var(--pf-v5-global--link--Color)">
-                <ExternalLinkAltIcon />
+            <Icon>
+                <ExternalLinkAltIcon color="var(--pf-v5-global--link--Color)" />
             </Icon>
         </Flex>
     );
