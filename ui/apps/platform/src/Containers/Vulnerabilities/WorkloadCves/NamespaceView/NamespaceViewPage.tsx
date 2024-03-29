@@ -40,8 +40,8 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import FilterAutocompleteSelect from 'Containers/Vulnerabilities/components/FilterAutocomplete';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import KeyValueListModal from 'Components/KeyValueListModal';
 import DeploymentFilterLink from './DeploymentFilterLink';
-import LabelsModal from './LabelsModal';
 
 type Namespace = {
     metadata: {
@@ -296,7 +296,7 @@ function NamespaceViewPage() {
                                             />
                                         </Td>
                                         <Td dataLabel="Labels">
-                                            <LabelsModal labels={labels} />
+                                            <KeyValueListModal type="label" keyValues={labels} />
                                         </Td>
                                     </Tr>
                                 );
