@@ -174,14 +174,6 @@ function InitBundleForm(): ReactElement {
                             label="Installation method for secured cluster services"
                             isRequired
                         >
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>
-                                        You can use one bundle to secure multiple clusters that have
-                                        the same installation method.
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                             <Select
                                 variant="single"
                                 toggleAriaLabel="Installation method menu toggle"
@@ -205,6 +197,14 @@ function InitBundleForm(): ReactElement {
                                         </SelectOption>
                                     ))}
                             </Select>
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        You can use one bundle to secure multiple clusters that have
+                                        the same installation method.
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormGroup>
                     </Form>
                     <Alert variant="info" isInline title="Download YAML file" component="p">

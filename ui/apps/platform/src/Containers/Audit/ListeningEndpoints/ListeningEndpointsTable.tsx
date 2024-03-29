@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction } from 'react';
 import { Button, ButtonVariant, Card, Text } from '@patternfly/react-core';
-import { Tbody, Tr, Td, Table /* data-codemods */, Th, Thead } from '@patternfly/react-table';
+import { Tbody, Tr, Td, Table, Th, Thead } from '@patternfly/react-table';
 
 import { riskBasePath } from 'routePaths';
 import LinkShim from 'Components/PatternFly/LinkShim';

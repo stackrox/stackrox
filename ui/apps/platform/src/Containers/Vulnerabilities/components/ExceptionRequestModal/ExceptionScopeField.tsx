@@ -28,15 +28,6 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
 
     return (
         <FormGroup fieldId={fieldId} label={label} isRequired>
-            <FormHelperText>
-                <HelperText>
-                    <HelperTextItem>
-                        {isImageWithoutTag
-                            ? `This image does not have a tag and the exception will apply to all tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`
-                            : undefined}
-                    </HelperTextItem>
-                </HelperText>
-            </FormHelperText>
             {scopeContext === 'GLOBAL' && (
                 <Radio
                     id="scope-global"
@@ -85,6 +76,15 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
                     label={`Only ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}:${scopeContext.imageName.tag}`}
                 />
             )}
+            <FormHelperText>
+                <HelperText>
+                    <HelperTextItem>
+                        {isImageWithoutTag
+                            ? `This image does not have a tag and the exception will apply to all tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`
+                            : undefined}
+                    </HelperTextItem>
+                </HelperText>
+            </FormHelperText>
         </FormGroup>
     );
 }

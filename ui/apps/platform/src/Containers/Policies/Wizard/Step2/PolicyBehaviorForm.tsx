@@ -215,14 +215,6 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             <Form>
                 <div className="pf-v5-u-px-lg">
                     <FormGroup fieldId="policy-lifecycle-stage" label="Lifecycle stages" isRequired>
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem>
-                                    Choose lifecycle stage to which your policy is applicable. You
-                                    can select more than one stage.
-                                </HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">
                             <Checkbox
                                 label="Build"
@@ -252,6 +244,14 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 isDisabled={hasActiveViolations}
                             />
                         </Flex>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Choose lifecycle stage to which your policy is applicable. You
+                                    can select more than one stage.
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                     {hasActiveViolations && (
                         <Alert
@@ -267,11 +267,6 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         isRequired={hasRuntime}
                         className="pf-v5-u-pt-lg"
                     >
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <Flex direction={{ default: 'row' }}>
                             <Radio
                                 label="Deployment"
@@ -290,6 +285,11 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 isDisabled={!hasRuntime || hasActiveViolations}
                             />
                         </Flex>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>{eventSourceHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                 </div>
                 <Divider component="div" />
@@ -303,11 +303,6 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         Select a method to address violations of this policy.
                     </div>
                     <FormGroup fieldId="policy-response-method" className="pf-v5-u-mb-lg">
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem>{responseMethodHelperText}</HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <Flex direction={{ default: 'row' }}>
                             <Radio
                                 label="Inform"
@@ -327,6 +322,11 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 onChange={() => setShowEnforcement(true)}
                             />
                         </Flex>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>{responseMethodHelperText}</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                     {showEnforcement && (
                         <div>

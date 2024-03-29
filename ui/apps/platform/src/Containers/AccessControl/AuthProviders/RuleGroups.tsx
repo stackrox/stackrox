@@ -100,19 +100,6 @@ function RuleGroups({
                                 </FlexItem>
                                 <FlexItem>
                                     <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
-                                        <FormHelperText>
-                                            <HelperText>
-                                                <HelperTextItem
-                                                    variant={
-                                                        errors[index]?.props?.key
-                                                            ? 'error'
-                                                            : 'default'
-                                                    }
-                                                >
-                                                    {errors[index]?.props?.key ?? ''}
-                                                </HelperTextItem>
-                                            </HelperText>
-                                        </FormHelperText>
                                         <SelectSingle
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key ?? ''}
@@ -127,6 +114,19 @@ function RuleGroups({
                                                 <SelectOption key={ruleKey} value={ruleKey} />
                                             ))}
                                         </SelectSingle>
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.key
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.key ?? ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
@@ -134,6 +134,13 @@ function RuleGroups({
                                         label="Value"
                                         fieldId={`groups[${index}].props.value`}
                                     >
+                                        <TextInput
+                                            type="text"
+                                            id={`groups[${index}].props.value`}
+                                            value={groups[`${index}`].props.value}
+                                            onChange={onChange}
+                                            isDisabled={isDisabled(group)}
+                                        />
                                         <FormHelperText>
                                             <HelperText>
                                                 <HelperTextItem
@@ -147,13 +154,6 @@ function RuleGroups({
                                                 </HelperTextItem>
                                             </HelperText>
                                         </FormHelperText>
-                                        <TextInput
-                                            type="text"
-                                            id={`groups[${index}].props.value`}
-                                            value={groups[`${index}`].props.value}
-                                            onChange={onChange}
-                                            isDisabled={isDisabled(group)}
-                                        />
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
@@ -161,6 +161,18 @@ function RuleGroups({
                                 </FlexItem>
                                 <FlexItem>
                                     <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
+                                        <SelectSingle
+                                            id={`groups[${index}].roleName`}
+                                            value={groups[`${index}`].roleName}
+                                            isDisabled={isDisabled(group)}
+                                            handleSelect={setFieldValue}
+                                            direction="up"
+                                            placeholderText="Select a role"
+                                        >
+                                            {roles.map(({ name }) => (
+                                                <SelectOption key={name} value={name} />
+                                            ))}
+                                        </SelectSingle>
                                         <FormHelperText>
                                             <HelperText>
                                                 <HelperTextItem
@@ -174,18 +186,6 @@ function RuleGroups({
                                                 </HelperTextItem>
                                             </HelperText>
                                         </FormHelperText>
-                                        <SelectSingle
-                                            id={`groups[${index}].roleName`}
-                                            value={groups[`${index}`].roleName}
-                                            isDisabled={isDisabled(group)}
-                                            handleSelect={setFieldValue}
-                                            direction="up"
-                                            placeholderText="Select a role"
-                                        >
-                                            {roles.map(({ name }) => (
-                                                <SelectOption key={name} value={name} />
-                                            ))}
-                                        </SelectSingle>
                                     </FormGroup>
                                 </FlexItem>
                                 {!isDisabled(group) && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 import capitalize from 'lodash/capitalize';
 

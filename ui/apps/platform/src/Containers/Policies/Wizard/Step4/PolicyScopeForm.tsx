@@ -188,14 +188,6 @@ function PolicyScopeForm() {
                         label="Exclude images (Build lifecycle only)"
                         fieldId="exclude-images"
                     >
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem>
-                                    Select all images from the list for which you don&apos;t want to
-                                    trigger a violation for the policy.
-                                </HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <Select
                             onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
                             isOpen={isExcludeImagesOpen}
@@ -215,6 +207,14 @@ function PolicyScopeForm() {
                                 </SelectOption>
                             ))}
                         </Select>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>
+                                    Select all images from the list for which you don&apos;t want to
+                                    trigger a violation for the policy.
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                 </FlexItem>
             </Flex>

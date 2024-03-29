@@ -103,23 +103,29 @@ function PolicyMetadataFormSection(): ReactElement {
             <Field name="description">
                 {({ field }) => (
                     <FormGroup fieldId="policy-description" label="Description">
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem>Enter details about the policy</HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <TextArea
                             id={field.name}
                             name={field.name}
                             value={field.value}
                             onChange={(event, _value) => onChange(_value, event)}
                         />
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem>Enter details about the policy</HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                 )}
             </Field>
             <Field name="rationale">
                 {({ field }) => (
                     <FormGroup fieldId="policy-rationale" label="Rationale">
+                        <TextArea
+                            id={field.name}
+                            name={field.name}
+                            value={field.value}
+                            onChange={(event, _value) => onChange(_value, event)}
+                        />
                         <FormHelperText>
                             <HelperText>
                                 <HelperTextItem>
@@ -127,18 +133,18 @@ function PolicyMetadataFormSection(): ReactElement {
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
-                        <TextArea
-                            id={field.name}
-                            name={field.name}
-                            value={field.value}
-                            onChange={(event, _value) => onChange(_value, event)}
-                        />
                     </FormGroup>
                 )}
             </Field>
             <Field name="remediation">
                 {({ field }) => (
                     <FormGroup fieldId="policy-guidance" label="Guidance">
+                        <TextArea
+                            id={field.name}
+                            name={field.name}
+                            value={field.value}
+                            onChange={(event, _value) => onChange(_value, event)}
+                        />
                         <FormHelperText>
                             <HelperText>
                                 <HelperTextItem>
@@ -146,12 +152,6 @@ function PolicyMetadataFormSection(): ReactElement {
                                 </HelperTextItem>
                             </HelperText>
                         </FormHelperText>
-                        <TextArea
-                            id={field.name}
-                            name={field.name}
-                            value={field.value}
-                            onChange={(event, _value) => onChange(_value, event)}
-                        />
                     </FormGroup>
                 )}
             </Field>
