@@ -26,12 +26,12 @@ type TokenMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Roles      []string               `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
 	IssuedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
-	Expiration *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration,proto3" json:"expiration,omitempty" search:"Expiration,store"` // @gotags: search:"Expiration,store"
-	Revoked    bool                   `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty" search:"Revoked,store"`      // @gotags: search:"Revoked,store"
+	Expiration *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration,proto3" json:"expiration,omitempty"` // @gotags: search:"Expiration,store"
+	Revoked    bool                   `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty"`      // @gotags: search:"Revoked,store"
 	// Deprecated: Marked as deprecated in storage/api_token.proto.
 	Role string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
 }

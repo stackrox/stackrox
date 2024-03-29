@@ -133,7 +133,7 @@ type DeclarativeConfigHealth struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id           string                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Id           string                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	Name         string                               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Status       DeclarativeConfigHealth_Status       `protobuf:"varint,4,opt,name=status,proto3,enum=storage.DeclarativeConfigHealth_Status" json:"status,omitempty"`
 	ErrorMessage string                               `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`

@@ -25,7 +25,7 @@ type ExternalBackup struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id            string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id            string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Name          string    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Type          string    `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	Schedule      *Schedule `protobuf:"bytes,4,opt,name=schedule,proto3" json:"schedule,omitempty"`
@@ -177,14 +177,14 @@ type S3Config struct {
 	unknownFields protoimpl.UnknownFields
 
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	UseIam bool   `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	UseIam bool   `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty"` // @gotags: scrub:"dependent"
 	// The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
-	AccessKeyId string `protobuf:"bytes,3,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	AccessKeyId string `protobuf:"bytes,3,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty"` // @gotags: scrub:"always"
 	// The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
-	SecretAccessKey string `protobuf:"bytes,4,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	SecretAccessKey string `protobuf:"bytes,4,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty"` // @gotags: scrub:"always"
 	Region          string `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
 	ObjectPrefix    string `protobuf:"bytes,6,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
-	Endpoint        string `protobuf:"bytes,7,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	Endpoint        string `protobuf:"bytes,7,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 }
 
 func (x *S3Config) Reset() {
@@ -275,9 +275,9 @@ type GCSConfig struct {
 
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// The service account for the storage integration. The server will mask the value of this credential in responses and logs.
-	ServiceAccount string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ServiceAccount string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"` // @gotags: scrub:"always"
 	ObjectPrefix   string `protobuf:"bytes,3,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
-	UseWorkloadId  bool   `protobuf:"varint,4,opt,name=use_workload_id,json=useWorkloadId,proto3" json:"use_workload_id,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	UseWorkloadId  bool   `protobuf:"varint,4,opt,name=use_workload_id,json=useWorkloadId,proto3" json:"use_workload_id,omitempty"` // @gotags: scrub:"dependent"
 }
 
 func (x *GCSConfig) Reset() {

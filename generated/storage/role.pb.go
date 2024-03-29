@@ -131,11 +131,11 @@ type Role struct {
 	unknownFields protoimpl.UnknownFields
 
 	// `name` and `description` are provided by the user and can be changed.
-	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"pk"
 	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	// The associated PermissionSet and AccessScope for this Role.
-	PermissionSetId string `protobuf:"bytes,6,opt,name=permission_set_id,json=permissionSetId,proto3" json:"permission_set_id,omitempty" sql:"type(uuid)"` // @gotags: sql:"type(uuid)"
-	AccessScopeId   string `protobuf:"bytes,7,opt,name=access_scope_id,json=accessScopeId,proto3" json:"access_scope_id,omitempty" sql:"type(uuid)"`       // @gotags: sql:"type(uuid)"
+	PermissionSetId string `protobuf:"bytes,6,opt,name=permission_set_id,json=permissionSetId,proto3" json:"permission_set_id,omitempty"` // @gotags: sql:"type(uuid)"
+	AccessScopeId   string `protobuf:"bytes,7,opt,name=access_scope_id,json=accessScopeId,proto3" json:"access_scope_id,omitempty"`       // @gotags: sql:"type(uuid)"
 	// Minimum (not default!) access level for every resource. Can be extended
 	// below by explicit permissions but not shrunk.
 	// Deprecated 2021-04-20 in favor of `permission_set_id`.
@@ -240,9 +240,9 @@ type PermissionSet struct {
 	unknownFields protoimpl.UnknownFields
 
 	// id is generated and cannot be changed.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	// `name` and `description` are provided by the user and can be changed.
-	Name             string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Name             string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"unique"
 	Description      string            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	ResourceToAccess map[string]Access `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
 	Traits           *Traits           `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
@@ -323,9 +323,9 @@ type SimpleAccessScope struct {
 	unknownFields protoimpl.UnknownFields
 
 	// `id` is generated and cannot be changed.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	// `name` and `description` are provided by the user and can be changed.
-	Name        string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Name        string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"unique"
 	Description string                   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Rules       *SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=rules,proto3" json:"rules,omitempty"`
 	Traits      *Traits                  `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`

@@ -185,8 +185,8 @@ type Notifier struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id           string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name         string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Id           string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: sql:"pk"
+	Name         string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"unique"
 	Type         string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	UiEndpoint   string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
 	LabelKey     string `protobuf:"bytes,8,opt,name=label_key,json=labelKey,proto3" json:"label_key,omitempty"`
@@ -203,7 +203,7 @@ type Notifier struct {
 	//	*Notifier_AwsSecurityHub
 	//	*Notifier_Syslog
 	Config         isNotifier_Config `protobuf_oneof:"config"`
-	NotifierSecret string            `protobuf:"bytes,19,opt,name=notifier_secret,json=notifierSecret,proto3" json:"notifier_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	NotifierSecret string            `protobuf:"bytes,19,opt,name=notifier_secret,json=notifierSecret,proto3" json:"notifier_secret,omitempty"` // @gotags: scrub:"always"
 	Traits         *Traits           `protobuf:"bytes,50,opt,name=traits,proto3" json:"traits,omitempty"`
 }
 
@@ -492,7 +492,7 @@ type CSCC struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The service account for the integration. The server will mask the value of this credential in responses and logs.
-	ServiceAccount string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ServiceAccount string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"` // @gotags: scrub:"always"
 	SourceId       string `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
 	WifEnabled     bool   `protobuf:"varint,5,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty"`
 }
@@ -555,10 +555,10 @@ type Jira struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Url      string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty" scrub:"dependent" validate:"nolocalendpoint"`           // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Url      string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`           // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password          string                  `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Password          string                  `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"` // @gotags: scrub:"always"
 	IssueType         string                  `protobuf:"bytes,4,opt,name=issue_type,json=issueType,proto3" json:"issue_type,omitempty"`
 	PriorityMappings  []*Jira_PriorityMapping `protobuf:"bytes,5,rep,name=priority_mappings,json=priorityMappings,proto3" json:"priority_mappings,omitempty"`
 	DefaultFieldsJson string                  `protobuf:"bytes,6,opt,name=default_fields_json,json=defaultFieldsJson,proto3" json:"default_fields_json,omitempty"`
@@ -651,17 +651,17 @@ type Email struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Server   string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Server   string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"` // @gotags: scrub:"dependent"
 	Sender   string `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
-	Username string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Username string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password              string           `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Password              string           `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"` // @gotags: scrub:"always"
 	DisableTLS            bool             `protobuf:"varint,5,opt,name=disableTLS,proto3" json:"disableTLS,omitempty"`
 	DEPRECATEDUseStartTLS bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS,proto3" json:"DEPRECATED_useStartTLS,omitempty"` // useStartTLS has been deprecated for startTLSAuthMethod
 	From                  string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
 	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
 	// Set to true to allow unauthenticated SMTP
-	AllowUnauthenticatedSmtp bool `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
+	AllowUnauthenticatedSmtp bool `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty"` // @gotags: scrub:"disableDependentIfTrue"
 }
 
 func (x *Email) Reset() {
@@ -765,8 +765,8 @@ type Splunk struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-	HttpToken           string `protobuf:"bytes,1,opt,name=http_token,json=httpToken,proto3" json:"http_token,omitempty" scrub:"always"`          // @gotags: scrub:"always"
-	HttpEndpoint        string `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint,proto3" json:"http_endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	HttpToken           string `protobuf:"bytes,1,opt,name=http_token,json=httpToken,proto3" json:"http_token,omitempty"`          // @gotags: scrub:"always"
+	HttpEndpoint        string `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint,proto3" json:"http_endpoint,omitempty"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 	Insecure            bool   `protobuf:"varint,3,opt,name=insecure,proto3" json:"insecure,omitempty"`
 	Truncate            int64  `protobuf:"varint,4,opt,name=truncate,proto3" json:"truncate,omitempty"`
 	AuditLoggingEnabled bool   `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
@@ -885,7 +885,7 @@ type PagerDuty struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The API key for the integration. The server will mask the value of this credential in responses and logs.
-	ApiKey string `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ApiKey string `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"` // @gotags: scrub:"always"
 }
 
 func (x *PagerDuty) Reset() {
@@ -932,12 +932,12 @@ type Generic struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 	SkipTLSVerify bool   `protobuf:"varint,2,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
 	CaCert        string `protobuf:"bytes,3,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`
-	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password            string          `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Password            string          `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"` // @gotags: scrub:"always"
 	Headers             []*KeyValuePair `protobuf:"bytes,6,rep,name=headers,proto3" json:"headers,omitempty"`
 	ExtraFields         []*KeyValuePair `protobuf:"bytes,7,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
 	AuditLoggingEnabled bool            `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
@@ -1036,7 +1036,7 @@ type SumoLogic struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	HttpSourceAddress string `protobuf:"bytes,1,opt,name=http_source_address,json=httpSourceAddress,proto3" json:"http_source_address,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	HttpSourceAddress string `protobuf:"bytes,1,opt,name=http_source_address,json=httpSourceAddress,proto3" json:"http_source_address,omitempty"` // @gotags: validate:"nolocalendpoint"
 	SkipTLSVerify     bool   `protobuf:"varint,2,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
 }
 
@@ -1184,8 +1184,8 @@ type AWSSecurityHub_Credentials struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AccessKeyId     string `protobuf:"bytes,1,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty" scrub:"always"`             // @gotags: scrub:"always"
-	SecretAccessKey string `protobuf:"bytes,2,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	AccessKeyId     string `protobuf:"bytes,1,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty"`             // @gotags: scrub:"always"
+	SecretAccessKey string `protobuf:"bytes,2,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty"` // @gotags: scrub:"always"
 	StsEnabled      bool   `protobuf:"varint,3,opt,name=sts_enabled,json=stsEnabled,proto3" json:"sts_enabled,omitempty"`
 }
 
@@ -1302,7 +1302,7 @@ type Syslog_TCPConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Hostname      string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Hostname      string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"` // @gotags: scrub:"dependent"
 	Port          int32  `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 	SkipTlsVerify bool   `protobuf:"varint,3,opt,name=skip_tls_verify,json=skipTlsVerify,proto3" json:"skip_tls_verify,omitempty"`
 	UseTls        bool   `protobuf:"varint,4,opt,name=use_tls,json=useTls,proto3" json:"use_tls,omitempty"`

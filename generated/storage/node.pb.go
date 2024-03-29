@@ -176,17 +176,17 @@ type Node struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A unique ID identifying this node.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID,store" sql:"pk,type(uuid)"` // @gotags: search:"Node ID,store" sql:"pk,type(uuid)"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: search:"Node ID,store" sql:"pk,type(uuid)"
 	// The (host)name of the node. Might or might not be the same as ID.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node,store"` // @gotags: search:"Node,store"
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Node,store"
 	// Taints on the host
 	Taints      []*Taint          `protobuf:"bytes,3,rep,name=taints,proto3" json:"taints,omitempty"`
-	ClusterId   string            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	ClusterName string            `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                                                      // @gotags: search:"Cluster,store"
-	Labels      map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Label"`           // @gotags: search:"Node Label"
-	Annotations map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Annotation"` // @gotags: search:"Node Annotation"
+	ClusterId   string            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                                            // @gotags: search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	ClusterName string            `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                                                      // @gotags: search:"Cluster,store"
+	Labels      map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`           // @gotags: search:"Node Label"
+	Annotations map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Node Annotation"
 	// When the cluster reported the node was added
-	JoinedAt *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty" search:"Node Join Time,store"` // @gotags: search:"Node Join Time,store"
+	JoinedAt *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"` // @gotags: search:"Node Join Time,store"
 	// node internal IP addresses
 	InternalIpAddresses []string `protobuf:"bytes,8,rep,name=internal_ip_addresses,json=internalIpAddresses,proto3" json:"internal_ip_addresses,omitempty"`
 	// node external IP addresses
@@ -200,13 +200,13 @@ type Node struct {
 	// From NodeInfo. Operating system reported by the node (ex: linux).
 	OperatingSystem string `protobuf:"bytes,17,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
 	// From NodeInfo. OS image reported by the node from /etc/os-release.
-	OsImage          string                 `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty" search:"Operating System,store"` // @gotags: search:"Operating System,store"
+	OsImage          string                 `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty"` // @gotags: search:"Operating System,store"
 	KubeletVersion   string                 `protobuf:"bytes,15,opt,name=kubelet_version,json=kubeletVersion,proto3" json:"kubelet_version,omitempty"`
 	KubeProxyVersion string                 `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
-	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"` // @gotags: search:"Last Updated,hidden"
 	// Time we received an update from Kubernetes.
-	K8SUpdated *timestamppb.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	Scan       *NodeScan              `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`                               // @gotags: policy:"Node Scan"
+	K8SUpdated *timestamppb.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty"` // @gotags: sensorhash:"ignore"
+	Scan       *NodeScan              `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty"`                               // @gotags: policy:"Node Scan"
 	// Types that are assignable to SetComponents:
 	//
 	//	*Node_Components
@@ -219,8 +219,8 @@ type Node struct {
 	//
 	//	*Node_FixableCves
 	SetFixable isNode_SetFixable `protobuf_oneof:"set_fixable"`
-	Priority   int64             `protobuf:"varint,22,opt,name=priority,proto3" json:"priority,omitempty" search:"Node Risk Priority,hidden"`                     // @gotags: search:"Node Risk Priority,hidden"
-	RiskScore  float32           `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Node Risk Score,hidden"` // @gotags: search:"Node Risk Score,hidden"
+	Priority   int64             `protobuf:"varint,22,opt,name=priority,proto3" json:"priority,omitempty"`                     // @gotags: search:"Node Risk Priority,hidden"
+	RiskScore  float32           `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"` // @gotags: search:"Node Risk Score,hidden"
 	// Types that are assignable to SetTopCvss:
 	//
 	//	*Node_TopCvss
@@ -483,7 +483,7 @@ type isNode_SetComponents interface {
 }
 
 type Node_Components struct {
-	Components int32 `protobuf:"varint,19,opt,name=components,proto3,oneof" search:"Component Count,store,hidden"` // @gotags: search:"Component Count,store,hidden"
+	Components int32 `protobuf:"varint,19,opt,name=components,proto3,oneof"` // @gotags: search:"Component Count,store,hidden"
 }
 
 func (*Node_Components) isNode_SetComponents() {}
@@ -493,7 +493,7 @@ type isNode_SetCves interface {
 }
 
 type Node_Cves struct {
-	Cves int32 `protobuf:"varint,20,opt,name=cves,proto3,oneof" search:"CVE Count,store,hidden"` // @gotags: search:"CVE Count,store,hidden"
+	Cves int32 `protobuf:"varint,20,opt,name=cves,proto3,oneof"` // @gotags: search:"CVE Count,store,hidden"
 }
 
 func (*Node_Cves) isNode_SetCves() {}
@@ -503,7 +503,7 @@ type isNode_SetFixable interface {
 }
 
 type Node_FixableCves struct {
-	FixableCves int32 `protobuf:"varint,21,opt,name=fixable_cves,json=fixableCves,proto3,oneof" search:"Fixable CVE Count,store,hidden"` // @gotags: search:"Fixable CVE Count,store,hidden"
+	FixableCves int32 `protobuf:"varint,21,opt,name=fixable_cves,json=fixableCves,proto3,oneof"` // @gotags: search:"Fixable CVE Count,store,hidden"
 }
 
 func (*Node_FixableCves) isNode_SetFixable() {}
@@ -513,7 +513,7 @@ type isNode_SetTopCvss interface {
 }
 
 type Node_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,24,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Node Top CVSS,store"` // @gotags: search:"Node Top CVSS,store"
+	TopCvss float32 `protobuf:"fixed32,24,opt,name=top_cvss,json=topCvss,proto3,oneof"` // @gotags: search:"Node Top CVSS,store"
 }
 
 func (*Node_TopCvss) isNode_SetTopCvss() {}
@@ -524,9 +524,9 @@ type NodeScan struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ScanTime        *timestamppb.Timestamp       `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"` // @gotags: search:"Node Scan Time,store"
+	ScanTime        *timestamppb.Timestamp       `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"` // @gotags: search:"Node Scan Time,store"
 	OperatingSystem string                       `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
-	Components      []*EmbeddedNodeScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"` // @gotags: sql:"-"
+	Components      []*EmbeddedNodeScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"` // @gotags: sql:"-"
 	Notes           []NodeScan_Note              `protobuf:"varint,4,rep,packed,name=notes,proto3,enum=storage.NodeScan_Note" json:"notes,omitempty"`
 }
 
@@ -681,8 +681,8 @@ type EmbeddedNodeScanComponent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name            string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
-	Version         string                   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
+	Name            string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`       // @gotags: search:"Component,store"
+	Version         string                   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"` // @gotags: search:"Component Version,store"
 	Vulns           []*EmbeddedVulnerability `protobuf:"bytes,3,rep,name=vulns,proto3" json:"vulns,omitempty"`
 	Vulnerabilities []*NodeVulnerability     `protobuf:"bytes,7,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
 	Priority        int64                    `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`

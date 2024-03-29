@@ -46,6 +46,18 @@ func (m *ComplianceProfileScanStats) Clone() *ComplianceProfileScanStats { retur
 func (m *ComplianceProfileScanStats) Marshal() ([]byte, error)           { return m.MarshalVT() }
 func (m *ComplianceProfileScanStats) Unmarshal(dAtA []byte) error        { return m.UnmarshalVT(dAtA) }
 
+func (m *ComplianceCheckResultStatusCount) Size() int { return m.SizeVT() }
+func (m *ComplianceCheckResultStatusCount) Clone() *ComplianceCheckResultStatusCount {
+	return m.CloneVT()
+}
+func (m *ComplianceCheckResultStatusCount) Marshal() ([]byte, error)    { return m.MarshalVT() }
+func (m *ComplianceCheckResultStatusCount) Unmarshal(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
+
+func (m *ComplianceProfileResults) Size() int                        { return m.SizeVT() }
+func (m *ComplianceProfileResults) Clone() *ComplianceProfileResults { return m.CloneVT() }
+func (m *ComplianceProfileResults) Marshal() ([]byte, error)         { return m.MarshalVT() }
+func (m *ComplianceProfileResults) Unmarshal(dAtA []byte) error      { return m.UnmarshalVT(dAtA) }
+
 func (m *ComplianceClusterScanStats) Size() int                          { return m.SizeVT() }
 func (m *ComplianceClusterScanStats) Clone() *ComplianceClusterScanStats { return m.CloneVT() }
 func (m *ComplianceClusterScanStats) Marshal() ([]byte, error)           { return m.MarshalVT() }

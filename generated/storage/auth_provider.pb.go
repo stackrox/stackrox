@@ -27,12 +27,12 @@ type AuthProvider struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id         string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name       string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Id         string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: sql:"pk"
+	Name       string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"unique"
 	Type       string            `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	UiEndpoint string            `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
 	Enabled    bool              `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Config     map[string]string `protobuf:"bytes,6,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" scrub:"map-values"` // @gotags: scrub:"map-values"
+	Config     map[string]string `protobuf:"bytes,6,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: scrub:"map-values"
 	// The login URL will be provided by the backend, and may not be specified in a request.
 	LoginUrl string `protobuf:"bytes,7,opt,name=login_url,json=loginUrl,proto3" json:"login_url,omitempty"`
 	// Deprecated: Marked as deprecated in storage/auth_provider.proto.

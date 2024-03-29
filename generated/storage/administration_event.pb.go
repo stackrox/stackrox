@@ -141,16 +141,16 @@ type AdministrationEvent struct {
 
 	// The id is a UUIDv5 generated deterministically from the tuple (type, level, domain,
 	// resource_type, resource_id, message). It is used for deduplication of events.
-	Id             string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                              // @gotags: sql:"pk,type(uuid)"
-	Type           AdministrationEventType       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AdministrationEventType" json:"type,omitempty" search:"Event Type,hidden"`    // @gotags: search:"Event Type,hidden"
-	Level          AdministrationEventLevel      `protobuf:"varint,3,opt,name=level,proto3,enum=storage.AdministrationEventLevel" json:"level,omitempty" search:"Event Level,hidden"` // @gotags: search:"Event Level,hidden"
+	Id             string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                              // @gotags: sql:"pk,type(uuid)"
+	Type           AdministrationEventType       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AdministrationEventType" json:"type,omitempty"`    // @gotags: search:"Event Type,hidden"
+	Level          AdministrationEventLevel      `protobuf:"varint,3,opt,name=level,proto3,enum=storage.AdministrationEventLevel" json:"level,omitempty"` // @gotags: search:"Event Level,hidden"
 	Message        string                        `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	Hint           string                        `protobuf:"bytes,5,opt,name=hint,proto3" json:"hint,omitempty"`
-	Domain         string                        `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty" search:"Event Domain,hidden"` // @gotags: search:"Event Domain,hidden"
+	Domain         string                        `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty"` // @gotags: search:"Event Domain,hidden"
 	Resource       *AdministrationEvent_Resource `protobuf:"bytes,7,opt,name=resource,proto3" json:"resource,omitempty"`
-	NumOccurrences int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty" search:"Event Occurrence,hidden"`  // @gotags: search:"Event Occurrence,hidden"
-	LastOccurredAt *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
-	CreatedAt      *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time,hidden"`                 // @gotags: search:"Created Time,hidden"
+	NumOccurrences int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty"`  // @gotags: search:"Event Occurrence,hidden"
+	LastOccurredAt *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty"` // @gotags: search:"Last Updated,hidden"
+	CreatedAt      *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                 // @gotags: search:"Created Time,hidden"
 }
 
 func (x *AdministrationEvent) Reset() {
@@ -260,7 +260,7 @@ type AdministrationEvent_Resource struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Type string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty" search:"Resource Type,hidden"` // @gotags: search:"Resource Type,hidden"
+	Type string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"` // @gotags: search:"Resource Type,hidden"
 	Id   string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 }

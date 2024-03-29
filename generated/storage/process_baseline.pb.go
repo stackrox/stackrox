@@ -80,10 +80,10 @@ type ProcessBaselineKey struct {
 
 	// The idea is for the keys to be flexible.
 	// Only certain combinations of these will be supported.
-	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"type(uuid),index=hash"` // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index=hash"
+	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"` // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index=hash"
 	ContainerName string `protobuf:"bytes,2,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
-	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                  // @gotags: search:"Namespace,hidden,store"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`                  // @gotags: search:"Namespace,hidden,store"
 }
 
 func (x *ProcessBaselineKey) Reset() {
@@ -151,10 +151,10 @@ type ProcessBaseline struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Key                     *ProcessBaselineKey    `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	Elements                []*BaselineElement     `protobuf:"bytes,3,rep,name=elements,proto3" json:"elements,omitempty"`
-	ElementGraveyard        []*BaselineElement     `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard,proto3" json:"element_graveyard,omitempty" search:"-"` // @gotags: search:"-"
+	ElementGraveyard        []*BaselineElement     `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard,proto3" json:"element_graveyard,omitempty"` // @gotags: search:"-"
 	Created                 *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
 	UserLockedTimestamp     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp,proto3" json:"user_locked_timestamp,omitempty"`
 	StackRoxLockedTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp,proto3" json:"stack_rox_locked_timestamp,omitempty"`
@@ -442,9 +442,9 @@ type ProcessBaselineResults struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	DeploymentId     string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	ClusterId        string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-	Namespace        string                            `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                           // @gotags: search:"Namespace,hidden,store"
+	DeploymentId     string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"` // @gotags: sql:"pk,type(uuid)"
+	ClusterId        string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`          // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
+	Namespace        string                            `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`                           // @gotags: search:"Namespace,hidden,store"
 	BaselineStatuses []*ContainerNameAndBaselineStatus `protobuf:"bytes,2,rep,name=baseline_statuses,json=baselineStatuses,proto3" json:"baseline_statuses,omitempty"`
 }
 

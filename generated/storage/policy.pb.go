@@ -347,30 +347,30 @@ type Policy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id              string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,store,hidden" sql:"pk"`                   // @gotags: search:"Policy ID,store,hidden" sql:"pk"
-	Name            string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy,store" sql:"unique"`               // @gotags: search:"Policy,store" sql:"unique"
-	Description     string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty" search:"Description"` // @gotags: search:"Description"
+	Id              string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                   // @gotags: search:"Policy ID,store,hidden" sql:"pk"
+	Name            string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`               // @gotags: search:"Policy,store" sql:"unique"
+	Description     string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"` // @gotags: search:"Description"
 	Rationale       string           `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
 	Remediation     string           `protobuf:"bytes,5,opt,name=remediation,proto3" json:"remediation,omitempty"`
-	Disabled        bool             `protobuf:"varint,6,opt,name=disabled,proto3" json:"disabled,omitempty" search:"Disabled"`                                                                         // @gotags: search:"Disabled"
-	Categories      []string         `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty" search:"Category,store"`                                                                      // @gotags: search:"Category,store"
-	LifecycleStages []LifecycleStage `protobuf:"varint,9,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty" search:"Lifecycle Stage,store"` // @gotags: search:"Lifecycle Stage,store"
+	Disabled        bool             `protobuf:"varint,6,opt,name=disabled,proto3" json:"disabled,omitempty"`                                                                         // @gotags: search:"Disabled"
+	Categories      []string         `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty"`                                                                      // @gotags: search:"Category,store"
+	LifecycleStages []LifecycleStage `protobuf:"varint,9,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty"` // @gotags: search:"Lifecycle Stage,store"
 	EventSource     EventSource      `protobuf:"varint,22,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
 	Exclusions      []*Exclusion     `protobuf:"bytes,21,rep,name=exclusions,proto3" json:"exclusions,omitempty"`
 	Scope           []*Scope         `protobuf:"bytes,11,rep,name=scope,proto3" json:"scope,omitempty"`
-	Severity        Severity         `protobuf:"varint,12,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty" search:"Severity,store"` // @gotags: search:"Severity,store"
+	Severity        Severity         `protobuf:"varint,12,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"` // @gotags: search:"Severity,store"
 	// FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 	// FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 	// FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-	EnforcementActions []EnforcementAction    `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
+	EnforcementActions []EnforcementAction    `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty"` // @gotags: search:"Enforcement"
 	Notifiers          []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	LastUpdated        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated"` // @gotags: search:"Policy Last Updated"
+	LastUpdated        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"` // @gotags: search:"Policy Last Updated"
 	// For internal use only.
-	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
+	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
 	// For internal use only.
-	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage,proto3" json:"SORT_lifecycleStage,omitempty" search:"SORT_Lifecycle Stage,hidden"` // @gotags: search:"SORT_Lifecycle Stage,hidden"
+	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage,proto3" json:"SORT_lifecycleStage,omitempty"` // @gotags: search:"SORT_Lifecycle Stage,hidden"
 	// For internal use only.
-	SORTEnforcement    bool                         `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement,hidden"` // @gotags: search:"SORT_Enforcement,hidden"
+	SORTEnforcement    bool                         `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty"` // @gotags: search:"SORT_Enforcement,hidden"
 	PolicyVersion      string                       `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
 	PolicySections     []*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections,proto3" json:"policy_sections,omitempty"`
 	MitreAttackVectors []*Policy_MitreAttackVectors `protobuf:"bytes,23,rep,name=mitre_attack_vectors,json=mitreAttackVectors,proto3" json:"mitre_attack_vectors,omitempty"`
@@ -1101,7 +1101,7 @@ type Exclusion_Container struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ImageName *ImageName `protobuf:"bytes,3,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty" search:"-"` // @gotags: search:"-"
+	ImageName *ImageName `protobuf:"bytes,3,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"` // @gotags: search:"-"
 }
 
 func (x *Exclusion_Container) Reset() {

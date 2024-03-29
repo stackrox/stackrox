@@ -106,18 +106,18 @@ type Secret struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret,store"`                                  // @gotags: search:"Secret,store"
-	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
-	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                      // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                  // @gotags: search:"Secret,store"
+	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // @gotags: search:"Cluster,store"
+	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                        // @gotags: search:"Namespace,store"
 	Type        string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // @gotags: search:"Created Time"
 	// Metadata about the secrets.
 	// The secret need not be a file, but rather may be an arbitrary value.
-	Files        []*SecretDataFile   `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty" sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"` // @gotags: sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"
+	Files        []*SecretDataFile   `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty"` // @gotags: sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"
 	Relationship *SecretRelationship `protobuf:"bytes,11,opt,name=relationship,proto3" json:"relationship,omitempty"`
 }
 
@@ -566,7 +566,7 @@ type SecretDataFile struct {
 	unknownFields protoimpl.UnknownFields
 
 	Name string     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type SecretType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.SecretType" json:"type,omitempty" search:"Secret Type"` // @gotags: search:"Secret Type"
+	Type SecretType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.SecretType" json:"type,omitempty"` // @gotags: search:"Secret Type"
 	// Types that are assignable to Metadata:
 	//
 	//	*SecretDataFile_Cert
@@ -666,7 +666,7 @@ type Cert struct {
 	Issuer    *CertName              `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty"`
 	Sans      []string               `protobuf:"bytes,3,rep,name=sans,proto3" json:"sans,omitempty"`
 	StartDate *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
-	EndDate   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty" search:"Cert Expiration"` // @gotags: search:"Cert Expiration"
+	EndDate   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"` // @gotags: search:"Cert Expiration"
 	Algorithm string                 `protobuf:"bytes,6,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
 }
 
@@ -860,7 +860,7 @@ type ImagePullSecret_Registry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name     string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Image Pull Secret Registry,store"` // @gotags: search:"Image Pull Secret Registry,store"
+	Name     string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Image Pull Secret Registry,store"
 	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 }
 

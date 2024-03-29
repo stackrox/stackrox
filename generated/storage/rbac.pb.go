@@ -141,16 +141,16 @@ type K8SRole struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Role ID,hidden" sql:"pk,type(uuid)"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role"`                                                                                                       // @gotags: search:"Role"
-	Namespace   string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
-	ClusterId   string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                                                                      // @gotags: search:"Cluster"
-	ClusterRole bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`                                                                     // @gotags: search:"Cluster Role"
-	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Label"`           // @gotags: search:"Role Label"
-	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Annotation"` // @gotags: search:"Role Annotation"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                                                                           // @gotags: search:"Role ID,hidden" sql:"pk,type(uuid)"
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                                                       // @gotags: search:"Role"
+	Namespace   string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                                             // @gotags: search:"Namespace,store"
+	ClusterId   string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`                                                                      // @gotags: search:"Cluster"
+	ClusterRole bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty"`                                                                     // @gotags: search:"Cluster Role"
+	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`           // @gotags: search:"Role Label"
+	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Role Annotation"
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Rules       []*PolicyRule          `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty" sensorhash:"set"` // @gotags: sensorhash:"set"
+	Rules       []*PolicyRule          `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty"` // @gotags: sensorhash:"set"
 }
 
 func (x *K8SRole) Reset() {
@@ -343,20 +343,20 @@ type K8SRoleBinding struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Role Binding ID,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Role Binding ID,hidden" sql:"pk,type(uuid)"
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Role Binding"`                                  // @gotags: search:"Role Binding"
-	Namespace   string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
-	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
+	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                      // @gotags: search:"Role Binding ID,hidden" sql:"pk,type(uuid)"
+	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                  // @gotags: search:"Role Binding"
+	Namespace   string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`                        // @gotags: search:"Namespace,store"
+	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // @gotags: search:"Cluster"
 	// ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
 	// the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
 	// empty and cluster role is true, the binding is a cluster role binding.
-	ClusterRole bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty" search:"Cluster Role"`                                                                     // @gotags: search:"Cluster Role"
-	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Binding Label"`           // @gotags: search:"Role Binding Label"
-	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Role Binding Annotation"` // @gotags: search:"Role Binding Annotation"
+	ClusterRole bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole,proto3" json:"cluster_role,omitempty"`                                                                     // @gotags: search:"Cluster Role"
+	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`           // @gotags: search:"Role Binding Label"
+	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Role Binding Annotation"
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	Subjects    []*Subject             `protobuf:"bytes,10,rep,name=subjects,proto3" json:"subjects,omitempty"`
-	RoleId      string                 `protobuf:"bytes,11,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty" search:"Role ID" sql:"type(uuid)"` // @gotags: search:"Role ID" sql:"type(uuid)"
+	RoleId      string                 `protobuf:"bytes,11,opt,name=role_id,json=roleId,proto3" json:"role_id,omitempty"` // @gotags: search:"Role ID" sql:"type(uuid)"
 }
 
 func (x *K8SRoleBinding) Reset() {
@@ -476,8 +476,8 @@ type Subject struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id          string      `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`                               // ID is derived from base64 of cluster id and name
-	Kind        SubjectKind `protobuf:"varint,1,opt,name=kind,proto3,enum=storage.SubjectKind" json:"kind,omitempty" search:"Subject Kind"` // @gotags: search:"Subject Kind"
-	Name        string      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Subject"`                           // @gotags: search:"Subject"
+	Kind        SubjectKind `protobuf:"varint,1,opt,name=kind,proto3,enum=storage.SubjectKind" json:"kind,omitempty"` // @gotags: search:"Subject Kind"
+	Name        string      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                           // @gotags: search:"Subject"
 	Namespace   string      `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	ClusterId   string      `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	ClusterName string      `protobuf:"bytes,6,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`

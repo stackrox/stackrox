@@ -27,14 +27,14 @@ type Version struct {
 	unknownFields protoimpl.UnknownFields
 
 	// This is a strictly incrementing integer describing the DB version.
-	SeqNum int32 `protobuf:"varint,1,opt,name=seq_num,json=seqNum,proto3" json:"seq_num,omitempty" search:"Current Sequence Number"` // @gotags: search:"Current Sequence Number"
+	SeqNum int32 `protobuf:"varint,1,opt,name=seq_num,json=seqNum,proto3" json:"seq_num,omitempty"` // @gotags: search:"Current Sequence Number"
 	// Associated version metadata. (For example, the corresponding product version.)
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Version"` // @gotags: search:"Version"
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"` // @gotags: search:"Version"
 	// Last time version was updated
-	LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted,proto3" json:"last_persisted,omitempty" search:"Last Persisted"` // @gotags: search:"Last Persisted"
+	LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted,proto3" json:"last_persisted,omitempty"` // @gotags: search:"Last Persisted"
 	// The minimum sequence number supported by this iteration of the database.  Rollbacks
 	// to versions prior to this sequence number are not supported.
-	MinSeqNum int32 `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum,proto3" json:"min_seq_num,omitempty" search:"Minimum Sequence Number"` // @gotags: search:"Minimum Sequence Number"
+	MinSeqNum int32 `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum,proto3" json:"min_seq_num,omitempty"` // @gotags: search:"Minimum Sequence Number"
 }
 
 func (x *Version) Reset() {

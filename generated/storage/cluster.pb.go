@@ -503,7 +503,7 @@ type ClusterMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Type ClusterMetadata_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type"` // @gotags: search:"Cluster Type"
+	Type ClusterMetadata_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty"` // @gotags: search:"Cluster Type"
 	// Name represents the name under which the cluster is registered with the
 	// cloud provider. In case of self managed OpenShift it is the name chosen
 	// by the OpenShift installer.
@@ -1416,10 +1416,10 @@ type Cluster struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                 string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"`     // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
-	Name               string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,store" sql:"unique"` // @gotags: search:"Cluster,store" sql:"unique"
+	Id                 string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
+	Name               string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Cluster,store" sql:"unique"
 	Type               ClusterType       `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
-	Labels             map[string]string `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Cluster Label"` // @gotags: search:"Cluster Label"
+	Labels             map[string]string `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Cluster Label"
 	MainImage          string            `protobuf:"bytes,4,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
 	CollectorImage     string            `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
 	CentralApiEndpoint string            `protobuf:"bytes,5,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
@@ -1433,7 +1433,7 @@ type Cluster struct {
 	DynamicConfig              *DynamicClusterConfig `protobuf:"bytes,18,opt,name=dynamic_config,json=dynamicConfig,proto3" json:"dynamic_config,omitempty"`
 	TolerationsConfig          *TolerationsConfig    `protobuf:"bytes,19,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
 	Priority                   int64                 `protobuf:"varint,20,opt,name=priority,proto3" json:"priority,omitempty"`
-	HealthStatus               *ClusterHealthStatus  `protobuf:"bytes,22,opt,name=health_status,json=healthStatus,proto3" json:"health_status,omitempty" sql:"-"` // @gotags: sql:"-"
+	HealthStatus               *ClusterHealthStatus  `protobuf:"bytes,22,opt,name=health_status,json=healthStatus,proto3" json:"health_status,omitempty"` // @gotags: sql:"-"
 	SlimCollector              bool                  `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
 	// The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
 	HelmConfig *CompleteClusterConfig `protobuf:"bytes,24,opt,name=helm_config,json=helmConfig,proto3" json:"helm_config,omitempty"`
@@ -1974,21 +1974,21 @@ type ClusterHealthStatus struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                         string                      `protobuf:"bytes,9,opt,name=id,proto3" json:"id,omitempty" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
+	Id                         string                      `protobuf:"bytes,9,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
 	CollectorHealthInfo        *CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo,proto3" json:"collector_health_info,omitempty"`
 	AdmissionControlHealthInfo *AdmissionControlHealthInfo `protobuf:"bytes,8,opt,name=admission_control_health_info,json=admissionControlHealthInfo,proto3" json:"admission_control_health_info,omitempty"`
 	// scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
 	// Please do not confuse this with the default scanner deployment on a central cluster.
 	ScannerHealthInfo *ScannerHealthInfo `protobuf:"bytes,10,opt,name=scanner_health_info,json=scannerHealthInfo,proto3" json:"scanner_health_info,omitempty"`
 	// The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-	SensorHealthStatus           ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"sensor_health_status,omitempty" search:"Sensor Status,store"`                                 // @gotags: search:"Sensor Status,store"
-	CollectorHealthStatus        ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"collector_health_status,omitempty" search:"Collector Status,store"`                        // @gotags: search:"Collector Status,store"
-	OverallHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"overall_health_status,omitempty" search:"Cluster Status,store"`                              // @gotags: search:"Cluster Status,store"
-	AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty" search:"Admission Control Status,store"` // @gotags: search:"Admission Control Status,store"
-	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                             // @gotags: search:"Scanner Status,store"
+	SensorHealthStatus           ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"sensor_health_status,omitempty"`                                 // @gotags: search:"Sensor Status,store"
+	CollectorHealthStatus        ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"collector_health_status,omitempty"`                        // @gotags: search:"Collector Status,store"
+	OverallHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"overall_health_status,omitempty"`                              // @gotags: search:"Cluster Status,store"
+	AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty"` // @gotags: search:"Admission Control Status,store"
+	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty"`                             // @gotags: search:"Scanner Status,store"
 	// For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
 	// this timestamp will be updated by central pipeline when message is processed
-	LastContact *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
+	LastContact *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty"` // @gotags: search:"Last Contact,store"
 	// To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
 	HealthInfoComplete bool `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete,proto3" json:"health_info_complete,omitempty"`
 }

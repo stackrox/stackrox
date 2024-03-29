@@ -74,9 +74,9 @@ type CloudSource struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                    // @gotags: sql:"pk,type(uuid)"
-	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"`                                // @gotags: sql:"unique" search:"Integration Name,hidden"
-	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty" search:"Integration Type,hidden"` // @gotags: search:"Integration Type,hidden"
+	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                    // @gotags: sql:"pk,type(uuid)"
+	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                // @gotags: sql:"unique" search:"Integration Name,hidden"
+	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty"` // @gotags: search:"Integration Type,hidden"
 	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
 	SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 	// Types that are assignable to Config:
@@ -195,7 +195,7 @@ type PaladinCloudConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: validate:"nolocalendpoint"
 }
 
 func (x *PaladinCloudConfig) Reset() {
@@ -242,7 +242,7 @@ type OCMConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: validate:"nolocalendpoint"
 }
 
 func (x *OCMConfig) Reset() {
@@ -289,7 +289,7 @@ type CloudSource_Credentials struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"` // @gotags: scrub:"always"
 }
 
 func (x *CloudSource_Credentials) Reset() {

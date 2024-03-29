@@ -26,8 +26,8 @@ type LogImbue struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`               // @gotags: sql:"pk"
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Log Imbue Creation Time,hidden"` // @gotags: search:"Log Imbue Creation Time,hidden"
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`               // @gotags: sql:"pk"
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // @gotags: search:"Log Imbue Creation Time,hidden"
 	Log       []byte                 `protobuf:"bytes,3,opt,name=log,proto3" json:"log,omitempty"`
 }
 

@@ -127,11 +127,11 @@ type NetworkPolicy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
 	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"` // @gotags: search:"Namespace,hidden,store"
+	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"` // @gotags: search:"Namespace,hidden,store"
 	Labels      map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Spec        *NetworkPolicySpec     `protobuf:"bytes,8,opt,name=spec,proto3" json:"spec,omitempty"`
@@ -754,7 +754,7 @@ type NetworkPolicyApplicationUndoRecord struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ClusterId            string                     `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	ClusterId            string                     `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	User                 string                     `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	ApplyTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp,proto3" json:"apply_timestamp,omitempty"`
 	OriginalModification *NetworkPolicyModification `protobuf:"bytes,3,opt,name=original_modification,json=originalModification,proto3" json:"original_modification,omitempty"`
@@ -833,11 +833,11 @@ type NetworkPolicyApplicationUndoDeploymentRecord struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	// For SAC
 	ClusterId  string                              `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Namespace  string                              `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	UndoRecord *NetworkPolicyApplicationUndoRecord `protobuf:"bytes,4,opt,name=undo_record,json=undoRecord,proto3" json:"undo_record,omitempty" sql:"-"` // @gotags: sql:"-"
+	UndoRecord *NetworkPolicyApplicationUndoRecord `protobuf:"bytes,4,opt,name=undo_record,json=undoRecord,proto3" json:"undo_record,omitempty"` // @gotags: sql:"-"
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) Reset() {

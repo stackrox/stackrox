@@ -262,7 +262,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -1034,6 +1034,7 @@
         "checkStats": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
         }
@@ -1107,6 +1108,7 @@
         "profileResults": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceCheckResultStatusCount"
           }
         },

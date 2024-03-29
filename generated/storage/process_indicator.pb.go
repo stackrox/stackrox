@@ -28,16 +28,16 @@ type ProcessIndicator struct {
 	unknownFields protoimpl.UnknownFields
 
 	// A unique UUID for the Indicator message
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Process ID,store,hidden" sql:"pk,type(uuid)"`                                            // @gotags: search:"Process ID,store,hidden"  sql:"pk,type(uuid)"
-	DeploymentId  string `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"`    // @gotags: search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"
-	ContainerName string `protobuf:"bytes,3,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty" search:"Container Name,hidden" policy:",prefer-parent"` // @gotags: search:"Container Name,hidden" policy:",prefer-parent"
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                            // @gotags: search:"Process ID,store,hidden"  sql:"pk,type(uuid)"
+	DeploymentId  string `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`    // @gotags: search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"
+	ContainerName string `protobuf:"bytes,3,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"` // @gotags: search:"Container Name,hidden" policy:",prefer-parent"
 	// Pod name
-	PodId  string `protobuf:"bytes,4,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty" search:"Pod ID,hidden"`     // @gotags: search:"Pod ID,hidden"
-	PodUid string `protobuf:"bytes,11,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"index=hash,type(uuid)"` // @gotags: search:"Pod UID,hidden" sql:"index=hash,type(uuid)"
+	PodId  string `protobuf:"bytes,4,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty"`     // @gotags: search:"Pod ID,hidden"
+	PodUid string `protobuf:"bytes,11,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty"` // @gotags: search:"Pod UID,hidden" sql:"index=hash,type(uuid)"
 	// A process signal message passed from Collector to Sensor
 	Signal             *ProcessSignal         `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
-	ClusterId          string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
-	Namespace          string                 `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store,hidden" policy:",prefer-parent"`                  // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
+	ClusterId          string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
+	Namespace          string                 `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty"`                  // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
 	ContainerStartTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
 	ImageId            string                 `protobuf:"bytes,12,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
 }
@@ -301,19 +301,19 @@ type ProcessSignal struct {
 	// self contained.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// ID of container associated with this process
-	ContainerId string `protobuf:"bytes,2,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty" search:"Container ID,hidden"` // @gotags: search:"Container ID,hidden"
+	ContainerId string `protobuf:"bytes,2,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"` // @gotags: search:"Container ID,hidden"
 	// Process creation time
-	Time *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Process Creation Time,hidden"` // @gotags: search:"Process Creation Time,hidden"
+	Time *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"` // @gotags: search:"Process Creation Time,hidden"
 	// Process name
-	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Process Name"` // @gotags: search:"Process Name"
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Process Name"
 	// Process arguments
-	Args string `protobuf:"bytes,5,opt,name=args,proto3" json:"args,omitempty" search:"Process Arguments"` // @gotags: search:"Process Arguments"
+	Args string `protobuf:"bytes,5,opt,name=args,proto3" json:"args,omitempty"` // @gotags: search:"Process Arguments"
 	// Process executable file path
-	ExecFilePath string `protobuf:"bytes,6,opt,name=exec_file_path,json=execFilePath,proto3" json:"exec_file_path,omitempty" search:"Process Path"` // @gotags: search:"Process Path"
+	ExecFilePath string `protobuf:"bytes,6,opt,name=exec_file_path,json=execFilePath,proto3" json:"exec_file_path,omitempty"` // @gotags: search:"Process Path"
 	// Host process ID
 	Pid uint32 `protobuf:"varint,7,opt,name=pid,proto3" json:"pid,omitempty"`
 	// Real user ID
-	Uid uint32 `protobuf:"varint,8,opt,name=uid,proto3" json:"uid,omitempty" search:"Process UID"` // @gotags: search:"Process UID"
+	Uid uint32 `protobuf:"varint,8,opt,name=uid,proto3" json:"uid,omitempty"` // @gotags: search:"Process UID"
 	// Real group ID
 	Gid uint32 `protobuf:"varint,9,opt,name=gid,proto3" json:"gid,omitempty"`
 	// Process Lineage
@@ -449,7 +449,7 @@ type ProcessSignal_LineageInfo struct {
 	unknownFields protoimpl.UnknownFields
 
 	ParentUid          uint32 `protobuf:"varint,1,opt,name=parent_uid,json=parentUid,proto3" json:"parent_uid,omitempty"`
-	ParentExecFilePath string `protobuf:"bytes,2,opt,name=parent_exec_file_path,json=parentExecFilePath,proto3" json:"parent_exec_file_path,omitempty" policy:"Process Ancestor"` // @gotags: policy:"Process Ancestor"
+	ParentExecFilePath string `protobuf:"bytes,2,opt,name=parent_exec_file_path,json=parentExecFilePath,proto3" json:"parent_exec_file_path,omitempty"` // @gotags: policy:"Process Ancestor"
 }
 
 func (x *ProcessSignal_LineageInfo) Reset() {

@@ -156,15 +156,15 @@ type NetworkBaseline struct {
 	unknownFields protoimpl.UnknownFields
 
 	// This is the ID of the baseline.
-	DeploymentId string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	ClusterId    string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	Namespace    string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                           // @gotags: search:"Namespace,hidden,store"
-	Peers        []*NetworkBaselinePeer `protobuf:"bytes,4,rep,name=peers,proto3" json:"peers,omitempty" search:"-"`                                   // @gotags: search:"-"
+	DeploymentId string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"` // @gotags: sql:"pk,type(uuid)"
+	ClusterId    string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`          // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	Namespace    string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`                           // @gotags: search:"Namespace,hidden,store"
+	Peers        []*NetworkBaselinePeer `protobuf:"bytes,4,rep,name=peers,proto3" json:"peers,omitempty"`                                   // @gotags: search:"-"
 	// A list of peers that will never be added to the baseline.
 	// For now, this contains peers that the user has manually removed.
 	// This is used to ensure we don't add it back in the event
 	// we see the flow again.
-	ForbiddenPeers       []*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers,proto3" json:"forbidden_peers,omitempty" search:"-"` // @gotags: search:"-"
+	ForbiddenPeers       []*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers,proto3" json:"forbidden_peers,omitempty"` // @gotags: search:"-"
 	ObservationPeriodEnd *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd,proto3" json:"observation_period_end,omitempty"`
 	// Indicates if this baseline has been locked by user.
 	// Here locking means:

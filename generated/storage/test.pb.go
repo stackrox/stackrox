@@ -173,20 +173,20 @@ type TestSingleKeyStruct struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" sql:"pk,index=hash" search:"Test Key"`                                    // @gotags: sql:"pk,index=hash" search:"Test Key"
-	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Test Name"`                                  // @gotags: sql:"unique" search:"Test Name"
-	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"` // @gotags: search:"Test String Slice"
-	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`                                 // @gotags: search:"Test Bool"
+	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`                                    // @gotags: sql:"pk,index=hash" search:"Test Key"
+	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                  // @gotags: sql:"unique" search:"Test Name"
+	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty"` // @gotags: search:"Test String Slice"
+	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty"`                                 // @gotags: search:"Test Bool"
 	// When using this ensure your precision needs are met and accounted for.  This will use a
 	// BigInt which may require you to convert from uint64 to int64 OR update
 	// the handling to use numerics.
-	Uint64    uint64                        `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`                                                                                        // @gotags: search:"Test Uint64"
-	Int64     int64                         `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
-	Float     float32                       `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
-	Labels    map[string]string             `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
-	Timestamp *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
-	Enum      TestSingleKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                     // @gotags: search:"Test Enum"
-	Enums     []TestSingleKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                            // @gotags: search:"Test Enum Slice"
+	Uint64    uint64                        `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty"`                                                                                        // @gotags: search:"Test Uint64"
+	Int64     int64                         `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty"`                                                                                          // @gotags: search:"Test Int64"
+	Float     float32                       `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty"`                                                                                         // @gotags: search:"Test Float"
+	Labels    map[string]string             `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Test Labels"
+	Timestamp *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                                                                   // @gotags: search:"Test Timestamp"
+	Enum      TestSingleKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enum,omitempty"`                                                     // @gotags: search:"Test Enum"
+	Enums     []TestSingleKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleKeyStruct_Enum" json:"enums,omitempty"`                                            // @gotags: search:"Test Enum Slice"
 	Embedded  *TestSingleKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
 	Nested    []*TestSingleKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
 	// Types that are assignable to Oneof:
@@ -369,20 +369,20 @@ type TestSingleUUIDKeyStruct struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" sql:"pk,index=hash,type(uuid)" search:"Test Key"`                                    // @gotags: sql:"pk,index=hash,type(uuid)" search:"Test Key"
-	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Test Name"`                                  // @gotags: sql:"unique" search:"Test Name"
-	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"` // @gotags: search:"Test String Slice"
-	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`                                 // @gotags: search:"Test Bool"
+	Key         string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`                                    // @gotags: sql:"pk,index=hash,type(uuid)" search:"Test Key"
+	Name        string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                  // @gotags: sql:"unique" search:"Test Name"
+	StringSlice []string `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty"` // @gotags: search:"Test String Slice"
+	Bool        bool     `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty"`                                 // @gotags: search:"Test Bool"
 	// When using this ensure your precision needs are met and accounted for.  This will use a
 	// BigInt which may require you to convert from uint64 to int64 OR update
 	// the handling to use numerics.
-	Uint64    uint64                            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`                                                                                        // @gotags: search:"Test Uint64"
-	Int64     int64                             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
-	Float     float32                           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
-	Labels    map[string]string                 `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
-	Timestamp *timestamppb.Timestamp            `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
-	Enum      TestSingleUUIDKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                 // @gotags: search:"Test Enum"
-	Enums     []TestSingleUUIDKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                        // @gotags: search:"Test Enum Slice"
+	Uint64    uint64                            `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty"`                                                                                        // @gotags: search:"Test Uint64"
+	Int64     int64                             `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty"`                                                                                          // @gotags: search:"Test Int64"
+	Float     float32                           `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty"`                                                                                         // @gotags: search:"Test Float"
+	Labels    map[string]string                 `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Test Labels"
+	Timestamp *timestamppb.Timestamp            `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                                                                   // @gotags: search:"Test Timestamp"
+	Enum      TestSingleUUIDKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enum,omitempty"`                                                 // @gotags: search:"Test Enum"
+	Enums     []TestSingleUUIDKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enums,omitempty"`                                        // @gotags: search:"Test Enum Slice"
 	Embedded  *TestSingleUUIDKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
 	Nested    []*TestSingleUUIDKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
 	// Types that are assignable to Oneof:
@@ -565,23 +565,23 @@ type TestStruct struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Key1        string                 `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`                                                                                             // @gotags: sql:"pk,id" search:"Test Key"
-	Key2        string                 `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty" search:"Test Key 2,store,hidden"`                                                                                             // @gotags: search:"Test Key 2,store,hidden"
-	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test String Slice"`                                                            // @gotags: search:"Test String Slice"
-	Bool        bool                   `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty" search:"Test Bool"`                                                                                            // @gotags: search:"Test Bool"
-	Uint64      uint64                 `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty" search:"Test Uint64"`                                                                                        // @gotags: search:"Test Uint64"
-	Int64       int64                  `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Int64"`                                                                                          // @gotags: search:"Test Int64"
-	Float       float32                `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty" search:"Test Float"`                                                                                         // @gotags: search:"Test Float"
-	Labels      map[string]string      `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Test Labels"` // @gotags: search:"Test Labels"
-	Timestamp   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                                   // @gotags: search:"Test Timestamp"
-	Enum        TestStruct_Enum        `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                              // @gotags: search:"Test Enum"
-	Enums       []TestStruct_Enum      `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                                     // @gotags: search:"Test Enum Slice"
-	String_     string                 `protobuf:"bytes,16,opt,name=string,proto3" json:"string,omitempty" search:"Test String"`                                                                                        // @gotags: search:"Test String"
+	Key1        string                 `protobuf:"bytes,1,opt,name=key1,proto3" json:"key1,omitempty"`                                                                                             // @gotags: sql:"pk,id" search:"Test Key"
+	Key2        string                 `protobuf:"bytes,2,opt,name=key2,proto3" json:"key2,omitempty"`                                                                                             // @gotags: search:"Test Key 2,store,hidden"
+	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty"`                                                            // @gotags: search:"Test String Slice"
+	Bool        bool                   `protobuf:"varint,4,opt,name=bool,proto3" json:"bool,omitempty"`                                                                                            // @gotags: search:"Test Bool"
+	Uint64      uint64                 `protobuf:"varint,5,opt,name=uint64,proto3" json:"uint64,omitempty"`                                                                                        // @gotags: search:"Test Uint64"
+	Int64       int64                  `protobuf:"varint,6,opt,name=int64,proto3" json:"int64,omitempty"`                                                                                          // @gotags: search:"Test Int64"
+	Float       float32                `protobuf:"fixed32,7,opt,name=float,proto3" json:"float,omitempty"`                                                                                         // @gotags: search:"Test Float"
+	Labels      map[string]string      `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // @gotags: search:"Test Labels"
+	Timestamp   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                                                                   // @gotags: search:"Test Timestamp"
+	Enum        TestStruct_Enum        `protobuf:"varint,10,opt,name=enum,proto3,enum=storage.TestStruct_Enum" json:"enum,omitempty"`                                                              // @gotags: search:"Test Enum"
+	Enums       []TestStruct_Enum      `protobuf:"varint,11,rep,packed,name=enums,proto3,enum=storage.TestStruct_Enum" json:"enums,omitempty"`                                                     // @gotags: search:"Test Enum Slice"
+	String_     string                 `protobuf:"bytes,16,opt,name=string,proto3" json:"string,omitempty"`                                                                                        // @gotags: search:"Test String"
 	// repeated int64: currently unsupported
 	//
 	// Deprecated: Marked as deprecated in storage/test.proto.
-	IntSliceDeprecated []int64              `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated,proto3" json:"int_slice_deprecated,omitempty" sql:"-"` // @gotags: sql:"-"
-	Int32Slice         []int32              `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice,proto3" json:"int32_slice,omitempty" search:"Test Int32 Slice"`                           // @gotags: search:"Test Int32 Slice"
+	IntSliceDeprecated []int64              `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated,proto3" json:"int_slice_deprecated,omitempty"` // @gotags: sql:"-"
+	Int32Slice         []int32              `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice,proto3" json:"int32_slice,omitempty"`                           // @gotags: search:"Test Int32 Slice"
 	Embedded           *TestStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
 	Nested             []*TestStruct_Nested `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
 	// Types that are assignable to Oneof:
@@ -795,11 +795,11 @@ type TestGrandparent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id        string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Grandparent ID" sql:"pk"`   // @gotags: search:"Test Grandparent ID" sql:"pk"
-	Val       string                      `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty" search:"Test Grandparent Val"` // @gotags: search:"Test Grandparent Val"
+	Id        string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`   // @gotags: search:"Test Grandparent ID" sql:"pk"
+	Val       string                      `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"` // @gotags: search:"Test Grandparent Val"
 	Embedded  []*TestGrandparent_Embedded `protobuf:"bytes,3,rep,name=embedded,proto3" json:"embedded,omitempty"`
-	Priority  int64                       `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty" search:"Test Grandparent Priority"`                     // @gotags: search:"Test Grandparent Priority"
-	RiskScore float32                     `protobuf:"fixed32,5,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Test Grandparent Risk Score"` // @gotags: search:"Test Grandparent Risk Score"
+	Priority  int64                       `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`                     // @gotags: search:"Test Grandparent Priority"
+	RiskScore float32                     `protobuf:"fixed32,5,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"` // @gotags: search:"Test Grandparent Risk Score"
 }
 
 func (x *TestGrandparent) Reset() {
@@ -874,11 +874,11 @@ type TestParent1 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent1 ID" sql:"pk"`                             // @gotags: search:"Test Parent1 ID" sql:"pk"
-	ParentId    string                   `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Id          string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Parent1 ID" sql:"pk"
+	ParentId    string                   `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestGrandparent:id)"
 	Children    []*TestParent1_Child1Ref `protobuf:"bytes,3,rep,name=children,proto3" json:"children,omitempty"`
-	Val         string                   `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty" search:"Test Parent1 Val"`                                    // @gotags: search:"Test Parent1 Val"
-	StringSlice []string                 `protobuf:"bytes,5,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty" search:"Test Parent1 String Slice"` // @gotags: search:"Test Parent1 String Slice"
+	Val         string                   `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty"`                                    // @gotags: search:"Test Parent1 Val"
+	StringSlice []string                 `protobuf:"bytes,5,rep,name=string_slice,json=stringSlice,proto3" json:"string_slice,omitempty"` // @gotags: search:"Test Parent1 String Slice"
 }
 
 func (x *TestParent1) Reset() {
@@ -953,8 +953,8 @@ type TestChild1 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Child1 ID" sql:"pk"`   // @gotags: search:"Test Child1 ID" sql:"pk"
-	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty" search:"Test Child1 Val"` // @gotags: search:"Test Child1 Val"
+	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`   // @gotags: search:"Test Child1 ID" sql:"pk"
+	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"` // @gotags: search:"Test Child1 Val"
 }
 
 func (x *TestChild1) Reset() {
@@ -1008,10 +1008,10 @@ type TestGrandChild1 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Grandchild1 ID" sql:"pk"`                             // @gotags: search:"Test Grandchild1 ID" sql:"pk"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestChild1:id)"` // @gotags: sql:"fk(TestChild1:id)"
-	ChildId  string `protobuf:"bytes,3,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty" sql:"fk(TestGGrandChild1:id),no-fk-constraint"`    // @gotags: sql:"fk(TestGGrandChild1:id),no-fk-constraint"
-	Val      string `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty" search:"Test Grandchild1 Val"`                           // @gotags: search:"Test Grandchild1 Val"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Grandchild1 ID" sql:"pk"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestChild1:id)"
+	ChildId  string `protobuf:"bytes,3,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty"`    // @gotags: sql:"fk(TestGGrandChild1:id),no-fk-constraint"
+	Val      string `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty"`                           // @gotags: search:"Test Grandchild1 Val"
 }
 
 func (x *TestGrandChild1) Reset() {
@@ -1079,8 +1079,8 @@ type TestGGrandChild1 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test GGrandchild1 ID" sql:"pk"`   // @gotags: search:"Test GGrandchild1 ID" sql:"pk"
-	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty" search:"Test GGrandchild1 Val"` // @gotags: search:"Test GGrandchild1 Val"
+	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`   // @gotags: search:"Test GGrandchild1 ID" sql:"pk"
+	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"` // @gotags: search:"Test GGrandchild1 Val"
 }
 
 func (x *TestGGrandChild1) Reset() {
@@ -1134,10 +1134,10 @@ type TestG2GrandChild1 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test G2Grandchild1 ID" sql:"pk"`                             // @gotags: search:"Test G2Grandchild1 ID" sql:"pk"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGGrandChild1:id)"` // @gotags: sql:"fk(TestGGrandChild1:id)"
-	ChildId  string `protobuf:"bytes,3,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty" sql:"fk(TestG3GrandChild1:id),no-fk-constraint"`    // @gotags: sql:"fk(TestG3GrandChild1:id),no-fk-constraint"
-	Val      string `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty" search:"Test G2Grandchild1 Val"`                           // @gotags: search:"Test G2Grandchild1 Val"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test G2Grandchild1 ID" sql:"pk"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestGGrandChild1:id)"
+	ChildId  string `protobuf:"bytes,3,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty"`    // @gotags: sql:"fk(TestG3GrandChild1:id),no-fk-constraint"
+	Val      string `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty"`                           // @gotags: search:"Test G2Grandchild1 Val"
 }
 
 func (x *TestG2GrandChild1) Reset() {
@@ -1205,8 +1205,8 @@ type TestG3GrandChild1 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test G3Grandchild1 ID" sql:"pk"`   // @gotags: search:"Test G3Grandchild1 ID" sql:"pk"
-	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty" search:"Test G3Grandchild1 Val"` // @gotags: search:"Test G3Grandchild1 Val"
+	Id  string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`   // @gotags: search:"Test G3Grandchild1 ID" sql:"pk"
+	Val string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"` // @gotags: search:"Test G3Grandchild1 Val"
 }
 
 func (x *TestG3GrandChild1) Reset() {
@@ -1260,9 +1260,9 @@ type TestParent2 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent2 ID" sql:"pk,type(uuid)"`                             // @gotags: search:"Test Parent2 ID" sql:"pk,type(uuid)"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
-	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Parent2 Val"`                           // @gotags: search:"Test Parent2 Val"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Parent2 ID" sql:"pk,type(uuid)"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty"`                           // @gotags: search:"Test Parent2 Val"
 }
 
 func (x *TestParent2) Reset() {
@@ -1323,11 +1323,11 @@ type TestChild2 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Child2 ID" sql:"pk,type(uuid)"`                             // @gotags: search:"Test Child2 ID" sql:"pk,type(uuid)"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestParent2:id)"` // @gotags: sql:"fk(TestParent2:id)"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Child2 ID" sql:"pk,type(uuid)"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestParent2:id)"
 	// For a potential optimization, insert a direct link from child to grandparent.
-	GrandparentId string `protobuf:"bytes,3,opt,name=grandparent_id,json=grandparentId,proto3" json:"grandparent_id,omitempty" sql:"fk(TestGrandparent:id),no-fk-constraint"` // @gotags: sql:"fk(TestGrandparent:id),no-fk-constraint"
-	Val           string `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty" search:"Test Child2 Val"`                                          // @gotags: search:"Test Child2 Val"
+	GrandparentId string `protobuf:"bytes,3,opt,name=grandparent_id,json=grandparentId,proto3" json:"grandparent_id,omitempty"` // @gotags: sql:"fk(TestGrandparent:id),no-fk-constraint"
+	Val           string `protobuf:"bytes,4,opt,name=val,proto3" json:"val,omitempty"`                                          // @gotags: search:"Test Child2 Val"
 }
 
 func (x *TestChild2) Reset() {
@@ -1395,9 +1395,9 @@ type TestParent3 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent3 ID" sql:"pk"`                             // @gotags: search:"Test Parent3 ID" sql:"pk"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
-	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Parent3 Val"`                           // @gotags: search:"Test Parent3 Val"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Parent3 ID" sql:"pk"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty"`                           // @gotags: search:"Test Parent3 Val"
 }
 
 func (x *TestParent3) Reset() {
@@ -1458,9 +1458,9 @@ type TestParent4 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Parent4 ID" sql:"pk,type(uuid)"`                             // @gotags: search:"Test Parent4 ID" sql:"pk,type(uuid)"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
-	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Parent4 Val"`                           // @gotags: search:"Test Parent4 Val"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Parent4 ID" sql:"pk,type(uuid)"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty"`                           // @gotags: search:"Test Parent4 Val"
 }
 
 func (x *TestParent4) Reset() {
@@ -1521,9 +1521,9 @@ type TestChild1P4 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test Child1P4 ID" sql:"pk"`                             // @gotags: search:"Test Child1P4 ID" sql:"pk"
-	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty" sql:"fk(TestParent4:id),type(uuid)"` // @gotags: sql:"fk(TestParent4:id),type(uuid)"
-	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty" search:"Test Child1P4 Val"`                           // @gotags: search:"Test Child1P4 Val"
+	Id       string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // @gotags: search:"Test Child1P4 ID" sql:"pk"
+	ParentId string `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // @gotags: sql:"fk(TestParent4:id),type(uuid)"
+	Val      string `protobuf:"bytes,3,opt,name=val,proto3" json:"val,omitempty"`                           // @gotags: search:"Test Child1P4 Val"
 }
 
 func (x *TestChild1P4) Reset() {
@@ -1584,9 +1584,9 @@ type TestShortCircuit struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id             string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test ShortCircuit ID" sql:"pk"`                                                 // @gotags: search:"Test ShortCircuit ID" sql:"pk"
-	ChildId        string `protobuf:"bytes,2,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty" search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"`                        // @gotags: search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"
-	G2GrandchildId string `protobuf:"bytes,3,opt,name=g2_grandchild_id,json=g2GrandchildId,proto3" json:"g2_grandchild_id,omitempty" search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"` // @gotags: search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"
+	Id             string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                 // @gotags: search:"Test ShortCircuit ID" sql:"pk"
+	ChildId        string `protobuf:"bytes,2,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty"`                        // @gotags: search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"
+	G2GrandchildId string `protobuf:"bytes,3,opt,name=g2_grandchild_id,json=g2GrandchildId,proto3" json:"g2_grandchild_id,omitempty"` // @gotags: search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"
 }
 
 func (x *TestShortCircuit) Reset() {
@@ -2290,9 +2290,9 @@ type TestStruct_Nested struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Nested   string                     `protobuf:"bytes,1,opt,name=nested,proto3" json:"nested,omitempty" search:"Test Nested String"`                      // @gotags: search:"Test Nested String"
-	IsNested bool                       `protobuf:"varint,3,opt,name=is_nested,json=isNested,proto3" json:"is_nested,omitempty" search:"Test Nested Bool"` // @gotags: search:"Test Nested Bool"
-	Int64    int64                      `protobuf:"varint,4,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Nested Int64"`                       // @gotags: search:"Test Nested Int64"
+	Nested   string                     `protobuf:"bytes,1,opt,name=nested,proto3" json:"nested,omitempty"`                      // @gotags: search:"Test Nested String"
+	IsNested bool                       `protobuf:"varint,3,opt,name=is_nested,json=isNested,proto3" json:"is_nested,omitempty"` // @gotags: search:"Test Nested Bool"
+	Int64    int64                      `protobuf:"varint,4,opt,name=int64,proto3" json:"int64,omitempty"`                       // @gotags: search:"Test Nested Int64"
 	Nested2  *TestStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty"`
 }
 
@@ -2361,7 +2361,7 @@ type TestStruct_OneOfNested struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Nested string `protobuf:"bytes,1,opt,name=nested,proto3" json:"nested,omitempty" search:"Test Oneof Nested String"` // @gotags: search:"Test Oneof Nested String"
+	Nested string `protobuf:"bytes,1,opt,name=nested,proto3" json:"nested,omitempty"` // @gotags: search:"Test Oneof Nested String"
 }
 
 func (x *TestStruct_OneOfNested) Reset() {
@@ -2455,9 +2455,9 @@ type TestStruct_Nested_Nested2 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Nested2  string `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty" search:"Test Nested String 2"`                    // @gotags: search:"Test Nested String 2"
-	IsNested bool   `protobuf:"varint,3,opt,name=is_nested,json=isNested,proto3" json:"is_nested,omitempty" search:"Test Nested Bool 2"` // @gotags: search:"Test Nested Bool 2"
-	Int64    int64  `protobuf:"varint,4,opt,name=int64,proto3" json:"int64,omitempty" search:"Test Nested Int64 2"`                       // @gotags: search:"Test Nested Int64 2"
+	Nested2  string `protobuf:"bytes,2,opt,name=nested2,proto3" json:"nested2,omitempty"`                    // @gotags: search:"Test Nested String 2"
+	IsNested bool   `protobuf:"varint,3,opt,name=is_nested,json=isNested,proto3" json:"is_nested,omitempty"` // @gotags: search:"Test Nested Bool 2"
+	Int64    int64  `protobuf:"varint,4,opt,name=int64,proto3" json:"int64,omitempty"`                       // @gotags: search:"Test Nested Int64 2"
 }
 
 func (x *TestStruct_Nested_Nested2) Reset() {
@@ -2565,7 +2565,7 @@ type TestGrandparent_Embedded struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Val       string                                `protobuf:"bytes,1,opt,name=val,proto3" json:"val,omitempty" search:"Test Grandparent Embedded"` // @gotags: search:"Test Grandparent Embedded"
+	Val       string                                `protobuf:"bytes,1,opt,name=val,proto3" json:"val,omitempty"` // @gotags: search:"Test Grandparent Embedded"
 	Embedded2 []*TestGrandparent_Embedded_Embedded2 `protobuf:"bytes,2,rep,name=embedded2,proto3" json:"embedded2,omitempty"`
 }
 
@@ -2620,7 +2620,7 @@ type TestGrandparent_Embedded_Embedded2 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Val string `protobuf:"bytes,1,opt,name=val,proto3" json:"val,omitempty" search:"Test Grandparent Embedded2"` // @gotags: search:"Test Grandparent Embedded2"
+	Val string `protobuf:"bytes,1,opt,name=val,proto3" json:"val,omitempty"` // @gotags: search:"Test Grandparent Embedded2"
 }
 
 func (x *TestGrandparent_Embedded_Embedded2) Reset() {
@@ -2667,7 +2667,7 @@ type TestParent1_Child1Ref struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ChildId string `protobuf:"bytes,1,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty" sql:"fk(TestChild1:id),no-fk-constraint"` // @gotags: sql:"fk(TestChild1:id),no-fk-constraint"
+	ChildId string `protobuf:"bytes,1,opt,name=child_id,json=childId,proto3" json:"child_id,omitempty"` // @gotags: sql:"fk(TestChild1:id),no-fk-constraint"
 }
 
 func (x *TestParent1_Child1Ref) Reset() {

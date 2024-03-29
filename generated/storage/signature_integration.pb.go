@@ -25,8 +25,8 @@ type SignatureIntegration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id     string                       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name   string                       `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Id     string                       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: sql:"pk"
+	Name   string                       `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"unique"
 	Cosign *CosignPublicKeyVerification `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 }
 

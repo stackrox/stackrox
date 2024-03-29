@@ -373,7 +373,7 @@ type ExchangeTokenRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The external authentication token. The server will mask the value of this credential in responses and logs.
-	ExternalToken string `protobuf:"bytes,1,opt,name=external_token,json=externalToken,proto3" json:"external_token,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ExternalToken string `protobuf:"bytes,1,opt,name=external_token,json=externalToken,proto3" json:"external_token,omitempty"` // @gotags: scrub:"always"
 	Type          string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
 	State         string `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
 }

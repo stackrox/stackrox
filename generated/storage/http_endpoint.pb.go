@@ -25,17 +25,17 @@ type HTTPEndpointConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: scrub:"dependent"
 	SkipTlsVerify bool   `protobuf:"varint,2,opt,name=skip_tls_verify,json=skipTlsVerify,proto3" json:"skip_tls_verify,omitempty"`
 	CaCert        string `protobuf:"bytes,3,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`
-	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password string          `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Password string          `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"` // @gotags: scrub:"always"
 	Headers  []*KeyValuePair `protobuf:"bytes,6,rep,name=headers,proto3" json:"headers,omitempty"`
 	// The client certificate in PEM format for the integration.
 	ClientCertPem string `protobuf:"bytes,7,opt,name=client_cert_pem,json=clientCertPem,proto3" json:"client_cert_pem,omitempty"`
 	// The client key in PEM format for the integration. The server will mask the value of this credential in responses and logs.
-	ClientKeyPem string `protobuf:"bytes,8,opt,name=client_key_pem,json=clientKeyPem,proto3" json:"client_key_pem,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ClientKeyPem string `protobuf:"bytes,8,opt,name=client_key_pem,json=clientKeyPem,proto3" json:"client_key_pem,omitempty"` // @gotags: scrub:"always"
 }
 
 func (x *HTTPEndpointConfig) Reset() {

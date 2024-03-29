@@ -130,7 +130,7 @@ type IntegrationHealth struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id           string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id           string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Name         string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Type         IntegrationHealth_Type   `protobuf:"varint,3,opt,name=type,proto3,enum=storage.IntegrationHealth_Type" json:"type,omitempty"`
 	Status       IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,proto3,enum=storage.IntegrationHealth_Status" json:"status,omitempty"`

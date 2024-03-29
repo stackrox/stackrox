@@ -218,9 +218,9 @@ type ReportSnapshot struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ReportId              string                    `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,type(uuid)"`                                          // @gotags: sql:"pk,type(uuid)"
-	ReportConfigurationId string                    `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId,proto3" json:"report_configuration_id,omitempty" search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"` // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"
-	Name                  string                    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"`                                                                  // @gotags: search:"Report Name"
+	ReportId              string                    `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty"`                                          // @gotags: sql:"pk,type(uuid)"
+	ReportConfigurationId string                    `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId,proto3" json:"report_configuration_id,omitempty"` // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"
+	Name                  string                    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                                                  // @gotags: search:"Report Name"
 	Description           string                    `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Type                  ReportSnapshot_ReportType `protobuf:"varint,5,opt,name=type,proto3,enum=storage.ReportSnapshot_ReportType" json:"type,omitempty"`
 	// Types that are assignable to Filter:
@@ -495,12 +495,12 @@ type ReportStatus struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ReportStatus_RunState" json:"run_state,omitempty" search:"Report State"` // @gotags: search:"Report State"
-	QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt,proto3" json:"queued_at,omitempty" search:"Report Init Time"`                                     // @gotags: search:"Report Init Time"
-	CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Report Completion Time"`                            // @gotags: search:"Report Completion Time"
+	RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ReportStatus_RunState" json:"run_state,omitempty"` // @gotags: search:"Report State"
+	QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt,proto3" json:"queued_at,omitempty"`                                     // @gotags: search:"Report Init Time"
+	CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                            // @gotags: search:"Report Completion Time"
 	ErrorMsg                 string                          `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
-	ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Report Request Type"`                               // @gotags: search:"Report Request Type"
-	ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ReportStatus_NotificationMethod" json:"report_notification_method,omitempty" search:"Report Notification Method"` // @gotags: search:"Report Notification Method"
+	ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ReportStatus_RunMethod" json:"report_request_type,omitempty"`                               // @gotags: search:"Report Request Type"
+	ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ReportStatus_NotificationMethod" json:"report_notification_method,omitempty"` // @gotags: search:"Report Notification Method"
 }
 
 func (x *ReportStatus) Reset() {

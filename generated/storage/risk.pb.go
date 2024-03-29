@@ -93,9 +93,9 @@ type Risk struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id      string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id      string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Subject *RiskSubject   `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
-	Score   float32        `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
+	Score   float32        `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty"` // @gotags: search:"Risk Score,hidden"
 	Results []*Risk_Result `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
 }
 
@@ -165,9 +165,9 @@ type RiskSubject struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id        string          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Namespace string          `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                     // @gotags: search:"Namespace,store"
-	ClusterId string          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	Type      RiskSubjectType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.RiskSubjectType" json:"type,omitempty" search:"Risk Subject Type,hidden"` // @gotags: search:"Risk Subject Type,hidden"
+	Namespace string          `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`                     // @gotags: search:"Namespace,store"
+	ClusterId string          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`    // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	Type      RiskSubjectType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.RiskSubjectType" json:"type,omitempty"` // @gotags: search:"Risk Subject Type,hidden"
 }
 
 func (x *RiskSubject) Reset() {

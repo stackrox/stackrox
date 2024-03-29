@@ -30,17 +30,17 @@ type SecuredUnits struct {
 
 	// id is not used to retrieve data, but serves mostly for compatibility with
 	// the current implementation of the query generator.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	// timestamp stores the moment at which the values of the metrics below are
 	// aggregated.
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" sql:"unique" search:"Administration Usage Timestamp,hidden"` // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
 	// num_nodes is the maximum number of secured nodes, observed across all
 	// registered clusters during last aggregation period.
-	NumNodes int64 `protobuf:"varint,3,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty" search:"Administration Usage Nodes,hidden"` // @gotags: search:"Administration Usage Nodes,hidden"
+	NumNodes int64 `protobuf:"varint,3,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"` // @gotags: search:"Administration Usage Nodes,hidden"
 	// num_cpu_units is the maximum number of secured CPU units (which are the
 	// units reported by Kubernetes), observed across all registered clusters
 	// during last aggregation period.
-	NumCpuUnits int64 `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty" search:"Administration Usage CPU Units,hidden"` // @gotags: search:"Administration Usage CPU Units,hidden"
+	NumCpuUnits int64 `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"` // @gotags: search:"Administration Usage CPU Units,hidden"
 }
 
 func (x *SecuredUnits) Reset() {

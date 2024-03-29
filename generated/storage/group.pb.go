@@ -30,7 +30,7 @@ type Group struct {
 	// They also uniquely identify the group with the props.id field.
 	Props *GroupProperties `protobuf:"bytes,1,opt,name=props,proto3" json:"props,omitempty"`
 	// This is the name of the role that will apply to users in this group.
-	RoleName string `protobuf:"bytes,3,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty" search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"` // @gotags: search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"
+	RoleName string `protobuf:"bytes,3,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"` // @gotags: search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"
 }
 
 func (x *Group) Reset() {
@@ -93,11 +93,11 @@ type GroupProperties struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Unique identifier for group properties and respectively the group.
-	Id             string  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id             string  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Traits         *Traits `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
-	AuthProviderId string  `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty" search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"` // @gotags: search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"
-	Key            string  `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty" search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                               // @gotags: search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"
-	Value          string  `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty" search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                           // @gotags: search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	AuthProviderId string  `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"` // @gotags: search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	Key            string  `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`                                               // @gotags: search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	Value          string  `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`                                           // @gotags: search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"
 }
 
 func (x *GroupProperties) Reset() {

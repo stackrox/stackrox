@@ -147,9 +147,9 @@ type NetworkFlow struct {
 	unknownFields protoimpl.UnknownFields
 
 	Props             *NetworkFlowProperties `protobuf:"bytes,1,opt,name=props,proto3" json:"props,omitempty"`
-	LastSeenTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_seen_timestamp,json=lastSeenTimestamp,proto3" json:"last_seen_timestamp,omitempty" sql:"index=brin"` // @gotags: sql:"index=brin"
+	LastSeenTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_seen_timestamp,json=lastSeenTimestamp,proto3" json:"last_seen_timestamp,omitempty"` // @gotags: sql:"index=brin"
 	// Need the clusterID as that is part of the key in RocksDB
-	ClusterId string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	ClusterId string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 }
 
 func (x *NetworkFlow) Reset() {
@@ -215,8 +215,8 @@ type NetworkFlowProperties struct {
 	// The destination deployment ID of the network flow
 	DstEntity *NetworkEntityInfo `protobuf:"bytes,2,opt,name=dst_entity,json=dstEntity,proto3" json:"dst_entity,omitempty"`
 	// may be 0 if not applicable (e.g., icmp).
-	DstPort    uint32     `protobuf:"varint,3,opt,name=dst_port,json=dstPort,proto3" json:"dst_port,omitempty" sql:"pk"`                // @gotags: sql:"pk"
-	L4Protocol L4Protocol `protobuf:"varint,4,opt,name=l4protocol,proto3,enum=storage.L4Protocol" json:"l4protocol,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	DstPort    uint32     `protobuf:"varint,3,opt,name=dst_port,json=dstPort,proto3" json:"dst_port,omitempty"`                // @gotags: sql:"pk"
+	L4Protocol L4Protocol `protobuf:"varint,4,opt,name=l4protocol,proto3,enum=storage.L4Protocol" json:"l4protocol,omitempty"` // @gotags: sql:"pk"
 }
 
 func (x *NetworkFlowProperties) Reset() {
@@ -460,8 +460,8 @@ type NetworkEntityInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Type NetworkEntityInfo_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty" sql:"index"` // @gotags: sql:"index"
-	Id   string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                          // @gotags: sql:"pk"
+	Type NetworkEntityInfo_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty"` // @gotags: sql:"index"
+	Id   string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                                          // @gotags: sql:"pk"
 	// Types that are assignable to Desc:
 	//
 	//	*NetworkEntityInfo_Deployment_
@@ -684,7 +684,7 @@ type NetworkEntityInfo_ExternalSource struct {
 	//	*NetworkEntityInfo_ExternalSource_Cidr
 	Source isNetworkEntityInfo_ExternalSource_Source `protobuf_oneof:"source"`
 	// `default` indicates whether the external source is user-generated or system-generated.
-	Default bool `protobuf:"varint,3,opt,name=default,proto3" json:"default,omitempty" search:"Default External Source,hidden"` // @gotags: search:"Default External Source,hidden"
+	Default bool `protobuf:"varint,3,opt,name=default,proto3" json:"default,omitempty"` // @gotags: search:"Default External Source,hidden"
 }
 
 func (x *NetworkEntityInfo_ExternalSource) Reset() {

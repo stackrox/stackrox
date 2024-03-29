@@ -25,8 +25,8 @@ type SlimUser struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"User ID"`     // @gotags: search:"User ID"
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"User Name"` // @gotags: search:"User Name"
+	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: search:"User ID"
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"User Name"
 }
 
 func (x *SlimUser) Reset() {

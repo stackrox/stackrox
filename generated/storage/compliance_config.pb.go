@@ -25,7 +25,7 @@ type ComplianceConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	StandardId      string `protobuf:"bytes,1,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	StandardId      string `protobuf:"bytes,1,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"` // @gotags: sql:"pk"
 	HideScanResults bool   `protobuf:"varint,2,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
 }
 

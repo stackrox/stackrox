@@ -379,7 +379,7 @@ type ComplianceDomain struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                                  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk" search:"Compliance Domain ID,hidden"` // @gotags: sql:"pk" search:"Compliance Domain ID,hidden"
+	Id          string                                  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk" search:"Compliance Domain ID,hidden"
 	Cluster     *ComplianceDomain_Cluster               `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	Nodes       map[string]*ComplianceDomain_Node       `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Deployments map[string]*ComplianceDomain_Deployment `protobuf:"bytes,3,rep,name=deployments,proto3" json:"deployments,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -451,11 +451,11 @@ type ComplianceRunMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
-	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden,store"` // @gotags: search:"Standard ID,hidden,store"
-	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
+	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"` // @gotags: search:"Standard ID,hidden,store"
+	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`    // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
 	StartTimestamp  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
-	FinishTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp,hidden,store"` // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
+	FinishTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty"` // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
 	Success         bool                   `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`
 	ErrorMessage    string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	DomainId        string                 `protobuf:"bytes,8,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
@@ -555,7 +555,7 @@ type ComplianceRunResults struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Domain               *ComplianceDomain                              `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty" sql:"-"` // @gotags: sql:"-"
+	Domain               *ComplianceDomain                              `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"` // @gotags: sql:"-"
 	RunMetadata          *ComplianceRunMetadata                         `protobuf:"bytes,2,opt,name=run_metadata,json=runMetadata,proto3" json:"run_metadata,omitempty"`
 	ClusterResults       *ComplianceRunResults_EntityResults            `protobuf:"bytes,3,opt,name=cluster_results,json=clusterResults,proto3" json:"cluster_results,omitempty"`
 	NodeResults          map[string]*ComplianceRunResults_EntityResults `protobuf:"bytes,4,rep,name=node_results,json=nodeResults,proto3" json:"node_results,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -643,7 +643,7 @@ type ComplianceStrings struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id      string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id      string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Strings []string `protobuf:"bytes,1,rep,name=strings,proto3" json:"strings,omitempty"`
 }
 

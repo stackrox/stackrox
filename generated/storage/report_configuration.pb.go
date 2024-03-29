@@ -210,15 +210,15 @@ type ReportConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"` // @gotags: search:"Report Name"
+	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: sql:"pk"
+	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Report Name"
 	Description string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
+	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty"` // @gotags: search:"Report Type"
 	// Types that are assignable to Filter:
 	//
 	//	*ReportConfiguration_VulnReportFilters
 	Filter  isReportConfiguration_Filter `protobuf_oneof:"filter"`
-	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty"` // @gotags: search:"Embedded Collection ID"
 	// Types that are assignable to NotifierConfig:
 	//
 	//	*ReportConfiguration_EmailConfig
@@ -228,7 +228,7 @@ type ReportConfiguration struct {
 	LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
 	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
 	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
+	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty"`  // @gotags: sql:"ignore_labels(User ID)"
 	Version               int32                                `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 }
 
@@ -657,7 +657,7 @@ type isResourceScope_ScopeReference interface {
 }
 
 type ResourceScope_CollectionId struct {
-	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3,oneof" search:"Collection ID"` // @gotags: search:"Collection ID"
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3,oneof"` // @gotags: search:"Collection ID"
 }
 
 func (*ResourceScope_CollectionId) isResourceScope_ScopeReference() {}
@@ -760,7 +760,7 @@ type isNotifierConfiguration_Ref interface {
 }
 
 type NotifierConfiguration_Id struct {
-	Id string `protobuf:"bytes,2,opt,name=id,proto3,oneof" sql:"fk(Notifier:id),restrict-delete"` // @gotags: sql:"fk(Notifier:id),restrict-delete"
+	Id string `protobuf:"bytes,2,opt,name=id,proto3,oneof"` // @gotags: sql:"fk(Notifier:id),restrict-delete"
 }
 
 func (*NotifierConfiguration_Id) isNotifierConfiguration_Ref() {}

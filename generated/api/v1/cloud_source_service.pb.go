@@ -906,7 +906,7 @@ type CloudSource_Credentials struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"` // @gotags: scrub:"always"
 }
 
 func (x *CloudSource_Credentials) Reset() {

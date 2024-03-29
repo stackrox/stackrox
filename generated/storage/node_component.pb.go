@@ -25,16 +25,16 @@ type NodeComponent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id        string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                                  // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      string  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`                              // @gotags: search:"Component,store"
-	Version   string  `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`                        // @gotags: search:"Component Version,store"
-	Priority  int64   `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	RiskScore float32 `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
+	Id        string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                  // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+	Name      string  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                              // @gotags: search:"Component,store"
+	Version   string  `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`                        // @gotags: search:"Component Version,store"
+	Priority  int64   `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty"`                     // @gotags: search:"Component Risk Priority,hidden"
+	RiskScore float32 `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are assignable to SetTopCvss:
 	//
 	//	*NodeComponent_TopCvss
 	SetTopCvss      isNodeComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	OperatingSystem string                     `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	OperatingSystem string                     `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"` // @gotags: search:"Operating System"
 }
 
 func (x *NodeComponent) Reset() {
@@ -130,7 +130,7 @@ type isNodeComponent_SetTopCvss interface {
 }
 
 type NodeComponent_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
+	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof"` // @gotags: search:"Component Top CVSS,store"
 }
 
 func (*NodeComponent_TopCvss) isNodeComponent_SetTopCvss() {}

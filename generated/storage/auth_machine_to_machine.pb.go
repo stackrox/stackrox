@@ -75,13 +75,13 @@ type AuthMachineToMachineConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id                      string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Id                      string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk,type(uuid)"
 	Type                    AuthMachineToMachineConfig_Type       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AuthMachineToMachineConfig_Type" json:"type,omitempty"`
 	TokenExpirationDuration string                                `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration,proto3" json:"token_expiration_duration,omitempty"`
 	Mappings                []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
 	// The issuer is related to an ID token's issuer.
 	// Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
-	Issuer string `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Issuer string `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"` // @gotags: sql:"unique"
 }
 
 func (x *AuthMachineToMachineConfig) Reset() {
@@ -158,7 +158,7 @@ type AuthMachineToMachineConfig_Mapping struct {
 
 	Key             string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	ValueExpression string `protobuf:"bytes,2,opt,name=value_expression,json=valueExpression,proto3" json:"value_expression,omitempty"`
-	Role            string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty" sql:"fk(Role:name),restrict-delete"` // @gotags: sql:"fk(Role:name),restrict-delete"
+	Role            string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"` // @gotags: sql:"fk(Role:name),restrict-delete"
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) Reset() {

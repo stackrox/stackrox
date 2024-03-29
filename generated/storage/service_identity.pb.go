@@ -114,7 +114,7 @@ type ServiceIdentity struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SerialStr string `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty" sql:"pk"` // The serial number in decimal representation. // @gotags: sql:"pk"
+	SerialStr string `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty"` // The serial number in decimal representation. // @gotags: sql:"pk"
 	// Types that are assignable to Srl:
 	//
 	//	*ServiceIdentity_Serial
