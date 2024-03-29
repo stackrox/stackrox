@@ -47,21 +47,19 @@ func (c *pingServiceClient) Ping(ctx context.Context, in *Empty, opts ...grpc.Ca
 }
 
 // PingServiceServer is the server API for PingService service.
-// All implementations must embed UnimplementedPingServiceServer
+// All implementations should embed UnimplementedPingServiceServer
 // for forward compatibility
 type PingServiceServer interface {
 	Ping(context.Context, *Empty) (*PongMessage, error)
-	mustEmbedUnimplementedPingServiceServer()
 }
 
-// UnimplementedPingServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedPingServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedPingServiceServer struct {
 }
 
 func (UnimplementedPingServiceServer) Ping(context.Context, *Empty) (*PongMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedPingServiceServer) mustEmbedUnimplementedPingServiceServer() {}
 
 // UnsafePingServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PingServiceServer will

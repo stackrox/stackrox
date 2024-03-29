@@ -69,16 +69,15 @@ func (c *searchServiceClient) Autocomplete(ctx context.Context, in *RawSearchReq
 }
 
 // SearchServiceServer is the server API for SearchService service.
-// All implementations must embed UnimplementedSearchServiceServer
+// All implementations should embed UnimplementedSearchServiceServer
 // for forward compatibility
 type SearchServiceServer interface {
 	Search(context.Context, *RawSearchRequest) (*SearchResponse, error)
 	Options(context.Context, *SearchOptionsRequest) (*SearchOptionsResponse, error)
 	Autocomplete(context.Context, *RawSearchRequest) (*AutocompleteResponse, error)
-	mustEmbedUnimplementedSearchServiceServer()
 }
 
-// UnimplementedSearchServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedSearchServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSearchServiceServer struct {
 }
 
@@ -91,7 +90,6 @@ func (UnimplementedSearchServiceServer) Options(context.Context, *SearchOptionsR
 func (UnimplementedSearchServiceServer) Autocomplete(context.Context, *RawSearchRequest) (*AutocompleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Autocomplete not implemented")
 }
-func (UnimplementedSearchServiceServer) mustEmbedUnimplementedSearchServiceServer() {}
 
 // UnsafeSearchServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to SearchServiceServer will

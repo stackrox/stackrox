@@ -225,7 +225,7 @@ endif
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
-		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
+		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated,require_unimplemented_servers=false:$(GENERATED_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go-grpc="${PROTOC_GEN_GO_GRPC_BIN}" \
 		$<

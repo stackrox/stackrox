@@ -120,7 +120,7 @@ func (c *cloudSourcesServiceClient) TestCloudSource(ctx context.Context, in *Tes
 }
 
 // CloudSourcesServiceServer is the server API for CloudSourcesService service.
-// All implementations must embed UnimplementedCloudSourcesServiceServer
+// All implementations should embed UnimplementedCloudSourcesServiceServer
 // for forward compatibility
 type CloudSourcesServiceServer interface {
 	// CountCloudSources returns the number of cloud sources after filtering by requested fields.
@@ -137,10 +137,9 @@ type CloudSourcesServiceServer interface {
 	DeleteCloudSource(context.Context, *DeleteCloudSourceRequest) (*Empty, error)
 	// TestCloudSource tests a cloud source.
 	TestCloudSource(context.Context, *TestCloudSourceRequest) (*Empty, error)
-	mustEmbedUnimplementedCloudSourcesServiceServer()
 }
 
-// UnimplementedCloudSourcesServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedCloudSourcesServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedCloudSourcesServiceServer struct {
 }
 
@@ -165,7 +164,6 @@ func (UnimplementedCloudSourcesServiceServer) DeleteCloudSource(context.Context,
 func (UnimplementedCloudSourcesServiceServer) TestCloudSource(context.Context, *TestCloudSourceRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TestCloudSource not implemented")
 }
-func (UnimplementedCloudSourcesServiceServer) mustEmbedUnimplementedCloudSourcesServiceServer() {}
 
 // UnsafeCloudSourcesServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to CloudSourcesServiceServer will

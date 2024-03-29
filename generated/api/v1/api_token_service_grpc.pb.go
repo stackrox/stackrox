@@ -97,7 +97,7 @@ func (c *aPITokenServiceClient) ListAllowedTokenRoles(ctx context.Context, in *E
 }
 
 // APITokenServiceServer is the server API for APITokenService service.
-// All implementations must embed UnimplementedAPITokenServiceServer
+// All implementations should embed UnimplementedAPITokenServiceServer
 // for forward compatibility
 type APITokenServiceServer interface {
 	// GetAPIToken returns API token metadata for a given id.
@@ -110,10 +110,9 @@ type APITokenServiceServer interface {
 	RevokeToken(context.Context, *ResourceByID) (*Empty, error)
 	// GetAllowedTokenRoles return roles that user is allowed to request for API token.
 	ListAllowedTokenRoles(context.Context, *Empty) (*ListAllowedTokenRolesResponse, error)
-	mustEmbedUnimplementedAPITokenServiceServer()
 }
 
-// UnimplementedAPITokenServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedAPITokenServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedAPITokenServiceServer struct {
 }
 
@@ -132,7 +131,6 @@ func (UnimplementedAPITokenServiceServer) RevokeToken(context.Context, *Resource
 func (UnimplementedAPITokenServiceServer) ListAllowedTokenRoles(context.Context, *Empty) (*ListAllowedTokenRolesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAllowedTokenRoles not implemented")
 }
-func (UnimplementedAPITokenServiceServer) mustEmbedUnimplementedAPITokenServiceServer() {}
 
 // UnsafeAPITokenServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to APITokenServiceServer will

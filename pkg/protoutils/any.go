@@ -1,8 +1,6 @@
 package protoutils
 
 import (
-	"github.com/gogo/protobuf/types"
-	golangProto "github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -12,12 +10,12 @@ import (
 // which is required because of our use of gogo and golang proto
 // TODO(cgorman) Resolve this by correctly implementing the other proto
 // pieces
-func MarshalAny(msg protocompat.Message) (*types.Any, error) {
-	a, err := types.MarshalAny(msg)
+func MarshalAny(msg protocompat.Message) (*anypb.Any, error) {
+	a, err := anypb.New(msg)
 	if err != nil {
 		return nil, err
 	}
-	a.TypeUrl = golangProto.MessageName(msg)
+	a.TypeUrl = string(msg.ProtoReflect().Descriptor().FullName())
 	return a, nil
 }
 

@@ -73,7 +73,7 @@ func (c *administrationUsageServiceClient) GetMaxSecuredUnitsUsage(ctx context.C
 }
 
 // AdministrationUsageServiceServer is the server API for AdministrationUsageService service.
-// All implementations must embed UnimplementedAdministrationUsageServiceServer
+// All implementations should embed UnimplementedAdministrationUsageServiceServer
 // for forward compatibility
 type AdministrationUsageServiceServer interface {
 	// GetCurrentSecuredUnitsUsage returns the current secured units usage
@@ -93,10 +93,9 @@ type AdministrationUsageServiceServer interface {
 	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
 	GetMaxSecuredUnitsUsage(context.Context, *TimeRange) (*MaxSecuredUnitsUsageResponse, error)
-	mustEmbedUnimplementedAdministrationUsageServiceServer()
 }
 
-// UnimplementedAdministrationUsageServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedAdministrationUsageServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedAdministrationUsageServiceServer struct {
 }
 
@@ -105,8 +104,6 @@ func (UnimplementedAdministrationUsageServiceServer) GetCurrentSecuredUnitsUsage
 }
 func (UnimplementedAdministrationUsageServiceServer) GetMaxSecuredUnitsUsage(context.Context, *TimeRange) (*MaxSecuredUnitsUsageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMaxSecuredUnitsUsage not implemented")
-}
-func (UnimplementedAdministrationUsageServiceServer) mustEmbedUnimplementedAdministrationUsageServiceServer() {
 }
 
 // UnsafeAdministrationUsageServiceServer may be embedded to opt out of forward compatibility for this service.

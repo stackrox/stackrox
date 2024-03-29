@@ -133,7 +133,7 @@ func (c *imageIntegrationServiceClient) TestUpdatedImageIntegration(ctx context.
 }
 
 // ImageIntegrationServiceServer is the server API for ImageIntegrationService service.
-// All implementations must embed UnimplementedImageIntegrationServiceServer
+// All implementations should embed UnimplementedImageIntegrationServiceServer
 // for forward compatibility
 type ImageIntegrationServiceServer interface {
 	// GetImageIntegration returns the image integration given its ID.
@@ -152,10 +152,9 @@ type ImageIntegrationServiceServer interface {
 	UpdateImageIntegration(context.Context, *UpdateImageIntegrationRequest) (*Empty, error)
 	// TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
 	TestUpdatedImageIntegration(context.Context, *UpdateImageIntegrationRequest) (*Empty, error)
-	mustEmbedUnimplementedImageIntegrationServiceServer()
 }
 
-// UnimplementedImageIntegrationServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedImageIntegrationServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedImageIntegrationServiceServer struct {
 }
 
@@ -182,8 +181,6 @@ func (UnimplementedImageIntegrationServiceServer) UpdateImageIntegration(context
 }
 func (UnimplementedImageIntegrationServiceServer) TestUpdatedImageIntegration(context.Context, *UpdateImageIntegrationRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TestUpdatedImageIntegration not implemented")
-}
-func (UnimplementedImageIntegrationServiceServer) mustEmbedUnimplementedImageIntegrationServiceServer() {
 }
 
 // UnsafeImageIntegrationServiceServer may be embedded to opt out of forward compatibility for this service.

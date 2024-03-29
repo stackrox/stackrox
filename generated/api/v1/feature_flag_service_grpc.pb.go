@@ -47,21 +47,19 @@ func (c *featureFlagServiceClient) GetFeatureFlags(ctx context.Context, in *Empt
 }
 
 // FeatureFlagServiceServer is the server API for FeatureFlagService service.
-// All implementations must embed UnimplementedFeatureFlagServiceServer
+// All implementations should embed UnimplementedFeatureFlagServiceServer
 // for forward compatibility
 type FeatureFlagServiceServer interface {
 	GetFeatureFlags(context.Context, *Empty) (*GetFeatureFlagsResponse, error)
-	mustEmbedUnimplementedFeatureFlagServiceServer()
 }
 
-// UnimplementedFeatureFlagServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedFeatureFlagServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedFeatureFlagServiceServer struct {
 }
 
 func (UnimplementedFeatureFlagServiceServer) GetFeatureFlags(context.Context, *Empty) (*GetFeatureFlagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureFlags not implemented")
 }
-func (UnimplementedFeatureFlagServiceServer) mustEmbedUnimplementedFeatureFlagServiceServer() {}
 
 // UnsafeFeatureFlagServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to FeatureFlagServiceServer will

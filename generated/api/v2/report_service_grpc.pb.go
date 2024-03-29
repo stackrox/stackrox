@@ -182,7 +182,7 @@ func (c *reportServiceClient) DeleteReport(ctx context.Context, in *DeleteReport
 }
 
 // ReportServiceServer is the server API for ReportService service.
-// All implementations must embed UnimplementedReportServiceServer
+// All implementations should embed UnimplementedReportServiceServer
 // for forward compatibility
 type ReportServiceServer interface {
 	// PostReportConfiguration creates a report configuration
@@ -211,10 +211,9 @@ type ReportServiceServer interface {
 	CancelReport(context.Context, *ResourceByID) (*Empty, error)
 	// Deletes a generated report for the given report id
 	DeleteReport(context.Context, *DeleteReportRequest) (*Empty, error)
-	mustEmbedUnimplementedReportServiceServer()
 }
 
-// UnimplementedReportServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedReportServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedReportServiceServer struct {
 }
 
@@ -254,7 +253,6 @@ func (UnimplementedReportServiceServer) CancelReport(context.Context, *ResourceB
 func (UnimplementedReportServiceServer) DeleteReport(context.Context, *DeleteReportRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteReport not implemented")
 }
-func (UnimplementedReportServiceServer) mustEmbedUnimplementedReportServiceServer() {}
 
 // UnsafeReportServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ReportServiceServer will

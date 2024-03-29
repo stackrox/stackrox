@@ -7,12 +7,13 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestConvertTimeString(t *testing.T) {
 	cases := []struct {
 		input  string
-		output *types.Timestamp
+		output *timestamppb.Timestamp
 	}{
 		{
 			input:  "",

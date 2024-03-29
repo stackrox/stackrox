@@ -234,7 +234,7 @@ func (x *imageServiceExportImagesClient) Recv() (*ExportImageResponse, error) {
 }
 
 // ImageServiceServer is the server API for ImageService service.
-// All implementations must embed UnimplementedImageServiceServer
+// All implementations should embed UnimplementedImageServiceServer
 // for forward compatibility
 type ImageServiceServer interface {
 	// GetImage returns the image given its ID.
@@ -270,10 +270,9 @@ type ImageServiceServer interface {
 	// being watched.
 	GetWatchedImages(context.Context, *Empty) (*GetWatchedImagesResponse, error)
 	ExportImages(*ExportImageRequest, ImageService_ExportImagesServer) error
-	mustEmbedUnimplementedImageServiceServer()
 }
 
-// UnimplementedImageServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedImageServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedImageServiceServer struct {
 }
 
@@ -319,7 +318,6 @@ func (UnimplementedImageServiceServer) GetWatchedImages(context.Context, *Empty)
 func (UnimplementedImageServiceServer) ExportImages(*ExportImageRequest, ImageService_ExportImagesServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportImages not implemented")
 }
-func (UnimplementedImageServiceServer) mustEmbedUnimplementedImageServiceServer() {}
 
 // UnsafeImageServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ImageServiceServer will

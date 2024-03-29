@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -37,7 +37,15 @@ func RESTHandler(endpointFunc func(*http.Request) (interface{}, error)) http.Han
 		if resp == nil {
 			_, err = fmt.Fprint(w, "{}")
 		} else if protoMsg, _ := resp.(protocompat.Message); protoMsg != nil {
-			err = (&jsonpb.Marshaler{}).Marshal(w, protoMsg)
+			var data []byte
+			data, err = protojson.Marshal(protoMsg)
+			if err != nil {
+				log.Errorf("Failed to send response from REST handler: %v", err)
+			}
+			_, err = w.Write(data)
+			if err != nil {
+				log.Errorf("Failed to send response from REST handler: %v", err)
+			}
 		} else {
 			err = json.NewEncoder(w).Encode(resp)
 		}

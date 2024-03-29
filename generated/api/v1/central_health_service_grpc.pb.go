@@ -47,21 +47,19 @@ func (c *centralHealthServiceClient) GetUpgradeStatus(ctx context.Context, in *E
 }
 
 // CentralHealthServiceServer is the server API for CentralHealthService service.
-// All implementations must embed UnimplementedCentralHealthServiceServer
+// All implementations should embed UnimplementedCentralHealthServiceServer
 // for forward compatibility
 type CentralHealthServiceServer interface {
 	GetUpgradeStatus(context.Context, *Empty) (*GetUpgradeStatusResponse, error)
-	mustEmbedUnimplementedCentralHealthServiceServer()
 }
 
-// UnimplementedCentralHealthServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedCentralHealthServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedCentralHealthServiceServer struct {
 }
 
 func (UnimplementedCentralHealthServiceServer) GetUpgradeStatus(context.Context, *Empty) (*GetUpgradeStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUpgradeStatus not implemented")
 }
-func (UnimplementedCentralHealthServiceServer) mustEmbedUnimplementedCentralHealthServiceServer() {}
 
 // UnsafeCentralHealthServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to CentralHealthServiceServer will

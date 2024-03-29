@@ -103,7 +103,7 @@ func (c *configServiceClient) PutConfig(ctx context.Context, in *PutConfigReques
 }
 
 // ConfigServiceServer is the server API for ConfigService service.
-// All implementations must embed UnimplementedConfigServiceServer
+// All implementations should embed UnimplementedConfigServiceServer
 // for forward compatibility
 type ConfigServiceServer interface {
 	GetPublicConfig(context.Context, *Empty) (*storage.PublicConfig, error)
@@ -112,10 +112,9 @@ type ConfigServiceServer interface {
 	UpdateVulnerabilityExceptionConfig(context.Context, *UpdateVulnerabilityExceptionConfigRequest) (*UpdateVulnerabilityExceptionConfigResponse, error)
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
-	mustEmbedUnimplementedConfigServiceServer()
 }
 
-// UnimplementedConfigServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedConfigServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedConfigServiceServer struct {
 }
 
@@ -137,7 +136,6 @@ func (UnimplementedConfigServiceServer) GetConfig(context.Context, *Empty) (*sto
 func (UnimplementedConfigServiceServer) PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutConfig not implemented")
 }
-func (UnimplementedConfigServiceServer) mustEmbedUnimplementedConfigServiceServer() {}
 
 // UnsafeConfigServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ConfigServiceServer will

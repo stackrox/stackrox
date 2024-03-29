@@ -84,7 +84,7 @@ func (c *clusterInitServiceClient) GenerateInitBundle(ctx context.Context, in *I
 }
 
 // ClusterInitServiceServer is the server API for ClusterInitService service.
-// All implementations must embed UnimplementedClusterInitServiceServer
+// All implementations should embed UnimplementedClusterInitServiceServer
 // for forward compatibility
 type ClusterInitServiceServer interface {
 	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
@@ -95,10 +95,9 @@ type ClusterInitServiceServer interface {
 	GetCAConfig(context.Context, *Empty) (*GetCAConfigResponse, error)
 	GetInitBundles(context.Context, *Empty) (*InitBundleMetasResponse, error)
 	GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error)
-	mustEmbedUnimplementedClusterInitServiceServer()
 }
 
-// UnimplementedClusterInitServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedClusterInitServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedClusterInitServiceServer struct {
 }
 
@@ -114,7 +113,6 @@ func (UnimplementedClusterInitServiceServer) GetInitBundles(context.Context, *Em
 func (UnimplementedClusterInitServiceServer) GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateInitBundle not implemented")
 }
-func (UnimplementedClusterInitServiceServer) mustEmbedUnimplementedClusterInitServiceServer() {}
 
 // UnsafeClusterInitServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ClusterInitServiceServer will

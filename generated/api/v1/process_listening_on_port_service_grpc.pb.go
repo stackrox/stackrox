@@ -48,22 +48,19 @@ func (c *listeningEndpointsServiceClient) GetListeningEndpoints(ctx context.Cont
 }
 
 // ListeningEndpointsServiceServer is the server API for ListeningEndpointsService service.
-// All implementations must embed UnimplementedListeningEndpointsServiceServer
+// All implementations should embed UnimplementedListeningEndpointsServiceServer
 // for forward compatibility
 type ListeningEndpointsServiceServer interface {
 	// GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
 	GetListeningEndpoints(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error)
-	mustEmbedUnimplementedListeningEndpointsServiceServer()
 }
 
-// UnimplementedListeningEndpointsServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedListeningEndpointsServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedListeningEndpointsServiceServer struct {
 }
 
 func (UnimplementedListeningEndpointsServiceServer) GetListeningEndpoints(context.Context, *GetProcessesListeningOnPortsRequest) (*GetProcessesListeningOnPortsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetListeningEndpoints not implemented")
-}
-func (UnimplementedListeningEndpointsServiceServer) mustEmbedUnimplementedListeningEndpointsServiceServer() {
 }
 
 // UnsafeListeningEndpointsServiceServer may be embedded to opt out of forward compatibility for this service.

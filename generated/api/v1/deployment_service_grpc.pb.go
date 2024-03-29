@@ -143,7 +143,7 @@ func (x *deploymentServiceExportDeploymentsClient) Recv() (*ExportDeploymentResp
 }
 
 // DeploymentServiceServer is the server API for DeploymentService service.
-// All implementations must embed UnimplementedDeploymentServiceServer
+// All implementations should embed UnimplementedDeploymentServiceServer
 // for forward compatibility
 type DeploymentServiceServer interface {
 	// GetDeployment returns a deployment given its ID.
@@ -159,10 +159,9 @@ type DeploymentServiceServer interface {
 	// GetLabels returns the labels used by deployments.
 	GetLabels(context.Context, *Empty) (*DeploymentLabelsResponse, error)
 	ExportDeployments(*ExportDeploymentRequest, DeploymentService_ExportDeploymentsServer) error
-	mustEmbedUnimplementedDeploymentServiceServer()
 }
 
-// UnimplementedDeploymentServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedDeploymentServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedDeploymentServiceServer struct {
 }
 
@@ -187,7 +186,6 @@ func (UnimplementedDeploymentServiceServer) GetLabels(context.Context, *Empty) (
 func (UnimplementedDeploymentServiceServer) ExportDeployments(*ExportDeploymentRequest, DeploymentService_ExportDeploymentsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportDeployments not implemented")
 }
-func (UnimplementedDeploymentServiceServer) mustEmbedUnimplementedDeploymentServiceServer() {}
 
 // UnsafeDeploymentServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to DeploymentServiceServer will

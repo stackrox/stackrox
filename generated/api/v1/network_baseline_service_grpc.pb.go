@@ -92,7 +92,7 @@ func (c *networkBaselineServiceClient) UnlockNetworkBaseline(ctx context.Context
 }
 
 // NetworkBaselineServiceServer is the server API for NetworkBaselineService service.
-// All implementations must embed UnimplementedNetworkBaselineServiceServer
+// All implementations should embed UnimplementedNetworkBaselineServiceServer
 // for forward compatibility
 type NetworkBaselineServiceServer interface {
 	GetNetworkBaselineStatusForFlows(context.Context, *NetworkBaselineStatusRequest) (*NetworkBaselineStatusResponse, error)
@@ -100,10 +100,9 @@ type NetworkBaselineServiceServer interface {
 	ModifyBaselineStatusForPeers(context.Context, *ModifyBaselineStatusForPeersRequest) (*Empty, error)
 	LockNetworkBaseline(context.Context, *ResourceByID) (*Empty, error)
 	UnlockNetworkBaseline(context.Context, *ResourceByID) (*Empty, error)
-	mustEmbedUnimplementedNetworkBaselineServiceServer()
 }
 
-// UnimplementedNetworkBaselineServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedNetworkBaselineServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedNetworkBaselineServiceServer struct {
 }
 
@@ -121,8 +120,6 @@ func (UnimplementedNetworkBaselineServiceServer) LockNetworkBaseline(context.Con
 }
 func (UnimplementedNetworkBaselineServiceServer) UnlockNetworkBaseline(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnlockNetworkBaseline not implemented")
-}
-func (UnimplementedNetworkBaselineServiceServer) mustEmbedUnimplementedNetworkBaselineServiceServer() {
 }
 
 // UnsafeNetworkBaselineServiceServer may be embedded to opt out of forward compatibility for this service.

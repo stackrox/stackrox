@@ -61,17 +61,16 @@ func (c *matcherClient) GetMetadata(ctx context.Context, in *emptypb.Empty, opts
 }
 
 // MatcherServer is the server API for Matcher service.
-// All implementations must embed UnimplementedMatcherServer
+// All implementations should embed UnimplementedMatcherServer
 // for forward compatibility
 type MatcherServer interface {
 	// GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
 	GetVulnerabilities(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error)
 	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
 	GetMetadata(context.Context, *emptypb.Empty) (*Metadata, error)
-	mustEmbedUnimplementedMatcherServer()
 }
 
-// UnimplementedMatcherServer must be embedded to have forward compatible implementations.
+// UnimplementedMatcherServer should be embedded to have forward compatible implementations.
 type UnimplementedMatcherServer struct {
 }
 
@@ -81,7 +80,6 @@ func (UnimplementedMatcherServer) GetVulnerabilities(context.Context, *GetVulner
 func (UnimplementedMatcherServer) GetMetadata(context.Context, *emptypb.Empty) (*Metadata, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
 }
-func (UnimplementedMatcherServer) mustEmbedUnimplementedMatcherServer() {}
 
 // UnsafeMatcherServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to MatcherServer will

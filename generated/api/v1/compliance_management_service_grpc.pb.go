@@ -69,16 +69,15 @@ func (c *complianceManagementServiceClient) GetRunStatuses(ctx context.Context, 
 }
 
 // ComplianceManagementServiceServer is the server API for ComplianceManagementService service.
-// All implementations must embed UnimplementedComplianceManagementServiceServer
+// All implementations should embed UnimplementedComplianceManagementServiceServer
 // for forward compatibility
 type ComplianceManagementServiceServer interface {
 	GetRecentRuns(context.Context, *GetRecentComplianceRunsRequest) (*GetRecentComplianceRunsResponse, error)
 	TriggerRuns(context.Context, *TriggerComplianceRunsRequest) (*TriggerComplianceRunsResponse, error)
 	GetRunStatuses(context.Context, *GetComplianceRunStatusesRequest) (*GetComplianceRunStatusesResponse, error)
-	mustEmbedUnimplementedComplianceManagementServiceServer()
 }
 
-// UnimplementedComplianceManagementServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedComplianceManagementServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedComplianceManagementServiceServer struct {
 }
 
@@ -90,8 +89,6 @@ func (UnimplementedComplianceManagementServiceServer) TriggerRuns(context.Contex
 }
 func (UnimplementedComplianceManagementServiceServer) GetRunStatuses(context.Context, *GetComplianceRunStatusesRequest) (*GetComplianceRunStatusesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRunStatuses not implemented")
-}
-func (UnimplementedComplianceManagementServiceServer) mustEmbedUnimplementedComplianceManagementServiceServer() {
 }
 
 // UnsafeComplianceManagementServiceServer may be embedded to opt out of forward compatibility for this service.

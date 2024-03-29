@@ -145,7 +145,7 @@ func (c *vulnerabilityRequestServiceClient) DeleteVulnerabilityRequest(ctx conte
 }
 
 // VulnerabilityRequestServiceServer is the server API for VulnerabilityRequestService service.
-// All implementations must embed UnimplementedVulnerabilityRequestServiceServer
+// All implementations should embed UnimplementedVulnerabilityRequestServiceServer
 // for forward compatibility
 type VulnerabilityRequestServiceServer interface {
 	// GetVulnerabilityRequest returns the requested vulnerability request by ID.
@@ -167,10 +167,9 @@ type VulnerabilityRequestServiceServer interface {
 	UndoVulnerabilityRequest(context.Context, *ResourceByID) (*UndoVulnRequestResponse, error)
 	// DeleteVulnerabilityRequest deletes a vulnerability request.
 	DeleteVulnerabilityRequest(context.Context, *ResourceByID) (*Empty, error)
-	mustEmbedUnimplementedVulnerabilityRequestServiceServer()
 }
 
-// UnimplementedVulnerabilityRequestServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedVulnerabilityRequestServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedVulnerabilityRequestServiceServer struct {
 }
 
@@ -200,8 +199,6 @@ func (UnimplementedVulnerabilityRequestServiceServer) UndoVulnerabilityRequest(c
 }
 func (UnimplementedVulnerabilityRequestServiceServer) DeleteVulnerabilityRequest(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVulnerabilityRequest not implemented")
-}
-func (UnimplementedVulnerabilityRequestServiceServer) mustEmbedUnimplementedVulnerabilityRequestServiceServer() {
 }
 
 // UnsafeVulnerabilityRequestServiceServer may be embedded to opt out of forward compatibility for this service.

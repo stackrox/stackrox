@@ -104,7 +104,7 @@ func (c *rbacServiceClient) ListSubjects(ctx context.Context, in *RawQuery, opts
 }
 
 // RbacServiceServer is the server API for RbacService service.
-// All implementations must embed UnimplementedRbacServiceServer
+// All implementations should embed UnimplementedRbacServiceServer
 // for forward compatibility
 type RbacServiceServer interface {
 	GetRole(context.Context, *ResourceByID) (*GetRoleResponse, error)
@@ -115,10 +115,9 @@ type RbacServiceServer interface {
 	// Id in this case is the Name field, since for users and groups, that is unique, and subjects do not have IDs.
 	GetSubject(context.Context, *ResourceByID) (*GetSubjectResponse, error)
 	ListSubjects(context.Context, *RawQuery) (*ListSubjectsResponse, error)
-	mustEmbedUnimplementedRbacServiceServer()
 }
 
-// UnimplementedRbacServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedRbacServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedRbacServiceServer struct {
 }
 
@@ -140,7 +139,6 @@ func (UnimplementedRbacServiceServer) GetSubject(context.Context, *ResourceByID)
 func (UnimplementedRbacServiceServer) ListSubjects(context.Context, *RawQuery) (*ListSubjectsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListSubjects not implemented")
 }
-func (UnimplementedRbacServiceServer) mustEmbedUnimplementedRbacServiceServer() {}
 
 // UnsafeRbacServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to RbacServiceServer will

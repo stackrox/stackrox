@@ -156,7 +156,7 @@ func (c *alertServiceClient) DeleteAlerts(ctx context.Context, in *DeleteAlertsR
 }
 
 // AlertServiceServer is the server API for AlertService service.
-// All implementations must embed UnimplementedAlertServiceServer
+// All implementations should embed UnimplementedAlertServiceServer
 // for forward compatibility
 type AlertServiceServer interface {
 	// GetAlert returns the alert given its id.
@@ -178,10 +178,9 @@ type AlertServiceServer interface {
 	// SnoozeAlert is deprecated.
 	SnoozeAlert(context.Context, *SnoozeAlertRequest) (*Empty, error)
 	DeleteAlerts(context.Context, *DeleteAlertsRequest) (*DeleteAlertsResponse, error)
-	mustEmbedUnimplementedAlertServiceServer()
 }
 
-// UnimplementedAlertServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedAlertServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedAlertServiceServer struct {
 }
 
@@ -215,7 +214,6 @@ func (UnimplementedAlertServiceServer) SnoozeAlert(context.Context, *SnoozeAlert
 func (UnimplementedAlertServiceServer) DeleteAlerts(context.Context, *DeleteAlertsRequest) (*DeleteAlertsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAlerts not implemented")
 }
-func (UnimplementedAlertServiceServer) mustEmbedUnimplementedAlertServiceServer() {}
 
 // UnsafeAlertServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to AlertServiceServer will

@@ -47,21 +47,18 @@ func (c *gRPCPreferencesServiceClient) Get(ctx context.Context, in *Empty, opts 
 }
 
 // GRPCPreferencesServiceServer is the server API for GRPCPreferencesService service.
-// All implementations must embed UnimplementedGRPCPreferencesServiceServer
+// All implementations should embed UnimplementedGRPCPreferencesServiceServer
 // for forward compatibility
 type GRPCPreferencesServiceServer interface {
 	Get(context.Context, *Empty) (*Preferences, error)
-	mustEmbedUnimplementedGRPCPreferencesServiceServer()
 }
 
-// UnimplementedGRPCPreferencesServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedGRPCPreferencesServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedGRPCPreferencesServiceServer struct {
 }
 
 func (UnimplementedGRPCPreferencesServiceServer) Get(context.Context, *Empty) (*Preferences, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
-}
-func (UnimplementedGRPCPreferencesServiceServer) mustEmbedUnimplementedGRPCPreferencesServiceServer() {
 }
 
 // UnsafeGRPCPreferencesServiceServer may be embedded to opt out of forward compatibility for this service.

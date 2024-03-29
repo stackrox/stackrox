@@ -72,7 +72,7 @@ func (c *administrationEventServiceClient) ListAdministrationEvents(ctx context.
 }
 
 // AdministrationEventServiceServer is the server API for AdministrationEventService service.
-// All implementations must embed UnimplementedAdministrationEventServiceServer
+// All implementations should embed UnimplementedAdministrationEventServiceServer
 // for forward compatibility
 type AdministrationEventServiceServer interface {
 	// CountAdministrationEvents returns the number of events after filtering by requested fields.
@@ -81,10 +81,9 @@ type AdministrationEventServiceServer interface {
 	GetAdministrationEvent(context.Context, *ResourceByID) (*GetAdministrationEventResponse, error)
 	// ListAdministrationEvents returns the list of events after filtered by requested fields.
 	ListAdministrationEvents(context.Context, *ListAdministrationEventsRequest) (*ListAdministrationEventsResponse, error)
-	mustEmbedUnimplementedAdministrationEventServiceServer()
 }
 
-// UnimplementedAdministrationEventServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedAdministrationEventServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedAdministrationEventServiceServer struct {
 }
 
@@ -96,8 +95,6 @@ func (UnimplementedAdministrationEventServiceServer) GetAdministrationEvent(cont
 }
 func (UnimplementedAdministrationEventServiceServer) ListAdministrationEvents(context.Context, *ListAdministrationEventsRequest) (*ListAdministrationEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAdministrationEvents not implemented")
-}
-func (UnimplementedAdministrationEventServiceServer) mustEmbedUnimplementedAdministrationEventServiceServer() {
 }
 
 // UnsafeAdministrationEventServiceServer may be embedded to opt out of forward compatibility for this service.

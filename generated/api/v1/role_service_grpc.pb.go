@@ -314,7 +314,7 @@ func (c *roleServiceClient) GetNamespacesForClusterAndPermissions(ctx context.Co
 }
 
 // RoleServiceServer is the server API for RoleService service.
-// All implementations must embed UnimplementedRoleServiceServer
+// All implementations should embed UnimplementedRoleServiceServer
 // for forward compatibility
 type RoleServiceServer interface {
 	GetRoles(context.Context, *Empty) (*GetRolesResponse, error)
@@ -394,10 +394,9 @@ type RoleServiceServer interface {
 	// If no permission is given in input, all namespaces allowed by the requester scope for
 	// any permission with namespace scope or narrower will be part of the response.
 	GetNamespacesForClusterAndPermissions(context.Context, *GetNamespaceForClusterAndPermissionsRequest) (*GetNamespacesForClusterAndPermissionsResponse, error)
-	mustEmbedUnimplementedRoleServiceServer()
 }
 
-// UnimplementedRoleServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedRoleServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedRoleServiceServer struct {
 }
 
@@ -461,7 +460,6 @@ func (UnimplementedRoleServiceServer) GetClustersForPermissions(context.Context,
 func (UnimplementedRoleServiceServer) GetNamespacesForClusterAndPermissions(context.Context, *GetNamespaceForClusterAndPermissionsRequest) (*GetNamespacesForClusterAndPermissionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNamespacesForClusterAndPermissions not implemented")
 }
-func (UnimplementedRoleServiceServer) mustEmbedUnimplementedRoleServiceServer() {}
 
 // UnsafeRoleServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to RoleServiceServer will

@@ -47,21 +47,18 @@ func (c *declarativeConfigHealthServiceClient) GetDeclarativeConfigHealths(ctx c
 }
 
 // DeclarativeConfigHealthServiceServer is the server API for DeclarativeConfigHealthService service.
-// All implementations must embed UnimplementedDeclarativeConfigHealthServiceServer
+// All implementations should embed UnimplementedDeclarativeConfigHealthServiceServer
 // for forward compatibility
 type DeclarativeConfigHealthServiceServer interface {
 	GetDeclarativeConfigHealths(context.Context, *Empty) (*GetDeclarativeConfigHealthsResponse, error)
-	mustEmbedUnimplementedDeclarativeConfigHealthServiceServer()
 }
 
-// UnimplementedDeclarativeConfigHealthServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedDeclarativeConfigHealthServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedDeclarativeConfigHealthServiceServer struct {
 }
 
 func (UnimplementedDeclarativeConfigHealthServiceServer) GetDeclarativeConfigHealths(context.Context, *Empty) (*GetDeclarativeConfigHealthsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeclarativeConfigHealths not implemented")
-}
-func (UnimplementedDeclarativeConfigHealthServiceServer) mustEmbedUnimplementedDeclarativeConfigHealthServiceServer() {
 }
 
 // UnsafeDeclarativeConfigHealthServiceServer may be embedded to opt out of forward compatibility for this service.

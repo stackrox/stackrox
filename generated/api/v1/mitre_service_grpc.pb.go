@@ -60,17 +60,16 @@ func (c *mitreAttackServiceClient) GetMitreAttackVector(ctx context.Context, in 
 }
 
 // MitreAttackServiceServer is the server API for MitreAttackService service.
-// All implementations must embed UnimplementedMitreAttackServiceServer
+// All implementations should embed UnimplementedMitreAttackServiceServer
 // for forward compatibility
 type MitreAttackServiceServer interface {
 	// ListMitreAttackVectors returns all MITRE ATT&CK vectors.
 	ListMitreAttackVectors(context.Context, *Empty) (*ListMitreAttackVectorsResponse, error)
 	// GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
 	GetMitreAttackVector(context.Context, *ResourceByID) (*GetMitreVectorResponse, error)
-	mustEmbedUnimplementedMitreAttackServiceServer()
 }
 
-// UnimplementedMitreAttackServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedMitreAttackServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedMitreAttackServiceServer struct {
 }
 
@@ -80,7 +79,6 @@ func (UnimplementedMitreAttackServiceServer) ListMitreAttackVectors(context.Cont
 func (UnimplementedMitreAttackServiceServer) GetMitreAttackVector(context.Context, *ResourceByID) (*GetMitreVectorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMitreAttackVector not implemented")
 }
-func (UnimplementedMitreAttackServiceServer) mustEmbedUnimplementedMitreAttackServiceServer() {}
 
 // UnsafeMitreAttackServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to MitreAttackServiceServer will

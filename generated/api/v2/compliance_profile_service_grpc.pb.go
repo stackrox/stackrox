@@ -84,7 +84,7 @@ func (c *complianceProfileServiceClient) GetComplianceProfileCount(ctx context.C
 }
 
 // ComplianceProfileServiceServer is the server API for ComplianceProfileService service.
-// All implementations must embed UnimplementedComplianceProfileServiceServer
+// All implementations should embed UnimplementedComplianceProfileServiceServer
 // for forward compatibility
 type ComplianceProfileServiceServer interface {
 	// GetComplianceProfile retrieves the specified compliance profile
@@ -95,10 +95,9 @@ type ComplianceProfileServiceServer interface {
 	ListProfileSummaries(context.Context, *ClustersProfileSummaryRequest) (*ListComplianceProfileSummaryResponse, error)
 	// GetComplianceProfileCount returns the number of profiles matching the given query
 	GetComplianceProfileCount(context.Context, *RawQuery) (*CountComplianceProfilesResponse, error)
-	mustEmbedUnimplementedComplianceProfileServiceServer()
 }
 
-// UnimplementedComplianceProfileServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedComplianceProfileServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedComplianceProfileServiceServer struct {
 }
 
@@ -113,8 +112,6 @@ func (UnimplementedComplianceProfileServiceServer) ListProfileSummaries(context.
 }
 func (UnimplementedComplianceProfileServiceServer) GetComplianceProfileCount(context.Context, *RawQuery) (*CountComplianceProfilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileCount not implemented")
-}
-func (UnimplementedComplianceProfileServiceServer) mustEmbedUnimplementedComplianceProfileServiceServer() {
 }
 
 // UnsafeComplianceProfileServiceServer may be embedded to opt out of forward compatibility for this service.

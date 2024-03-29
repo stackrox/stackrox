@@ -80,17 +80,16 @@ func (c *sensorUpgradeServiceClient) TriggerSensorCertRotation(ctx context.Conte
 }
 
 // SensorUpgradeServiceServer is the server API for SensorUpgradeService service.
-// All implementations must embed UnimplementedSensorUpgradeServiceServer
+// All implementations should embed UnimplementedSensorUpgradeServiceServer
 // for forward compatibility
 type SensorUpgradeServiceServer interface {
 	GetSensorUpgradeConfig(context.Context, *Empty) (*GetSensorUpgradeConfigResponse, error)
 	UpdateSensorUpgradeConfig(context.Context, *UpdateSensorUpgradeConfigRequest) (*Empty, error)
 	TriggerSensorUpgrade(context.Context, *ResourceByID) (*Empty, error)
 	TriggerSensorCertRotation(context.Context, *ResourceByID) (*Empty, error)
-	mustEmbedUnimplementedSensorUpgradeServiceServer()
 }
 
-// UnimplementedSensorUpgradeServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedSensorUpgradeServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSensorUpgradeServiceServer struct {
 }
 
@@ -106,7 +105,6 @@ func (UnimplementedSensorUpgradeServiceServer) TriggerSensorUpgrade(context.Cont
 func (UnimplementedSensorUpgradeServiceServer) TriggerSensorCertRotation(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TriggerSensorCertRotation not implemented")
 }
-func (UnimplementedSensorUpgradeServiceServer) mustEmbedUnimplementedSensorUpgradeServiceServer() {}
 
 // UnsafeSensorUpgradeServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to SensorUpgradeServiceServer will

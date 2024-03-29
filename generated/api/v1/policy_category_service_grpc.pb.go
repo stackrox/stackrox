@@ -96,7 +96,7 @@ func (c *policyCategoryServiceClient) DeletePolicyCategory(ctx context.Context, 
 }
 
 // PolicyCategoryServiceServer is the server API for PolicyCategoryService service.
-// All implementations must embed UnimplementedPolicyCategoryServiceServer
+// All implementations should embed UnimplementedPolicyCategoryServiceServer
 // for forward compatibility
 type PolicyCategoryServiceServer interface {
 	// GetPolicyCategory returns the requested policy category by ID.
@@ -109,10 +109,9 @@ type PolicyCategoryServiceServer interface {
 	RenamePolicyCategory(context.Context, *RenamePolicyCategoryRequest) (*PolicyCategory, error)
 	// DeletePolicyCategory removes the given policy category.
 	DeletePolicyCategory(context.Context, *DeletePolicyCategoryRequest) (*Empty, error)
-	mustEmbedUnimplementedPolicyCategoryServiceServer()
 }
 
-// UnimplementedPolicyCategoryServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedPolicyCategoryServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedPolicyCategoryServiceServer struct {
 }
 
@@ -131,7 +130,6 @@ func (UnimplementedPolicyCategoryServiceServer) RenamePolicyCategory(context.Con
 func (UnimplementedPolicyCategoryServiceServer) DeletePolicyCategory(context.Context, *DeletePolicyCategoryRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePolicyCategory not implemented")
 }
-func (UnimplementedPolicyCategoryServiceServer) mustEmbedUnimplementedPolicyCategoryServiceServer() {}
 
 // UnsafePolicyCategoryServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PolicyCategoryServiceServer will

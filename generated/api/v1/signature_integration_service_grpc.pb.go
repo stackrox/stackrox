@@ -94,7 +94,7 @@ func (c *signatureIntegrationServiceClient) DeleteSignatureIntegration(ctx conte
 }
 
 // SignatureIntegrationServiceServer is the server API for SignatureIntegrationService service.
-// All implementations must embed UnimplementedSignatureIntegrationServiceServer
+// All implementations should embed UnimplementedSignatureIntegrationServiceServer
 // for forward compatibility
 type SignatureIntegrationServiceServer interface {
 	ListSignatureIntegrations(context.Context, *Empty) (*ListSignatureIntegrationsResponse, error)
@@ -104,10 +104,9 @@ type SignatureIntegrationServiceServer interface {
 	PostSignatureIntegration(context.Context, *storage.SignatureIntegration) (*storage.SignatureIntegration, error)
 	PutSignatureIntegration(context.Context, *storage.SignatureIntegration) (*Empty, error)
 	DeleteSignatureIntegration(context.Context, *ResourceByID) (*Empty, error)
-	mustEmbedUnimplementedSignatureIntegrationServiceServer()
 }
 
-// UnimplementedSignatureIntegrationServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedSignatureIntegrationServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSignatureIntegrationServiceServer struct {
 }
 
@@ -125,8 +124,6 @@ func (UnimplementedSignatureIntegrationServiceServer) PutSignatureIntegration(co
 }
 func (UnimplementedSignatureIntegrationServiceServer) DeleteSignatureIntegration(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSignatureIntegration not implemented")
-}
-func (UnimplementedSignatureIntegrationServiceServer) mustEmbedUnimplementedSignatureIntegrationServiceServer() {
 }
 
 // UnsafeSignatureIntegrationServiceServer may be embedded to opt out of forward compatibility for this service.

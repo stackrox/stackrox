@@ -47,21 +47,19 @@ func (c *summaryServiceClient) GetSummaryCounts(ctx context.Context, in *Empty, 
 }
 
 // SummaryServiceServer is the server API for SummaryService service.
-// All implementations must embed UnimplementedSummaryServiceServer
+// All implementations should embed UnimplementedSummaryServiceServer
 // for forward compatibility
 type SummaryServiceServer interface {
 	GetSummaryCounts(context.Context, *Empty) (*SummaryCountsResponse, error)
-	mustEmbedUnimplementedSummaryServiceServer()
 }
 
-// UnimplementedSummaryServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedSummaryServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedSummaryServiceServer struct {
 }
 
 func (UnimplementedSummaryServiceServer) GetSummaryCounts(context.Context, *Empty) (*SummaryCountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSummaryCounts not implemented")
 }
-func (UnimplementedSummaryServiceServer) mustEmbedUnimplementedSummaryServiceServer() {}
 
 // UnsafeSummaryServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to SummaryServiceServer will

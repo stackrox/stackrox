@@ -72,7 +72,7 @@ func (c *serviceIdentityServiceClient) GetAuthorities(ctx context.Context, in *E
 }
 
 // ServiceIdentityServiceServer is the server API for ServiceIdentityService service.
-// All implementations must embed UnimplementedServiceIdentityServiceServer
+// All implementations should embed UnimplementedServiceIdentityServiceServer
 // for forward compatibility
 type ServiceIdentityServiceServer interface {
 	GetServiceIdentities(context.Context, *Empty) (*ServiceIdentityResponse, error)
@@ -81,10 +81,9 @@ type ServiceIdentityServiceServer interface {
 	CreateServiceIdentity(context.Context, *CreateServiceIdentityRequest) (*CreateServiceIdentityResponse, error)
 	// GetAuthorities returns the authorities currently in use.
 	GetAuthorities(context.Context, *Empty) (*Authorities, error)
-	mustEmbedUnimplementedServiceIdentityServiceServer()
 }
 
-// UnimplementedServiceIdentityServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedServiceIdentityServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedServiceIdentityServiceServer struct {
 }
 
@@ -96,8 +95,6 @@ func (UnimplementedServiceIdentityServiceServer) CreateServiceIdentity(context.C
 }
 func (UnimplementedServiceIdentityServiceServer) GetAuthorities(context.Context, *Empty) (*Authorities, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuthorities not implemented")
-}
-func (UnimplementedServiceIdentityServiceServer) mustEmbedUnimplementedServiceIdentityServiceServer() {
 }
 
 // UnsafeServiceIdentityServiceServer may be embedded to opt out of forward compatibility for this service.

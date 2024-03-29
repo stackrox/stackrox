@@ -61,7 +61,7 @@ func (c *complianceIntegrationServiceClient) GetComplianceIntegrationsCount(ctx 
 }
 
 // ComplianceIntegrationServiceServer is the server API for ComplianceIntegrationService service.
-// All implementations must embed UnimplementedComplianceIntegrationServiceServer
+// All implementations should embed UnimplementedComplianceIntegrationServiceServer
 // for forward compatibility
 type ComplianceIntegrationServiceServer interface {
 	// ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
@@ -69,10 +69,9 @@ type ComplianceIntegrationServiceServer interface {
 	// GetComplianceIntegrationsCount returns the number of compliance operator integrations
 	// matching the given query
 	GetComplianceIntegrationsCount(context.Context, *RawQuery) (*CountComplianceIntegrationsResponse, error)
-	mustEmbedUnimplementedComplianceIntegrationServiceServer()
 }
 
-// UnimplementedComplianceIntegrationServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedComplianceIntegrationServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedComplianceIntegrationServiceServer struct {
 }
 
@@ -81,8 +80,6 @@ func (UnimplementedComplianceIntegrationServiceServer) ListComplianceIntegration
 }
 func (UnimplementedComplianceIntegrationServiceServer) GetComplianceIntegrationsCount(context.Context, *RawQuery) (*CountComplianceIntegrationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceIntegrationsCount not implemented")
-}
-func (UnimplementedComplianceIntegrationServiceServer) mustEmbedUnimplementedComplianceIntegrationServiceServer() {
 }
 
 // UnsafeComplianceIntegrationServiceServer may be embedded to opt out of forward compatibility for this service.

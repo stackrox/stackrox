@@ -117,7 +117,7 @@ func (c *clustersServiceClient) GetClusterDefaultValues(ctx context.Context, in 
 }
 
 // ClustersServiceServer is the server API for ClustersService service.
-// All implementations must embed UnimplementedClustersServiceServer
+// All implementations should embed UnimplementedClustersServiceServer
 // for forward compatibility
 type ClustersServiceServer interface {
 	GetClusters(context.Context, *GetClustersRequest) (*ClustersList, error)
@@ -129,10 +129,9 @@ type ClustersServiceServer interface {
 	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
 	GetKernelSupportAvailable(context.Context, *Empty) (*KernelSupportAvailableResponse, error)
 	GetClusterDefaultValues(context.Context, *Empty) (*ClusterDefaultsResponse, error)
-	mustEmbedUnimplementedClustersServiceServer()
 }
 
-// UnimplementedClustersServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedClustersServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedClustersServiceServer struct {
 }
 
@@ -157,7 +156,6 @@ func (UnimplementedClustersServiceServer) GetKernelSupportAvailable(context.Cont
 func (UnimplementedClustersServiceServer) GetClusterDefaultValues(context.Context, *Empty) (*ClusterDefaultsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterDefaultValues not implemented")
 }
-func (UnimplementedClustersServiceServer) mustEmbedUnimplementedClustersServiceServer() {}
 
 // UnsafeClustersServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ClustersServiceServer will

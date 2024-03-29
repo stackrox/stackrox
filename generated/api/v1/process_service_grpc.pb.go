@@ -84,7 +84,7 @@ func (c *processServiceClient) GetGroupedProcessByDeploymentAndContainer(ctx con
 }
 
 // ProcessServiceServer is the server API for ProcessService service.
-// All implementations must embed UnimplementedProcessServiceServer
+// All implementations should embed UnimplementedProcessServiceServer
 // for forward compatibility
 type ProcessServiceServer interface {
 	// CountProcesses returns the count of processes.
@@ -95,10 +95,9 @@ type ProcessServiceServer interface {
 	GetGroupedProcessByDeployment(context.Context, *GetProcessesByDeploymentRequest) (*GetGroupedProcessesResponse, error)
 	// GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.
 	GetGroupedProcessByDeploymentAndContainer(context.Context, *GetProcessesByDeploymentRequest) (*GetGroupedProcessesWithContainerResponse, error)
-	mustEmbedUnimplementedProcessServiceServer()
 }
 
-// UnimplementedProcessServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedProcessServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedProcessServiceServer struct {
 }
 
@@ -114,7 +113,6 @@ func (UnimplementedProcessServiceServer) GetGroupedProcessByDeployment(context.C
 func (UnimplementedProcessServiceServer) GetGroupedProcessByDeploymentAndContainer(context.Context, *GetProcessesByDeploymentRequest) (*GetGroupedProcessesWithContainerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGroupedProcessByDeploymentAndContainer not implemented")
 }
-func (UnimplementedProcessServiceServer) mustEmbedUnimplementedProcessServiceServer() {}
 
 // UnsafeProcessServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to ProcessServiceServer will
