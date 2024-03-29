@@ -116,7 +116,7 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
     git checkout "$LAST_POSTGRES_SHA"
-    export GOTOOLCHAIN=go1.20.10
+    download_roxctl "${LAST_POSTGRES_TAG}"
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
@@ -162,9 +162,9 @@ test_upgrade_paths() {
     validate_upgrade "01_to_rocks" "central upgrade postgres down to rocks" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     info "Fetching a sensor bundle for cluster 'remote'"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
+    roxctl version
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
@@ -203,15 +203,9 @@ helm_upgrade_to_last_postgres() {
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
 
-    make cli
-
-    # Get opensource charts and convert to development_build to support release builds
-    if is_CI; then
-        bin/"${TEST_HOST_PLATFORM}"/roxctl version
-        bin/"${TEST_HOST_PLATFORM}"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-    else
-        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-    fi
+    download_roxctl "${LAST_POSTGRES_TAG}"
+    roxctl version
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
 
 
     local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
@@ -263,14 +257,11 @@ restore_3_56_1_backup() {
 deploy_earlier_rocks_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
-
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+    download_roxctl "${EARLIER_TAG}"
 
     # Let's try helm
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
