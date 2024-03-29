@@ -347,7 +347,7 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 			// If there already is an image ID for the image then that implies that the name of the image
 			// had a digest. e.g. quay.io/stackrox-io/main@sha256:xyz or main@sha256:xyz
-			// If the ID already exists populate NotPullable and IsClusterLocal, also sync the registry
+			// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
 			// and remote with the container runtime.
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
@@ -388,6 +388,10 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 // The image in a workload's spec may differ from what the container runtime pulls,
 // therefore the image name must be updated to accurately reflect the pulled image
 // to give downstream processes (like scanning) a better chance at completing.
+//
+// Note: at this time CRI-O does not indicate if a registry mirror was used,
+// therefore the mirror store (`pkg/registrymirror`) and mirror processing logic in
+// `sensor/common/scan` are still required to scan images from registry mirrors.
 func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName *storage.ImageName, updateDigest bool) {
 	if !features.UnqualifiedSearchRegistries.Enabled() || image.GetName() == nil || newerImageName == nil {
 		return
