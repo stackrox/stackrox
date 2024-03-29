@@ -5,6 +5,7 @@ import (
 	golangProto "github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/secrets"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // MarshalAny correctly marshals a proto message into an Any
@@ -22,7 +23,7 @@ func MarshalAny(msg protocompat.Message) (*types.Any, error) {
 
 // RequestToAny converts an input protobuf message to the generic protobuf Any type,
 // with the secrets scrubbed.
-func RequestToAny(req interface{}) *types.Any {
+func RequestToAny(req interface{}) *anypb.Any {
 	if req == nil {
 		return nil
 	}

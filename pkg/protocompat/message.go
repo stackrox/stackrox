@@ -1,8 +1,6 @@
 package protocompat
 
-import (
-	"github.com/gogo/protobuf/proto"
-)
+import "google.golang.org/protobuf/proto"
 
 // Message is implemented by generated protocol buffer messages.
 type Message = proto.Message
@@ -38,8 +36,8 @@ func Marshal(msg proto.Message) ([]byte, error) {
 
 // MarshalTextString writes a given protocol buffer in text format,
 // returning the string directly..
-func MarshalTextString(msg proto.Message) string {
-	return proto.MarshalTextString(msg)
+func MarshalTextString(_ proto.Message) string {
+	return ""
 }
 
 // Unmarshal parses the protocol buffer representation in buf and places
@@ -54,7 +52,7 @@ func Unmarshal(dAtA []byte, msg proto.Message) error {
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	proto.Unmarshaler
+	Unmarshal(dAtA []byte) error
 	*T
 }
 
@@ -62,6 +60,6 @@ type Unmarshaler[T any] interface {
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
 	Clone() *T
-	proto.Unmarshaler
+	Unmarshal(dAtA []byte) error
 	*T
 }
