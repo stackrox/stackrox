@@ -159,14 +159,14 @@ function ClusterLabelsTable({
                                     isDisabled={!isValid}
                                     onClick={() => onAddLabel()}
                                 >
-                                    <Icon
-                                        color={
-                                            isReplace
-                                                ? 'var(--pf-v5-global--warning-color--100)'
-                                                : 'var(--pf-v5-global--success-color--100)'
-                                        }
-                                    >
-                                        <PlusCircleIcon />
+                                    <Icon>
+                                        <PlusCircleIcon
+                                            color={
+                                                isReplace
+                                                    ? 'var(--pf-v5-global--warning-color--100)'
+                                                    : 'var(--pf-v5-global--success-color--100)'
+                                            }
+                                        />
                                     </Icon>
                                 </Button>
                             </Tooltip>
