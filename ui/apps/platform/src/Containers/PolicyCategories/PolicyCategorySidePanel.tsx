@@ -54,7 +54,7 @@ function PolicyCategorySidePanel({
 
     const { values, handleChange, dirty, handleSubmit } = formik;
 
-    function onChange(_value, event) {
+    function onChange(event: React.FormEvent) {
         handleChange(event);
     }
 
@@ -85,6 +85,12 @@ function PolicyCategorySidePanel({
                                 label="Category name"
                                 isRequired
                             >
+                                <TextInput
+                                    id="name"
+                                    type="text"
+                                    value={values.name}
+                                    onChange={onChange}
+                                />
                                 <FormHelperText>
                                     <HelperText>
                                         <HelperTextItem>
@@ -92,12 +98,6 @@ function PolicyCategorySidePanel({
                                         </HelperTextItem>
                                     </HelperText>
                                 </FormHelperText>
-                                <TextInput
-                                    id="name"
-                                    type="text"
-                                    value={values.name}
-                                    onChange={(event, _value) => onChange(_value, event)}
-                                />
                             </FormGroup>
                             <ActionGroup>
                                 {dirty && (

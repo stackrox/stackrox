@@ -362,15 +362,6 @@ const SystemConfigForm = ({
                         isRequired
                         fieldId="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
                     >
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem
-                                    variant={downloadableReportRetentionError ? 'error' : 'default'}
-                                >
-                                    {downloadableReportRetentionError}
-                                </HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
                         <Split hasGutter className="pf-v5-u-align-items-center">
                             <SplitItem isFilled>
                                 <TextInput
@@ -396,6 +387,15 @@ const SystemConfigForm = ({
                                 <Text>MB</Text>
                             </SplitItem>
                         </Split>
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem
+                                    variant={downloadableReportRetentionError ? 'error' : 'default'}
+                                >
+                                    {downloadableReportRetentionError}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
                     </FormGroup>
                 </GridItem>
                 {isFeatureFlagEnabled('ROX_ADMINISTRATION_EVENTS') && (

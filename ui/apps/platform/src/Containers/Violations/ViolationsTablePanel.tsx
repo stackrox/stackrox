@@ -12,15 +12,7 @@ import {
     pluralize,
 } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
-import {
-    ActionsColumn,
-    Table /* data-codemods */,
-    Tbody,
-    Thead,
-    Td,
-    Th,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';

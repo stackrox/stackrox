@@ -237,7 +237,7 @@ function AuthProviderForm({
     const { dirty, handleChange, isValid, setFieldValue, handleBlur, values, errors, touched } =
         formik;
 
-    function onChange(_value, event) {
+    function onChange(event: React.FormEvent) {
         handleChange(event);
     }
 
@@ -420,18 +420,11 @@ function AuthProviderForm({
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
                             <FormGroup label="Name" fieldId="name" isRequired>
-                                <FormHelperText>
-                                    <HelperText>
-                                        <HelperTextItem variant={nameValidated}>
-                                            {errors.name || ''}
-                                        </HelperTextItem>
-                                    </HelperText>
-                                </FormHelperText>
                                 <TextInput
                                     type="text"
                                     id="name"
                                     value={values.name}
-                                    onChange={(event, _value) => onChange(_value, event)}
+                                    onChange={onChange}
                                     isDisabled={isDisabled}
                                     isRequired
                                     onBlur={handleBlur}
@@ -441,6 +434,13 @@ function AuthProviderForm({
                                             : 'default'
                                     }
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameValidated}>
+                                            {errors.name || ''}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </FormGroup>
                         </GridItem>
                         <GridItem span={12} lg={6}>
@@ -548,9 +548,7 @@ function AuthProviderForm({
                                                                 type="text"
                                                                 id={`requiredAttributes[${index}].attributeKey`}
                                                                 value={attribute.attributeKey}
-                                                                onChange={(event, _value) =>
-                                                                    onChange(_value, event)
-                                                                }
+                                                                onChange={onChange}
                                                                 isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
@@ -562,9 +560,7 @@ function AuthProviderForm({
                                                                 type="text"
                                                                 id={`requiredAttributes[${index}].attributeValue`}
                                                                 value={attribute.attributeValue}
-                                                                onChange={(event, _value) =>
-                                                                    onChange(_value, event)
-                                                                }
+                                                                onChange={onChange}
                                                                 isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
@@ -666,9 +662,7 @@ function AuthProviderForm({
                                                             type="text"
                                                             id={`claimMappings[${index}][0]`}
                                                             value={mapping[0]}
-                                                            onChange={(event, _value) =>
-                                                                onChange(_value, event)
-                                                            }
+                                                            onChange={onChange}
                                                             isDisabled={isDisabled}
                                                         />
                                                     </FormGroup>
@@ -680,9 +674,7 @@ function AuthProviderForm({
                                                             type="text"
                                                             id={`claimMappings[${index}][1]`}
                                                             value={mapping[1]}
-                                                            onChange={(event, _value) =>
-                                                                onChange(_value, event)
-                                                            }
+                                                            onChange={onChange}
                                                             isDisabled={isDisabled}
                                                         />
                                                     </FormGroup>

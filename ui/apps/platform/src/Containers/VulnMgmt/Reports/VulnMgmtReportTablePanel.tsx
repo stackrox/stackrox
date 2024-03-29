@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { SearchIcon } from '@patternfly/react-icons';
-import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import usePermissions from 'hooks/usePermissions';

@@ -83,13 +83,6 @@ function DiagnosticBundleForm({
             <p>You can filter which platform data to include in the Zip file (max size 50MB)</p>
             {hasReadAccessForCluster && (
                 <FormGroup label="Filter by clusters" fieldId="filterByClusters">
-                    <FormHelperText>
-                        <HelperText>
-                            <HelperTextItem>
-                                No clusters selected will include all clusters
-                            </HelperTextItem>
-                        </HelperText>
-                    </FormHelperText>
                     <Select
                         id="filterByClusters"
                         variant={SelectVariant.typeaheadMulti}
@@ -104,6 +97,13 @@ function DiagnosticBundleForm({
                             <SelectOption key={cluster} value={cluster} />
                         ))}
                     </Select>
+                    <FormHelperText>
+                        <HelperText>
+                            <HelperTextItem>
+                                No clusters selected will include all clusters
+                            </HelperTextItem>
+                        </HelperText>
+                    </FormHelperText>
                 </FormGroup>
             )}
             <FormGroup
@@ -118,13 +118,6 @@ function DiagnosticBundleForm({
                 }
                 fieldId="filterByStartingTime"
             >
-                <FormHelperText>
-                    <HelperText>
-                        <HelperTextItem>
-                            To override default, use UTC format (seconds are optional)
-                        </HelperTextItem>
-                    </HelperText>
-                </FormHelperText>
                 <TextInput
                     type="text"
                     id="filterByStartingTime"
@@ -133,6 +126,13 @@ function DiagnosticBundleForm({
                     onChange={(event, value: string) => startingTimeChangeHandler(value, event)}
                     onBlur={handleBlur}
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem>
+                            To override default, use UTC format (seconds are optional)
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
         </Form>
     );

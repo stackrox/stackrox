@@ -28,15 +28,7 @@ import {
     EmptyStateHeader,
 } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
-import {
-    ActionsColumn,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportsPath } from 'routePaths';

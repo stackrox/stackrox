@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table /* data-codemods */, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';

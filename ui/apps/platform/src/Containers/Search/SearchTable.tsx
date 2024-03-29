@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';

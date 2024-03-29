@@ -27,6 +27,12 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
     return (
         <Flex>
             <FormGroup label={idx === 0 ? 'CIDR name' : ''} isRequired fieldId="cidr-name">
+                <Field
+                    name={`entities.${idx as string}.entity.name`}
+                    type="text"
+                    id="cidr-name"
+                    placeholder="CIDR name"
+                />
                 <FormHelperText>
                     <HelperText>
                         <HelperTextItem variant={showNameError ? 'error' : 'default'}>
@@ -34,14 +40,14 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
                         </HelperTextItem>
                     </HelperText>
                 </FormHelperText>
-                <Field
-                    name={`entities.${idx as string}.entity.name`}
-                    type="text"
-                    id="cidr-name"
-                    placeholder="CIDR name"
-                />
             </FormGroup>
             <FormGroup label={idx === 0 ? 'CIDR address' : ''} isRequired>
+                <Field
+                    name={`entities.${idx as string}.entity.cidr`}
+                    type="text"
+                    id="cidr-block-address"
+                    placeholder="192.0.0.2/24"
+                />
                 <FormHelperText>
                     <HelperText>
                         <HelperTextItem variant={showCidrError ? 'error' : 'default'}>
@@ -49,12 +55,6 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
                         </HelperTextItem>
                     </HelperText>
                 </FormHelperText>
-                <Field
-                    name={`entities.${idx as string}.entity.cidr`}
-                    type="text"
-                    id="cidr-block-address"
-                    placeholder="192.0.0.2/24"
-                />
             </FormGroup>
             <FlexItem className={buttonClassName}>
                 <Button

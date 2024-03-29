@@ -1,15 +1,7 @@
 import React, { CSSProperties, ReactElement, useState } from 'react';
 import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
-import {
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Thead,
-    Th,
-    Tr,
-    TreeRowWrapper,
-} from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
 
 import {
     EffectiveAccessScopeCluster,

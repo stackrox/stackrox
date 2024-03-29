@@ -31,6 +31,7 @@ function FormLabelGroup<T>({
 
     return (
         <FormGroup fieldId={fieldId} {...rest}>
+            {children}
             <FormHelperText>
                 <HelperText>
                     <HelperTextItem
@@ -42,7 +43,6 @@ function FormLabelGroup<T>({
                     </HelperTextItem>
                 </HelperText>
             </FormHelperText>
-            {children}
         </FormGroup>
     );
 }

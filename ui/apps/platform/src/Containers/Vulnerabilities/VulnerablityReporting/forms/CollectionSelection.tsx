@@ -166,7 +166,7 @@ function CollectionSelection({
                         placeholderText="Select a collection"
                         variant={SelectVariant.typeahead}
                         isOpen={isOpen}
-                        onToggle={() => onToggle}
+                        onToggle={(_e, isExpanded) => onToggle(isExpanded)}
                         onTypeaheadInputChanged={(value) => {
                             setSearch(value);
                             onValidateField(id);

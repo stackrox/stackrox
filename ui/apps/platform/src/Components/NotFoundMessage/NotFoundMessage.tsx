@@ -31,7 +31,7 @@ const NotFoundMessage = ({
     return (
         <Bullseye className="pf-v5-u-flex-grow-1">
             <EmptyState>
-                <EmptyStateHeader titleText={<>{title}</>} headingLevel="h1" />
+                <EmptyStateHeader titleText={title} headingLevel="h1" />
                 <EmptyStateFooter>
                     {message && <EmptyStateBody>{message}</EmptyStateBody>}
                     {isButtonVisible && <Button variant="primary">{actionText}</Button>}

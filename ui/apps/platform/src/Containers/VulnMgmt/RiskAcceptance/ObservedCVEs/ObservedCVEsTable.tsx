@@ -1,15 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement, useState } from 'react';
-import {
-    Table /* data-codemods */,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
-    IActions,
-} from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,

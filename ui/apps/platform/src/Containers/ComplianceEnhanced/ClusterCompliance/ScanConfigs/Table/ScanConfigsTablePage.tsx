@@ -23,15 +23,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import {
-    ActionsColumn,
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
 import {
