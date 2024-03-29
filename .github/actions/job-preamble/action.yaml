@@ -1,5 +1,9 @@
 name: Job Preamble
 description: Common steps for most jobs
+inputs:
+  gcp-account:
+    description: 'Account to be used to upload tests data'
+    required: true
 runs:
   using: composite
   steps:
@@ -14,4 +18,13 @@ runs:
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
+      shell: bash
+
+    - name: Record job
+      env:
+        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      run: |
+        source scripts/ci/lib.sh
+        setup_gcp
+        create_job_record "${{ github.job }}"
       shell: bash
