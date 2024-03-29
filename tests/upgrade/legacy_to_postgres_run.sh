@@ -89,8 +89,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
-    EARLIER_TAG="3.74.0-1-gfe924fce30"
+    EARLIER_SHA="2a5e823c00881302ba49dd87c5320012a6ac80d9"
+    EARLIER_TAG="3.74.9"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
