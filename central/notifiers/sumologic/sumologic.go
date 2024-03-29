@@ -56,11 +56,11 @@ func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error
 }
 
 func (s *sumologic) sendProtoPayload(ctx context.Context, msg protocompat.Message) error {
-	if data, err := protojson.Marshal(msg); err != nil {
+	data, err := protojson.Marshal(msg)
+	if err != nil {
 		return err
-	} else {
-		return s.sendPayload(ctx, bytes.NewBuffer(data))
 	}
+	return s.sendPayload(ctx, bytes.NewBuffer(data))
 }
 
 func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
