@@ -62,8 +62,8 @@ export function TdUnhealthy({ count, dataLabel }: TdStatusWithDataLabelProps): R
             {count !== 0 ? (
                 <IconText
                     icon={
-                        <Icon color="var(--pf-v5-global--danger-color--100)">
-                            <ExclamationCircleIcon />
+                        <Icon>
+                            <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                         </Icon>
                     }
                     text={String(count)}
@@ -81,8 +81,8 @@ export function TdDegraded({ count, dataLabel }: TdStatusWithDataLabelProps): Re
             {count !== 0 ? (
                 <IconText
                     icon={
-                        <Icon color="var(--pf-v5-global--warning-color--100)">
-                            <ExclamationTriangleIcon />
+                        <Icon>
+                            <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" />
                         </Icon>
                     }
                     text={String(count)}

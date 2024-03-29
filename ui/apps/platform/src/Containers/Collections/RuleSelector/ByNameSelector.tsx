@@ -155,8 +155,9 @@ function ByNameSelector({
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}
                                 >
-                                    <Icon color="var(--pf-v5-global--Color--dark-200)">
+                                    <Icon>
                                         <TrashIcon
+                                            color="var(--pf-v5-global--Color--dark-200)"
                                             className="pf-v5-u-flex-shrink-1"
                                             style={{ cursor: 'pointer' }}
                                         />

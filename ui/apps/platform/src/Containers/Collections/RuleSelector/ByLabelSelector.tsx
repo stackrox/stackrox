@@ -184,8 +184,11 @@ function ByLabelSelector({
                                                 variant="plain"
                                                 onClick={() => onDeleteValue(ruleIndex, valueIndex)}
                                             >
-                                                <Icon color="var(--pf-v5-global--Color--dark-200)">
-                                                    <TrashIcon style={{ cursor: 'pointer' }} />
+                                                <Icon>
+                                                    <TrashIcon
+                                                        color="var(--pf-v5-global--Color--dark-200)"
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
                                                 </Icon>
                                             </Button>
                                         )}

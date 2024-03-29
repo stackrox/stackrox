@@ -113,8 +113,8 @@ export function getComplianceLabelGroupColor(
 const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject } = {
     [ComplianceCheckStatus.PASS]: {
         icon: (
-            <Icon color="var(--pf-v5-global--success-color--100)">
-                <CheckCircleIcon />
+            <Icon>
+                <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
             </Icon>
         ),
         statusText: 'Pass',
@@ -122,8 +122,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.FAIL]: {
         icon: (
-            <Icon color="var(--pf-v5-global--danger-color--100)">
-                <SecurityIcon />
+            <Icon>
+                <SecurityIcon color="var(--pf-v5-global--danger-color--100)" />
             </Icon>
         ),
         statusText: 'Fail',
@@ -131,8 +131,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.ERROR]: {
         icon: (
-            <Icon color="var(--pf-v5-global--disabled-color--100)">
-                <ExclamationTriangleIcon />
+            <Icon>
+                <ExclamationTriangleIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Error',
@@ -140,8 +140,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.INFO]: {
         icon: (
-            <Icon color="var(--pf-v5-global--disabled-color--100)">
-                <ExclamationCircleIcon />
+            <Icon>
+                <ExclamationCircleIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Info',
@@ -150,8 +150,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.MANUAL]: {
         icon: (
-            <Icon color="var(--pf-v5-global--disabled-color--100)">
-                <WrenchIcon />
+            <Icon>
+                <WrenchIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Manual',
@@ -159,8 +159,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.NOT_APPLICABLE]: {
         icon: (
-            <Icon color="var(--pf-v5-global--disabled-color--100)">
-                <BanIcon />
+            <Icon>
+                <BanIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Not Applicable',
@@ -168,8 +168,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.INCONSISTENT]: {
         icon: (
-            <Icon color="var(--pf-v5-global--disabled-color--100)">
-                <UnknownIcon />
+            <Icon>
+                <UnknownIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Inconsistent',
@@ -177,8 +177,8 @@ const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject }
     },
     [ComplianceCheckStatus.UNSET_CHECK_STATUS]: {
         icon: (
-            <Icon color="var(--pf-v5-global--disabled-color--100)">
-                <ResourcesEmptyIcon />
+            <Icon>
+                <ResourcesEmptyIcon color="var(--pf-v5-global--disabled-color--100)" />
             </Icon>
         ),
         statusText: 'Unset', // TODO: ask about this status

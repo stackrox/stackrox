@@ -18,16 +18,16 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
         return errors && errors.length && errors[0] !== ''
             ? {
                   icon: (
-                      <Icon color="var(--pf-v5-global--danger-color--100)">
-                          <ExclamationCircleIcon />
+                      <Icon>
+                          <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                       </Icon>
                   ),
                   statusText: 'Unhealthy',
               }
             : {
                   icon: (
-                      <Icon color="var(--pf-v5-global--success-color--100)">
-                          <CheckCircleIcon />
+                      <Icon>
+                          <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
                       </Icon>
                   ),
                   statusText: 'Healthy',

@@ -19,8 +19,8 @@ const unknownColor = 'var(--pf-v5-global--warning-color--100)';
  */
 
 const notAllowedIcon = (
-    <Icon color={notAllowedColor}>
-        <BanIcon />;
+    <Icon>
+        <BanIcon color={notAllowedColor} />
     </Icon>
 );
 const notAllowedCluster = (
@@ -45,8 +45,8 @@ const notAllowedNamespace = (
 );
 
 const allowedIcon = (
-    <Icon color={allowedColor}>
-        <CheckIcon />
+    <Icon>
+        <CheckIcon color={allowedColor} />
     </Icon>
 );
 const allowedCluster = (
@@ -63,8 +63,11 @@ const allowedCluster = (
     >
         <span>
             {allowedIcon}
-            <Icon color={allowedColor}>
-                <LongArrowAltDownIcon style={{ transform: 'rotate(-45deg)' }} />
+            <Icon>
+                <LongArrowAltDownIcon
+                    color={allowedColor}
+                    style={{ transform: 'rotate(-45deg)' }}
+                />
             </Icon>
         </span>
     </Tooltip>
@@ -89,8 +92,8 @@ const partialCluster = (
     >
         <span>
             {allowedIcon}
-            <Icon color={allowedColor}>
-                <LongArrowAltUpIcon style={{ transform: 'rotate(-45deg)' }} />
+            <Icon>
+                <LongArrowAltUpIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
             </Icon>
         </span>
     </Tooltip>
