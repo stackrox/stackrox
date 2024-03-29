@@ -81,4 +81,5 @@ runs:
       METRICS_JOB_ID=$GITHUB_RUN_ID \
         update_job_record \
         outcome "${{ job.status }}" \
-        stopped_at "CURRENT_TIMESTAMP()
+        stopped_at "CURRENT_TIMESTAMP()" \
+        logs_link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -750,6 +750,8 @@ get_base_ref() {
         else
             die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
+    elif is_GITHUB_ACTIONS; then
+        echo "${GITHUB_BASE_REF}"
     else
         die "unsupported"
     fi
@@ -786,6 +788,8 @@ get_repo_full_name() {
 get_commit_sha() {
     if is_OPENSHIFT_CI; then
         echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
+    elif is_GITHUB_ACTIONS; then
+        echo "${GITHUB_SHA}"
     else
         die "unsupported"
     fi
