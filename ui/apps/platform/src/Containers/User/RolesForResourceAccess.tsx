@@ -6,13 +6,13 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { userBasePath } from 'routePaths';
 
 const forbiddenIcon = (
-    <Icon color="var(--pf-v5-global--danger-color--100)" size="sm">
-        <TimesIcon aria-label="forbidden" />
+    <Icon size="sm">
+        <TimesIcon color="var(--pf-v5-global--danger-color--100)" aria-label="forbidden" />
     </Icon>
 );
 const permittedIcon = (
-    <Icon color="var(--pf-v5-global--success-color--100)" size="sm">
-        <CheckIcon aria-label="permitted" />
+    <Icon size="sm">
+        <CheckIcon color="var(--pf-v5-global--success-color--100)" aria-label="permitted" />
     </Icon>
 );
 

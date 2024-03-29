@@ -96,8 +96,8 @@ function RequirementRow({
                                             isDisabled={values.length === 1}
                                             onClick={() => handleValueDelete(indexValue)}
                                         >
-                                            <Icon color="var(--pf-v5-global--danger-color--100)">
-                                                <MinusCircleIcon />
+                                            <Icon>
+                                                <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                                             </Icon>
                                         </Button>
                                     </Tooltip>
@@ -129,8 +129,8 @@ function RequirementRow({
                                             isDisabled={isDisabledAddValue}
                                             onClick={onAddValue}
                                         >
-                                            <Icon color="var(--pf-v5-global--primary-color--100)">
-                                                <PlusCircleIcon />
+                                            <Icon>
+                                                <PlusCircleIcon color="var(--pf-v5-global--primary-color--100)" />
                                             </Icon>
                                         </Button>
                                     </Tooltip>
@@ -162,8 +162,8 @@ function RequirementRow({
                                     isDisabled={values.length === 0 || valueInput.length !== 0}
                                     onClick={handleRequirementOK}
                                 >
-                                    <Icon color="var(--pf-v5-global--primary-color--100)">
-                                        <CheckCircleIcon />
+                                    <Icon>
+                                        <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
                                     </Icon>
                                 </Button>
                             </Tooltip>
@@ -174,8 +174,8 @@ function RequirementRow({
                                     className="pf-m-smallest"
                                     onClick={handleRequirementCancel}
                                 >
-                                    <Icon color="var(--pf-v5-global--color--100)">
-                                        <TimesCircleIcon />
+                                    <Icon>
+                                        <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
                                     </Icon>
                                 </Button>
                             </Tooltip>
@@ -191,8 +191,8 @@ function RequirementRow({
                                         isDisabled={activity === 'DISABLED'}
                                         onClick={handleRequirementEdit}
                                     >
-                                        <Icon color="var(--pf-v5-global--primary-color--100)">
-                                            <PencilAltIcon />
+                                        <Icon>
+                                            <PencilAltIcon color="var(--pf-v5-global--primary-color--100)" />
                                         </Icon>
                                     </Button>
                                 </Tooltip>
@@ -205,8 +205,8 @@ function RequirementRow({
                                     isDisabled={activity === 'DISABLED'}
                                     onClick={handleRequirementDelete}
                                 >
-                                    <Icon color="var(--pf-v5-global--danger-color--100)">
-                                        <MinusCircleIcon />
+                                    <Icon>
+                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                                     </Icon>
                                 </Button>
                             </Tooltip>

@@ -23,57 +23,39 @@ import { PolicySeverity } from 'types/policy.proto';
 // Color can be overridden by passing the standard `color` prop to the icon component.
 // For example, colors={count === 0 ? noViolationsColor: undefined} prop.
 
-export const CriticalSeverityIcon = (props) => (
-    <Icon
-        style={{
-            '--pf-v5-c-icon__content--Color': props.color ?? CRITICAL_SEVERITY_COLOR,
-        }}
-    >
-        <CriticalRiskIcon {...props} />
-    </Icon>
+export const CriticalSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <>
+        <Icon>
+            <CriticalRiskIcon color={color ?? CRITICAL_SEVERITY_COLOR} {...props} />
+        </Icon>
+    </>
 );
 
-export const ImportantSeverityIcon = (props) => (
-    <Icon
-        style={{
-            '--pf-v5-c-icon__content--Color': props.color ?? IMPORTANT_HIGH_SEVERITY_COLOR,
-        }}
-    >
-        <AngleDoubleUpIcon {...props} />
+export const ImportantSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <AngleDoubleUpIcon color={color ?? IMPORTANT_HIGH_SEVERITY_COLOR} {...props} />
     </Icon>
 );
 
 export const HighSeverityIcon = ImportantSeverityIcon; // High is for policy severity
 
-export const ModerateSeverityIcon = (props) => (
-    <Icon
-        style={{
-            '--pf-v5-c-icon__content--Color': props.color ?? MODERATE_MEDIUM_SEVERITY_COLOR,
-        }}
-    >
-        <EqualsIcon {...props} />
+export const ModerateSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <EqualsIcon color={color ?? MODERATE_MEDIUM_SEVERITY_COLOR} {...props} />
     </Icon>
 );
 
 export const MediumSeverityIcon = ModerateSeverityIcon; // Medium is for policy severity
 
-export const LowSeverityIcon = (props) => (
-    <Icon
-        style={{
-            '--pf-v5-c-icon__content--Color': props.color ?? LOW_SEVERITY_COLOR,
-        }}
-    >
-        <AngleDoubleDownIcon {...props} />
+export const LowSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <AngleDoubleDownIcon color={color ?? LOW_SEVERITY_COLOR} {...props} />
     </Icon>
 );
 
-export const UnknownSeverityIcon = (props) => (
-    <Icon
-        style={{
-            '--pf-v5-c-icon__content--Color': props.color ?? UNKNOWN_SEVERITY_COLOR,
-        }}
-    >
-        <UnknownIcon {...props} />
+export const UnknownSeverityIcon = ({ color, ...props }: SVGIconProps) => (
+    <Icon>
+        <UnknownIcon color={color ?? UNKNOWN_SEVERITY_COLOR} {...props} />
     </Icon>
 );
 
