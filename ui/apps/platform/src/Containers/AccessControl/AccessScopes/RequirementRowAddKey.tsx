@@ -76,8 +76,11 @@ function RequirementRowAddKey({
                                 isDisabled={isDisabledOK}
                                 onClick={onClickRequirementKeyOK}
                             >
-                                <Icon color="var(--pf-v5-global--primary-color--100)">
-                                    <ArrowCircleDownIcon style={{ transform: 'rotate(-90deg)' }} />
+                                <Icon>
+                                    <ArrowCircleDownIcon
+                                        color="var(--pf-v5-global--primary-color--100)"
+                                        style={{ transform: 'rotate(-90deg)' }}
+                                    />
                                 </Icon>
                             </Button>
                         </Tooltip>
@@ -97,8 +100,8 @@ function RequirementRowAddKey({
                         className="pf-m-smallest"
                         onClick={handleRequirementKeyCancel}
                     >
-                        <Icon color="var(--pf-v5-global--color--100)">
-                            <TimesCircleIcon />
+                        <Icon>
+                            <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
                         </Icon>
                     </Button>
                 </Tooltip>
