@@ -128,13 +128,6 @@ function EmailTemplateFormModal({
                 <Tab eventKey={0} title={<TabTitleText>Edit</TabTitleText>}>
                     <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" onSubmit={handleSubmit}>
                         <FormGroup label="Email subject" fieldId="emailSubject">
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem variant={emailSubjectValidated}>
-                                        {errors.emailSubject}
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                             <TextInput
                                 id="emailSubject"
                                 type="text"
@@ -145,6 +138,13 @@ function EmailTemplateFormModal({
                                 isDisabled={isSubmitting}
                                 placeholder={defaultEmailSubject}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={emailSubjectValidated}>
+                                        {errors.emailSubject}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <Flex>
                                 <FlexItem flex={{ default: 'flex_1' }}>
                                     <TextContent>
@@ -172,13 +172,6 @@ function EmailTemplateFormModal({
                             </Flex>
                         </FormGroup>
                         <FormGroup label="Email body" fieldId="emailBody">
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem variant={emailBodyValidated}>
-                                        {errors.emailBody}
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
                             <TextArea
                                 id="emailBody"
                                 type="text"
@@ -190,6 +183,13 @@ function EmailTemplateFormModal({
                                 style={{ minHeight: '250px' }}
                                 placeholder={defaultEmailBody}
                             />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant={emailBodyValidated}>
+                                        {errors.emailBody}
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                             <Flex>
                                 <FlexItem flex={{ default: 'flex_1' }}>
                                     <TextContent>

@@ -168,13 +168,6 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
         <Form id="access-scope-form">
             {alertSubmit}
             <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
-                <FormHelperText>
-                    <HelperText>
-                        <HelperTextItem variant={nameValidatedState}>
-                            {nameErrorMessage}
-                        </HelperTextItem>
-                    </HelperText>
-                </FormHelperText>
                 <TextInput
                     type="text"
                     id="name"
@@ -185,6 +178,13 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput

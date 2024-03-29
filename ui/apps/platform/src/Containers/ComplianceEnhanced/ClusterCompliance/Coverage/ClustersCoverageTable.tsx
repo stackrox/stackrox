@@ -16,7 +16,7 @@ import {
     ToolbarItem,
     Tooltip,
 } from '@patternfly/react-core';
-import { Table /* data-codemods */, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { CubesIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';

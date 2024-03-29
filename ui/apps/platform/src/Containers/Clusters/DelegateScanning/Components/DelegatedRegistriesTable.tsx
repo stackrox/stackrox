@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Button, TextInput } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import {
-    Table /* data-codemods */,
+    Table,
     Tbody,
     // TbodyProps,
     Td,

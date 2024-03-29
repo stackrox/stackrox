@@ -122,6 +122,7 @@ body {
 
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
+.pf-v5-svg,
 .pf-v5-c-page svg {
     display: inline;
 }

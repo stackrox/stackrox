@@ -29,6 +29,7 @@ import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { cloneDeep } from 'lodash';
+import { CollectionSlim } from 'services/CollectionsService';
 import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
@@ -47,11 +48,12 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
         formik.setFieldValue(fieldName, selection);
     };
 
-    const handleDateSelection = (fieldName: string) => (_event, selection) => {
-        formik.setFieldValue(fieldName, selection);
-    };
+    const handleDateSelection =
+        (fieldName: string) => (_event: React.FormEvent, selection: string) => {
+            formik.setFieldValue(fieldName, selection);
+        };
 
-    const handleCollectionSelection = (fieldName: string) => (selection) => {
+    const handleCollectionSelection = (fieldName: string) => (selection: CollectionSlim | null) => {
         formik.setFieldValue(fieldName, selection);
     };
 

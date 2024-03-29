@@ -9,7 +9,7 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { Table /* data-codemods */, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 

@@ -2,15 +2,7 @@
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Pagination } from '@patternfly/react-core';
-import {
-    Table /* data-codemods */,
-    Tbody,
-    Td,
-    Th,
-    ThProps,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
 

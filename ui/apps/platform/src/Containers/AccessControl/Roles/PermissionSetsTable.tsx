@@ -1,5 +1,5 @@
 import React, { ChangeEventHandler, ReactElement } from 'react';
-import { Table /* data-codemods */, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { PermissionSet } from 'services/RolesService';
 

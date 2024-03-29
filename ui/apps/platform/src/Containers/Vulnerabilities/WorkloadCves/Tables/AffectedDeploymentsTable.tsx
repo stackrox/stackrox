@@ -1,15 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, pluralize, Truncate } from '@patternfly/react-core';
-import {
-    Table /* data-codemods */,
-    Thead,
-    Tr,
-    Th,
-    Tbody,
-    Td,
-    ExpandableRowContent,
-} from '@patternfly/react-table';
+import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';

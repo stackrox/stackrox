@@ -41,13 +41,6 @@ function PolicyCategoriesSelectField(): ReactElement {
 
     return (
         <FormGroup fieldId="policy-categories" label="Categories" isRequired>
-            <FormHelperText>
-                <HelperText>
-                    <HelperTextItem>
-                        Select policy categories you want to apply to this policy
-                    </HelperTextItem>
-                </HelperText>
-            </FormHelperText>
             <Select
                 variant={SelectVariant.typeaheadMulti}
                 name={field.name}
@@ -63,6 +56,13 @@ function PolicyCategoriesSelectField(): ReactElement {
                     <SelectOption key={id} value={name} />
                 ))}
             </Select>
+            <FormHelperText>
+                <HelperText>
+                    <HelperTextItem>
+                        Select policy categories you want to apply to this policy
+                    </HelperTextItem>
+                </HelperText>
+            </FormHelperText>
         </FormGroup>
     );
 }

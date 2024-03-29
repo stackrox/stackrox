@@ -67,7 +67,7 @@ function CreatePolicyCategoryModal({
 
     const { values, handleChange, handleSubmit, resetForm, isValid } = formik;
 
-    function onChange(_value, event) {
+    function onChange(event: React.FormEvent) {
         handleChange(event);
     }
 
@@ -90,6 +90,12 @@ function CreatePolicyCategoryModal({
                 <FormikProvider value={formik}>
                     <Form onSubmit={handleSubmit}>
                         <FormGroup fieldId="name" label="Category name" isRequired>
+                            <TextInput
+                                id="name"
+                                type="text"
+                                value={values.name}
+                                onChange={onChange}
+                            />
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem>
@@ -97,12 +103,6 @@ function CreatePolicyCategoryModal({
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
-                            <TextInput
-                                id="name"
-                                type="text"
-                                value={values.name}
-                                onChange={(event, _value) => onChange(_value, event)}
-                            />
                         </FormGroup>
                     </Form>
                 </FormikProvider>
