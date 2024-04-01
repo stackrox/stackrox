@@ -226,7 +226,7 @@ spec:
         steps:
           - name: fetch-vuln-mappings
             image: registry.access.redhat.com/ubi8-minimal:latest
-            script: '"$(workspaces.source.path)/source/scanner/image/scanner/download-mappings.sh" "$(workspaces.source.path)/source"'
+            script: '"$(workspaces.source.path)/source/scanner/image/scanner/download-mappings.sh" "$(workspaces.source.path)/source/.konflux"'
       workspaces:
       - name: source
         workspace: workspace
