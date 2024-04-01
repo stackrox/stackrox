@@ -10,7 +10,7 @@ FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.20 as bui
 ENV CGO_ENABLED=1
 ENV GOFLAGS=""
 ENV GOTAGS="release"
-# TODO (ROX-23335): Properly set the build tag
+# TODO(ROX-23335): Properly set the build tag
 ENV BUILD_TAG="dev"
 ENV CI=1
 
