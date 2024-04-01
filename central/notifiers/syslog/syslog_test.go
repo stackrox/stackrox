@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/notifiers/syslog/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -118,12 +119,12 @@ func (s *SyslogNotifierTestSuite) TestCEFMakeJSONExtensionPair() {
 
 func (s *SyslogNotifierTestSuite) TestCEFMakeTimestampExtensionPair() {
 	key := "key"
-	value := protocompat.TimestampNow()
+	value := time.Now()
 
-	msTs := int64(value.GetSeconds())*1000 + int64(value.GetNanos())/1000000
+	msTs := int64(value.Unix())*1000 + int64(value.Nanosecond())/1000000
 	expectedValue := []string{fmt.Sprintf("%s=%s", key, strconv.Itoa(int(msTs)))}
 
-	extensionPair := makeTimestampExtensionPair(key, value)
+	extensionPair := makeTimestampExtensionPair(key, &value)
 	s.Equal(expectedValue, extensionPair)
 }
 

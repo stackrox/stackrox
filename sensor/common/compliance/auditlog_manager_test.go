@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -244,9 +243,11 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), nil)
 	manager.enabled.Set(true) // start out enabled
 
-	firstState := s.getAuditLogFileState(protocompat.TimestampNow(), "first-id-a")
+	firstEventTime := time.Now()
+	firstEvent := s.getKubernetesEvent(firstEventTime, "first-id-a")
+	firstState := s.getAuditLogFileState(firstEventTime, "first-id-a")
 	// add a state manually
-	manager.updateFileState("node-a", firstState.CollectLogsSince, firstState.LastAuditId)
+	manager.updateFileState("node-a", firstEvent)
 
 	states := manager.getLatestFileStates()
 	s.Equal(
@@ -255,11 +256,15 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	)
 
 	// Update the state and add a new node
-	secondState := s.getAuditLogFileState(protocompat.TimestampNow(), "second-id-a")
-	manager.updateFileState("node-a", secondState.CollectLogsSince, secondState.LastAuditId)
+	secondEventTime := time.Now()
+	secondEvent := s.getKubernetesEvent(secondEventTime, "second-id-a")
+	secondState := s.getAuditLogFileState(secondEventTime, "second-id-a")
+	manager.updateFileState("node-a", secondEvent)
 
-	altNodeState := s.getAuditLogFileState(protocompat.TimestampNow(), "first-id-b")
-	manager.updateFileState("node-b", altNodeState.CollectLogsSince, altNodeState.LastAuditId)
+	altNodeEventTime := time.Now()
+	altNodeEvent := s.getKubernetesEvent(altNodeEventTime, "first-id-b")
+	altNodeState := s.getAuditLogFileState(altNodeEventTime, "first-id-b")
+	manager.updateFileState("node-b", altNodeEvent)
 
 	// The originally retrieved state should not have changed
 	s.Equal(
@@ -274,17 +279,22 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	)
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getAuditLogFileState(time *types.Timestamp, lastID string) *storage.AuditLogFileState {
-	return &storage.AuditLogFileState{
-		CollectLogsSince: time,
-		LastAuditId:      lastID,
+func (s *AuditLogCollectionManagerTestSuite) getKubernetesEvent(eventTime time.Time, eventID string) *storage.KubernetesEvent {
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(eventTime)
+	s.NoError(err)
+	return &storage.KubernetesEvent{
+		Id:        eventID,
+		Timestamp: timestamp,
 	}
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getAsProtoTime(now time.Time) *types.Timestamp {
-	protoTime, err := protocompat.ConvertTimeToTimestampOrError(now)
+func (s *AuditLogCollectionManagerTestSuite) getAuditLogFileState(collectLogsSince time.Time, lastID string) *storage.AuditLogFileState {
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(collectLogsSince)
 	s.NoError(err)
-	return protoTime
+	return &storage.AuditLogFileState{
+		CollectLogsSince: timestamp,
+		LastAuditId:      lastID,
+	}
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
@@ -300,9 +310,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	for node := 0; node < 2; node++ {
 		for i := 0; i < 2; i++ {
 			nodeName := fmt.Sprintf("node-%d", node)
-			ts := s.getAsProtoTime(startTime.Add(time.Duration(i*10) * time.Minute))
-			msg := s.getMsgFromCompliance(nodeName, ts)
-			state := s.getAuditLogFileState(ts, msg.GetAuditEvents().Events[0].Id)
+			msgTime := startTime.Add(time.Duration(i*10) * time.Minute)
+			msg := s.getMsgFromCompliance(nodeName, msgTime)
+			state := s.getAuditLogFileState(msgTime, msg.GetAuditEvents().Events[0].Id)
 			expectedFileStates[nodeName] = state
 
 			manager.AuditMessagesChan() <- msg
@@ -310,7 +320,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	}
 
 	// One more just to ensure that by the point we get the file state, all message before this one has been processed
-	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", s.getAsProtoTime(startTime.Add(30*time.Minute)))
+	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", startTime.Add(30*time.Minute))
 
 	// Wait until the buffer is empty, at which point we know all messages were consumed
 	for len(manager.auditEventMsgs) > 0 { // should be safe to do since we are the only reader and because it's a buffered channel
@@ -346,7 +356,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 	}
 
 	// One more just to ensure that by the point we get the file state, all message before this one has been processed
-	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", s.getAsProtoTime(startTime.Add(30*time.Minute)))
+	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", startTime.Add(30*time.Minute))
 
 	// Wait until the buffer is empty, at which point we know all messages were consumed
 	for len(manager.auditEventMsgs) > 0 { // should be safe to do since we are the only reader and because it's a buffered channel
@@ -359,7 +369,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getMsgFromCompliance(nodeName string, timestamp *types.Timestamp) *sensor.MsgFromCompliance {
+func (s *AuditLogCollectionManagerTestSuite) getMsgFromCompliance(nodeName string, messageTime time.Time) *sensor.MsgFromCompliance {
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(messageTime)
+	s.NoError(err)
 	return &sensor.MsgFromCompliance{
 		Node: nodeName,
 		Msg: &sensor.MsgFromCompliance_AuditEvents{
@@ -412,10 +424,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendWhenNoFileSta
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendIfInitStateNotReceivedFromCentral() {
 	now := time.Now()
 	fileStates := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
+		"node-one": s.getAuditLogFileState(now.Add(-10*time.Minute), uuid.NewV4().String()),
 	}
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), fileStates)
 	manager.receivedInitialStateFromCentral.Set(false)
@@ -437,14 +446,8 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendIfInitStateNo
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFileStates() {
 	now := time.Now()
 	expectedStatus := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
-		"node-two": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Second)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
+		"node-one": s.getAuditLogFileState(now.Add(-10*time.Minute), uuid.NewV4().String()),
+		"node-two": s.getAuditLogFileState(now.Add(-10*time.Second), uuid.NewV4().String()),
 	}
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
@@ -462,14 +465,8 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFil
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() {
 	now := time.Now()
 	expectedStatus := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
-		"node-two": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Second)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
+		"node-one": s.getAuditLogFileState(now.Add(-10*time.Minute), uuid.NewV4().String()),
+		"node-two": s.getAuditLogFileState(now.Add(-10*time.Second), uuid.NewV4().String()),
 	}
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
@@ -523,7 +520,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 
 	for i, state := range states {
 		manager.Notify(state)
-		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), s.getAsProtoTime(time.Now().Add(1*time.Second)))
+		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), time.Now().Add(1*time.Second))
 		select {
 		case <-centralC:
 			s.T().Logf("Received message on centralC (state: %s)", state)

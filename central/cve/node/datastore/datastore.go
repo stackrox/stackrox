@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
@@ -30,7 +30,7 @@ type DataStore interface {
 	GetBatch(ctx context.Context, id []string) ([]*storage.NodeCVE, error)
 
 	// Suppress suppresses node vulnerabilities with provided cve names (not ids) for the duration provided.
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	// Unsuppress unsuppresses node vulnerabilities with provided cve names (not ids).
 	Unsuppress(ctx context.Context, cves ...string) error
 	EnrichNodeWithSuppressedCVEs(node *storage.Node)

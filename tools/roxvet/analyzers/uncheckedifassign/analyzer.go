@@ -64,7 +64,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	common.FilteredPreorder(inspectResult, common.Not(common.IsGeneratedFile), nodeFilter, func(n ast.Node) {
+	common.FilteredPreorder(inspectResult, common.Not(ast.IsGenerated), nodeFilter, func(n ast.Node) {
 		ifStmt := n.(*ast.IfStmt)
 		if ifStmt.Init == nil {
 			return

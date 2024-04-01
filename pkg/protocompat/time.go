@@ -66,6 +66,19 @@ func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, 
 	return gogoTimestamp.TimestampProto(goTime)
 }
 
+// GetProtoTimestampFromRFC3339NanoString generates a proto timestamp from a time string in RFC3339Nano format.
+func GetProtoTimestampFromRFC3339NanoString(timeStr string) (*gogoTimestamp.Timestamp, error) {
+	stringTime, err := time.Parse(time.RFC3339Nano, timeStr)
+	if err != nil {
+		return nil, err
+	}
+	timestamp, err := ConvertTimeToTimestampOrError(stringTime)
+	if err != nil {
+		return nil, err
+	}
+	return timestamp, nil
+}
+
 // GetProtoTimestampFromSeconds instantiates a protobuf Timestamp structure initialized
 // with the input to the seconds granularity.
 func GetProtoTimestampFromSeconds(seconds int64) *gogoTimestamp.Timestamp {
@@ -115,6 +128,16 @@ func ParseRFC3339NanoTimestamp(timestamp string) (*gogoTimestamp.Timestamp, erro
 // after the second.
 func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
 	return t1.Compare(t2)
+}
+
+// CompareTimestampToTime compares a proto timestamp to a time.
+// The return value is:
+// * -1 if the proto timestamp is before the time
+// * 0 if both represent the same time
+// * 1 if the proto timestamp is after the time
+func CompareTimestampToTime(t1 *gogoTimestamp.Timestamp, t2 *time.Time) int {
+	ts2 := ConvertTimeToTimestampOrNil(t2)
+	return CompareTimestamps(t1, ts2)
 }
 
 // DurationFromProto converts a proto Duration to a time.Duration.

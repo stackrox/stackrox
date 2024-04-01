@@ -3,7 +3,6 @@ package compliance
 import (
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -95,27 +94,25 @@ func (a *auditLogCollectionManagerImpl) runStateSaver() {
 				// Given how audit logs are always in chronological order, and given how compliance is parsing it in said order,
 				// we can make an assumption that the earliest event in this message is still later than the state before
 				// But we won't check it, in case there is a corner case where the time is out of order.
-				latestTime := events.GetEvents()[0].Timestamp
-				latestID := events.GetEvents()[0].GetId()
+				latestEvent := events.GetEvents()[0]
 				for _, e := range events.GetEvents()[1:] {
-					if protoutils.After(e.GetTimestamp(), latestTime) {
-						latestTime = e.GetTimestamp()
-						latestID = e.GetId()
+					if protoutils.After(e.GetTimestamp(), latestEvent.GetTimestamp()) {
+						latestEvent = e
 					}
 				}
-				a.updateFileState(node, latestTime, latestID)
+				a.updateFileState(node, latestEvent)
 			}
 		}
 	}
 }
 
-func (a *auditLogCollectionManagerImpl) updateFileState(node string, latestTime *types.Timestamp, latestID string) {
+func (a *auditLogCollectionManagerImpl) updateFileState(node string, latestEvent *storage.KubernetesEvent) {
 	a.fileStateLock.Lock()
 	defer a.fileStateLock.Unlock()
 
 	a.fileStates[node] = &storage.AuditLogFileState{
-		CollectLogsSince: latestTime,
-		LastAuditId:      latestID,
+		CollectLogsSince: latestEvent.GetTimestamp(),
+		LastAuditId:      latestEvent.GetId(),
 	}
 }
 

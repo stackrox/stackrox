@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -103,26 +102,20 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	s.NoError(err)
 
 	// time1 is the most recent, time6 is the least recent
-	time1, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
-	s.NoError(err)
-	time2, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-2 * time.Hour))
-	s.NoError(err)
-	time3, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-3 * time.Hour))
-	s.NoError(err)
-	time4, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-4 * time.Hour))
-	s.NoError(err)
-	time5, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Hour))
-	s.NoError(err)
-	time6, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-6 * time.Hour))
-	s.NoError(err)
+	time1 := time.Now().Add(-1 * time.Hour)
+	time2 := time.Now().Add(-2 * time.Hour)
+	time3 := time.Now().Add(-3 * time.Hour)
+	time4 := time.Now().Add(-4 * time.Hour)
+	time5 := time.Now().Add(-5 * time.Hour)
+	time6 := time.Now().Add(-6 * time.Hour)
 
 	reportSnapshots := []*storage.ReportSnapshot{
-		generateReportSnapshot(configID3, time1),
-		generateReportSnapshot(configID2, time2),
-		generateReportSnapshot(configID2, time3),
-		generateReportSnapshot(configID1, time4),
-		generateReportSnapshot(configID3, time5),
-		generateReportSnapshot(configID1, time6),
+		s.generateReportSnapshot(configID3, time1),
+		s.generateReportSnapshot(configID2, time2),
+		s.generateReportSnapshot(configID2, time3),
+		s.generateReportSnapshot(configID1, time4),
+		s.generateReportSnapshot(configID3, time5),
+		s.generateReportSnapshot(configID1, time6),
 	}
 
 	for _, snap := range reportSnapshots {
@@ -169,14 +162,16 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 func (s *ReportConfigurationDatastoreV2Tests) storeNotifier(name string) *storage.NotifierConfiguration_Id {
 	allCtx := sac.WithAllAccess(context.Background())
 
-	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name, Type: "email", UiEndpoint: "http://localhost"})
+	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
 	s.Require().NoError(err)
 	return &storage.NotifierConfiguration_Id{Id: id}
 }
 
-func generateReportSnapshot(configID string, completionTime *types.Timestamp) *storage.ReportSnapshot {
+func (s *ReportConfigurationDatastoreV2Tests) generateReportSnapshot(configID string, completionTime time.Time) *storage.ReportSnapshot {
+	completionTimestamp, err := protocompat.ConvertTimeToTimestampOrError(completionTime)
+	s.NoError(err)
 	metadata := fixtures.GetReportSnapshot()
-	metadata.ReportStatus.CompletedAt = completionTime
+	metadata.ReportStatus.CompletedAt = completionTimestamp
 	metadata.ReportConfigurationId = configID
 
 	return metadata

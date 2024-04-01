@@ -370,10 +370,10 @@ function launch_central {
       fi
 
       if [[ "${CGO_CHECKS}" == "true" ]]; then
-        echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+        echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
         helm_args+=(
-          --set customize.central.envVars.GODEBUG=cgocheck=2
+          --set customize.central.envVars.GOEXPERIMENT=cgocheck2
           --set customize.central.envVars.MUTEX_WATCHDOG_TIMEOUT_SECS=15
         )
       fi
@@ -483,9 +483,9 @@ function launch_central {
         ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then
-        echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+        echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
-        ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
+        ${ORCH_CMD} -n stackrox set env deploy/central GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
       fi
 
       # set logging options
@@ -672,13 +672,29 @@ function launch_sensor {
         exit 1
       fi
       mkdir "$k8s_dir/sensor-deploy"
-      touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
-      chmod 0600 "$k8s_dir/sensor-deploy/init-bundle.yaml"
-      curl_central "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
-          -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}' \
-          | jq '.helmValuesBundle' -r | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
+      (umask 077; touch "$k8s_dir/sensor-deploy/init-bundle.yaml")
+      local api_resp
+      api_resp="$(mktemp)"
+      # Retry with different bundle name to recover from situations where bundle was created on
+      # central but curl failed to read response for whatever reason.
+      for _ in $(seq 10); do
+        if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
+            -o "${api_resp}" \
+            -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
+          break
+        else
+          : > "${api_resp}"
+        fi
+      done
+      if [[ -s "${api_resp}" ]]; then
+        jq -r '.helmValuesBundle' "${api_resp}" | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
+      else
+        echo >&2 "Failed to fetch cluster init bundle despite retries, see messages above."
+        exit 1
+      fi
+      rm -f "${api_resp}"
 
-      curl_central "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
+      curl_central_retry "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
           -o "$k8s_dir/sensor-deploy/chart.zip"
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"

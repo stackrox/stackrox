@@ -8,9 +8,10 @@ import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import { vulnerabilitiesPlatformCvesPath } from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
 
-function TmpPlatformCvesOverviewPage() {
-    return <div>PlatformCvesOverviewPage</div>;
-}
+import PlatformCvesOverviewPage from './Overview/PlatformCvesOverviewPage';
+import PlatformCvePage from './PlatformCve/PlatformCvePage';
+
+const vulnerabilitiesPlatformCveSinglePath = `${vulnerabilitiesPlatformCvesPath}/cves/:cveId`;
 
 function PlatformCvesPage() {
     const { hasReadAccess } = usePermissions();
@@ -20,10 +21,11 @@ function PlatformCvesPage() {
         <>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
+                <Route path={vulnerabilitiesPlatformCveSinglePath} component={PlatformCvePage} />
                 <Route
                     exact
                     path={vulnerabilitiesPlatformCvesPath}
-                    component={TmpPlatformCvesOverviewPage}
+                    component={PlatformCvesOverviewPage}
                 />
                 <Route>
                     <PageSection variant="light">

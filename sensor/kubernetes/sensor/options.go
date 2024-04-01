@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
@@ -38,7 +39,7 @@ func ConfigWithDefaults() *CreateOptions {
 		k8sClient:                          nil,
 		localSensor:                        false,
 		traceWriter:                        nil,
-		eventPipelineQueueSize:             env.EventPipelineQueueSize.IntegerSetting(),
+		eventPipelineQueueSize:             queue.ScaleSizeOnNonDefault(env.EventPipelineQueueSize),
 		networkFlowServiceAuthFuncOverride: nil,
 		signalServiceAuthFuncOverride:      nil,
 		networkFlowWriter:                  nil,
