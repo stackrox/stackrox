@@ -37,5 +37,7 @@ func init() {
 		grpcLastMessageSizeReceived,
 		grpcError,
 		deploymentEnhancementRoundTripDuration,
+		reprocessorDurationGauge,
+		signatureVerificationReprocessorDurationGauge,
 	)
 }
