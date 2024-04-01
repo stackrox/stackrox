@@ -90,4 +90,7 @@ var (
 
 	// ComplianceReporting enables support for compliance reporting.
 	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", false)
+
+	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
+	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", false)
 )
