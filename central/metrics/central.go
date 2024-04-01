@@ -247,6 +247,17 @@ var (
 		Help:      "Total round trip duration in milliseconds for enhancing deployments",
 		Buckets:   prometheus.LinearBuckets(500, 1000, 10),
 	})
+
+	// We use a gauge instead of a histogram because the reprocessing duration
+	// is expected to vary significantly depending on the number of new images
+	// and the state of the cache. This makes it inefficient to define sufficiently
+	// fine-grained histogram buckets.
+	reprocessorDurationGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "reprocessor_duration_seconds",
+		Help:      "Total duration in seconds for the reprocessor loop",
+	})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -424,4 +435,9 @@ func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 	}
 	typ := event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
 	sensorEventsDeduperCounter.With(prometheus.Labels{"status": label, "type": typ}).Inc()
+}
+
+// SetReprocessorDuration registers how long a reprocessing step took.
+func SetReprocessorDuration(start time.Time) {
+	reprocessorDurationGauge.Set(time.Since(start).Seconds())
 }
