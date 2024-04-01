@@ -80,7 +80,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 	} else {
 		transport = transports[0]
 	}
-	client, err := registry.NewFromTransport(url, transport, registry.Quiet)
+	client, err := registry.NewFromTransport(url, transport, registry.Log)
 	if err != nil {
 		return nil, err
 	}
