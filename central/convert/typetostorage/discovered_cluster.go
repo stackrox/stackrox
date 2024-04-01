@@ -17,7 +17,7 @@ func DiscoveredCluster(cluster *discoveredclusters.DiscoveredCluster) *storage.D
 			Type:              cluster.GetType(),
 			ProviderType:      cluster.GetProviderType(),
 			Region:            cluster.GetRegion(),
-			FirstDiscoveredAt: cluster.GetFirstDiscoveredAt(),
+			FirstDiscoveredAt: protocompat.ConvertTimeToTimestampOrNil(cluster.GetFirstDiscoveredAt()),
 		},
 		Status:        cluster.GetStatus(),
 		SourceId:      cluster.GetCloudSourceID(),

@@ -72,21 +72,23 @@ func (x *signalServicePushSignalsClient) Recv() (*v1.Empty, error) {
 }
 
 // SignalServiceServer is the server API for SignalService service.
-// All implementations should embed UnimplementedSignalServiceServer
+// All implementations must embed UnimplementedSignalServiceServer
 // for forward compatibility
 type SignalServiceServer interface {
 	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
 	// send anything via this stream.
 	PushSignals(SignalService_PushSignalsServer) error
+	mustEmbedUnimplementedSignalServiceServer()
 }
 
-// UnimplementedSignalServiceServer should be embedded to have forward compatible implementations.
+// UnimplementedSignalServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedSignalServiceServer struct {
 }
 
 func (UnimplementedSignalServiceServer) PushSignals(SignalService_PushSignalsServer) error {
 	return status.Errorf(codes.Unimplemented, "method PushSignals not implemented")
 }
+func (UnimplementedSignalServiceServer) mustEmbedUnimplementedSignalServiceServer() {}
 
 // UnsafeSignalServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to SignalServiceServer will

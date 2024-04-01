@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -27,10 +27,8 @@ const (
 // i.e. not error out unmarshaling JSON that contains attributes not defined in proto.
 // This Unmarshaler must be used everywhere instead of direct calls to jsonpb.Unmarshal
 // and jsonpb.UnmarshalString.
-func JSONUnmarshaler() *jsonpb.Unmarshaler {
-	return &jsonpb.Unmarshaler{
-		AllowUnknownFields: true,
-	}
+func JSONUnmarshaler() *protojson.UnmarshalOptions {
+	return &protojson.UnmarshalOptions{}
 }
 
 // JSONToProto converts a string containing JSON into a proto message.
@@ -45,7 +43,11 @@ func JSONBytesToProto(contents []byte, m protocompat.Message) error {
 
 // JSONReaderToProto converts bytes from a reader containing JSON into a proto message.
 func JSONReaderToProto(reader io.Reader, m protocompat.Message) error {
-	return JSONUnmarshaler().Unmarshal(reader, m)
+	x, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	return JSONUnmarshaler().Unmarshal(x, m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
@@ -60,17 +62,16 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 		indent = ""
 	}
 
-	marshaller := &jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: false,
-		Indent:       indent,
+	marshaller := &protojson.MarshalOptions{
+		Indent: indent,
 	}
 
-	s, err := marshaller.MarshalToString(m)
+	x, err := marshaller.Marshal(m)
 	if err != nil {
 		return "", err
 	}
 
+	s := string(x)
 	if contains(options, OptUnEscape) {
 		s = unEscape(s)
 	}

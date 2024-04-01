@@ -4,7 +4,7 @@ package v2;
 
 import "api/v2/pagination.proto";
 
-option go_package = "v2";
+option go_package = "./;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
 // RawQuery represents the search query string.

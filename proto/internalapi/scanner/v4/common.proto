@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package scanner.v4;
 
-option go_package = "v4";
+option go_package = "./;v4";
 
 message Contents {
   repeated Package packages = 1;

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package central;
 
-option go_package = "central";
+option go_package = "./;central";
 
 message SensorUpgradeTrigger {
   message EnvVarDef {

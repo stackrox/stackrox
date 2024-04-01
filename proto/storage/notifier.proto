@@ -6,7 +6,7 @@ import "storage/common.proto";
 import "storage/policy.proto";
 import "storage/traits.proto";
 
-option go_package = "storage";
+option go_package = "./;storage";
 option java_package = "io.stackrox.proto.storage";
 
 // Next Tag: 19

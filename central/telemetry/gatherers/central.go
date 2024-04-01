@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
-	"github.com/stackrox/rox/pkg/telemetry"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
 )
@@ -48,7 +48,7 @@ func (c *CentralGatherer) Gather(ctx context.Context) *data.CentralInfo {
 		RoxComponentInfo: c.componentInfoGatherer.Gather(),
 		// Despite GoLand's warning it's okay for installationInfo to be nil, GetID() will return ""
 		ID:                 installationInfo.GetId(),
-		InstallationTime:   telemetry.GetTimeOrNil(installationInfo.GetCreated()),
+		InstallationTime:   protocompat.NilOrTime(installationInfo.GetCreated()),
 		Storage:            c.databaseGatherer.Gather(ctx),
 		APIStats:           c.apiGatherer.Gather(),
 		Errors:             errList,

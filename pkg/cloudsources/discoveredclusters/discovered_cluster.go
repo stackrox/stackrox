@@ -2,8 +2,8 @@ package discoveredclusters
 
 import (
 	"strings"
+	"time"
 
-	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -42,7 +42,7 @@ type DiscoveredCluster struct {
 	Type              storage.ClusterMetadata_Type
 	ProviderType      storage.DiscoveredCluster_Metadata_ProviderType
 	Region            string
-	FirstDiscoveredAt *gogoTimestamp.Timestamp
+	FirstDiscoveredAt *time.Time
 	Status            storage.DiscoveredCluster_Status
 	CloudSourceID     string
 }
@@ -88,7 +88,7 @@ func (d *DiscoveredCluster) GetRegion() string {
 }
 
 // GetFirstDiscoveredAt returns the first discovered at timestamp.
-func (d *DiscoveredCluster) GetFirstDiscoveredAt() *gogoTimestamp.Timestamp {
+func (d *DiscoveredCluster) GetFirstDiscoveredAt() *time.Time {
 	if d != nil {
 		return d.FirstDiscoveredAt
 	}

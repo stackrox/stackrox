@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -159,7 +160,7 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselines
 			Namespace:            baselineInfo.Namespace,
 			Peers:                peers,
 			ForbiddenPeers:       forbiddenPeers,
-			ObservationPeriodEnd: baselineInfo.ObservationPeriodEnd.GogoProtobuf(),
+			ObservationPeriodEnd: protoconv.ConvertMicroTSToProtobufTS(baselineInfo.ObservationPeriodEnd),
 			Locked:               baselineInfo.UserLocked,
 			DeploymentName:       baselineInfo.DeploymentName,
 		})

@@ -3,6 +3,7 @@ package storagetotype
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // DiscoveredCluster converts the given storage.DiscoveredCluster
@@ -14,7 +15,7 @@ func DiscoveredCluster(cluster *storage.DiscoveredCluster) *discoveredclusters.D
 		Type:              cluster.GetMetadata().GetType(),
 		ProviderType:      cluster.GetMetadata().GetProviderType(),
 		Region:            cluster.GetMetadata().GetRegion(),
-		FirstDiscoveredAt: cluster.GetMetadata().GetFirstDiscoveredAt(),
+		FirstDiscoveredAt: protocompat.ConvertTimestampToTimeOrNil(cluster.GetMetadata().GetFirstDiscoveredAt()),
 		Status:            cluster.GetStatus(),
 		CloudSourceID:     cluster.GetSourceId(),
 	}
