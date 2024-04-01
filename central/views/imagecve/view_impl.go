@@ -9,10 +9,8 @@ import (
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -26,12 +24,12 @@ type imageCVECoreViewImpl struct {
 }
 
 func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if err := validateQuery(q); err != nil {
+	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
 
 	var err error
-	q, err = withSACFilter(ctx, resources.Image, q)
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
 	if err != nil {
 		return 0, err
 	}
@@ -53,12 +51,12 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 }
 
 func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
-	if err := validateQuery(q); err != nil {
+	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
 
 	var err error
-	q, err = withSACFilter(ctx, resources.Image, q)
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
 	if err != nil {
 		return nil, err
 	}
@@ -93,12 +91,12 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
-	if err := validateQuery(q); err != nil {
+	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
 
 	var err error
-	q, err = withSACFilter(ctx, resources.Image, q)
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +136,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error
-	q, err = withSACFilter(ctx, resources.Deployment, q)
+	q, err = common.WithSACFilter(ctx, resources.Deployment, q)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +160,7 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 
 func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	var err error
-	q, err = withSACFilter(ctx, resources.Image, q)
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
 	if err != nil {
 		return nil, err
 	}
@@ -182,17 +180,6 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 		ret = append(ret, r.ImageID)
 	}
 	return ret, nil
-}
-
-func validateQuery(q *v1.Query) error {
-	// We only support a dynamic where clause. CveCore has a pre-defined select and group by. Remember this is a "view".
-	if len(q.GetSelects()) > 0 {
-		return errors.Errorf("Unexpected select clause in query %q", q.String())
-	}
-	if q.GetGroupBy() != nil {
-		return errors.Errorf("Unexpected group by clause in query %q", q.String())
-	}
-	return nil
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
@@ -333,20 +320,4 @@ func withCountQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVE).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
 	return cloned
-}
-
-func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
-	var sacQueryFilter *v1.Query
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-	if err != nil {
-		return nil, err
-	}
-
-	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }
