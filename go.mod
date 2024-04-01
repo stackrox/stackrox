@@ -32,7 +32,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.16.0
-	github.com/georgysavva/scany/v2 v2.1.0
+	github.com/georgysavva/scany/v2 v2.1.2
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/go-logr/logr v1.4.1
