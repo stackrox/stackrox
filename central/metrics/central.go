@@ -258,6 +258,20 @@ var (
 		Name:      "reprocessor_duration_seconds",
 		Help:      "Total duration in seconds for the reprocessor loop",
 	})
+
+	registryRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "registry_requests_total",
+		Help:      "Counts the number of registry requests",
+	}, []string{"type"})
+
+	registryTimeoutCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "registry_error_timeouts_total",
+		Help:      "Counts the number of registry timeout errors",
+	}, []string{"type"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -440,4 +454,14 @@ func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 // SetReprocessorDuration registers how long a reprocessing step took.
 func SetReprocessorDuration(start time.Time) {
 	reprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// IncRegistryRequests increments the number of registry requests.
+func IncRegistryRequests(registry string) {
+	registryRequestCounter.WithLabelValues(registry)
+}
+
+// IncRegistryTimeouts increments the number of registry timeouts.
+func IncRegistryTimeouts(registry string) {
+	registryTimeoutCounter.WithLabelValues(registry)
 }

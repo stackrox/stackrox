@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -202,15 +204,19 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 
 	remote := image.GetName().GetRemote()
 	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
+	updateMetrics(err, r.protoImageIntegration.GetType())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the manifest digest")
 	}
-	return handleManifests(r, manifestType, remote, digest.String())
+	metadata, err := handleManifests(r, manifestType, remote, digest.String())
+	updateMetrics(err, r.protoImageIntegration.GetType())
+	return metadata, err
 }
 
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
 	err := r.Client.Ping()
+	updateMetrics(err, r.protoImageIntegration.GetType())
 	if err != nil {
 		log.Errorf("error testing docker integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {
@@ -242,4 +248,11 @@ func (r *Registry) Name() string {
 // HTTPClient returns the *http.Client used to contact the registry.
 func (r *Registry) HTTPClient() *http.Client {
 	return r.Client.Client
+}
+
+func updateMetrics(err error, registryType string) {
+	metrics.IncRegistryRequests(registryType)
+	if err, ok := err.(net.Error); ok && err.Timeout() {
+		metrics.IncRegistryTimeouts(registryType)
+	}
 }

@@ -55,6 +55,7 @@ func (r *RegistryWithoutManifestCall) Metadata(image *storage.Image) (*storage.I
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("Error accessing %q", image.GetName().GetFullName()))
 	for _, f := range manifestFuncs {
 		metadata, err := f(r.Registry, remote, ref)
+		updateMetrics(err, r.protoImageIntegration.GetType())
 		if err != nil {
 			errorList.AddError(err)
 			continue
