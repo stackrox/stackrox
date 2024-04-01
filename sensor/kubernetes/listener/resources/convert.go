@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
+	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -336,13 +337,23 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 			image := w.Deployment.Containers[i].Image
 
-			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
-			// with an image digest. e.g. quay.io/stackrox-io/main@sha256:xyz
-			// If the ID already exists, populate NotPullable and IsClusterLocal.
+			var runtimeImageName *storage.ImageName
+			if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
+				var err error
+				if runtimeImageName, _, err = imageUtils.GenerateImageNameFromString(imageUtils.RemoveScheme(c.ImageID)); err != nil {
+					log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q, pod %q: %v", c.ImageID, w.Deployment.GetName(), p.GetName(), err)
+				}
+			}
+
+			// If there already is an image ID for the image then that implies that the name of the image
+			// had a digest. e.g. quay.io/stackrox-io/main@sha256:xyz or main@sha256:xyz
+			// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
+			// and remote with the container runtime.
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+				updateImageWithNewerImageName(image, runtimeImageName, true)
 				continue
 			}
 
@@ -362,8 +373,42 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+				updateImageWithNewerImageName(image, runtimeImageName, false)
 			}
 		}
+	}
+}
+
+// updateImageWithNewerImageName will update the registry, remote, and full name
+// of image from a newer image name, such as the one provided by the container
+// runtime. This is needed in order to support CRI-O's unqualified search registries
+// and short name aliases, for more details refer to:
+// https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md
+//
+// The image in a workload's spec may differ from what the container runtime pulls,
+// therefore the image name must be updated to accurately reflect the pulled image
+// to give downstream processes (like scanning) a better chance at completing.
+//
+// Note: at this time CRI-O does not indicate if a registry mirror was used,
+// therefore the mirror store (`pkg/registrymirror`) and mirror processing logic in
+// `sensor/common/scan` are still required to scan images from registry mirrors.
+func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName *storage.ImageName, updateDigest bool) {
+	if !features.UnqualifiedSearchRegistries.Enabled() || image.GetName() == nil || newerImageName == nil {
+		return
+	}
+
+	imageName := image.GetName()
+	origFullName := imageName.GetFullName()
+	if imageName.GetRegistry() != newerImageName.GetRegistry() || imageName.GetRemote() != newerImageName.GetRemote() {
+		imageName.Registry = newerImageName.GetRegistry()
+		imageName.Remote = newerImageName.GetRemote()
+
+		if updateDigest {
+			imageUtils.NormalizeImageFullName(imageName, image.GetId())
+		} else {
+			imageUtils.NormalizeImageFullNameNoSha(imageName)
+		}
+		log.Debugf("Updated image name from %q to %q", origFullName, imageName.GetFullName())
 	}
 }
 
