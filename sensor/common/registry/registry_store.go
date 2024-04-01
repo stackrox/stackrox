@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
+	"github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
 const (
@@ -78,7 +79,8 @@ type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
 func NewRegistryStore(checkTLS CheckTLS) *Store {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
-		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
+		CreatorFuncs:   registries.AllCreatorFuncsWithoutRepoList,
+		MetricsHandler: metrics.Singleton(),
 	})
 
 	store := &Store{

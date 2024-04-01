@@ -24,8 +24,8 @@ const (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.QuayType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := newRegistry(integration, false)
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := newRegistry(integration, false, metricsHandler)
 			return reg, err
 		}
 }
@@ -34,8 +34,8 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.QuayType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := newRegistry(integration, true)
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := newRegistry(integration, true, metricsHandler)
 			return reg, err
 		}
 }
@@ -84,7 +84,9 @@ func validate(quay *storage.QuayConfig, categories []storage.ImageIntegrationCat
 }
 
 // NewRegistryFromConfig returns a new instantiation of the Quay registry
-func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration, disableRepoList bool) (types.Registry, error) {
+func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration,
+	disableRepoList bool, metricsHandler *types.MetricsHandler,
+) (types.Registry, error) {
 	if err := validate(config, integration.GetCategories()); err != nil {
 		return nil, err
 	}
@@ -105,6 +107,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 		Endpoint:        config.GetEndpoint(),
 		Insecure:        config.GetInsecure(),
 		DisableRepoList: disableRepoList,
+		MetricsHandler:  metricsHandler,
 	}
 	cfg.SetCredentials(username, password)
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, integration)
@@ -117,12 +120,14 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 	}, nil
 }
 
-func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (types.Registry, error) {
+func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
+	metricsHandler *types.MetricsHandler,
+) (types.Registry, error) {
 	quayConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, errors.New("Quay config must be specified")
 	}
-	return NewRegistryFromConfig(quayConfig.Quay, integration, disableRepoList)
+	return NewRegistryFromConfig(quayConfig.Quay, integration, disableRepoList, metricsHandler)
 }
 
 // Test overrides the default docker Test function because the Quay Ping endpoint requires Auth

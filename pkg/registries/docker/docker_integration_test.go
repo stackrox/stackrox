@@ -19,7 +19,7 @@ func TestGetMetadataIntegration(t *testing.T) {
 				Endpoint: "https://registry.k8s.io",
 			},
 		},
-	}, false)
+	}, false, nil)
 	require.NoError(t, err)
 
 	image := storage.Image{
@@ -44,7 +44,7 @@ func TestOCIImageIndexManifest(t *testing.T) {
 				Endpoint: "https://gcr.io",
 			},
 		},
-	}, false)
+	}, false, nil)
 	require.NoError(t, err)
 
 	image := storage.Image{
@@ -70,7 +70,7 @@ func TestOCIImageIndexManifestWithoutManifestCall(t *testing.T) {
 				Endpoint: "https://gcr.io",
 			},
 		},
-	}, false)
+	}, false, nil)
 	require.NoError(t, err)
 
 	image := storage.Image{

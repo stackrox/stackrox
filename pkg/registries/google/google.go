@@ -48,9 +48,9 @@ func (g *googleRegistry) Config() *types.Config {
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.GoogleType,
-		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, options ...types.CreatorOption) (types.Registry, error) {
 			cfg := types.ApplyCreatorOptions(options...)
-			return NewRegistry(integration, false, cfg.GetGCPTokenManager())
+			return NewRegistry(integration, false, metricsHandler, cfg.GetGCPTokenManager())
 		}
 }
 
@@ -58,9 +58,9 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.GoogleType,
-		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, options ...types.CreatorOption) (types.Registry, error) {
 			cfg := types.ApplyCreatorOptions(options...)
-			return NewRegistry(integration, true, cfg.GetGCPTokenManager())
+			return NewRegistry(integration, true, metricsHandler, cfg.GetGCPTokenManager())
 		}
 }
 
@@ -80,7 +80,9 @@ func validate(google *storage.GoogleConfig) error {
 
 // NewRegistry creates an image integration based on the Google config. It also checks against
 // the specified Google project as a part of the registry match.
-func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, manager auth.STSTokenManager) (types.Registry, error) {
+func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
+	metricsHandler *types.MetricsHandler, manager auth.STSTokenManager,
+) (types.Registry, error) {
 	config := integration.GetGoogle()
 	if config == nil {
 		return nil, errors.New("Google configuration required")
@@ -92,6 +94,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	dockerConfig := &docker.Config{
 		Endpoint:        config.GetEndpoint(),
 		DisableRepoList: disableRepoList,
+		MetricsHandler:  metricsHandler,
 	}
 	var (
 		tokenSource oauth2.TokenSource
@@ -119,7 +122,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	reg := &googleRegistry{
 		project: strings.ToLower(config.GetProject()),
 	}
-	reg.transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource)
+	reg.transport = newGoogleTransport(integration.GetName(), dockerConfig, tokenSource, integration.GetType())
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration, reg.transport)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create docker registry")

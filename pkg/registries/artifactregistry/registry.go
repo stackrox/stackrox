@@ -9,9 +9,9 @@ import (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.ArtifactRegistryType,
-		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, options ...types.CreatorOption) (types.Registry, error) {
 			cfg := types.ApplyCreatorOptions(options...)
-			return google.NewRegistry(integration, false, cfg.GetGCPTokenManager())
+			return google.NewRegistry(integration, false, metricsHandler, cfg.GetGCPTokenManager())
 		}
 }
 
@@ -19,8 +19,8 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.ArtifactRegistryType,
-		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, options ...types.CreatorOption) (types.Registry, error) {
 			cfg := types.ApplyCreatorOptions(options...)
-			return google.NewRegistry(integration, true, cfg.GetGCPTokenManager())
+			return google.NewRegistry(integration, true, metricsHandler, cfg.GetGCPTokenManager())
 		}
 }

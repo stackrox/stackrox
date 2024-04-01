@@ -91,7 +91,7 @@ var DockerfileInstructionSet = map[string]struct{}{
 }
 
 // Creator is the func stub that defines how to instantiate an image registry.
-type Creator func(integration *storage.ImageIntegration, options ...CreatorOption) (Registry, error)
+type Creator func(integration *storage.ImageIntegration, metrics *MetricsHandler, options ...CreatorOption) (Registry, error)
 
 // CreatorWrapper is a wrapper around a Creator which also returns the registry's name.
 type CreatorWrapper func() (string, Creator)

@@ -1,6 +1,8 @@
 package registries
 
-import "github.com/stackrox/rox/pkg/registries/types"
+import (
+	"github.com/stackrox/rox/pkg/registries/types"
+)
 
 // FactoryOptions specifies optional configuration parameters for a registry factory.
 type FactoryOptions struct {
@@ -12,4 +14,7 @@ type FactoryOptions struct {
 	// that do not make use of a repo list (`/v2/_catalog`) in matching
 	// decisions.
 	CreatorFuncsWithoutRepoList []types.CreatorWrapper
+
+	// MetricsHandler wraps the Prometheus objects used in registries.
+	MetricsHandler *types.MetricsHandler
 }

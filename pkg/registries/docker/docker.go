@@ -31,8 +31,8 @@ var log = logging.LoggerForModule()
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
 	return types.DockerType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := NewDockerRegistry(integration, false)
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := NewDockerRegistry(integration, false, metricsHandler)
 			return reg, err
 		}
 }
@@ -41,8 +41,8 @@ func Creator() (string, types.Creator) {
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
 	return types.DockerType,
-		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
-			reg, err := NewDockerRegistry(integration, true)
+		func(integration *storage.ImageIntegration, metricsHandler *types.MetricsHandler, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := NewDockerRegistry(integration, true, metricsHandler)
 			return reg, err
 		}
 }
@@ -66,7 +66,9 @@ type Registry struct {
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
-func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration, transports ...registry.Transport) (*Registry, error) {
+func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration,
+	transports ...registry.Transport,
+) (*Registry, error) {
 	url := cfg.formatURL()
 	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
 	registryServer := urlfmt.GetServerFromURL(url)
@@ -76,7 +78,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	var transport registry.Transport
 	if len(transports) == 0 || transports[0] == nil {
-		transport = DefaultTransport(cfg)
+		transport = DefaultTransport(cfg, integration.GetType())
 	} else {
 		transport = transports[0]
 	}
@@ -114,7 +116,9 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 }
 
 // NewDockerRegistry creates a generic docker registry integration
-func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*Registry, error) {
+func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bool,
+	metricsHandler *types.MetricsHandler,
+) (*Registry, error) {
 	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, errors.New("Docker configuration required")
@@ -125,6 +129,7 @@ func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bo
 		password:        dockerConfig.Docker.GetPassword(),
 		Insecure:        dockerConfig.Docker.GetInsecure(),
 		DisableRepoList: disableRepoList,
+		MetricsHandler:  metricsHandler,
 	}
 	return NewDockerRegistryWithConfig(cfg, integration)
 }
