@@ -20,21 +20,16 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    - name: Record job
-      env:
-        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
-      run: |
-        set -euo pipefail
-        source scripts/ci/lib.sh
-        create_job_record "${{ github.job }}"
-      shell: bash
-
-    - name: Update job record
+    - name: Record job info
       uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       with:
         shell: bash
+        run: |
+          set -euo pipefail
+          source scripts/ci/lib.sh
+          create_job_record "${{ github.job }}"
         post: |
           set -exuo pipefail
           source $PWD/scripts/ci/lib.sh
