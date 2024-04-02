@@ -31,8 +31,7 @@ runs:
           source scripts/ci/lib.sh
           create_job_record "${{ github.job }}"
         post: |
-          set -exuo pipefail
-          source $PWD/scripts/ci/lib.sh
+          source scripts/ci/lib.sh
           typeset -F
           METRICS_JOB_ID=$GITHUB_RUN_ID \
           update_job_record \
