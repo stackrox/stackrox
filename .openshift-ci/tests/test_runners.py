@@ -174,6 +174,12 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         ClusterTestSetsRunner(cluster=cluster).run()
         cluster.teardown.assert_called_once()
 
+    def test_runs_initial_pre_test(self):
+        initial_pre_test = Mock()
+        ClusterTestSetsRunner(initial_pre_test=initial_pre_test,
+                              sets=[{}]).run()
+        initial_pre_test.run.assert_called_once()
+
     def test_runs_pre_test(self):
         pre_test = Mock()
         ClusterTestSetsRunner(sets=[{"pre_test": pre_test}]).run()
@@ -204,9 +210,15 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         ClusterTestSetsRunner(sets=[{}, {"post_test": post_test}, {}]).run()
         post_test.run.assert_called_once()
 
+    def test_runs_final_post(self):
+        final_post = Mock()
+        ClusterTestSetsRunner(sets=[{}, {}],
+                              final_post=final_post).run()
+        final_post.run.assert_called_once()
+
     # Failure semantics
 
-    def test_initial_failure_does_not_halt_the_set(self):
+    def test_first_failure_does_not_halt_the_set(self):
         test1 = Mock()
         test1.run.side_effect = Exception("test1 oops")
         test2 = Mock()
@@ -224,22 +236,67 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 sets=[{"test": test1}, {"test": test2}]).run()
 
-    def test_can_always_run(self):
+    def test_test_failure_is_reported_over_post_failure(self):
         test1 = Mock()
         test1.run.side_effect = Exception("test1 oops")
-        test2 = Mock()
-        post_test2 = Mock()
+        final_post = Mock()
+        final_post.run.side_effect = Exception("final post oops")
+        with self.assertRaisesRegex(Exception, "test1 oops"):
+            ClusterTestSetsRunner(
+                sets=[{"test": test1},], final_post=final_post).run()
+
+    def test_test_failure_is_reported_over_teardown_failure(self):
+        test1 = Mock()
+        test1.run.side_effect = Exception("test1 oops")
+        cluster = Mock()
+        cluster.teardown.side_effect = Exception("teardown oops")
+        with self.assertRaisesRegex(Exception, "test1 oops"):
+            ClusterTestSetsRunner(
+                sets=[{"test": test1},], cluster=cluster).run()
+
+    def test_can_skip(self):
+        test1 = Mock()
+        test1.run.side_effect = Exception("test1 oops")
+        skipped_test = Mock()
+        post_skipped_test = Mock()
         test3 = Mock()
         post_test3 = Mock()
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
                 sets=[
                     {"test": test1},
-                    {"test": test2, "post_test": post_test2, "always_run": False},
+                    {"test": skipped_test, "post_test": post_skipped_test, "always_run": False},
                     {"test": test3, "post_test": post_test3},
                 ]
             ).run()
-        test2.run.assert_not_called()
-        post_test2.run.assert_not_called()
+        skipped_test.run.assert_not_called()
+        post_skipped_test.run.assert_not_called()
         test3.run.assert_called_once()
         post_test3.run.assert_called_once()
+
+    def test_final_post_failure_is_reported_as_such(self):
+        test1 = Mock()
+        test2 = Mock()
+        final_post = Mock()
+        final_post.run.side_effect = Exception("final post oops")
+        with self.assertRaisesRegex(Exception, "final post oops"):
+            ClusterTestSetsRunner(
+                sets=[{"test": test1}, {"test": test2}],
+                final_post=final_post).run()
+
+    def test_initial_pre_test_failure_skips_the_set(self):
+        initial_pre_test = Mock()
+        initial_pre_test.run.side_effect = Exception("initial pre test oops")
+        cluster = Mock()
+        test1 = Mock()
+        final_post = Mock()
+        with self.assertRaisesRegex(Exception, "initial pre test oops"):
+            ClusterTestSetsRunner(
+                initial_pre_test=initial_pre_test,
+                cluster=cluster,
+                sets=[{"test": test1}],
+                final_post=final_post).run()
+        test1.run.assert_not_called()
+        # and keeps the cluster teardown and final post
+        cluster.teardown.assert_called()
+        final_post.run.assert_called()

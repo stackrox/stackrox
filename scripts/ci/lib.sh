@@ -58,7 +58,7 @@ ci_exit_trap() {
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
-    post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}"
+    post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}" "${JOB_JUNIT2JIRA_SUMMARY_FILE}"
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
@@ -936,23 +936,6 @@ get_pr_details() {
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
-    #TODO(janisz): remove after https://github.com/openshift/release/pull/49962 is merged
-    if [ -e "/tmp/go/" ]; then
-        info "Go already exists"
-    else
-        info "Replace Go"
-        go version
-        whoami
-        GOLANG_VERSION=1.21.8
-        GOLANG_SHA256=538b3b143dc7f32b093c8ffe0e050c260b57fc9d57a12c4140a639a8dd2b4e4f
-        url="https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz"
-        wget --no-verbose -O /tmp/go.tgz "$url"
-        echo "$GOLANG_SHA256 /tmp/go.tgz" | sha256sum -c -
-        tar -C /tmp/ -xzf /tmp/go.tgz
-    fi
-    export PATH=/tmp/go/bin:$PATH
-    go version
-
     openshift_ci_debug
 
     info "Current Status:"
@@ -1167,8 +1150,8 @@ store_test_results() {
 }
 
 post_process_test_results() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: post_process_test_results <slack attachments file.json>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: post_process_test_results <slack attachments file.json> <summary output.json>"
     fi
 
     if ! is_OPENSHIFT_CI; then
@@ -1181,6 +1164,7 @@ post_process_test_results() {
     fi
 
     local slack_attachments_file="$1"
+    local summary_file="$2"
     local csv_output
     local extra_args=()
     local base_link
@@ -1222,7 +1206,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.17/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.18/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1237,6 +1221,7 @@ post_process_test_results() {
             -threshold 5 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
             -slack-output "${slack_attachments_file}" \
+            -summary-output "${summary_file}" \
             "${extra_args[@]}"
 
         save_test_metrics "${csv_output}"
@@ -1258,6 +1243,8 @@ make_prow_job_link() {
 # There are currently two openshift-ci steps where junit failures are summarized for slack.
 JOB_SLACK_FAILURE_ATTACHMENTS="${SHARED_DIR:-/tmp}/job-slack-failure-attachments.json"
 END_SLACK_FAILURE_ATTACHMENTS="/tmp/end-slack-failure-attachments.json"
+JOB_JUNIT2JIRA_SUMMARY_FILE="${SHARED_DIR:-/tmp}/job-junit2jira-summary.json"
+END_JUNIT2JIRA_SUMMARY_FILE="/tmp/end-junit2jira-summary.json"
 
 send_slack_failure_summary() {
     if ! is_OPENSHIFT_CI || is_nightly_run; then
@@ -1348,11 +1335,14 @@ send_slack_failure_summary() {
         return 1
     fi
 
-    local slack_mention=""
-    _make_slack_mention
+    local mention_author=""
+    _set_mention_author
 
     local slack_attachments=""
     _make_slack_failure_attachments
+
+    local slack_mention=""
+    _make_slack_mention
 
     # shellcheck disable=SC2016
     local body='
@@ -1417,8 +1407,22 @@ send_slack_failure_summary() {
     fi
 }
 
+_set_mention_author() {
+    mention_author="false"
+
+    # Mention the commit author if new JIRA issues were created
+    if [[ -f "${JOB_JUNIT2JIRA_SUMMARY_FILE}" && \
+        "$(jq -r '.newJIRAs' "${JOB_JUNIT2JIRA_SUMMARY_FILE}")" != "0" ]]; then
+        mention_author="true"
+    fi
+    if [[ -f "${END_JUNIT2JIRA_SUMMARY_FILE}" && \
+        "$(jq -r '.newJIRAs' "${END_JUNIT2JIRA_SUMMARY_FILE}")" != "0" ]]; then
+        mention_author="true"
+    fi
+}
+
 _make_slack_mention() {
-    if [[ "${author_login}" != "dependabot[bot]" ]]; then
+    if [[ "${mention_author}" == "true" && "${author_login}" != "dependabot[bot]" ]]; then
         slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
         if [[ -n "$slack_mention" ]]; then
             slack_mention=", <@${slack_mention}>"
@@ -1454,6 +1458,9 @@ _make_slack_failure_attachments() {
 and artifacts for more information. Consider adding an \
 issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)."
         slack_attachments="$(_make_slack_failure_plain_text_block "${msg}")"
+
+        # Mention the commit author when the job failed with no JUNIT records
+        mention_author="true"
     fi
 }
 
@@ -1541,6 +1548,7 @@ slack_workflow_failure() {
     repo=$(jq -r <<<"${github_context}" '.repository')
     run_id=$(jq -r <<<"${github_context}" '.run_id')
 
+    local mention_author="true"
     local slack_mention=""
     _make_slack_mention
 
@@ -1771,6 +1779,11 @@ _EO_CASE_HEADER_
         cat << _EO_FAILURE_ >> "${junit_file}"
             <failure><![CDATA[${details}]]></failure>
 _EO_FAILURE_
+        fi
+        if [[ "$result" == "${_JUNIT_RESULT_SKIPPED}" ]]; then
+        cat << _EO_SKIPPED_ >> "${junit_file}"
+            <skipped/>
+_EO_SKIPPED_
         fi
 
         echo "        </testcase>" >> "${junit_file}"

@@ -27,18 +27,19 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
+
+import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../../types';
-import { getOverviewCvesPath } from '../utils/searchUtils';
 import ImageDetailBadges, {
     ImageDetails,
     imageDetailsFragment,
 } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 
-const workloadCveOverviewImagePath = getOverviewCvesPath({
+const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
     entityTab: 'Image',
 });

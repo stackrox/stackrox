@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -296,11 +295,6 @@ func main() {
 		}
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
-
-	// Now that we verified that the DB can be loaded, remove the .backup directory
-	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
-		log.Fatalf("Failed to remove backup DB: %v", err)
-	}
 
 	// Register telemetry prometheus metrics.
 	telemetry.Singleton().Start()

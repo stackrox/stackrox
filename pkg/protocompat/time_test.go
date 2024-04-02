@@ -96,6 +96,23 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	assert.Nil(t, protoTSInvalid)
 }
 
+func TestGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
+	timeString := "2017-11-16T19:35:32.012345678Z"
+
+	ts1, err1 := GetProtoTimestampFromRFC3339NanoString(timeString)
+	assert.NoError(t, err1)
+	assert.Equal(t, int64(1510860932), ts1.Seconds)
+	assert.Equal(t, int32(12345678), ts1.Nanos)
+
+	invalidTimeString1 := "0000-12-24T23:59:59.999999999Z"
+	_, err2 := GetProtoTimestampFromRFC3339NanoString(invalidTimeString1)
+	assert.Error(t, err2)
+
+	invalidTimeString2 := "0000-12-2AT23:59:59.999999999Z"
+	_, err3 := GetProtoTimestampFromRFC3339NanoString(invalidTimeString2)
+	assert.Error(t, err3)
+}
+
 func TestGetProtoTimestampFromSeconds(t *testing.T) {
 	seconds1 := int64(1234567890)
 	seconds2 := int64(23456789012)

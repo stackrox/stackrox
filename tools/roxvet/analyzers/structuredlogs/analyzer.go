@@ -47,7 +47,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.CallExpr)(nil),
 	}
 
-	fileFilter := common.And(common.Not(common.IsTestFile), common.Not(common.IsGeneratedFile))
+	fileFilter := common.And(common.Not(common.IsTestFile), common.Not(ast.IsGenerated))
 
 	common.FilteredPreorder(inspectResult, fileFilter, nodeFilter, func(n ast.Node) {
 		checkCall(pass, n.(*ast.CallExpr))
