@@ -21,7 +21,7 @@ require (
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.8.0
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.50.0
+	github.com/aws/aws-sdk-go v1.51.12
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble v1.1.0
