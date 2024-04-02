@@ -37,8 +37,8 @@ runs:
       with:
         shell: bash
         post: |
-          set -euo pipefail
-          source scripts/ci/lib.sh
+          set -exuo pipefail
+          source $PWD/scripts/ci/lib.sh
           METRICS_JOB_ID=$GITHUB_RUN_ID \
           update_job_record \
           outcome "${{ job.status }}" \
