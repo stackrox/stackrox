@@ -27,13 +27,10 @@ runs:
       with:
         shell: bash
         run: |
-          set -euo pipefail
-          source scripts/ci/lib.sh
+          . scripts/ci/lib.sh
           create_job_record "${{ github.job }}"
         post: |
-          bash -v
-          bash
-          source scripts/ci/lib.sh
+          . scripts/ci/lib.sh
           typeset -F
           METRICS_JOB_ID=$GITHUB_RUN_ID \
           update_job_record \
