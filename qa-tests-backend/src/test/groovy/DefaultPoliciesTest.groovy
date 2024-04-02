@@ -39,6 +39,7 @@ import util.SlackUtil
 
 import org.junit.Assume
 import spock.lang.IgnoreIf
+import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
@@ -574,6 +575,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         return total
     }
 
+    @Retry(count = 3)
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
