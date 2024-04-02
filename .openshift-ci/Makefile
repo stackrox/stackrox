@@ -5,10 +5,12 @@ ifdef CI
 	PYCODESTYLE=pycodestyle
 	AUTOPEP8=autopep8
 	PYLINT=pylint
+	PYTHON3=python3
 else
 	PYCODESTYLE=$(VENV)/bin/pycodestyle
 	AUTOPEP8=$(VENV)/bin/autopep8
 	PYLINT=$(VENV)/bin/pylint
+	PYTHON3=$(VENV)/bin/python3
 endif
 
 .PHONY: all
@@ -35,3 +37,7 @@ fix-style: $(VENV)/bin/activate
 .PHONY: lint
 lint: $(VENV)/bin/activate
 	$(PYLINT) --rcfile .pylintrc --ignore=$(VENV) $(PY_SRCS)
+
+.PHONY: test
+test: $(VENV)/bin/activate
+	$(PYTHON3) -m unittest discover -v --buffer --start-directory tests

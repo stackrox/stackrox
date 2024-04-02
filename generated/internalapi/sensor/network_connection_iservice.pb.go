@@ -4,13 +4,9 @@
 package sensor
 
 import (
-	context "context"
 	encoding_binary "encoding/binary"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -427,122 +423,6 @@ var fileDescriptor_6dc4e32683ddd49f = []byte{
 	0xa8, 0x92, 0x02, 0x7d, 0xd4, 0x47, 0x93, 0xfb, 0xdf, 0x0f, 0x2e, 0xfa, 0x71, 0x70, 0xd1, 0xcf,
 	0x83, 0x8b, 0xbe, 0xfc, 0x72, 0x2b, 0x6f, 0xed, 0xc2, 0xff, 0x46, 0x68, 0x59, 0xcf, 0x97, 0x74,
 	0xf8, 0x27, 0x00, 0x00, 0xff, 0xff, 0xa8, 0x49, 0x22, 0xb5, 0x3a, 0x03, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// NetworkConnectionInfoServiceClient is the client API for NetworkConnectionInfoService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type NetworkConnectionInfoServiceClient interface {
-	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-	// send anything via this stream.
-	PushNetworkConnectionInfo(ctx context.Context, opts ...grpc.CallOption) (NetworkConnectionInfoService_PushNetworkConnectionInfoClient, error)
-}
-
-type networkConnectionInfoServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewNetworkConnectionInfoServiceClient(cc grpc.ClientConnInterface) NetworkConnectionInfoServiceClient {
-	return &networkConnectionInfoServiceClient{cc}
-}
-
-func (c *networkConnectionInfoServiceClient) PushNetworkConnectionInfo(ctx context.Context, opts ...grpc.CallOption) (NetworkConnectionInfoService_PushNetworkConnectionInfoClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_NetworkConnectionInfoService_serviceDesc.Streams[0], "/sensor.NetworkConnectionInfoService/PushNetworkConnectionInfo", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &networkConnectionInfoServicePushNetworkConnectionInfoClient{stream}
-	return x, nil
-}
-
-type NetworkConnectionInfoService_PushNetworkConnectionInfoClient interface {
-	Send(*NetworkConnectionInfoMessage) error
-	Recv() (*NetworkFlowsControlMessage, error)
-	grpc.ClientStream
-}
-
-type networkConnectionInfoServicePushNetworkConnectionInfoClient struct {
-	grpc.ClientStream
-}
-
-func (x *networkConnectionInfoServicePushNetworkConnectionInfoClient) Send(m *NetworkConnectionInfoMessage) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *networkConnectionInfoServicePushNetworkConnectionInfoClient) Recv() (*NetworkFlowsControlMessage, error) {
-	m := new(NetworkFlowsControlMessage)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// NetworkConnectionInfoServiceServer is the server API for NetworkConnectionInfoService service.
-type NetworkConnectionInfoServiceServer interface {
-	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-	// send anything via this stream.
-	PushNetworkConnectionInfo(NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error
-}
-
-// UnimplementedNetworkConnectionInfoServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedNetworkConnectionInfoServiceServer struct {
-}
-
-func (*UnimplementedNetworkConnectionInfoServiceServer) PushNetworkConnectionInfo(srv NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
-	return status.Errorf(codes.Unimplemented, "method PushNetworkConnectionInfo not implemented")
-}
-
-func RegisterNetworkConnectionInfoServiceServer(s *grpc.Server, srv NetworkConnectionInfoServiceServer) {
-	s.RegisterService(&_NetworkConnectionInfoService_serviceDesc, srv)
-}
-
-func _NetworkConnectionInfoService_PushNetworkConnectionInfo_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(NetworkConnectionInfoServiceServer).PushNetworkConnectionInfo(&networkConnectionInfoServicePushNetworkConnectionInfoServer{stream})
-}
-
-type NetworkConnectionInfoService_PushNetworkConnectionInfoServer interface {
-	Send(*NetworkFlowsControlMessage) error
-	Recv() (*NetworkConnectionInfoMessage, error)
-	grpc.ServerStream
-}
-
-type networkConnectionInfoServicePushNetworkConnectionInfoServer struct {
-	grpc.ServerStream
-}
-
-func (x *networkConnectionInfoServicePushNetworkConnectionInfoServer) Send(m *NetworkFlowsControlMessage) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *networkConnectionInfoServicePushNetworkConnectionInfoServer) Recv() (*NetworkConnectionInfoMessage, error) {
-	m := new(NetworkConnectionInfoMessage)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-var _NetworkConnectionInfoService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.NetworkConnectionInfoService",
-	HandlerType: (*NetworkConnectionInfoServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "PushNetworkConnectionInfo",
-			Handler:       _NetworkConnectionInfoService_PushNetworkConnectionInfo_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
-	Metadata: "internalapi/sensor/network_connection_iservice.proto",
 }
 
 func (m *NetworkConnectionInfoMessage) Marshal() (dAtA []byte, err error) {

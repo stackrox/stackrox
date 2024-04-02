@@ -100,7 +100,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.CallExpr)(nil),
 	}
 
-	common.FilteredPreorder(inspectResult, common.Not(common.IsGeneratedFile), nodeFilter, func(n ast.Node) {
+	common.FilteredPreorder(inspectResult, common.Not(ast.IsGenerated), nodeFilter, func(n ast.Node) {
 		checkCall(pass, n.(*ast.CallExpr))
 	})
 	return nil, nil

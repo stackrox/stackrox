@@ -2,7 +2,6 @@ package dispatchers
 
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -70,14 +69,6 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			log.Warnf("unable to convert start time %v", err)
 		}
 
-		var endTime *types.Timestamp
-		if complianceScan.Status.EndTimestamp != nil {
-			endTime, err = protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.EndTimestamp.Time)
-			if err != nil {
-				log.Warnf("unable to convert end time %v", err)
-			}
-		}
-
 		protoStatus := &central.ComplianceOperatorScanStatusV2{
 			Phase:            string(complianceScan.Status.Phase),
 			Result:           string(complianceScan.Status.Result),
@@ -86,7 +77,15 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			Warnings:         complianceScan.Status.Warnings,
 			RemainingRetries: int64(complianceScan.Status.RemainingRetries),
 			StartTime:        startTime,
-			EndTime:          endTime,
+		}
+
+		if complianceScan.Status.EndTimestamp != nil {
+			endTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.EndTimestamp.Time)
+			if err != nil {
+				log.Warnf("unable to convert end time %v", err)
+			} else {
+				protoStatus.EndTime = endTime
+			}
 		}
 
 		protoScan := &central.ComplianceOperatorScanV2{

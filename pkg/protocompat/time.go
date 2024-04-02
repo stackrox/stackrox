@@ -16,6 +16,20 @@ var (
 	TimestampType = reflect.TypeOf(gogoTimestamp.Timestamp{})
 )
 
+// Timestamp represents a point in time independent of any time zone or local calendar, encoded
+// as a count of seconds and fractions of seconds at nanosecond resolution. The count is relative
+// to an epoch at UTC midnight on January 1, 1970, in the proleptic Gregorian calendar which
+// extends the Gregorian calendar backwards to year one.
+//
+// All minutes are 60 seconds long. Leap seconds are "smeared" so that no leap second table
+// is needed for interpretation, using a
+// [24-hour linear smear](https://developers.google.com/time/smear ).
+//
+// The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By restricting to that
+// range, we ensure that we can convert to and from
+// [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt ) date strings.
+type Timestamp = gogoTimestamp.Timestamp
+
 // TimestampNow returns a protobuf timestamp set to the current time.
 func TimestampNow() *gogoTimestamp.Timestamp {
 	return gogoTimestamp.TimestampNow()
@@ -64,6 +78,19 @@ func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, er
 // ConvertTimeToTimestampOrError converts golang time to proto timestamp.
 func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, error) {
 	return gogoTimestamp.TimestampProto(goTime)
+}
+
+// GetProtoTimestampFromRFC3339NanoString generates a proto timestamp from a time string in RFC3339Nano format.
+func GetProtoTimestampFromRFC3339NanoString(timeStr string) (*gogoTimestamp.Timestamp, error) {
+	stringTime, err := time.Parse(time.RFC3339Nano, timeStr)
+	if err != nil {
+		return nil, err
+	}
+	timestamp, err := ConvertTimeToTimestampOrError(stringTime)
+	if err != nil {
+		return nil, err
+	}
+	return timestamp, nil
 }
 
 // GetProtoTimestampFromSeconds instantiates a protobuf Timestamp structure initialized
@@ -115,6 +142,16 @@ func ParseRFC3339NanoTimestamp(timestamp string) (*gogoTimestamp.Timestamp, erro
 // after the second.
 func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
 	return t1.Compare(t2)
+}
+
+// CompareTimestampToTime compares a proto timestamp to a time.
+// The return value is:
+// * -1 if the proto timestamp is before the time
+// * 0 if both represent the same time
+// * 1 if the proto timestamp is after the time
+func CompareTimestampToTime(t1 *gogoTimestamp.Timestamp, t2 *time.Time) int {
+	ts2 := ConvertTimeToTimestampOrNil(t2)
+	return CompareTimestamps(t1, ts2)
 }
 
 // DurationFromProto converts a proto Duration to a time.Duration.

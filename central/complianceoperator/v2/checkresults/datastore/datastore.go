@@ -31,8 +31,11 @@ type DataStore interface {
 	// ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
 	ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error)
 
-	// ComplianceProfileResultStats retrieves the profile results stats specified by query for the scan configuration
+	// ComplianceProfileResultStats retrieves the profile result stats specified by query
 	ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByProfile, error)
+
+	// ComplianceProfileResults retrieves the profile results specified by query
+	ComplianceProfileResults(ctx context.Context, query *v1.Query) ([]*ResourceResultsByProfile, error)
 
 	// ComplianceClusterStatsCount retrieves the distinct scan result counts specified by query for the clusters
 	ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error)

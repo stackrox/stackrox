@@ -35,7 +35,7 @@ func main() {
 			}
 		}
 		log.Printf("#%d was retested %d times", prNumber, retested)
-		if retested > 10 {
+		if retested > 3 {
 			continue
 		}
 

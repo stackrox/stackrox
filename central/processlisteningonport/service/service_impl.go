@@ -23,6 +23,7 @@ var (
 )
 
 type serviceImpl struct {
+	v1.UnimplementedListeningEndpointsServiceServer
 	dataStore datastore.DataStore
 }
 

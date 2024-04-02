@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 	time "time"
 
-	types "github.com/gogo/protobuf/types"
 	storage "github.com/stackrox/rox/generated/storage"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
 	gomock "go.uber.org/mock/gomock"
@@ -44,11 +43,11 @@ func (m *MockFlowStore) EXPECT() *MockFlowStoreMockRecorder {
 }
 
 // GetAllFlows mocks base method.
-func (m *MockFlowStore) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (m *MockFlowStore) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllFlows", ctx, since)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
-	ret1, _ := ret[1].(*types.Timestamp)
+	ret1, _ := ret[1].(*time.Time)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -75,11 +74,11 @@ func (mr *MockFlowStoreMockRecorder) GetFlowsForDeployment(ctx, deploymentID any
 }
 
 // GetMatchingFlows mocks base method.
-func (m *MockFlowStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (m *MockFlowStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMatchingFlows", ctx, pred, since)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
-	ret1, _ := ret[1].(*types.Timestamp)
+	ret1, _ := ret[1].(*time.Time)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }

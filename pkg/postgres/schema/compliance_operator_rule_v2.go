@@ -64,6 +64,7 @@ type ComplianceOperatorRuleV2 struct {
 	RuleType   string               `gorm:"column:ruletype;type:varchar"`
 	Severity   storage.RuleSeverity `gorm:"column:severity;type:integer"`
 	ClusterID  string               `gorm:"column:clusterid;type:uuid;index:complianceoperatorrulev2_sac_filter,type:hash"`
+	RuleRefID  string               `gorm:"column:rulerefid;type:uuid"`
 	Serialized []byte               `gorm:"column:serialized;type:bytea"`
 }
 

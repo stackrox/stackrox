@@ -4,13 +4,9 @@
 package sensor
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -193,86 +189,6 @@ var fileDescriptor_bfc1f5deeeb84e10 = []byte{
 	0x2f, 0x2c, 0x5d, 0x53, 0xc6, 0x30, 0x59, 0x2f, 0xf8, 0x94, 0xa7, 0xd1, 0x5b, 0x1b, 0x93, 0xf7,
 	0x36, 0x26, 0x1f, 0x6d, 0x4c, 0x5e, 0x3f, 0xe3, 0x7f, 0xb7, 0xe1, 0x11, 0x66, 0xbd, 0x65, 0xd7,
 	0x93, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x9b, 0xc7, 0x85, 0x08, 0xca, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// CertDistributionServiceClient is the client API for CertDistributionService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type CertDistributionServiceClient interface {
-	FetchCertificate(ctx context.Context, in *FetchCertificateRequest, opts ...grpc.CallOption) (*FetchCertificateResponse, error)
-}
-
-type certDistributionServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewCertDistributionServiceClient(cc grpc.ClientConnInterface) CertDistributionServiceClient {
-	return &certDistributionServiceClient{cc}
-}
-
-func (c *certDistributionServiceClient) FetchCertificate(ctx context.Context, in *FetchCertificateRequest, opts ...grpc.CallOption) (*FetchCertificateResponse, error) {
-	out := new(FetchCertificateResponse)
-	err := c.cc.Invoke(ctx, "/sensor.CertDistributionService/FetchCertificate", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// CertDistributionServiceServer is the server API for CertDistributionService service.
-type CertDistributionServiceServer interface {
-	FetchCertificate(context.Context, *FetchCertificateRequest) (*FetchCertificateResponse, error)
-}
-
-// UnimplementedCertDistributionServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedCertDistributionServiceServer struct {
-}
-
-func (*UnimplementedCertDistributionServiceServer) FetchCertificate(ctx context.Context, req *FetchCertificateRequest) (*FetchCertificateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FetchCertificate not implemented")
-}
-
-func RegisterCertDistributionServiceServer(s *grpc.Server, srv CertDistributionServiceServer) {
-	s.RegisterService(&_CertDistributionService_serviceDesc, srv)
-}
-
-func _CertDistributionService_FetchCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FetchCertificateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CertDistributionServiceServer).FetchCertificate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/sensor.CertDistributionService/FetchCertificate",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CertDistributionServiceServer).FetchCertificate(ctx, req.(*FetchCertificateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _CertDistributionService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.CertDistributionService",
-	HandlerType: (*CertDistributionServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "FetchCertificate",
-			Handler:    _CertDistributionService_FetchCertificate_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/sensor/cert_distribution_iservice.proto",
 }
 
 func (m *FetchCertificateRequest) Marshal() (dAtA []byte, err error) {
