@@ -9,6 +9,7 @@ import (
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -16,10 +17,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -111,13 +115,6 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(clusterID)))
 
-	clusterFlowStore, err := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
-	if err != nil {
-		return nil, err
-	} else if clusterFlowStore == nil {
-		return nil, errors.Errorf("could not obtain flow store for cluster %q", clusterID)
-	}
-
 	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	deploymentsQuery := clusterIDQuery
 	if query.GetQuery() != nil {
@@ -134,64 +131,106 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	relevantDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
-	// relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
-
 	var graph []*node
+	var deploymentsWithMissingBaseline []*storage.Deployment
 	for _, deployment := range relevantDeployments {
-		// check if the baseline was cut
 		deploymentNode, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, includePorts, true)
+		if err != nil && err == networkBaselineNotFoundErr {
+			log.Debugf("unable to generate node from baseline for deployment %s, We will try to generate it based on network flows", deployment.GetId())
+			deploymentsWithMissingBaseline = append(deploymentsWithMissingBaseline, deployment)
+			continue
+		}
 		if err != nil {
-			log.Error(err)
+			log.Errorf("unable to generate node from baseline for deployment %s: %v", deployment.GetId(), err)
 			continue
 		}
 		graph = append(graph, deploymentNode)
 	}
+
+	if len(deploymentsWithMissingBaseline) == 0 {
+		return graph, nil
+	}
+
+	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(deploymentsWithMissingBaseline)
+
+	clusterFlowStore, err := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
+	if err != nil {
+		return nil, err
+	} else if clusterFlowStore == nil {
+		return nil, errors.Errorf("could not obtain flow store for cluster %q", clusterID)
+	}
+
+	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
+	// Note that this will never retrieve listen endpoint "flows".
+	// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
+	flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
+		dstEnt := flowProps.GetDstEntity()
+		return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
+	}, since)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
+	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
+		g.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	)
+
+	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+	flows = aggr.Aggregate(flows)
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(deploymentsWithMissingBaseline),
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	// Aggregate all external flows by node names to control the number of external nodes.
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+	graphMap, err := g.buildGraph(ctx, clusterID, deploymentsWithMissingBaseline, flows, missingInfoFlows, includePorts)
+	if err != nil {
+		log.Errorf("could not build the graph for based on flows for deployments with missing baselines")
+		return nil, err
+	}
+
+	for _, n := range graphMap {
+		graph = append(graph, n)
+	}
+
 	return graph, nil
-	//// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
-	//// Note that this will never retrieve listen endpoint "flows".
-	//// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
-	//flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
-	//	dstEnt := flowProps.GetDstEntity()
-	//	return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
-	//}, since)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
-	//}
-	//
-	//networkTree := tree.NewMultiNetworkTree(
-	//	g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
-	//	g.networkTreeMgr.GetDefaultNetworkTree(ctx),
-	//)
-	//
-	//// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
-	//aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
-	//utils.Should(err)
-	//flows = aggr.Aggregate(flows)
-	//flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments),
-	//	func(id string) *storage.NetworkEntityInfo {
-	//		if networkTree == nil {
-	//			return nil
-	//		}
-	//		return networkTree.Get(id)
-	//	},
-	//)
-	//
-	//// Aggregate all external flows by node names to control the number of external nodes.
-	//flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-	//missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
-	//return g.buildGraph(ctx, clusterID, relevantDeployments, flows, missingInfoFlows, includePorts)
 }
 
-func (g *generator) populateNode(elevatedCtx context.Context, id string, entityType storage.NetworkEntityInfo_Type) *node {
+func (g *generator) populateNode(ctx context.Context, id string, entityType storage.NetworkEntityInfo_Type) *node {
 	n := createNode(networkgraph.Entity{Type: entityType, ID: id})
 	if entityType == storage.NetworkEntityInfo_DEPLOYMENT {
-		nodeDeployment, ok, err := g.deploymentStore.GetDeployment(elevatedCtx, id)
-		if err != nil || !ok {
+		nodeDeployment, ok, err := g.deploymentStore.GetDeployment(ctx, id)
+		if err != nil {
 			// Deployment not found. It might be deleted.
 			log.Debugf("detected peer deployment %q missing while trying to generate baseline generated policy", id)
 			return nil
 		}
-		n.deployment = nodeDeployment
+		if !ok {
+			// Do a deployment quey with elevated privileges to make sure the deployment is not invisible (marked as masked).
+			// If it is, return the node and mark it as `masked`.
+
+			// Temporarily elevate permissions to obtain all deployments in cluster.
+			elevatedCtx := sac.WithAllAccess(ctx)
+			nodeDeployment, ok, err = g.deploymentStore.GetDeployment(elevatedCtx, id)
+			if err != nil || !ok {
+				// Deployment not found. It might be deleted.
+				log.Debugf("detected peer deployment %q missing while trying to generate baseline generated policy", id)
+				return nil
+			}
+			n.masked = true
+		}
+		if nodeDeployment != nil {
+			n.deployment = nodeDeployment
+		}
 	}
 	return n
 }
