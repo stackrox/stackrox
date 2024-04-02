@@ -24,6 +24,25 @@ func TestCompareTimestamps(t *testing.T) {
 	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
 }
 
+func TestConvertTimestampToCSVString(t *testing.T) {
+	var nilTS *types.Timestamp
+	nilStringRepresentation := ConvertTimestampToCSVString(nilTS)
+	assert.Equal(t, "N/A", nilStringRepresentation)
+
+	invalidTS := &types.Timestamp{
+		Seconds: -62234567890,
+	}
+	stringFromInvalid := ConvertTimestampToCSVString(invalidTS)
+	assert.Equal(t, "ERR", stringFromInvalid)
+
+	ts := &types.Timestamp{
+		Seconds: 2345678901,
+		Nanos:   123456789,
+	}
+	timeString := ConvertTimestampToCSVString(ts)
+	assert.Equal(t, "Sun, 01 May 2044 01:28:21 UTC", timeString)
+}
+
 func TestConvertTimestampToTimeOrError(t *testing.T) {
 	seconds := int64(2345678901)
 	nanos := int32(123456789)
