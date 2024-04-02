@@ -26,15 +26,10 @@ runs:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       with:
         shell: bash
-        run: |
-          cat scripts/ci/lib.sh
-          . scripts/ci/lib.sh
+        run: >
+          source scripts/ci/lib.sh;
           create_job_record "${{ github.job }}"
-        post: |
-          . scripts/ci/lib.sh
-          typeset -F
-          METRICS_JOB_ID=$GITHUB_RUN_ID \
-          update_job_record \
-          outcome "${{ job.status }}" \
-          stopped_at "CURRENT_TIMESTAMP()" \
-          logs_link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        post: >
+          source scripts/ci/lib.sh;
+          typeset -F;
+          METRICS_JOB_ID=$GITHUB_RUN_ID update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()" logs_link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
