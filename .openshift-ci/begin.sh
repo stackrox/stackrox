@@ -28,6 +28,7 @@ if [[ "${JOB_NAME:-}" =~ -ocp-(4|stable)- ]]; then
     set_ci_shared_export WORKER_NODE_COUNT 4
     #set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
     set_ci_shared_export WORKER_NODE_TYPE n2-standard-16
+    set_ci_shared_export MASTER_NODE_TYPE n2-standard-16
 fi
 
 if [[ "${JOB_NAME:-}" =~ -gke-perf-scale- ]]; then
