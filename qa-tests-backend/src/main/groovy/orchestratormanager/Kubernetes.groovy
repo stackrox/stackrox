@@ -2446,6 +2446,15 @@ class Kubernetes implements OrchestratorMain {
         return namespace
     }
 
+    def setPodSecurityMode(String ns, String mode = "warn", String profile = "restricted") {
+        Namespace namespace = client.namespaces().withName(ns).get()
+        ObjectMeta meta = namespace.getMetadata()
+        final Map<String, String> currentLabels = meta.getLabels()
+        currentLabels.put("pod-security.kubernetes.io/warn", "restricted")
+        meta.setLabels(currentLabels)
+        namespace.setMetadata(meta)
+    }
+
     def deleteNamespace(String ns, Boolean waitForDeletion = true) {
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
