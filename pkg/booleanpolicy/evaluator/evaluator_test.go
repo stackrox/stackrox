@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
@@ -24,16 +24,16 @@ type TopLevel struct {
 type Base struct {
 
 	// These exist for testing base types.
-	ValBaseSlice     []string          `search:"BaseSlice"`
-	ValBasePtr       *string           `search:"BasePtr"`
-	ValBaseBool      bool              `search:"BaseBool"`
-	ValBaseTS        *types.Timestamp  `search:"BaseTS"`
-	ValBaseInt       int               `search:"BaseInt"`
-	ValBaseUint      uint              `search:"BaseUint"`
-	ValBaseFloat     float64           `search:"BaseFloat"`
-	ValBaseEnum      storage.Access    `search:"BaseEnum"`
-	ValBaseMap       map[string]string `search:"BaseMap"`
-	ValBaseStructPtr *random           `search:"BaseStructPtr"`
+	ValBaseSlice     []string               `search:"BaseSlice"`
+	ValBasePtr       *string                `search:"BasePtr"`
+	ValBaseBool      bool                   `search:"BaseBool"`
+	ValBaseTS        *protocompat.Timestamp `search:"BaseTS"`
+	ValBaseInt       int                    `search:"BaseInt"`
+	ValBaseUint      uint                   `search:"BaseUint"`
+	ValBaseFloat     float64                `search:"BaseFloat"`
+	ValBaseEnum      storage.Access         `search:"BaseEnum"`
+	ValBaseMap       map[string]string      `search:"BaseMap"`
+	ValBaseStructPtr *random                `search:"BaseStructPtr"`
 }
 
 type random struct {

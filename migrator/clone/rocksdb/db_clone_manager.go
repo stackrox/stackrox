@@ -9,10 +9,6 @@ import (
 )
 
 const (
-	// Indexes
-	bleveIndex = "scorch.bleve"
-	index      = "index"
-
 	// CurrentClone - active rocksdb clone name
 	CurrentClone = migrations.Current
 
@@ -24,9 +20,6 @@ const (
 
 	// PreviousClone - previous rocksdb clone used for rollback
 	PreviousClone = ".previous"
-
-	// TempClone - temp rocksdb clone
-	TempClone = "temp"
 )
 
 var (
