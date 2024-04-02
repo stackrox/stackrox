@@ -27,6 +27,7 @@ runs:
       with:
         shell: bash
         run: |
+          cat scripts/ci/lib.sh
           . scripts/ci/lib.sh
           create_job_record "${{ github.job }}"
         post: |
