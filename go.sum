@@ -1820,8 +1820,8 @@ github.com/shopspring/decimal v1.3.1 h1:2Usl1nmF/WZucqkFZhnfFYxxxu8LG21F6nPQBE5g
 github.com/shopspring/decimal v1.3.1/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/sigstore/rekor v1.3.4 h1:RGIia1iOZU7fOiiP2UY/WFYhhp50S5aUm7YrM8aiA6E=
 github.com/sigstore/rekor v1.3.4/go.mod h1:1GubPVO2yO+K0m0wt/3SHFqnilr/hWbsjSOe7Vzxrlg=
-github.com/sigstore/sigstore v1.8.2 h1:0Ttjcn3V0fVQXlYq7+oHaaHkGFIt3ywm7SF4JTU/l8c=
-github.com/sigstore/sigstore v1.8.2/go.mod h1:CHVcSyknCcjI4K2ZhS1SI28r0tcQyBlwtALG536x1DY=
+github.com/sigstore/sigstore v1.8.3 h1:G7LVXqL+ekgYtYdksBks9B38dPoIsbscjQJX/MGWkA4=
+github.com/sigstore/sigstore v1.8.3/go.mod h1:mqbTEariiGA94cn6G3xnDiV6BD8eSLdL/eA7bvJ0fVs=
 github.com/sigstore/sigstore/pkg/signature/kms/aws v1.7.6 h1:WzZExOcFanrFfCi7SUgkBtJicWnSNziBD9nSSQIrqhc=
 github.com/sigstore/sigstore/pkg/signature/kms/aws v1.7.6/go.mod h1:3zOHOLHnCE6EXyVH+6Z/lC9O1RDsbmR045NQ1DogiHw=
 github.com/sigstore/sigstore/pkg/signature/kms/azure v1.7.6 h1:wsPt9kNXF1ZZyae2wO35NLsK+cjWqPGpuPaDdXzRe0g=
