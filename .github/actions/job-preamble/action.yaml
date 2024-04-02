@@ -27,9 +27,14 @@ runs:
       with:
         shell: bash
         run: >
+          set -exuo pipefail;
           source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}"
+          create_job_record "${{ github.job }}" ;
         post: >
+          set -exuo pipefail;
           source scripts/ci/lib.sh;
-          typeset -F;
-          METRICS_JOB_ID=$GITHUB_RUN_ID update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()" logs_link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          export METRICS_JOB_ID=$GITHUB_RUN_ID;
+          update_job_record
+            outcome "${{ job.status }}"
+            stopped_at "CURRENT_TIMESTAMP()"
+            logs_link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" ;
