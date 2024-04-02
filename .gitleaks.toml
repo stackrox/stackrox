@@ -4,5 +4,4 @@
   paths = [
     # Ignore all testdata cert keys.
     '''\/testdata.*\.key$''',
-    '''values-private.*\.yaml\.example$''',
   ]
