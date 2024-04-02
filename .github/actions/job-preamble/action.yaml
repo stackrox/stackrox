@@ -31,6 +31,8 @@ runs:
           source scripts/ci/lib.sh
           create_job_record "${{ github.job }}"
         post: |
+          bash -v
+          bash
           source scripts/ci/lib.sh
           typeset -F
           METRICS_JOB_ID=$GITHUB_RUN_ID \
