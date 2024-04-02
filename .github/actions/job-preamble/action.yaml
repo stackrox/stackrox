@@ -31,7 +31,6 @@ runs:
 
     - name: Update job record
       uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
-      if: ${{ always() }}
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       with:
@@ -39,6 +38,7 @@ runs:
         post: |
           set -exuo pipefail
           source $PWD/scripts/ci/lib.sh
+          typeset -F
           METRICS_JOB_ID=$GITHUB_RUN_ID \
           update_job_record \
           outcome "${{ job.status }}" \
