@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	benchmarkstore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/benchmarkstore/postgres"
+	controlstore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/control_store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -28,9 +29,8 @@ type complianceIntegrationDataStoreTestSuite struct {
 	noAccessCtx  context.Context
 	testContexts map[string]context.Context
 
-	dataStore Datastore
-	db        *pgtest.TestPostgres
-	storage   benchmarkstore.Store
+	benchmarkStore Datastore
+	db             *pgtest.TestPostgres
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) SetupSuite() {
@@ -55,9 +55,11 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 
 	os.Setenv("POSTGRES_PORT", "54323")
 	s.db = pgtest.ForT(s.T())
-	s.storage = benchmarkstore.New(s.db)
-	s.dataStore = &datastoreImpl{
-		benchmarkStore: s.storage,
+	benchmarkStorage := benchmarkstore.New(s.db)
+	controlStore := controlstore.New(s.db)
+	s.benchmarkStore = &datastoreImpl{
+		benchmarkStore: benchmarkStorage,
+		controlStore:   controlStore,
 	}
 }
 
@@ -65,12 +67,35 @@ func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
-func (s *complianceIntegrationDataStoreTestSuite) TestAddComplianceIntegration() {
+func (s *complianceIntegrationDataStoreTestSuite) TestAddBenchmark() {
 	benchmark := &storage.ComplianceOperatorBenchmark{
 		Id:      uuid.NewV4().String(),
 		Version: "4.5.0",
 		Name:    "CIS OpenShift Benchmark",
 	}
-	err := s.dataStore.UpsertBenchmark(s.hasWriteCtx, benchmark)
+	err := s.benchmarkStore.UpsertBenchmark(s.hasWriteCtx, benchmark)
 	s.Require().NoError(err)
+}
+
+func (s *complianceIntegrationDataStoreTestSuite) TestAddControl() {
+	benchmark := &storage.ComplianceOperatorBenchmark{
+		Id:   uuid.NewV4().String(),
+		Name: "CIS OpenShift",
+	}
+	err := s.benchmarkStore.UpsertBenchmark(s.hasWriteCtx, benchmark)
+	s.Require().NoError(err)
+
+	control := &storage.ComplianceOperatorControl{
+		Id:          uuid.NewV4().String(),
+		Control:     "1.1.1",
+		BenchmarkId: benchmark.GetId(),
+	}
+
+	err = s.benchmarkStore.UpsertControl(s.hasWriteCtx, control)
+	s.Require().NoError(err)
+
+	controlResult, found, err := s.benchmarkStore.GetControl(s.hasReadCtx, control.GetId())
+	s.Require().NoError(err)
+	s.True(found)
+	s.Equal("1.1.1", controlResult.GetControl())
 }
