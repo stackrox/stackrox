@@ -1744,7 +1744,7 @@ class Kubernetes implements OrchestratorMain {
      * @deprecated PodSecurityPolicy was deprecated in Kubernetes 1.21 and removed in Kubernetes 1.25.
      */
     protected defaultPspForNamespace(String namespace) {
-        if (Env.get("POD_SECURITY_POLICIES") == "true") {
+        if (Env.get("POD_SECURITY_POLICIES") != "false") {
             PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
                 .withName("allow-all-for-test")
                 .endMetadata()
