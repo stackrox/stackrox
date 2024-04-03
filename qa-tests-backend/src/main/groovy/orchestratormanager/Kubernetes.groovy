@@ -39,6 +39,7 @@ import io.fabric8.kubernetes.api.model.Probe
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
+import io.fabric8.kubernetes.api.model.SeccompProfile
 import io.fabric8.kubernetes.api.model.Secret as K8sSecret
 import io.fabric8.kubernetes.api.model.SecretEnvSource
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder
@@ -2285,7 +2286,9 @@ class Kubernetes implements OrchestratorMain {
                 envFrom: envFrom,
                 resources: new ResourceRequirements([], limits, requests),
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged,
+                                                     allowPrivilegeEscalation: deployment.isPrivileged,
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
+                                                     seccompProfile: new SeccompProfile(type: 'RuntimeDefault'),
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
                                                                                     drop: deployment.dropCapabilities)),
         )
