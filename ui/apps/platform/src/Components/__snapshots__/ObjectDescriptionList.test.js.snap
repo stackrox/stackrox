@@ -313,11 +313,11 @@ exports[`ObjectDescriptionList ports 1`] = `
     </div>
     <div>
       <dl
-        class="pf-c-description-list pf-m-horizontal pf-u-pl-md"
+        class="pf-c-description-list pf-m-horizontal pf-v5-u-pl-md"
       >
         <div>
           <dl
-            class="pf-c-description-list pf-m-horizontal pf-u-pl-md"
+            class="pf-c-description-list pf-m-horizontal pf-v5-u-pl-md"
           >
             <div>
               <div
