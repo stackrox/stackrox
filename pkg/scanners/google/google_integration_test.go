@@ -21,8 +21,6 @@ func TestGoogle(t *testing.T) {
 		t.Skip("SERVICE_ACCOUNT is required for Google integration test")
 		return
 	}
-	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
-	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
 
 	integration := &storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Google{
