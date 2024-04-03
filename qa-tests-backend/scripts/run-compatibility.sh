@@ -65,7 +65,6 @@ _compatibility_test() {
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
-        deploy_default_psp
         deploy_webhook_server
         get_ECR_docker_pull_password
     fi

@@ -70,9 +70,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder
-import io.fabric8.kubernetes.api.model.policy.v1beta1.HostPortRange
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodSecurityPolicy
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodSecurityPolicyBuilder
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule
@@ -108,7 +105,6 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
-import util.Env
 import util.Timer
 
 @Slf4j
@@ -158,7 +154,6 @@ class Kubernetes implements OrchestratorMain {
         try {
             client.namespaces().create(namespace)
             log.info "Created namespace ${ns}"
-            defaultPspForNamespace(ns)
             provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
@@ -1707,68 +1702,6 @@ class Kubernetes implements OrchestratorMain {
     }
 
     /*
-        PodSecurityPolicies
-    */
-
-    protected K8sRole generatePspRole() {
-        def rules = [new K8sPolicyRule(
-                apiGroups: ["policy"],
-                resources: ["podsecuritypolicies"],
-                resourceNames: ["allow-all-for-test"],
-                verbs: ["use"]
-        ),]
-        return new K8sRole(
-                name: "allow-all-for-test",
-//                namespace: namespace,
-                clusterRole: true,
-                rules: rules
-        )
-    }
-
-    protected K8sRoleBinding generatePspRoleBinding(String namespace) {
-        def roleBinding =  new K8sRoleBinding(
-                name: "allow-all-for-test-" + namespace,
-                namespace: namespace,
-                roleRef: generatePspRole(),
-                subjects: [new K8sSubject(
-                        name: "default",
-                        namespace: namespace,
-                        kind: "ServiceAccount"
-                )]
-        )
-        return roleBinding
-    }
-
-    /**
-     * @deprecated PodSecurityPolicy was deprecated in Kubernetes 1.21 and removed in Kubernetes 1.25.
-     */
-    protected defaultPspForNamespace(String namespace) {
-        if (Env.get("POD_SECURITY_POLICIES") != "false") {
-            PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
-                .withName("allow-all-for-test")
-                .endMetadata()
-                .withNewSpec()
-                .withPrivileged(true)
-                .withAllowPrivilegeEscalation(true)
-                .withAllowedCapabilities("*")
-                .withVolumes("*")
-                .withHostNetwork(true)
-                .withHostPorts(new HostPortRange(65535, 0))
-                .withHostIPC(true)
-                .withHostPID(true)
-                .withNewRunAsUser().withRule("RunAsAny").endRunAsUser()
-                .withNewSeLinux().withRule("RunAsAny").endSeLinux()
-                .withNewSupplementalGroups().withRule("RunAsAny").endSupplementalGroups()
-                .withNewFsGroup().withRule("RunAsAny").endFsGroup()
-                .endSpec()
-                .build()
-            client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
-            createClusterRole(generatePspRole())
-            createClusterRoleBinding(generatePspRoleBinding(namespace))
-        }
-    }
-
-    /*
         Jobs
      */
 
@@ -2432,7 +2365,6 @@ class Kubernetes implements OrchestratorMain {
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
-            defaultPspForNamespace(ns)
             return namespaceId
         }
     }

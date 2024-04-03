@@ -48,7 +48,6 @@ config_custom() {
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     deploy_optional_e2e_components
 
-    deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
