@@ -18,6 +18,9 @@ const (
 
 func TestIBM(t *testing.T) {
 	t.Skip("This registry is currently broken (ROX-3589)")
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	reg, err := newRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Ibm{
 			Ibm: &storage.IBMRegistryConfig{

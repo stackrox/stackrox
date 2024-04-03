@@ -10,6 +10,9 @@ import (
 )
 
 func TestGetMetadataIntegration(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	dockerHubClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -32,6 +35,9 @@ func TestGetMetadataIntegration(t *testing.T) {
 }
 
 func TestOCIImageIndexManifest(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	gcrClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -55,6 +61,9 @@ func TestOCIImageIndexManifest(t *testing.T) {
 }
 
 func TestOCIImageIndexManifestWithoutManifestCall(t *testing.T) {
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	gcrClient, err := NewRegistryWithoutManifestCall(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
