@@ -222,6 +222,22 @@ class Services extends BaseService {
         return violations == null || violations.size() == 0
     }
 
+    static boolean expectNoViolations(String deploymentName, String policyName, int timeoutSeconds = 60) {
+        int intervalSeconds = 3
+        int retries = (timeoutSeconds / intervalSeconds).intValue()
+        String query = "Deployment:${deploymentName}+Policy:${policyName}"
+
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            def violations = AlertService.getViolations(ListAlertsRequest.newBuilder().setQuery(query).build())
+            LOG.info "Deployment '${deploymentName}' has ${violations.size()} violation(s) for '${policyName}'"
+            if (violations.size() == 0) {
+                return true
+            }
+        }
+        return false
+    }
+
     static boolean checkForNoViolationsByDeploymentID(String deploymentID, String policyName, int checkSeconds = 5) {
         def violations = getViolationsByDeploymentID(deploymentID, policyName, false, checkSeconds)
         return violations == null || violations.isEmpty()
