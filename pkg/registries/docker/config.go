@@ -51,11 +51,16 @@ func (c *Config) formatURL() string {
 
 // DefaultTransport returns the default transport based on the configuration.
 func DefaultTransport(cfg *Config) registry.Transport {
-	transport := proxy.RoundTripper()
+	transport := proxy.RoundTripper(
+		proxy.WithDialTimeout(registryDialerTimeout),
+		proxy.WithResponseHeaderTimeout(registryResponseTimeout),
+	)
 	if cfg.Insecure {
-		transport = proxy.RoundTripperWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: true,
-		})
+		transport = proxy.RoundTripper(
+			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+			proxy.WithDialTimeout(registryDialerTimeout),
+			proxy.WithResponseHeaderTimeout(registryResponseTimeout),
+		)
 	}
 	username, password := cfg.GetCredentials()
 	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)
