@@ -2,6 +2,7 @@ package writer
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
@@ -45,7 +46,7 @@ func (c *writerImpl) flushNoLock(ctx context.Context) error {
 		return nil
 	}
 
-	eventsToAdd := sliceutils.ShallowClone(maputil.Values(c.buffer))
+	eventsToAdd := slices.Clone(maputil.Values(c.buffer))
 
 	ids := protoutils.GetIDs(eventsToAdd)
 	// The events we currently hold in the buffer are de-duplicated within the context of the buffer. However, they are

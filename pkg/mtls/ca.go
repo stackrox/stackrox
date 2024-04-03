@@ -4,12 +4,12 @@ import (
 	"crypto"
 	"crypto/tls"
 	"crypto/x509"
+	"slices"
 
 	"github.com/cloudflare/cfssl/helpers"
 	cfsslSigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // CA represents a StackRox service certificate authority.
@@ -60,8 +60,8 @@ func LoadCAForValidation(certPEM []byte) (CA, error) {
 
 func loadCA(certPEM, keyPEM []byte, forSigning bool) (CA, error) {
 	ca := &ca{
-		certPEM: sliceutils.ShallowClone(certPEM),
-		keyPEM:  sliceutils.ShallowClone(keyPEM),
+		certPEM: slices.Clone(certPEM),
+		keyPEM:  slices.Clone(keyPEM),
 	}
 
 	if forSigning {
@@ -116,11 +116,11 @@ func (c *ca) PrivateKey() crypto.PrivateKey {
 }
 
 func (c *ca) CertPEM() []byte {
-	return sliceutils.ShallowClone(c.certPEM)
+	return slices.Clone(c.certPEM)
 }
 
 func (c *ca) KeyPEM() []byte {
-	return sliceutils.ShallowClone(c.keyPEM)
+	return slices.Clone(c.keyPEM)
 }
 
 func (c *ca) CertPool() *x509.CertPool {
