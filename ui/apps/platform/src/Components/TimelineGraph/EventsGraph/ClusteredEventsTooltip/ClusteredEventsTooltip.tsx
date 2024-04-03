@@ -17,11 +17,13 @@ import TerminationEvent from '../EventMarker/TerminationEvent';
 type ClusteredEventsTooltipProps = {
     events: Event[];
     children: ReactElement;
+    popoverRef: React.RefObject<never>;
 };
 
 const ClusteredEventsTooltip = ({
     events = [],
     children,
+    popoverRef,
 }: ClusteredEventsTooltipProps): ReactElement => {
     const timeRangeTextOfEvents = getTimeRangeTextOfEvents(events);
     const tooltipTitle = `${events.length} ${pluralize(
@@ -79,11 +81,12 @@ const ClusteredEventsTooltip = ({
         <Popover
             aria-label="Open to see individual processes"
             headerContent={
-                <Text className="pf-v5-u-font-weight-bold" component={TextVariants.h3}>
+                <Text className="pf-u-font-weight-bold" component={TextVariants.h3}>
                     Events in this group
                 </Text>
             }
             bodyContent={<DetailedTooltipContent title={tooltipTitle} body={tooltipBody} />}
+            triggerRef={popoverRef}
         >
             {children}
         </Popover>
