@@ -245,11 +245,9 @@ deploy_earlier_rocks_central() {
 
     # Let's try helm
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    CHART_DIR=/tmp/early-stackrox-central-services-chart
-    mkdir -p "${CHART_DIR}"
-    roxctl helm output central-services --image-defaults opensource --output-dir "${CHART_DIR}"
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
 
-    helm install -n stackrox --create-namespace stackrox-central-services "${CHART_DIR}" \
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
          --set central.db.enabled=false \
          --set central.exposure.loadBalancer.enabled=true \
