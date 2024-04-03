@@ -510,6 +510,25 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
 
+	var port uint16
+	var direction string
+	if conn.incoming {
+		direction = "ingress"
+		port = conn.local.Port
+	} else {
+		direction = "egress"
+		port = conn.remote.IPAndPort.Port
+	}
+
+	metricDirection := prometheus.Labels{
+		"direction": direction,
+		"namespace": container.Namespace,
+	}
+
+	defer func() {
+		status.used = true
+	}()
+
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
@@ -524,25 +543,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 		if isFresh {
 			return
-		}
-
-		defer func() {
-			status.used = true
-		}()
-
-		var port uint16
-		var direction string
-		if conn.incoming {
-			direction = "ingress"
-			port = conn.local.Port
-		} else {
-			direction = "egress"
-			port = conn.remote.IPAndPort.Port
-		}
-
-		metricDirection := prometheus.Labels{
-			"direction": direction,
-			"namespace": container.Namespace,
 		}
 
 		if extSrc == nil {
@@ -598,7 +598,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	} else {
-		status.used = true
+		if !status.used {
+			flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
+		}
 		if conn.incoming {
 			// Only report incoming connections from outside of the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
