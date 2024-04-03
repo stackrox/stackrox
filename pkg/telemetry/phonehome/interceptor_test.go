@@ -134,6 +134,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 
 	md := metadata.New(nil)
 	md.Set("User-Agent", testRP.UserAgent)
+	md.Set("Custom-Header", "test")
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 
 	rih := requestinfo.NewRequestInfoHandler()
@@ -144,6 +145,7 @@ func (s *interceptorTestSuite) TestGrpcRequestInfo() {
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
+	s.Equal("test", rp.Header.Get("custom-header"))
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
 }
@@ -217,4 +219,20 @@ func (s *interceptorTestSuite) TestHttpRequestInfo() {
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(testRP.UserAgent, rp.UserAgent)
 	s.Equal(mockID, rp.UserID)
+}
+
+func (s *interceptorTestSuite) TestWithSimpleGet() {
+	var md metadata.MD = make(metadata.MD)
+	wrapped := (Getter)((withSimpleGet)(md))
+
+	md.Append("test-key", "test-value1", "test-value2")
+	md.Append("grpcgateway-test-key", "test-value3", "test-value4")
+
+	s.Equal("test-value1", wrapped.Get("test-key"))
+
+	md.Append("grpcgateway-accept", "application/grpc", "application/grpc-web")
+
+	s.Equal("test-value3", wrapped.Get("test-key"))
+
+	s.Equal("", wrapped.Get("nokey"))
 }

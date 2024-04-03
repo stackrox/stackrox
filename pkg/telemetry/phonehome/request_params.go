@@ -8,6 +8,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
+// Getter interface isolates gRPC metadata wrapper and http.Header
+// Get function, which returns the first value of the given header by key.
+type Getter interface {
+	Get(string) string
+}
+
 // RequestParams holds intercepted call parameters.
 type RequestParams struct {
 	UserAgent string
@@ -17,6 +23,7 @@ type RequestParams struct {
 	Code      int
 	GRPCReq   any
 	HTTPReq   *http.Request
+	Header    Getter
 }
 
 // ServiceMethod describes a service method with its gRPC and HTTP variants.

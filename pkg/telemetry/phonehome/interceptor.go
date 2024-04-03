@@ -11,6 +11,7 @@ import (
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	"google.golang.org/grpc/metadata"
 )
 
 const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
@@ -45,9 +46,26 @@ func getUserAgent[getter func(string) []string](headers getter) string {
 	// https://github.com/grpc/grpc-go/blob/0238b6e1cec37b55820b461d3d30652c54efe2c4/clientconn.go#L211-L215
 	userAgentValues := headers(grpcGatewayUserAgentHeader)
 	// If endpoint is accessed not via grpc-gateway, extract from User-Agent header.
-	// If endpoint is accessed via grpc-gateway, append grpc-go value to the resultinguser agent.
 	userAgentValues = append(userAgentValues, headers("User-Agent")...)
 	return strings.Join(userAgentValues, " ")
+}
+
+// Metadata stores and accesses the headers in lowercase. This is incompatible
+// with http.Header, which uses canonized keys.
+type withSimpleGet metadata.MD
+
+// Get implements the Getter interface for gRPC metadata to work similarly to
+// the http.Header.Get, that returns the first value from the array.
+// The grpcgateway
+func (md withSimpleGet) Get(key string) string {
+	// Add grpcgateway- prefix to the key if the request came via grpc-gateway.
+	if len((metadata.MD)(md).Get(runtime.MetadataPrefix+"Accept")) > 0 {
+		key = runtime.MetadataPrefix + key
+	}
+	if values := (metadata.MD)(md).Get(key); len(values) > 0 {
+		return values[0]
+	}
+	return ""
 }
 
 func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
@@ -66,6 +84,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 			Path:      ri.HTTPRequest.URL.Path,
 			Code:      grpcError.ErrToHTTPStatus(err),
 			GRPCReq:   req,
+			Header:    ri.HTTPRequest.Headers,
 		}
 	}
 
@@ -76,6 +95,7 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		Path:      grpcFullMethod,
 		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq:   req,
+		Header:    withSimpleGet(ri.Metadata),
 	}
 }
 
@@ -92,5 +112,6 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 		Path:      r.URL.Path,
 		Code:      status,
 		HTTPReq:   r,
+		Header:    r.Header,
 	}
 }
