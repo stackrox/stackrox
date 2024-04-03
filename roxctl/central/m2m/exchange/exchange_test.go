@@ -39,7 +39,7 @@ func mockEnvWithHTTPClient(t *testing.T, store *cfgMock.MockStore) environment.E
 }
 
 func TestExchange(t *testing.T) {
-	server := httptest.NewServer(exchangeHandle(t, "test-token"))
+	server := httptest.NewServer(exchangeHandle(t, "some-token", "test-token"))
 	defer server.Close()
 	// Required for picking up the endpoint used by GetRoxctlHTTPClient. Currently, it is not possible to inject this
 	// otherwise.
@@ -60,11 +60,9 @@ func TestExchange(t *testing.T) {
 
 	env := mockEnvWithHTTPClient(t, mockStore)
 
-	exchangeCmd := exchangeCommand{
-		env:        env,
-		centralURL: serverURL,
-	}
-	assert.NoError(t, exchangeCmd.exchange())
+	exchangeCmd := Command(env)
+	exchangeCmd.SetArgs([]string{"--token", "some-token"})
+	assert.NoError(t, exchangeCmd.Execute())
 }
 
 type centralCfgMatcher struct {
@@ -97,11 +95,15 @@ func matchesConfig(roxctlConfig *config.RoxctlConfig, key string) gomock.Matcher
 	return centralCfgMatcher{configKey: key, roxctlConfig: roxctlConfig}
 }
 
-func exchangeHandle(t *testing.T, token string) http.HandlerFunc {
+func exchangeHandle(t *testing.T, expectedToken, responseToken string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		var m2mRequest v1.ExchangeAuthMachineToMachineTokenRequest
+		assert.NoError(t, jsonpb.Unmarshal(request.Body, &m2mRequest))
+		assert.Equal(t, expectedToken, m2mRequest.GetIdToken())
+
 		m := jsonpb.Marshaler{Indent: "  "}
 		assert.NoError(t, m.Marshal(writer, &v1.ExchangeAuthMachineToMachineTokenResponse{
-			AccessToken: token,
+			AccessToken: responseToken,
 		}))
 	}
 }
