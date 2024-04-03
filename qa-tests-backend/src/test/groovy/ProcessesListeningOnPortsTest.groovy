@@ -78,7 +78,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         // batchCreateDeployments() provisions the namespace as needed (see
         // ensureNamespaceExsists())
         for (Deployment deployment : targetDeployments) {
-            ensureNamespaceExists(deployment.namespace)
+            orchestrator.ensureNamespaceExists(deployment.namespace)
             orchestrator.setPodSecurityMode(TEST_NAMESPACE, "warn", "restricted")
         }
         orchestrator.batchCreateDeployments(targetDeployments)
