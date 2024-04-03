@@ -21,7 +21,6 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 	props["Code"] = rp.Code
 	props["Method"] = rp.Method
 	props["User-Agent"] = rp.UserAgent
-	log.Infof("Headers: %v", rp.Header)
 	return true
 }
 
