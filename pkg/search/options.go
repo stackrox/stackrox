@@ -236,6 +236,10 @@ var (
 	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
 	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
 	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
+	ComplianceOperatorBenchmarkID            = newFieldLabel("Compliance Operator Benchmark ID")
+	ComplianceOperatorControlName            = newFieldLabel("Compliance Control Identifier")
+	ComplianceOperatorControlRuleRule        = newFieldLabel("Rule ID")
+	// ComplianceOperatorControlRuleControl     = newFieldLabel("Control ID")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")

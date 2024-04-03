@@ -7,6 +7,10 @@ import (
 
 	benchmarkstore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/benchmarkstore/postgres"
 	controlstore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/control_store/postgres"
+	controlruleedgestore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/controlruleedgestore/postgres"
+	rulestore "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
+	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/rules/store/postgres"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -57,21 +61,44 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 	benchmarkStorage := benchmarkstore.New(s.db)
 	controlStore := controlstore.New(s.db)
+	compliancestore := pgStore.New(s.db)
+	ruleStore := rulestore.New(compliancestore)
+	controlruleedgestore := controlruleedgestore.New(s.db)
+
 	s.benchmarkStore = &datastoreImpl{
-		benchmarkStore: benchmarkStorage,
-		controlStore:   controlStore,
+		benchmarkStore:       benchmarkStorage,
+		controlStore:         controlStore,
+		ruleStore:            ruleStore,
+		controlRuleEdgeStore: controlruleedgestore,
 	}
+	datastoreSingleton = s.benchmarkStore
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
+// TODO: Parse correct annotation
+// Annotations:
+// control.compliance.openshift.io/CIS-OCP
+// "policies.open-cluster-management.io/controls": "CIP-003-8 R6,P-004-6 R3,CIP-007-3 R6.1,CM-6,CM-6(1),Req-2.2,1.2.1",
+// "policies.open-cluster-management.io/standards": "NERC-CIP,NIST-800-53,PCI-DSS,CIS-OCP"
+//
+//	 "compliance.openshift.io/image-digest": "pb-ocp4qx7xv",
+//	"compliance.openshift.io/profiles": "ocp4-high,ocp4-pci-dss,ocp4-moderate-rev-4,ocp4-stig-v1r1,ocp4-moderate,ocp4-bsi-2022,ocp4-cis,ocp4-high-rev-4,ocp4-nerc-cip,ocp4-cis-1-4,ocp4-pci-dss-3-2,ocp4-stig,ocp4-bsi,ocp4-cis-1-5",
+//	"compliance.openshift.io/rule": "api-server-anonymous-auth",
+//	"control.compliance.openshift.io/CIS-OCP": "1.2.1",
+//	"control.compliance.openshift.io/NERC-CIP": "CIP-003-8 R6;CIP-004-6 R3;CIP-007-3 R6.1",
+//	"control.compliance.openshift.io/NIST-800-53": "CM-6;CM-6(1)",
+//	"control.compliance.openshift.io/PCI-DSS": "Req-2.2",
+//	"policies.open-cluster-management.io/controls": "CIP-003-8 R6,P-004-6 R3,CIP-007-3 R6.1,CM-6,CM-6(1),Req-2.2,1.2.1",
+//	"policies.open-cluster-management.io/standards": "NERC-CIP,NIST-800-53,PCI-DSS,CIS-OCP"
 func (s *complianceIntegrationDataStoreTestSuite) TestAddBenchmark() {
 	benchmark := &storage.ComplianceOperatorBenchmark{
-		Id:      uuid.NewV4().String(),
-		Version: "4.5.0",
-		Name:    "CIS OpenShift Benchmark",
+		Id:           uuid.NewV4().String(),
+		Version:      "v1.5.0",
+		Name:         "CIS Red Hat OpenShift Container Platform Benchmark",
+		ProfileLabel: "control.compliance.openshift.io/CIS-OCP",
 	}
 	err := s.benchmarkStore.UpsertBenchmark(s.hasWriteCtx, benchmark)
 	s.Require().NoError(err)
@@ -79,7 +106,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestAddBenchmark() {
 
 func (s *complianceIntegrationDataStoreTestSuite) TestAddControl() {
 	benchmark := &storage.ComplianceOperatorBenchmark{
-		Id:   uuid.NewV4().String(),
+		Id:   uuid.NewDummy().String(),
 		Name: "CIS OpenShift",
 	}
 	err := s.benchmarkStore.UpsertBenchmark(s.hasWriteCtx, benchmark)
@@ -98,4 +125,32 @@ func (s *complianceIntegrationDataStoreTestSuite) TestAddControl() {
 	s.Require().NoError(err)
 	s.True(found)
 	s.Equal("1.1.1", controlResult.GetControl())
+
+	rulestore := rulestore.New(pgStore.New(s.db))
+	clusterId := uuid.NewV4().String()
+	rule := &storage.ComplianceOperatorRuleV2{
+		Id:     uuid.NewV4().String(),
+		RuleId: uuid.NewV4().String(),
+		Name:   "rule from compliance operator",
+		Annotations: map[string]string{
+			CISBenchmarkAnnotation: "1.1.1",
+		},
+		ClusterId: clusterId,
+	}
+	err = rulestore.UpsertRule(s.hasWriteCtx, rule)
+	s.Require().NoError(err)
+
+	rulesByClusterId, err := rulestore.GetRulesByCluster(s.hasReadCtx, clusterId)
+	s.Require().NoError(err)
+	s.Len(rulesByClusterId, 1)
+
+	controlruleedgestore := controlruleedgestore.New(s.db)
+	ids, err := controlruleedgestore.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Len(ids, 1)
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorControlRuleRule, rule.GetId()).AddExactMatches(search.ControlID, control.GetId()).ProtoQuery()
+	linkResults, err := controlruleedgestore.Search(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Len(linkResults, 1)
 }

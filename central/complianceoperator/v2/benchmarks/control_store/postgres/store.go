@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	baseTable = "compliance_operator_controls"
-	storeName = "ComplianceOperatorControl"
+	baseTable = "compliance_operator_control_v2"
+	storeName = "ComplianceOperatorControlV2"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceOperatorControlsSchema
+	schema         = pkgSchema.ComplianceOperatorControlV2Schema
 	targetResource = resources.Compliance
 )
 
-type storeType = storage.ComplianceOperatorControl
+type storeType = storage.ComplianceOperatorControlV2
 
-// Store is the interface to interact with the storage for storage.ComplianceOperatorControl
+// Store is the interface to interact with the storage for storage.ComplianceOperatorControlV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -60,8 +60,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoComplianceOperatorControls,
-		copyFromComplianceOperatorControls,
+		insertIntoComplianceOperatorControlV2,
+		copyFromComplianceOperatorControlV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -83,7 +83,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorControls(batch *pgx.Batch, obj *storage.ComplianceOperatorControl) error {
+func insertIntoComplianceOperatorControlV2(batch *pgx.Batch, obj *storage.ComplianceOperatorControlV2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -93,16 +93,18 @@ func insertIntoComplianceOperatorControls(batch *pgx.Batch, obj *storage.Complia
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetBenchmarkId(),
+		obj.GetIdentifier(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_controls (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_control_v2 (Id, BenchmarkId, Identifier, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, BenchmarkId = EXCLUDED.BenchmarkId, Identifier = EXCLUDED.Identifier, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromComplianceOperatorControls(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorControl) error {
+func copyFromComplianceOperatorControlV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorControlV2) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -115,6 +117,8 @@ func copyFromComplianceOperatorControls(ctx context.Context, s pgSearch.Deleter,
 
 	copyCols := []string{
 		"id",
+		"benchmarkid",
+		"identifier",
 		"serialized",
 	}
 
@@ -131,6 +135,8 @@ func copyFromComplianceOperatorControls(ctx context.Context, s pgSearch.Deleter,
 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetBenchmarkId(),
+			obj.GetIdentifier(),
 			serialized,
 		})
 
@@ -148,7 +154,7 @@ func copyFromComplianceOperatorControls(ctx context.Context, s pgSearch.Deleter,
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_controls"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_control_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -171,11 +177,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorControls(ctx, db)
+	dropTableComplianceOperatorControlV2(ctx, db)
 }
 
-func dropTableComplianceOperatorControls(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_controls CASCADE")
+func dropTableComplianceOperatorControlV2(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_control_v2 CASCADE")
 
 }
 

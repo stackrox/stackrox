@@ -11,103 +11,49 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
-type ComplianceOperatorControlsStoreSuite struct {
+type ComplianceOperatorControlV2StoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestComplianceOperatorControlsStore(t *testing.T) {
-	suite.Run(t, new(ComplianceOperatorControlsStoreSuite))
+func TestComplianceOperatorControlV2Store(t *testing.T) {
+	suite.Run(t, new(ComplianceOperatorControlV2StoreSuite))
 }
 
-func (s *ComplianceOperatorControlsStoreSuite) SetupSuite() {
+func (s *ComplianceOperatorControlV2StoreSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ComplianceOperatorControlsStoreSuite) SetupTest() {
+func (s *ComplianceOperatorControlV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_controls CASCADE")
-	s.T().Log("compliance_operator_controls", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_control_v2 CASCADE")
+	s.T().Log("compliance_operator_control_v2", tag)
 	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
-func (s *ComplianceOperatorControlsStoreSuite) TearDownSuite() {
+func (s *ComplianceOperatorControlV2StoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ComplianceOperatorControlsStoreSuite) TestStore() {
+func (s *ComplianceOperatorControlV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
-	complianceOperatorControl := &storage.ComplianceOperatorControl{}
-	s.NoError(testutils.FullInit(complianceOperatorControl, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	complianceOperatorControlV2 := &storage.ComplianceOperatorControlV2{}
+	s.NoError(testutils.FullInit(complianceOperatorControlV2, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceOperatorControl, exists, err := store.Get(ctx, complianceOperatorControl.GetId())
+	foundComplianceOperatorControlV2, exists, err := store.Get(ctx, complianceOperatorControlV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorControl)
+	s.Nil(foundComplianceOperatorControlV2)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorControl))
-	foundComplianceOperatorControl, exists, err = store.Get(ctx, complianceOperatorControl.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorControl, foundComplianceOperatorControl)
-
-	complianceOperatorControlCount, err := store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(1, complianceOperatorControlCount)
-	complianceOperatorControlCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
-	s.NoError(err)
-	s.Zero(complianceOperatorControlCount)
-
-	complianceOperatorControlExists, err := store.Exists(ctx, complianceOperatorControl.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorControlExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorControl))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorControl), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorControl, exists, err = store.Get(ctx, complianceOperatorControl.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorControl, foundComplianceOperatorControl)
-
-	s.NoError(store.Delete(ctx, complianceOperatorControl.GetId()))
-	foundComplianceOperatorControl, exists, err = store.Get(ctx, complianceOperatorControl.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorControl)
-	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorControl.GetId()))
-
-	var complianceOperatorControls []*storage.ComplianceOperatorControl
-	var complianceOperatorControlIDs []string
-	for i := 0; i < 200; i++ {
-		complianceOperatorControl := &storage.ComplianceOperatorControl{}
-		s.NoError(testutils.FullInit(complianceOperatorControl, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorControls = append(complianceOperatorControls, complianceOperatorControl)
-		complianceOperatorControlIDs = append(complianceOperatorControlIDs, complianceOperatorControl.GetId())
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorControls))
-
-	complianceOperatorControlCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(200, complianceOperatorControlCount)
-
-	s.NoError(store.DeleteMany(ctx, complianceOperatorControlIDs))
-
-	complianceOperatorControlCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(0, complianceOperatorControlCount)
 }

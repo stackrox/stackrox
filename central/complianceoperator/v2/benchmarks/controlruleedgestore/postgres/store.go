@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -91,11 +92,13 @@ func insertIntoComplianceOperatorControlRuleV2Edges(batch *pgx.Batch, obj *stora
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetId(),
+		pgutils.NilOrUUID(obj.GetId()),
+		obj.GetControlId(),
+		obj.GetRuleId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_control_rule_v2_edges (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_control_rule_v2_edges (Id, ControlId, RuleId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ControlId = EXCLUDED.ControlId, RuleId = EXCLUDED.RuleId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -114,6 +117,8 @@ func copyFromComplianceOperatorControlRuleV2Edges(ctx context.Context, s pgSearc
 
 	copyCols := []string{
 		"id",
+		"controlid",
+		"ruleid",
 		"serialized",
 	}
 
@@ -129,7 +134,9 @@ func copyFromComplianceOperatorControlRuleV2Edges(ctx context.Context, s pgSearc
 		}
 
 		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
+			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetControlId(),
+			obj.GetRuleId(),
 			serialized,
 		})
 

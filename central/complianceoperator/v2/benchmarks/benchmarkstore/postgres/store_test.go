@@ -16,98 +16,98 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ComplianceOperatorBenchmarksStoreSuite struct {
+type ComplianceOperatorBenchmarkV2StoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestComplianceOperatorBenchmarksStore(t *testing.T) {
-	suite.Run(t, new(ComplianceOperatorBenchmarksStoreSuite))
+func TestComplianceOperatorBenchmarkV2Store(t *testing.T) {
+	suite.Run(t, new(ComplianceOperatorBenchmarkV2StoreSuite))
 }
 
-func (s *ComplianceOperatorBenchmarksStoreSuite) SetupSuite() {
+func (s *ComplianceOperatorBenchmarkV2StoreSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ComplianceOperatorBenchmarksStoreSuite) SetupTest() {
+func (s *ComplianceOperatorBenchmarkV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_benchmarks CASCADE")
-	s.T().Log("compliance_operator_benchmarks", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_benchmark_v2 CASCADE")
+	s.T().Log("compliance_operator_benchmark_v2", tag)
 	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
-func (s *ComplianceOperatorBenchmarksStoreSuite) TearDownSuite() {
+func (s *ComplianceOperatorBenchmarkV2StoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ComplianceOperatorBenchmarksStoreSuite) TestStore() {
+func (s *ComplianceOperatorBenchmarkV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
-	complianceOperatorBenchmark := &storage.ComplianceOperatorBenchmark{}
-	s.NoError(testutils.FullInit(complianceOperatorBenchmark, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	complianceOperatorBenchmarkV2 := &storage.ComplianceOperatorBenchmarkV2{}
+	s.NoError(testutils.FullInit(complianceOperatorBenchmarkV2, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceOperatorBenchmark, exists, err := store.Get(ctx, complianceOperatorBenchmark.GetId())
+	foundComplianceOperatorBenchmarkV2, exists, err := store.Get(ctx, complianceOperatorBenchmarkV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorBenchmark)
+	s.Nil(foundComplianceOperatorBenchmarkV2)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, complianceOperatorBenchmark))
-	foundComplianceOperatorBenchmark, exists, err = store.Get(ctx, complianceOperatorBenchmark.GetId())
+	s.NoError(store.Upsert(ctx, complianceOperatorBenchmarkV2))
+	foundComplianceOperatorBenchmarkV2, exists, err = store.Get(ctx, complianceOperatorBenchmarkV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorBenchmark, foundComplianceOperatorBenchmark)
+	s.Equal(complianceOperatorBenchmarkV2, foundComplianceOperatorBenchmarkV2)
 
-	complianceOperatorBenchmarkCount, err := store.Count(ctx, search.EmptyQuery())
+	complianceOperatorBenchmarkV2Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(1, complianceOperatorBenchmarkCount)
-	complianceOperatorBenchmarkCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
+	s.Equal(1, complianceOperatorBenchmarkV2Count)
+	complianceOperatorBenchmarkV2Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
-	s.Zero(complianceOperatorBenchmarkCount)
+	s.Zero(complianceOperatorBenchmarkV2Count)
 
-	complianceOperatorBenchmarkExists, err := store.Exists(ctx, complianceOperatorBenchmark.GetId())
+	complianceOperatorBenchmarkV2Exists, err := store.Exists(ctx, complianceOperatorBenchmarkV2.GetId())
 	s.NoError(err)
-	s.True(complianceOperatorBenchmarkExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorBenchmark))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorBenchmark), sac.ErrResourceAccessDenied)
+	s.True(complianceOperatorBenchmarkV2Exists)
+	s.NoError(store.Upsert(ctx, complianceOperatorBenchmarkV2))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorBenchmarkV2), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorBenchmark, exists, err = store.Get(ctx, complianceOperatorBenchmark.GetId())
+	foundComplianceOperatorBenchmarkV2, exists, err = store.Get(ctx, complianceOperatorBenchmarkV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorBenchmark, foundComplianceOperatorBenchmark)
+	s.Equal(complianceOperatorBenchmarkV2, foundComplianceOperatorBenchmarkV2)
 
-	s.NoError(store.Delete(ctx, complianceOperatorBenchmark.GetId()))
-	foundComplianceOperatorBenchmark, exists, err = store.Get(ctx, complianceOperatorBenchmark.GetId())
+	s.NoError(store.Delete(ctx, complianceOperatorBenchmarkV2.GetId()))
+	foundComplianceOperatorBenchmarkV2, exists, err = store.Get(ctx, complianceOperatorBenchmarkV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorBenchmark)
-	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorBenchmark.GetId()))
+	s.Nil(foundComplianceOperatorBenchmarkV2)
+	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorBenchmarkV2.GetId()))
 
-	var complianceOperatorBenchmarks []*storage.ComplianceOperatorBenchmark
-	var complianceOperatorBenchmarkIDs []string
+	var complianceOperatorBenchmarkV2s []*storage.ComplianceOperatorBenchmarkV2
+	var complianceOperatorBenchmarkV2IDs []string
 	for i := 0; i < 200; i++ {
-		complianceOperatorBenchmark := &storage.ComplianceOperatorBenchmark{}
-		s.NoError(testutils.FullInit(complianceOperatorBenchmark, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorBenchmarks = append(complianceOperatorBenchmarks, complianceOperatorBenchmark)
-		complianceOperatorBenchmarkIDs = append(complianceOperatorBenchmarkIDs, complianceOperatorBenchmark.GetId())
+		complianceOperatorBenchmarkV2 := &storage.ComplianceOperatorBenchmarkV2{}
+		s.NoError(testutils.FullInit(complianceOperatorBenchmarkV2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		complianceOperatorBenchmarkV2s = append(complianceOperatorBenchmarkV2s, complianceOperatorBenchmarkV2)
+		complianceOperatorBenchmarkV2IDs = append(complianceOperatorBenchmarkV2IDs, complianceOperatorBenchmarkV2.GetId())
 	}
 
-	s.NoError(store.UpsertMany(ctx, complianceOperatorBenchmarks))
+	s.NoError(store.UpsertMany(ctx, complianceOperatorBenchmarkV2s))
 
-	complianceOperatorBenchmarkCount, err = store.Count(ctx, search.EmptyQuery())
+	complianceOperatorBenchmarkV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(200, complianceOperatorBenchmarkCount)
+	s.Equal(200, complianceOperatorBenchmarkV2Count)
 
-	s.NoError(store.DeleteMany(ctx, complianceOperatorBenchmarkIDs))
+	s.NoError(store.DeleteMany(ctx, complianceOperatorBenchmarkV2IDs))
 
-	complianceOperatorBenchmarkCount, err = store.Count(ctx, search.EmptyQuery())
+	complianceOperatorBenchmarkV2Count, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
-	s.Equal(0, complianceOperatorBenchmarkCount)
+	s.Equal(0, complianceOperatorBenchmarkV2Count)
 }

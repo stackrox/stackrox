@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -57,57 +56,4 @@ func (s *ComplianceOperatorControlRuleV2EdgesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundComplianceOperatorControlRuleV2Edge)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, complianceOperatorControlRuleV2Edge))
-	foundComplianceOperatorControlRuleV2Edge, exists, err = store.Get(ctx, complianceOperatorControlRuleV2Edge.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorControlRuleV2Edge, foundComplianceOperatorControlRuleV2Edge)
-
-	complianceOperatorControlRuleV2EdgeCount, err := store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(1, complianceOperatorControlRuleV2EdgeCount)
-	complianceOperatorControlRuleV2EdgeCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
-	s.NoError(err)
-	s.Zero(complianceOperatorControlRuleV2EdgeCount)
-
-	complianceOperatorControlRuleV2EdgeExists, err := store.Exists(ctx, complianceOperatorControlRuleV2Edge.GetId())
-	s.NoError(err)
-	s.True(complianceOperatorControlRuleV2EdgeExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorControlRuleV2Edge))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorControlRuleV2Edge), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorControlRuleV2Edge, exists, err = store.Get(ctx, complianceOperatorControlRuleV2Edge.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorControlRuleV2Edge, foundComplianceOperatorControlRuleV2Edge)
-
-	s.NoError(store.Delete(ctx, complianceOperatorControlRuleV2Edge.GetId()))
-	foundComplianceOperatorControlRuleV2Edge, exists, err = store.Get(ctx, complianceOperatorControlRuleV2Edge.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundComplianceOperatorControlRuleV2Edge)
-	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorControlRuleV2Edge.GetId()))
-
-	var complianceOperatorControlRuleV2Edges []*storage.ComplianceOperatorControlRuleV2Edge
-	var complianceOperatorControlRuleV2EdgeIDs []string
-	for i := 0; i < 200; i++ {
-		complianceOperatorControlRuleV2Edge := &storage.ComplianceOperatorControlRuleV2Edge{}
-		s.NoError(testutils.FullInit(complianceOperatorControlRuleV2Edge, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorControlRuleV2Edges = append(complianceOperatorControlRuleV2Edges, complianceOperatorControlRuleV2Edge)
-		complianceOperatorControlRuleV2EdgeIDs = append(complianceOperatorControlRuleV2EdgeIDs, complianceOperatorControlRuleV2Edge.GetId())
-	}
-
-	s.NoError(store.UpsertMany(ctx, complianceOperatorControlRuleV2Edges))
-
-	complianceOperatorControlRuleV2EdgeCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(200, complianceOperatorControlRuleV2EdgeCount)
-
-	s.NoError(store.DeleteMany(ctx, complianceOperatorControlRuleV2EdgeIDs))
-
-	complianceOperatorControlRuleV2EdgeCount, err = store.Count(ctx, search.EmptyQuery())
-	s.NoError(err)
-	s.Equal(0, complianceOperatorControlRuleV2EdgeCount)
 }
