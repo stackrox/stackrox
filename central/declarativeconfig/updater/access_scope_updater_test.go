@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -65,7 +66,7 @@ func (s *updaterTestSuite) TestUpsert() {
 		},
 		"valid message type should be upserted": {
 			m: &storage.SimpleAccessScope{
-				Id:          "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
+				Id:          uuid.NewTestUUID(1).String(),
 				Name:        "testing",
 				Description: "testing",
 				Rules: &storage.SimpleAccessScope_Rules{
@@ -91,7 +92,7 @@ func (s *updaterTestSuite) TestUpsert() {
 func (s *updaterTestSuite) TestDelete_Successful() {
 	scopes := []*storage.SimpleAccessScope{
 		{
-			Id:          "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
+			Id:          uuid.NewTestUUID(1).String(),
 			Name:        "test-1",
 			Description: "",
 			Rules: &storage.SimpleAccessScope_Rules{
@@ -100,7 +101,7 @@ func (s *updaterTestSuite) TestDelete_Successful() {
 			Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 		},
 		{
-			Id:          "04a87e34-b568-5e14-90ac-380d25c8689b",
+			Id:          uuid.NewTestUUID(2).String(),
 			Name:        "test-2",
 			Description: "",
 			Rules: &storage.SimpleAccessScope_Rules{
@@ -109,7 +110,7 @@ func (s *updaterTestSuite) TestDelete_Successful() {
 			Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 		},
 		{
-			Id:          "0925514f-3a33-5931-b431-756406e1a008",
+			Id:          uuid.NewTestUUID(3).String(),
 			Name:        "test-3",
 			Description: "",
 			Rules: &storage.SimpleAccessScope_Rules{
@@ -123,7 +124,7 @@ func (s *updaterTestSuite) TestDelete_Successful() {
 		s.Require().NoError(s.updater.roleDS.AddAccessScope(s.ctx, scope))
 	}
 
-	failedIDs, err := s.updater.DeleteResources(s.ctx, "0925514f-3a33-5931-b431-756406e1a008")
+	failedIDs, err := s.updater.DeleteResources(s.ctx, scopes[2].GetId())
 	s.NoError(err)
 	s.Empty(failedIDs)
 
@@ -144,10 +145,10 @@ func (s *updaterTestSuite) TestDelete_Error() {
 	invalidErr := errox.InvalidArgs.New("something is wrong")
 	referenceErr := errox.ReferencedByAnotherObject.New("something is referenced")
 
-	m := roleMocks.NewMockDataStore(gomock.NewController(s.T()))
+	mockDS := roleMocks.NewMockDataStore(gomock.NewController(s.T()))
 	scopes := []*storage.SimpleAccessScope{
 		{
-			Id:          "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
+			Id:          uuid.NewTestUUID(1).String(),
 			Name:        "test-1",
 			Description: "",
 			Rules: &storage.SimpleAccessScope_Rules{
@@ -156,7 +157,7 @@ func (s *updaterTestSuite) TestDelete_Error() {
 			Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 		},
 		{
-			Id:          "04a87e34-b568-5e14-90ac-380d25c8689b",
+			Id:          uuid.NewTestUUID(2).String(),
 			Name:        "test-2",
 			Description: "",
 			Rules: &storage.SimpleAccessScope_Rules{
@@ -170,14 +171,14 @@ func (s *updaterTestSuite) TestDelete_Error() {
 
 	healths := []*storage.DeclarativeConfigHealth{
 		{
-			Id:           "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
+			Id:           uuid.NewTestUUID(1).String(),
 			Name:         "test-1",
 			Status:       storage.DeclarativeConfigHealth_HEALTHY,
 			ResourceName: "test-1",
 			ResourceType: storage.DeclarativeConfigHealth_ACCESS_SCOPE,
 		},
 		{
-			Id:           "04a87e34-b568-5e14-90ac-380d25c8689b",
+			Id:           uuid.NewTestUUID(2).String(),
 			Name:         "test-2",
 			Status:       storage.DeclarativeConfigHealth_HEALTHY,
 			ResourceName: "test-2",
@@ -190,13 +191,13 @@ func (s *updaterTestSuite) TestDelete_Error() {
 	}
 
 	gomock.InOrder(
-		m.EXPECT().GetAccessScopesFiltered(gomock.Any(), gomock.Any()).Return(scopes, nil),
-		m.EXPECT().RemoveAccessScope(gomock.Any(), scopes[0].GetId()).Return(invalidErr),
-		m.EXPECT().RemoveAccessScope(gomock.Any(), scopes[1].GetId()).Return(referenceErr),
-		m.EXPECT().UpsertAccessScope(gomock.Any(), orphanedScope).Return(nil),
+		mockDS.EXPECT().GetAccessScopesFiltered(gomock.Any(), gomock.Any()).Return(scopes, nil),
+		mockDS.EXPECT().RemoveAccessScope(gomock.Any(), scopes[0].GetId()).Return(invalidErr),
+		mockDS.EXPECT().RemoveAccessScope(gomock.Any(), scopes[1].GetId()).Return(referenceErr),
+		mockDS.EXPECT().UpsertAccessScope(gomock.Any(), orphanedScope).Return(nil),
 	)
 
-	s.updater.roleDS = m
+	s.updater.roleDS = mockDS
 
 	failedIDs, err := s.updater.DeleteResources(s.ctx)
 	s.Error(err)

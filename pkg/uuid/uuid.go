@@ -5,6 +5,7 @@ package uuid
 import (
 	"crypto/sha256"
 	"database/sql/driver"
+	"fmt"
 
 	"github.com/gofrs/uuid"
 )
@@ -151,4 +152,14 @@ func NewV5(ns UUID, name string) UUID {
 // NewDummy returns a uuid for testing purposes
 func NewDummy() UUID {
 	return FromStringOrNil("aaaaaaaa-bbbb-4011-0000-111111111111")
+}
+
+// NewTestUUID returns a UUID for testing purposes with the given number.
+// Example: 11111111-1111-1111-1111-111111111111.
+func NewTestUUID(d int) UUID {
+	return FromStringOrNil(fmt.Sprintf(
+		"%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d-"+
+			"%[1]d%[1]d%[1]d%[1]d-"+
+			"%[1]d%[1]d%[1]d%[1]d-"+
+			"%[1]d%[1]d%[1]d%[1]d-%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d", d))
 }
