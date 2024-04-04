@@ -18,6 +18,8 @@ const (
 
 func TestQuayIntegrationSuite(t *testing.T) {
 	t.Skip("See ROX-9448 for re-enabling")
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
 	suite.Run(t, new(QuayIntegrationSuite))
 }
 
