@@ -12,6 +12,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -54,7 +55,7 @@ func (s *migrationTestSuite) TestMigration() {
 	for i := 0; i < numPlop; i++ {
 		plop := &storage.ProcessListeningOnPortStorage{}
 		s.NoError(testutils.FullInit(plop, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		plop.CloseTimestamp = timestamp.Now().GogoProtobuf()
+		plop.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(timestamp.Now())
 		converted, err := schema.ConvertProcessListeningOnPortStorageFromProto(plop)
 		s.Require().NoError(err)
 		convertedPlops = append(convertedPlops, *converted)
