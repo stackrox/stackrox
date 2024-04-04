@@ -234,7 +234,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             )
             log.info "Re-disabled policy '${policyName}'"
             if (!expectNoViolations(deploymentName,  policyName, VIOLATION_CLEARED_TIMEOUT)) {
-                log.warn("[ROX-23466] '${policyName}' violation was not cleared before proceeding with other tests")
+                log.warn("[ROX-23466] Policy '${policyName}' violation was not cleared before proceeding with other tests")
                 log.warn("[ROX-23466] This may affect the alert count API test")
             }
         }

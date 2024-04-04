@@ -231,7 +231,7 @@ class Services extends BaseService {
         while (t.IsValid()) {
             def violations = AlertService.getViolations(ListAlertsRequest.newBuilder().setQuery(query).build())
             LOG.info "Deployment '${deploymentName}' has ${violations.size()} violation(s) for '${policyName}'"
-            if (violations.size() == 0) {
+            if (violations.isEmpty()) {
                 return true
             }
         }
