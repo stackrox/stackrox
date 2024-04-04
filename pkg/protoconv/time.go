@@ -102,3 +102,13 @@ func ReadableTime(ts *gogoTimestamp.Timestamp) string {
 	}
 	return t.UTC().Format(time.DateTime)
 }
+
+// NowMinus substracts a specified amount of time from the current timestamp
+func NowMinus(t time.Duration) *gogoTimestamp.Timestamp {
+	return ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+// TimeBeforeDays subtracts a specified number of days from the current timestamp
+func TimeBeforeDays(days int) *gogoTimestamp.Timestamp {
+	return NowMinus(24 * time.Duration(days) * time.Hour)
+}
