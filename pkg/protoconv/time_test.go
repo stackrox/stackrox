@@ -46,3 +46,14 @@ func TestReadableTime(t *testing.T) {
 	unreadable := ReadableTime(invalidTs)
 	assert.Equal(t, "<malformed time>", unreadable)
 }
+
+func TestTimeBeforeDays(t *testing.T) {
+	now := protocompat.TimestampNow()
+
+	threeDaysAgo := TimeBeforeDays(3)
+
+	nowMinusThreeDaysSeconds := now.Seconds - int64(3*24*3600)
+	deltaSeconds := threeDaysAgo.Seconds - nowMinusThreeDaysSeconds
+	assert.True(t, deltaSeconds >= 0)
+	assert.True(t, deltaSeconds < 3)
+}

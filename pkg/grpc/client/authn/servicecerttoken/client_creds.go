@@ -5,12 +5,12 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/common/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -43,7 +43,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 		reqShallowCopy := *req
 		newHeader := make(http.Header)
 		for k, vs := range req.Header {
-			newHeader[k] = sliceutils.ShallowClone(vs)
+			newHeader[k] = slices.Clone(vs)
 		}
 
 		newHeader.Set("authorization", fmt.Sprintf("%s %s", servicecerttoken.TokenType, token))

@@ -5,18 +5,14 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
-)
-
-var (
-	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
 type walkerContext struct {
@@ -389,7 +385,7 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 
 		switch structField.Type.Kind() {
 		case reflect.Ptr:
-			if structField.Type == timestampType {
+			if structField.Type == protocompat.TimestampPtrType {
 				schema.AddFieldWithType(field, postgres.DateTime, opts)
 				continue
 			}

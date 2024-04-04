@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -24,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -325,7 +325,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 					assert.False(t, processes.Contains(remove))
 				}
 				for _, stockProcess := range stockProcesses {
-					if sliceutils.Find(c.toRemove, stockProcess) == -1 {
+					if slices.Index(c.toRemove, stockProcess) == -1 {
 						assert.True(t, processes.Contains(stockProcess))
 					}
 				}

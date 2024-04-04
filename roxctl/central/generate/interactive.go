@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -14,7 +15,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"golang.org/x/crypto/ssh/terminal"
@@ -294,8 +294,8 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 		groupsSlice = append(groupsSlice, group)
 	}
 	sort.Slice(groupsSlice, func(i, j int) bool {
-		iPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[i].name)
-		jPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[j].name)
+		iPos := slices.Index(orderedFlagGroupNames, groupsSlice[i].name)
+		jPos := slices.Index(orderedFlagGroupNames, groupsSlice[j].name)
 		// If they're both not in the list of ordered flag groups, just sort alphabetically.
 		if iPos == -1 && jPos == -1 {
 			return groupsSlice[i].name < groupsSlice[j].name

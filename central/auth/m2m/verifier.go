@@ -40,7 +40,7 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 	}
 	provider, err := oidc.NewProvider(
 		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute,
-			Transport: proxy.RoundTripperWithTLSConfig(tlsConfig)}),
+			Transport: proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))}),
 		config.GetIssuer(),
 	)
 	if err != nil {

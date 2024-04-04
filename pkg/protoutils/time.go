@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -35,4 +36,13 @@ func MustGetProtoTimestampFromRFC3339NanoString(timeStr string) *types.Timestamp
 	timestamp, err := protocompat.GetProtoTimestampFromRFC3339NanoString(timeStr)
 	utils.CrashOnError(err)
 	return timestamp
+}
+
+// RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
+func RoundTimestamp(ts *types.Timestamp, d time.Duration) *types.Timestamp {
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
+	if err != nil {
+		return ts
+	}
+	return protoconv.ConvertTimeToTimestamp(t.Round(d))
 }

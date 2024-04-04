@@ -35,6 +35,18 @@ func TimestampNow() *gogoTimestamp.Timestamp {
 	return gogoTimestamp.TimestampNow()
 }
 
+// ConvertTimestampToCSVString converts a proto timestamp to a string for display in a CSV report.
+func ConvertTimestampToCSVString(timestamp *gogoTimestamp.Timestamp) string {
+	if timestamp == nil {
+		return "N/A"
+	}
+	ts, err := gogoTimestamp.TimestampFromProto(timestamp)
+	if err != nil {
+		return "ERR"
+	}
+	return ts.Format(time.RFC1123)
+}
+
 // ConvertTimestampToTimeOrNil converts a proto timestamp to a golang Time, defaulting to nil in case of error.
 func ConvertTimestampToTimeOrNil(gogo *gogoTimestamp.Timestamp) *time.Time {
 	if gogo == nil {
@@ -109,6 +121,20 @@ func GetProtoTimestampFromSecondsAndNanos(seconds int64, nanos int32) *gogoTimes
 // with the zero values for all fields.
 func GetProtoTimestampZero() *gogoTimestamp.Timestamp {
 	return &gogoTimestamp.Timestamp{}
+}
+
+// NilOrNow allows for a proto timestamp to be stored a timestamp type in Postgres
+func NilOrNow(t *gogoTimestamp.Timestamp) *time.Time {
+	now := time.Now()
+	if t == nil {
+		return &now
+	}
+	ts, err := ConvertTimestampToTimeOrError(t)
+	if err != nil {
+		return &now
+	}
+	ts = ts.Round(time.Microsecond)
+	return &ts
 }
 
 // NilOrTime allows for a proto timestamp to be stored a timestamp type in Postgres

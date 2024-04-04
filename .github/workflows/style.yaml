@@ -29,6 +29,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -53,6 +55,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -83,6 +87,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -114,6 +120,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
