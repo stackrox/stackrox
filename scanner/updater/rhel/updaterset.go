@@ -126,7 +126,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	}
 
 	for _, e := range m {
-		name := strings.TrimSuffix(strings.Replace(e.Path, "/", "-", -1), ".oval.xml.bz2")
+		name := strings.TrimSuffix(strings.ReplaceAll(e.Path, "/", "-"), ".oval.xml.bz2")
 		// We need to disregard this OVAL stream because some advisories therein have
 		// been released with the CPEs identical to those used in classic RHEL stream.
 		// This in turn causes false CVEs to appear in scanned images. Red Hat Product

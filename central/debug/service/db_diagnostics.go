@@ -23,7 +23,7 @@ func buildDBDiagnosticData(ctx context.Context, dbConfig *postgres.Config, dbPoo
 	diagnosticData.DatabaseClientVersion = getDBClientVersion()
 	// Get extensions
 	if dbConfig != nil {
-		diagnosticData.DatabaseConnectString = strings.TrimSpace(strings.Replace(dbConfig.ConnString(), dbConfig.ConnConfig.Password, "REDACTED", -1))
+		diagnosticData.DatabaseConnectString = strings.TrimSpace(strings.ReplaceAll(dbConfig.ConnString(), dbConfig.ConnConfig.Password, "REDACTED"))
 	}
 	diagnosticData.DatabaseExtensions = getPostgresExtensions(ctx, dbPool)
 
