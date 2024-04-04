@@ -13,8 +13,7 @@ func TestWithGet(t *testing.T) {
 	h := make(http.Header)
 	h.Add("key", "value")
 
-	hWithGet := WithGet(h)
-	assert.Equal(t, h.Get("key"), hWithGet.Get("key")[0])
+	assert.Equal(t, h.Get("key"), WithGet(h).Get("key")[0])
 }
 
 func TestGetFirst(t *testing.T) {
@@ -31,21 +30,21 @@ func TestGetFirst(t *testing.T) {
 func TestHasGrpcPrefix(t *testing.T) {
 	h := make(http.Header)
 	h.Add("key", "value")
-	assert.False(t, HasGrpcPrefix(WithGet(h)))
+	assert.False(t, HasMetadataPrefix(WithGet(h)))
 	h.Add(runtime.MetadataPrefix+"Accept", "value")
-	assert.True(t, HasGrpcPrefix(WithGet(h)))
-	assert.False(t, HasGrpcPrefix(nil))
+	assert.True(t, HasMetadataPrefix(WithGet(h)))
+	assert.False(t, HasMetadataPrefix(nil))
 }
 
-func TestIgnoreGrcpPrefix(t *testing.T) {
+func TestIgnoreMetadataPrefix(t *testing.T) {
 	md := metadata.New(nil)
 	md.Append(runtime.MetadataPrefix+"Accept", "value")
 	md.Append("key", "value1")
 	md.Append(runtime.MetadataPrefix+"key", "value2")
-	assert.True(t, HasGrpcPrefix(md))
+	assert.True(t, HasMetadataPrefix(md))
 
-	noPrefix := IgnoreGrpcPrefix(md)
-	assert.False(t, HasGrpcPrefix(noPrefix))
+	noPrefix := IgnoreMetadataPrefix(md)
+	assert.False(t, HasMetadataPrefix(noPrefix))
 	assert.Equal(t, "value2", noPrefix.Get("key")[0])
 }
 
@@ -72,7 +71,7 @@ func TestKeyCase(t *testing.T) {
 		// keys are lowercased in metadata.MD.
 		md := metadata.New(nil)
 		md.Append(runtime.MetadataPrefix+keyCase1, goodValue)
-		testKeys(t, IgnoreGrpcPrefix(md))
+		testKeys(t, IgnoreMetadataPrefix(md))
 	})
 
 	t.Run("test http.Header", func(t *testing.T) {

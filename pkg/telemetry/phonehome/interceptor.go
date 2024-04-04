@@ -44,29 +44,27 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		log.Debug("Cannot identify user from context: ", iderr)
 	}
 
-	// Use the wrapped HTTP request details if provided:
 	ri := requestinfo.FromContext(ctx)
-	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
-		return &RequestParams{
-			UserAgent: getUserAgent(ri.Metadata),
-			UserID:    id,
-			Method:    ri.HTTPRequest.Method,
-			Path:      ri.HTTPRequest.URL.Path,
-			Code:      grpcError.ErrToHTTPStatus(err),
-			GRPCReq:   req,
-			Header:    ri.Metadata,
-		}
-	}
-
-	return &RequestParams{
+	rp := &RequestParams{
 		UserAgent: getUserAgent(ri.Metadata),
 		UserID:    id,
-		Method:    grpcFullMethod,
-		Path:      grpcFullMethod,
-		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq:   req,
 		Header:    ri.Metadata,
 	}
+	// Use the wrapped HTTP request details if provided:
+	if ri.HTTPRequest != nil {
+		rp.Method = ri.HTTPRequest.Method
+		if ri.HTTPRequest.URL != nil {
+			rp.Path = ri.HTTPRequest.URL.Path
+		}
+		rp.Code = grpcError.ErrToHTTPStatus(err)
+		rp.Header = requestinfo.WithGet(ri.HTTPRequest.Headers)
+	} else {
+		rp.Method = grpcFullMethod
+		rp.Path = grpcFullMethod
+		rp.Code = int(erroxGRPC.RoxErrorToGRPCCode(err))
+	}
+	return rp
 }
 
 func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {

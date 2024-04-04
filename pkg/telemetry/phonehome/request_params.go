@@ -18,7 +18,8 @@ type RequestParams struct {
 	Code      int
 	GRPCReq   any
 	HTTPReq   *http.Request
-	Header    requestinfo.HeaderGetter
+	// Header is gRPC metadata or http.Header.
+	Header requestinfo.HeaderGetter
 }
 
 // ServiceMethod describes a service method with its gRPC and HTTP variants.

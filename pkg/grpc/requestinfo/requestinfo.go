@@ -276,8 +276,8 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
-	if HasGrpcPrefix(md) {
-		ri.Metadata = IgnoreGrpcPrefix(md)
+	if HasMetadataPrefix(md) {
+		ri.Metadata = IgnoreMetadataPrefix(md)
 	} else {
 		ri.Metadata = md
 	}
@@ -346,7 +346,7 @@ func sourceAddr(ctx context.Context) net.Addr {
 	return p.Addr
 }
 
-// WithGet adds the HeaderGetter implementation to http.Header
+// WithGet adds the HeaderGetter implementation to http.Header.
 type WithGet http.Header
 
 // Get implements HeaderGetter interface.
@@ -365,20 +365,20 @@ func GetFirst(header HeaderGetter, key string) string {
 	return ""
 }
 
-// HasGrpcPrefix checks whether headers are prepended with the gRPC gateway
+// HasMetadataPrefix checks whether headers are prepended with the gRPC gateway
 // prefix.
-func HasGrpcPrefix(h HeaderGetter) bool {
+func HasMetadataPrefix(h HeaderGetter) bool {
 	return h != nil && len(h.Get(runtime.MetadataPrefix+"Accept")) > 0
 }
 
-// IgnoreGrpcPrefix wraps a header map and implements HeaderGetter interface
+// IgnoreMetadataPrefix wraps a header map and implements HeaderGetter interface
 // that queries the map ignoring gRPC gateway prefixes of the keys, stored in
 // the map: given key 'Accept' it will query for 'grpcgateway-Accept' instead.
-type IgnoreGrpcPrefix metadata.MD
+type IgnoreMetadataPrefix metadata.MD
 
 // Get implements the HeaderGetter interface. It assumes to be called on a
 // metadata instance for which HasGrpcPrefix(h) returns true.
-func (md IgnoreGrpcPrefix) Get(key string) []string {
+func (md IgnoreMetadataPrefix) Get(key string) []string {
 	return metadata.MD(md).Get(runtime.MetadataPrefix + key)
 }
 
