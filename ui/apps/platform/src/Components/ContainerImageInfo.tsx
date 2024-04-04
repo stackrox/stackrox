@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 
-import { vulnManagementPath } from 'routePaths';
+import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import { ContainerImage } from 'types/deployment.proto';
 
 type ContainerImageInfoProps = {
@@ -28,7 +28,9 @@ function ContainerImageInfo({ image }: ContainerImageInfoProps) {
         <Card>
             <CardTitle>Image</CardTitle>
             <CardBody>
-                <Link to={`${vulnManagementPath}/image/${image.id}`}>{image.name.fullName}</Link>
+                <Link to={`${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`}>
+                    {image.name.fullName}
+                </Link>
             </CardBody>
         </Card>
     );
