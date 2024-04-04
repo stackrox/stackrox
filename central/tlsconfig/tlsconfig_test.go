@@ -11,9 +11,9 @@ import (
 	"math/big"
 	"os"
 	"path"
+	"slices"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -232,8 +232,8 @@ func createCertChainWithLengthOf(length int) ([]*x509.Certificate, []*ecdsa.Priv
 		privateKeys = append(privateKeys, privateKey)
 	}
 	// inverse the order of the certs so that the leaf is first
-	sliceutils.ReverseInPlace(certs)
-	sliceutils.ReverseInPlace(privateKeys)
+	slices.Reverse(certs)
+	slices.Reverse(privateKeys)
 	return certs, privateKeys, nil
 }
 
