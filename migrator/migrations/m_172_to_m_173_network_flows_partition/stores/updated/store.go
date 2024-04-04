@@ -6,13 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -84,8 +82,8 @@ type FlowStore interface {
 	// Count gets the total count of records for this cluster to support migration
 	Count(ctx context.Context) (int, error)
 	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
-	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
+	GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
@@ -152,11 +150,6 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
-		var ts *types.Timestamp
-		if lastTime != nil {
-			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
-		}
-
 		flow := &storage.NetworkFlow{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity: &storage.NetworkEntityInfo{
@@ -170,8 +163,10 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 				DstPort:    port,
 				L4Protocol: protocol,
 			},
-			LastSeenTimestamp: ts,
-			ClusterId:         clusterID,
+			ClusterId: clusterID,
+		}
+		if lastTime != nil {
+			flow.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(*lastTime)
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
@@ -185,17 +180,17 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *time.Time, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := protocompat.TimestampNow()
+	lastUpdateTS := time.Now()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -203,7 +198,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, protocompat.NilOrTime(since))
+		rows, err = s.db.Query(ctx, partitionSinceStmt, since)
 	}
 	if err != nil {
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
@@ -215,22 +210,22 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 		return nil, nil, pgutils.ErrNilIfNoRows(err)
 	}
 
-	return flows, lastUpdateTS, nil
+	return flows, &lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *time.Time, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	var rows pgx.Rows
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := protocompat.TimestampNow()
+	lastUpdateTS := time.Now()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -238,7 +233,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, protocompat.NilOrTime(since))
+		rows, err = s.db.Query(ctx, partitionSinceStmt, since)
 	}
 
 	if err != nil {
@@ -248,7 +243,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 
 	flows, err := s.readRows(rows, pred)
 
-	return flows, lastUpdateTS, err
+	return flows, &lastUpdateTS, err
 }
 
 // GetFlowsForDeployment returns the flows matching the deployment ID
