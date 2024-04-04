@@ -112,6 +112,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 					OutputFolderPath:      tt.outDir,
 					OutputFilePath:        tt.outFile,
 					RemoveOutputPath:      tt.removeOutputPath,
+					DNSPort:               53,
 				},
 				offline:         true,
 				inputFolderPath: "", // set through construct
