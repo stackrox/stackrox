@@ -237,7 +237,7 @@ var (
 	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
 	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
 	ComplianceOperatorBenchmarkID            = newFieldLabel("Compliance Operator Benchmark ID")
-	ComplianceOperatorControlName            = newFieldLabel("Compliance Control Identifier")
+	ComplianceControlIdentifier              = newFieldLabel("Compliance Control Identifier")
 	ComplianceOperatorControlRuleRule        = newFieldLabel("Rule ID")
 	// ComplianceOperatorControlRuleControl     = newFieldLabel("Control ID")
 

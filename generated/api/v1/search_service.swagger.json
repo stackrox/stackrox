@@ -110,7 +110,8 @@
                 "COMPLIANCE_SCAN_SETTING_BINDINGS",
                 "COMPLIANCE_SUITES",
                 "CLOUD_SOURCES",
-                "DISCOVERED_CLUSTERS"
+                "DISCOVERED_CLUSTERS",
+                "COMPLIANCE_BENCHMARK_CONTROL"
               ]
             },
             "collectionFormat": "multi"
@@ -220,7 +221,8 @@
                 "COMPLIANCE_SCAN_SETTING_BINDINGS",
                 "COMPLIANCE_SUITES",
                 "CLOUD_SOURCES",
-                "DISCOVERED_CLUSTERS"
+                "DISCOVERED_CLUSTERS",
+                "COMPLIANCE_BENCHMARK_CONTROL"
               ]
             },
             "collectionFormat": "multi"
@@ -324,7 +326,8 @@
                 "COMPLIANCE_SCAN_SETTING_BINDINGS",
                 "COMPLIANCE_SUITES",
                 "CLOUD_SOURCES",
-                "DISCOVERED_CLUSTERS"
+                "DISCOVERED_CLUSTERS",
+                "COMPLIANCE_BENCHMARK_CONTROL"
               ]
             },
             "collectionFormat": "multi"
@@ -477,7 +480,8 @@
         "COMPLIANCE_SCAN_SETTING_BINDINGS",
         "COMPLIANCE_SUITES",
         "CLOUD_SOURCES",
-        "DISCOVERED_CLUSTERS"
+        "DISCOVERED_CLUSTERS",
+        "COMPLIANCE_BENCHMARK_CONTROL"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 70"

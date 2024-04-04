@@ -101,7 +101,7 @@ func (d datastoreImpl) LinkRuleToControl(ctx context.Context, rule *storage.Comp
 
 	// TODO: Query Control by Name and Benchmark ID.
 	// TODO: Get Id of Control and create the link between Rule and Control
-	builder := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorControlName, controlName)
+	builder := search.NewQueryBuilder().AddExactMatches(search.ComplianceControlIdentifier, controlName)
 	query := builder.ProtoQuery()
 
 	results, err := d.controlStore.Search(ctx, query)
@@ -117,7 +117,7 @@ func (d datastoreImpl) LinkRuleToControl(ctx context.Context, rule *storage.Comp
 		objs = append(objs, &storage.ComplianceOperatorControlRuleV2Edge{
 			Id:        uuid.NewV4().String(),
 			ControlId: result.ID,
-			RuleId:    rule.RuleId,
+			RuleId:    rule.Id,
 		})
 	}
 

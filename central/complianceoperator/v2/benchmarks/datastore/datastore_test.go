@@ -10,13 +10,13 @@ import (
 	controlruleedgestore "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/controlruleedgestore/postgres"
 	rulestore "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/rules/store/postgres"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -94,7 +94,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
 //	"policies.open-cluster-management.io/controls": "CIP-003-8 R6,P-004-6 R3,CIP-007-3 R6.1,CM-6,CM-6(1),Req-2.2,1.2.1",
 //	"policies.open-cluster-management.io/standards": "NERC-CIP,NIST-800-53,PCI-DSS,CIS-OCP"
 func (s *complianceIntegrationDataStoreTestSuite) TestAddBenchmark() {
-	benchmark := &storage.ComplianceOperatorBenchmark{
+	benchmark := &storage.ComplianceOperatorBenchmarkV2{
 		Id:           uuid.NewV4().String(),
 		Version:      "v1.5.0",
 		Name:         "CIS Red Hat OpenShift Container Platform Benchmark",
@@ -105,16 +105,16 @@ func (s *complianceIntegrationDataStoreTestSuite) TestAddBenchmark() {
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TestAddControl() {
-	benchmark := &storage.ComplianceOperatorBenchmark{
+	benchmark := &storage.ComplianceOperatorBenchmarkV2{
 		Id:   uuid.NewDummy().String(),
 		Name: "CIS OpenShift",
 	}
 	err := s.benchmarkStore.UpsertBenchmark(s.hasWriteCtx, benchmark)
 	s.Require().NoError(err)
 
-	control := &storage.ComplianceOperatorControl{
+	control := &storage.ComplianceOperatorControlV2{
 		Id:          uuid.NewV4().String(),
-		Control:     "1.1.1",
+		Identifier:  "1.1.1",
 		BenchmarkId: benchmark.GetId(),
 	}
 
@@ -124,7 +124,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestAddControl() {
 	controlResult, found, err := s.benchmarkStore.GetControl(s.hasReadCtx, control.GetId())
 	s.Require().NoError(err)
 	s.True(found)
-	s.Equal("1.1.1", controlResult.GetControl())
+	s.Equal("1.1.1", controlResult.GetIdentifier())
 
 	rulestore := rulestore.New(pgStore.New(s.db))
 	clusterId := uuid.NewV4().String()

@@ -80,6 +80,7 @@ enum SearchCategory {
   COMPLIANCE_SUITES = 67;
   CLOUD_SOURCES = 68;
   DISCOVERED_CLUSTERS = 69;
+  COMPLIANCE_BENCHMARK_CONTROL = 70;
 }
 
 enum SearchDataType {

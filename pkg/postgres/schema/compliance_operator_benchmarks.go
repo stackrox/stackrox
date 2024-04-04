@@ -24,7 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorBenchmark)(nil)), "compliance_operator_benchmarks")
+		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorBenchmarkV2)(nil)), "compliance_operator_benchmarks")
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorBenchmarksStmt)
 		return schema
