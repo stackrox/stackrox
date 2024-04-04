@@ -1,3 +1,4 @@
+import static Services.expectNoViolations
 import static Services.getPolicies
 import static Services.waitForViolation
 
@@ -116,6 +117,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     ]
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 300
+    static final private Integer VIOLATION_CLEARED_TIMEOUT = WAIT_FOR_VIOLATION_TIMEOUT
 
     @Shared
     private String gcrId
@@ -223,8 +225,6 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation for #policyName is triggered"
-        // Some of these policies require scans so extend the timeout as the scan will be done inline
-        // with our scanner
         assert waitForViolation(deploymentName,  policyName, WAIT_FOR_VIOLATION_TIMEOUT)
 
         cleanup:
@@ -233,6 +233,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(true).build()
             )
             log.info "Re-disabled policy '${policyName}'"
+            if (!expectNoViolations(deploymentName,  policyName, VIOLATION_CLEARED_TIMEOUT)) {
+                log.warn("[ROX-23466] Policy '${policyName}' violation was not cleared before proceeding")
+                log.warn("[ROX-23466] This may affect the alert count API test")
+            }
         }
 
         where:
