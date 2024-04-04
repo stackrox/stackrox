@@ -44,71 +44,27 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     static final private List<Deployment> DEPLOYMENTS =
         [
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_RESOLVE_VIOLATION)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_LOCK)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_DELETE)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_DELETE_API)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_POST_DELETE_API)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_REMOVEPROCESS)
-                     .setNamespace(TEST_NAMESPACE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
+                deployment(DEPLOYMENTNGINX),
+                deployment(DEPLOYMENTNGINX_RESOLVE_VIOLATION),
+                deployment(DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION),
+                deployment(DEPLOYMENTNGINX_LOCK),
+                deployment(DEPLOYMENTNGINX_DELETE),
+                deployment(DEPLOYMENTNGINX_DELETE_API),
+                deployment(DEPLOYMENTNGINX_POST_DELETE_API),
+                deployment(DEPLOYMENTNGINX_REMOVEPROCESS),
             ]
+
+    private static Deployment deployment(String name) {
+        return new Deployment()
+                .setName(name)
+                .setNamespace(TEST_NAMESPACE)
+                .setImage(TEST_IMAGE)
+                .addPort(22, "TCP")
+                .addAnnotation("test", "annotation")
+                .setEnv(["CLUSTER_NAME": "main"])
+                .addLabel("app", "test")
+                .setCapabilities([], [])
+    }
 
     @Shared
     private Policy unauthorizedProcessExecution
