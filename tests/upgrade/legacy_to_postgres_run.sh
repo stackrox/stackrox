@@ -298,7 +298,10 @@ download_roxctl() {
     curl --retry 3 -v --fail -o "${output_dir}/roxctl" \
         "https://mirror.openshift.com/pub/rhacs/assets/${version}/bin/${host_os}/roxctl${platform}"
     chmod +x "${output_dir}/roxctl"
+    sha1sum "${output_dir}/roxctl"
+    ls -lah "${output_dir}"
     ${output_dir}/roxctl version
+    which roxctl
     export PATH="${output_dir}:$PATH"
     roxctl version
 }
