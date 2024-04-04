@@ -55,7 +55,7 @@ func NewTemp(dbPath string) (*bolt.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(filepath.Join(tmpDir, strings.Replace(dbPath, "/", "_", -1)))
+	return New(filepath.Join(tmpDir, strings.ReplaceAll(dbPath, "/", "_")))
 }
 
 // RegisterBucket registers a new bucket in the global DB.
