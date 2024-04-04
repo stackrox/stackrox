@@ -246,6 +246,7 @@ deploy_earlier_rocks_central() {
     download_roxctl "${EARLIER_TAG}"
 
     # Let's try helm
+    roxctl version
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
 
