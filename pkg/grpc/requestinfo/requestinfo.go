@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/cryptoutils"
@@ -76,6 +77,11 @@ func (s Source) GetSourceIP() string {
 	)
 }
 
+// HeaderGetter interface abstracts http.Header and metadata.MD types.
+type HeaderGetter interface {
+	Get(key string) []string
+}
+
 // RequestInfo provides a unified view of a GRPC request, regardless of whether it came through the HTTP/1.1 gateway
 // or directly via GRPC.
 // When forwarding requests in the HTTP/1.1 gateway, there are two independent mechanisms to defend against spoofing:
@@ -103,7 +109,7 @@ type RequestInfo struct {
 	VerifiedChains [][]mtls.CertInfo
 	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
 	// these are only the headers that make it to the GRPC handler.
-	Metadata metadata.MD
+	Metadata HeaderGetter
 	// HTTPRequest is a slimmed down version of *http.Request that will only be populated if the request came through the gateway
 	HTTPRequest *HTTPRequest
 	// Source holds information about the request's source (such as the client IP).
@@ -269,7 +275,12 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		ri.VerifiedChains = ExtractCertInfoChains(tlsState.VerifiedChains)
 	}
 
-	ri.Metadata, _ = metadata.FromIncomingContext(ctx)
+	md, _ := metadata.FromIncomingContext(ctx)
+	if HasGrpcPrefix(md) {
+		ri.Metadata = IgnoreGrpcPrefix(md)
+	} else {
+		ri.Metadata = md
+	}
 	return context.WithValue(ctx, requestInfoKey{}, *ri), nil
 }
 
@@ -279,7 +290,7 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 
 		ri := &RequestInfo{
 			Hostname:    r.Host,
-			Metadata:    metadataFromHeader(r.Header),
+			Metadata:    WithGet(r.Header),
 			HTTPRequest: slimHTTPRequest(r),
 			Source:      sourceFromRequest(r),
 		}
@@ -335,12 +346,40 @@ func sourceAddr(ctx context.Context) net.Addr {
 	return p.Addr
 }
 
-func metadataFromHeader(header http.Header) metadata.MD {
-	md := make(metadata.MD)
-	for key, vals := range header {
-		md.Append(key, vals...)
+// WithGet adds the HeaderGetter implementation to http.Header
+type WithGet http.Header
+
+// Get implements HeaderGetter interface.
+func (md WithGet) Get(key string) []string {
+	return http.Header(md).Values(key)
+}
+
+// GetFirst returns the first value of the header by key, or empty string.
+func GetFirst(header HeaderGetter, key string) string {
+	if header == nil {
+		return ""
 	}
-	return md
+	if values := header.Get(key); len(values) > 0 {
+		return values[0]
+	}
+	return ""
+}
+
+// HasGrpcPrefix checks whether headers are prepended with the gRPC gateway
+// prefix.
+func HasGrpcPrefix(h HeaderGetter) bool {
+	return h != nil && len(h.Get(runtime.MetadataPrefix+"Accept")) > 0
+}
+
+// IgnoreGrpcPrefix wraps a header map and implements HeaderGetter interface
+// that queries the map ignoring gRPC gateway prefixes of the keys, stored in
+// the map: given key 'Accept' it will query for 'grpcgateway-Accept' instead.
+type IgnoreGrpcPrefix metadata.MD
+
+// Get implements the HeaderGetter interface. It assumes to be called on a
+// metadata instance for which HasGrpcPrefix(h) returns true.
+func (md IgnoreGrpcPrefix) Get(key string) []string {
+	return metadata.MD(md).Get(runtime.MetadataPrefix + key)
 }
 
 // sourceFromRequest retrieves the source from the HTTP request.

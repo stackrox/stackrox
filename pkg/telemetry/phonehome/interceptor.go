@@ -3,18 +3,13 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"strings"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	grpcError "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
-	"google.golang.org/grpc/metadata"
 )
-
-const grpcGatewayUserAgentHeader = runtime.MetadataPrefix + "User-Agent"
 
 func (cfg *Config) track(rp *RequestParams) {
 	cfg.interceptorsLock.RLock()
@@ -39,33 +34,8 @@ func (cfg *Config) track(rp *RequestParams) {
 	}
 }
 
-func getUserAgent[getter func(string) []string](headers getter) string {
-	// By default, all permanent HTTP headers in grpc-gateway are added grpcgateway- prefix:
-	// https://github.com/grpc-ecosystem/grpc-gateway/blob/8952e38d5addd28308e29c272c696a578aa8ace8/runtime/mux.go#L106-L114
-	// User-Agent header is occupied with internal grpc-go value:
-	// https://github.com/grpc/grpc-go/blob/0238b6e1cec37b55820b461d3d30652c54efe2c4/clientconn.go#L211-L215
-	userAgentValues := headers(grpcGatewayUserAgentHeader)
-	// If endpoint is accessed not via grpc-gateway, extract from User-Agent header.
-	userAgentValues = append(userAgentValues, headers("User-Agent")...)
-	return strings.Join(userAgentValues, " ")
-}
-
-// Metadata stores and accesses the headers in lowercase. This is incompatible
-// with http.Header, which uses canonized keys.
-type withSimpleGet metadata.MD
-
-// Get implements the Getter interface for gRPC metadata to work similarly to
-// the http.Header.Get, that returns the first value from the array.
-// The grpcgateway
-func (md withSimpleGet) Get(key string) string {
-	// Add grpcgateway- prefix to the key if the request came via grpc-gateway.
-	if len((metadata.MD)(md).Get(runtime.MetadataPrefix+"Accept")) > 0 {
-		key = runtime.MetadataPrefix + key
-	}
-	if values := (metadata.MD)(md).Get(key); len(values) > 0 {
-		return values[0]
-	}
-	return ""
+func getUserAgent(h requestinfo.HeaderGetter) string {
+	return requestinfo.GetFirst(h, "User-Agent")
 }
 
 func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
@@ -78,24 +48,24 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	ri := requestinfo.FromContext(ctx)
 	if ri.HTTPRequest != nil && ri.HTTPRequest.URL != nil {
 		return &RequestParams{
-			UserAgent: getUserAgent(ri.Metadata.Get),
+			UserAgent: getUserAgent(ri.Metadata),
 			UserID:    id,
 			Method:    ri.HTTPRequest.Method,
 			Path:      ri.HTTPRequest.URL.Path,
 			Code:      grpcError.ErrToHTTPStatus(err),
 			GRPCReq:   req,
-			Header:    ri.HTTPRequest.Headers,
+			Header:    ri.Metadata,
 		}
 	}
 
 	return &RequestParams{
-		UserAgent: getUserAgent(ri.Metadata.Get),
+		UserAgent: getUserAgent(ri.Metadata),
 		UserID:    id,
 		Method:    grpcFullMethod,
 		Path:      grpcFullMethod,
 		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
 		GRPCReq:   req,
-		Header:    withSimpleGet(ri.Metadata),
+		Header:    ri.Metadata,
 	}
 }
 
@@ -104,14 +74,14 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
 	}
-
+	header := requestinfo.WithGet(r.Header)
 	return &RequestParams{
-		UserAgent: getUserAgent(r.Header.Values),
+		UserAgent: getUserAgent(header),
 		UserID:    id,
 		Method:    r.Method,
 		Path:      r.URL.Path,
 		Code:      status,
 		HTTPReq:   r,
-		Header:    r.Header,
+		Header:    header,
 	}
 }
