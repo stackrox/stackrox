@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -98,7 +99,7 @@ func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlo
 	}
 
 	if ts != timestamp.InfiniteFuture {
-		proto.LastSeenTimestamp = ts.GogoProtobuf()
+		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 	return proto
 }
@@ -119,7 +120,7 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 	}
 
 	if ts != timestamp.InfiniteFuture {
-		proto.LastActiveTimestamp = ts.GogoProtobuf()
+		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 	return proto
 }
@@ -156,7 +157,7 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 	}
 
 	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = ts.GogoProtobuf()
+		proto.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 
 	return proto

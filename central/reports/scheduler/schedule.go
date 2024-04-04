@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -246,13 +247,13 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 		// TODO: @khushboo for more accuracy, save timestamp when the vuln data is pulled aka the query is run
 		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
 			ReportStatus: storage.ReportLastRunStatus_FAILURE,
-			LastRunTime:  timestamp.Now().GogoProtobuf(),
+			LastRunTime:  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 			ErrorMsg:     err.Error(),
 		}
 	} else {
 		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
 			ReportStatus: storage.ReportLastRunStatus_SUCCESS,
-			LastRunTime:  timestamp.Now().GogoProtobuf(),
+			LastRunTime:  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 			ErrorMsg:     "",
 		}
 		req.ReportConfig.LastSuccessfulRunTime = protocompat.TimestampNow()

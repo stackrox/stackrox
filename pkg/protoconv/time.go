@@ -7,6 +7,7 @@ import (
 	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
@@ -111,4 +112,9 @@ func NowMinus(t time.Duration) *gogoTimestamp.Timestamp {
 // TimeBeforeDays subtracts a specified number of days from the current timestamp
 func TimeBeforeDays(days int) *gogoTimestamp.Timestamp {
 	return NowMinus(24 * time.Duration(days) * time.Hour)
+}
+
+// ConvertMicroTSToProtobufTS converts a microtimestamp to a (Gogo) protobuf representation.
+func ConvertMicroTSToProtobufTS(ts timestamp.MicroTS) *gogoTimestamp.Timestamp {
+	return protocompat.GetProtoTimestampFromSecondsAndNanos(ts.UnixSeconds(), ts.UnixNanosFraction())
 }
