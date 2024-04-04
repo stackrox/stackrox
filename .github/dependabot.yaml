@@ -16,6 +16,7 @@ updates:
     labels:
       - "dependencies"
       - "area/ui"
+      - "auto-retest"
     reviewers:
       - "stackrox/ui-dep-updaters"
     commit-message:
@@ -31,6 +32,7 @@ updates:
       - "ci-all-qa-tests"
       - "dependencies"
       - "auto-merge"
+      - "auto-retest"
     reviewers:
       - "stackrox/backend-dep-updaters"
     commit-message:
@@ -46,6 +48,7 @@ updates:
       - "ci-all-qa-tests"
       - "dependencies"
       - "auto-merge"
+      - "auto-retest"
     reviewers:
       - "stackrox/backend-dep-updaters"
     commit-message:
@@ -71,6 +74,7 @@ updates:
     labels:
     - "dependencies"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
       - "stackrox/backend-dep-updaters"
     commit-message:
@@ -86,6 +90,7 @@ updates:
     labels:
     - "dependencies"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -101,6 +106,7 @@ updates:
     labels:
     - "dependencies"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
       - "stackrox/backend-dep-updaters"
     commit-message:
@@ -116,6 +122,7 @@ updates:
     labels:
     - "dependencies"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -132,6 +139,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -148,6 +156,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -164,6 +173,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -180,6 +190,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -196,6 +207,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -212,6 +224,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
@@ -228,6 +241,7 @@ updates:
     - "dependencies"
     - "area/scanner"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/scanner"
     commit-message:
@@ -244,6 +258,7 @@ updates:
     - "dependencies"
     - "area/operator"
     - "auto-merge"
+    - "auto-retest"
     reviewers:
     - "stackrox/backend-dep-updaters"
     commit-message:
