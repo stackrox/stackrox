@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnManagementPath } from 'routePaths';
+import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import CollapsibleCard from 'Components/CollapsibleCard';
 
 import KeyValuePairs from './KeyValuePairs';
@@ -47,7 +47,7 @@ const ContainerImage = ({ image }) => {
             <div className="font-700 inline">Image Name: </div>
             <Link
                 className="hover:text-primary-800 leading-normal word-break"
-                to={`${vulnManagementPath}/image/${image.id}`}
+                to={`${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`}
             >
                 {image.name.fullName}
             </Link>
