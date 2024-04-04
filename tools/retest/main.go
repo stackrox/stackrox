@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/google/go-github/v60/github"
 )
@@ -42,6 +43,10 @@ func main() {
 		prDetails, _, err := client.PullRequests.Get(ctx, "stackrox", "stackrox", prNumber)
 		handleError(err)
 
+		if isGHACheckFailing(ctx, client, prDetails.GetHead().GetSHA()) {
+			continue
+		}
+
 		var statuses []Status
 		statusRequest, err := http.NewRequest("GET", prDetails.GetStatusesURL(), nil)
 		handleError(err)
@@ -65,6 +70,23 @@ func main() {
 	}
 }
 
+func isGHACheckFailing(ctx context.Context, client *github.Client, lastCommit string) bool {
+	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, "stackrox", "stackrox", lastCommit, &github.ListCheckRunsOptions{
+		Status: ptr("completed"),
+		Filter: ptr("latest"),
+	})
+	handleError(err)
+	for _, check := range checks.CheckRuns {
+		ghaUrlPrefix := "https://api.github.com/repos/stackrox/stackrox/check-runs/"
+		if check.GetConclusion() == "failure" &&
+			strings.HasPrefix(check.GetURL(), ghaUrlPrefix) {
+			log.Printf("%s is failing: %s", check.GetName(), check.GetHTMLURL())
+		}
+		return true
+	}
+	return false
+}
+
 type Status struct {
 	Context string `json:"context"`
 	State   string `json:"state"`
@@ -74,4 +96,8 @@ func handleError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func ptr[T any](in T) *T {
+	return &in
 }
