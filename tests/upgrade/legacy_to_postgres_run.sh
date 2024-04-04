@@ -295,7 +295,7 @@ download_roxctl() {
     esac
 
     info "Download roxctl $version"
-    curl --retry 3 -sS --fail -o "${output_dir}/roxctl" \
+    curl --retry 3 -v --fail -o "${output_dir}/roxctl" \
         "https://mirror.openshift.com/pub/rhacs/assets/${version}/bin/${host_os}/roxctl${platform}"
     chmod +x "${output_dir}/roxctl"
     ${output_dir}/roxctl version
