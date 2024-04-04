@@ -15,6 +15,6 @@ func ServiceTypeToSlugName(ty storage.ServiceType) string {
 		return ""
 	}
 	tyName = strings.ToLower(tyName)
-	tyName = strings.Replace(tyName, "_", "-", -1)
+	tyName = strings.ReplaceAll(tyName, "_", "-")
 	return tyName
 }
