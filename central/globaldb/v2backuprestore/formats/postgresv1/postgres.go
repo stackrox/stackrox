@@ -43,7 +43,7 @@ func checkPostgresSize(_ common.RestoreFileContext, fileReader io.Reader, size i
 		return nil
 	}
 
-	restoreBytes, err := strconv.ParseInt(string(bytes[:]), 10, 64)
+	restoreBytes, err := strconv.ParseInt(string(bytes), 10, 64)
 	if err != nil {
 		log.Warnf("Could not determine free disk space for Postgres: %v. Assuming free space is sufficient.", err)
 		return nil
