@@ -4,6 +4,11 @@
     "title": "api/v1/alert_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "AlertService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -98,7 +103,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -180,7 +185,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -213,7 +218,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -301,7 +306,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -377,7 +382,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -453,7 +458,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -484,7 +489,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -500,7 +505,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1ResolveAlertRequest"
+              "$ref": "#/definitions/AlertServiceResolveAlertBody"
             }
           }
         ],
@@ -523,7 +528,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -539,7 +544,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1SnoozeAlertRequest"
+              "$ref": "#/definitions/AlertServiceSnoozeAlertBody"
             }
           }
         ],
@@ -562,7 +567,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -630,7 +635,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageContainerImage"
+          "$ref": "#/definitions/storageContainerImage",
+          "title": "@gotags: search:\"-\" sql:\"ignore-fks,ignore-index\""
         },
         "name": {
           "type": "string"
@@ -641,7 +647,8 @@
       "type": "object",
       "properties": {
         "action": {
-          "$ref": "#/definitions/storageEnforcementAction"
+          "$ref": "#/definitions/storageEnforcementAction",
+          "title": "@gotags: search:\"Enforcement\""
         },
         "message": {
           "type": "string"
@@ -669,10 +676,42 @@
         "processes": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          }
+          },
+          "title": "@gotags: sql:\"ignore-fks\""
         }
       }
+    },
+    "AlertResource": {
+      "type": "object",
+      "properties": {
+        "resourceType": {
+          "$ref": "#/definitions/AlertResourceResourceType",
+          "title": "@gotags: search:\"Resource Type,store\""
+        },
+        "name": {
+          "type": "string",
+          "title": "@gotags: search:\"Resource\""
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "clusterName": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "namespaceId": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        }
+      },
+      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "AlertResourceResourceType": {
       "type": "string",
@@ -688,6 +727,26 @@
       ],
       "default": "UNKNOWN"
     },
+    "AlertServiceResolveAlertBody": {
+      "type": "object",
+      "properties": {
+        "whitelist": {
+          "type": "boolean"
+        },
+        "addToBaseline": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AlertServiceSnoozeAlertBody": {
+      "type": "object",
+      "properties": {
+        "snoozeTill": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "AlertViolation": {
       "type": "object",
       "properties": {
@@ -698,7 +757,8 @@
           "$ref": "#/definitions/ViolationKeyValueAttrs"
         },
         "networkFlowInfo": {
-          "$ref": "#/definitions/ViolationNetworkFlowInfo"
+          "$ref": "#/definitions/ViolationNetworkFlowInfo",
+          "title": "@gotags: search:\"-\" sql:\"-\""
         },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
@@ -730,6 +790,7 @@
         "events": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1AlertEvent"
           }
         }
@@ -744,6 +805,7 @@
         "severities": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/ClusterAlertsAlertEvents"
           }
         }
@@ -767,6 +829,7 @@
         "counts": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AlertGroupAlertCounts"
           }
         }
@@ -787,19 +850,24 @@
       "type": "object",
       "properties": {
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster,store\""
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Namespace,store\""
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster ID,store\" sql:\"type(uuid)\""
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Namespace ID\" sql:\"type(uuid)\""
         },
         "resourceType": {
-          "$ref": "#/definitions/storageListAlertResourceType"
+          "$ref": "#/definitions/storageListAlertResourceType",
+          "title": "@gotags: search:\"Resource Type,store\""
         }
       },
       "description": "Fields common to all entities that an alert might belong to."
@@ -808,7 +876,8 @@
       "type": "object",
       "properties": {
         "SORTName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"SORT_Policy,hidden,analyzer=keyword\""
         }
       }
     },
@@ -816,7 +885,8 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Resource\""
         }
       }
     },
@@ -863,7 +933,8 @@
           "format": "int64"
         },
         "parentExecFilePath": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: policy:\"Process Ancestor\""
         }
       }
     },
@@ -873,6 +944,7 @@
         "attrs": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/KeyValueAttrsKeyValueAttr"
           }
         }
@@ -892,27 +964,9 @@
         }
       }
     },
-    "protobufAny": {
+    "googlerpcStatus": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
-        }
-      },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "runtimeError": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -923,34 +977,51 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
       }
     },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
     "storageAlert": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "Internal use only // @gotags: search:\"Alert ID,hidden\" sensorhash:\"ignore\" sql:\"pk,type(uuid)\""
         },
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "title": "@gotags: sql:\"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)\""
         },
         "lifecycleStage": {
-          "$ref": "#/definitions/storageLifecycleStage"
+          "$ref": "#/definitions/storageLifecycleStage",
+          "title": "@gotags: search:\"Lifecycle Stage\" sql:\"index=btree\""
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster ID,store\" sql:\"type(uuid)\""
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster,store\""
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Namespace,store\""
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Namespace ID\" sql:\"type(uuid)\""
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
@@ -958,40 +1029,46 @@
         },
         "image": {
           "$ref": "#/definitions/storageContainerImage",
+          "description": "@gotags: sql:\"ignore-fks,ignore-index\"",
           "title": "Represents an alert on a container image.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "resource": {
-          "$ref": "#/definitions/storageAlertResource",
+          "$ref": "#/definitions/AlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AlertViolation"
           },
-          "description": "For run-time phase alert, a maximum of 40 violations are retained."
+          "description": "For run-time phase alert, a maximum of 40 violations are retained.\n\n@gotags: sensorhash:\"ignore\" search:\"-\""
         },
         "processViolation": {
-          "$ref": "#/definitions/AlertProcessViolation"
+          "$ref": "#/definitions/AlertProcessViolation",
+          "title": "@gotags: search:\"-\""
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
         },
         "time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: sensorhash:\"ignore\" search:\"Violation Time\""
         },
         "firstOccurred": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: sensorhash:\"ignore\""
         },
         "resolvedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
+          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED.\n\n@gotags: sensorhash:\"ignore\""
         },
         "state": {
-          "$ref": "#/definitions/storageViolationState"
+          "$ref": "#/definitions/storageViolationState",
+          "title": "@gotags: search:\"Violation State,store\" sql:\"index=btree\""
         },
         "snoozeTill": {
           "type": "string",
@@ -1003,35 +1080,43 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Deployment ID,store,hidden\" sql:\"index=hash,type(uuid)\""
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Deployment,store\""
         },
         "type": {
           "type": "string"
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: sensorhash:\"ignore\""
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "containers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AlertDeploymentContainer"
           }
         },
@@ -1039,36 +1124,14 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: sensorhash:\"ignore\""
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "@gotags: search:\"Inactive Deployment\""
         }
       }
-    },
-    "storageAlertResource": {
-      "type": "object",
-      "properties": {
-        "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
-        },
-        "name": {
-          "type": "string"
-        },
-        "clusterId": {
-          "type": "string"
-        },
-        "clusterName": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "namespaceId": {
-          "type": "string"
-        }
-      },
-      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "storageBooleanOperator": {
       "type": "string",
@@ -1082,7 +1145,8 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Sha,store,hidden\" sql:\"fk(Image:id),no-fk-constraint,index=hash\""
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -1161,16 +1225,20 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Registry,store\""
         },
         "remote": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Remote,store\""
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image Tag,store\""
         },
         "fullName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Image,store,analyzer=standard\""
         }
       }
     },
@@ -1203,24 +1271,28 @@
           "type": "string"
         },
         "lifecycleStage": {
-          "$ref": "#/definitions/storageLifecycleStage"
+          "$ref": "#/definitions/storageLifecycleStage",
+          "title": "@gotags: search:\"Lifecycle Stage,store\""
         },
         "time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Violation Time\""
         },
         "policy": {
           "$ref": "#/definitions/storageListAlertPolicy"
         },
         "state": {
-          "$ref": "#/definitions/storageViolationState"
+          "$ref": "#/definitions/storageViolationState",
+          "title": "@gotags: search:\"Violation State,store\""
         },
         "enforcementCount": {
           "type": "integer",
           "format": "int32"
         },
         "enforcementAction": {
-          "$ref": "#/definitions/storageEnforcementAction"
+          "$ref": "#/definitions/storageEnforcementAction",
+          "title": "@gotags: search:\"Enforcement\""
         },
         "commonEntityInfo": {
           "$ref": "#/definitions/ListAlertCommonEntityInfo"
@@ -1239,29 +1311,32 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Deployment ID,store,hidden\""
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Deployment,store\""
         },
         "clusterName": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         },
         "namespace": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         },
         "clusterId": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "@gotags: search:\"Inactive Deployment\""
         },
         "namespaceId": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         }
       }
     },
@@ -1269,13 +1344,16 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Policy ID,store,hidden\""
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Policy,store\""
         },
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "title": "@gotags: search:\"Severity,store\""
         },
         "description": {
           "type": "string"
@@ -1284,7 +1362,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Category,store\""
         },
         "developerInternalFields": {
           "$ref": "#/definitions/ListAlertPolicyDevFields",
@@ -1324,13 +1403,16 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Policy ID,store,hidden\" sql:\"pk\""
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Policy,store\" sql:\"unique\""
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Description\""
         },
         "rationale": {
           "type": "string"
@@ -1339,19 +1421,22 @@
           "type": "string"
         },
         "disabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "@gotags: search:\"Disabled\""
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "@gotags: search:\"Category,store\""
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
-          }
+          },
+          "title": "@gotags: search:\"Lifecycle Stage,store\""
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource"
@@ -1359,24 +1444,27 @@
         "exclusions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageExclusion"
           }
         },
         "scope": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageScope"
           }
         },
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "title": "@gotags: search:\"Severity,store\""
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
           },
-          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\n\n@gotags: search:\"Enforcement\""
         },
         "notifiers": {
           "type": "array",
@@ -1386,19 +1474,20 @@
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "title": "@gotags: search:\"Policy Last Updated\""
         },
         "SORTName": {
           "type": "string",
-          "description": "For internal use only."
+          "description": "For internal use only.\n\n@gotags: search:\"SORT_Policy,hidden,analyzer=keyword\""
         },
         "SORTLifecycleStage": {
           "type": "string",
-          "description": "For internal use only."
+          "description": "For internal use only.\n\n@gotags: search:\"SORT_Lifecycle Stage,hidden\""
         },
         "SORTEnforcement": {
           "type": "boolean",
-          "description": "For internal use only."
+          "description": "For internal use only.\n\n@gotags: search:\"SORT_Enforcement,hidden\""
         },
         "policyVersion": {
           "type": "string"
@@ -1406,12 +1495,14 @@
         "policySections": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storagePolicySection"
           }
         },
         "mitreAttackVectors": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/PolicyMitreAttackVectors"
           }
         },
@@ -1444,6 +1535,7 @@
         "values": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storagePolicyValue"
           }
         }
@@ -1458,6 +1550,7 @@
         "policyGroups": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storagePolicyGroup"
           }
         }
@@ -1476,30 +1569,37 @@
       "properties": {
         "id": {
           "type": "string",
+          "description": "@gotags: search:\"Process ID,store,hidden\"  sql:\"pk,type(uuid)\"",
           "title": "A unique UUID for the Indicator message"
         },
         "deploymentId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Deployment ID,store,hidden\" policy:\",prefer-parent\" sql:\"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)\""
         },
         "containerName": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Container Name,hidden\" policy:\",prefer-parent\""
         },
         "podId": {
           "type": "string",
+          "description": "@gotags: search:\"Pod ID,hidden\"",
           "title": "Pod name"
         },
         "podUid": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Pod UID,hidden\" sql:\"index=hash,type(uuid)\""
         },
         "signal": {
           "$ref": "#/definitions/storageProcessSignal",
           "title": "A process signal message passed from Collector to Sensor"
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Cluster ID,store,hidden\" policy:\",prefer-parent\" sql:\"type(uuid)\""
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: search:\"Namespace,store,hidden\" policy:\",prefer-parent\""
         },
         "containerStartTime": {
           "type": "string",
@@ -1520,23 +1620,28 @@
         },
         "containerId": {
           "type": "string",
+          "description": "@gotags: search:\"Container ID,hidden\"",
           "title": "ID of container associated with this process"
         },
         "time": {
           "type": "string",
           "format": "date-time",
+          "description": "@gotags: search:\"Process Creation Time,hidden\"",
           "title": "Process creation time"
         },
         "name": {
           "type": "string",
+          "description": "@gotags: search:\"Process Name\"",
           "title": "Process name"
         },
         "args": {
           "type": "string",
+          "description": "@gotags: search:\"Process Arguments\"",
           "title": "Process arguments"
         },
         "execFilePath": {
           "type": "string",
+          "description": "@gotags: search:\"Process Path\"",
           "title": "Process executable file path"
         },
         "pid": {
@@ -1547,6 +1652,7 @@
         "uid": {
           "type": "integer",
           "format": "int64",
+          "description": "@gotags: search:\"Process UID\"",
           "title": "Real user ID"
         },
         "gid": {
@@ -1568,6 +1674,7 @@
         "lineageInfo": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/ProcessSignalLineageInfo"
           },
           "title": "Process LineageInfo"
@@ -1686,6 +1793,7 @@
         "clusters": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/GetAlertTimeseriesResponseClusterAlerts"
           }
         }
@@ -1697,6 +1805,7 @@
         "groups": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/GetAlertsCountsResponseAlertGroup"
           }
         }
@@ -1708,6 +1817,7 @@
         "alertsByPolicies": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1GetAlertsGroupResponsePolicyGroup"
           }
         }
@@ -1742,6 +1852,7 @@
         "alerts": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageListAlert"
           }
         }
@@ -1764,6 +1875,7 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."
@@ -1782,37 +1894,11 @@
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
-    "v1ResolveAlertRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "whitelist": {
-          "type": "boolean"
-        },
-        "addToBaseline": {
-          "type": "boolean"
-        }
-      }
-    },
     "v1ResolveAlertsRequest": {
       "type": "object",
       "properties": {
         "query": {
           "type": "string"
-        }
-      }
-    },
-    "v1SnoozeAlertRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },

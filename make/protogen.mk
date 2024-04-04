@@ -41,8 +41,8 @@ endif
 
 $(call go-tool, PROTOC_GEN_GO_BIN, github.com/gogo/protobuf/protoc-gen-gofast)
 $(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
-$(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger, tools/proto)
-$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway, tools/proto)
+$(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2, tools/proto)
+$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway, tools/proto)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
 
 ##############
@@ -229,8 +229,8 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR:%=%,)allow_colon_final_segments=true,logtostderr=true:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
+		--grpc-gateway_out=$(M_ARGS_STR:%=%,)logtostderr=true:$(GENERATED_BASE_PATH) \
+		$<
 
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
@@ -245,8 +245,8 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
-		$(dir $<)/*.proto
+		--openapiv2_out=$(M_ARGS_STR:%=%,)logtostderr=true:$(GENERATED_BASE_PATH) \
+		$<
 
 
 $(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
@@ -259,7 +259,7 @@ endif
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
+		--openapiv2_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$<
 
 # Generate the docs from the merged swagger specs.
