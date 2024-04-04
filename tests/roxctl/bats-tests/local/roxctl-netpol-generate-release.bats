@@ -137,6 +137,14 @@ teardown() {
     assert_line --index 5 'doc: 2'
 }
 
+@test "roxctl-release netpol generate fails with dns port set to 0" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport 0
+    assert_failure
+    assert_output --regexp 'ERROR:.*illegal port number'
+}
+
 @test "roxctl-release netpol generate produces no output when all yamls are templated" {
     mkdir -p "$out_dir"
     write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"

@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/netpol/resources"
 	v1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
@@ -101,6 +103,11 @@ func (cmd *netpolGenerateCmd) validate() error {
 		if err := cmd.setupPath(cmd.Options.OutputFilePath); err != nil {
 			return errors.Wrap(err, "failed to set up file path")
 		}
+	}
+
+	portErrs := validation.IsValidPortNum(int(cmd.Options.DNSPort))
+	if len(portErrs) > 0 {
+		return fmt.Errorf("illegal port number: %s", portErrs[0])
 	}
 
 	return nil
