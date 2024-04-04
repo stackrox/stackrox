@@ -1,13 +1,14 @@
 package check412
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -84,5 +85,5 @@ func sshPolicyEnforced(ctx framework.ComplianceContext) bool {
 }
 
 func policyHasSSH(policy *storage.Policy) bool {
-	return sliceutils.Find(policyfields.GetProcessNames(policy), "sshd") >= 0
+	return slices.Index(policyfields.GetProcessNames(policy), "sshd") >= 0
 }
