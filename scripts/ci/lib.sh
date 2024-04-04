@@ -1193,6 +1193,8 @@ post_process_test_results() {
         else
             if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
                 create_jiras="false"
+            elif [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+                create_jiras="false"
             else
                 create_jiras="true"
             fi
