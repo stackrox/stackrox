@@ -84,7 +84,7 @@ test_upgrade_paths() {
     ########################################################################################
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
     ########################################################################################
-    set -x
+    set -euox pipefail
 
     deploy_earlier_rocks_central
     wait_for_api
