@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 
-import { vulnManagementPath } from 'routePaths';
+import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import DescriptionListItem from 'Components/DescriptionListItem';
 
 type ContainerImageProps = {
@@ -33,7 +33,11 @@ function ContainerImage({ image }: ContainerImageProps): ReactElement {
     return (
         <DescriptionListItem
             term="Image name"
-            desc={<Link to={`${vulnManagementPath}/image/${image.id}`}>{image.name.fullName}</Link>}
+            desc={
+                <Link to={`${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`}>
+                    {image.name.fullName}
+                </Link>
+            }
         />
     );
 }
