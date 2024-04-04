@@ -2,6 +2,7 @@ package concurrency
 
 import (
 	"bytes"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dbhelper"
@@ -150,8 +151,8 @@ func (rks *rangeKeySetImpl) Equals(in KeySet) bool {
 
 func (rks *rangeKeySetImpl) Clone() KeySet {
 	return &rangeKeySetImpl{
-		lower: sliceutils.ShallowClone(rks.lower),
-		upper: sliceutils.ShallowClone(rks.upper),
+		lower: slices.Clone(rks.lower),
+		upper: slices.Clone(rks.upper),
 	}
 }
 
@@ -192,7 +193,7 @@ func (pkr *prefixKeySetImpl) Equals(in KeySet) bool {
 
 func (pkr *prefixKeySetImpl) Clone() KeySet {
 	return &prefixKeySetImpl{
-		prefix: sliceutils.ShallowClone(pkr.prefix),
+		prefix: slices.Clone(pkr.prefix),
 	}
 }
 
