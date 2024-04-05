@@ -127,8 +127,20 @@ COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
-# TODO: others
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
+RUN GOARCH=$(uname -m) ; \
+    case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
+    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
+    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
+
+# TODO: rhacs-main/Dockerfile.in?ref_type=heads#L107-122
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
@@ -160,3 +172,5 @@ ENV PATH="/stackrox:$PATH" \
     ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
 
 USER 4000:4000
+
+# TODO: rhacs-main/Dockerfile.in?ref_type=heads#L127
