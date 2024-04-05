@@ -132,10 +132,10 @@ function InviteUsersModal(): ReactElement | null {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authProviders]); // ignore `setFieldValue` as a dependency
 
-    function onChange(value, event) {
-        // handle PF4 inconsistency with Select inputs, where value is ID, and event is Value
-        if (value === 'role' || value === 'provider') {
-            return setFieldValue(value, event);
+    function onChange(event, value) {
+        // handle PF5 inconsistency with deprecated Select inputs, where event is ID, and value is Value
+        if (event === 'role' || event === 'provider') {
+            return setFieldValue(event, value);
         }
         return setFieldValue(event.target.id, value);
     }
