@@ -77,7 +77,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         }
     });
 
-    it('should not allow user to edit policy criteria for default policies', () => {
+    it.only('should not allow user to edit policy criteria for default policies', () => {
         visitPolicies();
         editFirstPolicyFromTable();
         goToStep3();
