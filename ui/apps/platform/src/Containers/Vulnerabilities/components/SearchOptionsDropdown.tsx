@@ -26,7 +26,7 @@ function SearchOptionsDropdown({
             variant="single"
             toggleAriaLabel="search options filter menu toggle"
             aria-label="search options filter menu items"
-            onToggle={() => onToggle}
+            onToggle={(_e, v) => onToggle(v)}
             onSelect={onSearchOptionSelect}
             selections={searchOption.value}
             isOpen={isOpen}
