@@ -63,9 +63,9 @@ const labelLinkCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) =
     return typeof datum === 'number' ? chartData[datum - 1]?.labelLink ?? '' : '';
 };
 
-// const labelTextCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-//     return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
-// };
+const labelTextCallback = ({ datum }: { datum?: number }, chartData: ChartData[]) => {
+    return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
+};
 
 function makeChartData(
     searchFilter: SearchFilter,
@@ -135,7 +135,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                     tickLabelComponent={
                         <LinkableChartLabel
                             linkWith={(props) => labelLinkCallback(props, chartData)}
-                            // text={(props) => labelTextCallback(props, chartData)}
+                            text={(props) => labelTextCallback(props, chartData)}
                         />
                     }
                 />
