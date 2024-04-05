@@ -159,7 +159,7 @@ function FilterAutocompleteSelect({
                 onSelect={(e, value) => {
                     onSelect(value);
                 }}
-                onToggle={() => onToggle}
+                onToggle={(_e, v) => onToggle(v)}
                 isOpen={isOpen}
                 placeholderText={`Filter results by ${searchOption.label}`}
                 variant="typeaheadmulti"

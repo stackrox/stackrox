@@ -5,6 +5,7 @@ interface SelectToggleReturn {
     isOpen: boolean;
     /** Callback that fires when the toggle element is clicked in the component */
     onToggle: (
+        // TODO: add this as a param once all Selects are using PF5
         // event:
         //     | Event
         //     | React.MouseEvent<Element, MouseEvent>
@@ -14,6 +15,7 @@ interface SelectToggleReturn {
     ) => void;
     /** Function that sets the toggle state of the component */
     toggleSelect: (
+        // TODO: add this as a param once all Selects are using PF5
         // event:
         //     | Event
         //     | React.MouseEvent<Element, MouseEvent>
