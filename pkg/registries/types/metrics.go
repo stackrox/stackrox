@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"os"
 
@@ -17,6 +18,17 @@ type MetricsHandler struct {
 	requestCounter    *prometheus.CounterVec
 	timeoutCounter    *prometheus.CounterVec
 	durationHistogram *prometheus.HistogramVec
+}
+
+// roundedDurationBuckets produces exponential buckets rounded to the next millisecond.
+// The smallest bucket contains all durations smaller than 0.1 seconds. The largest
+// bucket is set to the registry client timeout.
+func roundedDurationBuckets() []float64 {
+	buckets := prometheus.ExponentialBucketsRange(0.1, env.RegistryClientTimeout.DurationSetting().Seconds(), 16)
+	for i := range buckets {
+		buckets[i] = math.Round(buckets[i]*1000) / 1000
+	}
+	return buckets
 }
 
 // NewMetricsHandler creates a new metrics handler.
@@ -45,9 +57,7 @@ func NewMetricsHandler(subsystem metrics.Subsystem) *MetricsHandler {
 			Subsystem: subsystem.String(),
 			Name:      "registry_client_request_duration_seconds",
 			Help:      "A histogram of registry response times.",
-			Buckets: prometheus.ExponentialBucketsRange(
-				0.1, env.RegistryClientTimeout.DurationSetting().Seconds(), 16,
-			),
+			Buckets:   roundedDurationBuckets(),
 		},
 		[]string{"type"},
 	)
