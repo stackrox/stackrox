@@ -525,10 +525,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		"namespace": container.Namespace,
 	}
 
-	defer func() {
-		status.used = true
-	}()
-
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
@@ -544,6 +540,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if isFresh {
 			return
 		}
+
+		defer func() {
+			status.used = true
+		}()
 
 		if extSrc == nil {
 			entityType := networkgraph.InternetEntity()
@@ -601,6 +601,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if !status.used {
 			flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
 		}
+		status.used = true
 		if conn.incoming {
 			// Only report incoming connections from outside of the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
