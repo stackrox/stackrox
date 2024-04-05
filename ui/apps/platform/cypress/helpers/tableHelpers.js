@@ -14,7 +14,7 @@ export function getTableRowActionButtonByName(name) {
         .get('a')
         .contains(exactName)
         .then(($el) => {
-            return cy.wrap($el).parent().siblings('td').find('button[aria-label="Actions"]');
+            return cy.wrap($el).parent().siblings('td').find('button[aria-label="Kebab toggle"]');
         });
 }
 
