@@ -224,7 +224,7 @@ export function clickEntityNameInTable(entitiesKey, entityName) {
 
 export function clickRowActionMenuItemInTable(entityName, menuItemText) {
     cy.get(
-        `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-v5-c-table__action .pf-v5-c-dropdown__toggle`
+        `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-v5-c-table__action .pf-v5-c-menu-toggle`
     ).click();
     cy.get(`td.pf-v5-c-table__action button[role="menuitem"]:contains("${menuItemText}")`).click();
 }
