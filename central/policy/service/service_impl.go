@@ -108,8 +108,6 @@ type serviceImpl struct {
 	mitreStore        mitreDS.AttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
-
-	buildTimePolicies detection.PolicySet
 	lifecycleManager  lifecycle.Manager
 	processor         notifier.Processor
 	metadataCache     expiringcache.Cache
@@ -568,23 +566,11 @@ func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set
 }
 
 func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
-	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
-
-	if policies.AppliesAtBuildTime(policy) {
-		errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
-	} else {
-		s.buildTimePolicies.RemovePolicy(policy.GetId())
-	}
-
-	errorList.AddError(s.lifecycleManager.UpsertPolicy(policy))
-	return errorList.ToError()
+	return errors.Wrap(s.lifecycleManager.UpsertPolicy(policy), "adding policy to detection cache")
 }
 
 func (s *serviceImpl) removeActivePolicy(id string) error {
-	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	s.buildTimePolicies.RemovePolicy(id)
-	errorList.AddError(s.lifecycleManager.RemovePolicy(id))
-	return errorList.ToError()
+	return errors.Wrap(s.lifecycleManager.RemovePolicy(id), "removing policy from detection: ")
 }
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {

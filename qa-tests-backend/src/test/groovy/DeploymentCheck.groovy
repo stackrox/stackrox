@@ -1,7 +1,9 @@
 import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.Rbac
+import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.K8sRole
 import objects.K8sRoleBinding
@@ -12,12 +14,15 @@ import objects.NetworkPolicyTypes
 import services.ClusterService
 import services.DetectionService
 import services.NetworkPolicyService
+import services.PolicyCategoryService
+import services.PolicyService
 
 import spock.lang.Shared
 import spock.lang.Tag
 
 class DeploymentCheck extends BaseSpecification {
     private final static String DEPLOYMENT_CHECK = "check-deployments"
+    private final static String DEPLOYMENT_CHECK_POLICY_CATEGORY = "Deployment Check"
 
     @Shared
     private String clusterId
@@ -29,6 +34,10 @@ class DeploymentCheck extends BaseSpecification {
     private K8sServiceAccount serviceAccount
     @Shared
     private K8sRoleBinding roleBinding
+    @Shared
+    private String policyCategoryID
+    @Shared
+    private String policyID
 
     def setupSpec() {
         // Ensure a secured cluster exists
@@ -73,6 +82,65 @@ class DeploymentCheck extends BaseSpecification {
         orchestrator.deleteNetworkPolicy(netPol)
         orchestrator.deleteNamespace(DEPLOYMENT_CHECK)
         orchestrator.waitForNamespaceDeletion(DEPLOYMENT_CHECK)
+        if (policyCategoryID != "") {
+            PolicyCategoryService.deletePolicyCategory(policyCategoryID)
+        }
+        if (policyID != "") {
+            PolicyService.deletePolicy(policyID)
+        }
+    }
+
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("DeploymentCheck")
+    def "Test Deployment Check - Filtered by Category"() {
+        given:
+        "create the builder, policy category, and policy"
+        def image = "custom-registry"
+        def builder = DetectionServiceOuterClass.DeployYAMLDetectionRequest.newBuilder()
+        builder.setYaml(createDeploymentYaml(DEPLOYMENT_CHECK, DEPLOYMENT_CHECK, "custom-registry/nginx:latest"))
+        builder.setNamespace(DEPLOYMENT_CHECK)
+        builder.setCluster(clusterId)
+        builder.setPolicyCategories(0, DEPLOYMENT_CHECK_POLICY_CATEGORY)
+        def req = builder.build()
+        DetectionServiceOuterClass.DeployDetectionResponse res
+        policyCategoryID = PolicyCategoryService.createNewPolicyCategory(DEPLOYMENT_CHECK_POLICY_CATEGORY)
+        def policy = PolicyOuterClass.Policy.newBuilder().
+                addLifecycleStages(PolicyOuterClass.LifecycleStage.BUILD).
+                addCategories(DEPLOYMENT_CHECK_POLICY_CATEGORY).
+                setName(DEPLOYMENT_CHECK).
+                setDisabled(false).
+                setSeverityValue(2).
+                addPolicySections(PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                        PolicyOuterClass.PolicyGroup.newBuilder().setFieldName("Image Registry").
+                                setBooleanOperator(PolicyOuterClass.BooleanOperator.AND).
+                                addAllValues(
+                                        [image].collect { PolicyOuterClass.
+                                                PolicyValue.newBuilder().setValue(it).build() }
+                                ).build()
+                )).
+                addAllScope([DEPLOYMENT_CHECK].collect
+                        { ScopeOuterClass.Scope.newBuilder().setNamespace(DEPLOYMENT_CHECK).build() }).
+                build()
+        policyID = PolicyService.createNewPolicy(policy)
+
+        when:
+        withRetry(20, 5) {
+            res = DetectionService.getDetectDeploytimeFromYAML(req)
+        }
+
+        then:
+        assert res
+        assert res.getRemarks(0).getName() == DEPLOYMENT_CHECK
+        assert res.getRunsCount() == 1
+        def run = res.getRuns(0)
+        assert run
+        assert run.getAlertsCount() == 1
+        def alert = run.getAlerts(0)
+        assert alert
+        assert alert.getPolicy().getName() == DEPLOYMENT_CHECK
+        assert alert.getPolicy().getCategoriesCount() == 1
+        assert alert.getPolicy().getCategories(0) == DEPLOYMENT_CHECK_POLICY_CATEGORY
     }
 
     @Tag("BAT")
@@ -132,7 +200,7 @@ class DeploymentCheck extends BaseSpecification {
         assert !res.getRemarksList().findAll { it.getName() == secondDeployment }.isEmpty()
     }
 
-    static String createDeploymentYaml(String deploymentName, String namespace) {
+    static String createDeploymentYaml(String deploymentName, String namespace, String image = "nginx:latest") {
         """
 apiVersion: apps/v1
 kind: Deployment
@@ -154,9 +222,9 @@ spec:
       serviceAccountName: check-deployment-sa
       containers:
       - name: nginx
-        image: nginx:latest
+        image: %s
         ports:
         - containerPort: 80
-        """.formatted(deploymentName, namespace, deploymentName, deploymentName, deploymentName)
+        """.formatted(deploymentName, namespace, deploymentName, deploymentName, deploymentName, image)
     }
 }

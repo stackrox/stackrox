@@ -235,8 +235,11 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	// Stash away the category names, since they need to be erased on storage. But the policy insert must happen first,
 	// to get an ID, to satisfy foreign key constraints when policy category edges are added.
 	policyCategories := policy.GetCategories()
-	policy.Categories = []string{}
-	err = ds.storage.Upsert(ctx, policy)
+	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
+	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
+	clonedPolicy := policy.Clone()
+	clonedPolicy.Categories = []string{}
+	err = ds.storage.Upsert(ctx, clonedPolicy)
 	if err != nil {
 		return policy.Id, err
 	}
@@ -269,9 +272,12 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
 		return err
 	}
-	policy.Categories = []string{}
+	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
+	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
+	clonedPolicy := policy.Clone()
+	clonedPolicy.Categories = []string{}
 
-	return ds.storage.Upsert(ctx, policy)
+	return ds.storage.Upsert(ctx, clonedPolicy)
 }
 
 // RemovePolicy removes a policy from the storage.
