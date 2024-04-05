@@ -1,7 +1,7 @@
 # Produces an image containing a vulnerable version of sqlite-jdbc
 #
 # Created to validate the detection of CVE-2023-32697 by ACS Scanner.
-# 
+#
 # Pushed to: "quay.io/rhacs-eng/qa:sqlite-jdbc-CVE-2023-32697".
 
 ARG URL=https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.41.2.1/sqlite-jdbc-3.41.2.1.jar
