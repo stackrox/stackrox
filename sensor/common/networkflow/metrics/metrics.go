@@ -12,6 +12,8 @@ func init() {
 		NetworkFlowMessagesPerNode,
 		ContainerIDMisses,
 		ExternalFlowCounter,
+		InternalFlowCounter,
+		NetworkEntityFlowCounter,
 		HostConnectionsAdded,
 		HostConnectionsRemoved,
 		HostEndpointsAdded,
@@ -47,13 +49,24 @@ var (
 		Name:      "network_flow_misses_container_lookup",
 		Help:      "Total number of misses on container lookup for network flows",
 	})
-	ExternalFlowCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_external_flows",
-		Help:      "Total number of external flows",
-	})
-
+		Help:      "Total number of external flows observed by Sensor enrichment",
+	}, []string{"direction", "namespace"})
+	InternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_internal_flows",
+		Help:      "Total number of internal flows observed by Sensor enrichment",
+	}, []string{"direction", "namespace"})
+	NetworkEntityFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_entity_flows",
+		Help:      "Total number of network entity flows observed by Sensor enrichment",
+	}, []string{"direction", "namespace"})
 	HostConnectionsAdded = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
