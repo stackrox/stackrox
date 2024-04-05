@@ -207,8 +207,7 @@
           "$ref": "#/definitions/storageOperationStatus"
         },
         "requestor": {
-          "$ref": "#/definitions/storageSlimUser",
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          "$ref": "#/definitions/storageSlimUser"
         }
       }
     },
@@ -224,12 +223,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"User ID\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"User Name\""
+          "type": "string"
         }
       }
     },

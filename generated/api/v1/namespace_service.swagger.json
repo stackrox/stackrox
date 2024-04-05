@@ -155,27 +155,22 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace ID\" sql:\"pk,type(uuid)\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store\""
+          "type": "string"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+          "type": "string"
         },
         "clusterName": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster\""
+          "type": "string"
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Namespace Label\""
+          }
         },
         "creationTime": {
           "type": "string",
@@ -189,8 +184,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Namespace Annotation\""
+          }
         }
       }
     },
@@ -281,7 +275,7 @@
           "$ref": "#/definitions/v1Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v1SortOption": {
       "type": "object",

@@ -225,8 +225,7 @@
       "type": "object",
       "properties": {
         "cve": {
-          "type": "string",
-          "title": "@gotags: search:\"CVE,store\" sql:\"index=hash\""
+          "type": "string"
         },
         "summary": {
           "type": "string"
@@ -237,12 +236,12 @@
         "publishedOn": {
           "type": "string",
           "format": "date-time",
-          "description": "This indicates the timestamp when the cve was first published in the cve feeds.\n\n@gotags: search:\"CVE Published On\""
+          "description": "This indicates the timestamp when the cve was first published in the cve feeds."
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the system.\n\n@gotags: search:\"CVE Created Time\""
+          "description": "Time when the CVE was first seen in the system."
         },
         "lastModified": {
           "type": "string",
@@ -453,8 +452,7 @@
           "$ref": "#/definitions/storageContainerRuntime"
         },
         "version": {
-          "type": "string",
-          "title": "@gotags: search:\"Container Runtime,store\""
+          "type": "string"
         }
       }
     },
@@ -462,12 +460,10 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Component,store\""
+          "type": "string"
         },
         "version": {
-          "type": "string",
-          "title": "@gotags: search:\"Component Version,store\""
+          "type": "string"
         },
         "vulns": {
           "type": "array",
@@ -501,13 +497,11 @@
       "type": "object",
       "properties": {
         "cve": {
-          "type": "string",
-          "title": "@gotags: search:\"CVE,store\""
+          "type": "string"
         },
         "cvss": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"CVSS,store\""
+          "format": "float"
         },
         "summary": {
           "type": "string"
@@ -516,8 +510,7 @@
           "type": "string"
         },
         "fixedBy": {
-          "type": "string",
-          "title": "@gotags: search:\"Fixed By,store,hidden\""
+          "type": "string"
         },
         "scoreVersion": {
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
@@ -530,8 +523,7 @@
         },
         "publishedOn": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"CVE Published On\""
+          "format": "date-time"
         },
         "lastModified": {
           "type": "string",
@@ -545,12 +537,10 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
-          },
-          "title": "@gotags: hash:\"ignore\""
+          }
         },
         "suppressed": {
-          "type": "boolean",
-          "title": "@gotags: search:\"CVE Snoozed\""
+          "type": "boolean"
         },
         "suppressActivation": {
           "type": "string",
@@ -563,20 +553,18 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen, for this specific distro, in the system.\n\n@gotags: policy:\"First System Occurrence Timestamp\" hash:\"ignore\""
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in this image.\n\n@gotags: policy:\"First Image Occurrence Timestamp\" hash:\"ignore\""
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity",
-          "title": "@gotags: policy:\"Severity\""
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
         "state": {
-          "$ref": "#/definitions/storageVulnerabilityState",
-          "title": "@gotags: search:\"Vulnerability State\""
+          "$ref": "#/definitions/storageVulnerabilityState"
         }
       },
       "title": "Next Tag: 21"
@@ -595,11 +583,11 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "A unique ID identifying this node.\n\n@gotags: search:\"Node ID,store\" sql:\"pk,type(uuid)\""
+          "description": "A unique ID identifying this node."
         },
         "name": {
           "type": "string",
-          "description": "The (host)name of the node. Might or might not be the same as ID.\n\n@gotags: search:\"Node,store\""
+          "description": "The (host)name of the node. Might or might not be the same as ID."
         },
         "taints": {
           "type": "array",
@@ -610,31 +598,26 @@
           "title": "Taints on the host"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store\" sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+          "type": "string"
         },
         "clusterName": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster,store\""
+          "type": "string"
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Node Label\""
+          }
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Node Annotation\""
+          }
         },
         "joinedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "@gotags: search:\"Node Join Time,store\"",
           "title": "When the cluster reported the node was added"
         },
         "internalIpAddresses": {
@@ -668,7 +651,7 @@
         },
         "osImage": {
           "type": "string",
-          "description": "From NodeInfo. OS image reported by the node from /etc/os-release.\n\n@gotags: search:\"Operating System,store\""
+          "description": "From NodeInfo. OS image reported by the node from /etc/os-release."
         },
         "kubeletVersion": {
           "type": "string"
@@ -678,47 +661,39 @@
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Last Updated,hidden\""
+          "format": "date-time"
         },
         "k8sUpdated": {
           "type": "string",
           "format": "date-time",
-          "description": "Time we received an update from Kubernetes.\n\n@gotags: sensorhash:\"ignore\""
+          "description": "Time we received an update from Kubernetes."
         },
         "scan": {
-          "$ref": "#/definitions/storageNodeScan",
-          "title": "@gotags: policy:\"Node Scan\""
+          "$ref": "#/definitions/storageNodeScan"
         },
         "components": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"Component Count,store,hidden\""
+          "format": "int32"
         },
         "cves": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"CVE Count,store,hidden\""
+          "format": "int32"
         },
         "fixableCves": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"Fixable CVE Count,store,hidden\""
+          "format": "int32"
         },
         "priority": {
           "type": "string",
-          "format": "int64",
-          "title": "@gotags: search:\"Node Risk Priority,hidden\""
+          "format": "int64"
         },
         "riskScore": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Node Risk Score,hidden\""
+          "format": "float"
         },
         "topCvss": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Node Top CVSS,store\""
+          "format": "float"
         },
         "notes": {
           "type": "array",
@@ -741,8 +716,7 @@
       "properties": {
         "scanTime": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Node Scan Time,store\""
+          "format": "date-time"
         },
         "operatingSystem": {
           "type": "string"
@@ -752,8 +726,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageEmbeddedNodeScanComponent"
-          },
-          "title": "@gotags: sql:\"-\""
+          }
         },
         "notes": {
           "type": "array",
@@ -782,20 +755,16 @@
         },
         "cvss": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: policy:\"CVSS\""
+          "format": "float"
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity",
-          "title": "@gotags: policy:\"Severity\""
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
         "fixedBy": {
-          "type": "string",
-          "title": "@gotags: policy:\"Fixed By\""
+          "type": "string"
         },
         "snoozed": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"CVE Snoozed\""
+          "type": "boolean"
         },
         "snoozeStart": {
           "type": "string",
@@ -811,16 +780,13 @@
       "type": "object",
       "properties": {
         "key": {
-          "type": "string",
-          "title": "@gotags: search:\"Taint Key\""
+          "type": "string"
         },
         "value": {
-          "type": "string",
-          "title": "@gotags: search:\"Taint Value\""
+          "type": "string"
         },
         "taintEffect": {
-          "$ref": "#/definitions/storageTaintEffect",
-          "title": "@gotags: search:\"Taint Effect\""
+          "$ref": "#/definitions/storageTaintEffect"
         }
       }
     },

@@ -85,8 +85,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk,type(uuid)\""
+          "type": "string"
         },
         "name": {
           "type": "string"

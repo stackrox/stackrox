@@ -366,42 +366,34 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Role ID,hidden\" sql:\"pk,type(uuid)\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Role\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store\""
+          "type": "string"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store,hidden\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "clusterName": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster\""
+          "type": "string"
         },
         "clusterRole": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Cluster Role\""
+          "type": "boolean"
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Role Label\""
+          }
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Role Annotation\""
+          }
         },
         "createdAt": {
           "type": "string",
@@ -412,8 +404,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePolicyRule"
-          },
-          "title": "@gotags: sensorhash:\"set\""
+          }
         }
       },
       "title": "Properties of an individual k8s Role or ClusterRole.\n////////////////////////////////////////"
@@ -422,42 +413,35 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Role Binding ID,hidden\" sql:\"pk,type(uuid)\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Role Binding\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store\""
+          "type": "string"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store,hidden\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "clusterName": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster\""
+          "type": "string"
         },
         "clusterRole": {
           "type": "boolean",
-          "description": "ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether\nthe binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is\nempty and cluster role is true, the binding is a cluster role binding.\n\n@gotags: search:\"Cluster Role\""
+          "description": "ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether\nthe binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is\nempty and cluster role is true, the binding is a cluster role binding."
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Role Binding Label\""
+          }
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Role Binding Annotation\""
+          }
         },
         "createdAt": {
           "type": "string",
@@ -471,8 +455,7 @@
           }
         },
         "roleId": {
-          "type": "string",
-          "title": "@gotags: search:\"Role ID\" sql:\"type(uuid)\""
+          "type": "string"
         }
       },
       "title": "Properties of an individual k8s RoleBinding or ClusterRoleBinding.\n////////////////////////////////////////"
@@ -521,12 +504,10 @@
           "title": "ID is derived from base64 of cluster id and name"
         },
         "kind": {
-          "$ref": "#/definitions/storageSubjectKind",
-          "title": "@gotags: search:\"Subject Kind\""
+          "$ref": "#/definitions/storageSubjectKind"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Subject\""
+          "type": "string"
         },
         "namespace": {
           "type": "string"

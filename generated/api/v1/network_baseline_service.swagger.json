@@ -274,7 +274,7 @@
         },
         "default": {
           "type": "boolean",
-          "description": "`default` indicates whether the external source is user-generated or system-generated.\n\n@gotags: search:\"Default External Source,hidden\""
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -333,23 +333,20 @@
       "properties": {
         "deploymentId": {
           "type": "string",
-          "description": "This is the ID of the baseline.\n\n@gotags: sql:\"pk,type(uuid)\""
+          "description": "This is the ID of the baseline."
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,hidden,store\""
+          "type": "string"
         },
         "peers": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselinePeer"
-          },
-          "title": "@gotags: search:\"-\""
+          }
         },
         "forbiddenPeers": {
           "type": "array",
@@ -357,7 +354,7 @@
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselinePeer"
           },
-          "description": "A list of peers that will never be added to the baseline.\nFor now, this contains peers that the user has manually removed.\nThis is used to ensure we don't add it back in the event\nwe see the flow again.\n\n@gotags: search:\"-\""
+          "description": "A list of peers that will never be added to the baseline.\nFor now, this contains peers that the user has manually removed.\nThis is used to ensure we don't add it back in the event\nwe see the flow again."
         },
         "observationPeriodEnd": {
           "type": "string",
@@ -424,12 +421,10 @@
       "type": "object",
       "properties": {
         "type": {
-          "$ref": "#/definitions/storageNetworkEntityInfoType",
-          "title": "@gotags: sql:\"index\""
+          "$ref": "#/definitions/storageNetworkEntityInfoType"
         },
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "deployment": {
           "$ref": "#/definitions/NetworkEntityInfoDeployment"

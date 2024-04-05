@@ -486,8 +486,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\" search:\"Compliance Domain ID,hidden\""
+          "type": "string"
         },
         "cluster": {
           "$ref": "#/definitions/ComplianceDomainCluster"
@@ -526,16 +525,13 @@
       "type": "object",
       "properties": {
         "runId": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\" search:\"Compliance Run ID,hidden\""
+          "type": "string"
         },
         "standardId": {
-          "type": "string",
-          "title": "@gotags: search:\"Standard ID,hidden,store\""
+          "type": "string"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "startTimestamp": {
           "type": "string",
@@ -543,8 +539,7 @@
         },
         "finishTimestamp": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Compliance Run Finished Timestamp,hidden,store\""
+          "format": "date-time"
         },
         "success": {
           "type": "boolean"
@@ -562,8 +557,7 @@
       "type": "object",
       "properties": {
         "domain": {
-          "$ref": "#/definitions/storageComplianceDomain",
-          "title": "@gotags: sql:\"-\""
+          "$ref": "#/definitions/storageComplianceDomain"
         },
         "runMetadata": {
           "$ref": "#/definitions/storageComplianceRunMetadata"
@@ -629,20 +623,16 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Control ID,hidden\""
+          "type": "string"
         },
         "standardId": {
-          "type": "string",
-          "title": "@gotags: search:\"Standard ID,hidden\""
+          "type": "string"
         },
         "groupId": {
-          "type": "string",
-          "title": "@gotags: search:\"Control Group ID,hidden\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Control,store\""
+          "type": "string"
         },
         "description": {
           "type": "string"
@@ -659,16 +649,13 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Control Group ID\""
+          "type": "string"
         },
         "standardId": {
-          "type": "string",
-          "title": "@gotags: search:\"Standard ID,store\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Control Group,store\""
+          "type": "string"
         },
         "description": {
           "type": "string"
@@ -690,16 +677,14 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ComplianceControlGroup"
-          },
-          "title": "@gotags: search:\"-\""
+          }
         },
         "controls": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ComplianceControl"
-          },
-          "title": "@gotags: search:\"-\""
+          }
         }
       }
     },
@@ -707,12 +692,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Standard ID,hidden\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Standard,store,hidden\""
+          "type": "string"
         },
         "description": {
           "type": "string"
@@ -818,7 +801,7 @@
           "$ref": "#/definitions/v1Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v1SortOption": {
       "type": "object",

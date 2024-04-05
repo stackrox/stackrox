@@ -384,16 +384,13 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Registry Scope\""
+          "type": "string"
         },
         "remote": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Remote Scope\""
+          "type": "string"
         },
         "tag": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Tag Scope\""
+          "type": "string"
         }
       }
     },
@@ -405,7 +402,7 @@
           "items": {
             "type": "string"
           },
-          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832.\n\n@gotags: search:\"CVE\""
+          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
         }
       }
     },
@@ -469,12 +466,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Approver User ID\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Approver User Name\""
+          "type": "string"
         }
       }
     },
@@ -493,12 +488,10 @@
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Deferral Update CVEs\""
+          }
         },
         "expiry": {
-          "$ref": "#/definitions/storageRequestExpiry",
-          "title": "@gotags: search:\"-\""
+          "$ref": "#/definitions/storageRequestExpiry"
         }
       }
     },
@@ -512,8 +505,7 @@
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"False Positive Update CVEs\""
+          }
         }
       }
     },
@@ -527,8 +519,7 @@
           "type": "string"
         },
         "user": {
-          "$ref": "#/definitions/storageSlimUser",
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          "$ref": "#/definitions/storageSlimUser"
         },
         "createdAt": {
           "type": "string",
@@ -541,16 +532,16 @@
       "properties": {
         "expiresWhenFixed": {
           "type": "boolean",
-          "description": "Indicates that this request expires when the associated vulnerability is fixed.\n\n@gotags: search:\"Request Expires When Fixed\""
+          "description": "Indicates that this request expires when the associated vulnerability is fixed."
         },
         "expiresOn": {
           "type": "string",
           "format": "date-time",
-          "description": "Indicates the timestamp when this request expires.\n\n@gotags: search:\"Request Expiry Time\""
+          "description": "Indicates the timestamp when this request expires."
         },
         "expiryType": {
           "$ref": "#/definitions/RequestExpiryExpiryType",
-          "description": "This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.\nThis field can be used only for deferral requests.\nThis field indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.\n\n@gotags: search:\"Expiry Type\""
+          "description": "This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.\nThis field can be used only for deferral requests.\nThis field indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable."
         }
       }
     },
@@ -569,12 +560,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Requester User ID\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Requester User Name\""
+          "type": "string"
         }
       }
     },
@@ -582,12 +571,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"User ID\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"User Name\""
+          "type": "string"
         }
       }
     },
@@ -595,46 +582,40 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Request Name\" sql:\"unique\""
+          "type": "string"
         },
         "targetState": {
           "$ref": "#/definitions/storageVulnerabilityState",
-          "description": "Indicates the state the vulnerabilities will move to once the request is complete.\n\n@gotags: search:\"Requested Vulnerability State\""
+          "description": "Indicates the state the vulnerabilities will move to once the request is complete."
         },
         "status": {
           "$ref": "#/definitions/storageRequestStatus",
-          "description": "Indicates the status of a request.\n\n@gotags: search:\"Request Status\""
+          "description": "Indicates the status of a request."
         },
         "expired": {
           "type": "boolean",
-          "description": "Indicates if this request is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting cve observation.\n\n@gotags: search:\"Expired Request\""
+          "description": "Indicates if this request is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting cve observation."
         },
         "requestor": {
-          "$ref": "#/definitions/storageSlimUser",
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          "$ref": "#/definitions/storageSlimUser"
         },
         "approvers": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageSlimUser"
-          },
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          }
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Created Time\""
+          "format": "date-time"
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Last Updated\""
+          "format": "date-time"
         },
         "comments": {
           "type": "array",
@@ -666,8 +647,7 @@
           "$ref": "#/definitions/VulnerabilityRequestCVEs"
         },
         "updatedDeferralReq": {
-          "$ref": "#/definitions/storageDeferralRequest",
-          "title": "@gotags: search:\"-\""
+          "$ref": "#/definitions/storageDeferralRequest"
         },
         "deferralUpdate": {
           "$ref": "#/definitions/storageDeferralUpdate"

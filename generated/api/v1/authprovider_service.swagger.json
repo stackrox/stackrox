@@ -196,7 +196,6 @@
         "parameters": [
           {
             "name": "id",
-            "description": "@gotags: sql:\"pk\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -313,8 +312,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"unique\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -329,8 +327,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: scrub:\"map-values\""
+          }
         },
         "loginUrl": {
           "type": "string",
@@ -498,12 +495,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"unique\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -518,8 +513,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: scrub:\"map-values\""
+          }
         },
         "loginUrl": {
           "type": "string",
@@ -568,7 +562,7 @@
       "properties": {
         "serialStr": {
           "type": "string",
-          "title": "The serial number in decimal representation. // @gotags: sql:\"pk\""
+          "title": "The serial number in decimal representation. // "
         },
         "serial": {
           "type": "string",
@@ -713,7 +707,7 @@
       "properties": {
         "externalToken": {
           "type": "string",
-          "description": "The external authentication token. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The external authentication token. The server will mask the value of this credential in responses and logs."
         },
         "type": {
           "type": "string"

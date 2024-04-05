@@ -157,7 +157,6 @@
         "parameters": [
           {
             "name": "externalBackup.id",
-            "description": "@gotags: sql:\"pk\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -284,7 +283,6 @@
         "parameters": [
           {
             "name": "id",
-            "description": "@gotags: sql:\"pk\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -445,8 +443,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "name": {
           "type": "string"
@@ -480,14 +477,13 @@
         },
         "serviceAccount": {
           "type": "string",
-          "description": "The service account for the storage integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The service account for the storage integration. The server will mask the value of this credential in responses and logs."
         },
         "objectPrefix": {
           "type": "string"
         },
         "useWorkloadId": {
-          "type": "boolean",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "boolean"
         }
       }
     },
@@ -498,16 +494,15 @@
           "type": "string"
         },
         "useIam": {
-          "type": "boolean",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "boolean"
         },
         "accessKeyId": {
           "type": "string",
-          "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The access key ID for the storage integration. The server will mask the value of this credential in responses and logs."
         },
         "secretAccessKey": {
           "type": "string",
-          "description": "The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The secret access key for the storage integration. The server will mask the value of this credential in responses and logs."
         },
         "region": {
           "type": "string"
@@ -516,8 +511,7 @@
           "type": "string"
         },
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         }
       }
     },

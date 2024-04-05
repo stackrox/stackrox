@@ -105,7 +105,7 @@
         "parameters": [
           {
             "name": "key.deploymentId",
-            "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported.\n\n@gotags: search:\"Deployment ID,hidden\" sql:\"type(uuid),index=hash\"",
+            "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -118,14 +118,12 @@
           },
           {
             "name": "key.clusterId",
-            "description": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\"",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "key.namespace",
-            "description": "@gotags: search:\"Namespace,hidden,store\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -222,8 +220,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "key": {
           "$ref": "#/definitions/storageProcessBaselineKey"
@@ -240,8 +237,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageBaselineElement"
-          },
-          "title": "@gotags: search:\"-\""
+          }
         },
         "created": {
           "type": "string",
@@ -266,18 +262,16 @@
       "properties": {
         "deploymentId": {
           "type": "string",
-          "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported.\n\n@gotags: search:\"Deployment ID,hidden\" sql:\"type(uuid),index=hash\""
+          "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported."
         },
         "containerName": {
           "type": "string"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,hidden,store\""
+          "type": "string"
         }
       }
     },

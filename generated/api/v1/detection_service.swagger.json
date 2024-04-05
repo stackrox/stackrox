@@ -121,8 +121,7 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageContainerImage",
-          "title": "@gotags: search:\"-\" sql:\"ignore-fks,ignore-index\""
+          "$ref": "#/definitions/storageContainerImage"
         },
         "name": {
           "type": "string"
@@ -133,8 +132,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "$ref": "#/definitions/storageEnforcementAction",
-          "title": "@gotags: search:\"Enforcement\""
+          "$ref": "#/definitions/storageEnforcementAction"
         },
         "message": {
           "type": "string"
@@ -152,8 +150,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          },
-          "title": "@gotags: sql:\"ignore-fks\""
+          }
         }
       }
     },
@@ -161,12 +158,10 @@
       "type": "object",
       "properties": {
         "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType",
-          "title": "@gotags: search:\"Resource Type,store\""
+          "$ref": "#/definitions/AlertResourceResourceType"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Resource\""
+          "type": "string"
         },
         "clusterId": {
           "type": "string",
@@ -211,8 +206,7 @@
           "$ref": "#/definitions/ViolationKeyValueAttrs"
         },
         "networkFlowInfo": {
-          "$ref": "#/definitions/ViolationNetworkFlowInfo",
-          "title": "@gotags: search:\"-\" sql:\"-\""
+          "$ref": "#/definitions/ViolationNetworkFlowInfo"
         },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
@@ -239,16 +233,13 @@
       "type": "object",
       "properties": {
         "key": {
-          "type": "string",
-          "title": "@gotags: search:\"Environment Key,store\""
+          "type": "string"
         },
         "value": {
-          "type": "string",
-          "title": "@gotags: search:\"Environment Value,store\""
+          "type": "string"
         },
         "envVarSource": {
-          "$ref": "#/definitions/EnvironmentConfigEnvVarSource",
-          "title": "@gotags: search:\"Environment Variable Source,store\""
+          "$ref": "#/definitions/EnvironmentConfigEnvVarSource"
         }
       }
     },
@@ -334,12 +325,10 @@
       "type": "object",
       "properties": {
         "level": {
-          "$ref": "#/definitions/PortConfigExposureLevel",
-          "title": "@gotags: search:\"Exposure Level,store\""
+          "$ref": "#/definitions/PortConfigExposureLevel"
         },
         "serviceName": {
           "type": "string",
-          "description": "@gotags: search:\"Exposing Service,store\"",
           "title": "only set if level is not HOST"
         },
         "serviceId": {
@@ -350,13 +339,11 @@
         },
         "servicePort": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"Exposing Service Port,store\""
+          "format": "int32"
         },
         "nodePort": {
           "type": "integer",
           "format": "int32",
-          "description": "@gotags: search:\"Exposed Node Port,store\"",
           "title": "only set if level is HOST, NODE, EXTERNAL or ROUTE"
         },
         "externalIps": {
@@ -364,7 +351,6 @@
           "items": {
             "type": "string"
           },
-          "description": "@gotags: search:\"External IP,store\"",
           "title": "only set if level is EXTERNAL"
         },
         "externalHostnames": {
@@ -372,7 +358,6 @@
           "items": {
             "type": "string"
           },
-          "description": "@gotags: search:\"External Hostname,store\"",
           "title": "only set if level is EXTERNAL or ROUTE"
         }
       }
@@ -397,8 +382,7 @@
           "format": "int64"
         },
         "parentExecFilePath": {
-          "type": "string",
-          "title": "@gotags: policy:\"Process Ancestor\""
+          "type": "string"
         }
       }
     },
@@ -432,8 +416,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "$ref": "#/definitions/SeccompProfileProfileType",
-          "title": "@gotags: policy:\"Seccomp Profile Type\""
+          "$ref": "#/definitions/SeccompProfileProfileType"
         },
         "localhostProfile": {
           "type": "string"
@@ -508,31 +491,25 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "Internal use only // @gotags: search:\"Alert ID,hidden\" sensorhash:\"ignore\" sql:\"pk,type(uuid)\""
+          "title": "Internal use only // "
         },
         "policy": {
-          "$ref": "#/definitions/storagePolicy",
-          "title": "@gotags: sql:\"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)\""
+          "$ref": "#/definitions/storagePolicy"
         },
         "lifecycleStage": {
-          "$ref": "#/definitions/storageLifecycleStage",
-          "title": "@gotags: search:\"Lifecycle Stage\" sql:\"index=btree\""
+          "$ref": "#/definitions/storageLifecycleStage"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "clusterName": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster,store\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store\""
+          "type": "string"
         },
         "namespaceId": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace ID\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
@@ -540,7 +517,6 @@
         },
         "image": {
           "$ref": "#/definitions/storageContainerImage",
-          "description": "@gotags: sql:\"ignore-fks,ignore-index\"",
           "title": "Represents an alert on a container image.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "resource": {
@@ -553,33 +529,29 @@
             "type": "object",
             "$ref": "#/definitions/AlertViolation"
           },
-          "description": "For run-time phase alert, a maximum of 40 violations are retained.\n\n@gotags: sensorhash:\"ignore\" search:\"-\""
+          "description": "For run-time phase alert, a maximum of 40 violations are retained."
         },
         "processViolation": {
-          "$ref": "#/definitions/AlertProcessViolation",
-          "title": "@gotags: search:\"-\""
+          "$ref": "#/definitions/AlertProcessViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
         },
         "time": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: sensorhash:\"ignore\" search:\"Violation Time\""
+          "format": "date-time"
         },
         "firstOccurred": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: sensorhash:\"ignore\""
+          "format": "date-time"
         },
         "resolvedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED.\n\n@gotags: sensorhash:\"ignore\""
+          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
         },
         "state": {
-          "$ref": "#/definitions/storageViolationState",
-          "title": "@gotags: search:\"Violation State,store\" sql:\"index=btree\""
+          "$ref": "#/definitions/storageViolationState"
         },
         "snoozeTill": {
           "type": "string",
@@ -591,12 +563,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment ID,store,hidden\" sql:\"index=hash,type(uuid)\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment,store\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -613,8 +583,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: sensorhash:\"ignore\""
+          }
         },
         "clusterId": {
           "type": "string",
@@ -635,12 +604,10 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: sensorhash:\"ignore\""
+          }
         },
         "inactive": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Inactive Deployment\""
+          "type": "boolean"
         }
       }
     },
@@ -672,8 +639,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageVolume"
-          },
-          "title": "@gotags: sql:\"flag=ROX_DEPLOYMENT_VOLUME_SEARCH\" search:\"flag=ROX_DEPLOYMENT_VOLUME_SEARCH\""
+          }
         },
         "ports": {
           "type": "array",
@@ -681,22 +647,20 @@
             "type": "object",
             "$ref": "#/definitions/storagePortConfig"
           },
-          "title": "Policies use the port config on the top-level deployment. // @gotags: policy:\",ignore\" search:\"-\""
+          "title": "Policies use the port config on the top-level deployment. // "
         },
         "secrets": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageEmbeddedSecret"
-          },
-          "title": "@gotags: sql:\"flag=ROX_DEPLOYMENT_SECRET_SEARCH\" search:\"flag=ROX_DEPLOYMENT_SECRET_SEARCH\""
+          }
         },
         "resources": {
           "$ref": "#/definitions/storageResources"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: policy:\"Container Name\""
+          "type": "string"
         },
         "livenessProbe": {
           "$ref": "#/definitions/storageLivenessProbe"
@@ -714,8 +678,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/ContainerConfigEnvironmentConfig"
-          },
-          "title": "@gotags: sql:\"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH\" search:\"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH\""
+          }
         },
         "command": {
           "type": "array",
@@ -740,8 +703,7 @@
           "format": "int64"
         },
         "appArmorProfile": {
-          "type": "string",
-          "title": "@gotags: policy:\"AppArmor Profile\""
+          "type": "string"
         }
       }
     },
@@ -749,8 +711,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Sha,store,hidden\" sql:\"fk(Image:id),no-fk-constraint,index=hash\""
+          "type": "string"
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -768,68 +729,55 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment ID,store,hidden\" sql:\"pk,type(uuid)\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment,store\""
+          "type": "string"
         },
         "hash": {
           "type": "string",
-          "format": "uint64",
-          "title": "@gotags: hash:\"ignore\" sensorhash:\"ignore\""
+          "format": "uint64"
         },
         "type": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment Type\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store\""
+          "type": "string"
         },
         "namespaceId": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace ID\" sql:\"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)\""
+          "type": "string"
         },
         "orchestratorComponent": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Orchestrator Component\""
+          "type": "boolean"
         },
         "replicas": {
           "type": "string",
-          "format": "int64",
-          "title": "@gotags: policy:\"Replicas\""
+          "format": "int64"
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Deployment Label,store\""
+          }
         },
         "podLabels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Pod Label,store\""
+          }
         },
         "labelSelector": {
           "$ref": "#/definitions/storageLabelSelector"
         },
         "created": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Created,store,hidden\" hash:\"ignore\""
+          "format": "date-time"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store,hidden\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "clusterName": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster,store\""
+          "type": "string"
         },
         "containers": {
           "type": "array",
@@ -842,13 +790,11 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Deployment Annotation\""
+          }
         },
         "priority": {
           "type": "string",
-          "format": "int64",
-          "title": "@gotags: search:\"Deployment Risk Priority,hidden\" hash:\"ignore\""
+          "format": "int64"
         },
         "inactive": {
           "type": "boolean"
@@ -857,62 +803,51 @@
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Image Pull Secret\""
+          }
         },
         "serviceAccount": {
-          "type": "string",
-          "title": "@gotags: search:\"Service Account\""
+          "type": "string"
         },
         "serviceAccountPermissionLevel": {
-          "$ref": "#/definitions/storagePermissionLevel",
-          "title": "@gotags: search:\"Service Account Permission Level,store\""
+          "$ref": "#/definitions/storagePermissionLevel"
         },
         "automountServiceAccountToken": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Automount Service Account Token\""
+          "type": "boolean"
         },
         "hostNetwork": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Host Network\""
+          "type": "boolean"
         },
         "hostPid": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Host PID\""
+          "type": "boolean"
         },
         "hostIpc": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Host IPC\""
+          "type": "boolean"
         },
         "runtimeClass": {
-          "type": "string",
-          "title": "@gotags: policy:\"Runtime Class\""
+          "type": "string"
         },
         "tolerations": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageToleration"
-          },
-          "title": "@gotags: search:\"-\""
+          }
         },
         "ports": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePortConfig"
-          },
-          "title": "@gotags: policy:\"Ports\""
+          }
         },
         "stateTimestamp": {
           "type": "string",
           "format": "int64",
-          "title": "Internal use only // @gotags: hash:\"ignore\" sensorhash:\"ignore\""
+          "title": "Internal use only // "
         },
         "riskScore": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Deployment Risk Score,hidden\" policy:\",ignore\""
+          "format": "float"
         }
       },
       "title": "Next available tag: 35"
@@ -921,12 +856,10 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Secret\""
+          "type": "string"
         },
         "path": {
-          "type": "string",
-          "title": "@gotags: search:\"Secret Path\""
+          "type": "string"
         }
       }
     },
@@ -995,20 +928,16 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Registry,store\""
+          "type": "string"
         },
         "remote": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Remote,store\""
+          "type": "string"
         },
         "tag": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Tag,store\""
+          "type": "string"
         },
         "fullName": {
-          "type": "string",
-          "title": "@gotags: search:\"Image,store,analyzer=standard\""
+          "type": "string"
         }
       }
     },
@@ -1088,8 +1017,7 @@
       "type": "object",
       "properties": {
         "defined": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Liveness Probe Defined\""
+          "type": "boolean"
         }
       }
     },
@@ -1123,16 +1051,13 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Policy ID,store,hidden\" sql:\"pk\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Policy,store\" sql:\"unique\""
+          "type": "string"
         },
         "description": {
-          "type": "string",
-          "title": "@gotags: search:\"Description\""
+          "type": "string"
         },
         "rationale": {
           "type": "string"
@@ -1141,22 +1066,19 @@
           "type": "string"
         },
         "disabled": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Disabled\""
+          "type": "boolean"
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Category,store\""
+          }
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
-          },
-          "title": "@gotags: search:\"Lifecycle Stage,store\""
+          }
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource"
@@ -1176,15 +1098,14 @@
           }
         },
         "severity": {
-          "$ref": "#/definitions/storageSeverity",
-          "title": "@gotags: search:\"Severity,store\""
+          "$ref": "#/definitions/storageSeverity"
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
           },
-          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\n\n@gotags: search:\"Enforcement\""
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
         },
         "notifiers": {
           "type": "array",
@@ -1194,20 +1115,19 @@
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Policy Last Updated\""
+          "format": "date-time"
         },
         "SORTName": {
           "type": "string",
-          "description": "For internal use only.\n\n@gotags: search:\"SORT_Policy,hidden,analyzer=keyword\""
+          "description": "For internal use only."
         },
         "SORTLifecycleStage": {
           "type": "string",
-          "description": "For internal use only.\n\n@gotags: search:\"SORT_Lifecycle Stage,hidden\""
+          "description": "For internal use only."
         },
         "SORTEnforcement": {
           "type": "boolean",
-          "description": "For internal use only.\n\n@gotags: search:\"SORT_Enforcement,hidden\""
+          "description": "For internal use only."
         },
         "policyVersion": {
           "type": "string"
@@ -1232,7 +1152,7 @@
         },
         "mitreVectorsLocked": {
           "type": "boolean",
-          "description": "Read-only field. If true, the policy's MITRE ATT\u0026CK fields are rendered read-only."
+          "description": "Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only."
         },
         "isDefault": {
           "type": "boolean",
@@ -1292,16 +1212,13 @@
         },
         "containerPort": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"Port,store\""
+          "format": "int32"
         },
         "protocol": {
-          "type": "string",
-          "title": "@gotags: search:\"Port Protocol,store\""
+          "type": "string"
         },
         "exposure": {
-          "$ref": "#/definitions/PortConfigExposureLevel",
-          "title": "@gotags: search:\"Max Exposure Level,store\""
+          "$ref": "#/definitions/PortConfigExposureLevel"
         },
         "exposedPort": {
           "type": "integer",
@@ -1312,8 +1229,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/PortConfigExposureInfo"
-          },
-          "title": "@gotags: policy:\"Exposure Infos\" sensorhash:\"set\""
+          }
         }
       },
       "title": "Next Available Tag: 6"
@@ -1323,37 +1239,30 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "@gotags: search:\"Process ID,store,hidden\"  sql:\"pk,type(uuid)\"",
           "title": "A unique UUID for the Indicator message"
         },
         "deploymentId": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment ID,store,hidden\" policy:\",prefer-parent\" sql:\"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)\""
+          "type": "string"
         },
         "containerName": {
-          "type": "string",
-          "title": "@gotags: search:\"Container Name,hidden\" policy:\",prefer-parent\""
+          "type": "string"
         },
         "podId": {
           "type": "string",
-          "description": "@gotags: search:\"Pod ID,hidden\"",
           "title": "Pod name"
         },
         "podUid": {
-          "type": "string",
-          "title": "@gotags: search:\"Pod UID,hidden\" sql:\"index=hash,type(uuid)\""
+          "type": "string"
         },
         "signal": {
           "$ref": "#/definitions/storageProcessSignal",
           "title": "A process signal message passed from Collector to Sensor"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store,hidden\" policy:\",prefer-parent\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store,hidden\" policy:\",prefer-parent\""
+          "type": "string"
         },
         "containerStartTime": {
           "type": "string",
@@ -1374,28 +1283,23 @@
         },
         "containerId": {
           "type": "string",
-          "description": "@gotags: search:\"Container ID,hidden\"",
           "title": "ID of container associated with this process"
         },
         "time": {
           "type": "string",
           "format": "date-time",
-          "description": "@gotags: search:\"Process Creation Time,hidden\"",
           "title": "Process creation time"
         },
         "name": {
           "type": "string",
-          "description": "@gotags: search:\"Process Name\"",
           "title": "Process name"
         },
         "args": {
           "type": "string",
-          "description": "@gotags: search:\"Process Arguments\"",
           "title": "Process arguments"
         },
         "execFilePath": {
           "type": "string",
-          "description": "@gotags: search:\"Process Path\"",
           "title": "Process executable file path"
         },
         "pid": {
@@ -1406,7 +1310,6 @@
         "uid": {
           "type": "integer",
           "format": "int64",
-          "description": "@gotags: search:\"Process UID\"",
           "title": "Real user ID"
         },
         "gid": {
@@ -1439,8 +1342,7 @@
       "type": "object",
       "properties": {
         "defined": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Readiness Probe Defined\""
+          "type": "boolean"
         }
       }
     },
@@ -1449,23 +1351,19 @@
       "properties": {
         "cpuCoresRequest": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"CPU Cores Request,store\""
+          "format": "float"
         },
         "cpuCoresLimit": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"CPU Cores Limit,store\""
+          "format": "float"
         },
         "memoryMbRequest": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Memory Request (MB),store\""
+          "format": "float"
         },
         "memoryMbLimit": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Memory Limit (MB),store\""
+          "format": "float"
         }
       }
     },
@@ -1498,8 +1396,7 @@
       "type": "object",
       "properties": {
         "privileged": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Privileged,store\""
+          "type": "boolean"
         },
         "selinux": {
           "$ref": "#/definitions/SecurityContextSELinux"
@@ -1508,26 +1405,22 @@
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Drop Capabilities,store\""
+          }
         },
         "addCapabilities": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Add Capabilities,store\""
+          }
         },
         "readOnlyRootFilesystem": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Read Only Root Filesystem,store\""
+          "type": "boolean"
         },
         "seccompProfile": {
           "$ref": "#/definitions/SecurityContextSeccompProfile"
         },
         "allowPrivilegeEscalation": {
-          "type": "boolean",
-          "title": "@gotags: policy:\"Allow Privilege Escalation\""
+          "type": "boolean"
         }
       }
     },
@@ -1556,15 +1449,13 @@
       "type": "object",
       "properties": {
         "key": {
-          "type": "string",
-          "title": "@gotags: search:\"Toleration Key\""
+          "type": "string"
         },
         "operator": {
           "$ref": "#/definitions/storageTolerationOperator"
         },
         "value": {
-          "type": "string",
-          "title": "@gotags: search:\"Toleration Value\""
+          "type": "string"
         },
         "taintEffect": {
           "$ref": "#/definitions/storageTaintEffect"
@@ -1594,28 +1485,22 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Volume Name,store\""
+          "type": "string"
         },
         "source": {
-          "type": "string",
-          "title": "@gotags: search:\"Volume Source,store\""
+          "type": "string"
         },
         "destination": {
-          "type": "string",
-          "title": "@gotags: search:\"Volume Destination,store\""
+          "type": "string"
         },
         "readOnly": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Volume ReadOnly,store\""
+          "type": "boolean"
         },
         "type": {
-          "type": "string",
-          "title": "@gotags: search:\"Volume Type,store\""
+          "type": "string"
         },
         "mountPropagation": {
-          "$ref": "#/definitions/VolumeMountPropagation",
-          "title": "@gotags: policy:\"Mount Propagation\""
+          "$ref": "#/definitions/VolumeMountPropagation"
         }
       }
     },
@@ -1710,7 +1595,7 @@
           "items": {
             "type": "string"
           },
-          "description": "The reference will be in the format: namespace/name[\u003cgroup\u003e/\u003cversion\u003e, Kind=\u003ckind\u003e]."
+          "description": "The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>]."
         },
         "remarks": {
           "type": "array",

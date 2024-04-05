@@ -127,7 +127,7 @@
       "properties": {
         "serialStr": {
           "type": "string",
-          "title": "The serial number in decimal representation. // @gotags: sql:\"pk\""
+          "title": "The serial number in decimal representation. // "
         },
         "serial": {
           "type": "string",

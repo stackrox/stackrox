@@ -18,7 +18,7 @@
   "paths": {
     "/v1/mitreattackvectors": {
       "get": {
-        "summary": "ListMitreAttackVectors returns all MITRE ATT\u0026CK vectors.",
+        "summary": "ListMitreAttackVectors returns all MITRE ATT&CK vectors.",
         "operationId": "MitreAttackService_ListMitreAttackVectors",
         "responses": {
           "200": {
@@ -41,7 +41,7 @@
     },
     "/v1/mitreattackvectors/{id}": {
       "get": {
-        "summary": "GetMitreAttackVector returns the full MITRE ATT\u0026CK vector for a tactic with all its techniques.",
+        "summary": "GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.",
         "operationId": "MitreAttackService_GetMitreAttackVector",
         "responses": {
           "200": {

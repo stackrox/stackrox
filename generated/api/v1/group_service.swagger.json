@@ -36,7 +36,7 @@
         "parameters": [
           {
             "name": "id",
-            "description": "Unique identifier for group properties and respectively the group.\n\n@gotags: sql:\"pk\"",
+            "description": "Unique identifier for group properties and respectively the group.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -78,21 +78,18 @@
           },
           {
             "name": "authProviderId",
-            "description": "@gotags: search:\"Group Auth Provider,hidden\" sql:\"index=category:unique;name:groups_unique_indicator\"",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "key",
-            "description": "@gotags: search:\"Group Key,hidden\" sql:\"index=category:unique;name:groups_unique_indicator\"",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "value",
-            "description": "@gotags: search:\"Group Value,hidden\" sql:\"index=category:unique;name:groups_unique_indicator\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -371,7 +368,7 @@
         },
         "roleName": {
           "type": "string",
-          "description": "This is the name of the role that will apply to users in this group.\n\n@gotags: search:\"Role,hidden\" sql:\"index=name:groups_unique_indicator;category:unique\""
+          "description": "This is the name of the role that will apply to users in this group."
         }
       },
       "description": "Group is a GroupProperties : Role mapping."
@@ -381,22 +378,19 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for group properties and respectively the group.\n\n@gotags: sql:\"pk\""
+          "description": "Unique identifier for group properties and respectively the group."
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
         },
         "authProviderId": {
-          "type": "string",
-          "title": "@gotags: search:\"Group Auth Provider,hidden\" sql:\"index=category:unique;name:groups_unique_indicator\""
+          "type": "string"
         },
         "key": {
-          "type": "string",
-          "title": "@gotags: search:\"Group Key,hidden\" sql:\"index=category:unique;name:groups_unique_indicator\""
+          "type": "string"
         },
         "value": {
-          "type": "string",
-          "title": "@gotags: search:\"Group Value,hidden\" sql:\"index=category:unique;name:groups_unique_indicator\""
+          "type": "string"
         }
       },
       "description": "GroupProperties defines the properties of a group. Groups apply to users when\ntheir properties match. For instance:\n  - If GroupProperties has only an auth_provider_id, then that group applies\n    to all users logged in with that auth provider.\n  - If GroupProperties in addition has a claim key, then it applies to all\n    users with that auth provider and the claim key, etc.\nNote: Changes to GroupProperties may require changes to v1.DeleteGroupRequest."

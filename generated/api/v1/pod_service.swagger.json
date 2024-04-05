@@ -209,7 +209,6 @@
         },
         "imageDigest": {
           "type": "string",
-          "description": "@gotags: search:\"Container Image Digest,hidden\"",
           "title": "Image ID"
         },
         "finished": {
@@ -260,24 +259,19 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "@gotags: search:\"Pod ID,hidden\" sql:\"pk,type(uuid)\"",
           "title": "Pod UID"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Pod Name,hidden\""
+          "type": "string"
         },
         "deploymentId": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment ID,hidden\" sql:\"fk(Deployment:id),no-fk-constraint,type(uuid)\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store\""
+          "type": "string"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store,hidden\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "liveInstances": {
           "type": "array",
@@ -292,7 +286,7 @@
             "type": "object",
             "$ref": "#/definitions/PodContainerInstanceList"
           },
-          "description": "Must be a list of lists, so we can perform search queries (does not work for maps that aren't \u003cstring, string\u003e)\nThere is one bucket (list) per container name.\n\n@gotags: search:\"-\""
+          "description": "Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)\nThere is one bucket (list) per container name."
         },
         "started": {
           "type": "string",

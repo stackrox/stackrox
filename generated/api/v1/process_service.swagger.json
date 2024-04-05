@@ -195,8 +195,7 @@
           "format": "int64"
         },
         "parentExecFilePath": {
-          "type": "string",
-          "title": "@gotags: policy:\"Process Ancestor\""
+          "type": "string"
         }
       }
     },
@@ -233,37 +232,30 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "@gotags: search:\"Process ID,store,hidden\"  sql:\"pk,type(uuid)\"",
           "title": "A unique UUID for the Indicator message"
         },
         "deploymentId": {
-          "type": "string",
-          "title": "@gotags: search:\"Deployment ID,store,hidden\" policy:\",prefer-parent\" sql:\"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)\""
+          "type": "string"
         },
         "containerName": {
-          "type": "string",
-          "title": "@gotags: search:\"Container Name,hidden\" policy:\",prefer-parent\""
+          "type": "string"
         },
         "podId": {
           "type": "string",
-          "description": "@gotags: search:\"Pod ID,hidden\"",
           "title": "Pod name"
         },
         "podUid": {
-          "type": "string",
-          "title": "@gotags: search:\"Pod UID,hidden\" sql:\"index=hash,type(uuid)\""
+          "type": "string"
         },
         "signal": {
           "$ref": "#/definitions/storageProcessSignal",
           "title": "A process signal message passed from Collector to Sensor"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,store,hidden\" policy:\",prefer-parent\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "namespace": {
-          "type": "string",
-          "title": "@gotags: search:\"Namespace,store,hidden\" policy:\",prefer-parent\""
+          "type": "string"
         },
         "containerStartTime": {
           "type": "string",
@@ -284,28 +276,23 @@
         },
         "containerId": {
           "type": "string",
-          "description": "@gotags: search:\"Container ID,hidden\"",
           "title": "ID of container associated with this process"
         },
         "time": {
           "type": "string",
           "format": "date-time",
-          "description": "@gotags: search:\"Process Creation Time,hidden\"",
           "title": "Process creation time"
         },
         "name": {
           "type": "string",
-          "description": "@gotags: search:\"Process Name\"",
           "title": "Process name"
         },
         "args": {
           "type": "string",
-          "description": "@gotags: search:\"Process Arguments\"",
           "title": "Process arguments"
         },
         "execFilePath": {
           "type": "string",
-          "description": "@gotags: search:\"Process Path\"",
           "title": "Process executable file path"
         },
         "pid": {
@@ -316,7 +303,6 @@
         "uid": {
           "type": "integer",
           "format": "int64",
-          "description": "@gotags: search:\"Process UID\"",
           "title": "Real user ID"
         },
         "gid": {

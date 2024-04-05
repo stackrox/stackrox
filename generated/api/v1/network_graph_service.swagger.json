@@ -313,7 +313,7 @@
         },
         "default": {
           "type": "boolean",
-          "description": "`default` indicates whether the external source is user-generated or system-generated.\n\n@gotags: search:\"Default External Source,hidden\""
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -399,12 +399,10 @@
       "type": "object",
       "properties": {
         "type": {
-          "$ref": "#/definitions/storageNetworkEntityInfoType",
-          "title": "@gotags: sql:\"index\""
+          "$ref": "#/definitions/storageNetworkEntityInfoType"
         },
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "deployment": {
           "$ref": "#/definitions/NetworkEntityInfoDeployment"
@@ -431,8 +429,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "hideDefaultExternalSrcs": {
           "type": "boolean"

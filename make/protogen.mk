@@ -247,6 +247,12 @@ endif
 		--proto_path=$(PROTO_BASE_PATH) \
 		--openapiv2_out=$(M_ARGS_STR:%=%,)logtostderr=true:$(GENERATED_BASE_PATH) \
 		$<
+	$(SILENT)cat $@ | \
+	sed 's/@gotags: .*\"/\"/g' | \
+	sed 's/\\n\\n\"/\"/g' | \
+	sed 's/: \"\"/: null/g' | \
+	jq 'walk( if type == "object" then with_entries(select(.value != null)) else . end)' > $@.tmp
+	$(SILENT)mv $@.tmp $@
 
 
 $(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
@@ -261,6 +267,12 @@ endif
 		--proto_path=$(PROTO_BASE_PATH) \
 		--openapiv2_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$<
+	cat $@ | \
+	sed 's/@gotags: .*\"/\"/g' | \
+	sed 's/\n\n"//g' | \
+	sed 's/\"\"/null/g' | \
+	jq 'walk( if type == "object" then with_entries(select(.value != null)) else . end)' > $@
+
 
 # Generate the docs from the merged swagger specs.
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2)

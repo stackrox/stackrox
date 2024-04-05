@@ -481,8 +481,7 @@
           "$ref": "#/definitions/storageEmailNotifierConfiguration"
         },
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"fk(Notifier:id),restrict-delete\""
+          "type": "string"
         }
       }
     },
@@ -490,26 +489,22 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Report Name\""
+          "type": "string"
         },
         "description": {
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/ReportConfigurationReportType",
-          "title": "@gotags: search:\"Report Type\""
+          "$ref": "#/definitions/ReportConfigurationReportType"
         },
         "vulnReportFilters": {
           "$ref": "#/definitions/storageVulnerabilityReportFilters"
         },
         "scopeId": {
-          "type": "string",
-          "title": "@gotags: search:\"Embedded Collection ID\""
+          "type": "string"
         },
         "emailConfig": {
           "$ref": "#/definitions/storageEmailNotifierConfiguration"
@@ -535,8 +530,7 @@
           }
         },
         "creator": {
-          "$ref": "#/definitions/storageSlimUser",
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          "$ref": "#/definitions/storageSlimUser"
         },
         "version": {
           "type": "integer",
@@ -564,8 +558,7 @@
       "type": "object",
       "properties": {
         "collectionId": {
-          "type": "string",
-          "title": "@gotags: search:\"Collection ID\""
+          "type": "string"
         }
       }
     },
@@ -640,12 +633,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"User ID\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"User Name\""
+          "type": "string"
         }
       }
     },

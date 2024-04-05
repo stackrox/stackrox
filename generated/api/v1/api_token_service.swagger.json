@@ -199,8 +199,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "name": {
           "type": "string"
@@ -217,12 +216,10 @@
         },
         "expiration": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Expiration,store\""
+          "format": "date-time"
         },
         "revoked": {
-          "type": "boolean",
-          "title": "@gotags: search:\"Revoked,store\""
+          "type": "boolean"
         },
         "role": {
           "type": "string"

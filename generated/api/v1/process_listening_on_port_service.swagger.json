@@ -69,8 +69,7 @@
           "format": "int64"
         },
         "parentExecFilePath": {
-          "type": "string",
-          "title": "@gotags: policy:\"Process Ancestor\""
+          "type": "string"
         }
       }
     },
@@ -161,28 +160,23 @@
         },
         "containerId": {
           "type": "string",
-          "description": "@gotags: search:\"Container ID,hidden\"",
           "title": "ID of container associated with this process"
         },
         "time": {
           "type": "string",
           "format": "date-time",
-          "description": "@gotags: search:\"Process Creation Time,hidden\"",
           "title": "Process creation time"
         },
         "name": {
           "type": "string",
-          "description": "@gotags: search:\"Process Name\"",
           "title": "Process name"
         },
         "args": {
           "type": "string",
-          "description": "@gotags: search:\"Process Arguments\"",
           "title": "Process arguments"
         },
         "execFilePath": {
           "type": "string",
-          "description": "@gotags: search:\"Process Path\"",
           "title": "Process executable file path"
         },
         "pid": {
@@ -193,7 +187,6 @@
         "uid": {
           "type": "integer",
           "format": "int64",
-          "description": "@gotags: search:\"Process UID\"",
           "title": "Real user ID"
         },
         "gid": {

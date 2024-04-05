@@ -976,8 +976,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Sha,store,hidden\" sql:\"fk(Image:id),no-fk-constraint,index=hash\""
+          "type": "string"
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -1022,12 +1021,10 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Component,store\""
+          "type": "string"
         },
         "version": {
-          "type": "string",
-          "title": "@gotags: search:\"Component Version,store\""
+          "type": "string"
         },
         "license": {
           "$ref": "#/definitions/storageLicense"
@@ -1037,8 +1034,7 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageEmbeddedVulnerability"
-          },
-          "title": "@gotags: hash:\"set\""
+          }
         },
         "layerIndex": {
           "type": "integer",
@@ -1046,8 +1042,7 @@
         },
         "priority": {
           "type": "string",
-          "format": "int64",
-          "title": "@gotags: hash:\"ignore\""
+          "format": "int64"
         },
         "source": {
           "$ref": "#/definitions/storageSourceType"
@@ -1061,8 +1056,7 @@
         },
         "riskScore": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Component Risk Score,hidden\""
+          "format": "float"
         },
         "fixedBy": {
           "type": "string",
@@ -1074,7 +1068,6 @@
             "type": "object",
             "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
-          "description": "@gotags: json:\"-\"",
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         }
       },
@@ -1098,13 +1091,11 @@
       "type": "object",
       "properties": {
         "cve": {
-          "type": "string",
-          "title": "@gotags: search:\"CVE,store\""
+          "type": "string"
         },
         "cvss": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"CVSS,store\""
+          "format": "float"
         },
         "summary": {
           "type": "string"
@@ -1113,8 +1104,7 @@
           "type": "string"
         },
         "fixedBy": {
-          "type": "string",
-          "title": "@gotags: search:\"Fixed By,store,hidden\""
+          "type": "string"
         },
         "scoreVersion": {
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
@@ -1127,8 +1117,7 @@
         },
         "publishedOn": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"CVE Published On\""
+          "format": "date-time"
         },
         "lastModified": {
           "type": "string",
@@ -1142,12 +1131,10 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
-          },
-          "title": "@gotags: hash:\"ignore\""
+          }
         },
         "suppressed": {
-          "type": "boolean",
-          "title": "@gotags: search:\"CVE Snoozed\""
+          "type": "boolean"
         },
         "suppressActivation": {
           "type": "string",
@@ -1160,20 +1147,18 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen, for this specific distro, in the system.\n\n@gotags: policy:\"First System Occurrence Timestamp\" hash:\"ignore\""
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in this image.\n\n@gotags: policy:\"First Image Occurrence Timestamp\" hash:\"ignore\""
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
-          "$ref": "#/definitions/storageVulnerabilitySeverity",
-          "title": "@gotags: policy:\"Severity\""
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
         "state": {
-          "$ref": "#/definitions/storageVulnerabilityState",
-          "title": "@gotags: search:\"Vulnerability State\""
+          "$ref": "#/definitions/storageVulnerabilityState"
         }
       },
       "title": "Next Tag: 21"
@@ -1191,8 +1176,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Sha,store,hidden\" sql:\"pk\""
+          "type": "string"
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
@@ -1203,14 +1187,13 @@
             "type": "object",
             "$ref": "#/definitions/storageImageName"
           },
-          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise.\n\n@gotags: search:\"-\""
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
         },
         "scan": {
-          "$ref": "#/definitions/storageImageScan",
-          "title": "@gotags: policy:\"Image Scan\""
+          "$ref": "#/definitions/storageImageScan"
         },
         "signatureVerificationData": {
           "$ref": "#/definitions/storageImageSignatureVerificationData"
@@ -1220,23 +1203,19 @@
         },
         "components": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"Component Count,store,hidden\""
+          "format": "int32"
         },
         "cves": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"CVE Count,store,hidden\""
+          "format": "int32"
         },
         "fixableCves": {
           "type": "integer",
-          "format": "int32",
-          "title": "@gotags: search:\"Fixable CVE Count,store,hidden\""
+          "format": "int32"
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Last Updated,hidden\""
+          "format": "date-time"
         },
         "notPullable": {
           "type": "boolean"
@@ -1246,18 +1225,15 @@
         },
         "priority": {
           "type": "string",
-          "format": "int64",
-          "title": "@gotags: search:\"Image Risk Priority,hidden\""
+          "format": "int64"
         },
         "riskScore": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Image Risk Score,hidden\""
+          "format": "float"
         },
         "topCvss": {
           "type": "number",
-          "format": "float",
-          "title": "@gotags: search:\"Image Top CVSS,store\""
+          "format": "float"
         },
         "notes": {
           "type": "array",
@@ -1272,12 +1248,10 @@
       "type": "object",
       "properties": {
         "instruction": {
-          "type": "string",
-          "title": "@gotags: search:\"Dockerfile Instruction Keyword,store\""
+          "type": "string"
         },
         "value": {
-          "type": "string",
-          "title": "@gotags: search:\"Dockerfile Instruction Value,store\""
+          "type": "string"
         },
         "created": {
           "type": "string",
@@ -1307,7 +1281,7 @@
           "items": {
             "type": "string"
           },
-          "title": "We never need both sets of layers so consolidate them. They will be ordered by oldest-\u003enewest"
+          "title": "We never need both sets of layers so consolidate them. They will be ordered by oldest->newest"
         },
         "dataSource": {
           "$ref": "#/definitions/storageDataSource",
@@ -1325,20 +1299,16 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Registry,store\""
+          "type": "string"
         },
         "remote": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Remote,store\""
+          "type": "string"
         },
         "tag": {
-          "type": "string",
-          "title": "@gotags: search:\"Image Tag,store\""
+          "type": "string"
         },
         "fullName": {
-          "type": "string",
-          "title": "@gotags: search:\"Image,store,analyzer=standard\""
+          "type": "string"
         }
       }
     },
@@ -1360,20 +1330,17 @@
         },
         "scanTime": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Image Scan Time,store\""
+          "format": "date-time"
         },
         "components": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageEmbeddedImageScanComponent"
-          },
-          "title": "@gotags: sql:\"-\""
+          }
         },
         "operatingSystem": {
-          "type": "string",
-          "title": "@gotags: search:\"Image OS,store\""
+          "type": "string"
         },
         "dataSource": {
           "$ref": "#/definitions/storageDataSource",
@@ -1417,8 +1384,7 @@
         },
         "fetched": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Image Signature Fetched Time,hidden\""
+          "format": "date-time"
         }
       }
     },
@@ -1554,8 +1520,7 @@
         },
         "created": {
           "type": "string",
-          "format": "date-time",
-          "title": "@gotags: search:\"Image Created Time,store\""
+          "format": "date-time"
         },
         "author": {
           "type": "string"
@@ -1568,36 +1533,31 @@
           }
         },
         "user": {
-          "type": "string",
-          "title": "@gotags: search:\"Image User\""
+          "type": "string"
         },
         "command": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Image Command\""
+          }
         },
         "entrypoint": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Image Entrypoint\""
+          }
         },
         "volumes": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Image Volumes\""
+          }
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "@gotags: search:\"Image Label,store\""
+          }
         }
       }
     },
@@ -1634,8 +1594,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         }
       }
     },
@@ -1750,7 +1709,7 @@
           "$ref": "#/definitions/v1Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v1ScanImageInternalResponse": {
       "type": "object",
@@ -1807,7 +1766,7 @@
       "properties": {
         "normalizedName": {
           "type": "string",
-          "title": "If the image was scanned successfully, this returns the normalized name of the image.\nThis depends on what we get from the registry.\nFor example, \"docker.io/wordpress:latest\" -\u003e \"docker.io/library/wordpress:latest\""
+          "title": "If the image was scanned successfully, this returns the normalized name of the image.\nThis depends on what we get from the registry.\nFor example, \"docker.io/wordpress:latest\" -> \"docker.io/library/wordpress:latest\""
         },
         "errorType": {
           "$ref": "#/definitions/WatchImageResponseErrorType"

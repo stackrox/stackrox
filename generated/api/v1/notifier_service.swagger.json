@@ -221,7 +221,6 @@
         "parameters": [
           {
             "name": "id",
-            "description": "@gotags: sql:\"pk\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -261,7 +260,6 @@
         "parameters": [
           {
             "name": "notifier.id",
-            "description": "@gotags: sql:\"pk\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -286,12 +284,10 @@
       "type": "object",
       "properties": {
         "accessKeyId": {
-          "type": "string",
-          "title": "@gotags: scrub:\"always\""
+          "type": "string"
         },
         "secretAccessKey": {
-          "type": "string",
-          "title": "@gotags: scrub:\"always\""
+          "type": "string"
         },
         "stsEnabled": {
           "type": "boolean"
@@ -322,8 +318,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"unique\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -365,8 +360,7 @@
           "$ref": "#/definitions/storageSyslog"
         },
         "notifierSecret": {
-          "type": "string",
-          "title": "@gotags: scrub:\"always\""
+          "type": "string"
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
@@ -381,8 +375,7 @@
           "type": "object",
           "properties": {
             "name": {
-              "type": "string",
-              "title": "@gotags: sql:\"unique\""
+              "type": "string"
             },
             "type": {
               "type": "string"
@@ -424,8 +417,7 @@
               "$ref": "#/definitions/storageSyslog"
             },
             "notifierSecret": {
-              "type": "string",
-              "title": "@gotags: scrub:\"always\""
+              "type": "string"
             },
             "traits": {
               "$ref": "#/definitions/storageTraits"
@@ -465,8 +457,7 @@
       "type": "object",
       "properties": {
         "hostname": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "port": {
           "type": "integer",
@@ -556,7 +547,7 @@
       "properties": {
         "serviceAccount": {
           "type": "string",
-          "description": "The service account for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The service account for the integration. The server will mask the value of this credential in responses and logs."
         },
         "sourceId": {
           "type": "string"
@@ -570,19 +561,17 @@
       "type": "object",
       "properties": {
         "server": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "sender": {
           "type": "string"
         },
         "username": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "password": {
           "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
         },
         "disableTLS": {
           "type": "boolean"
@@ -599,7 +588,6 @@
         },
         "allowUnauthenticatedSmtp": {
           "type": "boolean",
-          "description": "@gotags: scrub:\"disableDependentIfTrue\"",
           "title": "Set to true to allow unauthenticated SMTP"
         }
       }
@@ -608,8 +596,7 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "skipTLSVerify": {
           "type": "boolean"
@@ -618,12 +605,11 @@
           "type": "string"
         },
         "username": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "password": {
           "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
         },
         "headers": {
           "type": "array",
@@ -648,16 +634,14 @@
       "type": "object",
       "properties": {
         "url": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "username": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "password": {
           "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
         },
         "issueType": {
           "type": "string"
@@ -692,12 +676,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"unique\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -739,8 +721,7 @@
           "$ref": "#/definitions/storageSyslog"
         },
         "notifierSecret": {
-          "type": "string",
-          "title": "@gotags: scrub:\"always\""
+          "type": "string"
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
@@ -753,7 +734,7 @@
       "properties": {
         "apiKey": {
           "type": "string",
-          "description": "The API key for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The API key for the integration. The server will mask the value of this credential in responses and logs."
         }
       }
     },
@@ -773,11 +754,10 @@
       "properties": {
         "httpToken": {
           "type": "string",
-          "description": "The HTTP token for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The HTTP token for the integration. The server will mask the value of this credential in responses and logs."
         },
         "httpEndpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "insecure": {
           "type": "boolean"
@@ -805,8 +785,7 @@
       "type": "object",
       "properties": {
         "httpSourceAddress": {
-          "type": "string",
-          "title": "@gotags: validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "skipTLSVerify": {
           "type": "boolean"

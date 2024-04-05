@@ -171,7 +171,6 @@
         "parameters": [
           {
             "name": "config.id",
-            "description": "@gotags: sql:\"pk,type(uuid)\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -269,7 +268,6 @@
         "parameters": [
           {
             "name": "id",
-            "description": "@gotags: sql:\"pk,type(uuid)\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -297,8 +295,7 @@
           "type": "string"
         },
         "password": {
-          "type": "string",
-          "title": "@gotags: scrub:\"always\""
+          "type": "string"
         },
         "expiresAt": {
           "type": "string",
@@ -311,8 +308,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"unique\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -357,8 +353,7 @@
           "type": "boolean"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "skipTestIntegration": {
           "type": "boolean"
@@ -376,8 +371,7 @@
           "type": "object",
           "properties": {
             "name": {
-              "type": "string",
-              "title": "@gotags: sql:\"unique\""
+              "type": "string"
             },
             "type": {
               "type": "string"
@@ -422,8 +416,7 @@
               "type": "boolean"
             },
             "clusterId": {
-              "type": "string",
-              "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\""
+              "type": "string"
             },
             "skipTestIntegration": {
               "type": "boolean"
@@ -462,7 +455,7 @@
         },
         "password": {
           "type": "string",
-          "description": "The server will mask the value of this password in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The server will mask the value of this password in responses and logs."
         }
       },
       "title": "Robot account is Quay's named tokens that can be granted permissions on multiple repositories under an organization.\nIt's Quay's recommended authentication model when possible (i.e. registry integration)"
@@ -499,16 +492,14 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "username": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "password": {
           "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
         },
         "wifEnabled": {
           "type": "boolean"
@@ -519,8 +510,7 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "insecure": {
           "type": "boolean"
@@ -531,8 +521,7 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "insecure": {
           "type": "boolean"
@@ -543,12 +532,10 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "grpcEndpoint": {
-          "type": "string",
-          "title": "@gotags: validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "numConcurrentScans": {
           "type": "integer",
@@ -560,16 +547,14 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "username": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "string"
         },
         "password": {
           "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
         },
         "insecure": {
           "type": "boolean"
@@ -584,22 +569,20 @@
         },
         "accessKeyId": {
           "type": "string",
-          "description": "The access key ID for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The access key ID for the integration. The server will mask the value of this credential in responses and logs."
         },
         "secretAccessKey": {
           "type": "string",
-          "description": "The secret access key for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The secret access key for the integration. The server will mask the value of this credential in responses and logs."
         },
         "region": {
           "type": "string"
         },
         "useIam": {
-          "type": "boolean",
-          "title": "@gotags: scrub:\"dependent\""
+          "type": "boolean"
         },
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "useAssumeRole": {
           "type": "boolean"
@@ -619,12 +602,11 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "serviceAccount": {
           "type": "string",
-          "description": "The service account for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The service account for the integration. The server will mask the value of this credential in responses and logs."
         },
         "project": {
           "type": "string"
@@ -638,12 +620,11 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "apiKey": {
           "type": "string",
-          "description": "The API key for the integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The API key for the integration. The server will mask the value of this credential in responses and logs."
         }
       }
     },
@@ -651,12 +632,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: sql:\"pk,type(uuid)\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: sql:\"unique\""
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -701,8 +680,7 @@
           "type": "boolean"
         },
         "clusterId": {
-          "type": "string",
-          "title": "@gotags: search:\"Cluster ID,hidden,store\" sql:\"type(uuid)\""
+          "type": "string"
         },
         "skipTestIntegration": {
           "type": "boolean"
@@ -727,12 +705,11 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string",
-          "title": "@gotags: scrub:\"dependent\" validate:\"nolocalendpoint\""
+          "type": "string"
         },
         "oauthToken": {
           "type": "string",
-          "description": "The OAuth token for the integration. Required if this is a scanner integration. The server will mask the value of this credential in responses and logs.\n\n@gotags: scrub:\"always\""
+          "description": "The OAuth token for the integration. Required if this is a scanner integration. The server will mask the value of this credential in responses and logs."
         },
         "insecure": {
           "type": "boolean"

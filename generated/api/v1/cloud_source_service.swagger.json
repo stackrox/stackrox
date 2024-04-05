@@ -334,8 +334,7 @@
       "type": "object",
       "properties": {
         "secret": {
-          "type": "string",
-          "title": "@gotags: scrub:\"always\""
+          "type": "string"
         }
       }
     },

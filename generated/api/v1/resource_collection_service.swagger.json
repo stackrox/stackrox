@@ -432,7 +432,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "@gotags: search:\"Embedded Collection ID\" sql:\"fk(ResourceCollection:id),restrict-delete\"",
           "title": "'id' is searchable to force a separate table"
         }
       }
@@ -518,12 +517,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"Collection ID\" sql:\"pk\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"Collection Name\" sql:\"unique\""
+          "type": "string"
         },
         "description": {
           "type": "string"
@@ -537,12 +534,10 @@
           "format": "date-time"
         },
         "createdBy": {
-          "$ref": "#/definitions/storageSlimUser",
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          "$ref": "#/definitions/storageSlimUser"
         },
         "updatedBy": {
-          "$ref": "#/definitions/storageSlimUser",
-          "title": "@gotags: sql:\"ignore_labels(User ID)\""
+          "$ref": "#/definitions/storageSlimUser"
         },
         "resourceSelectors": {
           "type": "array",
@@ -610,12 +605,10 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: search:\"User ID\""
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "title": "@gotags: search:\"User Name\""
+          "type": "string"
         }
       }
     },
@@ -810,7 +803,7 @@
           "$ref": "#/definitions/v1Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v1SortOption": {
       "type": "object",
