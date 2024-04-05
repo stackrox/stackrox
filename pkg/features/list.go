@@ -106,4 +106,7 @@ var (
 	// AttemptManifestDigest enables attempting to pull manifest digests from registres that historically did not
 	// support it but now appear to (ie: Nexus and RHEL).
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", true)
+
+	// VulnMgmt2MiscImprovements enables support for misc improvements for VM 2.0 GA
+	VulnMgmt2MiscImprovements = registerFeature("Enables support for misc improvements for VM 2.0 GA", "ROX_VULN_MGMT_2_MISC_IMPROVEMENTS", true)
 )
