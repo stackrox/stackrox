@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package central;
 
-import "storage/runtime_filters.proto";
 import "storage/resource_collection.proto";
+import "storage/runtime_filters.proto";
 
 option go_package = "./;central";
 
