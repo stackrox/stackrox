@@ -20,4 +20,4 @@ message RuntimeFilter {
 
   RuntimeFilterFeatures feature = 1;
   repeated RuntimeFilterRule rules = 2;
-} 
+}
