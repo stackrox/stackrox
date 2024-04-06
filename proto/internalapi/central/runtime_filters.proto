@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package central;
+
+import "storage/runtime_filters.proto";
+import "storage/resource_collection.proto";
+
+option go_package = "./;central";
+
+message RuntimeFilteringConfiguration {
+  repeated storage.RuntimeFilter runtime_filters = 1;
+  repeated storage.ResourceCollection resource_collections = 2;
+}
