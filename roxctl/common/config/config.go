@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -35,6 +36,11 @@ func (r *RoxctlConfig) GetCentralConfigs() CentralConfigs {
 // CentralURL is the URL of central.
 type CentralURL = string
 
+// NewConfigKey returns a new CentralURL to use for configurations based on a url.URL.
+func NewConfigKey(url *url.URL) CentralURL {
+	return url.Hostname() + ":" + url.Port()
+}
+
 // CentralConfigs is the list of configurations per central.
 type CentralConfigs map[CentralURL]*CentralConfig
 
@@ -44,7 +50,13 @@ func (c CentralConfigs) GetCentralConfig(centralURL CentralURL) *CentralConfig {
 	if c == nil {
 		return nil
 	}
-	return c[centralURL]
+	cfg := c[centralURL]
+	if cfg != nil {
+		return cfg
+	}
+	cfg = &CentralConfig{}
+	c[centralURL] = cfg
+	return cfg
 }
 
 // CentralConfig contains all configurations available for a single central. Currently, it only holds access information.
