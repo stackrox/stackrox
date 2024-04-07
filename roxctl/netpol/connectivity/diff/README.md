@@ -99,11 +99,27 @@ The semantic-diff report provides a summary of changed/added/removed connections
 Each line in the output represents an allowed connection that has been added/removed/changed on `dir2` with respect to `dir1`.
 The `workloads-diff-info` adds information about added/removed workload related to the added/removed connection, if relevant.
 
+
+### Visualization
+
+
+Generate output in [dot](https://graphviz.org/doc/info/lang.html) format:
+```shell
+$ roxctl netpol connectivity diff --dir1=roxctl/netpol/connectivity/diff/testdata/netpol-analysis-example-minimal/ --dir2=roxctl/netpol/connectivity/diff/testdata/netpol-diff-example-minimal -o dot
+```
+
+Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to produce the connectivity graph.
+
+Produced graph for the above example is depicted below:
+
+![graph](connectivity-diff-graph-example.svg)
+
+
 ## Parameters
 
 The output can be redirected to a file by using `--output-file` parameter.
 
-The output format can be set by using the `--output-format` parameter. Supported output formats: `txt, md, csv`.
+The output format can be set by using the `--output-format` parameter. Supported output formats: `txt, md, csv, dot`.
 
 When running in a CI pipeline, `roxctl netpol connectivity diff` may benefit from the `--fail` option that stops the processing on the first encountered error.
 
