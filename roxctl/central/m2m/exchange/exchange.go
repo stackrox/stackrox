@@ -24,10 +24,12 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "exchange",
-		Short: "Exchanges a OIDC token for a short-lived access token",
+		Short: "Exchanges an OIDC token for a short-lived access token",
 		Long: `Obtain a short-lived access token from Central by exchanging an OIDC token.
 This works by configuring a machine-to-machine access configuration within Central beforehand.
-Based on the OIDC token's issuer, a short-lived access token will be exchanged.`,
+Based on the OIDC token's issuer, a short-lived access token will be exchanged.
+
+The access token will be stored in the roxctl configuration file and used for authentication in other commands.`,
 		RunE: util.RunENoArgs(func(command *cobra.Command) error {
 			if err := exchangeCmd.construct(command); err != nil {
 				return err
