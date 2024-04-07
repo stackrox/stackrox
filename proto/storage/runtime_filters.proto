@@ -19,5 +19,6 @@ message RuntimeFilter {
   }
 
   RuntimeFilterFeatures feature = 1;
-  repeated RuntimeFilterRule rules = 2;
+  string default_status = 2;
+  repeated RuntimeFilterRule rules = 3;
 }
