@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"fmt"
+	"strings"
 
 	"github.com/gofrs/uuid"
 )
@@ -155,11 +156,14 @@ func NewDummy() UUID {
 }
 
 // NewTestUUID returns a UUID for testing purposes with the given number.
+// If number is negative or greater than 9 then zeroes are returned.
 // Example: 11111111-1111-1111-1111-111111111111.
 func NewTestUUID(d int) UUID {
-	return FromStringOrNil(fmt.Sprintf(
-		"%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d-"+
-			"%[1]d%[1]d%[1]d%[1]d-"+
-			"%[1]d%[1]d%[1]d%[1]d-"+
-			"%[1]d%[1]d%[1]d%[1]d-%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d%[1]d", d))
+	s := fmt.Sprintf("%d", d)
+	return FromStringOrNil(
+		strings.Repeat(s, 8) +
+			strings.Repeat(s, 4) +
+			strings.Repeat(s, 4) +
+			strings.Repeat(s, 4) +
+			strings.Repeat(s, 12))
 }
