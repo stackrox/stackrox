@@ -225,7 +225,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	}
 
 	if request.GetProfileName() != "" {
-		// Add the scan config name as an exact match
+		// Add the profile name as an exact match
 		parsedQuery = search.ConjunctionQuery(
 			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).ProtoQuery(),
 			parsedQuery,
