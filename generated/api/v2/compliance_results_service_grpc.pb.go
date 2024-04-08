@@ -28,6 +28,7 @@ const (
 	ComplianceResultsService_GetComplianceProfilesStats_FullMethodName                 = "/v2.ComplianceResultsService/GetComplianceProfilesStats"
 	ComplianceResultsService_GetComplianceClusterScanStats_FullMethodName              = "/v2.ComplianceResultsService/GetComplianceClusterScanStats"
 	ComplianceResultsService_GetComplianceOverallClusterStats_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceOverallClusterStats"
+	ComplianceResultsService_GetComplianceClusterStats_FullMethodName                  = "/v2.ComplianceResultsService/GetComplianceClusterStats"
 	ComplianceResultsService_GetComplianceOverallClusterCount_FullMethodName           = "/v2.ComplianceResultsService/GetComplianceOverallClusterCount"
 	ComplianceResultsService_GetComplianceScanResultsCount_FullMethodName              = "/v2.ComplianceResultsService/GetComplianceScanResultsCount"
 	ComplianceResultsService_GetComplianceScanConfigurationResultsCount_FullMethodName = "/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount"
@@ -80,7 +81,9 @@ type ComplianceResultsServiceClient interface {
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
 	GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
+	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
+	GetComplianceClusterStats(ctx context.Context, in *ComplianceClusterStatsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceOverallClusterCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
 	GetComplianceScanResultsCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
 	GetComplianceScanConfigurationResultsCount(ctx context.Context, in *ComplianceScanResultsRequest, opts ...grpc.CallOption) (*CountComplianceScanResults, error)
@@ -175,6 +178,15 @@ func (c *complianceResultsServiceClient) GetComplianceOverallClusterStats(ctx co
 	return out, nil
 }
 
+func (c *complianceResultsServiceClient) GetComplianceClusterStats(ctx context.Context, in *ComplianceClusterStatsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error) {
+	out := new(ListComplianceClusterOverallStatsResponse)
+	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceClusterStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *complianceResultsServiceClient) GetComplianceOverallClusterCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceScanResults, error) {
 	out := new(CountComplianceScanResults)
 	err := c.cc.Invoke(ctx, ComplianceResultsService_GetComplianceOverallClusterCount_FullMethodName, in, out, opts...)
@@ -249,7 +261,9 @@ type ComplianceResultsServiceServer interface {
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
 	GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error)
+	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error)
+	GetComplianceClusterStats(context.Context, *ComplianceClusterStatsRequest) (*ListComplianceClusterOverallStatsResponse, error)
 	GetComplianceOverallClusterCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
 	GetComplianceScanResultsCount(context.Context, *RawQuery) (*CountComplianceScanResults, error)
 	GetComplianceScanConfigurationResultsCount(context.Context, *ComplianceScanResultsRequest) (*CountComplianceScanResults, error)
@@ -285,6 +299,9 @@ func (UnimplementedComplianceResultsServiceServer) GetComplianceClusterScanStats
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceOverallClusterStats not implemented")
+}
+func (UnimplementedComplianceResultsServiceServer) GetComplianceClusterStats(context.Context, *ComplianceClusterStatsRequest) (*ListComplianceClusterOverallStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceClusterStats not implemented")
 }
 func (UnimplementedComplianceResultsServiceServer) GetComplianceOverallClusterCount(context.Context, *RawQuery) (*CountComplianceScanResults, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceOverallClusterCount not implemented")
@@ -469,6 +486,24 @@ func _ComplianceResultsService_GetComplianceOverallClusterStats_Handler(srv inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceResultsService_GetComplianceClusterStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceClusterStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceResultsServiceServer).GetComplianceClusterStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceResultsService_GetComplianceClusterStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceResultsServiceServer).GetComplianceClusterStats(ctx, req.(*ComplianceClusterStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ComplianceResultsService_GetComplianceOverallClusterCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
@@ -565,6 +600,10 @@ var ComplianceResultsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComplianceOverallClusterStats",
 			Handler:    _ComplianceResultsService_GetComplianceOverallClusterStats_Handler,
+		},
+		{
+			MethodName: "GetComplianceClusterStats",
+			Handler:    _ComplianceResultsService_GetComplianceClusterStats_Handler,
 		},
 		{
 			MethodName: "GetComplianceOverallClusterCount",
