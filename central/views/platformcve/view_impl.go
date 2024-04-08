@@ -80,7 +80,7 @@ func (v *platformCVECoreViewImpl) GetClusterIDs(ctx context.Context, q *v1.Query
 	}
 
 	q.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.ClusterID).Distinct().Proto(),
 	}
 
 	var results []*clusterResponse
@@ -104,15 +104,12 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVEType).Proto(),
 		search.NewQuerySelect(search.CVSS).Proto(),
 		search.NewQuerySelect(search.CVECreatedTime).Proto(),
-		search.NewQuerySelect(search.ClusterID).AggrFunc(aggregatefunc.Count).Proto(),
+		search.NewQuerySelect(search.ClusterID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.ClusterID).
+			Distinct().
 			AggrFunc(aggregatefunc.Count).
 			Filter("fixable_cluster_count",
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.Severity,
-						storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY.String(),
-					).ProtoQuery(),
+				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery(),
 			).Proto(),
 	}
 	cloned.Selects = append(cloned.Selects, withCountByPlatformTypeSelectQuery(q).Selects...)
@@ -126,6 +123,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 	cloned := q.Clone()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(search.ClusterID).
+			Distinct().
 			AggrFunc(aggregatefunc.Count).
 			Filter("generic_cluster_count",
 				search.NewQueryBuilder().
@@ -135,6 +133,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 					).ProtoQuery(),
 			).Proto(),
 		search.NewQuerySelect(search.ClusterID).
+			Distinct().
 			AggrFunc(aggregatefunc.Count).
 			Filter("kubernetes_cluster_count",
 				search.NewQueryBuilder().
@@ -144,6 +143,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 					).ProtoQuery(),
 			).Proto(),
 		search.NewQuerySelect(search.ClusterID).
+			Distinct().
 			AggrFunc(aggregatefunc.Count).
 			Filter("openshift_cluster_count",
 				search.NewQueryBuilder().
@@ -153,6 +153,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 					).ProtoQuery(),
 			).Proto(),
 		search.NewQuerySelect(search.ClusterID).
+			Distinct().
 			AggrFunc(aggregatefunc.Count).
 			Filter("openshift4_cluster_count",
 				search.NewQueryBuilder().
