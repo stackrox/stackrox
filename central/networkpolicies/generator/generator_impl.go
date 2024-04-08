@@ -298,10 +298,8 @@ func (g *generator) generatePolicies(graph []*node, namespacesByName map[string]
 			continue
 		}
 
-		log.Debugf("generate policy for node %v", node)
 		policy := generatePolicy(node, namespacesByName, ingressPolicies, egressPolicies)
 		if policy != nil {
-			log.Debugf("generated policy for node %v", node)
 			generatedPolicies = append(generatedPolicies, policy)
 		}
 	}
