@@ -340,7 +340,7 @@ export function deleteIntegrationInTable(integrationSource, integrationType, int
     };
 
     interactAndWaitForResponses(() => {
-        cy.get(`tr:contains("${integrationName}") button[aria-label="Actions"]`).click();
+        cy.get(`tr:contains("${integrationName}") button[aria-label="Kebab toggle"]`).click();
         cy.get(
             `tr:contains("${integrationName}") button[role="menuitem"]:contains("Delete Integration")`
         ).click(); // TODO Title Case

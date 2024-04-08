@@ -33,14 +33,14 @@ function FormLabelGroup<T>({
         <FormGroup fieldId={fieldId} {...rest}>
             {children}
             <FormHelperText>
-                <HelperText>
-                    <HelperTextItem
-                        variant={
-                            isTouched && error ? ValidatedOptions.error : ValidatedOptions.default
-                        }
-                    >
-                        {error || helperText}
-                    </HelperTextItem>
+                <HelperText id={`${fieldId}-helper`}>
+                    {isTouched && error ? (
+                        <HelperTextItem variant={ValidatedOptions.error}>{error}</HelperTextItem>
+                    ) : (
+                        <HelperTextItem variant={ValidatedOptions.default}>
+                            {helperText}
+                        </HelperTextItem>
+                    )}
                 </HelperText>
             </FormHelperText>
         </FormGroup>

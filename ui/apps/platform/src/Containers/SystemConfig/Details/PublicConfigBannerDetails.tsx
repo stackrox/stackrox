@@ -53,6 +53,7 @@ const PublicConfigBannerDetails = ({
                     hasNoOffset: false,
                     className: undefined,
                 }}
+                data-testid={`${type}-state`}
             >
                 {
                     <>
