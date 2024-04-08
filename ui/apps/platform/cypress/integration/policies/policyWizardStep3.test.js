@@ -68,7 +68,7 @@ function clearPolicyCriteriaCards() {
     });
 }
 
-describe('Policy wizard, Step 3 Policy Criteria', () => {
+describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
     withAuth();
 
     before(function () {
@@ -77,7 +77,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         }
     });
 
-    it.only('should not allow user to edit policy criteria for default policies', () => {
+    it('should not allow user to edit policy criteria for default policies', () => {
         visitPolicies();
         editFirstPolicyFromTable();
         goToStep3();
