@@ -5,7 +5,7 @@ export function getInputByLabel(label) {
         .contains('label', label)
         .invoke('attr', 'for')
         .then((id) => {
-            cy.get(`#${CSS.escape(id)}`);
+            cy.get(`#${CSS.escape(id)}`).scrollIntoView();
         });
 }
 
