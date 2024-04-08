@@ -40,6 +40,7 @@ const PublicConfigLoginDetails = ({
                     hasNoOffset: false,
                     className: undefined,
                 }}
+                data-testid="login-notice-state"
             >
                 {
                     <>
