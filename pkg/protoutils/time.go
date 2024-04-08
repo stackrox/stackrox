@@ -4,6 +4,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -25,4 +28,21 @@ func Sub(ts1, ts2 *types.Timestamp) time.Duration {
 func After(ts1, ts2 *types.Timestamp) bool {
 	diff := Sub(ts1, ts2)
 	return diff > 0
+}
+
+// MustGetProtoTimestampFromRFC3339NanoString generates a proto timestamp from a time string in RFC3339Nano format.
+// The function panics if an error is raised in the conversion process.
+func MustGetProtoTimestampFromRFC3339NanoString(timeStr string) *types.Timestamp {
+	timestamp, err := protocompat.GetProtoTimestampFromRFC3339NanoString(timeStr)
+	utils.CrashOnError(err)
+	return timestamp
+}
+
+// RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
+func RoundTimestamp(ts *types.Timestamp, d time.Duration) *types.Timestamp {
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
+	if err != nil {
+		return ts
+	}
+	return protoconv.ConvertTimeToTimestamp(t.Round(d))
 }

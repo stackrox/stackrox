@@ -24,6 +24,25 @@ func TestCompareTimestamps(t *testing.T) {
 	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
 }
 
+func TestConvertTimestampToCSVString(t *testing.T) {
+	var nilTS *types.Timestamp
+	nilStringRepresentation := ConvertTimestampToCSVString(nilTS)
+	assert.Equal(t, "N/A", nilStringRepresentation)
+
+	invalidTS := &types.Timestamp{
+		Seconds: -62234567890,
+	}
+	stringFromInvalid := ConvertTimestampToCSVString(invalidTS)
+	assert.Equal(t, "ERR", stringFromInvalid)
+
+	ts := &types.Timestamp{
+		Seconds: 2345678901,
+		Nanos:   123456789,
+	}
+	timeString := ConvertTimestampToCSVString(ts)
+	assert.Equal(t, "Sun, 01 May 2044 01:28:21 UTC", timeString)
+}
+
 func TestConvertTimestampToTimeOrError(t *testing.T) {
 	seconds := int64(2345678901)
 	nanos := int32(123456789)
@@ -96,6 +115,23 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	assert.Nil(t, protoTSInvalid)
 }
 
+func TestGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
+	timeString := "2017-11-16T19:35:32.012345678Z"
+
+	ts1, err1 := GetProtoTimestampFromRFC3339NanoString(timeString)
+	assert.NoError(t, err1)
+	assert.Equal(t, int64(1510860932), ts1.Seconds)
+	assert.Equal(t, int32(12345678), ts1.Nanos)
+
+	invalidTimeString1 := "0000-12-24T23:59:59.999999999Z"
+	_, err2 := GetProtoTimestampFromRFC3339NanoString(invalidTimeString1)
+	assert.Error(t, err2)
+
+	invalidTimeString2 := "0000-12-2AT23:59:59.999999999Z"
+	_, err3 := GetProtoTimestampFromRFC3339NanoString(invalidTimeString2)
+	assert.Error(t, err3)
+}
+
 func TestGetProtoTimestampFromSeconds(t *testing.T) {
 	seconds1 := int64(1234567890)
 	seconds2 := int64(23456789012)
@@ -124,6 +160,33 @@ func TestGetProtoTimestampZero(t *testing.T) {
 	ts1 := GetProtoTimestampZero()
 	assert.Equal(t, int64(0), ts1.GetSeconds())
 	assert.Equal(t, int32(0), ts1.GetNanos())
+}
+
+func TestNilOrNow(t *testing.T) {
+	now := time.Now()
+	var nilTS *types.Timestamp
+	nowFromNil := NilOrNow(nilTS)
+	assert.NotNil(t, nowFromNil)
+	deltaFromNil := nowFromNil.Sub(now)
+	// ensure the delta between "now" and the "now" from conversion is small enough
+	assert.Equal(t, "0s", deltaFromNil.Truncate(time.Second).String())
+
+	invalidTS := &types.Timestamp{
+		Seconds: -62234567890,
+	}
+	nowFromInvalid := NilOrNow(invalidTS)
+	assert.NotNil(t, nowFromInvalid)
+	deltaFromInvalid := nowFromInvalid.Sub(now)
+	// ensure the delta between "now" and the "now" from conversion is small enough
+	assert.Equal(t, "0s", deltaFromInvalid.Truncate(time.Second).String())
+
+	ts := &types.Timestamp{
+		Seconds: int64(2345678901),
+		Nanos:   int32(123456789),
+	}
+	timeFromTS := NilOrNow(ts)
+	assert.NotNil(t, timeFromTS)
+	assert.Equal(t, time.Date(2044, 5, 1, 1, 28, 21, 123457000, time.UTC), *timeFromTS)
 }
 
 func TestTimestampNow(t *testing.T) {

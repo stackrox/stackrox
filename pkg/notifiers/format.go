@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mitre/datastore"
 	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
-	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -140,7 +140,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 		FullMitreAttackVectors: fullMitreVectors,
 		AlertLink:              alertLink,
 		Severity:               SeverityString(alert.Policy.Severity),
-		Time:                   readable.ProtoTime(alert.Time),
+		Time:                   protoconv.ReadableTime(alert.Time),
 	}
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
@@ -151,8 +151,8 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 
 	// Remove all the formatting
 	format := bplPolicyFormat
-	f := strings.Replace(format, "\t", "", -1)
-	f = strings.Replace(f, "\n", "", -1)
+	f := strings.ReplaceAll(format, "\t", "")
+	f = strings.ReplaceAll(f, "\n", "")
 
 	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
 	if err != nil {

@@ -20,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
@@ -68,7 +70,7 @@ type hostConnections struct {
 type connStatus struct {
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
-	// used keeps track of if an endpoint has been used by the the networkgraph path.
+	// used keeps track of if an endpoint has been used by the networkgraph path.
 	used bool
 	// usedProcess keeps track of if an endpoint has been used by the processes listening on
 	// ports path. If processes listening on ports is used, both must be true to delete the
@@ -97,7 +99,7 @@ func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlo
 	}
 
 	if ts != timestamp.InfiniteFuture {
-		proto.LastSeenTimestamp = ts.GogoProtobuf()
+		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 	return proto
 }
@@ -118,7 +120,7 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 	}
 
 	if ts != timestamp.InfiniteFuture {
-		proto.LastActiveTimestamp = ts.GogoProtobuf()
+		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 	return proto
 }
@@ -155,7 +157,7 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 	}
 
 	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = ts.GogoProtobuf()
+		proto.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 
 	return proto
@@ -250,7 +252,7 @@ func NewManager(
 	}
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
+		mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 	} else {
 		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
@@ -509,6 +511,21 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
 
+	var port uint16
+	var direction string
+	if conn.incoming {
+		direction = "ingress"
+		port = conn.local.Port
+	} else {
+		direction = "egress"
+		port = conn.remote.IPAndPort.Port
+	}
+
+	metricDirection := prometheus.Labels{
+		"direction": direction,
+		"namespace": container.Namespace,
+	}
+
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
@@ -524,17 +541,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if isFresh {
 			return
 		}
-		if !status.used {
-			flowMetrics.ExternalFlowCounter.Inc()
-		}
-		status.used = true
 
-		var port uint16
-		if conn.incoming {
-			port = conn.local.Port
-		} else {
-			port = conn.remote.IPAndPort.Port
-		}
+		defer func() {
+			status.used = true
+		}()
 
 		if extSrc == nil {
 			entityType := networkgraph.InternetEntity()
@@ -569,7 +579,18 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 					"Marking it as '%s' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
 			}
+
+			if !status.used {
+				if isExternal {
+					flowMetrics.ExternalFlowCounter.With(metricDirection).Inc()
+				} else {
+					flowMetrics.InternalFlowCounter.With(metricDirection).Inc()
+				}
+			}
 		} else {
+			if !status.used {
+				flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
+			}
 			lookupResults = []clusterentities.LookupResult{
 				{
 					Entity:         networkgraph.EntityFromProto(extSrc),
@@ -578,6 +599,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	} else {
+		if !status.used {
+			flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
+		}
 		status.used = true
 		if conn.incoming {
 			// Only report incoming connections from outside of the cluster. These are already taken care of by the

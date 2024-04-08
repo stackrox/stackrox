@@ -1,13 +1,13 @@
 package detection
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -84,7 +84,7 @@ func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 				assert.True(t, compiled.AppliesTo(dep), "Failed expectation for %s", dep.GetId())
 			}
 			for _, dep := range allDeps {
-				if sliceutils.Find(c.shouldApplyTo, dep) == -1 {
+				if slices.Index(c.shouldApplyTo, dep) == -1 {
 					assert.False(t, compiled.AppliesTo(dep), "Failed expectation for %s", dep.GetId())
 				}
 			}

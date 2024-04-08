@@ -8,8 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,10 +68,10 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 	v4DataSource := &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}
 	v4MatchReq := &v1.EnrichLocalImageInternalRequest{IndexerVersion: "v4"}
 	v2MatchReq := &v1.EnrichLocalImageInternalRequest{}
-	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: timestamp.NowMinus(reprocessInterval * 2)}}
-	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: timestamp.NowMinus(0)}}
+	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(reprocessInterval * 2)}}
+	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0)}}
 	v4ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: v2ExpiredScan.Scan.ScanTime, DataSource: v4DataSource}}
-	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: timestamp.NowMinus(0), DataSource: v4DataSource}}
+	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0), DataSource: v4DataSource}}
 
 	testCases := []struct {
 		desc           string
@@ -145,4 +146,68 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 		})
 	}
 
+}
+
+func TestUpdatingImageFromRequest(t *testing.T) {
+	createImgName := func(name string) *storage.ImageName {
+		imgName, _, err := utils.GenerateImageNameFromString(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return imgName
+	}
+
+	imgAName := createImgName("docker.io/library/nginx:latest")
+	imgBName := createImgName("example.com/library/nginx:latest")   // diff registry
+	imgCName := createImgName("docker.io/different/nginx:latest")   // diff remote
+	imgDName := createImgName("example.com/different/nginx:latest") // diff registry and remote
+
+	imgA := &storage.Image{Name: imgAName}
+	imgAWithMeta := &storage.Image{Name: imgAName, Metadata: &storage.ImageMetadata{}}
+
+	tcs := []struct {
+		name         string
+		existingImg  *storage.Image
+		reqImgName   *storage.ImageName
+		expectedName *storage.ImageName
+		feature      bool
+	}{
+		{
+			"feature disabled do not update name",
+			imgA, imgBName, imgAName, false,
+		},
+		{
+			"metadata exists do not update name",
+			imgAWithMeta, imgBName, imgAName, true,
+		},
+		{
+			"images are the same do not update name",
+			imgA, imgAName, imgAName, true,
+		},
+		{
+			"registry differs update name",
+			imgA, imgBName, imgBName, true,
+		},
+		{
+			"remote differs update name",
+			imgA, imgCName, imgCName, true,
+		},
+		{
+			"registry and remote differs update name",
+			imgA, imgDName, imgDName, true,
+		},
+		{
+			"image name nil do not update name",
+			imgA, nil, imgAName, true,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			pkgTestUtils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, tc.feature)
+
+			clone := tc.existingImg.Clone()
+			updateImageFromRequest(clone, tc.reqImgName)
+			assert.Equal(t, tc.expectedName, clone.Name)
+		})
+	}
 }

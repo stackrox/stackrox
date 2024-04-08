@@ -4,13 +4,9 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -254,152 +250,6 @@ var fileDescriptor_5092c07627247a99 = []byte{
 	0xef, 0x6b, 0x97, 0x3c, 0x7d, 0xb8, 0x7f, 0xa8, 0x9d, 0x20, 0x57, 0x5a, 0x8c, 0xef, 0x32, 0x5c,
 	0x96, 0x17, 0xe7, 0x42, 0x26, 0x3c, 0x0f, 0xaf, 0xac, 0x3c, 0xbc, 0x24, 0x37, 0xff, 0x8a, 0xde,
 	0xe0, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xf0, 0x34, 0x96, 0xdb, 0xfa, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// PodServiceClient is the client API for PodService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type PodServiceClient interface {
-	// GetPods returns the pods.
-	GetPods(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*PodsResponse, error)
-	ExportPods(ctx context.Context, in *ExportPodRequest, opts ...grpc.CallOption) (PodService_ExportPodsClient, error)
-}
-
-type podServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewPodServiceClient(cc grpc.ClientConnInterface) PodServiceClient {
-	return &podServiceClient{cc}
-}
-
-func (c *podServiceClient) GetPods(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*PodsResponse, error) {
-	out := new(PodsResponse)
-	err := c.cc.Invoke(ctx, "/v1.PodService/GetPods", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *podServiceClient) ExportPods(ctx context.Context, in *ExportPodRequest, opts ...grpc.CallOption) (PodService_ExportPodsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_PodService_serviceDesc.Streams[0], "/v1.PodService/ExportPods", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &podServiceExportPodsClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type PodService_ExportPodsClient interface {
-	Recv() (*ExportPodResponse, error)
-	grpc.ClientStream
-}
-
-type podServiceExportPodsClient struct {
-	grpc.ClientStream
-}
-
-func (x *podServiceExportPodsClient) Recv() (*ExportPodResponse, error) {
-	m := new(ExportPodResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// PodServiceServer is the server API for PodService service.
-type PodServiceServer interface {
-	// GetPods returns the pods.
-	GetPods(context.Context, *RawQuery) (*PodsResponse, error)
-	ExportPods(*ExportPodRequest, PodService_ExportPodsServer) error
-}
-
-// UnimplementedPodServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedPodServiceServer struct {
-}
-
-func (*UnimplementedPodServiceServer) GetPods(ctx context.Context, req *RawQuery) (*PodsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPods not implemented")
-}
-func (*UnimplementedPodServiceServer) ExportPods(req *ExportPodRequest, srv PodService_ExportPodsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ExportPods not implemented")
-}
-
-func RegisterPodServiceServer(s *grpc.Server, srv PodServiceServer) {
-	s.RegisterService(&_PodService_serviceDesc, srv)
-}
-
-func _PodService_GetPods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PodServiceServer).GetPods(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.PodService/GetPods",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PodServiceServer).GetPods(ctx, req.(*RawQuery))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PodService_ExportPods_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExportPodRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(PodServiceServer).ExportPods(m, &podServiceExportPodsServer{stream})
-}
-
-type PodService_ExportPodsServer interface {
-	Send(*ExportPodResponse) error
-	grpc.ServerStream
-}
-
-type podServiceExportPodsServer struct {
-	grpc.ServerStream
-}
-
-func (x *podServiceExportPodsServer) Send(m *ExportPodResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-var _PodService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.PodService",
-	HandlerType: (*PodServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetPods",
-			Handler:    _PodService_GetPods_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "ExportPods",
-			Handler:       _PodService_ExportPods_Handler,
-			ServerStreams: true,
-		},
-	},
-	Metadata: "api/v1/pod_service.proto",
 }
 
 func (m *PodsResponse) Marshal() (dAtA []byte, err error) {

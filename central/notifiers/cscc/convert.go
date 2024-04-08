@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -20,9 +20,9 @@ import (
 
 // An Enforcement object reports that an enforcement action has been taken.
 type Enforcement struct {
-	Action    string               `json:"action,omitempty"`
-	Message   string               `json:"message,omitempty"`
-	Timestamp *timestamp.Timestamp `json:"timestamp,omitempty"`
+	Action    string     `json:"action,omitempty"`
+	Message   string     `json:"message,omitempty"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
 }
 
 // Properties includes various values, by key, for a new Finding.
@@ -139,7 +139,7 @@ func convertEnforcementAction(a storage.EnforcementAction) string {
 // Cloud SCC requires that Finding IDs be alphanumeric (no special characters)
 // and 1-32 characters long. UUIDs are 32 characters if you remove hyphens.
 func convertAlertUUID(u string) string {
-	return strings.Replace(u, "-", "", -1)
+	return strings.ReplaceAll(u, "-", "")
 }
 
 func convertEnforcement(alert *storage.Alert) []Enforcement {

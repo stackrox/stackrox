@@ -301,15 +301,19 @@ splunk:
         assert authProvider
 
         // Verify the groups are created successfully, and specify the origin declarative.
-        def expectedGroups = [VALID_DEFAULT_GROUP, VALID_DECLARATIVE_GROUP]
+        def expectedGroups = [VALID_DECLARATIVE_GROUP, VALID_DEFAULT_GROUP]
+                .sort { it.roleName }
         def groupsResponse = GroupService.getGroups(
                 GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProvider.getId()).build())
-        def expectedProperties = expectedGroups.props
-        verifyAll(groupsResponse.getGroupsList().props) {
-            it.key == expectedProperties.key
-            it.value == expectedProperties.value
-            it.traits.origin == expectedProperties.traits.origin
-            it.authProviderId.every { it == authProvider.id }
+
+        def retrievedGroups = groupsResponse.getGroupsList().collect()
+        retrievedGroups.sort { it.roleName }
+        verifyAll(retrievedGroups) {
+            it.roleName == expectedGroups.roleName
+            it.props.key == expectedGroups.props.key
+            it.props.value == expectedGroups.props.value
+            it.props.traits.origin == expectedGroups.props.traits.origin
+            it.props.authProviderId.every { it == authProvider.id }
         }
 
         // Verify the notifier is created successfully, and does specify the origin declarative.

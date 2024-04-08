@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/satoken"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
@@ -125,7 +126,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
-	indicators := make(chan *message.ExpiringMessage, env.ProcessIndicatorBufferSize.IntegerSetting())
+	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 	var processSignals signalService.Service
 	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {

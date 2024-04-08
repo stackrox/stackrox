@@ -20,7 +20,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -29,6 +29,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -44,7 +46,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -53,6 +55,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -74,7 +78,7 @@ jobs:
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.62
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.67
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,6 +87,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -105,7 +111,7 @@ jobs:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -114,6 +120,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies

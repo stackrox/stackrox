@@ -2,11 +2,11 @@ package augmentedobjs
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -248,7 +248,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		// - the verified image references contains the image full name that is currently specified. This can either
 		// be equal to `img.GetName().GetFullName()`, or when used within a deployment, the container image's full name.
 		if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED &&
-			sliceutils.Find(result.GetVerifiedImageReferences(), imageFullName) != -1 {
+			slices.Index(result.GetVerifiedImageReferences(), imageFullName) != -1 {
 			ids = append(ids, result.GetVerifierId())
 		}
 	}

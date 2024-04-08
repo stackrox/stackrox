@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -22,7 +23,6 @@ import (
 )
 
 const (
-	registryTimeout  = 5 * time.Second
 	repoListInterval = 10 * time.Minute
 )
 
@@ -85,7 +85,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		return nil, err
 	}
 
-	client.Client.Timeout = registryTimeout
+	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
 	var repoSet set.Set[string]
 	var ticker *time.Ticker

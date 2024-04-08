@@ -5,10 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/pkg/grpc/errors"
-	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -32,18 +30,6 @@ func writeHeaders(w http.ResponseWriter, filename string) {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	w.WriteHeader(http.StatusOK)
-}
-
-// FromTimestamp creates a string representation of the given timestamp.
-func FromTimestamp(timestamp *types.Timestamp) string {
-	if timestamp == nil {
-		return "N/A"
-	}
-	ts, err := protocompat.ConvertTimestampToTimeOrError(timestamp)
-	if err != nil {
-		return "ERR"
-	}
-	return ts.Format(time.RFC1123)
 }
 
 // FromGraphQLTime create a string representation of the given graphQL.Time.

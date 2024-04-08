@@ -4,14 +4,10 @@
 package sensor
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -1045,118 +1041,6 @@ var fileDescriptor_9b20c44efbf676a9 = []byte{
 	0xee, 0x0e, 0x83, 0x5f, 0xef, 0x0e, 0x83, 0xdf, 0xee, 0x0e, 0x83, 0x9f, 0xff, 0x38, 0xec, 0x5c,
 	0xfb, 0x3f, 0xd0, 0x4d, 0xcf, 0x7e, 0xf4, 0xbf, 0xfc, 0x3b, 0x00, 0x00, 0xff, 0xff, 0xd3, 0xd2,
 	0x51, 0x48, 0xc0, 0x06, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// ComplianceServiceClient is the client API for ComplianceService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type ComplianceServiceClient interface {
-	Communicate(ctx context.Context, opts ...grpc.CallOption) (ComplianceService_CommunicateClient, error)
-}
-
-type complianceServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewComplianceServiceClient(cc grpc.ClientConnInterface) ComplianceServiceClient {
-	return &complianceServiceClient{cc}
-}
-
-func (c *complianceServiceClient) Communicate(ctx context.Context, opts ...grpc.CallOption) (ComplianceService_CommunicateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_ComplianceService_serviceDesc.Streams[0], "/sensor.ComplianceService/Communicate", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &complianceServiceCommunicateClient{stream}
-	return x, nil
-}
-
-type ComplianceService_CommunicateClient interface {
-	Send(*MsgFromCompliance) error
-	Recv() (*MsgToCompliance, error)
-	grpc.ClientStream
-}
-
-type complianceServiceCommunicateClient struct {
-	grpc.ClientStream
-}
-
-func (x *complianceServiceCommunicateClient) Send(m *MsgFromCompliance) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *complianceServiceCommunicateClient) Recv() (*MsgToCompliance, error) {
-	m := new(MsgToCompliance)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// ComplianceServiceServer is the server API for ComplianceService service.
-type ComplianceServiceServer interface {
-	Communicate(ComplianceService_CommunicateServer) error
-}
-
-// UnimplementedComplianceServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedComplianceServiceServer struct {
-}
-
-func (*UnimplementedComplianceServiceServer) Communicate(srv ComplianceService_CommunicateServer) error {
-	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
-}
-
-func RegisterComplianceServiceServer(s *grpc.Server, srv ComplianceServiceServer) {
-	s.RegisterService(&_ComplianceService_serviceDesc, srv)
-}
-
-func _ComplianceService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ComplianceServiceServer).Communicate(&complianceServiceCommunicateServer{stream})
-}
-
-type ComplianceService_CommunicateServer interface {
-	Send(*MsgToCompliance) error
-	Recv() (*MsgFromCompliance, error)
-	grpc.ServerStream
-}
-
-type complianceServiceCommunicateServer struct {
-	grpc.ServerStream
-}
-
-func (x *complianceServiceCommunicateServer) Send(m *MsgToCompliance) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *complianceServiceCommunicateServer) Recv() (*MsgFromCompliance, error) {
-	m := new(MsgFromCompliance)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-var _ComplianceService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.ComplianceService",
-	HandlerType: (*ComplianceServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Communicate",
-			Handler:       _ComplianceService_Communicate_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
-	Metadata: "internalapi/sensor/compliance_iservice.proto",
 }
 
 func (m *GetScrapeConfigRequest) Marshal() (dAtA []byte, err error) {

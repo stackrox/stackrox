@@ -18,7 +18,6 @@ func Map[T, U any](slice []T, mapFunc func(T) U) []U {
 
 // MapsIntersect returns true if there is at least one key-value pair that is present in both maps
 // If both, or either maps are empty, it returns false
-// TODO : Convert to generics after upgrade to go 1.18
 func MapsIntersect[K, V comparable](m1 map[K]V, m2 map[K]V) bool {
 	if len(m2) == 0 {
 		return false

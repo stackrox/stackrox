@@ -3,6 +3,7 @@ package iap
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	joseJwt "github.com/go-jose/go-jose/v3/jwt"
 	"github.com/pkg/errors"
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/jwt"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -108,7 +108,7 @@ func (p *backendImpl) Validate(ctx context.Context, roxClaims *tokens.Claims) er
 		return errFingerPrintChanged
 	}
 
-	if !sliceutils.Equal([]string{extraClaims.Hd}, []string{roxClaims.ExternalUser.Attributes["hd"][0]}) {
+	if !slices.Equal([]string{extraClaims.Hd}, []string{roxClaims.ExternalUser.Attributes["hd"][0]}) {
 		return errFingerPrintChanged
 	}
 

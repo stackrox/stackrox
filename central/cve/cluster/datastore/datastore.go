@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/common"
@@ -26,7 +26,7 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ClusterCVE, error)
 
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	Unsuppress(ctx context.Context, cves ...string) error
 
 	// UpsertInternal and DeleteInternal provide functionality to add and remove k8s, openshift and istio vulnerabilities.

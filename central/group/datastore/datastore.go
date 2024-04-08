@@ -2,11 +2,14 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stackrox/rox/central/group/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore is the datastore for groups.
@@ -32,6 +35,16 @@ type DataStore interface {
 func New(storage store.Store, roleDatastore datastore.DataStore, authProviderDatastore authproviders.Store) DataStore {
 	return &dataStoreImpl{
 		storage:               storage,
+		roleDatastore:         roleDatastore,
+		authProviderDatastore: authProviderDatastore,
+	}
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, roleDatastore datastore.DataStore,
+	authProviderDatastore authproviders.Store) DataStore {
+	return &dataStoreImpl{
+		storage:               pgStore.New(pool),
 		roleDatastore:         roleDatastore,
 		authProviderDatastore: authProviderDatastore,
 	}

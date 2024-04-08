@@ -27,6 +27,7 @@ MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
+GENERATED_API_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 GENERATED_API_SWAGGER_SPECS_V2 = $(API_SERVICE_PROTOS_V2:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
@@ -39,6 +40,7 @@ ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
 endif
 
 $(call go-tool, PROTOC_GEN_GO_BIN, github.com/gogo/protobuf/protoc-gen-gofast)
+$(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
 $(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger, tools/proto)
 $(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway, tools/proto)
 $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag, tools/proto)
@@ -48,7 +50,7 @@ $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag
 ##############
 # Set some platform variables for protoc.
 # If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
-PROTOC_VERSION := 22.0
+PROTOC_VERSION := 25.3
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_OS = linux
@@ -99,8 +101,6 @@ $(MODFILE_DIR)/%/UPDATE_CHECK: go.sum
 	$(SILENT)go list -m -json $* | jq '.Dir' >"$@.tmp"
 	$(SILENT)(cmp -s "$@.tmp" "$@" && rm "$@.tmp") || mv "$@.tmp" "$@"
 
-GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
-
 # The --go_out=M... argument specifies the go package to use for an imported proto file.
 # Here, we instruct protoc-gen-go to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
@@ -127,7 +127,6 @@ GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
 
 $(PROTOC_INCLUDES): $(PROTOC)
 
-GOGO_DIR = $(shell go list -f '{{.Dir}}' -m github.com/gogo/protobuf)
 GRPC_GATEWAY_DIR = $(shell go list -f '{{.Dir}}' -m github.com/grpc-ecosystem/grpc-gateway)
 
 PROTO_DEPS=$(PROTOC) $(PROTOC_INCLUDES)
@@ -183,7 +182,7 @@ inject-proto-tags: $(PROTOC_GO_INJECT_TAG_BIN)
 	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*.pb.go"
 	@PATH=$(GOTOOLS_BIN) protoc-go-inject-tag -input "$(GENERATED_BASE_PATH)/*/*/*/*.pb.go"
 
-# Generate all of the proto messages and gRPC services with one invocation of
+# Generate all of the proto messages with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
 $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS) $(PROTOC)
@@ -193,18 +192,15 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--gofast_out=$(GOGO_M_STR:%=%,)$(M_ARGS_STR:%=%,)plugins=grpc:$(GENERATED_BASE_PATH) \
+		--gofast_out=$(M_ARGS_STR:%=%,):$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
-# Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
-# protoc when any of the .pb.gw.go sources don't exist or when any of the
-# .proto files change.
-$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(ALL_PROTOS) $(PROTOC)
+# Generate gRPC services.
+$(GENERATED_BASE_PATH)/%_grpc.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GO_GRPC_BIN) $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
@@ -212,7 +208,24 @@ endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
-		-I$(GOGO_DIR) \
+		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_PROTO_BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
+		--go-grpc_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated,require_unimplemented_servers=false:$(GENERATED_BASE_PATH) \
+		--plugin protoc-gen-go-grpc="${PROTOC_GEN_GO_GRPC_BIN}" \
+		$<
+
+# Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
+# protoc when any of the .pb.gw.go sources don't exist or when any of the
+# .proto files change.
+$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(GENERATED_BASE_PATH)/%_service_grpc.pb.go $(ALL_PROTOS) $(PROTOC)
+	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
+	$(SILENT)mkdir -p $(dir $@)
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
@@ -228,7 +241,6 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -243,7 +255,6 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
-		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
 		-I$(SCANNER_PROTO_BASE_PATH) \

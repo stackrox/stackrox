@@ -37,6 +37,8 @@ jobs:
       uses: actions/checkout@v4
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2

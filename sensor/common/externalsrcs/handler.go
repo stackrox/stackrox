@@ -40,13 +40,13 @@ type handlerImpl struct {
 	stopSig   concurrency.Signal
 	updateSig concurrency.Signal
 
-	// `entities` stores the IPNetwork to entity object mappings. We allow only unique CIDRs in a cluster, which could
+	// entities stores the IPNetwork to entity object mappings. We allow only unique CIDRs in a cluster, which could
 	// be overlapping or not.
 	entities map[pkgNet.IPNetwork]*storage.NetworkEntityInfo
 	// entitiesById is used for easy lookups during network flow policy evaluation
 	entitiesByID     map[string]*storage.NetworkEntityInfo
 	lastRequestSeqID int64
-	// `lastSeenList` stores the networks in descending lexical byte order. Since, the host identifier bits are all set
+	// lastSeenList stores the networks in descending lexical byte order. Since, the host identifier bits are all set
 	// to 0, this gives us highest-smallest to lowest-largest subnet ordering. e.g. 127.0.0.0/8, 10.10.0.0/24,
 	// 10.0.0.0/24, 10.0.0.0/8. This list can be used to lookup the smallest subnet containing an IP address.
 	lastSeenList             *sensor.IPNetworkList

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
@@ -34,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -72,7 +70,12 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 			return
 		}
 	} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
-		req.DataStartTime = req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
+		sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
+		req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
+		if err != nil {
+			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+			return
+		}
 	}
 
 	// Change report status to PREPARING
@@ -198,7 +201,7 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 }
 
 func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
-	dataStartTime *types.Timestamp) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
+	dataStartTime time.Time) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
 	var deployedImgResults []common.DeployedImagesResult
 	var watchedImgResults []common.WatchedImagesResult
 	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
@@ -243,9 +246,9 @@ func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, colle
 }
 
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
-	collection *storage.ResourceCollection, dataStartTime *types.Timestamp) (*common.ReportQuery, error) {
+	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
-		timestamp.FromProtobuf(dataStartTime).GoTime())
+		dataStartTime)
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching clusters to build report query")
@@ -355,7 +358,7 @@ func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifie
 	)
 }
 
-func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.ReportSnapshot) (*types.Timestamp, error) {
+func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.ReportSnapshot) (time.Time, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, snap.GetReportConfigurationId()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
@@ -366,15 +369,19 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.R
 		ProtoQuery()
 	results, err := rg.reportSnapshotStore.SearchReportSnapshots(reportGenCtx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error finding last successful scheduled report time")
+		return time.Time{}, errors.Wrap(err, "Error finding last successful scheduled report time")
 	}
 	if len(results) > 1 {
-		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
+		return time.Time{}, errors.Errorf("Received %d records when only one record is expected", len(results))
 	}
 	if len(results) == 0 {
-		return nil, nil
+		return time.Time{}, nil
 	}
-	return results[0].GetReportStatus().GetCompletedAt(), nil
+	completedAt, err := protocompat.ConvertTimestampToTimeOrError(results[0].GetReportStatus().GetCompletedAt())
+	if err != nil {
+		return time.Time{}, err
+	}
+	return completedAt, nil
 }
 
 func (rg *reportGeneratorImpl) getDeploymentIDs(deploymentsQuery *v1.Query) ([]string, error) {

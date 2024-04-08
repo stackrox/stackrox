@@ -3,14 +3,13 @@ package sortedkeys
 import (
 	"encoding/binary"
 	"errors"
-
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"slices"
 )
 
 // Unmarshal unmarshals a set of SortedKeys.
 func Unmarshal(marshalled []byte) (SortedKeys, error) {
 	var unmarshalled SortedKeys
-	buf := sliceutils.ShallowClone(marshalled)
+	buf := slices.Clone(marshalled)
 	for len(buf) >= 2 {
 		// First two bytes encode the length.
 		length := decodeLength(buf[:2])

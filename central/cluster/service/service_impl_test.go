@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	datastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	probeSourcesMocks "github.com/stackrox/rox/central/probesources/mocks"
@@ -75,6 +74,11 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 }
 
 func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
+	tenDaysAgo, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(10))
+	suite.NoError(err)
+	eightyDaysAgo, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(80))
+	suite.NoError(err)
+
 	cases := map[string]struct {
 		cluster  *storage.Cluster
 		config   *storage.Config
@@ -107,7 +111,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 				Labels: map[string]string{"k1": "v2"},
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-					LastContact:        suite.timeBeforeDays(10),
+					LastContact:        tenDaysAgo,
 				},
 			},
 			config:   suite.getTestSystemConfig(60, 30, 7),
@@ -119,7 +123,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 				Labels: map[string]string{"k1": "v2"},
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-					LastContact:        suite.timeBeforeDays(80),
+					LastContact:        eightyDaysAgo,
 				},
 			},
 			config:   suite.getTestSystemConfig(60, 30, 7),
@@ -130,7 +134,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 				Id: "UNHEALTHY CLUSTER",
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-					LastContact:        suite.timeBeforeDays(10),
+					LastContact:        tenDaysAgo,
 				},
 			},
 			config:   suite.getTestSystemConfig(0, 30, 7),
@@ -160,6 +164,10 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	config := suite.getTestSystemConfig(60, 30, 7)
 
+	tenDaysAgo, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(10))
+	suite.NoError(err)
+	eightyDaysAgo, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(80))
+	suite.NoError(err)
 	clusters := []*storage.Cluster{
 		{
 			Id: "HEALTHY cluster",
@@ -179,7 +187,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 			Labels: map[string]string{"k1": "v2"},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-				LastContact:        suite.timeBeforeDays(10),
+				LastContact:        tenDaysAgo,
 			},
 		},
 		{
@@ -187,7 +195,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 			Labels: map[string]string{"k1": "v2"},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-				LastContact:        suite.timeBeforeDays(80),
+				LastContact:        eightyDaysAgo,
 			},
 		},
 	}
@@ -215,13 +223,15 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	}
 }
 
-func (suite *ClusterServiceTestSuite) timeBeforeDays(days int) *types.Timestamp {
-	result, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-24 * time.Duration(days) * time.Hour))
-	suite.NoError(err)
-	return result
+func daysAgo(days int) time.Time {
+	return time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 }
 
 func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, createdBeforeDays, lastUpdatedBeforeDays int) *storage.Config {
+	lastUpdated, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(lastUpdatedBeforeDays))
+	suite.NoError(err)
+	createdAt, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(createdBeforeDays))
+	suite.NoError(err)
 	return &storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
 			DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
@@ -231,8 +241,8 @@ func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, created
 					"k2": "v2",
 					"k3": "v3",
 				},
-				LastUpdated: suite.timeBeforeDays(lastUpdatedBeforeDays),
-				CreatedAt:   suite.timeBeforeDays(createdBeforeDays),
+				LastUpdated: lastUpdated,
+				CreatedAt:   createdAt,
 			},
 		},
 	}

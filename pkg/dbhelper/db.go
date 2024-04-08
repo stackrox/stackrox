@@ -2,8 +2,7 @@ package dbhelper
 
 import (
 	"bytes"
-
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"slices"
 )
 
 var (
@@ -30,7 +29,7 @@ func GetPrefix(key []byte) (prefix []byte) {
 	if idx == -1 {
 		return nil
 	}
-	return sliceutils.ShallowClone(key[:idx])
+	return slices.Clone(key[:idx])
 }
 
 // HasPrefix returns if the given key has the given prefix.

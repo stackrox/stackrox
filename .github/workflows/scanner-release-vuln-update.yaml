@@ -27,7 +27,7 @@ jobs:
     needs: read-release-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
@@ -78,6 +78,9 @@ jobs:
 
         # Do not use the make target, as there may be some incompatibilities.
         # See https://github.com/stackrox/stackrox/pull/9227.
+        # Similarly, any updates to the Go version may require go.mod updates.
+        # Just run go mod tidy and hope for the best.
+        go mod tidy
         cd scanner
         go build -trimpath -o bin/updater ./cmd/updater
         go clean -cache -modcache

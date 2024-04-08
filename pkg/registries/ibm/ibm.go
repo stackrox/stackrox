@@ -2,7 +2,6 @@ package ibm
 
 import (
 	"errors"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -12,8 +11,6 @@ import (
 
 const (
 	username = "iamapikey"
-
-	registryTimeout = 10 * time.Second
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
@@ -62,7 +59,5 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 	if err != nil {
 		return nil, err
 	}
-	// IBM needs a custom timeout because it's pretty slow
-	registry.Client.Client.Timeout = registryTimeout
 	return registry, nil
 }

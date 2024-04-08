@@ -4,13 +4,9 @@
 package central
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	storage "github.com/stackrox/rox/generated/storage"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -1936,118 +1932,6 @@ var fileDescriptor_9d0a66b7b73dbb5d = []byte{
 	0xbc, 0xe7, 0xfc, 0xfd, 0xf3, 0x9e, 0xf3, 0xcf, 0xcf, 0x7b, 0xce, 0x9f, 0xff, 0xb5, 0x57, 0xfb,
 	0x9d, 0xf9, 0x2d, 0xf7, 0xc3, 0x1d, 0xf9, 0x43, 0xd6, 0xf3, 0xff, 0x07, 0x00, 0x00, 0xff, 0xff,
 	0x10, 0xbf, 0xb6, 0x80, 0x08, 0x16, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// SensorServiceClient is the client API for SensorService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type SensorServiceClient interface {
-	Communicate(ctx context.Context, opts ...grpc.CallOption) (SensorService_CommunicateClient, error)
-}
-
-type sensorServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewSensorServiceClient(cc grpc.ClientConnInterface) SensorServiceClient {
-	return &sensorServiceClient{cc}
-}
-
-func (c *sensorServiceClient) Communicate(ctx context.Context, opts ...grpc.CallOption) (SensorService_CommunicateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_SensorService_serviceDesc.Streams[0], "/central.SensorService/Communicate", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &sensorServiceCommunicateClient{stream}
-	return x, nil
-}
-
-type SensorService_CommunicateClient interface {
-	Send(*MsgFromSensor) error
-	Recv() (*MsgToSensor, error)
-	grpc.ClientStream
-}
-
-type sensorServiceCommunicateClient struct {
-	grpc.ClientStream
-}
-
-func (x *sensorServiceCommunicateClient) Send(m *MsgFromSensor) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *sensorServiceCommunicateClient) Recv() (*MsgToSensor, error) {
-	m := new(MsgToSensor)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// SensorServiceServer is the server API for SensorService service.
-type SensorServiceServer interface {
-	Communicate(SensorService_CommunicateServer) error
-}
-
-// UnimplementedSensorServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedSensorServiceServer struct {
-}
-
-func (*UnimplementedSensorServiceServer) Communicate(srv SensorService_CommunicateServer) error {
-	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
-}
-
-func RegisterSensorServiceServer(s *grpc.Server, srv SensorServiceServer) {
-	s.RegisterService(&_SensorService_serviceDesc, srv)
-}
-
-func _SensorService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SensorServiceServer).Communicate(&sensorServiceCommunicateServer{stream})
-}
-
-type SensorService_CommunicateServer interface {
-	Send(*MsgToSensor) error
-	Recv() (*MsgFromSensor, error)
-	grpc.ServerStream
-}
-
-type sensorServiceCommunicateServer struct {
-	grpc.ServerStream
-}
-
-func (x *sensorServiceCommunicateServer) Send(m *MsgToSensor) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *sensorServiceCommunicateServer) Recv() (*MsgFromSensor, error) {
-	m := new(MsgFromSensor)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-var _SensorService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "central.SensorService",
-	HandlerType: (*SensorServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Communicate",
-			Handler:       _SensorService_Communicate_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
-	Metadata: "internalapi/central/sensor_iservice.proto",
 }
 
 func (m *MsgFromSensor) Marshal() (dAtA []byte, err error) {

@@ -7,7 +7,7 @@ jobs:
   upload-dev-vulnerabilities:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
       volumes:
         - /tmp:/tmp # make sure Claircore blob can access tmp folder
     steps:
@@ -18,6 +18,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2

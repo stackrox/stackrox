@@ -56,7 +56,7 @@ jobs:
       # prerelease - built with GOTAGS=release
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.66
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -72,6 +72,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -115,7 +117,7 @@ jobs:
       # prerelease
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.66
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}

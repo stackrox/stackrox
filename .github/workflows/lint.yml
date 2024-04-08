@@ -35,7 +35,7 @@ jobs:
   openshift-ci-lint:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.62
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.67
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,6 +44,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Pylint
         run: make -C .openshift-ci lint

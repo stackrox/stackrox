@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	common "github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -83,7 +82,7 @@ func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
 	metadataUpdated, scanUpdated bool,
-	iTime *protoTypes.Timestamp,
+	iTime time.Time,
 ) error {
 	cloned := parts.image
 	if cloned.GetScan().GetComponents() != nil {
@@ -330,7 +329,7 @@ func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID s
 	return err
 }
 
-func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ImageCVE) error {
+func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.ImageCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -368,7 +367,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.T
 			obj.SnoozeStart = storedCVE.GetSnoozeStart()
 			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
 		} else {
-			obj.CveBaseInfo.CreatedAt = iTime
+			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
 
 		serialized, marshalErr := obj.Marshal()
@@ -475,7 +474,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 	return nil
 }
 
-func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, vulnStateUpdate bool,
+func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime time.Time, vulnStateUpdate bool,
 	objs ...*storage.ImageCVEEdge) error {
 
 	if vulnStateUpdate {
@@ -502,7 +501,7 @@ func copyFromImageCVEEdges(ctx context.Context, tx *postgres.Tx, iTime *protoTyp
 		if oldEdgeIDs.Remove(edge.GetId()) {
 			continue
 		}
-		edge.FirstImageOccurrence = iTime
+		edge.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 
 		inputRow, err := getImageCVEEdgeRowToInsert(edge)
 		if err != nil {
@@ -698,10 +697,10 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
-	iTime := protocompat.TimestampNow()
+	iTime := time.Now()
 
 	if !s.noUpdateTimestamps {
-		obj.LastUpdated = iTime
+		obj.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 	}
 
 	oldImage, _, err := s.GetImageMetadata(ctx, obj.GetId())
@@ -1410,7 +1409,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		err = copyFromImageCVEEdges(ctx, tx, protocompat.TimestampNow(), true, imageCVEEdges...)
+		err = copyFromImageCVEEdges(ctx, tx, time.Now(), true, imageCVEEdges...)
 		if err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err

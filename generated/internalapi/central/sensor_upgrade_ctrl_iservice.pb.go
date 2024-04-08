@@ -4,13 +4,9 @@
 package central
 
 import (
-	context "context"
 	fmt "fmt"
-	types "github.com/gogo/protobuf/types"
+	_ "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -733,122 +729,6 @@ var fileDescriptor_3c23719610e3bb4d = []byte{
 	0x44, 0x6f, 0xa7, 0x5a, 0x88, 0x5b, 0x0b, 0x1f, 0xcf, 0xdb, 0xce, 0xa7, 0xf3, 0xb6, 0xf3, 0xf9,
 	0xbc, 0xed, 0xbc, 0xff, 0xd2, 0x6e, 0xbc, 0xb0, 0x2b, 0xf4, 0x70, 0x4c, 0x53, 0x1f, 0x7c, 0x0f,
 	0x00, 0x00, 0xff, 0xff, 0xcd, 0x87, 0x90, 0xf0, 0x8c, 0x05, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// SensorUpgradeControlServiceClient is the client API for SensorUpgradeControlService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type SensorUpgradeControlServiceClient interface {
-	UpgradeCheckInFromUpgrader(ctx context.Context, in *UpgradeCheckInFromUpgraderRequest, opts ...grpc.CallOption) (*UpgradeCheckInFromUpgraderResponse, error)
-	UpgradeCheckInFromSensor(ctx context.Context, in *UpgradeCheckInFromSensorRequest, opts ...grpc.CallOption) (*types.Empty, error)
-}
-
-type sensorUpgradeControlServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewSensorUpgradeControlServiceClient(cc grpc.ClientConnInterface) SensorUpgradeControlServiceClient {
-	return &sensorUpgradeControlServiceClient{cc}
-}
-
-func (c *sensorUpgradeControlServiceClient) UpgradeCheckInFromUpgrader(ctx context.Context, in *UpgradeCheckInFromUpgraderRequest, opts ...grpc.CallOption) (*UpgradeCheckInFromUpgraderResponse, error) {
-	out := new(UpgradeCheckInFromUpgraderResponse)
-	err := c.cc.Invoke(ctx, "/central.SensorUpgradeControlService/UpgradeCheckInFromUpgrader", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *sensorUpgradeControlServiceClient) UpgradeCheckInFromSensor(ctx context.Context, in *UpgradeCheckInFromSensorRequest, opts ...grpc.CallOption) (*types.Empty, error) {
-	out := new(types.Empty)
-	err := c.cc.Invoke(ctx, "/central.SensorUpgradeControlService/UpgradeCheckInFromSensor", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// SensorUpgradeControlServiceServer is the server API for SensorUpgradeControlService service.
-type SensorUpgradeControlServiceServer interface {
-	UpgradeCheckInFromUpgrader(context.Context, *UpgradeCheckInFromUpgraderRequest) (*UpgradeCheckInFromUpgraderResponse, error)
-	UpgradeCheckInFromSensor(context.Context, *UpgradeCheckInFromSensorRequest) (*types.Empty, error)
-}
-
-// UnimplementedSensorUpgradeControlServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedSensorUpgradeControlServiceServer struct {
-}
-
-func (*UnimplementedSensorUpgradeControlServiceServer) UpgradeCheckInFromUpgrader(ctx context.Context, req *UpgradeCheckInFromUpgraderRequest) (*UpgradeCheckInFromUpgraderResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpgradeCheckInFromUpgrader not implemented")
-}
-func (*UnimplementedSensorUpgradeControlServiceServer) UpgradeCheckInFromSensor(ctx context.Context, req *UpgradeCheckInFromSensorRequest) (*types.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpgradeCheckInFromSensor not implemented")
-}
-
-func RegisterSensorUpgradeControlServiceServer(s *grpc.Server, srv SensorUpgradeControlServiceServer) {
-	s.RegisterService(&_SensorUpgradeControlService_serviceDesc, srv)
-}
-
-func _SensorUpgradeControlService_UpgradeCheckInFromUpgrader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpgradeCheckInFromUpgraderRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SensorUpgradeControlServiceServer).UpgradeCheckInFromUpgrader(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/central.SensorUpgradeControlService/UpgradeCheckInFromUpgrader",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SensorUpgradeControlServiceServer).UpgradeCheckInFromUpgrader(ctx, req.(*UpgradeCheckInFromUpgraderRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SensorUpgradeControlService_UpgradeCheckInFromSensor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpgradeCheckInFromSensorRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SensorUpgradeControlServiceServer).UpgradeCheckInFromSensor(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/central.SensorUpgradeControlService/UpgradeCheckInFromSensor",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SensorUpgradeControlServiceServer).UpgradeCheckInFromSensor(ctx, req.(*UpgradeCheckInFromSensorRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _SensorUpgradeControlService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "central.SensorUpgradeControlService",
-	HandlerType: (*SensorUpgradeControlServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "UpgradeCheckInFromUpgrader",
-			Handler:    _SensorUpgradeControlService_UpgradeCheckInFromUpgrader_Handler,
-		},
-		{
-			MethodName: "UpgradeCheckInFromSensor",
-			Handler:    _SensorUpgradeControlService_UpgradeCheckInFromSensor_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/central/sensor_upgrade_ctrl_iservice.proto",
 }
 
 func (m *UpgradeCheckInFromUpgraderRequest) Marshal() (dAtA []byte, err error) {

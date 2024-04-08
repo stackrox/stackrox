@@ -5,7 +5,7 @@ package sensor;
 import "storage/deployment.proto";
 import "storage/image.proto";
 
-option go_package = "sensor";
+option go_package = "./;sensor";
 
 message GetImageRequest {
   storage.ContainerImage image = 1;

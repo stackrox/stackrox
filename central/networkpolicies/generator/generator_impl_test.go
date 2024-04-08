@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -214,7 +216,8 @@ func sortPolicies(policies []*storage.NetworkPolicy) {
 }
 
 func (s *generatorTestSuite) TestGenerate() {
-	ts := protocompat.TimestampNow()
+	now := time.Now().UTC()
+	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
@@ -321,7 +324,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
 		[]*storage.NetworkFlow{
 			{
 				Props: &storage.NetworkFlowProperties{
@@ -382,7 +385,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, protocompat.TimestampNow(), nil)
+		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -529,7 +532,8 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 				},
 			}))
 
-	ts := protocompat.TimestampNow()
+	now := time.Now().UTC()
+	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		Query:            "Namespace: foo,bar,qux",
@@ -645,7 +649,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
 		[]*storage.NetworkFlow{
 			depFlow("depA", "depB"),
 			depFlow("depA", "depD"),
@@ -660,7 +664,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, protocompat.TimestampNow(), nil)
+		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)

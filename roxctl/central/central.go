@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
 	"github.com/stackrox/rox/roxctl/central/login"
+	"github.com/stackrox/rox/roxctl/central/m2m"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -33,6 +34,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		initbundles.Command(cliEnvironment),
 		login.Command(cliEnvironment),
 		export.Command(cliEnvironment),
+		m2m.Command(cliEnvironment),
 	)
 	return c
 }

@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -26,6 +26,8 @@ jobs:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -65,10 +67,12 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
   go-postgres:
@@ -77,7 +81,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -85,6 +89,8 @@ jobs:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
       run: |
@@ -116,16 +122,18 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -133,6 +141,8 @@ jobs:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
       run: |
@@ -164,12 +174,14 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create combined mono repo lock file
       uses: ./.github/actions/create-concatenated-ui-monorepo-lock
@@ -192,16 +204,18 @@ jobs:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/test-results/reports'
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -210,6 +224,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -226,16 +242,18 @@ jobs:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.66
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -244,6 +262,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Shell Unit Tests
       run: make shell-unit-tests
@@ -255,11 +275,31 @@ jobs:
         paths: 'shell-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: (!cancelled())
       uses: ./.github/actions/junit2jira
       with:
+        create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'shell-test-output'
+
+  openshift-ci-unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.62
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: OpenShift CI Wrapper Unit Tests
+        run: make -C .openshift-ci test
 
   slack-on-unit-tests-failure:
     env:
@@ -278,6 +318,7 @@ jobs:
       - go-bench
       - go-postgres
       - local-roxctl-tests
+      - openshift-ci-unit-tests
       - shell-unit-tests
       - ui
     permissions:

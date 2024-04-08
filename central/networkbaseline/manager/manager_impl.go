@@ -25,8 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -161,7 +160,7 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselines
 			Namespace:            baselineInfo.Namespace,
 			Peers:                peers,
 			ForbiddenPeers:       forbiddenPeers,
-			ObservationPeriodEnd: baselineInfo.ObservationPeriodEnd.GogoProtobuf(),
+			ObservationPeriodEnd: protoconv.ConvertMicroTSToProtobufTS(baselineInfo.ObservationPeriodEnd),
 			Locked:               baselineInfo.UserLocked,
 			DeploymentName:       baselineInfo.DeploymentName,
 		})
@@ -302,7 +301,7 @@ func (m *manager) processDeploymentCreate(deploymentID, _ string) error {
 		&queue.DeploymentObservation{
 			DeploymentID:   deploymentID,
 			InObservation:  true,
-			ObservationEnd: getNewObservationPeriodEnd().GogoProtobuf(),
+			ObservationEnd: getNewObservationPeriodEnd().GoTime(),
 		})
 
 	return nil
@@ -561,7 +560,7 @@ func (m *manager) processNetworkPolicyUpdate(
 				&queue.DeploymentObservation{
 					DeploymentID:   deployment.GetId(),
 					InObservation:  true,
-					ObservationEnd: newObservationPeriodEnd.GogoProtobuf(),
+					ObservationEnd: newObservationPeriodEnd.GoTime(),
 				})
 		} else {
 			baseline.ObservationPeriodEnd = newObservationPeriodEnd
@@ -774,7 +773,7 @@ func (m *manager) flushBaselineQueue() {
 	for {
 		// ObservationEnd is in the future so we have nothing to do at this time
 		head := m.deploymentObservationQueue.Peek()
-		if head == nil || protoutils.After(head.ObservationEnd, protocompat.TimestampNow()) {
+		if head == nil || head.ObservationEnd.After(time.Now()) {
 			return
 		}
 
@@ -793,7 +792,7 @@ func (m *manager) flushBaselineQueue() {
 			continue
 		}
 
-		err = m.addBaseline(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), deployment.GetNamespace(), timestamp.FromProtobuf(observedDep.ObservationEnd))
+		err = m.addBaseline(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), deployment.GetNamespace(), timestamp.FromGoTime(observedDep.ObservationEnd))
 		if err != nil {
 			log.Error(err)
 		}
@@ -899,7 +898,7 @@ func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 	if depDetails == nil {
 		t = getNewObservationPeriodEnd()
 	} else {
-		t = timestamp.FromProtobuf(depDetails.ObservationEnd)
+		t = timestamp.FromGoTime(depDetails.ObservationEnd)
 	}
 
 	// Now build the baseline

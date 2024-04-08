@@ -4,13 +4,9 @@
 package v4
 
 import (
-	context "context"
 	fmt "fmt"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -190,126 +186,6 @@ var fileDescriptor_750c78caaf4a6a6e = []byte{
 	0xfa, 0xaa, 0xfe, 0xbe, 0x72, 0xac, 0x8f, 0x95, 0x63, 0x7d, 0xae, 0x1c, 0xeb, 0xf5, 0xcb, 0xf9,
 	0xf3, 0x58, 0x4a, 0xfa, 0x93, 0x72, 0xea, 0xbd, 0xf8, 0x0e, 0x00, 0x00, 0xff, 0xff, 0x08, 0x94,
 	0x61, 0x8c, 0x5f, 0x02, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// MatcherClient is the client API for Matcher service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type MatcherClient interface {
-	// GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
-	GetVulnerabilities(ctx context.Context, in *GetVulnerabilitiesRequest, opts ...grpc.CallOption) (*VulnerabilityReport, error)
-	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
-	GetMetadata(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*Metadata, error)
-}
-
-type matcherClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewMatcherClient(cc grpc.ClientConnInterface) MatcherClient {
-	return &matcherClient{cc}
-}
-
-func (c *matcherClient) GetVulnerabilities(ctx context.Context, in *GetVulnerabilitiesRequest, opts ...grpc.CallOption) (*VulnerabilityReport, error) {
-	out := new(VulnerabilityReport)
-	err := c.cc.Invoke(ctx, "/scanner.v4.Matcher/GetVulnerabilities", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *matcherClient) GetMetadata(ctx context.Context, in *types.Empty, opts ...grpc.CallOption) (*Metadata, error) {
-	out := new(Metadata)
-	err := c.cc.Invoke(ctx, "/scanner.v4.Matcher/GetMetadata", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// MatcherServer is the server API for Matcher service.
-type MatcherServer interface {
-	// GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
-	GetVulnerabilities(context.Context, *GetVulnerabilitiesRequest) (*VulnerabilityReport, error)
-	// GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
-	GetMetadata(context.Context, *types.Empty) (*Metadata, error)
-}
-
-// UnimplementedMatcherServer can be embedded to have forward compatible implementations.
-type UnimplementedMatcherServer struct {
-}
-
-func (*UnimplementedMatcherServer) GetVulnerabilities(ctx context.Context, req *GetVulnerabilitiesRequest) (*VulnerabilityReport, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilities not implemented")
-}
-func (*UnimplementedMatcherServer) GetMetadata(ctx context.Context, req *types.Empty) (*Metadata, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
-}
-
-func RegisterMatcherServer(s *grpc.Server, srv MatcherServer) {
-	s.RegisterService(&_Matcher_serviceDesc, srv)
-}
-
-func _Matcher_GetVulnerabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVulnerabilitiesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MatcherServer).GetVulnerabilities(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/scanner.v4.Matcher/GetVulnerabilities",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MatcherServer).GetVulnerabilities(ctx, req.(*GetVulnerabilitiesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Matcher_GetMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(types.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MatcherServer).GetMetadata(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/scanner.v4.Matcher/GetMetadata",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MatcherServer).GetMetadata(ctx, req.(*types.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _Matcher_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "scanner.v4.Matcher",
-	HandlerType: (*MatcherServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetVulnerabilities",
-			Handler:    _Matcher_GetVulnerabilities_Handler,
-		},
-		{
-			MethodName: "GetMetadata",
-			Handler:    _Matcher_GetMetadata_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internalapi/scanner/v4/matcher_service.proto",
 }
 
 func (m *GetVulnerabilitiesRequest) Marshal() (dAtA []byte, err error) {

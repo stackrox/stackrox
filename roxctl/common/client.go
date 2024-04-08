@@ -72,6 +72,8 @@ func GetRoxctlHTTPClient(am auth.Method, timeout time.Duration, forceHTTP1 bool,
 	retryClient.HTTPClient.Transport = transport
 	retryClient.HTTPClient.Timeout = timeout
 	retryClient.RetryWaitMin = 10 * time.Second
+	// Silence the default log output of the HTTP retry client to not pollute output.
+	retryClient.Logger = nil
 
 	client := retryClient.StandardClient()
 	return &roxctlClientImpl{http: client, am: am, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil

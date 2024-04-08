@@ -115,7 +115,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	return countResults, nil
 }
 
-// ComplianceProfileResultStats retrieves the profile results stats specified by query for the scan configuration
+// ComplianceProfileResultStats retrieves the profile result stats specified by query
 func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByProfile, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
 
@@ -151,6 +151,59 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 	}
 
 	return countResults, nil
+}
+
+// ComplianceProfileResults retrieves the profile results specified by query
+func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.Query) ([]*ResourceResultsByProfile, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
+
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return nil, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorProfileName).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckRationale).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorRuleName).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorProfileName.String(),
+			search.ComplianceOperatorCheckName.String(),
+			search.ComplianceOperatorCheckRationale.String(),
+			search.ComplianceOperatorRuleName.String(),
+		},
+	}
+
+	if cloned.Pagination == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+	}
+	cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+		{
+			Field: search.ComplianceOperatorProfileName.String(),
+		},
+		{
+			Field: search.ComplianceOperatorCheckName.String(),
+		},
+		{
+			Field: search.ComplianceOperatorCheckRationale.String(),
+		},
+		{
+			Field: search.ComplianceOperatorRuleName.String(),
+		},
+	}
+
+	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	results, err := pgSearch.RunSelectRequestForSchema[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 // ComplianceClusterStats retrieves the scan result stats specified by query for the clusters

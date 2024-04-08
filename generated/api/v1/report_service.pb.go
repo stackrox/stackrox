@@ -4,12 +4,8 @@
 package v1
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -42,84 +38,4 @@ var fileDescriptor_e7a746f03a51c2dc = []byte{
 	0x99, 0xaf, 0x57, 0x5c, 0x92, 0x98, 0x9c, 0x5d, 0x94, 0x5f, 0x01, 0xb1, 0x5c, 0x2f, 0xb1, 0x20,
 	0x53, 0xaf, 0xcc, 0x30, 0x8a, 0xa9, 0xcc, 0x30, 0x82, 0x29, 0x89, 0x0d, 0x2c, 0x66, 0x0c, 0x08,
 	0x00, 0x00, 0xff, 0xff, 0x60, 0x5e, 0xf9, 0x47, 0xfa, 0x00, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// ReportServiceClient is the client API for ReportService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
-type ReportServiceClient interface {
-	RunReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-}
-
-type reportServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewReportServiceClient(cc grpc.ClientConnInterface) ReportServiceClient {
-	return &reportServiceClient{cc}
-}
-
-func (c *reportServiceClient) RunReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/v1.ReportService/RunReport", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ReportServiceServer is the server API for ReportService service.
-type ReportServiceServer interface {
-	RunReport(context.Context, *ResourceByID) (*Empty, error)
-}
-
-// UnimplementedReportServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedReportServiceServer struct {
-}
-
-func (*UnimplementedReportServiceServer) RunReport(ctx context.Context, req *ResourceByID) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RunReport not implemented")
-}
-
-func RegisterReportServiceServer(s *grpc.Server, srv ReportServiceServer) {
-	s.RegisterService(&_ReportService_serviceDesc, srv)
-}
-
-func _ReportService_RunReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResourceByID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReportServiceServer).RunReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/v1.ReportService/RunReport",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportServiceServer).RunReport(ctx, req.(*ResourceByID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _ReportService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.ReportService",
-	HandlerType: (*ReportServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "RunReport",
-			Handler:    _ReportService_RunReport_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/report_service.proto",
 }
