@@ -24,6 +24,7 @@ runs:
       uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
       with:
         shell: bash
         run: >
