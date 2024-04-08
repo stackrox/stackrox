@@ -270,7 +270,7 @@ describe('Policies table', () => {
         cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
         cy.get(
             `${trSelector} ${selectors.table.actionsItemButton}:contains("Cannot delete a default policy")`
-        ).should('have.attr', 'aria-disabled', 'true');
+        ).should('have.attr', 'disabled', 'disabled');
     });
 
     it('should have enabled row action to delete user generated policy', () => {
