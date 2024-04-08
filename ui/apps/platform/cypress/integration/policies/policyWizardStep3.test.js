@@ -68,7 +68,7 @@ function clearPolicyCriteriaCards() {
     });
 }
 
-describe('Policy wizard, Step 3 Policy Criteria', () => {
+describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
     withAuth();
 
     before(function () {

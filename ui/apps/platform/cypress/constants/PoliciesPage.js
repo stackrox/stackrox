@@ -16,7 +16,7 @@ export const selectors = {
         severityCell: 'td[data-label="Severity"]',
         lifecycleCell: 'td[data-label="Lifecycle"]',
         selectCheckbox: '.pf-v5-c-table__check input[type="checkbox"]',
-        actionsToggleButton: 'td.pf-v5-c-table__action button.pf-v5-c-dropdown__toggle',
+        actionsToggleButton: 'td.pf-v5-c-table__action button',
         actionsItemButton: 'td.pf-v5-c-table__action ul li button[role="menuitem"]',
         firstRow: '[data-testid="policies-table"] tbody tr:nth(0)',
         rows: '[data-testid="policies-table"] tbody tr',
