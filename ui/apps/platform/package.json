@@ -169,7 +169,7 @@
         "redux-saga-test-plan": "^3.7.0",
         "tailwindcss": "^2.0.3",
         "ts-jest": "^29.1.1",
-        "typescript": "^5.4.3"
+        "typescript": "^5.4.4"
     },
     "browserslist": [
         "Chrome >= 80"
