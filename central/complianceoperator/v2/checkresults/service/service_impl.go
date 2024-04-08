@@ -42,6 +42,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceProfileResults",
+			"/v2.ComplianceResultsService/GetComplianceClusterStats",
 		},
 	})
 )
@@ -198,6 +199,53 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
+	}
+
+	// Lookup the integrations to get the status
+	clusterErrors := make(map[string][]string, len(scanResults))
+	for _, result := range scanResults {
+		integrations, err := s.integrationDS.GetComplianceIntegrationByCluster(ctx, result.ClusterID)
+		if err != nil || len(integrations) != 1 {
+			return nil, errors.Errorf("Unable to retrieve cluster %q", result.ClusterID)
+		}
+		clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
+	}
+
+	return &v2.ListComplianceClusterOverallStatsResponse{
+		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
+	}, nil
+}
+
+// GetComplianceClusterStats lists current scan stats grouped by cluster
+func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2.ComplianceClusterStatsRequest) (*v2.ListComplianceClusterOverallStatsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	if request.GetProfileName() != "" {
+		// Add the profile name as an exact match
+		parsedQuery = search.ConjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, request.GetProfileName()).ProtoQuery(),
+			parsedQuery,
+		)
+	}
+
+	if request.GetScanConfigId() != "" {
+		// Add the scan config name as an exact match
+		parsedQuery = search.ConjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, request.GetScanConfigId()).ProtoQuery(),
+			parsedQuery,
+		)
+	}
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for request %v", request)
 	}
 
 	// Lookup the integrations to get the status
