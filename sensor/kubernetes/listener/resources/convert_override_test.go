@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -113,7 +112,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 			LabelSelector: &storage.LabelSelector{
 				MatchLabels: map[string]string{},
 			},
-			Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
+			Created:                      &timestamp.Timestamp{Seconds: 1000},
 			Tolerations:                  []*storage.Toleration{},
 			ServiceAccount:               "default",
 			AutomountServiceAccountToken: true,
@@ -186,64 +185,6 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 					Tag:      "latest",
 					FullName: "quay.io/stackrox/kafka:latest",
 				},
-			},
-			expectedDeployment: &storage.Deployment{
-				Id:          "FooID",
-				ClusterId:   testClusterID,
-				Name:        "deployment",
-				Namespace:   "namespace",
-				NamespaceId: "FAKENSID",
-				Type:        kubernetes.Deployment,
-				LabelSelector: &storage.LabelSelector{
-					MatchLabels: map[string]string{},
-				},
-				Created:                      &timestamp.Timestamp{Seconds: 1000},
-				Tolerations:                  []*storage.Toleration{},
-				ServiceAccount:               "default",
-				AutomountServiceAccountToken: true,
-				ImagePullSecrets:             []string{},
-				Containers: []*storage.Container{
-					{
-						Id:   "FooID:container1",
-						Name: "container1",
-						Config: &storage.ContainerConfig{
-							Env: []*storage.ContainerConfig_EnvironmentConfig{},
-						},
-						SecurityContext: &storage.SecurityContext{},
-						Resources:       &storage.Resources{},
-						Image: &storage.ContainerImage{
-							Id: "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
-								Registry: "hello.io",
-								Remote:   "stackrox/kafka",
-								Tag:      "latest",
-								FullName: "hello.io/stackrox/kafka:latest",
-							},
-							NotPullable: true,
-						},
-						LivenessProbe:  &storage.LivenessProbe{Defined: false},
-						ReadinessProbe: &storage.ReadinessProbe{Defined: false},
-					},
-					{
-						Id:   "FooID:container2",
-						Name: "container2",
-						Config: &storage.ContainerConfig{
-							Env: []*storage.ContainerConfig_EnvironmentConfig{},
-						},
-						Image: &storage.ContainerImage{
-							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
-								Registry: "hello.io",
-								Remote:   "stackrox/policy-engine",
-								Tag:      "1.3",
-								FullName: "hello.io/stackrox/policy-engine:1.3",
-							},
-						},
-						SecurityContext: &storage.SecurityContext{},
-						Resources:       &storage.Resources{},
-						LivenessProbe:   &storage.LivenessProbe{Defined: false},
-						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
-					},
 				{
 					Registry: "quay.io",
 					Remote:   "stackrox/policy-engine",
