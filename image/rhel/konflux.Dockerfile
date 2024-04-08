@@ -173,4 +173,4 @@ ENV PATH="/stackrox:$PATH" \
 
 USER 4000:4000
 
-# TODO: rhacs-main/Dockerfile.in?ref_type=heads#L127
+HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping
