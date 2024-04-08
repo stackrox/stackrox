@@ -210,7 +210,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 			srcID := sourceImage.GetId()
 			pullName := pullSourceImage.GetName().GetFullName()
 			pullID := pullSourceImage.GetId()
-			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and registry %q", srcName, srcID, pullName, pullID, reg.Name())
+			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config().Insecure)
 			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
 			return reg, pullSourceImage
 		}
@@ -267,7 +267,7 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 		// No registries found thus far, create a no auth registry.
 		reg, err := s.createNoAuthImageRegistry(ctx, imgName, s.regFactory)
 		if err != nil {
-			return nil, pkgErrors.Errorf("unable to create no auth registry for %q", imgName.GetFullName())
+			return nil, pkgErrors.Errorf("unable to create no auth integration for %q", imgName.GetFullName())
 		}
 		regs = append(regs, reg)
 	}
@@ -310,8 +310,9 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 	for _, reg := range registries {
 		metadata, err := reg.Metadata(image)
 		if err != nil {
-			log.Debugf("Failed fetching metadata for image %q with id %q: %v", image.GetName().GetFullName(), image.GetId(), err)
-			errs = append(errs, err)
+			insecure := reg.Config().Insecure
+			log.Debugf("Failed fetching metadata for image %q (%q) with integration %q (insecure: %t): %v", image.GetName().GetFullName(), image.GetId(), reg.Name(), insecure, err)
+			errs = append(errs, pkgErrors.Wrapf(err, "with integration %q (insecure: %t)", reg.Name(), insecure))
 			continue
 		}
 
