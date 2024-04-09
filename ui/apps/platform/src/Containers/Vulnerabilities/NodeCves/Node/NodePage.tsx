@@ -29,7 +29,7 @@ import NodePageHeader, { NodeMetadata, nodeMetadataFragment } from './NodePageHe
 import NodePageVulnerabilities from './NodePageVulnerabilities';
 import NodePageDetails from './NodePageDetails';
 
-const nodeCveOverviewCvePath = getOverviewPagePath('Node', {
+const nodeCveOverviewPath = getOverviewPagePath('Node', {
     entityTab: 'Node',
 });
 
@@ -66,7 +66,7 @@ function NodePage() {
             <PageTitle title={`Node CVEs - Node ${nodeName}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={nodeCveOverviewCvePath}>Nodes</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={nodeCveOverviewPath}>Nodes</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
                         {nodeName ?? (
                             <Skeleton screenreaderText="Loading Node name" width="200px" />
@@ -82,7 +82,7 @@ function NodePage() {
                             title={getAxiosErrorMessage(error)}
                             headingLevel="h2"
                             icon={ExclamationCircleIcon}
-                            iconClassName="pf-u-danger-color-100"
+                            iconClassName="pf-v5-u-danger-color-100"
                         />
                     </Bullseye>
                 </PageSection>
@@ -99,7 +99,7 @@ function NodePage() {
                                 // pagination.setPage(1);
                             }}
                             component={TabsComponent.nav}
-                            className="pf-u-pl-md pf-u-background-color-100"
+                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                             role="region"
                             mountOnEnter
                             unmountOnExit
@@ -123,7 +123,7 @@ function NodePage() {
                             id={vulnTabId}
                             ref={vulnTabRef}
                             eventKey={vulnTabKey}
-                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                         >
                             <NodePageVulnerabilities />
                         </TabContent>
@@ -133,7 +133,7 @@ function NodePage() {
                             id={detailsTabId}
                             ref={detailsTabRef}
                             eventKey={detailsTabKey}
-                            className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                         >
                             <NodePageDetails />
                         </TabContent>
