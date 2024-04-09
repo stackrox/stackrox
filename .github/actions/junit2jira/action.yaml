@@ -41,6 +41,7 @@ runs:
     env:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
+    if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' || env.JIRA_TOKEN != '' }}"
     run: |
       extra_args=()
       if [[ "${{ inputs.create-jiras }}" == "false" ]]; then
