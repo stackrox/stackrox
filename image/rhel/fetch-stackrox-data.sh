@@ -4,7 +4,11 @@
 
 set -euxo pipefail
 
+TARGET_DIR="${1:/stackrox-data}"
+
 fetch_stackrox_data() {
+    local target_dir="${1}"
+
     mkdir -p /tmp/external-networks
     local latest_prefix
     latest_prefix="$(curl --fail https://definitions.stackrox.io/external-networks/latest_prefix)"
@@ -16,9 +20,9 @@ fetch_stackrox_data() {
 
     sha256sum -c <( echo "$(cat /tmp/external-networks/checksum) /tmp/external-networks/networks" )
 
-    mkdir /stackrox-data/external-networks
-    zip -jr /stackrox-data/external-networks/external-networks.zip /tmp/external-networks
+    mkdir "${target_dir}/external-networks"
+    zip -jr "${target_dir}/external-networks/external-networks.zip" /tmp/external-networks
     rm -rf /tmp/external-networks
 }
 
-fetch_stackrox_data
+fetch_stackrox_data "${TARGET_DIR}"

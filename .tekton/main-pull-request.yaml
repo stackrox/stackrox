@@ -299,6 +299,21 @@ spec:
           image: registry.access.redhat.com/ubi8/ubi:latest
           script: exec "$(workspaces.source.path)/source/scripts/konflux/subscription-manager/subscription-manager-bro.sh" smuggle
 
+    - name: fetch-external-networks
+      runAfter:
+      - clone-repository
+      taskSpec:
+        steps:
+          - name: fetch-external-networks
+            image: registry.access.redhat.com/ubi8-minimal:latest
+            script: |
+              #!/usr/bin/env bash
+              "$(workspaces.source.path)/source/image/rhel/fetch-stackrox-data.sh" \
+                  "$(workspaces.source.path)/source/.konflux/stackrox-data"
+      workspaces:
+      - name: source
+        workspace: workspace
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -338,6 +353,7 @@ spec:
       - fetch-external-content
       - prefetch-dependencies
       - clone-rocksdb
+      - fetch-external-networks
       taskRef:
         params:
         # buildah with more memory is needed for UI builds to succeed. Otherwise, there's an error like this in logs:

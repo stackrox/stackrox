@@ -1,2 +1,3 @@
 # rocksdb source for main container builds in Konflux
 rocksdb/
+stackrox-data/
