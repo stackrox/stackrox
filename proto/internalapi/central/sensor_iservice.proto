@@ -16,12 +16,12 @@ import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/policy_sync.proto";
 import "internalapi/central/process_listening_on_ports_update.proto";
-import "internalapi/central/runtime_filters.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
+import "storage/runtime_filters.proto";
 
 option go_package = "central";
 
@@ -83,7 +83,7 @@ message MsgToSensor {
     ClusterHealthResponse cluster_health_response = 25;
     DeduperState deduper_state = 26;
     DeploymentEnhancementRequest deployment_enhancement_request = 27;
-    RuntimeFilteringConfiguration runtime_filtering_configuration = 28;
+    storage.RuntimeFilteringConfiguration runtime_filtering_configuration = 28;
   }
 }
 
