@@ -27,35 +27,28 @@ func TestGetFirst(t *testing.T) {
 	assert.Equal(t, "", GetFirst(nil, "nokey"))
 }
 
-func TestHasGrpcPrefix(t *testing.T) {
-	h := make(http.Header)
-	h.Add("key", "value")
-	assert.False(t, HasMetadataPrefix(WithGet(h)))
-	h.Add(runtime.MetadataPrefix+"Accept", "value")
-	assert.True(t, HasMetadataPrefix(WithGet(h)))
-	assert.False(t, HasMetadataPrefix(nil))
-}
-
 func TestIgnoreMetadataPrefix(t *testing.T) {
 	md := metadata.New(nil)
-	md.Append(runtime.MetadataPrefix+"Accept", "value")
-	md.Append("key", "value1")
-	md.Append(runtime.MetadataPrefix+"key", "value2")
-	assert.True(t, HasMetadataPrefix(md))
+	md.Append("Accept", "value1")
+	md.Append("custom-key", "value1")
+	md.Append(runtime.MetadataPrefix+"Accept", "value2")
+	md.Append(runtime.MetadataPrefix+"custom-key", "value2")
 
-	noPrefix := IgnoreMetadataPrefix(md)
-	assert.False(t, HasMetadataPrefix(noPrefix))
-	assert.Equal(t, "value2", noPrefix.Get("key")[0])
+	noPrefix := WithHeaderMatcher(md)
+	assert.Equal(t, "value2", noPrefix.Get("Accept")[0])
+	assert.Equal(t, "value1", noPrefix.Get("custom-key")[0])
 }
 
 func TestKeyCase(t *testing.T) {
 
-	keyCase1 := "mixed-Case-key"
-	keyCase2 := "Mixed-case-Key"
-	goodValue := "good"
+	// Use "permanent" headers to enable header matcher.
+	const keyCase1 = "content-Type"
+	const keyCase2 = "Content-type"
+	const goodValue = "good"
 
 	testKeys := func(t *testing.T, getter HeaderGetter) {
 		assert.Len(t, getter.Get(keyCase1), 1)
+		assert.Len(t, getter.Get(keyCase2), 1)
 		assert.Equal(t, goodValue, GetFirst(getter, keyCase1))
 		assert.Equal(t, goodValue, GetFirst(getter, keyCase2))
 	}
@@ -65,13 +58,17 @@ func TestKeyCase(t *testing.T) {
 		md := metadata.New(nil)
 		md.Append(keyCase1, goodValue)
 		testKeys(t, md)
+		assert.Empty(t, WithHeaderMatcher(md).Get(keyCase1))
+		assert.Empty(t, WithHeaderMatcher(md).Get(keyCase2))
 	})
 
 	t.Run("test metadata.MD with prefix", func(t *testing.T) {
 		// keys are lowercased in metadata.MD.
 		md := metadata.New(nil)
 		md.Append(runtime.MetadataPrefix+keyCase1, goodValue)
-		testKeys(t, IgnoreMetadataPrefix(md))
+		testKeys(t, WithHeaderMatcher(md))
+		assert.Empty(t, md.Get(keyCase1))
+		assert.Empty(t, md.Get(keyCase2))
 	})
 
 	t.Run("test http.Header", func(t *testing.T) {
@@ -79,5 +76,7 @@ func TestKeyCase(t *testing.T) {
 		h := make(http.Header)
 		h.Add(keyCase1, goodValue)
 		testKeys(t, WithGet(h))
+		assert.Empty(t, WithHeaderMatcher(WithGet(h)).Get(keyCase1))
+		assert.Empty(t, WithHeaderMatcher(WithGet(h)).Get(keyCase2))
 	})
 }
