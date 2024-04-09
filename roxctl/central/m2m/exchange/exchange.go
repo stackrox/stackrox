@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -39,7 +41,10 @@ The access token will be stored in the roxctl configuration file and used for au
 	}
 	cmd.Flags().StringVar(&exchangeCmd.token, "token", "",
 		"OIDC identity token to exchange for a short-lived access token")
-	utils.Must(cmd.MarkFlagRequired("token"))
+	cmd.Flags().StringVar(&exchangeCmd.tokenFile, "token-file", "",
+		"File containing an OIDC identity token to exchange for a short-lived access token")
+	cmd.MarkFlagsOneRequired("token", "token-file")
+	cmd.MarkFlagsMutuallyExclusive("token", "token-file")
 	flags.AddTimeoutWithDefault(cmd, 1*time.Minute)
 	return cmd
 }
@@ -49,6 +54,7 @@ type exchangeCommand struct {
 	timeout    time.Duration
 	centralURL *url.URL
 	token      string
+	tokenFile  string
 }
 
 func (e *exchangeCommand) construct(cmd *cobra.Command) error {
@@ -58,6 +64,18 @@ func (e *exchangeCommand) construct(cmd *cobra.Command) error {
 		return errors.Wrap(err, "retrieving Central URL")
 	}
 	e.centralURL = centralURL
+
+	if e.tokenFile != "" {
+		fileContents, err := os.ReadFile(e.tokenFile)
+		if err != nil {
+			return errors.Wrapf(err, "reading token from file %q", e.tokenFile)
+		}
+		token := strings.TrimSpace(string(fileContents))
+		if token == "" {
+			return errox.InvalidArgs.Newf("empty token given from file %q", e.tokenFile)
+		}
+		e.token = token
+	}
 	return nil
 }
 
