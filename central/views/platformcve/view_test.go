@@ -1,7 +1,10 @@
+//go:build sql_integration
+
 package platformcve
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -16,8 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/scoped"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -28,8 +35,21 @@ type testCase struct {
 	ctx         context.Context
 	q           *v1.Query
 	matchFilter *filterImpl
-	less        lessFunc
 	expectedErr string
+}
+
+type sacTestCase struct {
+	desc            string
+	ctx             context.Context
+	visibleClusters set.StringSet
+}
+
+type paginationTestCase struct {
+	desc   string
+	q      *v1.Query
+	offset int
+	limit  int
+	less   lessFunc
 }
 
 type lessFunc func(records []CveCore) func(i, j int) bool
@@ -130,7 +150,7 @@ func (s *PlatformCVEViewTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *PlatformCVEViewTestSuite) TestPlatformCVECore() {
+func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q)
@@ -140,7 +160,7 @@ func (s *PlatformCVEViewTestSuite) TestPlatformCVECore() {
 			}
 			assert.NoError(t, err)
 
-			expected := s.compileExpected(tc.matchFilter, tc.less)
+			expected := s.compileExpectedCVECores(tc.matchFilter)
 			assert.Equal(t, len(expected), len(actual))
 			assert.ElementsMatch(t, expected, actual)
 
@@ -155,6 +175,67 @@ func (s *PlatformCVEViewTestSuite) TestPlatformCVECore() {
 				)
 			}
 		})
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreSAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				actual, err := s.cveView.Get(sacTC.ctx, tc.q)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				matchFilter := tc.matchFilter
+				baseClusterMatchFilter := matchFilter.matchCluster
+				matchFilter.withClusterFilter(func(cluster *storage.Cluster) bool {
+					if sacTC.visibleClusters.Contains(cluster.GetId()) {
+						return baseClusterMatchFilter(cluster)
+					}
+					return false
+				})
+
+				expected := s.compileExpectedCVECores(tc.matchFilter)
+				assert.Equal(t, len(expected), len(actual))
+				assert.ElementsMatch(t, expected, actual)
+			})
+		}
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECoreWithPagination() {
+	for _, paginationTc := range s.paginationTestCases() {
+		for _, baseTc := range s.testCases() {
+			tc := &baseTc
+			applyPaginationProps(tc, paginationTc)
+			s.T().Run(tc.desc, func(t *testing.T) {
+				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				expected := s.compileExpectedCVECoresWithPagination(tc.matchFilter, paginationTc.less, paginationTc.offset, paginationTc.limit)
+				assert.Equal(t, len(expected), len(actual))
+				assert.EqualValues(t, expected, actual)
+
+				for _, record := range actual {
+					// The total cluster count should be equal to aggregation of the all platform type counts.
+					assert.Equal(t,
+						record.GetClusterCountByPlatformType().GetGenericClusterCount()+
+							record.GetClusterCountByPlatformType().GetKubernetesClusterCount()+
+							record.GetClusterCountByPlatformType().GetOpenshiftClusterCount()+
+							record.GetClusterCountByPlatformType().GetOpenshift4ClusterCount(),
+						record.GetClusterCount(),
+					)
+				}
+			})
+		}
 	}
 }
 
@@ -344,7 +425,126 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 	}
 }
 
-func (s *PlatformCVEViewTestSuite) compileExpected(filter *filterImpl, less lessFunc) []CveCore {
+func (s *PlatformCVEViewTestSuite) sacTestCases(ctx context.Context) []sacTestCase {
+	return []sacTestCase{
+		{
+			desc: "All clusters visible",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Cluster))),
+			visibleClusters: set.NewStringSet(
+				s.clusterNameToIDMap["generic-1"], s.clusterNameToIDMap["generic-2"],
+				s.clusterNameToIDMap["kubernetes-1"], s.clusterNameToIDMap["kubernetes-2"],
+				s.clusterNameToIDMap["openshift-1"], s.clusterNameToIDMap["openshift-2"],
+				s.clusterNameToIDMap["openshift4-1"], s.clusterNameToIDMap["openshift4-2"],
+			),
+		},
+		{
+			desc: "generic-1, kubernetes-1, openshift-1 and openshift4-1 clusters visible",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resources.Cluster),
+					sac.ClusterScopeKeys(
+						s.clusterNameToIDMap["generic-1"], s.clusterNameToIDMap["kubernetes-1"],
+						s.clusterNameToIDMap["openshift-1"], s.clusterNameToIDMap["openshift4-1"]))),
+			visibleClusters: set.NewStringSet(
+				s.clusterNameToIDMap["generic-1"],
+				s.clusterNameToIDMap["kubernetes-1"],
+				s.clusterNameToIDMap["openshift-1"],
+				s.clusterNameToIDMap["openshift4-1"],
+			),
+		},
+		{
+			desc: "generic-2, kubernetes-2, openshift-2, openshift4-2 clusters visible",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.Cluster),
+					sac.ClusterScopeKeys(
+						s.clusterNameToIDMap["generic-2"], s.clusterNameToIDMap["kubernetes-2"],
+						s.clusterNameToIDMap["openshift-2"], s.clusterNameToIDMap["openshift4-2"]))),
+			visibleClusters: set.NewStringSet(
+				s.clusterNameToIDMap["generic-2"],
+				s.clusterNameToIDMap["kubernetes-2"],
+				s.clusterNameToIDMap["openshift-2"],
+				s.clusterNameToIDMap["openshift4-2"],
+			),
+		},
+		{
+			desc: "NamespaceA in openshift4-2 cluster visible",
+			ctx: sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resources.Cluster),
+					sac.ClusterScopeKeys(s.clusterNameToIDMap["openshift4-2"]),
+					sac.NamespaceScopeKeys(testconsts.NamespaceA))),
+			visibleClusters: set.NewStringSet(s.clusterNameToIDMap["openshift4-2"]),
+		},
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) paginationTestCases() []paginationTestCase {
+	return []paginationTestCase{
+		{
+			desc: "Offset: 0, Limit: 6, Order By: CVSS descending",
+			q: search.NewQueryBuilder().WithPagination(
+				search.NewPagination().Limit(6).AddSortOption(
+					search.NewSortOption(search.CVSS).Reversed(true),
+				).AddSortOption(search.NewSortOption(search.CVEID)),
+			).ProtoQuery(),
+			offset: 0,
+			limit:  6,
+			less: func(records []CveCore) func(i int, j int) bool {
+				return func(i, j int) bool {
+					if records[i].GetCVSS() == records[j].GetCVSS() {
+						return records[i].GetCVEID() < records[j].GetCVEID()
+					}
+					return records[i].GetCVSS() > records[j].GetCVSS()
+				}
+			},
+		},
+		{
+			desc: "Offset: 6, Limit: 6, Order By: CVEType",
+			q: search.NewQueryBuilder().WithPagination(
+				search.NewPagination().Offset(6).Limit(6).AddSortOption(
+					search.NewSortOption(search.CVEType),
+				).AddSortOption(search.NewSortOption(search.CVEID)),
+			).ProtoQuery(),
+			offset: 6,
+			limit:  6,
+			less: func(records []CveCore) func(i int, j int) bool {
+				return func(i int, j int) bool {
+					if records[i].GetCVEType() == records[j].GetCVEType() {
+						return records[i].GetCVEID() < records[j].GetCVEID()
+					}
+					return records[i].GetCVEType() < records[j].GetCVEType()
+				}
+			},
+		},
+		{
+			desc: "Order By number of affected clusters",
+			q: search.NewQueryBuilder().WithPagination(
+				search.NewPagination().AddSortOption(
+					search.NewSortOption(search.ClusterID).AggregateBy(aggregatefunc.Count, true).Reversed(true),
+				).AddSortOption(search.NewSortOption(search.CVEID)),
+			).ProtoQuery(),
+			offset: 0,
+			limit:  0,
+			less: func(records []CveCore) func(i int, j int) bool {
+				return func(i int, j int) bool {
+					if records[i].GetClusterCount() == records[j].GetClusterCount() {
+						return records[i].GetCVEID() < records[j].GetCVEID()
+					}
+					return records[i].GetClusterCount() > records[j].GetClusterCount()
+				}
+			},
+		},
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []CveCore {
 	var expected []CveCore
 	for _, cveParts := range s.cvePartsList {
 		if !filter.matchCVEParts(cveParts) {
@@ -401,11 +601,30 @@ func (s *PlatformCVEViewTestSuite) compileExpected(filter *filterImpl, less less
 		})
 	}
 
+	return expected
+}
+
+func (s *PlatformCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter *filterImpl, less lessFunc, offset, limit int) []CveCore {
+	expected := s.compileExpectedCVECores(filter)
 	if less != nil {
 		sort.SliceStable(expected, less(expected))
 	}
+	if offset >= len(expected) {
+		return []CveCore{}
+	}
+	if limit == 0 {
+		return expected
+	}
+	end := offset + limit
+	if end > len(expected) {
+		end = len(expected)
+	}
+	return expected[offset:end]
+}
 
-	return expected
+func applyPaginationProps(baseTc *testCase, paginationTc paginationTestCase) {
+	baseTc.desc = fmt.Sprintf("%s %s", baseTc.desc, paginationTc.desc)
+	baseTc.q.Pagination = paginationTc.q.GetPagination()
 }
 
 func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]converter.ClusterCVEParts) {
