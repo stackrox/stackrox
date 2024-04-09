@@ -103,15 +103,6 @@ var (
 	// CloudSources enables support for cloud source integrations.
 	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", true)
 
-	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
-	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", false)
-
-	// VulnMgmtNodePlatformCVEs enables new APIs and UI for VM 2.0 Node and Platform CVEs
-	VulnMgmtNodePlatformCVEs = registerFeature("Enables support for Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_NODE_PLATFORM_CVES", false)
-
-	// ComplianceReporting enables support for compliance reporting.
-	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", false)
-
 	// UnqualifiedSearchRegistries enables support for unqualified search registries and short name aliases.
 	UnqualifiedSearchRegistries = registerFeature("Enable support for unqualified search registries and short name aliases", "ROX_UNQUALIFIED_SEARCH_REGISTRIES", false)
 )
