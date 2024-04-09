@@ -51,7 +51,7 @@ function KeyValueListModal({ type, keyValues }: KeyValueListModalProps) {
 
     return (
         <>
-            <Button variant="link" isInline onClick={openModal}>
+            <Button variant="link" isInline onClick={openModal} isDisabled={keyValues.length === 0}>
                 {text}
             </Button>
             <Modal

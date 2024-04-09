@@ -54,6 +54,10 @@ type Namespace = {
             key: string;
             value: string;
         }[];
+        annotations: {
+            key: string;
+            value: string;
+        }[];
         priority: number;
     };
     deploymentCount: number;
@@ -68,6 +72,10 @@ const namespacesQuery = gql`
                 clusterId
                 clusterName
                 labels {
+                    key
+                    value
+                }
+                annotations {
                     key
                     value
                 }
@@ -212,12 +220,13 @@ function NamespaceViewPage() {
                             <Th sort={getSortParams('Cluster')}>Cluster</Th>
                             <Th sort={getSortParams('Deployment Count')}>Deployments</Th>
                             <Th>Labels</Th>
+                            <Th>Annotations</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {tableUIState.type === 'ERROR' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <TableErrorComponent
                                         error={tableUIState.error}
                                         message="An error occurred. Try refreshing again"
@@ -227,7 +236,7 @@ function NamespaceViewPage() {
                         )}
                         {tableUIState.type === 'LOADING' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <Bullseye>
                                         <Spinner aria-label="Loading table data" />
                                     </Bullseye>
@@ -236,7 +245,7 @@ function NamespaceViewPage() {
                         )}
                         {tableUIState.type === 'EMPTY' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <Bullseye>
                                         <EmptyStateTemplate
                                             title="There are currently no namespaces"
@@ -251,7 +260,7 @@ function NamespaceViewPage() {
                         )}
                         {tableUIState.type === 'FILTERED_EMPTY' && (
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={6}>
                                     <Bullseye>
                                         <EmptyStateTemplate
                                             title="No results found"
@@ -280,7 +289,14 @@ function NamespaceViewPage() {
                         {(tableUIState.type === 'COMPLETE' || tableUIState.type === 'POLLING') &&
                             tableUIState.data.map((namespace) => {
                                 const {
-                                    metadata: { id, name, clusterName, labels, priority },
+                                    metadata: {
+                                        id,
+                                        name,
+                                        clusterName,
+                                        labels,
+                                        annotations,
+                                        priority,
+                                    },
                                     deploymentCount,
                                 } = namespace;
 
@@ -298,6 +314,12 @@ function NamespaceViewPage() {
                                         </Td>
                                         <Td dataLabel="Labels">
                                             <KeyValueListModal type="label" keyValues={labels} />
+                                        </Td>
+                                        <Td dataLabel="Annotations">
+                                            <KeyValueListModal
+                                                type="annotation"
+                                                keyValues={annotations}
+                                            />
                                         </Td>
                                     </Tr>
                                 );
