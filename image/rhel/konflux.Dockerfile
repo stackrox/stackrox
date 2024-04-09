@@ -72,9 +72,6 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# TODO: remove me
-RUN git diff scripts/konflux/bootstrap-yarn/package-lock.json
-
 # Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
 RUN git restore scripts/konflux/bootstrap-yarn/package-lock.json && \
     scripts/konflux/fail-build-if-git-is-dirty.sh
@@ -140,8 +137,6 @@ RUN GOARCH=$(uname -m) ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
-# TODO: rhacs-main/Dockerfile.in?ref_type=heads#L107-122
-
 LABEL \
     com.redhat.component="rhacs-main-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
@@ -172,5 +167,3 @@ ENV PATH="/stackrox:$PATH" \
     ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
 
 USER 4000:4000
-
-HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping
