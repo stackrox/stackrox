@@ -35,7 +35,7 @@ function FormLabelGroup<T>({
         <FormGroup fieldId={fieldId} {...rest}>
             {children}
             <FormHelperText>
-                <HelperText>
+                <HelperText id={`${fieldId}-helper`}>
                     <HelperTextItem variant={validated}>
                         {showError ? error : helperText}
                     </HelperTextItem>

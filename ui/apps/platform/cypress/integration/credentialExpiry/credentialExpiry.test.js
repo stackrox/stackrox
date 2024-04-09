@@ -54,7 +54,7 @@ describe('Credential expiry', () => {
 
             visitSystemConfigurationWithCentralCredentialExpiryBanner(expiry);
 
-            cy.get(centralCredentialExpiryBanner).should('have.class', 'pf-m-warning');
+            cy.get(centralCredentialExpiryBanner).should('have.class', 'pf-m-gold');
         });
 
         it('should show a danger banner if the expiry date is less than or equal to 3 days', () => {
@@ -62,7 +62,7 @@ describe('Credential expiry', () => {
 
             visitSystemConfigurationWithCentralCredentialExpiryBanner(expiry);
 
-            cy.get(centralCredentialExpiryBanner).should('have.class', 'pf-m-danger');
+            cy.get(centralCredentialExpiryBanner).should('have.class', 'pf-m-red');
         });
 
         it('should download the YAML', () => {
@@ -115,7 +115,7 @@ describe('Credential expiry', () => {
 
             visitSystemConfigurationWithScannerCredentialExpiryBanner(expiry);
 
-            cy.get(scannerCredentialExpiryBanner).should('have.class', 'pf-m-warning');
+            cy.get(scannerCredentialExpiryBanner).should('have.class', 'pf-m-gold');
         });
 
         it('should show a danger banner if the expiry date is greater than 14 days', () => {
@@ -123,7 +123,7 @@ describe('Credential expiry', () => {
 
             visitSystemConfigurationWithScannerCredentialExpiryBanner(expiry);
 
-            cy.get(scannerCredentialExpiryBanner).should('have.class', 'pf-m-danger');
+            cy.get(scannerCredentialExpiryBanner).should('have.class', 'pf-m-red');
         });
 
         it('should download the YAML', () => {

@@ -1,6 +1,6 @@
 export const selectors = {
     actions: {
-        btn: 'td .pf-v5-c-dropdown button[aria-label="Actions"]', // via ActionsColumn element
+        btn: 'td .pf-v5-c-menu-toggle[aria-label="Kebab toggle"]', // via ActionsColumn element
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',
         resolveBtn: 'button:contains("Mark as resolved")',
         resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
@@ -20,9 +20,9 @@ export const selectors = {
         explanationMessage: '[aria-label="Enforcement explanation message"]',
     },
     deployment: {
-        overview: `[aria-label="Deployment details"] article:has('h3:contains("Deployment overview")')`,
-        containerConfiguration: `[aria-label="Deployment details"] article:has('h3:contains("Container configuration")')`,
-        securityContext: `[aria-label="Deployment details"] article:has('h3:contains("Security context")')`,
-        portConfiguration: `[aria-label="Deployment details"] article:has('h3:contains("Port configuration")')`,
+        overview: `[aria-label="Deployment details"]:has('h3:contains("Deployment overview")')`,
+        containerConfiguration: `[aria-label="Deployment details"]:has('h3:contains("Container configuration")')`,
+        securityContext: `[aria-label="Deployment details"]:has('h3:contains("Security context")')`,
+        portConfiguration: `[aria-label="Deployment details"]:has('h3:contains("Port configuration")')`,
     },
 };
