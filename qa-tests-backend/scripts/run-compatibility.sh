@@ -67,7 +67,7 @@ _compatibility_test() {
 
         deploy_default_psp
         deploy_webhook_server
-        get_ECR_docker_pull_password
+        # get_ECR_docker_pull_password
     fi
 
     rm -f FAIL

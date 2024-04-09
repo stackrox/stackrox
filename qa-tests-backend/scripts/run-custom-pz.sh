@@ -50,7 +50,7 @@ config_custom() {
 
     deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
-    get_ECR_docker_pull_password
+    # get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
     #deploy_clair_v4
 }
@@ -67,7 +67,7 @@ reuse_config_part_1() {
 
     create_webhook_server_port_forward
     export_webhook_server_certs "$ROOT/$DEPLOY_DIR/webhook_server_certs"
-    get_ECR_docker_pull_password
+    # get_ECR_docker_pull_password
 
     wait_for_api
     export_central_basic_auth_creds
