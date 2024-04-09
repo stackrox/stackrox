@@ -187,7 +187,7 @@ type Alert struct {
 	//	*Alert_Resource_
 	Entity isAlert_Entity `protobuf_oneof:"Entity"`
 	// For run-time phase alert, a maximum of 40 violations are retained.
-	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" sensorhash:"ignore" search:"-"`                                      // @gotags: sensorhash:"ignore" search:"-"
+	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" search:"-"`                                      // @gotags: search:"-"
 	ProcessViolation *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation,proto3" json:"process_violation,omitempty" search:"-"` // @gotags: search:"-"
 	Enforcement      *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
 	Time             *types.Timestamp        `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time"
