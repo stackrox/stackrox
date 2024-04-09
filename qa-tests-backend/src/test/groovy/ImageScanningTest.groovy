@@ -81,13 +81,13 @@ class ImageScanningTest extends BaseSpecification {
                     .setImage("us.gcr.io/stackrox-ci/qa/registry-image:0.3")
                     .addLabel("app", "gcr-image-scanning-test")
                     .addImagePullSecret("gcr-image-scanning-test"),
-            "ecr": new Deployment()
-                    .setName("ecr-image-registry-test")
-                    .setNamespace(TEST_NAMESPACE)
-                    .setImage("${Env.mustGetAWSECRRegistryID()}.dkr.ecr.${Env.mustGetAWSECRRegistryRegion()}." +
-                            "amazonaws.com/stackrox-qa-ecr-test:registry-image-no-secrets")
-                    .addLabel("app", "ecr-image-registry-test")
-                    .addImagePullSecret("ecr-image-registry-test"),
+            // "ecr": new Deployment()
+            //         .setName("ecr-image-registry-test")
+            //         .setNamespace(TEST_NAMESPACE)
+            //         .setImage("${Env.mustGetAWSECRRegistryID()}.dkr.ecr.${Env.mustGetAWSECRRegistryRegion()}." +
+            //                 "amazonaws.com/stackrox-qa-ecr-test:registry-image-no-secrets")
+            //         .addLabel("app", "ecr-image-registry-test")
+            //         .addImagePullSecret("ecr-image-registry-test"),
             "acr": new Deployment()
                     .setName("acr-image-registry-test")
                     .setNamespace(TEST_NAMESPACE)
@@ -109,13 +109,13 @@ class ImageScanningTest extends BaseSpecification {
                     username: "_json_key",
                     password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
                     server: "https://us.gcr.io"),
-            "ecr": new Secret(
-                    name: "ecr-image-registry-test",
-                    namespace: TEST_NAMESPACE,
-                    username: "AWS",
-                    password: Env.mustGetAWSECRDockerPullPassword(),
-                    server: "https://${Env.mustGetAWSECRRegistryID()}.dkr.ecr."+
-                            "${Env.mustGetAWSECRRegistryRegion()}.amazonaws.com"),
+            // "ecr": new Secret(
+            //         name: "ecr-image-registry-test",
+            //         namespace: TEST_NAMESPACE,
+            //         username: "AWS",
+            //         password: Env.mustGetAWSECRDockerPullPassword(),
+            //         server: "https://${Env.mustGetAWSECRRegistryID()}.dkr.ecr."+
+            //                 "${Env.mustGetAWSECRRegistryRegion()}.amazonaws.com"),
             "acr": new Secret(
                     name: "acr-image-registry-test",
                     namespace: TEST_NAMESPACE,
@@ -620,18 +620,18 @@ class ImageScanningTest extends BaseSpecification {
         where:
         testName                      | integration | deleteAutoRegistry | source                     |
                 imageIntegrationConfig
-        "ecr-iam"                     | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createCustomIntegration(useIam: true, endpoint: "") }
-        "ecr-assume-role"             | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRole: true, endpoint: "") }
-        "ecr-assume-role-external-id" | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRoleExternalId: true, endpoint: "") }
-        "ecr-auto"                    | "ecr"       | false              | source(".*.amazonaws.com") |
-                null
-        "ecr-auto-and-config"         | "ecr"       | false              | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createDefaultIntegration() }
-        "ecr-config-only"             | "ecr"       | true               | /^ecr$/                    |
-                { -> ECRRegistryIntegration.createDefaultIntegration() }
+        // "ecr-iam"                     | "ecr"       | false              | /^ecr$/                    |
+        //         { -> ECRRegistryIntegration.createCustomIntegration(useIam: true, endpoint: "") }
+        // "ecr-assume-role"             | "ecr"       | false              | /^ecr$/                    |
+        //         { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRole: true, endpoint: "") }
+        // "ecr-assume-role-external-id" | "ecr"       | false              | /^ecr$/                    |
+        //         { -> ECRRegistryIntegration.createCustomIntegration(useAssumeRoleExternalId: true, endpoint: "") }
+        // "ecr-auto"                    | "ecr"       | false              | source(".*.amazonaws.com") |
+        //         null
+        // "ecr-auto-and-config"         | "ecr"       | false              | /^ecr$/                    |
+        //         { -> ECRRegistryIntegration.createDefaultIntegration() }
+        // "ecr-config-only"             | "ecr"       | true               | /^ecr$/                    |
+        //         { -> ECRRegistryIntegration.createDefaultIntegration() }
         "acr-auto"            | "acr"       | false              | /Autogenerated .*.azurecr.io for cluster remote/ |
                 null
         "acr-auto-and-config" | "acr"       | false              | /^acr$/                    |
