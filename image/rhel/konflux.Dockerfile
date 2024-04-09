@@ -166,7 +166,7 @@ ENV PATH="/stackrox:$PATH" \
     ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="STACKROX_BRANDING"
 
-COPY .konflux/stackrox-data/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
+COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
