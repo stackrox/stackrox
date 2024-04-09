@@ -13,9 +13,9 @@ message MsgToCollector {
 }
 
 message MsgFromCollector {
-    oneof msg {
-        storage.RuntimeFiltersACK runtime_filters_ack = 1;
-    }
+  oneof msg {
+    storage.RuntimeFiltersACK runtime_filters_ack = 1;
+  }
 }
 
 service CollectorService {
