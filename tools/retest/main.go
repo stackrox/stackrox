@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/v60/github"
@@ -12,8 +14,6 @@ import (
 
 func main() {
 	ctx := context.Background()
-
-	retestComment := "/retest"
 
 	// Use installation transport with client.
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
@@ -29,44 +29,77 @@ func main() {
 		comments, _, err := client.Issues.ListComments(ctx, "stackrox", "stackrox", prNumber, nil)
 		handleError(err)
 
-		retested := 0
-		for _, c := range comments {
-			if c.GetBody() == retestComment {
-				retested++
-			}
-		}
-		log.Printf("#%d was retested %d times", prNumber, retested)
-		if retested > 3 {
+		retestNTimes(ctx, client, prNumber, comments)
+		retest(ctx, client, prNumber, comments)
+
+	}
+}
+
+func retestNTimes(ctx context.Context, client *github.Client, prNumber int, comments []*github.IssueComment) {
+	restestNTimes := regexp.MustCompile("Retest (.*) (\\d+) times")
+	job := ""
+	times := 0
+	for _, c := range comments {
+		matched := restestNTimes.FindStringSubmatch(c.GetBody())
+		if len(matched) != 2 {
 			continue
 		}
-
-		prDetails, _, err := client.PullRequests.Get(ctx, "stackrox", "stackrox", prNumber)
-		handleError(err)
-
-		if isGHACheckFailing(ctx, client, prDetails.GetHead().GetSHA()) {
+		job = matched[0]
+		t, err := strconv.Atoi(matched[1])
+		if err != nil {
+			log.Printf("#%d got an error in a comment: %s", prNumber, err)
 			continue
 		}
-
-		var statuses []Status
-		statusRequest, err := http.NewRequest("GET", prDetails.GetStatusesURL(), nil)
-		handleError(err)
-		_, err = client.Do(ctx, statusRequest, &statuses)
-		handleError(err)
-
-		retestComment := github.IssueComment{
-			Body: &retestComment,
+		times = t
+		if times < 1 || times > 100 {
+			log.Printf("#%d got request to retest %d times but it should be between 1 and 100", prNumber, times)
+			continue
 		}
+		log.Printf("#%d will retest %s %d times", prNumber, job, times)
+	}
 
-		for _, status := range statuses {
-			log.Printf("#%d %-40s\t%10s", prNumber, status.Context, status.State)
-			if status.State != "failure" {
-				continue
-			}
-			comment, _, err := client.Issues.CreateComment(ctx, "stackrox", "stackrox", prNumber, &retestComment)
-			handleError(err)
-			log.Printf("#%d commented: %s", prNumber, comment.GetURL())
-			break
+}
+
+func retest(ctx context.Context, client *github.Client, prNumber int, comments []*github.IssueComment) {
+	retestComment := "/retest"
+
+	retested := 0
+	for _, c := range comments {
+		if c.GetBody() == retestComment {
+			retested++
 		}
+	}
+	log.Printf("#%d was retested %d times", prNumber, retested)
+	if retested > 3 {
+		return
+	}
+
+	prDetails, _, err := client.PullRequests.Get(ctx, "stackrox", "stackrox", prNumber)
+	handleError(err)
+
+	if isGHACheckFailing(ctx, client, prDetails.GetHead().GetSHA()) {
+		return
+	}
+
+	var statuses []Status
+	statusRequest, err := http.NewRequest("GET", prDetails.GetStatusesURL(), nil)
+	handleError(err)
+	_, err = client.Do(ctx, statusRequest, &statuses)
+	handleError(err)
+
+	comment := github.IssueComment{
+		Body: &retestComment,
+	}
+
+	for _, status := range statuses {
+		log.Printf("#%d %-40s\t%10s", prNumber, status.Context, status.State)
+		if status.State != "failure" {
+			return
+		}
+		comment, _, err := client.Issues.CreateComment(ctx, "stackrox", "stackrox", prNumber, &comment)
+		handleError(err)
+		log.Printf("#%d commented: %s", prNumber, comment.GetURL())
+		break
 	}
 }
 
