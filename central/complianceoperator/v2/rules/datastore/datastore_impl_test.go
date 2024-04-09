@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	ruleStorage "github.com/stackrox/rox/central/complianceoperator/v2/rules/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -276,6 +277,80 @@ func (s *complianceRuleDataStoreTestSuite) TestGetRulesByCluster() {
 	}
 	for _, tc := range testCases {
 		retrievedObjects, err := s.dataStore.GetRulesByCluster(tc.testContext, tc.clusterID)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
+		s.Require().Equal(tc.expectedResults, retrievedObjects)
+	}
+}
+
+func (s *complianceRuleDataStoreTestSuite) TestSearchRules() {
+	// make sure we have nothing
+	ruleIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(ruleIDs)
+
+	testRule1 := getTestRule(testconsts.Cluster1)
+	testRule2 := getTestRule(testconsts.Cluster1)
+	testRule3 := getTestRule(testconsts.Cluster2)
+
+	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, testRule1))
+	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, testRule2))
+	s.Require().NoError(s.dataStore.UpsertRule(s.hasWriteCtx, testRule3))
+
+	count, err := s.storage.Count(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Require().Equal(3, count)
+
+	testCases := []struct {
+		desc            string
+		query           *v1.Query
+		testContext     context.Context
+		expectedResults []*storage.ComplianceOperatorRuleV2
+		expectedCount   int
+	}{
+		{
+			desc: "Rules exist - Full access",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+			testContext:     s.testContexts[testutils.UnrestrictedReadCtx],
+			expectedResults: []*storage.ComplianceOperatorRuleV2{testRule1},
+			expectedCount:   1,
+		},
+		{
+			desc: "Rules exist - Cluster 1 access",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+			testContext:     s.testContexts[testutils.Cluster1ReadWriteCtx],
+			expectedResults: []*storage.ComplianceOperatorRuleV2{testRule1},
+			expectedCount:   1,
+		},
+		{
+			desc: "Rules exist - Cluster 2 access",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+			testContext:     s.testContexts[testutils.Cluster2ReadWriteCtx],
+			expectedResults: nil,
+			expectedCount:   0,
+		},
+		{
+			desc: "Rules exists - No compliance access",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorRuleName, testRule1.Name).ProtoQuery(),
+			testContext:     s.nonComplianceContexts[testutils.UnrestrictedReadCtx],
+			expectedResults: nil,
+			expectedCount:   0,
+		},
+		{
+			desc: "Rule does not exist - Full access",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorRuleName, "nonsense").ProtoQuery(),
+			testContext:     s.testContexts[testutils.UnrestrictedReadCtx],
+			expectedResults: nil,
+			expectedCount:   0,
+		},
+	}
+	for _, tc := range testCases {
+		retrievedObjects, err := s.dataStore.SearchRules(tc.testContext, tc.query)
 		s.Require().NoError(err)
 		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
 		s.Require().Equal(tc.expectedResults, retrievedObjects)

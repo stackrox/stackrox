@@ -186,6 +186,17 @@
     }
   },
   "definitions": {
+    "ComplianceRuleFix": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": "string"
+        },
+        "disruption": {
+          "type": "string"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -313,9 +324,6 @@
         "name": {
           "type": "string"
         },
-        "ruleVersion": {
-          "type": "string"
-        },
         "ruleType": {
           "type": "string"
         },
@@ -338,10 +346,27 @@
           "type": "string"
         },
         "fixes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComplianceRuleFix"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "ruleId": {
+          "type": "string"
+        },
+        "parentRule": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string"
+        },
+        "warning": {
           "type": "string"
         }
-      },
-      "title": "Next Tag: 11"
+      }
     },
     "v2CountComplianceProfilesResponse": {
       "type": "object",
