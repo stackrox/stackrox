@@ -64,7 +64,7 @@ describe('Workload CVE Image Single page', () => {
         ).then(($severityTotals) => {
             const severityTotal = $severityTotals.toArray().reduce((acc, $el) => {
                 const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                return isNaN(count) ? 0 : count;
+                return Number.isNaN(count) ? 0 : count;
             }, 0);
             const plural = severityTotal === 1 ? '' : 's';
             cy.get(`*:contains(${severityTotal} result${plural} found)`);
@@ -80,7 +80,7 @@ describe('Workload CVE Image Single page', () => {
         ).then(($statusTotals) => {
             const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
                 const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                return isNaN(count) ? 0 : count;
+                return Number.isNaN(count) ? 0 : count;
             }, 0);
 
             const plural = statusTotal === 1 ? '' : 's';
