@@ -4,10 +4,11 @@ import { useParams } from 'react-router-dom';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { getOverviewCvesPath } from '../utils/searchUtils';
-import NodeCvePageHeader, { NodeCveMetadata } from './NodeCvePageHeader';
 
-const workloadCveOverviewCvePath = getOverviewCvesPath({
+import { getOverviewPagePath } from '../../utils/searchUtils';
+import CvePageHeader, { CveMetadata } from '../../components/CvePageHeader';
+
+const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
     entityTab: 'CVE',
 });
 
@@ -15,7 +16,7 @@ function NodeCvePage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { cveId } = useParams() as { cveId: string };
 
-    const [nodeCveMetadata, setNodeCveMetadata] = useState<NodeCveMetadata>();
+    const [nodeCveMetadata, setNodeCveMetadata] = useState<CveMetadata>();
     const nodeCveName = nodeCveMetadata?.cve;
 
     // TODO - Simulate a loading state, will replace metadata with results from a query
@@ -33,7 +34,7 @@ function NodeCvePage() {
                 ],
             });
         }, 1500);
-    }, []);
+    }, [cveId]);
 
     return (
         <>
@@ -50,7 +51,7 @@ function NodeCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <NodeCvePageHeader data={nodeCveMetadata} />
+                <CvePageHeader data={nodeCveMetadata} />
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">

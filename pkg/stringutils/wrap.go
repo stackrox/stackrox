@@ -11,6 +11,6 @@ import (
 func Wrap(text string) string {
 	wrapped := wordwrap.WrapString(text, 80)
 	wrapped = strings.TrimSpace(wrapped)
-	wrapped = strings.Replace(wrapped, "\n", "\n      ", -1)
+	wrapped = strings.ReplaceAll(wrapped, "\n", "\n      ")
 	return wrapped
 }

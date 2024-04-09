@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -96,7 +96,7 @@ func validateAuthStatusResponseForClientCert(t *testing.T, cert *x509.Certificat
 	assert.Equal(t, "userpki", authStatus.GetAuthProvider().GetType())
 	fingerprint := cryptoutils.CertFingerprint(cert)
 
-	userIDAttributeIdx := sliceutils.FindMatching(authStatus.UserAttributes, func(attr *v1.UserAttribute) bool {
+	userIDAttributeIdx := slices.IndexFunc(authStatus.UserAttributes, func(attr *v1.UserAttribute) bool {
 		return attr.Key == "userid"
 	})
 	assert.True(t, userIDAttributeIdx >= 0, "couldn't find userid attribute in resp %+v", authStatus)

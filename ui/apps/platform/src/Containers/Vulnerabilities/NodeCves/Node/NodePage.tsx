@@ -1,20 +1,46 @@
 import React from 'react';
-import { PageSection, Breadcrumb, Divider, BreadcrumbItem, Skeleton } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
+import { gql, useQuery } from '@apollo/client';
+import {
+    PageSection,
+    Breadcrumb,
+    Divider,
+    BreadcrumbItem,
+    Skeleton,
+    Bullseye,
+} from '@patternfly/react-core';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { getOverviewCvesPath } from '../utils/searchUtils';
 
-const workloadCveOverviewCvePath = getOverviewCvesPath({
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import NodePageHeader, { NodeMetadata, nodeMetadataFragment } from './NodePageHeader';
+import { getOverviewPagePath } from '../../utils/searchUtils';
+
+const workloadCveOverviewCvePath = getOverviewPagePath('Node', {
     entityTab: 'Node',
 });
 
+const nodeMetadataQuery = gql`
+    ${nodeMetadataFragment}
+    query getNodeMetadata($id: ID!) {
+        node(id: $id) {
+            ...NodeMetadata
+        }
+    }
+`;
+
+// TODO - Update for PF5
 function NodePage() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { nodeId } = useParams() as { nodeId: string };
 
-    const nodeName: string | undefined = 'TODO';
+    const { data, error } = useQuery<{ node: NodeMetadata }, { id: string }>(nodeMetadataQuery, {
+        variables: { id: nodeId },
+    });
+
+    const nodeName = data?.node?.name ?? '-';
 
     return (
         <>
@@ -30,6 +56,24 @@ function NodePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
+            {error ? (
+                <PageSection variant="light">
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title={getAxiosErrorMessage(error)}
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            iconClassName="pf-u-danger-color-100"
+                        />
+                    </Bullseye>
+                </PageSection>
+            ) : (
+                <>
+                    <PageSection variant="light">
+                        <NodePageHeader data={data?.node} />
+                    </PageSection>
+                </>
+            )}
         </>
     );
 }

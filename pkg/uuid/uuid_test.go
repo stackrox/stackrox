@@ -60,3 +60,17 @@ func TestFromString(t *testing.T) {
 		t.Errorf("Couldn't find UUID, %s, in map", second)
 	}
 }
+
+func TestNewTestUUID(t *testing.T) {
+	test := NewTestUUID(1)
+	require.NotNil(t, test)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", test.String())
+
+	test = NewTestUUID(-1)
+	require.NotNil(t, test)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", test.String())
+
+	test = NewTestUUID(10)
+	require.NotNil(t, test)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", test.String())
+}

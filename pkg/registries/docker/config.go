@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/heroku/docker-registry-client/registry"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -51,11 +52,16 @@ func (c *Config) formatURL() string {
 
 // DefaultTransport returns the default transport based on the configuration.
 func DefaultTransport(cfg *Config) registry.Transport {
-	transport := proxy.RoundTripper()
+	transport := proxy.RoundTripper(
+		proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
+		proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
+	)
 	if cfg.Insecure {
-		transport = proxy.RoundTripperWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: true,
-		})
+		transport = proxy.RoundTripper(
+			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+			proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
+			proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
+		)
 	}
 	username, password := cfg.GetCredentials()
 	return registry.WrapTransport(transport, strings.TrimSuffix(cfg.formatURL(), "/"), username, password)

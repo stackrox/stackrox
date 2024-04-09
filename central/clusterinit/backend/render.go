@@ -128,7 +128,7 @@ func (b *InitBundleWithMeta) RenderAsK8sSecrets() ([]byte, error) {
 		}
 
 		serviceTypeStr := strings.ToLower(
-			strings.Replace(strings.TrimSuffix(svcType.String(), "_SERVICE"), "_", "-", -1))
+			strings.ReplaceAll(strings.TrimSuffix(svcType.String(), "_SERVICE"), "_", "-"))
 		secret := &v1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",

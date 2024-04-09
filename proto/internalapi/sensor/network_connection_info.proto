@@ -8,7 +8,7 @@ import "storage/network_flow.proto";
 import "storage/process_indicator.proto";
 
 option cc_enable_arenas = true;
-option go_package = "sensor";
+option go_package = "./;sensor";
 
 message NetworkConnectionInfo {
   // Network connections that were added from the last time state was sent.

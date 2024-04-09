@@ -9,16 +9,16 @@ import {
     Divider,
     Flex,
     FlexItem,
-    Label,
-    LabelGroup,
     PageSection,
     Spinner,
     Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
-import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { getDateTime } from 'utils/dateUtils';
+
+import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+import KeyValueListModal from 'Components/KeyValueListModal';
 
 export type DeploymentPageDetailsProps = {
     deploymentId: string;
@@ -165,45 +165,22 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                                             {deploymentDetailsData.type}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
-                                </DescriptionList>
-                            </FlexItem>
-                            <Divider component="div" />
-                            <FlexItem>
-                                <DescriptionList
-                                    isFillColumns
-                                    columnModifier={{
-                                        md: '2Col',
-                                        sm: '1Col',
-                                    }}
-                                >
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Labels</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                {deploymentDetailsData.labels.map((label) => {
-                                                    return (
-                                                        <Label>
-                                                            {label.key}: {label.value}
-                                                        </Label>
-                                                    );
-                                                })}
-                                            </LabelGroup>
+                                            <KeyValueListModal
+                                                type="label"
+                                                keyValues={deploymentDetailsData.labels}
+                                            />
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Annotations</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                {deploymentDetailsData.annotations.map(
-                                                    (annotation) => {
-                                                        return (
-                                                            <Label>
-                                                                {annotation.key}: {annotation.value}
-                                                            </Label>
-                                                        );
-                                                    }
-                                                )}
-                                            </LabelGroup>
+                                            <KeyValueListModal
+                                                type="annotation"
+                                                keyValues={deploymentDetailsData.annotations}
+                                            />
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>

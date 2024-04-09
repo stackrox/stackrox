@@ -750,6 +750,8 @@ get_base_ref() {
         else
             die "Expect PULL_BASE_REF or CLONEREFS_OPTIONS"
         fi
+    elif is_GITHUB_ACTIONS; then
+        echo "${GITHUB_BASE_REF}"
     else
         die "unsupported"
     fi
@@ -786,6 +788,8 @@ get_repo_full_name() {
 get_commit_sha() {
     if is_OPENSHIFT_CI; then
         echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
+    elif is_GITHUB_ACTIONS; then
+        echo "${GITHUB_SHA}"
     else
         die "unsupported"
     fi
@@ -1189,6 +1193,8 @@ post_process_test_results() {
         else
             if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
                 create_jiras="false"
+            elif [[ "${JOB_NAME:-unknown}" =~ interop ]]; then
+                create_jiras="false"
             else
                 create_jiras="true"
             fi
@@ -1206,7 +1212,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.18/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.19/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \

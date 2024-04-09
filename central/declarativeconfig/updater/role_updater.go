@@ -8,7 +8,6 @@ import (
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
-	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -19,7 +18,6 @@ import (
 
 type roleUpdater struct {
 	roleDS        roleDataStore.DataStore
-	groupDS       groupDataStore.DataStore
 	healthDS      declarativeConfigHealth.DataStore
 	idExtractor   types.IDExtractor
 	nameExtractor types.NameExtractor
@@ -27,11 +25,9 @@ type roleUpdater struct {
 
 var _ ResourceUpdater = (*roleUpdater)(nil)
 
-func newRoleUpdater(roleDatastore roleDataStore.DataStore, groupDatastore groupDataStore.DataStore,
-	healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
+func newRoleUpdater(roleDatastore roleDataStore.DataStore, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &roleUpdater{
 		roleDS:        roleDatastore,
-		groupDS:       groupDatastore,
 		healthDS:      healthDS,
 		idExtractor:   types.UniversalIDExtractor(),
 		nameExtractor: types.UniversalNameExtractor(),

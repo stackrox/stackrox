@@ -141,7 +141,7 @@ func getEffectVersion(version string) string {
 	// 3.0.58.x-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
 	version = strings.Replace(version, "x", strconv.Itoa(math.MaxInt32), 1)
 	// 3.0.58.2147483647-189-dirty -> 3.0.58.2147483647.189.dirty
-	version = strings.Replace(version, "-", ".", -1)
+	version = strings.ReplaceAll(version, "-", ".")
 	// 3.0.58.2147483647.189.dirty -> 3.0.58.2147483647.189.1, dirty version is greater than its base dev build
 	version = strings.Replace(version, "dirty", "1", 1)
 	return version

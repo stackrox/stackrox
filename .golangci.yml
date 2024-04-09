@@ -33,27 +33,6 @@ issues:
     - path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
       linters:
         - forbidigo
-    - linters:
-        - revive
-      text: "should have a package comment"
-    - linters:
-        - revive
-      text: "should not use dot imports"
-    - linters:
-        - revive
-      text: "returns unexported type .* which can be annoying to use"
-    - linters:
-        - revive
-      text: "error strings should not be capitalized or end with punctuation or a newline"
-    - linters:
-        - revive
-      text: "should omit type int from declaration"
-    - linters:
-        - revive
-      text: "don't use leading k in Go names"
-    - linters:
-        - revive
-      text: "if-return"
     - path: .*/bleve@.*/index\.go
       linters:
         - staticcheck
@@ -83,7 +62,13 @@ linters-settings:
     - G504
     - G601
   revive:
-    min-confidence: 0
+    rules:
+    - name: package-comments
+      disabled: true
+    - name: error-strings
+      disabled: true
+    - name: unexported-return
+      disabled: true
   govet:
     enable-all: true
     disable:
@@ -106,8 +91,19 @@ linters-settings:
           - github.com/stackrox/rox/migrator/log.WritetoStderr
           - github.com/stackrox/rox/migrator/log.WritetoStderrf
   gocritic:
-    enabled-checks:
-      - commentFormatting
+    disabled-checks:
+    - appendAssign
+    - argOrder
+    - assignOp
+    - captLocal
+    - dupArg
+    - elseif
+    - exitAfterDefer
+    - ifElseChain
+    - mapKey
+    - singleCaseSwitch
+    - unlambda
+    - wrapperFunc
   nolintlint:
     allow-leading-space: false # require machine-readable nolint directives (i.e. with no leading space)
     allow-unused: false # report any unused nolint directives

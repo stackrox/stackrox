@@ -14,8 +14,7 @@ set -euo pipefail
 # TODO(ROX-23154) will add a test to ensure an upgrade from RocksDB to 4.5 will return an error
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-LAST_POSTGRES_TAG="4.4.0-rc.11-2-g5bdff1f851"
-LAST_POSTGRES_SHA="5bdff1f851bd3c551674797370da04d508b0f6ab"
+LAST_POSTGRES_TAG="4.4.0"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
@@ -52,9 +51,6 @@ test_upgrade() {
 
     # repo for old version with legacy database
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-upgrade-test"
-    # repo for old version with postgres database so we can perform a subsequent
-    # postgres->postgres upgrade
-    REPO_FOR_POSTGRES_TIME_TRAVEL="/tmp/rox-postgres-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
     QUAY_REPO="stackrox-io"
     REGISTRY="quay.io/$QUAY_REPO"
@@ -63,14 +59,7 @@ test_upgrade() {
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
 
-    if is_CI; then
-        export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
-        require_environment "LONGTERM_LICENSE"
-        export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
-    fi
-
     preamble
-    preamble_postgres
     setup_deployment_env false false
     setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
@@ -89,12 +78,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
-    EARLIER_TAG="3.74.0-1-gfe924fce30"
+    EARLIER_TAG="3.74.0"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
-
-    cd "$REPO_FOR_TIME_TRAVEL"
-    git checkout "$EARLIER_SHA"
 
     ########################################################################################
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
@@ -115,9 +100,7 @@ test_upgrade_paths() {
     export API_TOKEN
 
     cd "$TEST_ROOT"
-    git remote add origin https://github.com/stackrox/stackrox.git
-    git fetch origin release-4.4.x/go_1.21
-    git checkout "$LAST_POSTGRES_SHA"
+    download_roxctl "${LAST_POSTGRES_TAG}"
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #
@@ -163,9 +146,9 @@ test_upgrade_paths() {
     validate_upgrade "01_to_rocks" "central upgrade postgres down to rocks" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     info "Fetching a sensor bundle for cluster 'remote'"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
+    roxctl version
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
@@ -204,15 +187,8 @@ helm_upgrade_to_last_postgres() {
     ci_export ROX_POSTGRES_DATASTORE "true"
     export CLUSTER="remote"
 
-    make cli
-
-    # Get opensource charts and convert to development_build to support release builds
-    if is_CI; then
-        bin/"${TEST_HOST_PLATFORM}"/roxctl version
-        bin/"${TEST_HOST_PLATFORM}"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-    else
-        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-    fi
+    roxctl version
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
 
 
     local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
@@ -257,6 +233,7 @@ restore_3_56_1_backup() {
     require_environment "ROX_PASSWORD"
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+    roxctl version
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
@@ -264,14 +241,11 @@ restore_3_56_1_backup() {
 deploy_earlier_rocks_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    make cli
-
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+    download_roxctl "${EARLIER_TAG}"
 
     # Let's try helm
     ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+    roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_PASSWORD}" \
@@ -292,18 +266,37 @@ deploy_earlier_rocks_central() {
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
 }
 
-preamble_postgres() {
-    info "Starting test preamble postgres"
-
-    info "Will clone or update a clean copy of the rox repo for Postgres DB test at $REPO_FOR_POSTGRES_TIME_TRAVEL"
-    if [[ -d "$REPO_FOR_POSTGRES_TIME_TRAVEL" ]]; then
-        if is_CI; then
-          info "Repo for time travel already exists! Will use it."
-        fi
-        (cd "$REPO_FOR_POSTGRES_TIME_TRAVEL" && git checkout master && git reset --hard && git pull)
-    else
-        (cd "$(dirname "$REPO_FOR_POSTGRES_TIME_TRAVEL")" && git clone https://github.com/stackrox/stackrox.git "$(basename "$REPO_FOR_POSTGRES_TIME_TRAVEL")")
+download_roxctl() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: download_roxctl <version>"
     fi
+
+    local version="$1"
+    local output_dir="$(mktemp -d)"
+
+    local host_os
+    if is_darwin; then
+        host_os="darwin"
+    elif is_linux; then
+        host_os="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    local platform
+    case "$(uname -m)" in
+        x86_64) platform="" ;;
+        ppc64le) platform="-ppc64le" ;;
+        s390x) platform="-s390x" ;;
+        *) die "Unknown architecture" ;;
+    esac
+
+    info "Download roxctl $version"
+    curl --location --retry 3 -sS --fail -o "${output_dir}/roxctl" \
+        "https://mirror.openshift.com/pub/rhacs/assets/${version}/bin/${host_os}/roxctl${platform}"
+    chmod +x "${output_dir}/roxctl"
+    export PATH="$output_dir:$PATH"
+    roxctl version
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

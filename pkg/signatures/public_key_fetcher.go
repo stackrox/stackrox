@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -24,7 +25,6 @@ import (
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"golang.org/x/time/rate"
 )
 
@@ -227,12 +227,12 @@ func checkIfErrorContainsCode(err error, codes ...int) bool {
 
 	// Transport error is returned by go-containerregistry for any errors occurred post authentication.
 	if errors.As(err, &transportErr) {
-		return sliceutils.Find(codes, transportErr.StatusCode) != -1
+		return slices.Index(codes, transportErr.StatusCode) != -1
 	}
 
 	// HttpStatusError is returned by heroku-client for any errors occurred during authentication.
 	if errors.As(err, &statusError) && statusError.Response != nil {
-		return sliceutils.Find(codes, statusError.Response.StatusCode) != -1
+		return slices.Index(codes, statusError.Response.StatusCode) != -1
 	}
 
 	return false

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -58,7 +59,7 @@ func SetCurrentVersionPostgres(pool postgres.DB) {
 			SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 			Version:       version.GetMainVersion(),
 			MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-			LastPersisted: timestamp.Now().GogoProtobuf(),
+			LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 		}
 		setVersionPostgres(pool, newVersion)
 	}

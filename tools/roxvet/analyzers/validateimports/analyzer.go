@@ -71,10 +71,6 @@ var (
 				"github.com/stackrox/rox/pkg/protocompat",
 				"github.com/stackrox/rox/pkg/protoconv",
 				"github.com/stackrox/rox/pkg/protoutils",
-				// The packages below should be removed from the set
-				// once migrated to the compatibility layer (above three packages).
-				"github.com/stackrox/rox/pkg/postgres/pgutils",
-				"github.com/stackrox/rox/pkg/search/postgres",
 			),
 		},
 		"github.com/gogo/protobuf/types": {
@@ -84,25 +80,6 @@ var (
 				"github.com/stackrox/rox/pkg/protoconv",
 				"github.com/stackrox/rox/pkg/protoconv/resources",
 				"github.com/stackrox/rox/pkg/protoutils",
-				// The packages below should be removed from the set
-				// once migrated to the compatibility layer (above three packages).
-				"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate",
-				"github.com/stackrox/rox/central/splunk",
-				"github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_network_flows_partition/stores/previous",
-				"github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_network_flows_partition/stores/updated",
-				"github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role",
-				"github.com/stackrox/rox/pkg/booleanpolicy/evaluator",
-				"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer",
-				"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters",
-				"github.com/stackrox/rox/pkg/csv",
-				"github.com/stackrox/rox/pkg/networkgraph/testutils",
-				"github.com/stackrox/rox/pkg/postgres/pgutils",
-				"github.com/stackrox/rox/pkg/postgres/walker",
-				"github.com/stackrox/rox/pkg/readable",
-				"github.com/stackrox/rox/pkg/search/predicate",
-				"github.com/stackrox/rox/pkg/search/predicate/basematchers",
-				"github.com/stackrox/rox/pkg/telemetry",
-				"github.com/stackrox/rox/pkg/timestamp",
 			),
 		},
 		"github.com/magiconair/properties/assert": {
@@ -309,6 +286,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/process/id",
 			"pkg/protocompat",
 			"pkg/protoconv",
+			"pkg/protoutils",
 			"pkg/retry",
 			"pkg/sac",
 			"pkg/scancomponent",

@@ -767,22 +767,18 @@ class ImageScanningTest extends BaseSpecification {
 
         then:
         "Validate registry based image metadata"
-        def imageDetail = expectedDigestImageFromScan(QUAY_IMAGE_WITH_CLAIR_SCAN_DATA, integrationName)
+        // ROX-23406 - A retry is needed because quay.io will sometimes return
+        // scan details without vulns.
+        withRetry(5, 60) {
+            def imageDetail = expectedDigestImageFromScan(QUAY_IMAGE_WITH_CLAIR_SCAN_DATA, integrationName)
 
-        and:
-        "Validate image scan details"
-        assert imageDetail.scan.dataSource.id != ""
-        assert imageDetail.scan.dataSource.name == scannerName
+            // Validate image scan details
+            assert imageDetail.scan.dataSource.id != ""
+            assert imageDetail.scan.dataSource.name == scannerName
 
-        try {
             assert imageDetail.scan.componentsCount > 0
             assert imageDetail.scan.componentsList.size() > 0
             assert imageDetail.scan.componentsList.vulnsCount.sum { it as Integer } > 0
-        } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw (e)
-            }
-            throw new AssumptionViolatedException("Failed to scan the image using ${scannerName}. Skipping test!", e)
         }
 
         cleanup:
@@ -801,15 +797,15 @@ class ImageScanningTest extends BaseSpecification {
         "quay registry with token"                         | "quay"           | "Stackrox Scanner" |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: false,]) }
-        "quay with robot creds only"                      | "quay"    |  "Stackrox Scanner" |
+        "quay with robot creds only"                       | "quay"           |  "Stackrox Scanner" |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: "", useRobotCreds: true, includeScanner: false,]) }
 
-        "quay registry+scanner with token"                  | "quay"   | "quay" |
+        "quay registry+scanner with token"                  | "quay"          | "quay" |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), includeScanner: true,]) }
 
-        "quay registry+scanner with token and robot creds"  | "quay"   | "quay" |
+        "quay registry+scanner with token and robot creds"  | "quay"          | "quay" |
                 { -> QuayImageIntegration.createCustomIntegration(
                         [oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"), useRobotCreds: true,
                          includeScanner: true,]) }

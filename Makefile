@@ -74,7 +74,7 @@ UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifneq ($(UNAME_M),x86_64)
-	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
+	BUILD_IMAGE = docker.io/library/golang:1.21
 endif
 
 CENTRAL_DB_DOCKER_ARGS :=
@@ -418,24 +418,17 @@ build-volumes:
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
 
-.PHONY: main-builder-image
-main-builder-image: build-volumes
-	@echo "+ $@"
-	$(SILENT)# Ensure that the go version in the image matches the expected version
-	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
-	grep -q "$(shell head -n 1 EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
-
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
 	@echo "+ $@"
 
 .PHONY: sensor-build-dockerized
-sensor-build-dockerized: main-builder-image
+sensor-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
-sensor-kubernetes-build-dockerized: main-builder-image
+sensor-kubernetes-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
@@ -449,7 +442,7 @@ sensor-kubernetes-build:
 	$(GOBUILD) sensor/kubernetes
 
 .PHONY: main-build-dockerized
-main-build-dockerized: main-builder-image
+main-build-dockerized: build-volumes
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 

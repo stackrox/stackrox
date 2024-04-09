@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
@@ -142,6 +143,36 @@ func TestProxyExcludes(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNilf(t, proxyURL, "Expected proxy to be used for URL %v", u)
 			}
+		})
+	}
+}
+
+func TestProxyOptions(t *testing.T) {
+	cases := []struct {
+		name            string
+		options         []Option
+		responseTimeout time.Duration
+	}{
+		{
+			name:            "no options",
+			options:         []Option{},
+			responseTimeout: 0,
+		},
+		{
+			name:            "with response header timeout",
+			options:         []Option{WithResponseHeaderTimeout(10 * time.Second)},
+			responseTimeout: 10 * time.Second,
+		},
+	}
+
+	for _, testCase := range cases {
+		tc := testCase
+		t.Run(tc.name, func(t *testing.T) {
+			transport := Without(tc.options...).(*http.Transport)
+			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
+
+			transport = RoundTripper(tc.options...).(*http.Transport)
+			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
 		})
 	}
 }

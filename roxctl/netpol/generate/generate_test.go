@@ -3,6 +3,7 @@ package generate
 import (
 	"testing"
 
+	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -112,6 +113,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 					OutputFolderPath:      tt.outDir,
 					OutputFilePath:        tt.outFile,
 					RemoveOutputPath:      tt.removeOutputPath,
+					DNSPort:               npguard.DefaultDNSPort,
 				},
 				offline:         true,
 				inputFolderPath: "", // set through construct
