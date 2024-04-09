@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -189,7 +190,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		},
 	}
 
-	resp, err := service.CreateComplianceScanConfiguration(ctx, req)
+	resp, err := createComplianceScanConfigurationWithRetry(ctx, service, req)
 	assert.NoError(t, err)
 	assert.Equal(t, req.GetScanName(), resp.GetScanName())
 
@@ -300,7 +301,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	}
 
 	// Verify that the duplicate profile was not created and the error message is correct
-	_, err = service.CreateComplianceScanConfiguration(ctx, duplicateProfileReq)
+	_, err = createComplianceScanConfigurationWithRetry(ctx, service, duplicateProfileReq)
 	assert.Contains(t, err.Error(), "already uses profile")
 
 	query = &v2.RawQuery{Query: ""}
@@ -335,7 +336,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	}
 
 	// Verify that the invalid scan configuration was not created and the error message is correct
-	_, err = service.CreateComplianceScanConfiguration(ctx, invalidProfileReq)
+	_, err = createComplianceScanConfigurationWithRetry(ctx, service, invalidProfileReq)
 	if err == nil {
 		t.Fatal("expected error creating scan configuration with invalid profiles")
 	}
@@ -379,7 +380,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 		},
 	}
 
-	resp, err := service.CreateComplianceScanConfiguration(ctx, req)
+	resp, err := createComplianceScanConfigurationWithRetry(ctx, service, req)
 	assert.NoError(t, err)
 	assert.Equal(t, req.GetScanName(), resp.GetScanName())
 
@@ -430,7 +431,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 		},
 	}
 
-	resp, err := service.CreateComplianceScanConfiguration(ctx, req)
+	resp, err := createComplianceScanConfigurationWithRetry(ctx, service, req)
 	assert.NoError(t, err)
 	assert.Equal(t, req.GetScanName(), resp.GetScanName())
 
@@ -466,6 +467,25 @@ func deleteScanConfig(ctx context.Context, scanID string, service v2.ComplianceS
 	}
 	_, err := service.DeleteComplianceScanConfiguration(ctx, req)
 	return err
+}
+
+func createComplianceScanConfigurationWithRetry(ctx context.Context, service v2.ComplianceScanConfigurationServiceClient, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
+	var resp *v2.ComplianceScanConfiguration
+	err := retry.WithRetry(func() error {
+		var err error
+		resp, err = service.CreateComplianceScanConfiguration(ctx, req)
+		if err != nil && strings.Contains(err.Error(), "is already used in scan setting binding") {
+			// Ignore this specific error and retry
+			return retry.MakeRetryable(err)
+		}
+		return err
+	},
+		retry.BetweenAttempts(func(previousAttemptNumber int) {
+			time.Sleep(30 * time.Second)
+		}),
+		retry.Tries(10),
+	)
+	return resp, err
 }
 
 func getscanConfigID(configName string, scanConfigs []*v2.ComplianceScanConfigurationStatus) string {
@@ -504,7 +524,7 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 		},
 		Clusters: []string{clusterId},
 	}
-	scanConfig, err := client.CreateComplianceScanConfiguration(context.TODO(), &sc)
+	scanConfig, err := createComplianceScanConfigurationWithRetry(context.TODO(), client, &sc)
 	if err != nil {
 		t.Fatal(err)
 	}
