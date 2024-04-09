@@ -42,7 +42,8 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" }
+        { "type": "npm", "path": "scripts/konflux/bootstrap-yarn" },
+        { "type": "gomod", "path": "." }
       ]
   - name: build-source-image
     value: 'true'
@@ -57,7 +58,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 3Gi
       status: { }
   - name: git-auth
     secret:
@@ -85,6 +86,10 @@ spec:
       computeResources:
         requests:
           cpu: 1
+
+  # The pipeline regularly takes >1h to finish.
+  timeouts:
+    pipeline: 1h30m0s
 
   pipelineSpec:
 
