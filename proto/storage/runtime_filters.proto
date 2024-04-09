@@ -5,6 +5,16 @@ package storage;
 option go_package = "./;storage";
 option java_package = "io.stackrox.proto.storage";
 
+message RuntimeFiltersACK {
+  string instance_id = 1;
+  Action action = 2;
+
+  enum Action {
+    ACK = 0;
+    NACK = 1;
+  }
+}
+
 message RuntimeFilter {
   enum RuntimeFilterFeatures {
     EXTERNAL_IPS = 0;

@@ -25,7 +25,7 @@ import "storage/runtime_filters.proto";
 
 option go_package = "./internalapi/central;central";
 
-// next available tag: 19
+// next available tag: 20
 message MsgFromSensor {
   string hash_key = 7;
   string dedupe_key = 8;
@@ -46,6 +46,7 @@ message MsgFromSensor {
     ComplianceOperatorInfo compliance_operator_info = 16;
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
+    storage.RuntimeFiltersACK runtime_filters_ack = 19;
   }
 }
 
