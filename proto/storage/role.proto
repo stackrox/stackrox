@@ -5,7 +5,7 @@ package storage;
 import "storage/labels.proto";
 import "storage/traits.proto";
 
-option go_package = "./;storage";
+option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 // A role specifies which actions are allowed for which subset of cluster

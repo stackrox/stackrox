@@ -8,7 +8,7 @@ import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 import "storage/role.proto";
 
-option go_package = "./;v1";
+option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 // storage.Access values should be in escalating order. IE READ_WRITE means you have READ as well.
