@@ -276,6 +276,8 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
+	// Check if md has permanent HTTP headers prefixed by the gRPC gateway, and
+	// wrap it so that such headers are accessed by their unprefixed keys.
 	if len(md.Get(runtime.MetadataPrefix+"Accept")) != 0 {
 		ri.Metadata = WithHeaderMatcher(md)
 	} else {
