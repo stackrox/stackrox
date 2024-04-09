@@ -4,7 +4,7 @@
 
 set -euxo pipefail
 
-TARGET_DIR="${1:/stackrox-data}"
+TARGET_DIR="${1:-/stackrox-data}"
 
 fetch_stackrox_data() {
     local target_dir="${1}"

@@ -306,6 +306,7 @@ spec:
             image: registry.access.redhat.com/ubi8-minimal:latest
             script: |
               #!/usr/bin/env bash
+              microdnf install -y openssl zip
               "$(workspaces.source.path)/source/image/rhel/fetch-stackrox-data.sh" \
                   "$(workspaces.source.path)/source/.konflux/stackrox-data"
       workspaces:
