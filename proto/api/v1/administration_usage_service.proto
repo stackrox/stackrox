@@ -6,7 +6,7 @@ import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "./;v1";
+option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 // TimeRange allows for requesting data by a time range.

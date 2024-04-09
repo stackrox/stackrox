@@ -12,7 +12,7 @@ import "storage/network_baseline.proto";
 import "storage/network_flow.proto";
 import "storage/network_policy.proto";
 
-option go_package = "./;v1";
+option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 // API specific objects.

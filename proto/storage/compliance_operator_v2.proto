@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "storage/schedule.proto";
 import "storage/user.proto";
 
-option go_package = "./;storage";
+option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 // Represents the role of the node within the cluster

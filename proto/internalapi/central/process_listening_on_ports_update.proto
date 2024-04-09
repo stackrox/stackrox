@@ -5,7 +5,7 @@ package central;
 import "google/protobuf/timestamp.proto";
 import "storage/process_listening_on_port.proto";
 
-option go_package = "./;central";
+option go_package = "central";
 
 message ProcessListeningOnPortsUpdate {
   repeated storage.ProcessListeningOnPortFromSensor processes_listening_on_ports = 1;

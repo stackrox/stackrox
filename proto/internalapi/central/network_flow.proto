@@ -5,7 +5,7 @@ package central;
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 
-option go_package = "./;central";
+option go_package = "central";
 
 message NetworkFlowUpdate {
   // Network flows that were added or removed from the last time state was sent to Central.

@@ -9,7 +9,7 @@ import "storage/deployment.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
 
-option go_package = "./;integrations";
+option go_package = "integrations";
 option java_package = "io.stackrox.proto.api.integrations";
 
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
