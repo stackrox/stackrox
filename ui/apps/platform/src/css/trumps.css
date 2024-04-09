@@ -5,7 +5,7 @@
  */
 
 .ReactModal__Content,
-#main-page-container > div > :not(.pf-c-page__main-section) {
+#main-page-container > div > :not(.pf-c-page__main-section):not(.pf-c-tab-content) {
   font-size: 0.875rem;
   color: var(--base-600);
 }
