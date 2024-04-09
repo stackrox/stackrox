@@ -1,8 +1,10 @@
 import React from 'react';
-import { Flex, Skeleton, Title, LabelGroup, Label } from '@patternfly/react-core';
-
+import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
+
 import { getDateTime } from 'utils/dateUtils';
+
+import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
 export const clusterMetadataFragment = gql`
     fragment ClusterMetadata on Cluster {
@@ -35,14 +37,10 @@ export type ClusterPageHeaderProps = {
 function ClusterPageHeader({ data }: ClusterPageHeaderProps) {
     if (!data) {
         return (
-            <Flex
-                direction={{ default: 'column' }}
-                spaceItems={{ default: 'spaceItemsXs' }}
-                className="pf-v5-u-w-50"
-            >
-                <Skeleton screenreaderText="Loading Cluster name" fontSize="2xl" />
-                <Skeleton screenreaderText="Loading Cluster metadata" height="40px" />
-            </Flex>
+            <HeaderLoadingSkeleton
+                nameScreenreaderText="Loading Cluster name"
+                metadataScreenreaderText="Loading Cluster metadata"
+            />
         );
     }
 

@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-    Flex,
-    LabelGroup,
-    Label,
-    Skeleton,
-    Text,
-    Title,
-    List,
-    ListItem,
-} from '@patternfly/react-core';
+import { Flex, LabelGroup, Label, Text, Title, List, ListItem } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -16,6 +7,7 @@ import { getDateTime } from 'utils/dateUtils';
 
 import { getDistroLinkText } from '../utils/textUtils';
 import { sortCveDistroList } from '../utils/sortUtils';
+import HeaderLoadingSkeleton from './HeaderLoadingSkeleton';
 
 export type CveMetadata = {
     cve: string;
@@ -34,14 +26,10 @@ export type CvePageHeaderProps = {
 function CvePageHeader({ data }: CvePageHeaderProps) {
     if (!data) {
         return (
-            <Flex
-                direction={{ default: 'column' }}
-                spaceItems={{ default: 'spaceItemsXs' }}
-                className="pf-v5-u-w-50"
-            >
-                <Skeleton screenreaderText="Loading CVE name" fontSize="2xl" />
-                <Skeleton screenreaderText="Loading CVE metadata" height="100px" />
-            </Flex>
+            <HeaderLoadingSkeleton
+                nameScreenreaderText="Loading CVE name"
+                metadataScreenreaderText="Loading CVE metadata"
+            />
         );
     }
 
