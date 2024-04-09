@@ -22,3 +22,8 @@ message RuntimeFilter {
   string default_status = 2;
   repeated RuntimeFilterRule rules = 3;
 }
+
+message RuntimeFilteringConfiguration {
+  repeated storage.RuntimeFilter runtime_filters = 1;
+  repeated storage.ResourceCollection resource_collections = 2;
+}
