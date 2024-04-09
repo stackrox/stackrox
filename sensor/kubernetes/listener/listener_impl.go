@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 )
 
 const (
@@ -39,6 +39,7 @@ type listenerImpl struct {
 	storeProvider      *resources.StoreProvider
 	mayCreateHandlers  concurrency.Signal
 	context            context.Context
+	crdWatcherStatusC  chan *watcher.Status
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {
@@ -87,21 +88,21 @@ func (k *listenerImpl) Stop(_ error) {
 	k.storeProvider.CleanupStores()
 }
 
-func serverResourcesForGroup(client client.Interface, group string) (*metav1.APIResourceList, error) {
-	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(group)
-	return resourceList, err
-}
-
-// resourceExists returns true if resource exists in list.  Use with output from
-// `serverResourcesForGroup` to verify a resource exists prior to starting an
-// Informer to prevent client-go from spamming the k8s API and logs.
-func resourceExists(list *metav1.APIResourceList, resource string) bool {
-	for _, apiResource := range list.APIResources {
-		if apiResource.Name == resource {
-			return true
+func (k *listenerImpl) handleWatcherStatus(fn func(*watcher.Status)) {
+	go func() {
+		for {
+			select {
+			case <-k.stopSig.Done():
+				return
+			case status, ok := <-k.crdWatcherStatusC:
+				if !ok {
+					log.Error("crdWatcherStatusC channel closed")
+					return
+				}
+				if fn != nil {
+					fn(status)
+				}
+			}
 		}
-	}
-
-	log.Warnf("Resource %q does not exist...", resource)
-	return false
+	}()
 }
