@@ -143,7 +143,7 @@ func createEntityMetadataMap(alerts []*storage.Alert) map[string]EntityMetadata 
 			}
 		default:
 			// this should theoretically not happen, this means that an unknown entity is specified.
-			// the returned entityID will be "unkown"
+			// the returned entityID will be "unknown"
 			result[entityID] = EntityMetadata{ID: entityID}
 		}
 	}
@@ -189,7 +189,7 @@ func getEntityIDFromAlert(alert *storage.Alert) string {
 	case *storage.Alert_Image:
 		return entity.Image.Name.GetFullName()
 	}
-	// return an "unkown" id opposed to an empty string; we still create the report, but the metadata
+	// return an "unknown" id opposed to an empty string; we still create the report, but the metadata
 	// will be empty
 	return "unknown"
 }

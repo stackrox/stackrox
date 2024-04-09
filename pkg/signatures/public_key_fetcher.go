@@ -198,7 +198,7 @@ func isMissingSignatureError(err error) bool {
 	return checkIfErrorContainsCode(err, http.StatusNotFound)
 }
 
-// isUnkownMimeTypeError is checking whether the error indicates that the image is an unkown mime type for cosign.
+// isUnkownMimeTypeError is checking whether the error indicates that the image is an unknown mime type for cosign.
 // Cosign itself only supports OCI or DockerV2 manifest schemes and will error out on any other, older manifest schemes.
 // Cosign ref:
 // https://github.com/sigstore/cosign/blob/6bfac1a470492d8964778b1b8c41e0056bf5dbdd/pkg/oci/remote/remote.go#L65-L76
