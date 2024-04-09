@@ -113,6 +113,7 @@ load_state() {
         echo >&2 "ERROR: Bats state file ${BATS_STATE_FILE} does not exist"
         exit 1
     fi
+    # shellcheck source=/dev/null
     source "${BATS_STATE_FILE}"
 }
 
@@ -230,7 +231,9 @@ teardown_file() {
 }
 
 @test "Verify freshly built main image is available" {
+    # shellcheck source=../../deploy/common/env.sh
     source "${ROOT}/deploy/common/env.sh" > /dev/null
+    # shellcheck source=../../deploy/common/deploy.sh
     source "${ROOT}/deploy/common/deploy.sh" > /dev/null
     # We use the image inspection functionality baked into `oc` -- works on OpenShift and vanilla K8s.
     info "Checking availability of image ${MAIN_IMAGE}"
@@ -243,6 +246,7 @@ teardown_file() {
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
+    # shellcheck disable=SC2030,SC2031
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
