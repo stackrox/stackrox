@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"time"
 
@@ -268,8 +270,14 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 
 func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
+
+	// Generate random SHA to use as HashId // FIXME: temporary for tests. Find way to properly calc the hashId.
+	data := make([]byte, 10)
+	rand.Read(data)
+	randomSha := fmt.Sprintf("%x", sha256.Sum256(data))
+
 	r := &v4.CreateNodeIndexReportRequest{
-		HashId: "FIXME",
+		HashId: "SCANNER_v4:" + randomSha,
 	}
 	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
 }
