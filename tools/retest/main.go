@@ -80,7 +80,7 @@ func isGHACheckFailing(ctx context.Context, client *github.Client, lastCommit st
 		ghaUrlPrefix := "https://api.github.com/repos/stackrox/stackrox/check-runs/"
 		if check.GetConclusion() == "failure" &&
 			strings.HasPrefix(check.GetURL(), ghaUrlPrefix) {
-			log.Printf("%s is failing: %s", check.GetName(), check.GetHTMLURL())
+			log.Printf("%s has failed: %s", check.GetName(), check.GetHTMLURL())
 		}
 		return true
 	}
