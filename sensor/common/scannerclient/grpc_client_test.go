@@ -31,7 +31,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			name: "when get index fails then return error",
 			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
-					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any()).
+					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v4.IndexReport{}, status.Error(codes.Unavailable, "index failed"))
 			},
 			args: args{
@@ -50,7 +50,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			name: "when get index succeeds then return index report",
 			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
-					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any()).
+					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v4.IndexReport{
 						State:    "IndexFinished",
 						Contents: &v4.Contents{},

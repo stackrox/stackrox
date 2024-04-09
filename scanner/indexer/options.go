@@ -14,6 +14,7 @@ type Option func(*options)
 type options struct {
 	auth     authn.Authenticator
 	platform v1.Platform
+	insecure bool
 }
 
 // WithAuth specifies the authentication to use
@@ -23,6 +24,12 @@ type options struct {
 func WithAuth(auth authn.Authenticator) Option {
 	return func(o *options) {
 		o.auth = auth
+	}
+}
+
+func InsecureSkipTLSVerify(insecure bool) Option {
+	return func(o *options) {
+		o.insecure = insecure
 	}
 }
 

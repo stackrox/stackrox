@@ -66,7 +66,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 			Password: req.GetContainerImage().GetPassword(),
 		}))
 	}
-
+	opts = append(opts, indexer.InsecureSkipTLSVerify(req.GetInsecureSkipTlsVerify()))
 	// Create index report.
 	zlog.Info(ctx).
 		Str("image_url", req.GetContainerImage().GetUrl()).
@@ -136,7 +136,8 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
 	return s.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
-		HashId: req.GetHashId(),
+		HashId:                req.GetHashId(),
+		InsecureSkipTlsVerify: req.GetInsecureSkipTlsVerify(),
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: req.GetContainerImage(),
 		},

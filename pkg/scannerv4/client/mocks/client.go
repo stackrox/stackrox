@@ -88,18 +88,18 @@ func (mr *MockScannerMockRecorder) GetMatcherMetadata(arg0 any) *gomock.Call {
 }
 
 // GetOrCreateImageIndex mocks base method.
-func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
+func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, insecure bool) (*v4.IndexReport, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", ctx, ref, auth)
+	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", ctx, ref, auth, insecure)
 	ret0, _ := ret[0].(*v4.IndexReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrCreateImageIndex indicates an expected call of GetOrCreateImageIndex.
-func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, insecure any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth, insecure)
 }
 
 // GetVulnerabilities mocks base method.
@@ -118,16 +118,16 @@ func (mr *MockScannerMockRecorder) GetVulnerabilities(ctx, ref, contents any) *g
 }
 
 // IndexAndScanImage mocks base method.
-func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator) (*v4.VulnerabilityReport, error) {
+func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator, arg3 bool) (*v4.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexAndScanImage", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "IndexAndScanImage", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*v4.VulnerabilityReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IndexAndScanImage indicates an expected call of IndexAndScanImage.
-func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), arg0, arg1, arg2, arg3)
 }

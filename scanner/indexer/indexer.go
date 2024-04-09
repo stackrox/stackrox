@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"crypto/sha512"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -62,17 +63,27 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	return es
 }
 
-// remoteTransport is the http.RoundTripper to use when talking to image registries.
-var remoteTransport = proxiedRemoteTransport()
+var (
+	// remoteTransport is the http.RoundTripper to use when talking to image registries.
+	remoteTransport         = proxiedRemoteTransport(false)
+	insecureRemoteTransport = proxiedRemoteTransport(true)
+)
 
-func proxiedRemoteTransport() http.RoundTripper {
-	tr, ok := remote.DefaultTransport.(*http.Transport)
-	if !ok {
-		// The proxy function was already modified to proxy.TransportFunc.
-		// See scanner/cmd/scanner/main.go.
-		return http.DefaultTransport
+func proxiedRemoteTransport(insecure bool) http.RoundTripper {
+	tr := func() *http.Transport {
+		tr, ok := remote.DefaultTransport.(*http.Transport)
+		if !ok {
+			return http.DefaultTransport.(*http.Transport).Clone()
+		}
+		tr = tr.Clone()
+		tr.Proxy = proxy.TransportFunc
+		return tr
+	}()
+	if insecure {
+		tr.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 	}
-	tr.Proxy = proxy.TransportFunc
 	return tr
 }
 
@@ -258,7 +269,8 @@ func (i *localIndexer) IndexContainerImage(
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
-	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout)
+	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout, o.insecure)
+
 	if err != nil {
 		return nil, err
 	}
@@ -291,12 +303,16 @@ func (i *localIndexer) IndexContainerImage(
 	return i.libIndex.Index(ctx, manifest)
 }
 
-func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
+func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration, insecure bool) (*http.Client, error) {
 	repo := imgRef.Context()
 	reg := repo.Registry
 	tr := remoteTransport
+	if insecure {
+		tr = insecureRemoteTransport
+	}
 	tr = transport.NewUserAgent(tr, `StackRox Scanner/`+version.Version)
 	tr = transport.NewRetry(tr)
+
 	var err error
 	tr, err = transport.NewWithContext(ctx, reg, auth, tr, []string{repo.Scope(transport.PullScope)})
 	if err != nil {
@@ -377,7 +393,15 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 // a list of layers.
 func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
 	// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
-	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform))
+	client := &http.Client{
+		Transport: remoteTransport,
+	}
+	if o.insecure {
+		client = &http.Client{
+			Transport: insecureRemoteTransport,
+		}
+	}
+	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform), remote.WithTransport(client.Transport))
 	if err != nil {
 		return nil, err
 	}

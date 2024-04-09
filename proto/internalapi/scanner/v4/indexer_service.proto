@@ -22,6 +22,7 @@ message CreateIndexReportRequest {
   oneof resource_locator {
     ContainerImageLocator container_image = 2;
   }
+  bool insecure_skip_tls_verify = 3;
 }
 
 message GetIndexReportRequest {
@@ -41,6 +42,7 @@ message GetOrCreateIndexReportRequest {
   oneof resource_locator {
     ContainerImageLocator container_image = 2;
   }
+  bool insecure_skip_tls_verify = 3;
 }
 
 // Indexer service creates manifests and store index reports.

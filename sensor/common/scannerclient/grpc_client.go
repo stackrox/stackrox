@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -227,12 +226,7 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 }
 
 func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
-	var opts []name.Option
-	if cfg.Insecure {
-		opts = append(opts, name.Insecure)
-	}
-
-	ref, err := pkgscanner.DigestFromImage(image, opts...)
+	ref, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +235,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		Username: cfg.Username,
 		Password: cfg.Password,
 	}
-	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth)
+	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth, cfg.Insecure)
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}

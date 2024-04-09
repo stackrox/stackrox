@@ -120,7 +120,8 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 					}
 					err = doWithTimeout(ctx, scanTimeout, func(ctx context.Context) error {
 						log.Printf("indexing image %v", ref)
-						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth)
+						// TODO(ROX-23898): add flag for skipping TLS verification.
+						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth, false)
 						if err != nil {
 							stats.indexFailure.Add(1)
 							return fmt.Errorf("indexing: %w", err)
@@ -135,7 +136,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						// Though this method both indexes and matches, we know the indexing has already completed,
 						// and this method will just verify the index still exists. We don't account for
 						// this verification's potential failures at this time.
-						_, err = scanner.IndexAndScanImage(ctx, d, auth)
+						_, err = scanner.IndexAndScanImage(ctx, d, auth, false)
 						if err != nil {
 							stats.matchFailure.Add(1)
 							return fmt.Errorf("matching: %w", err)
