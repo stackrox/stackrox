@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -38,9 +40,30 @@ func mockEnvWithHTTPClient(t *testing.T, store *cfgMock.MockStore) environment.E
 	return mockEnv
 }
 
-func TestExchange(t *testing.T) {
+func TestExchange_From_TokenFlag(t *testing.T) {
+	env, closeFn := setup(t)
+	defer closeFn()
+
+	exchangeCmd := Command(env)
+	exchangeCmd.SetArgs([]string{"--token", "some-token"})
+	assert.NoError(t, exchangeCmd.Execute())
+}
+
+func TestExchange_From_TokenFile(t *testing.T) {
+	env, closeFn := setup(t)
+	defer closeFn()
+
+	tokenFilePath := path.Join(t.TempDir(), "token-file")
+
+	require.NoError(t, os.WriteFile(tokenFilePath, []byte("some-token"), 0644))
+
+	exchangeCmd := Command(env)
+	exchangeCmd.SetArgs([]string{"--token-file", tokenFilePath})
+	assert.NoError(t, exchangeCmd.Execute())
+}
+
+func setup(t *testing.T) (environment.Environment, func()) {
 	server := httptest.NewServer(exchangeHandle(t, "some-token", "test-token"))
-	defer server.Close()
 	// Required for picking up the endpoint used by GetRoxctlHTTPClient. Currently, it is not possible to inject this
 	// otherwise.
 	t.Setenv("ROX_ENDPOINT", server.URL)
@@ -58,11 +81,9 @@ func TestExchange(t *testing.T) {
 		}},
 	}}, cfgKey)).AnyTimes().Return(nil)
 
-	env := mockEnvWithHTTPClient(t, mockStore)
-
-	exchangeCmd := Command(env)
-	exchangeCmd.SetArgs([]string{"--token", "some-token"})
-	assert.NoError(t, exchangeCmd.Execute())
+	return mockEnvWithHTTPClient(t, mockStore), func() {
+		server.Close()
+	}
 }
 
 type centralCfgMatcher struct {
