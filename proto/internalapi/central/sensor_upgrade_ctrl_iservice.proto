@@ -4,7 +4,7 @@ package central;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "./;central";
+option go_package = "central";
 
 message UpgradeCheckInFromUpgraderRequest {
   string cluster_id = 5;
