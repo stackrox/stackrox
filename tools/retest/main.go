@@ -18,7 +18,7 @@ func main() {
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 
 	//TODO(janisz): handle pagination
-	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-merge state:open type:pr status:failure`, nil)
+	search, _, err := client.Search.Issues(ctx, `repo:stackrox/stackrox label:auto-retest state:open type:pr status:failure`, nil)
 	handleError(err)
 	log.Printf("Found %d PRs", search.GetTotal())
 
