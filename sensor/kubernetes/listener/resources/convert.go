@@ -337,9 +337,6 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 			image := w.Deployment.Containers[i].Image
 
-			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
-			// with an image digest. e.g. stackrox.io/main@sha256:xyz
-			// If the ID already exists, populate NotPullable and IsClusterLocal.
 			var runtimeImageName *storage.ImageName
 			if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
 				var err error
