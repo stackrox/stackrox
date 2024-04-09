@@ -276,7 +276,11 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
-	ri.Metadata = WithHeaderMatcher(md)
+	if len(md.Get(runtime.MetadataPrefix+"Accept")) != 0 {
+		ri.Metadata = WithHeaderMatcher(md)
+	} else {
+		ri.Metadata = md
+	}
 	return context.WithValue(ctx, requestInfoKey{}, *ri), nil
 }
 
