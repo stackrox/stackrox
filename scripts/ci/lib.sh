@@ -1200,6 +1200,12 @@ post_process_test_results() {
             fi
         fi
 
+        if [[ "$JOB_NAME" == *"interop"* ]]; then
+          info "Disable jira issue creation for Interop tests"
+          create_jiras="false"
+        fi
+
+
         if [[ "${create_jiras}" == "false" ]]; then
             extra_args=(--dry-run)
             info "Will use junit2jira to create CSV for BigQuery input"
